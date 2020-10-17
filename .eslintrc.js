@@ -19,7 +19,7 @@ module.exports = {
       {
         env: "literal",
         projectName: "app",
-        schemaJsonFilepath: "node_modules/.temp/graphql/schema.json"
+        schemaJsonFilepath: "graphql/schema.json"
       }
     ]
   },
