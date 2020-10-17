@@ -16,7 +16,7 @@ module.exports = {
     name: env.VUE_APP_APOLLO_ENGINE_SERVICE,
     localSchemaFile: path.resolve(
       __dirname,
-      "./node_modules/.temp/graphql/schema.json"
+      "./graphql/schema.json"
     )
   },
   engine: {
