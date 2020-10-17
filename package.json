@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@gitlab/ui": "^21.32.2",
+    "@lifeomic/json-schema-to-graphql-types": "^1.4.2",
     "core-js": "^3.6.5",
     "graphql-type-json": "^0.2.1",
     "jquery": "^3.5.1",
