@@ -1066,6 +1066,11 @@
     ts-node "^8"
     tslib "^1"
 
+"@gitlab/svgs@^1.171.0":
+  version "1.171.0"
+  resolved "https://registry.yarnpkg.com/@gitlab/svgs/-/svgs-1.171.0.tgz#abc3092bf804f0898301626130e0f3231834924a"
+  integrity sha512-TPfdqIxQDda+0CQHhb9XdF50lmqDmADu6yT8R4oZi6BoUtWLdiHbyFt+RnVU6t7EmjIKicNAii7Ga+f2ljCfUA==
+
 "@gitlab/ui@^21.32.2":
   version "21.32.2"
   resolved "https://registry.yarnpkg.com/@gitlab/ui/-/ui-21.32.2.tgz#5897d2e17b7a129be9a76a6a73f99d680865d924"
@@ -9031,6 +9036,11 @@ pify@^4.0.1:
   version "4.0.1"
   resolved "https://registry.yarnpkg.com/pify/-/pify-4.0.1.tgz#4b2cd25c50d598735c50292224fd8c6df41e3231"
   integrity sha512-uB80kBFb/tfd68bVleG9T5GGsGPjJrLAUpR5PZIrhBnIaRTQRjqdJSsIKkOP6OAIFbj7GOrcudc5pNjZ+geV2g==
+
+pikaday@^1.8.0:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/pikaday/-/pikaday-1.8.0.tgz#ce930e257042e852e6aadee1115e01554b2d71c5"
+  integrity sha512-SgGxMYX0NHj9oQnMaSyAipr2gOrbB4Lfs/TJTb6H6hRHs39/5c5VZi73Q8hr53+vWjdn6HzkWcj8Vtl3c9ziaA==
 
 pinkie-promise@^2.0.0:
   version "2.0.1"

@@ -1,20 +1,29 @@
 <template>
   <div id="app">
-    <formTest />
-    <img alt="Vue logo" src="./assets/logo.png" />
-    <ApolloExample msg="Welcome to Your Vue.js App" />
+  <pre>Views
+* User home
+  - Contexts: Connections, secrets, etc.
+  - Cloud accounts / organizations (or just instances?)
+  - Repos: (projects, deployment, plain/source code, ensembles?)
+* Notification/Inbox pane: Review upstream updates, Status changes, Other alerts
+* MyCloud view -- ensembles, instances, jobs, artifacts/source
+* Project view -- replaces readme in project repo? basically the same as user home plus ensembles
+* Plaform home: including the whole cloud
+* browse/search for available public ensembles / services to clone or connect to
+</pre>
+    <Demo name="demo" />
+    <!-- <ApolloExample msg="Welcome to Your Vue.js App" /> -->
   </div>
 </template>
 
 <script>
-import ApolloExample from "./components/ApolloExample.vue";
-import formTest from "./components/test.vue";
+// import ApolloExample from "./components/ApolloExample.vue";
+import Demo from "./components/Demo.vue";
 
 export default {
   name: "App",
   components: {
-    ApolloExample,
-    formTest
+    Demo
   }
 };
 </script>
