@@ -11,6 +11,7 @@
 * Plaform home: including the whole cloud
 * browse/search for available public ensembles / services to clone or connect to
 </pre>
+Ensemble View
     <Demo name="demo" />
     <!-- <ApolloExample msg="Welcome to Your Vue.js App" /> -->
   </div>
@@ -39,8 +40,7 @@ export default {
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  text-align: center;
   color: #2c3e50;
-  margin-top: 60px;
+  margin: 4rem;
 }
 </style>

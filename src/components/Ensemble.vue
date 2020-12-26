@@ -2,9 +2,9 @@
   <div class="ensemble">
     <details>
       <summary>
-        <span class="actions">(Fork/New | Login | Connect | Deploy/Update | More...)</span>
+        <span class="actions">(Fork | Login | Connect | Deploy/Update | More...)</span>
         {{ name }}
-        <div class="summaryindent">Project / example-domain.com</div>
+        <div class="summaryindent">{{ domain }}</div>
       </summary>
       <table>
         <tr>
@@ -55,6 +55,7 @@ export default {
   name: "Ensemble",
   props: {
     name: String,
+    domain: String
   },
   components: {
     Instance,

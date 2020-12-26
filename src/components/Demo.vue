@@ -1,8 +1,13 @@
 <template>
   <div class="panel">
-    <div>{{ name }} SPEC/Template view goes here </div>
-    <Ensemble name="Ensemble1" />
-    <Ensemble name="Ensemble2" />
+    <div>
+        <b>{{ name }}</b> <span class="actions">(New | Project)</span>
+    </div>
+    <div>
+        SPEC/Template view goes here
+    </div>
+    <Ensemble name="Ensemble1" domain="example-domain.com" />
+    <Ensemble name="Ensemble2" domain="staging.example-domain.com" />
   </div>
 </template>
 
