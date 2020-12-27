@@ -13,7 +13,7 @@
         </tr>
         <tr>
           <td>Status</td>
-          <td>OK</td>
+          <td><Status status="ok"/></td>
         </tr>
       </table>
       <p>Public Endpoints</p>
@@ -49,6 +49,7 @@
 
 <script>
 import * as GlComponents from "@gitlab/ui";
+import Status from "./Status.vue";
 import Instance from "./Instance.vue";
 
 export default {
@@ -59,6 +60,7 @@ export default {
   },
   components: {
     Instance,
+    Status,
     ...GlComponents,
   },
 };
