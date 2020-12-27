@@ -1071,7 +1071,7 @@
   resolved "https://registry.yarnpkg.com/@gitlab/svgs/-/svgs-1.177.0.tgz#e481ed327a11d3834c8b1668d7485b9eefef97f5"
   integrity sha512-L7DggusgkbubNFCRIYtCuYiLx+t5Hp8y/XIxJ3RM5mqAfxkTR1KxALNLDP9CT7xWieHDhNvgcXAdamGoi0ofDQ==
 
-"@gitlab/ui@^25.0.2":
+"@gitlab/ui@^25.0.1":
   version "25.0.1"
   resolved "https://registry.yarnpkg.com/@gitlab/ui/-/ui-25.0.1.tgz#2669cd65a19cda69af42017f39eb964072c03bf8"
   integrity sha512-WLvrnVU18DaPHQghwUbYcqoK02axD639T4THDUBk3fzzOs2piXYvqDfRtT59cpaZpDS3IIHUTlPhxBCE7zv2GQ==
