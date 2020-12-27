@@ -1066,21 +1066,21 @@
     ts-node "^8"
     tslib "^1"
 
-"@gitlab/svgs@^1.171.0":
-  version "1.171.0"
-  resolved "https://registry.yarnpkg.com/@gitlab/svgs/-/svgs-1.171.0.tgz#abc3092bf804f0898301626130e0f3231834924a"
-  integrity sha512-TPfdqIxQDda+0CQHhb9XdF50lmqDmADu6yT8R4oZi6BoUtWLdiHbyFt+RnVU6t7EmjIKicNAii7Ga+f2ljCfUA==
+"@gitlab/svgs@^1.177.0":
+  version "1.177.0"
+  resolved "https://registry.yarnpkg.com/@gitlab/svgs/-/svgs-1.177.0.tgz#e481ed327a11d3834c8b1668d7485b9eefef97f5"
+  integrity sha512-L7DggusgkbubNFCRIYtCuYiLx+t5Hp8y/XIxJ3RM5mqAfxkTR1KxALNLDP9CT7xWieHDhNvgcXAdamGoi0ofDQ==
 
-"@gitlab/ui@^21.32.2":
-  version "21.32.2"
-  resolved "https://registry.yarnpkg.com/@gitlab/ui/-/ui-21.32.2.tgz#5897d2e17b7a129be9a76a6a73f99d680865d924"
-  integrity sha512-i/xOM5on5irPelQhgItykonBqnFs5FO6+Sjn2djjp9CvG+aUnb1iLnu59YK8Vhfy+T52fSNDCjgiy/sdZ0E4xA==
+"@gitlab/ui@^25.0.2":
+  version "25.0.1"
+  resolved "https://registry.yarnpkg.com/@gitlab/ui/-/ui-25.0.1.tgz#2669cd65a19cda69af42017f39eb964072c03bf8"
+  integrity sha512-WLvrnVU18DaPHQghwUbYcqoK02axD639T4THDUBk3fzzOs2piXYvqDfRtT59cpaZpDS3IIHUTlPhxBCE7zv2GQ==
   dependencies:
     "@babel/standalone" "^7.0.0"
     "@gitlab/vue-toasted" "^1.3.0"
     bootstrap-vue "2.13.1"
     copy-to-clipboard "^3.0.8"
-    dompurify "^2.1.1"
+    dompurify "^2.2.6"
     echarts "^4.2.1"
     highlight.js "^9.13.1"
     js-beautify "^1.8.8"
@@ -4984,10 +4984,10 @@ domhandler@^2.3.0:
   dependencies:
     domelementtype "1"
 
-dompurify@^2.1.1:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-2.1.1.tgz#b5aa988676b093a9c836d8b855680a8598af25fe"
-  integrity sha512-NijiNVkS/OL8mdQL1hUbCD6uty/cgFpmNiuFxrmJ5YPH2cXrPKIewoixoji56rbZ6XBPmtM8GA8/sf9unlSuwg==
+dompurify@^2.2.6:
+  version "2.2.6"
+  resolved "https://registry.yarnpkg.com/dompurify/-/dompurify-2.2.6.tgz#54945dc5c0b45ce5ae228705777e8e59d7b2edc4"
+  integrity sha512-7b7ZArhhH0SP6W2R9cqK6RjaU82FZ2UPM7RO8qN1b1wyvC/NY1FNWcX1Pu00fFOAnzEORtwXe4bPaClg6pUybQ==
 
 domutils@1.5.1:
   version "1.5.1"
