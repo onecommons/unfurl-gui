@@ -21,10 +21,7 @@
           <summary>Dependencies</summary>
           <div class="child">
             <ul>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
+              <li>Instance</li>
             </ul>
           </div>
         </details>
@@ -32,10 +29,15 @@
           <summary>Endpoints</summary>
           <div class="child">
             <ul>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
+              <li>TODO: capabilities</li>
+            </ul>
+          </div>
+        </details>
+        <details>
+          <summary>Hosts</summary>
+          <div class="child">
+            <ul>
+              <li>Instances</li>
             </ul>
           </div>
         </details>
@@ -43,10 +45,7 @@
           <summary>Artifacts</summary>
           <div class="child">
             <ul>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
+              <li>TODO: artifact</li>
             </ul>
           </div>
         </details>
@@ -54,10 +53,7 @@
           <summary>Revisions</summary>
           <div class="child">
             <ul>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
-              <li>job</li>
+              <li>TODO: job</li>
             </ul>
           </div>
         </details>
@@ -67,16 +63,20 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import * as GlComponents from "@gitlab/ui";
-export default {
+// import {Instance} from "../ensemble.ts";
+
+export default Vue.extend({
   name: "Instance",
   props: {
-    name: String
+    name: String,
+//    instance: Instance
   },
   components: {
     ...GlComponents
   }
-};
+});
 </script>
 
 <!-- Add "scoped" attribute to limit CSS to this component only -->
