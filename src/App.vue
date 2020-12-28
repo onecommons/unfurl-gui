@@ -17,16 +17,19 @@ Ensemble View
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { Component, Vue } from "vue-property-decorator";
+
 // import ApolloExample from "./components/ApolloExample.vue";
 import Demo from "./components/Demo.vue";
 
-export default {
+@Component({
   name: "App",
   components: {
     Demo
   }
-};
+})
+export default class App extends Vue {}
 </script>
 
 <style>

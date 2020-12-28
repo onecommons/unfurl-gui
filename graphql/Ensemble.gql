@@ -1,0 +1,305 @@
+yarn run v1.22.5
+$ /Users/adam/_dev/unfurl-gui/node_modules/.bin/convert-json-schemas-to-graphql-types jsonschemas/
+"""indicates these properties must be set all at once or replaced"""
+type Atomic {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+"""indicates these properties must be set all at once or replaced"""
+input AtomicIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type Attributes {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input AttributesIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type ChangesItem {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input ChangesItemIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type ConfigurationSpec {
+  operation: String
+  className: String!
+  majorVersion: String
+  minorVersion: String
+}
+
+input ConfigurationSpecIn {
+  operation: String
+  className: String!
+  majorVersion: String
+  minorVersion: String
+}
+
+type Context {
+  inputs: Attributes
+  runtime: String
+  environment: Attributes
+  locals: External
+  secrets: External
+  connections: NamedObjects
+  external: ContextExternal
+}
+
+type ContextExternal {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input ContextExternalIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input ContextIn {
+  inputs: AttributesIn
+  runtime: String
+  environment: AttributesIn
+  locals: ExternalIn
+  secrets: ExternalIn
+  connections: NamedObjectsIn
+  external: ContextExternalIn
+}
+
+"""Declare external instances imported from another manifest."""
+type External {
+  manifest: ExternalManifest
+  uri: String
+  instance: String
+  schema: Attributes
+  attributes: Attributes
+}
+
+"""Declare external instances imported from another manifest."""
+input ExternalIn {
+  manifest: ExternalManifestIn
+  uri: String
+  instance: String
+  schema: AttributesIn
+  attributes: AttributesIn
+}
+
+type ExternalManifest {
+  file: String
+  repository: String
+}
+
+input ExternalManifestIn {
+  file: String
+  repository: String
+}
+
+type Instance {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input InstanceIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type Instances {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input InstancesIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type Job {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input JobIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+"""constrains how properties are named"""
+type NamedObjects {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+"""constrains how properties are named"""
+input NamedObjectsIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+enum ReadyState {
+  unknown
+  ok
+  degraded
+  error
+  pending
+  absent
+}
+
+"""a JSON Schema """
+type Schema {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+"""a JSON Schema """
+input SchemaIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type Secret {
+  ref: SecretRef!
+}
+
+input SecretIn {
+  ref: SecretRefIn!
+}
+
+type SecretRef {
+  secret: String!
+}
+
+input SecretRefIn {
+  secret: String!
+}
+
+enum State {
+  initial
+  creating
+  created
+  configuring
+  configured
+  starting
+  started
+  stopping
+  stopped
+  deleting
+  deleted
+  error
+}
+
+type Status {
+  readyState: StatusReadyState
+  priority: StatusPriority
+  lastStateChange: String
+  lastConfigChange: String
+}
+
+input StatusIn {
+  readyState: StatusReadyStateIn
+  priority: StatusPriority
+  lastStateChange: String
+  lastConfigChange: String
+}
+
+enum StatusPriority {
+  ignore
+  optional
+  required
+}
+
+type StatusReadyState {
+  effective: ReadyState
+  local: ReadyState
+  state: State
+}
+
+input StatusReadyStateIn {
+  effective: ReadyState
+  local: ReadyState
+  state: State
+}
+
+type Task {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input TaskIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type Ensemble {
+  apiVersion: String!
+  kind: Https:/-/onecommonsOrg/schemas/unfurl/v1alpha1/EnsembleJsonKind!
+  metadata: EnsembleMetadata
+  context: Context
+  spec: EnsembleSpec!
+  status: EnsembleStatus
+  lastJob: Job
+  changeLog: String
+  jobsFolder: String
+  changes: [ChangesItem!]
+}
+
+input EnsembleIn {
+  apiVersion: String!
+  kind: Https:/-/onecommonsOrg/schemas/unfurl/v1alpha1/EnsembleJsonKind!
+  metadata: EnsembleMetadataIn
+  context: ContextIn
+  spec: EnsembleSpecIn!
+  status: EnsembleStatusIn
+  lastJob: JobIn
+  changeLog: String
+  jobsFolder: String
+  changes: [ChangesItemIn!]
+}
+
+type EnsembleMetadata {
+  uri: String!
+  aliases: [String!]
+}
+
+input EnsembleMetadataIn {
+  uri: String!
+  aliases: [String!]
+}
+
+type EnsembleSpec {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input EnsembleSpecIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+type EnsembleStatus {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+input EnsembleStatusIn {
+  _typesWithoutFieldsAreNotAllowed_: String
+}
+
+enum Https:/-/onecommonsOrg/schemas/unfurl/v1alpha1/EnsembleJsonKind {
+  Manifest
+  Ensemble
+}
+
+type Mutation {
+  StateIn(input: State): String
+  ReadyStateIn(input: ReadyState): String
+  AtomicIn(input: AtomicIn): String
+  NamedObjectsIn(input: NamedObjectsIn): String
+  SecretIn(input: SecretIn): String
+  AttributesIn(input: AttributesIn): String
+  SchemaIn(input: SchemaIn): String
+  ContextIn(input: ContextIn): String
+  ExternalIn(input: ExternalIn): String
+  InstanceIn(input: InstanceIn): String
+  InstancesIn(input: InstancesIn): String
+  StatusIn(input: StatusIn): String
+  ChangeIdIn(input: String): String
+  TimestampIn(input: String): String
+  VersionIn(input: String): String
+  ConfigurationSpecIn(input: ConfigurationSpecIn): String
+  ChangesIn(input: [ChangesItemIn!]): String
+  JobIn(input: JobIn): String
+  TaskIn(input: TaskIn): String
+  Ensemble(input: EnsembleIn): String
+}
+
+
+
+Done in 0.25s.
