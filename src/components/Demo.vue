@@ -11,20 +11,20 @@
   </div>
 </template>
 
-<script lang="ts">
+<script>
 import * as GlComponents from "@gitlab/ui";
 import Ensemble from "./Ensemble.vue";
 
-import { Component, Prop, Vue } from "vue-property-decorator";
-
-@Component({components: {
-     Ensemble,
+export default {
+  name: "Demo",
+  props: {
+    name: String
+  },
+  components: {
+    Ensemble,
     ...GlComponents
-   }
-})
-export default class Demo extends Vue {
-  @Prop() private name!: string;
-}
+  }
+};
 
 </script>
 

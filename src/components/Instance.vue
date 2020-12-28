@@ -62,16 +62,16 @@
   </div>
 </template>
 
-<script type="ts">
+<script>
 import Vue from 'vue'
 import * as GlComponents from "@gitlab/ui";
-import {Instance} from "../ensemble";
+// import {Instance} from "../ensemble.ts";
 
 export default Vue.extend({
   name: "Instance",
   props: {
     name: String,
-    instance: Instance
+//    instance: Instance
   },
   components: {
     ...GlComponents
