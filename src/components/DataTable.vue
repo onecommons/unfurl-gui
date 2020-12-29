@@ -1,11 +1,13 @@
 <template>
   <gl-table :items="this.items" :fields="$options.fields">
-    <template #head(column_one)>
-      <div>{{ items }}</div>
+    <div>{{ items }}</div>
+    <!-- add slot here, something like (assuming Status is registered component):
+
+    <template #cell(Status)="{ currentStatus }">
+      <Status status="currentStatus"/>
     </template>
-    <template #cell(column_one)>
-      This is the template for column data belonging to the first object
-    </template>
+    
+    -->
   </gl-table>
 </template>
 <script>
@@ -15,15 +17,15 @@ export default {
   fields: [
     {
       key: "row",
-      label: "Column One",
-      thClass: "",
-      tdClass: ""
+      label: "Name",
+      thClass: "dt-th",
+      tdClass: "dt-td"
     },
     {
       key: "content",
-      label: "Column 2",
-      thClass: "",
-      tdClass: ""
+      label: "Data",
+      thClass: "dt-th",
+      tdClass: "dt-td"
     }
   ],
   name: "DataTable",
@@ -35,4 +37,13 @@ export default {
   }
 };
 </script>
-<style></style>
+<style>
+table.gl-table,
+table.gl-table tr td {
+  border: 1px solid #999;
+}
+table.gl-table tr th.dt-th {
+  background-color: #000;
+  color: #fff;
+}
+</style>

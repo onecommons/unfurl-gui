@@ -14,6 +14,9 @@
         (in this case the Status component as an item in the DataTable).
         After a few tries, I don't think I can waste more time figuring this out...
         See https://stackoverflow.com/a/42998087 for Vue syntax on passing components as props.
+        clues to possible solution: 
+        https://stackoverflow.com/a/58435755
+        https://stackoverflow.com/a/61359051
       -->
       <Status :status="currentStatus" />
       <p>Public Endpoints</p>
