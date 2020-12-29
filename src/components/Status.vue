@@ -1,9 +1,10 @@
 <template>
   <div class="status-badge">
     <gl-badge
+      v-if="status in statusBadges"
       href="javascript:void(0)"
-      :variant="getBadge()"
-      :icon="getBadge('icon')"
+      :variant="statusBadges[status][0]"
+      :icon="statusBadges[status][1]"
     >
       <span>
         {{ status[0].toUpperCase() + status.slice(1) }}
@@ -31,16 +32,6 @@ export default {
         degraded: ["warning", "status_running"]
       }
     };
-  },
-  methods: {
-    getBadge: function(attr) {
-      const badges = this.statusBadges;
-      for (const status in badges) {
-        if (this.status === status) {
-          return attr == "icon" ? badges[status][1] : badges[status][0];
-        }
-      }
-    }
   },
   components: {
     ...GlComponents
