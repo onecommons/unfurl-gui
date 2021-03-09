@@ -10,5 +10,6 @@ export const db = new Lowdb(new FileSync(resolve(__dirname, '../../live/db.json'
 // Seed an empty DB
 db.defaults({
   messages: [],
+  accounts: [],
   uploads: [],
 }).write()
