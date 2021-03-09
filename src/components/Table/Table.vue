@@ -112,12 +112,18 @@ export default class Table extends Vue {
   selected: Array<any> = [];
   selectMode = "multi";
 
+  // Save the items selected within array.
   onRowSelected(items: any) {
     this.selected = items;
   }
 
+  // Handle Toggle function in Checkboxes
   onRowClicked(row: any) {
-    this.$refs.selectableTable.$children[0].selectRow(row.index);
+    if (row.rowSelected) {
+      this.$refs.selectableTable.$children[0].unselectRow(row.index);
+    } else {
+      this.$refs.selectableTable.$children[0].selectRow(row.index);
+    }
   }
 }
 </script>
