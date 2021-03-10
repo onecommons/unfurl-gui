@@ -2,18 +2,23 @@
   <div v-if="loading" class="loading apollo">Loading...</div>
   <div v-else-if="error" class="error apollo">An error occured</div>
   <div v-else>
-    <p>
-      Selected Rows:<br />
-      {{ selectedRows }}
-    </p>
+    <gl-form-input
+      id="filter-input"
+      v-model="filter"
+      type="search"
+      placeholder="Type to Search"
+    />
     <gl-table
       id="accounts-table"
+      @row-clicked="rowClicked"
+      @filtered="onFiltered"
       :current-page="page"
       :select-mode="selectMode"
-      @row-clicked="rowClicked"
       :items="items"
       :fields="fields"
       :perPage="perPage"
+      :filter="filter"
+      :filter-included-fields="filterOn"
       ref="selectableTable"
       primary-key="id"
       :tbody-tr-class="tbodyRowClass"
@@ -32,7 +37,7 @@
     <gl-pagination
       v-model="page"
       :per-page="perPage"
-      :total-items="items.length"
+      :total-items="totalRows"
       first-text="First"
       prev-text="Prev"
       next-text="Next"
@@ -42,7 +47,7 @@
   </div>
 </template>
 <script lang="ts">
-import { GlTable, GlPagination, GlFormCheckbox } from "@gitlab/ui";
+import { GlTable, GlPagination, GlFormCheckbox, GlFormInput } from "@gitlab/ui";
 import { Component, Vue, Ref } from "vue-property-decorator";
 import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
 
@@ -50,7 +55,8 @@ import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
   components: {
     GlTable,
     GlPagination,
-    GlFormCheckbox
+    GlFormCheckbox,
+    GlFormInput
   }
 })
 export default class Table extends Vue {
@@ -104,6 +110,9 @@ export default class Table extends Vue {
   error = false;
   selected: Array<any> = [];
   selectMode = "multi";
+  filter = null;
+  filterOn = [];
+  totalRows = 1;
 
   data() {
     return {
@@ -128,6 +137,11 @@ export default class Table extends Vue {
     }
   }
 
+  onFiltered(filteredItems: any) {
+    this.totalRows = filteredItems.length;
+    this.page = 1;
+  }
+
   public async created() {
     this.loading = true;
 
@@ -140,6 +154,7 @@ export default class Table extends Vue {
       this.error = true;
     } else {
       this.items = data.accounts;
+      this.totalRows = this.items.length;
     }
   }
 
