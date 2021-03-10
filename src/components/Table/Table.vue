@@ -69,15 +69,7 @@
   </div>
 </template>
 <script lang="ts">
-import {
-  GlTable,
-  GlPagination,
-  GlFormCheckbox,
-  GlFormInput,
-  GlContainer,
-  GlRow,
-  GlCol
-} from "@gitlab/ui";
+import { GlTable, GlPagination, GlFormCheckbox, GlFormInput } from "@gitlab/ui";
 import { Component, Vue, Ref } from "vue-property-decorator";
 import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
 
@@ -86,10 +78,7 @@ import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
     GlTable,
     GlPagination,
     GlFormCheckbox,
-    GlFormInput,
-    GlContainer,
-    GlRow,
-    GlCol
+    GlFormInput
   }
 })
 export default class Table extends Vue {
