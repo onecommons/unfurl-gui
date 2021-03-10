@@ -2,12 +2,15 @@
   <div v-if="loading" class="loading apollo">Loading...</div>
   <div v-else-if="error" class="error apollo">An error occured</div>
   <div v-else>
+    <!-- Filter search Box -->
     <gl-form-input
       id="filter-input"
       v-model="filter"
       type="search"
       placeholder="Type to filter"
     />
+
+    <!-- Table -->
     <gl-table
       id="accounts-table"
       @row-clicked="rowClicked"
@@ -60,8 +63,9 @@ import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
   }
 })
 export default class Table extends Vue {
-  [x: string]: any;
   @Ref() readonly selectableTable: GlTable;
+
+  [x: string]: any;
   fields: Array<any> = [
     {
       key: "selected",
