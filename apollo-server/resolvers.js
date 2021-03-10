@@ -13,6 +13,7 @@ export default {
   Query: {
     hello: (root, { name }) => `Hello ${name || 'World'}!`,
     messages: (root, args, { db }) => db.get('messages').value(),
+    accounts: (root, args, { db }) => db.get('accounts').value(),
     uploads: (root, args, { db }) => db.get('uploads').value(),
 
   },
@@ -26,7 +27,7 @@ export default {
     addMessage: (root, { input }, { pubsub, db }) => {
       const message = {
         id: shortid.generate(),
-        text: input.text,
+        text: input.text
       }
 
       db
@@ -38,6 +39,27 @@ export default {
       pubsub.publish('messages', { messageAdded: message })
 
       return message
+    },
+
+    addAccount: ( root, { input }, { pubsub, db }) => {
+      const account = {
+        id: shortid.generate(),
+        account: input.account,
+        network: input.network,
+        group: input.group,
+        resource: input.resource,
+        service: input.service,
+        emsemble: input.emsemble,
+        description: input.description
+      }
+
+      db
+        .get('accounts')
+        .push(account)
+        .last()
+        .write()
+
+      return account;
     },
 
     singleUpload: (root, { file }, { processUpload }) => processUpload(file),

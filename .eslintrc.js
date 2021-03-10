@@ -26,7 +26,8 @@ module.exports = {
         projectName: "app",
         schemaJsonFilepath: "graphql/schema.json"
       }
-    ]
+    ],
+    "@typescript-eslint/no-explicit-any": "off"
   },
 
   plugins: ["graphql"]

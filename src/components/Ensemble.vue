@@ -2,7 +2,9 @@
   <div class="ensemble">
     <details>
       <summary>
-        <span class="actions">(Fork | Login | Connect | Deploy/Update | More...)</span>
+        <span class="actions"
+          >(Fork | Login | Connect | Deploy/Update | More...)</span
+        >
         {{ name }}
         <div class="summaryindent">{{ domain }}</div>
       </summary>
@@ -13,9 +15,10 @@
         </tr>
         <tr>
           <td>Status</td>
-          <td><Status status="ok"/></td>
+          <td><Status status="ok" /></td>
         </tr>
       </table>
+
       <p>Public Endpoints</p>
       <p>Inputs / Outputs</p>
       <details class="external">
@@ -56,7 +59,7 @@ export default {
   name: "Ensemble",
   props: {
     name: String,
-    domain: String
+    domain: String,
   },
   components: {
     Instance,

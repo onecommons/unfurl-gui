@@ -23,6 +23,17 @@ input MessageInput {
   text: String!
 }
 
+"Input from user to create account"
+input AccountInput {
+  account: String!
+  network: String!
+  group: String!
+  resource: String!
+  service: String!
+  emsemble: String!
+  description: String
+}
+
 type File {
   id: ID!
   path: String!
@@ -31,12 +42,24 @@ type File {
   encoding: String!
 }
 
+type Account {
+  id: ID!
+  account: String!
+  network: String!,
+  group: String!,
+  resource: String!,
+  service: String!,
+  emsemble: String!,
+  description: String!
+}
 
 type Query {
   "Test query with a parameter"
   hello(name: String): String!
   "List of messages sent by users"
   messages: [Message]
+  "List of Accounts"
+  accounts: [Account]
   uploads: [File]
 
 }
@@ -45,6 +68,8 @@ type Mutation {
   myMutation: String!
   "Add a message and publish it on 'messages' subscription channel"
   addMessage (input: MessageInput!): Message!
+  "Add an account"
+  addAccount (input: AccountInput!): Account!
   singleUpload (file: Upload!): File!
   multipleUpload (files: [Upload!]!): [File!]!
 
