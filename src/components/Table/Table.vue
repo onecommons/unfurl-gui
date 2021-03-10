@@ -1,61 +1,83 @@
 <template>
-  <div v-if="loading" class="loading apollo">Loading...</div>
-  <div v-else-if="error" class="error apollo">An error occured</div>
-  <div v-else>
-    <!-- Filter search Box -->
-    <gl-form-input
-      id="filter-input"
-      v-model="filter"
-      type="search"
-      placeholder="Type to filter"
-    />
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-8"></div>
+      <div class="col-4 align-self-end">
+        <!-- Filter search Box -->
+        <gl-form-input
+          id="filter-input"
+          v-model="filter"
+          type="search"
+          placeholder="Type to filter"
+        />
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div class="col-md-12" :style="tableHeight">
+        <div v-if="loading" class="loading apollo">Loading...</div>
+        <div v-else-if="error" class="error apollo">An error occured</div>
+        <div v-else>
+          <!-- Table -->
+          <gl-table
+            id="accounts-table"
+            @row-clicked="rowClicked"
+            @filtered="onFiltered"
+            :current-page="page"
+            :select-mode="selectMode"
+            :items="items"
+            :fields="fields"
+            :perPage="perPage"
+            :filter="filter"
+            :filter-included-fields="filterOn"
+            ref="selectableTable"
+            primary-key="id"
+            :tbody-tr-class="tbodyRowClass"
+            show-empty
+          >
+            <!-- No records found -->
+            <template #empty="scope">
+              <div class="text-center my-2">{{ scope.emptyText }}</div>
+            </template>
 
-    <!-- Table -->
-    <gl-table
-      id="accounts-table"
-      @row-clicked="rowClicked"
-      @filtered="onFiltered"
-      :current-page="page"
-      :select-mode="selectMode"
-      :items="items"
-      :fields="fields"
-      :perPage="perPage"
-      :filter="filter"
-      :filter-included-fields="filterOn"
-      ref="selectableTable"
-      primary-key="id"
-      :tbody-tr-class="tbodyRowClass"
-      show-empty
-    >
-      No records found
-      <template #empty="scope">
-        <div class="text-center my-2">{{ scope.emptyText }}</div>
-      </template>
+            <!-- Not recours found using filter box -->
+            <template #emptyfiltered="scope">
+              <div class="text-center my-2">{{ scope.emptyFilteredText }}</div>
+            </template>
 
-      <!-- Not recours found using filter box -->
-      <template #emptyfiltered="scope">
-        <h4>{{ scope.emptyFilteredText }}</h4>
-      </template>
-
-      <!-- Checkbox to select row -->
-      <template v-slot:cell(selected)="{ item, field: { key } }">
-        <gl-form-checkbox v-model="item[key]"></gl-form-checkbox>
-      </template>
-    </gl-table>
-    <gl-pagination
-      v-model="page"
-      :per-page="perPage"
-      :total-items="totalRows"
-      first-text="First"
-      prev-text="Prev"
-      next-text="Next"
-      last-text="Last"
-      aria-controls="accounts-table"
-    />
+            <!-- Checkbox to select row -->
+            <template v-slot:cell(selected)="{ item, field: { key } }">
+              <gl-form-checkbox v-model="item[key]"></gl-form-checkbox>
+            </template>
+          </gl-table>
+        </div>
+      </div>
+    </div>
+    <div class="row-fluid">
+      <div class="col-md-12">
+        <gl-pagination
+          v-model="page"
+          :per-page="perPage"
+          :total-items="totalRows"
+          first-text="First"
+          prev-text="Prev"
+          next-text="Next"
+          last-text="Last"
+          aria-controls="accounts-table"
+        />
+      </div>
+    </div>
   </div>
 </template>
 <script lang="ts">
-import { GlTable, GlPagination, GlFormCheckbox, GlFormInput } from "@gitlab/ui";
+import {
+  GlTable,
+  GlPagination,
+  GlFormCheckbox,
+  GlFormInput,
+  GlContainer,
+  GlRow,
+  GlCol
+} from "@gitlab/ui";
 import { Component, Vue, Ref } from "vue-property-decorator";
 import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
 
@@ -64,7 +86,10 @@ import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
     GlTable,
     GlPagination,
     GlFormCheckbox,
-    GlFormInput
+    GlFormInput,
+    GlContainer,
+    GlRow,
+    GlCol
   }
 })
 export default class Table extends Vue {
@@ -114,7 +139,7 @@ export default class Table extends Vue {
     }
   ];
   page = 1;
-  perPage = 5;
+  perPage = 3;
   loading = false;
   error = false;
   selected: Array<any> = [];
@@ -130,7 +155,6 @@ export default class Table extends Vue {
   }
 
   rowClicked(item: any) {
-    console.log(item);
     if (item.selected) {
       this.$set(item, "selected", false);
     } else {
@@ -171,6 +195,10 @@ export default class Table extends Vue {
 
   public get selectedRows(): string[] {
     return this.items.filter((item: { selected: any }) => item.selected);
+  }
+
+  public get tableHeight(): string {
+    return `height: ${this.perPage * 56 + 60}px`;
   }
 }
 </script>
