@@ -63,7 +63,7 @@ import { GET_ACCOUNTS } from "../../graphql/Accounts/Account";
   }
 })
 export default class Table extends Vue {
-  @Ref() readonly selectableTable: GlTable;
+  @Ref() readonly selectableTable: typeof GlTable;
 
   [x: string]: any;
   fields: Array<any> = [
