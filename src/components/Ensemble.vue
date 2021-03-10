@@ -59,13 +59,13 @@ export default {
   name: "Ensemble",
   props: {
     name: String,
-    domain: String,
+    domain: String
   },
   components: {
     Instance,
     Status,
-    ...GlComponents,
-  },
+    ...GlComponents
+  }
 };
 </script>
 
