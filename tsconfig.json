@@ -10,11 +10,12 @@
     "skipLibCheck": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
+    "noImplicitAny": true,
     "sourceMap": true,
     "baseUrl": ".",
     "types": [
       "webpack-env",
-      "vue-cli-plugin-apollo/types"      
+      "vue-cli-plugin-apollo/types"
     ],
     "paths": {
       "@/*": [
@@ -37,5 +38,8 @@
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
+  "rules": {
+    "@typescript-eslint/no-explicit-any": "off"
+  },
 }
