@@ -52,8 +52,8 @@
         </div>
       </div>
     </div>
-    <div class="row-fluid">
-      <div class="col-md-12">
+    <div class="row justify-content-end">
+      <div class="col">
         <gl-pagination
           v-model="page"
           :per-page="perPage"
@@ -128,7 +128,7 @@ export default class Table extends Vue {
     }
   ];
   page = 1;
-  perPage = 3;
+  perPage = 5;
   loading = false;
   error = false;
   selected: Array<any> = [];
