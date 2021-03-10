@@ -27,9 +27,14 @@
       :tbody-tr-class="tbodyRowClass"
       show-empty
     >
-      <!-- No records found -->
+      No records found
       <template #empty="scope">
         <div class="text-center my-2">{{ scope.emptyText }}</div>
+      </template>
+
+      <!-- Not recours found using filter box -->
+      <template #emptyfiltered="scope">
+        <h4>{{ scope.emptyFilteredText }}</h4>
       </template>
 
       <!-- Checkbox to select row -->
@@ -125,6 +130,7 @@ export default class Table extends Vue {
   }
 
   rowClicked(item: any) {
+    console.log(item);
     if (item.selected) {
       this.$set(item, "selected", false);
     } else {
@@ -134,6 +140,7 @@ export default class Table extends Vue {
 
   tbodyRowClass(item: any) {
     /* Style the row as needed */
+    if (item === null || item === undefined) return;
     if (item.selected) {
       return ["b-table-row-selected", "table-primary", "cursor-pointer"];
     } else {
