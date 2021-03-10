@@ -6,7 +6,7 @@
       id="filter-input"
       v-model="filter"
       type="search"
-      placeholder="Type to Search"
+      placeholder="Type to filter"
     />
     <gl-table
       id="accounts-table"
