@@ -1,3 +1,5 @@
+/* eslint-disable no-prototype-builtins */
+/* eslint-disable @typescript-eslint/no-use-before-define */
 // https://app.quicktype.io?share=hS3Pzwlp1dunMZpXSINY
 
 // To parse this data:
@@ -253,6 +255,7 @@ function transform(val: any, typ: any, getProps: any, key: any = ""): any {
       const typ = typs[i];
       try {
         return transform(val, typ, getProps);
+        // eslint-disable-next-line no-empty
       } catch (_) {}
     }
     return invalidValue(typs, val);
