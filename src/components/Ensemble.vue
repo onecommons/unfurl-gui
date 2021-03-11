@@ -8,17 +8,17 @@
         {{ name }}
         <div class="summaryindent">{{ domain }}</div>
       </summary>
-      <DataTable :items="items" />
-      <!-- 
-        It's not obvious how to pass a component as prop as item within array 
-        (in this case the Status component as an item in the DataTable).
-        After a few tries, I don't think I can waste more time figuring this out...
-        See https://stackoverflow.com/a/42998087 for Vue syntax on passing components as props.
-        clues to possible solution: 
-        https://stackoverflow.com/a/58435755
-        https://stackoverflow.com/a/61359051
-      -->
-      <Status :status="currentStatus" />
+      <table>
+        <tr>
+          <td>Type</td>
+          <td>tosca:Compute</td>
+        </tr>
+        <tr>
+          <td>Status</td>
+          <td><Status status="ok" /></td>
+        </tr>
+      </table>
+
       <p>Public Endpoints</p>
       <p>Inputs / Outputs</p>
       <details class="external">
@@ -54,7 +54,6 @@
 import * as GlComponents from "@gitlab/ui";
 import Status from "./Status.vue";
 import Instance from "./Instance.vue";
-import DataTable from "./DataTable.vue";
 
 export default {
   name: "Ensemble",
@@ -62,19 +61,9 @@ export default {
     name: String,
     domain: String
   },
-  data() {
-    return {
-      currentStatus: "ok",
-      items: [
-        { row: "Type", content: "tosca:Compute" },
-        { row: "Status", content: this.currentStatus }
-      ]
-    };
-  },
   components: {
     Instance,
     Status,
-    DataTable,
     ...GlComponents
   }
 };

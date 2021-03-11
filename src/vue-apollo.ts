@@ -1,3 +1,4 @@
+import { SubscriptionClient } from "subscriptions-transport-ws";
 import Vue from "vue";
 import VueApollo from "vue-apollo";
 import {
@@ -87,7 +88,10 @@ export function createProvider(options = {}) {
 }
 
 // Manually call this when user log in
-export async function onLogin(apolloClient, token) {
+export async function onLogin(
+  apolloClient: { wsClient: SubscriptionClient; resetStore: () => any },
+  token: string
+) {
   if (typeof localStorage !== "undefined" && token) {
     localStorage.setItem(AUTH_TOKEN, token);
   }
@@ -101,7 +105,10 @@ export async function onLogin(apolloClient, token) {
 }
 
 // Manually call this when user log out
-export async function onLogout(apolloClient) {
+export async function onLogout(apolloClient: {
+  wsClient: SubscriptionClient;
+  resetStore: () => any;
+}) {
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem(AUTH_TOKEN);
   }
