@@ -10,13 +10,12 @@
 import { Component, Vue } from "vue-property-decorator";
 
 // import ApolloExample from "./components/ApolloExample.vue";
-import Demo from "./components/Demo.vue";
+// import Demo from "./components/Demo.vue";
 import Table from "./components/Table/Table.vue";
 
 @Component({
   name: "App",
   components: {
-    Demo,
     Table
   }
 })
