@@ -6,20 +6,17 @@
   </div>
 </template>
 
-<script lang="ts">
-import { Component, Vue } from "vue-property-decorator";
-
+<script>
 // import ApolloExample from "./components/ApolloExample.vue";
 // import Demo from "./components/Demo.vue";
 import Table from "./components/Table/Table.vue";
 
-@Component({
+export default {
   name: "App",
   components: {
     Table
   }
-})
-export default class App extends Vue {}
+};
 </script>
 
 <style>
