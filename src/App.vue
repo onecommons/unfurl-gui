@@ -1,7 +1,7 @@
 <template>
   <div id="app">
-    <Table />
-    <!-- <Demo name="demo" /> -->
+    <NavBar />
+    <router-view class="view"></router-view>
     <!-- <ApolloExample msg="Welcome to Your Vue.js App" /> -->
   </div>
 </template>
@@ -9,12 +9,13 @@
 <script>
 // import ApolloExample from "./components/ApolloExample.vue";
 // import Demo from "./components/Demo.vue";
-import Table from "./components/Table/Table.vue";
+import NavBar from "./components/common/NavBar";
 
 export default {
   name: "App",
   components: {
-    Table
+    // Table,
+    NavBar
   }
 };
 </script>
