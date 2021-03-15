@@ -17,6 +17,7 @@
             <td>value</td>
           </tr>
         </table>
+
         <details>
           <summary>Dependencies</summary>
           <div class="child">
@@ -70,7 +71,6 @@ export default Vue.extend({
   name: "Instance",
   props: {
     name: String,
-    instance: Instance
   },
   components: {
     ...GlComponents
