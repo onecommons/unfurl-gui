@@ -1,6 +1,6 @@
 <template>
   <div class="row-fluid mt-4">
-    <h3>Table component Example</h3>
+    <h3>Accounts</h3>
     <Table />
   </div>
 </template>
