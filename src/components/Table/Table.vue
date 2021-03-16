@@ -20,6 +20,8 @@
           <!-- Table -->
           <gl-table
             id="accounts-table"
+            fixed
+            layout
             @row-clicked="rowClicked"
             @filtered="onFiltered"
             :current-page="page"
@@ -139,7 +141,8 @@ export default class Table extends Vue {
 
   data() {
     return {
-      items: []
+      items: [],
+      tableHeight: ""
     };
   }
 
@@ -186,8 +189,10 @@ export default class Table extends Vue {
     return this.items.filter((item: { selected: any }) => item.selected);
   }
 
-  public get tableHeight(): string {
-    return `height: ${this.perPage * 56 + 60}px`;
+  public async mounted() {
+    setTimeout(() => {
+      this.tableHeight = `height: ${this.$refs.selectableTable.$children[0].$el.clientHeight + 10}px`;
+    }, 500);
   }
 }
 </script>
