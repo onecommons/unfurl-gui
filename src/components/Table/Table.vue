@@ -192,7 +192,7 @@ export default class Table extends Vue {
   public async mounted() {
     setTimeout(() => {
       this.tableHeight = `height: ${this.$refs.selectableTable.$children[0].$el.clientHeight + 10}px`;
-    }, 500);
+    }, 100);
   }
 }
 </script>
