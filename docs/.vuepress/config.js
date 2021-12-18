@@ -53,4 +53,16 @@ module.exports = {
       },
     ],
   ],
+  configureWebpack: (config, isServer) => {
+    return {
+      resolve: {
+        alias: {
+          '@formily/gitlab-ui': path.resolve(
+            __dirname,
+            '../../packages/components/src'
+          ),
+        },
+      },
+    }
+  },
 }
