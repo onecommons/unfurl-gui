@@ -63,3 +63,36 @@ type Subscription {
   """When a new message is added"""
   messageAdded: Message!
 }
+
+type Account {
+  """
+  Account name.
+  """
+  account: String!
+
+  """
+  Description of account.
+  """
+  description: String!
+
+  """
+  Emsemble of account.
+  """
+  emsemble: String!
+
+  """
+  Group of account.
+  """
+  group: String!
+
+  """
+  Network of account.
+  """
+  network: String!
+
+  """
+  Service of account.
+  """
+  service: String!
+}
+

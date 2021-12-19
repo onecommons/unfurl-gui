@@ -1,0 +1,10 @@
+query getAccounts {
+    accounts {
+        account
+        network
+        group
+        service
+        description
+        emsemble
+    }
+}
