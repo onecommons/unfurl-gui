@@ -1,0 +1,13 @@
+query getEnvironments($projectPath: ID!) {
+  project(fullPath: $projectPath) {
+    __typename
+    environments(states: "available") {
+      	 nodes {
+          id
+          name
+          path
+          state
+        }
+    }
+  }
+}

@@ -1,0 +1,67 @@
+.align_left {
+  text-align: left;
+}
+.oc_requirement_description,
+.oc_resource_description {
+  color: #666666;
+}
+.oc_resource_description {
+  font-size: 12px;
+}
+
+.oc_resource-type {
+  font-style: normal;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 20px;
+  color: #666666;
+}
+
+.oc_row_opacity {
+  position: absolute;
+  bottom: 10px;
+  background: #fff;
+  opacity: 0.5;
+  width: 95%;
+  height: 70px;
+  margin: 0 auto 0;
+  z-index: 9999;
+}
+.oc_requirements_actions {
+  padding: 4px 8px;
+}
+
+.col-form-label {
+  padding-bottom: 0px;
+}
+.form-text {
+  font-size: 14px;
+}
+.template-title {
+  font-size: 21px;
+  color: #303030;
+  font-style: normal;
+  line-height: 24px;
+}
+.oc_environment_name,
+.oc_card_title {
+  font-style: normal;
+  font-weight: normal;
+  font-size: 14px;
+  line-height: 20px;
+  background-attachment: fixed;
+}
+.oc_card_title {
+  font-weight: 700;
+}
+
+.card_advance_view {
+  font-size: 14px;
+  line-height: 16px;
+  text-align: right;
+}
+
+.alert-input {
+  color: #EC5941;
+  font-weight: 700;
+}

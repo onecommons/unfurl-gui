@@ -38,6 +38,27 @@ delete window.translations;
 */
 const gettext = (text) => locale.gettext(ensureSingleLine(text));
 
+/**
+  Translate context based text
+  Either pass in the context translation like `Context|Text to translate`
+  or allow for dynamic text by doing passing in the context first & then the text to translate
+
+  @param keyOrContext Can be either the key to translate including the context
+                      (eg. 'Context|Text') or just the context for the translation
+                      (eg. 'Context')
+  @param key Is the dynamic variable you want to be translated
+  @returns {String} Translated context based text
+*/
+const pgettext = (keyOrContext, key) => {
+  const normalizedKey = ensureSingleLine(key ? `${keyOrContext}|${key}` : keyOrContext);
+  const translated = gettext(normalizedKey).split('|');
+
+  return translated[translated.length - 1];
+};
+
 export { languageCode };
 export { gettext as __ };
+// export { ngettext as n__ };
+export { pgettext as s__ };
+// export { sprintf };  
 export default locale;

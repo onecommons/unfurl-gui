@@ -1,0 +1,8 @@
+fragment ServiceToConnectItem on ServiceToConnect {
+    name
+    value
+    avatar
+    description
+    platform
+    type
+}

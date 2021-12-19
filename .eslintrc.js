@@ -7,10 +7,12 @@ module.exports = {
 
   extends: [
     "plugin:vue/essential",
-    "eslint:recommended",
-    "@vue/typescript/recommended",
-    "@vue/prettier",
-    "@vue/prettier/@typescript-eslint"
+    // XXX the code shared with gitlab-oc should use the same lints
+    // disabling because they generate too much noise
+    // "eslint:recommended",
+    // "@vue/typescript/recommended",
+    // "@vue/prettier",
+    // "@vue/prettier/@typescript-eslint"
   ],
 
   parserOptions: {

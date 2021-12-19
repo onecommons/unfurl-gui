@@ -1,0 +1,4 @@
+fragment EnvironmentItem on OcEnvironment {
+    name
+    cloud
+}

@@ -1,0 +1,11 @@
+fragment TemplateItem on Template {
+    title
+    slug
+    description
+    cloud
+    environment
+    totalDeployments
+    url
+    type
+    resourceTemplates
+}

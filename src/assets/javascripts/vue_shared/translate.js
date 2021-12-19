@@ -1,6 +1,6 @@
 // don't bother copying n__, s__, and sprintf from gitlab's locale until we actually use them
 // import { __, n__, s__, sprintf } from '../locale';
-import { __ } from '../locale';
+import { __, s__} from '../locale';
 
 export default (Vue) => {
   Vue.mixin({
@@ -34,8 +34,19 @@ export default (Vue) => {
         @param key Is the dynamic variable you want to be translated
         @returns {String} Translated context based text
       */
-      // s__,
-     // sprintf,
+      /**
+        Translate context based text
+        Either pass in the context translation like `Context|Text to translate`
+        or allow for dynamic text by doing passing in the context first & then the text to translate
+
+        @param keyOrContext Can be either the key to translate including the context
+                            (eg. 'Context|Text') or just the context for the translation
+                            (eg. 'Context')
+        @param key Is the dynamic variable you want to be translated
+        @returns {String} Translated context based text
+      */
+        s__,
+      // sprintf,    
     },
   });
 };

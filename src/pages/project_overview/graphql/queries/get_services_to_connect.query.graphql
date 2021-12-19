@@ -1,0 +1,13 @@
+query getServicesToConnect($projectPath: ID!) {
+  overview(fullPath: $projectPath) {
+    id
+    servicesToConnect {
+      name
+      value
+      avatar
+      description
+      platform
+      type
+    }
+  }
+}

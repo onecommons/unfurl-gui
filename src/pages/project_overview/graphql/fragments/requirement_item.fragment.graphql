@@ -1,0 +1,18 @@
+#import "./input_item.fragment.graphql"
+#import "./output_item.fragment.graphql"
+
+fragment RequirementItem on Requirement {
+    title
+    badge
+    description
+    status
+    type
+    inputs {
+        __typename
+        ...InputItems
+    }
+    outputs {
+        __typename
+        ...OutputItems
+    }
+}

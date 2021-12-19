@@ -1,5 +1,4 @@
 "Included scalars"
-scalar JSON
 scalar Upload
 
 "It will increment!"
@@ -42,44 +41,7 @@ type File {
   encoding: String!
 }
 
-type Account {
-  id: ID!
-  account: String!
-  network: String!,
-  group: String!,
-  resource: String!,
-  service: String!,
-  emsemble: String!,
-  description: String!
-}
-
-type Query {
-  "Test query with a parameter"
-  hello(name: String): String!
-  "List of messages sent by users"
-  messages: [Message]
-  "List of Accounts"
-  accounts: [Account]
-  uploads: [File]
-
-}
-
-type Mutation {
-  myMutation: String!
-  "Add a message and publish it on 'messages' subscription channel"
-  addMessage (input: MessageInput!): Message!
-  "Add an account"
-  addAccount (input: AccountInput!): Account!
-  singleUpload (file: Upload!): File!
-  multipleUpload (files: [Upload!]!): [File!]!
-
-}
-
-type Subscription {
-  mySub: String!
-  "This will update every 2 seconds"
-  counter: Counter!
-  "When a new message is added"
-  messageAdded: Message!
-
-}
+directive @deprecated(
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
+ 

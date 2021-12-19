@@ -1,0 +1,4 @@
+fragment OutputItems on Output {
+    instructions
+    title
+}

@@ -1,0 +1,18 @@
+mutation updateOverview(
+  $projectPath: ID!
+  $title: String
+  $template: TemplateInput
+  $inputs:  [OcInput!]
+) {
+  updateOverview(
+    input: {
+      projectPath: $projectPath
+      title: $title
+      template: $template
+      inputs: $inputs
+    }
+  ) {
+    isOk
+    errors
+  }
+}

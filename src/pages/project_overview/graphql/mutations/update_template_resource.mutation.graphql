@@ -1,0 +1,17 @@
+mutation  updateTemplateResource(
+  $projectPath: ID!
+  $title: String
+  $objectResources: JSON
+) {
+   updateTemplateResource(
+    input: {
+      projectPath: $projectPath
+      title: $title
+      resourceObject: $objectResources
+    }
+  ) {
+    isOk
+    resourceObject
+    errors
+  }
+}

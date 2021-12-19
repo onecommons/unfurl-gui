@@ -1,0 +1,15 @@
+mutation createTemplate(
+  $projectPath: ID!
+  $template: TemplateInput!
+) {
+  createTemplate(
+    input: {
+      projectPath: $projectPath
+      template: $template
+    }
+  ) {
+    templates {
+        title
+    }
+  }
+}

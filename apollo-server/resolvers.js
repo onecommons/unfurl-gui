@@ -1,6 +1,6 @@
 import GraphQLJSON from 'graphql-type-json'
 import shortid from 'shortid'
-
+import _ from 'lodash';
 
 export default {
   JSON: GraphQLJSON,
@@ -9,16 +9,42 @@ export default {
     countStr: counter => `Current count: ${counter.count}`,
   },
 
-
   Query: {
+    /*
+    from boilerplate
+
     hello: (root, { name }) => `Hello ${name || 'World'}!`,
     messages: (root, args, { db }) => db.get('messages').value(),
-    accounts: (root, args, { db }) => db.get('accounts').value(),
     uploads: (root, args, { db }) => db.get('uploads').value(),
+  */
+    
+    accounts: (root, args, { db }) => db.get('accounts').value(),
+    overview: (root, args, { db }) => db.get('overview').value(),
+  },
 
+  Overview: {
+    templates: (overview, args, { db }) => {
+      if (args.searchBySlug) {
+        return [_.find(overview.templates, { slug: args.searchBySlug })];
+      }
+      return overview.templates;
+    }
+  },
+
+  Template: {
+    resourceTemplates: (template, args, { db }) => template.resource_templates,
+  
+    totalDeployments: (template, args, { db }) => template.total_deployments,     
+  },
+
+  // fields with JSON type need explicit resolvers
+
+  Resource: {
+    requirements: (resource, args, { db }) => resource.requirements
   },
 
   Mutation: {
+    /*
     myMutation: (root, args, context) => {
       const message = 'My mutation completed!'
       context.pubsub.publish('hey', { mySub: message })
@@ -40,7 +66,6 @@ export default {
 
       return message
     },
-
     addAccount: ( root, { input }, { pubsub, db }) => {
       const account = {
         id: shortid.generate(),
@@ -64,10 +89,11 @@ export default {
 
     singleUpload: (root, { file }, { processUpload }) => processUpload(file),
     multipleUpload: (root, { files }, { processUpload }) => Promise.all(files.map(processUpload)),
-
+*/
   },
 
   Subscription: {
+    /*
     mySub: {
       subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator('hey'),
     },
@@ -89,6 +115,6 @@ export default {
     messageAdded: {
       subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator('messages'),
     },
-
+  */
   },
 }

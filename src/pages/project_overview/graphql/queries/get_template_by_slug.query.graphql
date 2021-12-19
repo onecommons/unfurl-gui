@@ -1,0 +1,13 @@
+
+#import "../fragments/template_item.fragment.graphql"
+
+query getTemplateBySlug($projectPath: ID!, $templateSlug: String!) {
+  overview(fullPath: $projectPath) {
+    __typename
+    id
+    templates(searchBySlug: $templateSlug) {
+      __typename
+      ...TemplateItem
+    }
+  }
+}

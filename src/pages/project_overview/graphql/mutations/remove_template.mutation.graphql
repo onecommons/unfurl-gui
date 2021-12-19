@@ -1,0 +1,17 @@
+#import "../fragments/template_item.fragment.graphql"
+mutation removeTemplate(
+  $projectPath: ID!
+  $title: String!
+) {
+  removeTemplate(
+    input: {
+      projectPath: $projectPath
+      title: $title
+    }
+  ) {
+    isOk
+    templates {
+      ...TemplateItem
+    }
+  }
+}

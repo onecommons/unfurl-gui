@@ -1,0 +1,15 @@
+#import "../fragments/input_item.fragment.graphql"
+fragment ResourceItem on Resource {
+    name
+    avatar
+    description
+    platform
+    type
+    badge
+    value
+    requirements
+    inputs {
+        __typename
+        ...InputItems
+    }
+}

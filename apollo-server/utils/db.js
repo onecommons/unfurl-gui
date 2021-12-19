@@ -7,9 +7,12 @@ mkdirp(resolve(__dirname, '../../live'))
 
 export const db = new Lowdb(new FileSync(resolve(__dirname, '../../live/db.json')))
 
+const unfurl_json = require("../unfurl.json");
+
 // Seed an empty DB
 db.defaults({
   messages: [],
   accounts: [],
   uploads: [],
+  overview: unfurl_json
 }).write()

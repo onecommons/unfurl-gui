@@ -1,0 +1,8 @@
+fragment EnvItems on Environment {
+    nodes {
+        id
+        name
+        state
+        path
+    }
+}

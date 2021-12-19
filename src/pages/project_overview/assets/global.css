@@ -1,0 +1,50 @@
+h2.oc-title-section {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 19px;
+    line-height: 24px;
+  }
+  h1.oc-home-panel-title {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 28px;
+  }
+  h4.project-title {
+    font-size: 16px;
+    margin-top: 0px;
+  }
+  .project_wide_cards {
+    width: 100%;
+  }
+  .oc_table_row {
+    border-bottom: 1px solid #eeeeee;
+    padding: 10px 0px;
+    color: #303030;
+    font-size: 14px;
+  }
+  .oc-table-section .title {
+    font-style: normal;
+    font-weight: bold;
+    font-size: 14px;
+    line-height: 16px;
+    color: #303030;
+  }
+  .icon-gray {
+    color: #999999;
+  }
+  .icon-red {
+    color: #ec5941;
+  }
+
+  .icon-green {
+    color: #52b87a;
+  }
+
+.header-oc {
+    background-color: #E3F7FF !important;
+}
+
+.deploy-action {
+  background: #E3F7FF !important;
+
+}
