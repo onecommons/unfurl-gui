@@ -21,8 +21,8 @@ export default {
     GlSkeletonLoader,
     GlFormGroup,
     GlFormInput,
-    GlIcon,
-    GlFormRadio,
+    // GlIcon,
+    // GlFormRadio,
     GlFormCheckbox,
     OcCard,
     OcInputs,
@@ -162,6 +162,12 @@ export default {
       this.completedMainInputs = flag;
       this.checkAllRequirements();
     });
+
+    bus.$on('defaultMainInputs',(data)=>{
+      this.getCardsStacked[0].inputs = []
+      this.getCardsStacked[0].inputs = data
+    })
+
     bus.$on('triggerAutoSave', () => {
 
       this.dataUnsaved = true;
@@ -388,7 +394,7 @@ export default {
         }
         return nword + 'ing';
       }
-      // eslint-disable-next-line @gitlab/require-i18n-strings
+      
       return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b> ? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other (nodes ?) which are linked to it.`;
     },
 
@@ -445,7 +451,7 @@ export default {
                   :level="idx"
                   class="gl-mt-6">
                   <template #content>
-                    <oc-inputs :main-inputs="card.inputs" :component-key="2" />
+                    <oc-inputs bool_data="true" :main-inputs="card.inputs" :component-key="2" />
 
                     <oc-list
                       tabs-title="Requirements"
