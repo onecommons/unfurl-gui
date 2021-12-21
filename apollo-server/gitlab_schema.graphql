@@ -16147,6 +16147,16 @@ input OcInput {
   Value of input
   """
   value: String
+
+  """
+  Value of input
+  """
+  default: JSON
+
+  """
+  Value of input
+  """
+  required: Boolean
 }
 
 type Output {

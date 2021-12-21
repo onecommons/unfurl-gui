@@ -21,7 +21,8 @@
       {
         "title": "Domain name",
         "value": "",
-        "instructions": "Name of the domain to host the app on"
+        "instructions": "Name of the domain to host the app on",
+        "default": "example.com"
       }
     ],
     "outputs": [
@@ -104,17 +105,20 @@
           {
             "title": "CPUs",
             "value": "",
-            "instructions": "Number of CPUs for the server"
+            "instructions": "Number of CPUs for the server",
+            "default": 2
           },
           {
             "title": "Memory",
             "value": "",
-            "instructions": "Amount of RAM (in MB)"
+            "instructions": "Amount of RAM (in MB)",
+            "default": 512
           },
           {
             "title": "Storage ",
             "value": "",
-            "instructions": "Size of boot disk (in GB)"
+            "instructions": "Size of boot disk (in GB)",
+            "default": 100
           }
         ]
       },
@@ -130,17 +134,20 @@
           {
             "title": "CPUs",
             "value": "",
-            "instructions": "Number of CPUs for the server"
+            "instructions": "Number of CPUs for the server",
+            "default": 2
           },
           {
             "title": "Memory",
             "value": "",
-            "instructions": "Amount of RAM (in MB)"
+            "instructions": "Amount of RAM (in MB)",
+            "default": 512
           },
           {
             "title": "Storage ",
             "value": "",
-            "instructions": "Size of boot disk (in GB)"
+            "instructions": "Size of boot disk (in GB)",
+            "default": 100
           }
         ]
       },
@@ -296,7 +303,8 @@
               {
                 "title": "Domain name",
                 "value": "",
-                "instructions": "Name of the domain to host the app on"
+                "instructions": "Name of the domain to host the app on",
+                "default": "example.com"
               }
             ],
             "requirements": [
