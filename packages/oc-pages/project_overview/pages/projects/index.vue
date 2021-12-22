@@ -1,6 +1,6 @@
 <script>
 import { GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
-import TableWithoutHeader from 'oc/vue_shared/components/oc/table_without_header.vue';
+import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import { mapGetters } from 'vuex';
 import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';

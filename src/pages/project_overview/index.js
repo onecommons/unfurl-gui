@@ -4,12 +4,12 @@ import Layout from "../../components/Layout.vue";
 
 import setConfigs from "@gitlab/ui/dist/config";
 
-import MainComponent from 'oc/project_overview/components/main.vue';
-import createRouter from 'oc/project_overview/router';
-import store from 'oc/project_overview/store';
+import MainComponent from '../../gitlab-oc/project_overview/components/main.vue';
+import createRouter from '../../gitlab-oc/project_overview/router';
+import store from '../../gitlab-oc/project_overview/store';
 import __ from '~/locale';
 
-import 'oc/project_overview/assets/global.css';
+import '../../gitlab-oc/project_overview/assets/global.css';
 
 import apolloProvider from "~/graphql-shim.js";
 

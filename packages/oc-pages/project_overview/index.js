@@ -7,6 +7,8 @@ import __ from '~/locale';
 
 import './assets/global.css';
 
+//export {bus} from 'oc/bus-shim';
+
 export default () => {
   const element = document.getElementById('js-oc-project-overview');
 

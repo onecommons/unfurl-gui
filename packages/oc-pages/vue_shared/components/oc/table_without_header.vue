@@ -1,5 +1,5 @@
 <script>
-import TableListRow from 'oc/vue_shared/components/oc/table_list_row.vue';
+import TableListRow from './table_list_row.vue';
 import { __ } from '~/locale';
 
 export default {

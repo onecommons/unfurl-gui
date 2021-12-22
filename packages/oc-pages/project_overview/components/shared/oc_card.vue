@@ -1,7 +1,7 @@
 <script>
 import { GlCard, GlIcon, GlBadge } from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
-import { bus } from 'oc/project_overview/bus';
+import { bus } from '../../bus.js';
 
 import { __ } from '~/locale';
 

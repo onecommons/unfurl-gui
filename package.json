@@ -59,5 +59,7 @@
     "vue-cli-plugin-apollo": "~0.22.2",
     "vue-template-compiler": "2.6.12"
   },
-  "workspaces": ["packages/oc-pages"]
+  "workspaces": [
+    "packages/oc-pages"
+  ]
 }

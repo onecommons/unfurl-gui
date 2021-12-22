@@ -2,8 +2,9 @@ const path = require('path');
 
 // this alias is used by code copied from gitlab
 const alias = {
+  'oc': path.join(__dirname, 'src/assets/javascripts'),
   '~': path.join(__dirname, 'src/assets/javascripts'),
-  'oc': path.join(__dirname, 'src/gitlab-oc')
+  //'oc': path.join(__dirname, 'src/gitlab-oc')
 }
 
 const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || "https://unfurl.cloud"

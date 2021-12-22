@@ -1,6 +1,6 @@
 <script>
 import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
-import { bus } from 'oc/project_overview/bus';
+import { bus } from '../../../project_overview/bus';
 
 import { __ } from '~/locale';
 
