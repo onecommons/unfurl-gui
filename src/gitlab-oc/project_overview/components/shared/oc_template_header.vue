@@ -46,17 +46,3 @@ export default {
         </div>
     </div>
 </template>
-<style>
-.icon-blue {
-    color: #1F75CB;;
-}
-.template-title {
-  font-size: 21px !important;
-  color: #303030;
-  font-style: normal;
-  line-height: 24px;
-}
-.logo-mt {
-    margin-top: 1px;
-}
-</style>

@@ -209,10 +209,3 @@ export default {
         </gl-tabs>
     </div>
 </template>
-<style scoped>
-.oc_requirements_actions {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-</style>

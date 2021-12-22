@@ -97,7 +97,7 @@ export default {
 <template>
     <gl-card :header-class="['gl-display-flex',  'header-oc', mainCardClass]">
         <template #header>
-            <div class="align_left gl-display-flex flex-one gl-pt-1">
+            <div class="align_left align_center gl-display-flex flex-one gl-pt-1">
                 <gl-icon v-if="mainCardClass === ''" :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeader.text)" />
                 <h4 class="gl-my-0 oc_card_title">{{ customTitle }}</h4>
                 <gl-icon
@@ -179,5 +179,12 @@ export default {
     background: #DBDBDB !important;
     color: #525252;
     font-weight: normal !important;
+}
+.gl-display-flex {
+    display: flex;
+}
+
+body.ui-indigo .gl-tab-nav-item-active-indigo {
+    box-shadow: inset 0 -2px 0 0 #00d2d9;
 }
 </style>

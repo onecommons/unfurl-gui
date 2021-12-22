@@ -386,7 +386,7 @@ export default {
         }
         return nword + 'ing';
       }
-      // eslint-disable-next-line @gitlab/require-i18n-strings
+      
       return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b> ? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other (nodes ?) which are linked to it.`;
     },
 
