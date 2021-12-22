@@ -9224,6 +9224,16 @@ type Input {
   Value of input
   """
   value: String
+
+  """
+  Value of input
+  """
+  default: JSON
+
+  """
+  Value of input
+  """
+  required: Boolean
 }
 
 """
@@ -16171,6 +16181,25 @@ type Output {
   title: String!
 }
 
+type ApplicationBlueprint {
+  """
+  Full path of the project.
+  """
+  fullPath: ID!
+
+  """
+  ID of the project.
+  """
+  project: ID!
+
+  """
+  Application overview as JSON
+  """
+  json: JSON!
+
+  overview: Overview
+}
+
 type Overview {
   """
   Number of Deployments
@@ -20279,12 +20308,12 @@ type Query {
   """
   Oc Project Overview
   """
-  overview(
+  applicationBlueprint(
     """
     The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
     """
     fullPath: ID!
-  ): Overview
+  ): ApplicationBlueprint
 
   """
   Find a package.

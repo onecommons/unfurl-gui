@@ -14,5 +14,5 @@ db.defaults({
   messages: [],
   accounts: [],
   uploads: [],
-  overview: unfurl_json
+  projects: { "demo/apostrophe-demo": unfurl_json }
 }).write()

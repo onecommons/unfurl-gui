@@ -1,48 +1,25 @@
 import GraphQLJSON from 'graphql-type-json'
-import shortid from 'shortid'
 import _ from 'lodash';
 
 export default {
   JSON: GraphQLJSON,
 
-  Counter: {
-    countStr: counter => `Current count: ${counter.count}`,
-  },
-
   Query: {
-    /*
-    from boilerplate
-
-    hello: (root, { name }) => `Hello ${name || 'World'}!`,
-    messages: (root, args, { db }) => db.get('messages').value(),
-    uploads: (root, args, { db }) => db.get('uploads').value(),
-  */
     
     accounts: (root, args, { db }) => db.get('accounts').value(),
-    overview: (root, args, { db }) => db.get('overview').value(),
-  },
 
-  Overview: {
-    templates: (overview, args, { db }) => {
-      if (args.searchBySlug) {
-        return [_.find(overview.templates, { slug: args.searchBySlug })];
-      }
-      return overview.templates;
+    applicationBlueprint: (root, args, { db }) => {
+        //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
+        // demo/apostrophe-demo
+        return db.get('projects').value()[args.fullPath]
     }
   },
 
-  Template: {
-    resourceTemplates: (template, args, { db }) => template.resource_templates,
-  
-    totalDeployments: (template, args, { db }) => template.total_deployments,     
-  },
-
   // fields with JSON type need explicit resolvers
-
-  Resource: {
-    requirements: (resource, args, { db }) => resource.requirements
-  },
-
+  ApplicationBlueprint: {
+    json: (obj, args, { }) => obj
+  },    
+  
   Mutation: {
     /*
     myMutation: (root, args, context) => {
