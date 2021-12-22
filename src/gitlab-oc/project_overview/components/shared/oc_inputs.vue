@@ -1,7 +1,7 @@
 <script>
 import { GlTabs, GlTab, GlIcon, GlFormGroup, GlFormInput } from '@gitlab/ui';
 import { debounce } from 'lodash';
-import { bus } from '../../index';
+import { bus } from '../../bus';
 import { __ } from '~/locale';
 
 export default {

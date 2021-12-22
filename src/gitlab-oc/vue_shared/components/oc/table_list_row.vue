@@ -1,6 +1,6 @@
 <script>
-import { GlIcon , GlButton, GlModalDirective, GlButtonGroup } from "@gitlab/ui";
-import { bus } from 'oc/project_overview/index';
+import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
+import { bus } from 'oc/project_overview/bus';
 
 import { __ } from '~/locale';
 
@@ -8,7 +8,6 @@ import { __ } from '~/locale';
 export default {
     name: "TableListRow",
     components: {
-        GlButtonGroup,
         GlIcon,
         GlButton
     },

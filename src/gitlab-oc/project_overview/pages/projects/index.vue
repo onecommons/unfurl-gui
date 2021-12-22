@@ -5,7 +5,7 @@ import { mapGetters } from 'vuex';
 import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
-import { bus } from '../../index';
+import { bus } from '../../bus';
 
 export default {
     name: 'ProjectPageHome',

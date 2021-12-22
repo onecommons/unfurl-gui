@@ -1,5 +1,5 @@
 <script>
-import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlIcon, GlFormRadio, GlFormCheckbox} from '@gitlab/ui';
+import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
@@ -12,7 +12,7 @@ import OcList from '../../components/shared/oc_list.vue';
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import  OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
-import { bus } from '../../index';
+import { bus } from '../../bus';
 
 export default {
   name: 'TemplatesPage',
@@ -21,8 +21,6 @@ export default {
     GlSkeletonLoader,
     GlFormGroup,
     GlFormInput,
-    GlIcon,
-    GlFormRadio,
     GlFormCheckbox,
     OcCard,
     OcInputs,

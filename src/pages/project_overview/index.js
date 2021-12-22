@@ -4,14 +4,14 @@ import Layout from "../../components/Layout.vue";
 
 import setConfigs from "@gitlab/ui/dist/config";
 
-import MainComponent from './components/main.vue';
-import createRouter from './router';
-import store from './store';
+import MainComponent from 'oc/project_overview/components/main.vue';
+import createRouter from 'oc/project_overview/router';
+import store from 'oc/project_overview/store';
 import __ from '~/locale';
 
-import './assets/global.css';
+import 'oc/project_overview/assets/global.css';
 
-import apolloProvider from './graphql';
+import apolloProvider from "~/graphql-shim.js";
 
 setConfigs();
 if (process.env.NODE_ENV !== 'production') {
@@ -20,10 +20,6 @@ if (process.env.NODE_ENV !== 'production') {
 Vue.use(Translate);
 
 // from oc/app/assets/javascripts/pages/projects/overview/index.js
-
-
-// Create a general Bus
-export const bus = new Vue();
 
 const element = document.getElementById('js-oc-project-overview');
 const {

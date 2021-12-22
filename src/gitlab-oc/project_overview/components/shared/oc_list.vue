@@ -1,6 +1,6 @@
 <script>
 import { GlTabs, GlTab, GlIcon, GlButton } from '@gitlab/ui';
-import { bus } from '../../index';
+import { bus } from '../../bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'

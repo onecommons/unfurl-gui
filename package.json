@@ -39,6 +39,7 @@
   },
   "devDependencies": {
     "@graphql-codegen/typescript": "^1.19.0",
+    "@gitlab/eslint-plugin": "9.4.0",
     "@typescript-eslint/eslint-plugin": "^2.33.0",
     "@typescript-eslint/parser": "^2.33.0",
     "@vue/cli-plugin-babel": "~4.5.0",

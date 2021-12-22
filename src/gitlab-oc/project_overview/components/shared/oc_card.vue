@@ -1,19 +1,16 @@
 <script>
-import { GlCard, GlIcon, GlBadge, GlModalDirective, GlModal } from "@gitlab/ui";
+import { GlCard, GlIcon, GlBadge } from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
-import { bus } from 'oc/project_overview/index';
+import { bus } from 'oc/project_overview/bus';
+
 import { __ } from '~/locale';
 
 export default {
     name: "OcCard",
     components: {
-        GlModal,
         GlCard,
         GlIcon,
         GlBadge,
-    },
-    directives: {
-        GlModal: GlModalDirective,
     },
     mixins: [commonMethods],
     props: {
