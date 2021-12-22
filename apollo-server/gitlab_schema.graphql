@@ -16142,7 +16142,7 @@ type OcEnvironment {
 """
 Input type for Oc input
 """
-input OcInput {
+input InputInput {
   """
   Description of input
   """
@@ -16157,16 +16157,6 @@ input OcInput {
   Value of input
   """
   value: String
-
-  """
-  Value of input
-  """
-  default: JSON
-
-  """
-  Value of input
-  """
-  required: Boolean
 }
 
 type Output {
@@ -26143,7 +26133,7 @@ input UpdateOverviewInput {
   """
   Input after mutation.
   """
-  inputs: [OcInput!]
+  inputs: [InputInput!]
 
   """
   Project full path the branch is associated with.

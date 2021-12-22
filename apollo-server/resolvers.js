@@ -21,28 +21,57 @@ export default {
   },    
   
   Mutation: {
-    /*
-    myMutation: (root, args, context) => {
-      const message = 'My mutation completed!'
-      context.pubsub.publish('hey', { mySub: message })
-      return message
-    },
-    addMessage: (root, { input }, { pubsub, db }) => {
-      const message = {
-        id: shortid.generate(),
-        text: input.text
+
+    updateTemplateResource: (root, { input }, { pubsub, db }) => {
+      const { projectPath, title, resourceObject } = input; 
+      const overview = db.get('projects').value()[projectPath];      
+      const index = _.findIndex(overview['templates'], { title });
+      overview['templates'][index]['resource_templates'] = resourceObject;
+      db.write();
+      return {
+          isOk: true,
+          resourceObject,
+          errors: []
       }
-
-      db
-        .get('messages')
-        .push(message)
-        .last()
-        .write()
-
-      pubsub.publish('messages', { messageAdded: message })
-
-      return message
+     },
+  
+    createTemplate: (root, { input }, { pubsub, db }) => { 
+      const { projectPath, template } = input;
+      const overview = db.get('projects').value()[projectPath];
+      const newTemplate = { ...template };
+      newTemplate.resource_templates = template.resourceTemplates;
+      delete newTemplate.resourceTemplates;
+      overview.templates.push(newTemplate);
+      db.write();
+      return overview.templates;
     },
+
+    removeTemplate: (root, { input }, { pubsub, db }) => {
+      const { projectPath, title } = input;
+      const overview = db.get('projects').value()[projectPath];
+      _.remove(overview['templates'], { title });          
+      db.write();
+      return  {
+        isOk: true,
+        templates: overview["templates"]
+      }
+    },
+
+    updateOverview: (root, { input }, { pubsub, db }) => {
+      const { projectPath, title, template, inputs } = input;
+      const overview = db.get('projects').value()[projectPath];
+      if (title) { 
+        const index = _.findIndex(overview['templates'], { title });
+        overview['templates'][index] = template;
+      }
+      if (inputs) { 
+        overview['inputs'] = inputs;
+      }
+      db.write();
+
+      return { isOk: true, errors: [] }
+    },
+  
     addAccount: ( root, { input }, { pubsub, db }) => {
       const account = {
         id: shortid.generate(),
@@ -64,34 +93,8 @@ export default {
       return account;
     },
 
-    singleUpload: (root, { file }, { processUpload }) => processUpload(file),
-    multipleUpload: (root, { files }, { processUpload }) => Promise.all(files.map(processUpload)),
-*/
   },
 
   Subscription: {
-    /*
-    mySub: {
-      subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator('hey'),
-    },
-    counter: {
-      subscribe: (parent, args, { pubsub }) => {
-        const channel = Math.random().toString(36).substring(2, 15) // random channel name
-        let count = 0
-        setInterval(() => pubsub.publish(
-          channel,
-          {
-            // eslint-disable-next-line no-plusplus
-            counter: { count: count++ },
-          }
-        ), 2000)
-        return pubsub.asyncIterator(channel)
-      },
-    },
-
-    messageAdded: {
-      subscribe: (parent, args, { pubsub }) => pubsub.asyncIterator('messages'),
-    },
-  */
   },
 }
