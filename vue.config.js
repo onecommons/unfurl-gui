@@ -19,6 +19,7 @@ module.exports = {
   configureWebpack: {
     resolve: {
       alias,
+      symlinks: false
     },    
   },
 
