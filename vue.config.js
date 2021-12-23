@@ -23,7 +23,11 @@ module.exports = {
   },
 
   pages: {
-    index: "src/main.ts",
+    index: {
+      entry: "src/main.ts",
+      template: 'public/index.html',
+      unfurlCloudBaseUrl
+    },
 
     demo: {
       entry: "src/pages/project_overview/index.js",
@@ -34,6 +38,13 @@ module.exports = {
     dashboard: {
       title: "Unfurl Cloud Dashboard",
       entry: "src/pages/dashboard/index.js",
+      unfurlCloudBaseUrl
+    },
+
+    form: {
+      title: "Formily Testbed",
+      entry: "src/pages/dashboard/index.js",
+      template: 'public/form.html',
       unfurlCloudBaseUrl
     }
   }
