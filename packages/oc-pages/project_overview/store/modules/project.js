@@ -184,13 +184,13 @@ const actions = {
             errorPolicy: 'all',
             variables: { projectPath, defaultBranch },
         });
-        const overview = data.overview;
+        const overview = data.applicationBlueprint.overview;
         const {  id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
         commit('SET_PROJECT_INFO', { id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl});
         if(!errors) {
-            commit('SET_PROJECT_INFO', data.overview);
-            commit('SET_TEMPLATES_LIST', data.overview.templates);
-            commit('SET_RESOURCES_LIST', data.overview.resources);
+            commit('SET_PROJECT_INFO', overview);
+            commit('SET_TEMPLATES_LIST', overview.templates);
+            commit('SET_RESOURCES_LIST', overview.resources);
         } else {
             throw new Error(errors[0].message);
         }
@@ -198,25 +198,19 @@ const actions = {
     },
 
     async fetchTemplateBySlug({ commit, dispatch }, { projectPath, templateSlug }) {
-        try {
-
-            const {errors, data} = await graphqlClient.clients.defaultClient.query({
-                query: getTemplateBySlug,
-                errorPolicy: 'all',
-                variables: { projectPath, templateSlug },
-            });
-            if (errors) {
-                throw new Error(errors.map(e => e).join(", "));
-            }
-
-            const template = {...data.overview.templates[0]};
-            if(Object.keys(template).length > 0) commit("SET_TEMPLATE_SELECTED", {template});
-            if(Object.keys(template).length > 0) dispatch('setResourcesOfTemplate', template.resourceTemplates, {root: true});
-            return data;
-        } catch(err) {
-            throw new Error(err);
+        const {errors, data} = await graphqlClient.clients.defaultClient.query({
+            query: getTemplateBySlug,
+            errorPolicy: 'all',
+            variables: { projectPath },
+        });
+        if (errors) {
+            throw new Error(errors.map(e => e).join(", "));
         }
-
+        const match = _.find(data.applicationBlueprint.overview.templates, { slug: templateSlug });
+        const template = { ...match };
+        if(Object.keys(template).length > 0) commit("SET_TEMPLATE_SELECTED", {template});
+        if(Object.keys(template).length > 0) dispatch('setResourcesOfTemplate', template.resourceTemplates, {root: true});
+        return data.applicationBlueprint;
     },
 
     async fetchEnvironments({ commit }, { projectPath }) {
@@ -242,7 +236,7 @@ const actions = {
             throw new Error(errors.map(e => e).join(", "));
         }
 
-        const services = [...data.overview.servicesToConnect];
+        const services = [...data.applicationBlueprint.overview.servicesToConnect];
         commit("SET_SERVICES_TO_CONNECT", services);
         return services;
 

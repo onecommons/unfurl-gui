@@ -4,6 +4,7 @@ const path = require('path');
 const alias = {
   'oc': path.join(__dirname, 'src/assets/javascripts'),
   '~': path.join(__dirname, 'src/assets/javascripts'),
+  'oc_pages': path.join(__dirname, 'src/gitlab-oc')
   //'oc': path.join(__dirname, 'src/gitlab-oc')
 }
 

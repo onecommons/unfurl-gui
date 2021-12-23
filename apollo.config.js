@@ -10,7 +10,8 @@ const env = loadEnv([
 module.exports = {
   client: {
     service: env.VUE_APP_APOLLO_ENGINE_SERVICE,
-    includes: ["src/**/*.{js,jsx,ts,tsx,vue,gql}"]
+    includes: ["src/**/*.{js,jsx,ts,tsx,vue,gql}"],
+    addTypename: true,
   },
   service: {
     name: env.VUE_APP_APOLLO_ENGINE_SERVICE,

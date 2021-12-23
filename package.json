@@ -27,7 +27,6 @@
     "lodash": "4.17.20",
     "lowdb": "^1.0.0",
     "mkdirp": "^0.5.5",
-    "oc-pages": "link:packages/oc-pages/",
     "pikaday": "^1.8.0",
     "portal-vue": "^2.1.7",
     "shortid": "^2.2.8",

@@ -2,7 +2,7 @@ mutation updateOverview(
   $projectPath: ID!
   $title: String
   $template: TemplateInput
-  $inputs:  [OcInput!]
+  $inputs:  [InputInput!]
 ) {
   updateOverview(
     input: {

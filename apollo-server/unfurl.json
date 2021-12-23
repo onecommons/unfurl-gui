@@ -1,10 +1,10 @@
 {
-    "liveUrl": "https://demo-apostrophe-demo.dev3.unfurl.cloud/",
+    "livePreview": "https://demo-apostrophe-demo.dev3.unfurl.cloud/",
     "title": "Apostrophe CMS Demo",
     "image": "/apostrophe-cover.png",
     "sourceCodeUrl": "https://github.com/aszs/apostrophe-sandbox.git",
+    "webUrl":  "https://github.com/aszs/apostrophe-sandbox",
     "deployments": 164,
-
     "description": "blah",
     "descriptionHtml": "blah blah",
     "fullPath": "demo/apostrophe-demo",
@@ -100,6 +100,7 @@
         "avatar": null,
         "platform": "Amazon Web Services",
         "type": "Compute",
+        "badge": "COMPUTE",
         "requirements": [],
         "inputs": [
           {
@@ -129,6 +130,7 @@
         "avatar": null,
         "platform": "Google Cloud Platform",
         "type": "Compute",
+        "badge": "COMPUTE",
         "requirements": [],
         "inputs": [
           {

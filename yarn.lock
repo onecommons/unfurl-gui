@@ -13214,12 +13214,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"oc-pages@link:packages/oc-pages/::locator=unfurl-gui%40workspace%3A.":
-  version: 0.0.0-use.local
-  resolution: "oc-pages@link:packages/oc-pages/::locator=unfurl-gui%40workspace%3A."
-  languageName: node
-  linkType: soft
-
 "oc-pages@workspace:packages/oc-pages":
   version: 0.0.0-use.local
   resolution: "oc-pages@workspace:packages/oc-pages"
@@ -17145,7 +17139,6 @@ __metadata:
     lodash: 4.17.20
     lowdb: ^1.0.0
     mkdirp: ^0.5.5
-    oc-pages: "link:packages/oc-pages/"
     pikaday: ^1.8.0
     portal-vue: ^2.1.7
     prettier: ^1.19.1
