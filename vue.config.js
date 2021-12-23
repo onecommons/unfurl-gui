@@ -43,7 +43,7 @@ module.exports = {
 
     form: {
       title: "Formily Testbed",
-      entry: "src/pages/dashboard/index.js",
+      entry: "src/pages/form/main.ts",
       template: 'public/form.html',
       unfurlCloudBaseUrl
     }
