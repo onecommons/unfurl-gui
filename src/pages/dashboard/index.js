@@ -14,7 +14,7 @@ if (process.env.NODE_ENV !== 'production') {
 Vue.use(Translate);
 
 // from oc/app/assets/javascripts/table/index.js:
-const element = document.getElementById("js-table-component");
+const element = document.getElementById("app");
 
 Vue.component('MainBody', TableComponent);
 const vue = new Vue({

@@ -1,14 +1,16 @@
 import Vue from "vue";
-import App from "./App.vue";
-import { createProvider } from "./vue-apollo";
+import Layout from "./components/Layout.vue";
+import HelloWorld from "./components/HelloWorld.vue";
 import setConfigs from "@gitlab/ui/dist/config";
-import router from "./router";
 setConfigs();
+if (process.env.NODE_ENV !== 'production') {
+  Vue.config.productionTip = false;
+}
 
-Vue.config.productionTip = false;
+Vue.component('MainBody', HelloWorld);
+// XXX replace HelloWorld with this pages component for example:
+//Vue.component('MainBody', FormilyComponent);
 
 new Vue({
-  apolloProvider: createProvider(),
-  router,
-  render: h => h(App)
+  render: h => h(Layout)
 }).$mount("#app");

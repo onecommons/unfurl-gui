@@ -1,6 +1,18 @@
 <template>
   <div class="hello">
     <h1>{{ msg }}</h1>
+
+        <h2>Unfurl.cloud Pages:</h2>
+        <p>
+          <a href="/demo">Project Overview</a> <br>(Copy of <code>gitlab-oc/oc/app/assets/javascripts/pages/projects/overview/</code>)
+        </p>
+        <p>
+          <a href="/dashboard">Dashboard</a> <br>(Copy of <code>gitlab-oc/oc/app/assets/javascripts/pages/dashboard</code>)
+        </p>
+        <p>
+            <a href="/form">Formily Testbed</a> 
+        </p>
+        <hr> 
     <p>
       For a guide and recipes on how to configure / customize this project,<br />
       check out the
