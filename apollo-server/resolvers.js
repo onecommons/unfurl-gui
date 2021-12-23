@@ -72,6 +72,7 @@ export default {
       return { isOk: true, errors: [] }
     },
   
+  /*
     addAccount: ( root, { input }, { pubsub, db }) => {
       const account = {
         id: shortid.generate(),
@@ -92,7 +93,7 @@ export default {
 
       return account;
     },
-
+*/
   },
 
   Subscription: {
