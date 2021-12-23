@@ -9224,6 +9224,16 @@ type Input {
   Value of input
   """
   value: String
+
+  """
+  Value of input
+  """
+  default: JSON
+
+  """
+  Value of input
+  """
+  required: Boolean
 }
 
 """
@@ -16132,7 +16142,7 @@ type OcEnvironment {
 """
 Input type for Oc input
 """
-input OcInput {
+input InputInput {
   """
   Description of input
   """
@@ -16147,16 +16157,6 @@ input OcInput {
   Value of input
   """
   value: String
-
-  """
-  Value of input
-  """
-  default: JSON
-
-  """
-  Value of input
-  """
-  required: Boolean
 }
 
 type Output {
@@ -16169,6 +16169,25 @@ type Output {
   Title of output
   """
   title: String!
+}
+
+type ApplicationBlueprint {
+  """
+  Full path of the project.
+  """
+  fullPath: ID!
+
+  """
+  ID of the project.
+  """
+  project: ID!
+
+  """
+  Application overview as JSON
+  """
+  json: JSON!
+
+  overview: Overview
 }
 
 type Overview {
@@ -20279,12 +20298,12 @@ type Query {
   """
   Oc Project Overview
   """
-  overview(
+  applicationBlueprint(
     """
     The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
     """
     fullPath: ID!
-  ): Overview
+  ): ApplicationBlueprint
 
   """
   Find a package.
@@ -26114,7 +26133,7 @@ input UpdateOverviewInput {
   """
   Input after mutation.
   """
-  inputs: [OcInput!]
+  inputs: [InputInput!]
 
   """
   Project full path the branch is associated with.

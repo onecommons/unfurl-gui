@@ -1,5 +1,0 @@
-fragment InputItems on Input {
-    instructions
-    title
-    value
-}

@@ -1,0 +1,17 @@
+
+#import "../fragments/template_item.fragment.graphql"
+
+query getTemplateBySlug($projectPath: ID!) {
+  applicationBlueprint(fullPath: $projectPath) {
+      __typename
+      json
+      overview @client {
+        __typename
+        id
+        templates {
+          __typename
+          ...TemplateItem
+        }
+    }
+  }
+}
