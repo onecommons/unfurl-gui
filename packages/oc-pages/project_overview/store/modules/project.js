@@ -247,38 +247,30 @@ const actions = {
         // eslint-disable-next-line no-underscore-dangle
         delete template.__typename;
         template.resourceTemplates.primary.requirements = deletePropertyFromArray(template.resourceTemplates.primary.requirements);
-        try {
-            const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-                mutation: createTemplate,
-                errorPolicy: 'all',
-                variables: { projectPath, template }
-            });
-            if ( errors ) {
-                throw new Error(errors.map(e => e.message).join(", "));
-            };
-            return data;
-        } catch(err) {
-            throw new Error(err.message);
-        }
+        const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
+            mutation: createTemplate,
+            errorPolicy: 'all',
+            variables: { projectPath, template }
+        });
+        if ( errors ) {
+            throw new Error(errors.map(e => e.message).join(", "));
+        };
+        return data;
     },
 
     // eslint-disable-next-line no-empty-pattern
     async deleteTemplate({ commit, state: _state}, { projectTitle }) {
-        try {
-            const { projectPath }= _state.globalVars;
-            const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-                mutation: removeTemplate,
-                errorPolicy: 'all',
-                variables: { projectPath, title: projectTitle }
-            });
-            if ( errors ) {
-                throw new Error(errors.map(e => e.message).join(", "));
-            };
-            commit('SET_TEMPLATES_LIST', data.removeTemplate.templates);
-            return data.removeTemplate;
-        } catch(err) {
-            throw new Error(err.message);
-        }
+        const { projectPath }= _state.globalVars;
+        const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
+            mutation: removeTemplate,
+            errorPolicy: 'all',
+            variables: { projectPath, title: projectTitle }
+        });
+        if ( errors ) {
+            throw new Error(errors.map(e => e.message).join(", "));
+        };
+        commit('SET_TEMPLATES_LIST', data.removeTemplate.templates);
+        return data.removeTemplate;
     },
 
     async updateTemplate({ commit, state: _state}, { template, inputs }) {
@@ -300,20 +292,16 @@ const actions = {
             inputs: mainInputs
         };
 
-        try {
-            const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-                mutation: updateOverview,
-                errorPolicy: 'all',
-                variables
-            });
-            if ( errors ) {
-                throw new Error(errors.map(e => e.message).join(", "));
-            };
-            commit("SET_TEMPLATE_SELECTED", { template });
-            return data;
-        } catch(err) {
-            throw new Error(err.message);
-        }
+        const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
+            mutation: updateOverview,
+            errorPolicy: 'all',
+            variables
+        });
+        if ( errors ) {
+            throw new Error(errors.map(e => e.message).join(", "));
+        };
+        commit("SET_TEMPLATE_SELECTED", { template });
+        return data;
     },
 
     completeRequirement({ commit }, { requirementTitle } ) {
