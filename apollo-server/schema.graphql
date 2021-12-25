@@ -41,4 +41,6 @@ type File {
 directive @deprecated(
     reason: String = "No longer supported"
   ) on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION | ARGUMENT_DEFINITION
- 
+
+# es-linter needs this 
+directive @client on FIELD_DEFINITION

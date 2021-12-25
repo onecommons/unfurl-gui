@@ -8,7 +8,7 @@
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
     "apollo": "vue-cli-service apollo:dev --generate-schema",
-    "apollo:schema:generate": "vue-cli-service apollo:schema:generate",
+    "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",
     "apollo:schema:publish": "vue-cli-service apollo:schema:publish",
     "apollo:start": "vue-cli-service apollo:start"
   },
