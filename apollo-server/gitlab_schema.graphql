@@ -9209,33 +9209,6 @@ An ISO 8601-encoded date
 """
 scalar ISO8601Date
 
-type Input {
-  """
-  Description of input
-  """
-  instructions: String
-
-  """
-  Title of input
-  """
-  title: String!
-
-  """
-  Value of input
-  """
-  value: String
-
-  """
-  Value of input
-  """
-  default: JSON
-
-  """
-  Value of input
-  """
-  required: Boolean
-}
-
 """
 A `IntegrationsPrometheusID` is a global ID. It is encoded as a string.
 
@@ -15564,18 +15537,14 @@ type Mutation {
     """
     input: UpdateNoteInput!
   ): UpdateNotePayload
+
   updateOverview(
     """
     Parameters for UpdateOverview
     """
     input: UpdateOverviewInput!
   ): UpdateOverviewPayload
-  updateRequirement(
-    """
-    Parameters for UpdateRequirement
-    """
-    input: UpdateRequirementInput!
-  ): UpdateRequirementPayload
+ 
   updateSnippet(
     """
     Parameters for UpdateSnippet
@@ -16159,18 +16128,6 @@ input InputInput {
   value: String
 }
 
-type Output {
-  """
-  Description of output
-  """
-  instructions: String
-
-  """
-  Title of output
-  """
-  title: String!
-}
-
 type ApplicationBlueprint {
   """
   Full path of the project.
@@ -16186,115 +16143,6 @@ type ApplicationBlueprint {
   Application overview as JSON
   """
   json: JSON!
-
-  overview: Overview
-}
-
-type Overview {
-  """
-  Number of Deployments
-  """
-  deployments: Int
-
-  """
-  Short description of the project.
-  """
-  description: String
-
-  """
-  The GitLab Flavored Markdown rendering of `description`
-  """
-  descriptionHtml: String
-
-  """
-  OneCommons general Environments
-  """
-  environments: [OcEnvironment!]
-
-  """
-  Full path of the project.
-  """
-  fullPath: ID!
-
-  """
-  ID of the project.
-  """
-  id: ID!
-
-  """
-  Image from unfurl file
-  """
-  image: String
-
-  """
-  OneCommons general Inputs
-  """
-  inputs: [Input!]
-
-  """
-  Live preview url from unfurl file
-  """
-  livePreview: String
-
-  """
-  Name of the project (without namespace).
-  """
-  name: String!
-
-  """
-  OneCommons general outputs
-  """
-  outputs: [Output!]
-
-  """
-  OneCommons general requirements
-  """
-  requirements: [Requirement!]
-
-  """
-  OneCommons general resources
-  """
-  resources: [Resource!]
-
-  """
-  OneCommons Services to connect
-  """
-  servicesToConnect: [ServiceToConnect!]
-
-  """
-  Source code url
-  """
-  sourceCodeUrl: String
-
-  """
-  OneCommons templates
-  """
-  templates(
-    """
-    If we want to search template by title.
-    """
-    searchBySlug: String
-
-    """
-    If we want to search template by title.
-    """
-    searchByTitle: String
-
-    """
-    If we want to search template by type.
-    """
-    searchByType: String
-  ): [Template!]
-
-  """
-  Live preview url from unfurl file
-  """
-  title: String
-
-  """
-  Web URL of the project.
-  """
-  webUrl: String
 }
 
 """
@@ -21987,58 +21835,6 @@ type RepositoryBlobEdge {
   node: RepositoryBlob
 }
 
-type Requirement {
-  """
-  Badge of  requirement
-  """
-  badge: String
-
-  """
-  Specific if node was created or connected
-  """
-  connected: Boolean
-
-  """
-  Specific if node was created or connected
-  """
-  created: Boolean
-
-  """
-  description of  requirement
-  """
-  description: String
-
-  """
-  Template inputs
-  """
-  inputs: [Input!]
-
-  """
-  Template outputs
-  """
-  outputs: [Output!]
-
-  """
-  Template requirements
-  """
-  requirements: [Requirement!]
-
-  """
-  status of requirement
-  """
-  status: Boolean
-
-  """
-  Title of  requirement
-  """
-  title: String!
-
-  """
-  Type of  requirement
-  """
-  type: String
-}
-
 interface ResolvableInterface {
   """
   Indicates if the object can be resolved.
@@ -22059,53 +21855,6 @@ interface ResolvableInterface {
   User who resolved the object.
   """
   resolvedBy: UserCore
-}
-
-type Resource {
-  """
-  Avatar or image of resource
-  """
-  avatar: String
-
-  """
-  Badge of resource
-  """
-  badge: String
-
-  """
-  Description of resource
-  """
-  description: String
-
-  """
-  Template inputs
-  """
-  inputs: [Input!]
-
-  """
-  Name of resource
-  """
-  name: String!
-
-  """
-  Platform of resource
-  """
-  platform: String
-
-  """
-  List of requirements
-  """
-  requirements: JSON
-
-  """
-  Type of resource
-  """
-  type: String
-
-  """
-  Value of resource
-  """
-  value: String!
 }
 
 type RootStorageStatistics {
@@ -23399,38 +23148,6 @@ type ServiceEdge {
   The item at the end of the edge.
   """
   node: Service
-}
-
-type ServiceToConnect {
-  """
-  Avatar or image of service
-  """
-  avatar: String
-
-  """
-  Description of Service
-  """
-  description: String
-
-  """
-  Name of Service
-  """
-  name: String!
-
-  """
-  Platform that service use
-  """
-  platform: String
-
-  """
-  Type of Service
-  """
-  type: String!
-
-  """
-  Value of Service
-  """
-  value: String
 }
 
 enum ServiceType {
@@ -26169,46 +25886,6 @@ type UpdateOverviewPayload {
   indicator if mutation its successfull.
   """
   isOk: Boolean
-}
-
-"""
-Autogenerated input type of UpdateRequirement
-"""
-input UpdateRequirementInput {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  Project full path the branch is associated with.
-  """
-  projectPath: ID!
-
-  """
-  title of requirement.
-  """
-  title: String!
-}
-
-"""
-Autogenerated return type of UpdateRequirement
-"""
-type UpdateRequirementPayload {
-  """
-  A unique identifier for the client performing the mutation.
-  """
-  clientMutationId: String
-
-  """
-  Errors encountered during execution of the mutation.
-  """
-  errors: [String!]!
-
-  """
-  Requirement after mutation.
-  """
-  requirements: [Requirement!]
 }
 
 """

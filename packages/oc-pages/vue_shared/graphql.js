@@ -1,6 +1,9 @@
 import { ApolloLink } from 'apollo-link';
 import { visit } from 'graphql/language';
 import _ from "lodash";
+import typeDefs from './graphql/client-schema.graphql';
+
+export { typeDefs };
 
 /**
  * This is a temporary workaround for apollo client issue https://github.com/apollographql/apollo-client/issues/5192
@@ -136,7 +139,6 @@ export const resolvers = {
 
         required: (obj, args, { }) => obj.required ?? false,
     },
-
 
     Template: {
         // type JSON
