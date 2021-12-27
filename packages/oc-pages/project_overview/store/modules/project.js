@@ -1,5 +1,5 @@
 import { templateElement } from "@babel/types";
-import { cloneDeep } from 'lodash';
+import _ from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import createTemplate from '../../graphql/mutations/create_template.mutation.graphql';
@@ -243,7 +243,7 @@ const actions = {
     },
 
     async createTemplate({ state: _state }, { projectPath }) {
-        const template = cloneDeep(state.template);
+        const template = _.cloneDeep(state.template);
         // eslint-disable-next-line no-underscore-dangle
         delete template.__typename;
         template.resourceTemplates.primary.requirements = deletePropertyFromArray(template.resourceTemplates.primary.requirements);
