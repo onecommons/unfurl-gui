@@ -1,16 +1,16 @@
 <template>
   <div class="hello">
-  <FormProvider :form="form" style="height: 100vh">
-    <SchemaField :schema="schema"/>
-    <span style="display: flex;justify-content: center">
+    <FormProvider :form="form" style="height: 100vh">
+      <SchemaField :schema="schema"/>
+      <span style="display: flex;justify-content: center">
     <Submit @submit="onSubmit">submit</Submit>
    </span>
-  </FormProvider>
-</div>
+    </FormProvider>
+  </div>
 </template>
 
 <script>
-import {createForm,setValidateLanguage} from "@formily/core";
+import {createForm, setValidateLanguage} from "@formily/core";
 import {createSchemaField, FormProvider} from "@formily/vue";
 import {
   FormItem,
@@ -23,6 +23,7 @@ import {
   InputNumber,
   Password,
   ArrayItems,
+  Editable,
   Space
 } from "@formily/element";
 
@@ -39,9 +40,9 @@ const schema = {
         wrapperCol: 20,
       },
       properties: {
-        confirm:{
-          type:'boolean',
-          title:'confirm',
+        confirm: {
+          type: 'boolean',
+          title: 'confirm',
           'x-decorator': 'FormItem',
           'x-component': 'Checkbox',
         },
@@ -128,29 +129,45 @@ const schema = {
           'x-decorator': 'FormItem',
           'x-component': 'Password',
         },
-        config:{
-          type:'object',
-          properties:{
-            id:{
-              type: 'string',
-              title: 'ID',
-              required: true,
-              'x-decorator': 'FormItem',
-              'x-component': 'Input',
-            },
-            name:{
-              type: 'Name',
-              title: 'input',
-              required: true,
-              'x-decorator': 'FormItem',
-              'x-component': 'Input',
-            },
-            describe:{
-              type: 'string',
-              title: 'Describe',
-              required: true,
-              'x-decorator': 'FormItem',
-              'x-component': 'Input',
+        config: {
+          type: 'object',
+          title: 'config',
+          'x-component': 'Editable.Popover',
+          'x-component-props': {
+            title: 'detail',
+          },
+          'x-decorator': 'FormItem',
+          properties: {
+            layout: {
+              type: 'void',
+              'x-component': 'FormLayout',
+              'x-component-props': {
+                labelCol: 10,
+                wrapperCol: 14,
+              },
+              properties: {
+                id: {
+                  type: 'string',
+                  title: 'ID',
+                  required: true,
+                  'x-decorator': 'FormItem',
+                  'x-component': 'Input',
+                },
+                name: {
+                  type: 'Name',
+                  title: 'input',
+                  required: true,
+                  'x-decorator': 'FormItem',
+                  'x-component': 'Input',
+                },
+                describe: {
+                  type: 'string',
+                  title: 'Describe',
+                  required: true,
+                  'x-decorator': 'FormItem',
+                  'x-component': 'Input',
+                }
+              }
             }
           }
         },
@@ -214,7 +231,21 @@ const schema = {
   }
 }
 
-const form = createForm()
+const form = createForm({
+      initialValues: {
+        confirm: true,
+        checkbox: ['A', 'C'],
+        config: {
+          id: 'test',
+          name: 'test',
+          describe: 'test'
+        },
+        recursive: [
+          {input: 'test', select: 1}
+        ]
+      } // set form's values
+    }
+)
 const fields = createSchemaField({
   components: {
     FormLayout,
@@ -226,7 +257,8 @@ const fields = createSchemaField({
     InputNumber,
     Password,
     Space,
-    ArrayItems
+    ArrayItems,
+    Editable
   },
 })
 export default {
@@ -239,6 +271,7 @@ export default {
   },
   methods: {
     onSubmit(value) {
+      // handle form values
       console.log(value);
     }
   }
