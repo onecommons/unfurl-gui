@@ -2,6 +2,8 @@ import Vue from "vue";
 import Layout from "../../components/Layout.vue";
 import HelloWorld from "../../components/HelloWorld.vue";
 import setConfigs from "@gitlab/ui/dist/config";
+import 'element-ui/lib/theme-chalk/index.css';
+
 setConfigs();
 if (process.env.NODE_ENV !== 'production') {
   Vue.config.productionTip = false;
