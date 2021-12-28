@@ -18,7 +18,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       _key: columnName,
       _expanded: _depth == 0,
       _depth,
-      _controlNodes: _depth == 0? []: [columnName] // top level fields have a separate control
+      _controlNodes: [columnName] // top level fields have a separate control
     };
     // add the child rows
     for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
@@ -150,7 +150,8 @@ export default {
       const result = [{key: "selected", label: ""}];
       let i = 0;
       for(const field of this.fields) {
-        result.push({index: i++, ...field});
+        const label = field.label.trim() + '  ';  // dirty trick to keep THs from touching each other
+        result.push({index: i++, ...field, label});
       }
       result.push({ key: "$menu", label: "", });
       return result;
@@ -252,8 +253,8 @@ export default {
 <template>
   <div class="container-fluid">
     <div class="row fluid filter-searchbox">
-      <div class="col-8"></div>
-      <div class="col-4 align-self-end">
+      <div class="col-lg-8 col-md-7 col-sm-2 "></div>
+      <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
           <gl-icon name="filter" style="width: 24px; height: 24px; color: #595959"/>
           <span style="padding: 0 5px">Filter: </span>
@@ -282,8 +283,8 @@ export default {
             filter="{}"
             id="accounts-table"
             ref="selectableTable"
-            responsive
             tbody-tr-class="oc-table-row"
+            responsive="lg"
             layout
             :items="_items"
             :fields="_fields"
@@ -319,8 +320,12 @@ export default {
             <div class="table-body" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
               <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
-                <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
-                <gl-icon v-else name="chevron-right" class="accordion-cell" />
+                  <span v-if="scope.field.index != 0">
+                    <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
+                    <gl-icon v-else name="chevron-right" class="accordion-cell" />
+                  </span>
+                  <span v-else style="margin-left: 0.5em;" />
+
                 <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
                 <span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span>
               </span>
@@ -370,7 +375,7 @@ export default {
   border-style: solid;
   border-radius: 4px;
   border-width: 1px;
-  font-size: 1.15em;
+  font-size: 1em;
   padding-bottom: 40px;
 }
 
@@ -384,7 +389,7 @@ export default {
 }
 
 .oc-table >>> th {
-  padding: 0.25em 22px;
+  padding: 0.25em 0;
   /*height: 2.5em;*/
   font-family: 'Open Sans';
   font-weight: bold;
@@ -407,14 +412,14 @@ export default {
 .table-body {
   display: flex;
   align-items: end;
-  padding: 0.4rem 22px;
+  padding: 0.4rem 0;
   border-style: none;
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #EEEEEE;
   width: 100%;
   height: 100%;
-  line-height: 1.2;
+  line-height: 1.35;
 }
 
 .table-body >>> * {
@@ -423,7 +428,7 @@ export default {
 
 .table-body.expanded-row {
   align-items: center;
-  padding: 0 22px;
+  padding: 0px;
   height: 3rem;
 }
 
@@ -432,18 +437,11 @@ export default {
 }
 
 .table-body .collapsable {
-  display: flex; align-items: center; line-height: 1
+  display: flex; align-items: center; /*line-height: 1*/
 }
 
 .table-aside {
-  padding: 0.4rem 22px;
-}
-
-.table-body.heading {
-  font-weight: 700;
-  font-family: "Open Sans";
-  font-size: 1.07em;
-  color: #0099FF;
+  padding: 0.4rem 0px;
 }
 
 .filter-container {
@@ -476,12 +474,17 @@ export default {
   border-color: inherit;
   box-sizing: border-box;
 }
+
 .oc-table >>> tr.table-expanded {
   border-color: #D1CFD7;
   height: 3rem;
 }
 .oc-table >>> tr.table-expanded > td {
   height: 3rem;
+}
+
+.oc-table >>> th {
+  white-space: pre;
 }
 
 
@@ -498,9 +501,14 @@ export default {
   margin-left: -0.5em;
 }
 
-.collapsable {
-  cursor: pointer;
+.oc-table >>> td:nth-child(2) {
+  color: #0099FF;
+  font-weight: bold;
+  font-size: 0.88em;
 }
+
+.collapsable { cursor: pointer; }
+.collapsable >>> span {display: flex;}
 
 .expanded-row  {
   background-color: #F4F4F4;
@@ -514,6 +522,7 @@ export default {
 .primary-toggle >>> svg {
  box-sizing: content-box; margin-top: 40px; color:#00D2D9; height: 1.875em; width: 1.875em;
  cursor: pointer;
+ padding: 0 0 0 22px;
 }
 
 </style>
