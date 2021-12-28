@@ -8,7 +8,7 @@
 </template>
 
 <script>
-import {createForm} from "@formily/core";
+import {createForm,setValidateLanguage} from "@formily/core";
 import {createSchemaField, FormProvider} from "@formily/vue";
 import {
   FormItem,
@@ -23,6 +23,8 @@ import {
   ArrayItems,
   Space
 } from "@formily/element";
+
+setValidateLanguage('en-US');
 
 const schema = {
   type: 'object',
@@ -86,6 +88,7 @@ const schema = {
           default: 'default',
           'x-decorator': 'FormItem',
           'x-component': 'Input',
+
         },
         number: {
           type: 'number',
