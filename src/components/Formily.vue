@@ -39,6 +39,12 @@ const schema = {
         wrapperCol: 20,
       },
       properties: {
+        confirm:{
+          type:'boolean',
+          title:'confirm',
+          'x-decorator': 'FormItem',
+          'x-component': 'Checkbox',
+        },
         checkbox: {
           type: 'array',
           title: 'checkbox',
@@ -121,6 +127,32 @@ const schema = {
           title: 'password',
           'x-decorator': 'FormItem',
           'x-component': 'Password',
+        },
+        config:{
+          type:'object',
+          properties:{
+            id:{
+              type: 'string',
+              title: 'ID',
+              required: true,
+              'x-decorator': 'FormItem',
+              'x-component': 'Input',
+            },
+            name:{
+              type: 'Name',
+              title: 'input',
+              required: true,
+              'x-decorator': 'FormItem',
+              'x-component': 'Input',
+            },
+            describe:{
+              type: 'string',
+              title: 'Describe',
+              required: true,
+              'x-decorator': 'FormItem',
+              'x-component': 'Input',
+            }
+          }
         },
         recursive: {
           type: 'array',
