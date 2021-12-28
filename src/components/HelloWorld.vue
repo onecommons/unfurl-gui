@@ -2,7 +2,7 @@
   <FormProvider :form="form" style="height: 100vh">
     <SchemaField :schema="schema"/>
     <span style="display: flex;justify-content: center">
-    <Submit @submit="onSubmit">提交</Submit>
+    <Submit @submit="onSubmit">submit</Submit>
    </span>
   </FormProvider>
 </template>
