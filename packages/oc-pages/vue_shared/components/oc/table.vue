@@ -69,12 +69,15 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
     parentRow.childrenToDepth = function*(n) {
       for(const child of parentRow._children) {
         if(!child) break;
-        if(n == -1 || child._depth <= n) {
+        if(n == -1 || child._depth <= n + span) {
           yield child;
         }
-        for(const descendent of child.childrenToDepth(n)) {
-          yield descendent;
+        if((_depth + span) != n) {
+          for(const descendent of child.childrenToDepth(n)) {
+            yield descendent;
+          }
         }
+        
       }
     };
 
@@ -112,6 +115,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       yield child;
     }
     parentRow._children = parentRow._children.filter(row => row._depth - parentRow._depth <= span);
+    parentRow._span = span;
     for(const child of parentRow._children){
       child._parent = parentRow;
     }
@@ -140,7 +144,6 @@ export default {
         row.index = i++;
         result.push(row);
       }
-      console.log({result});
       return result;
     },
     _fields() {
@@ -210,7 +213,7 @@ export default {
     },
     expandedAt(row, depth) {
       const item = this._items[row];
-      for(const child of item.childrenToDepth(depth == item._depth? -1: depth)) {
+      for(const child of item.childrenToDepth(depth)) {
         if(!child._expanded) {
           return false;
         }
@@ -288,9 +291,9 @@ export default {
             show-empty
           >
           <template #head(selected)>
-            <span @click="toggleAll">
-              <gl-icon v-if="allExpanded()" name="chevron-down" style="color:#00D2D9; height: 1.875em; width: 1.875em;"/>
-              <gl-icon v-else name="chevron-right" style="color:#00D2D9; height: 1.875em; width: 1.875em;"/>
+            <span @click="toggleAll" class="primary-toggle">
+                <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
+                <gl-icon v-else title="Collapse All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
             </span>
           </template>
 
@@ -301,8 +304,8 @@ export default {
 
           <template #cell(selected)=scope>
             <div class="control-cell left">
-              <span @click="_ => toggleExpanded(scope.item.index, -1)" class="table-aside primary-toggle" v-if="scope.item._key == fields[0].key && scope.item._totalChildren > 0">
-                <gl-icon v-if="expandedAt(scope.item.index, -1)" name="chevron-down" />
+              <span @click="_ => toggleExpanded(scope.item.index, 0)" class="table-aside primary-toggle" v-if="scope.item._key == fields[0].key && scope.item._children.length > 1">
+                <gl-icon v-if="expandedAt(scope.item.index, 0)" name="chevron-down" />
                 <gl-icon v-else name="chevron-right" />
               </span>
             </div>
@@ -393,7 +396,7 @@ export default {
 }
 
 .oc-table >>> td {
-  font-family: Inter;
+  font-family: 'Open Sans';
   white-space: nowrap;
   font-size: 0.8125em;
   border-style: none;
@@ -493,7 +496,10 @@ export default {
 
 .oc-table >>> .collapsable {
   margin-left: -0.5em;
+}
 
+.collapsable {
+  cursor: pointer;
 }
 
 .expanded-row  {
@@ -507,6 +513,7 @@ export default {
 
 .primary-toggle >>> svg {
  box-sizing: content-box; margin-top: 40px; color:#00D2D9; height: 1.875em; width: 1.875em;
+ cursor: pointer;
 }
 
 </style>
