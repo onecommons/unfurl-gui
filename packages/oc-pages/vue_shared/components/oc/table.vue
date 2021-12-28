@@ -376,7 +376,6 @@ export default {
   border-radius: 4px;
   border-width: 1px;
   font-size: 1em;
-  padding-bottom: 40px;
 }
 
 
@@ -386,6 +385,9 @@ export default {
 
 .oc-table >>> table {
   margin-top: -1px;
+  border-bottom-style: solid;
+  border-bottom-color: white;
+  border-bottom-width: 40px; /*fix scrollbar position*/
 }
 
 .oc-table >>> th {
@@ -517,6 +519,10 @@ export default {
 }
 .table-body.filter-match > span {
   background-color: yellow;
+}
+
+.table-body > * {
+  margin-right: 1em;
 }
 
 .primary-toggle >>> svg {
