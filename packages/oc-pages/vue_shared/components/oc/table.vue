@@ -1,5 +1,5 @@
 <script>
-import { GlIcon, GlTable, GlFormInput } from "@gitlab/ui";
+import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
 import { __ } from '~/locale';
 
@@ -11,6 +11,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
     const group = grouped[key];
     let parentRow = { 
       [columnName]: group[0][columnName],
+      tooltips: group[0].tooltips,
       _children: [],
       _childrenByGroup: {},
       _totalChildren: 0,
@@ -86,7 +87,6 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       for(const child of parentRow.childrenToDepth(n)) {
         child._expanded = state;
       }
-
     };
 
     parentRow.shouldDisplay = function() {
@@ -121,6 +121,9 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
 export default {
   name: 'TableComponent',
   props: ['items', 'fields'],
+  directives: {
+    GlTooltip: GlTooltipDirective,
+  },
   components: {
     GlTable,
     GlIcon,
@@ -137,6 +140,7 @@ export default {
         row.index = i++;
         result.push(row);
       }
+      console.log({result});
       return result;
     },
     _fields() {
@@ -221,7 +225,11 @@ export default {
       return true;
 
     },
-
+    tooltip(scope) {
+      const {item, field} = scope;
+      const result= item.tooltips && item.tooltips[field.key];
+      return result;
+    },
     onFilterChange(e){
       for(const item of this._items) {
         let matched = false;
@@ -307,12 +315,14 @@ export default {
           <template #cell()=scope>
             <div class="table-body" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
               <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
+                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
                 <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
                 <gl-icon v-else name="chevron-right" class="accordion-cell" />
                 <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
                 <span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span>
               </span>
               <span v-else-if="scope.item[scope.field.key]"> 
+                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
                 <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
               </span>
               <!--
@@ -402,6 +412,10 @@ export default {
   width: 100%;
   height: 100%;
   line-height: 1.2;
+}
+
+.table-body >>> * {
+  position: relative;
 }
 
 .table-body.expanded-row {
