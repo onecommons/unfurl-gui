@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import TableComponent from './components/table.vue';
+import TableComponentContainer from './components/table.vue';
 import apolloProvider from './graphql';
 
 export default () => {
@@ -9,7 +9,7 @@ export default () => {
     el: element,
     apolloProvider,
     render(createElement) {
-      return createElement(TableComponent);
+      return createElement('div');
     },
   });
 };
