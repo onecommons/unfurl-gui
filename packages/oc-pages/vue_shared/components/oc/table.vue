@@ -18,7 +18,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       _key: columnName,
       _expanded: _depth == 0,
       _depth,
-      _controlNodes: [columnName] // top level fields have a separate control
+      _controlNodes: []
     };
     // add the child rows
     for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
@@ -147,13 +147,13 @@ export default {
       return result;
     },
     _fields() {
-      const result = [{key: "selected", label: ""}];
+      const result = [{key: "selected", label: "", thStyle: {width: '0px'}}];
       let i = 0;
       for(const field of this.fields) {
         const label = field.label.trim() + '  ';  // dirty trick to keep THs from touching each other
         result.push({index: i++, ...field, label});
       }
-      result.push({ key: "$menu", label: "", });
+      result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
       return result;
     },
     keys() {
@@ -292,28 +292,25 @@ export default {
             show-empty
           >
           <template #head(selected)>
-            <span @click="toggleAll" class="primary-toggle">
+            <span @click="toggleAll" class="control-cell primary-toggle">
                 <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
-                <gl-icon v-else title="Collapse All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
+                <gl-icon v-else title="Expand All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
             </span>
           </template>
 
           <template #head($menu)>
+            <span class="control-cell">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"> <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/> </svg>
+            </span>
           </template>
 
 
-          <template #cell(selected)=scope>
-            <div class="control-cell left">
-              <span @click="_ => toggleExpanded(scope.item.index, 0)" class="table-aside primary-toggle" v-if="scope.item._key == fields[0].key && scope.item._children.length > 1">
-                <gl-icon v-if="expandedAt(scope.item.index, 0)" name="chevron-down" />
-                <gl-icon v-else name="chevron-right" />
-              </span>
-            </div>
+          <template #cell(selected)>
+            <div class="control-cell left" />
           </template>
 
           <template #cell($menu)>
-            <div class="control-cell right"></div>
+            <div class="control-cell right" />
           </template>
 
           <template #cell()=scope>
@@ -325,7 +322,6 @@ export default {
                     <gl-icon v-else name="chevron-right" class="accordion-cell" />
                   </span>
                   <span v-else style="margin-left: 0.5em;" />
-
                 <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
                 <span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span>
               </span>
@@ -333,12 +329,8 @@ export default {
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
                 <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
               </span>
-              <!--
-              <span v-else-if="scope.item._totalChildren > 0 && scope.item._childCounts[scope.field.key] > 0">
-              -->
               <span v-else-if="false">
                 <slot :name="scope.field.key + '$count'">
-                <!-- this doesn't actually pluralize yet -->
                 {{pluralize(scope)}}
                 </slot>
               </span>
@@ -392,8 +384,8 @@ export default {
 
 .oc-table >>> th {
   padding: 0.25em 0;
-  /*height: 2.5em;*/
   font-family: 'Open Sans';
+  font-size: 0.95em;
   font-weight: bold;
   color: #4A5053;
   background-color: #F4F4F4;
@@ -438,8 +430,12 @@ export default {
   color:#00D2D9; height: 1.5em; width: 1.5em;
 }
 
+.expanded-row .accordion-cell {
+  color: #4A5053;
+}
+
 .table-body .collapsable {
-  display: flex; align-items: center; /*line-height: 1*/
+  display: flex; align-items: center;
 }
 
 .table-aside {
@@ -495,6 +491,10 @@ export default {
   border-width: 1px;
   width: 100%; height: 100%;
 }
+
+th .control-cell {
+  margin: 0 1em;
+}
 .control-cell.left { border-right-style: solid; }
 
 .control-cell.right { border-left-style: solid; } 
@@ -526,9 +526,8 @@ export default {
 }
 
 .primary-toggle >>> svg {
- box-sizing: content-box; margin-top: 40px; color:#00D2D9; height: 1.875em; width: 1.875em;
+ box-sizing: content-box; color:#00D2D9; height: 1.875em; width: 1.875em;
  cursor: pointer;
- padding: 0 0 0 22px;
 }
 
 </style>
