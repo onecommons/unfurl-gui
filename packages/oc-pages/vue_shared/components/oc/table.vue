@@ -3,6 +3,15 @@ import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
 import { __ } from '~/locale';
 
+function searchMatchingFunction(cellContent, searchKey) {
+  if(!(cellContent && cellContent.toLowerCase)) return false;
+  if(searchKey.length <= 2) {
+    return cellContent.toLowerCase() == searchKey.toLowerCase();
+  } else {
+    return cellContent.toLowerCase().startsWith(searchKey.toLowerCase());
+  }
+}
+
 function* expandRows(fields, children, _depth = 0, parent=null) {
   if(fields.length == 0) return;
   const columnName = fields[0].key, remainingColumns = _.tail(fields);
@@ -169,12 +178,15 @@ export default {
   },
   data() {
     return {
-      filter: ''
+      filter: '',
+      matchedResults: false,
+      showingToast: false
     };
   },
   watch: {
     filter(val) {
-      this.onFilterChange(val);
+      this.matchedResults = this.onFilterChange(val);
+      this.debouncedSearch();
     }
   },
   methods: {
@@ -235,18 +247,29 @@ export default {
       return result;
     },
     onFilterChange(e){
+      let result = false;
       for(const item of this._items) {
         let matched = false;
         for(const field of this._fields) {
-          if(item[field.key] == e) {
+          if(searchMatchingFunction(item[field.key], e)){
             item._filterIndex = field.index;
-            matched = true;
+            matched = result = true;
             item.expose();
           }
         }
         if(!matched) item._filterIndex = undefined;
       }
-    }
+      return result;
+    },
+    debouncedSearch: _.debounce(function() {
+      if(this.filter.length >= 3 && !this.matchedResults && !this.showingToast) {
+        this.showingToast = true;
+        const instance = this;
+        this.$toast.show('No results found', {
+          onComplete(){ instance.showingToast = false; }
+        });
+      }
+    }, 1000)
   }
 };
 </script>
@@ -261,6 +284,7 @@ export default {
           <div class="filter-input-container">
             <gl-form-input
               id="filter-input"
+              debounce="500"
               type="search"
               v-model="filter"
               />
@@ -299,8 +323,8 @@ export default {
           </template>
 
           <template #head($menu)>
-            <span class="control-cell">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"> <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/> </svg>
+            <span class="control-cell" @click="toast()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"> <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/> </svg>
             </span>
           </template>
 
