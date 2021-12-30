@@ -42,7 +42,7 @@ type Overview {
   image: String
 
   """
-  OneCommons general Inputs
+  General properties
   """
   inputs: [Input!]
 
@@ -288,7 +288,7 @@ type ServiceToConnect {
 
 type NewApplicationBlueprint {
   
-  primary: NodeType!
+  primary: ResourceType!
 
   """
   Live preview url from unfurl file
@@ -373,7 +373,7 @@ type ResourceTemplate {
 
   type: ResourceType!
 
-  description: string
+  description: String
   # input has schema and value
   properties: [Input!]
   requirements: [Requirement!]
@@ -413,6 +413,11 @@ type Deployment {
   url: String
 }
 
+# TODO
+type Job {
+  ranOn: Time 
+}
+
 type Resource {
   name: String!
   url: String
@@ -420,7 +425,7 @@ type Resource {
   template: ResourceTemplate!
   status: Status
   state: State
-  attributes: [Inputs!]
+  attributes: [Input!]
   connections: [Requirement!]
 }
 
