@@ -64,12 +64,12 @@ type Overview {
   """
   OneCommons general requirements
   """
-  requirements: [Requirement!]
+  requirements: [OldRequirement!]
 
   """
   OneCommons general resources
   """
-  resources: [Resource!]
+  resources: [OldResource!]
 
   """
   OneCommons Services to connect
@@ -126,7 +126,7 @@ type Input {
   """
   Value of input
   """
-  value: String
+  value: JSON
 
   """
   Value of input
@@ -137,6 +137,11 @@ type Input {
   Value of input
   """
   required: Boolean
+
+  """
+  json-schema
+  """
+  schema: JSON
 }
 
 type Output {
@@ -151,7 +156,7 @@ type Output {
   title: String!
 }
 
-type Requirement {
+type OldRequirement {
   """
   Badge of  requirement
   """
@@ -183,11 +188,6 @@ type Requirement {
   outputs: [Output!]
 
   """
-  Template requirements
-  """
-  requirements: [Requirement!]
-
-  """
   status of requirement
   """
   status: Boolean
@@ -203,7 +203,7 @@ type Requirement {
   type: String
 }
 
-type Resource {
+type OldResource {
   """
   Avatar or image of resource
   """
@@ -282,4 +282,168 @@ type ServiceToConnect {
   value: String
 }
 
+###############################
+######## new schema ###########
+###############################
 
+type NewApplicationBlueprint {
+  
+  primary: NodeType!
+
+  """
+  Live preview url from unfurl file
+  """
+  livePreview: String
+
+  """
+  Name of the project (without namespace).
+  """
+  name: String!
+
+  """
+  Source code url
+  """
+  sourceCodeUrl: String
+}
+
+type DeploymentTemplate {
+  """
+  Description of template
+  """
+  description: String
+
+  blueprint: ApplicationBlueprint!
+
+  """
+  Required cloud provider
+  """
+  cloud: String
+
+  """
+  Slug of template
+  """
+  slug: String!
+
+  """
+  Title of template
+  """
+  title: String!
+
+  primary: ResourceTemplate!
+
+  resourceTemplates: [ResourceTemplate!]
+}
+
+type ResourceType {
+  name: String!
+  title: String
+  implements: [ResourceType!]
+  description: String
+  badge: String
+
+  properties: [Input!]
+  outputs: [Output!]
+  requirements: [RequirementConstraint!]
+}
+
+type RequirementConstraint {
+    name: String!
+
+    description: String
+
+    """
+    Node type need to fulfill this requirement
+    """
+    resourceType: ResourceType!
+
+    """
+    minimum number of the requirement needed (0 means this is optional)
+    """
+    min: Int
+
+    """
+    maximum number of this requirements allowed (default: 1)
+    """
+    max: Int
+}
+
+type ResourceTemplate {
+  name: String!
+  title: String
+
+  type: ResourceType!
+
+  description: string
+  # input has schema and value
+  properties: [Input!]
+  requirements: [Requirement!]
+}
+
+type Requirement {
+  name: String
+  constraint: RequirementConstraint!
+  match: ResourceTemplate
+  target: Resource
+}
+
+type Deployment {
+  """
+  Title of template
+  """
+  title: String!
+
+  """
+  Environment
+  """
+  environment: OcEnvironment
+
+  primary: Resource
+
+  resources: [Resource!]
+
+  job: Job
+  ready: Boolean
+
+  blueprint: ApplicationBlueprint
+  sourceDeploymentTemplateName: String
+
+  """
+  Live preview url from unfurl file
+  """
+  url: String
+}
+
+type Resource {
+  name: String!
+  url: String
+  deployment: Deployment
+  template: ResourceTemplate!
+  status: Status
+  state: State
+  attributes: [Inputs!]
+  connections: [Requirement!]
+}
+
+enum Status {
+  Absent
+  Degraded
+  Error
+  Ok
+  Pending
+  Unknown
+}
+
+enum State {
+  Configured
+  Configuring
+  Created
+  Creating
+  Deleted
+  Deleting
+  Error
+  Initial
+  Started
+  Starting
+  Stopped
+  Stopping
+}

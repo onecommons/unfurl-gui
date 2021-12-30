@@ -94,9 +94,9 @@ export const resolvers = {
 
         outputs: _.partial(patchTypenameInArr, "Output"),
 
-        requirements: _.partial(patchTypenameInArr, "Requirement"),
+        requirements: _.partial(patchTypenameInArr, "OldRequirement"),
       
-        resources: _.partial(patchTypenameInArr, "Resource"),
+        resources: _.partial(patchTypenameInArr, "OldResource"),
 
         servicesToConnect: _.partial(patchTypenameInArr, "ServiceToConnect"),
         
@@ -121,23 +121,36 @@ export const resolvers = {
         }
       },
 
-    Requirement: {
+    OldRequirement: {
         inputs: _.partial(patchTypenameInArr, "Input"),
 
         outputs: _.partial(patchTypenameInArr, "Output"),
 
-        requirements: _.partial(patchTypenameInArr, "Requirement"),
+        requirements: _.partial(patchTypenameInArr, "OldRequirement"),
 
         status: (obj, args, { }) => obj.status ?? null,
     },
 
     // note: fields with JSON type need explicit resolvers
 
-    Input: {
-        // type JSON
-        default: (obj, args, { }) => obj.default ?? null,
+  Input: {
+      instructions: (obj, args, { }) => obj.instructions ?? obj.description,
 
-        required: (obj, args, { }) => obj.required ?? false,
+      title: (obj, args, { }) => obj.title,
+
+      // type JSON
+      value: (obj, args, { }) => obj.value ?? null,
+
+      // type JSON
+      default: (obj, args, { }) => obj.default ?? null,
+
+      required: (obj, args, { }) => obj.required ?? false,
+
+      // type JSON
+      schema: (obj, args, { }) => {
+        if (!obj.type) ob.type = "string";
+        return obj;
+      },
     },
 
     Template: {
@@ -148,7 +161,7 @@ export const resolvers = {
         totalDeployments: (template, args, {}) => template.total_deployments,     
     },
 
-    Resource: {
+    OldResource: {
         inputs: _.partial(patchTypenameInArr, "Input"),
 
         // type JSON
