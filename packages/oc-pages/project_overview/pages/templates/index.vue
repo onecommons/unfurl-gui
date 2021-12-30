@@ -197,7 +197,6 @@ export default {
     ...mapActions([
       'syncGlobalVars',
       'createNodeResource',
-      'updateTemplate',
       'savePrimaryCard',
       'saveCards',
       'saveTemplateResources',

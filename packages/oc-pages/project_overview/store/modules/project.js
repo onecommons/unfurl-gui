@@ -3,7 +3,6 @@ import _ from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import createTemplate from '../../graphql/mutations/create_template.mutation.graphql';
-import updateOverview from '../../graphql/mutations/update_template.mutation.graphql';
 import getEnvironments from '../../graphql/queries/get_environments.query.graphql';
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
@@ -273,38 +272,7 @@ const actions = {
         return data.removeTemplate;
     },
 
-    async updateTemplate({ commit, state: _state}, { template, inputs }) {
-        delete template.__typename;
-        template.requirements = deletePropertyFromArray(template.resourceTemplates.primary.requirements);
-        const { projectPath }= _state.globalVars;
-
-        // eslint-disable-next-line no-underscore-dangle
-        const mainInputs =  inputs.map((i) => {
-            const n = i;
-            // eslint-disable-next-line no-underscore-dangle
-            delete n.__typename;
-            return n;
-        });
-        const variables = {
-            projectPath,
-            title: template.title,
-            template,
-            inputs: mainInputs
-        };
-
-        const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-            mutation: updateOverview,
-            errorPolicy: 'all',
-            variables
-        });
-        if ( errors ) {
-            throw new Error(errors.map(e => e.message).join(", "));
-        };
-        commit("SET_TEMPLATE_SELECTED", { template });
-        return data;
-    },
-
-    completeRequirement({ commit }, { requirementTitle } ) {
+  completeRequirement({ commit }, { requirementTitle }) {
         commit('CHECK_REQUIREMENT', { requirementTitle });
     },
 

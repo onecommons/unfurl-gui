@@ -57,21 +57,6 @@ export default {
       }
     },
 
-    updateOverview: (root, { input }, { pubsub, db }) => {
-      const { projectPath, title, template, inputs } = input;
-      const overview = db.get('projects').value()[projectPath];
-      if (title) { 
-        const index = _.findIndex(overview['templates'], { title });
-        overview['templates'][index] = template;
-      }
-      if (inputs) { 
-        overview['inputs'] = inputs;
-      }
-      db.write();
-
-      return { isOk: true, errors: [] }
-    },
-  
   /*
     addAccount: ( root, { input }, { pubsub, db }) => {
       const account = {
