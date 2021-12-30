@@ -42,6 +42,7 @@ export default {
       deployButton: false,
       requirementTemp: {},
       resourceName: '',
+      userEditedResourceName: false,
       alertNameExists: null,
       titleKey: '',
       dataUnsaved: false,
@@ -61,7 +62,7 @@ export default {
         fullName: `refs/heads/${this.$projectGlobal.ref}`,
       },
       pipelinesPath: `/${this.$projectGlobal.projectPath}/-/pipelines`,
-    }
+    };
   },
 
   computed: {
@@ -104,15 +105,15 @@ export default {
     ocTemplateResourcePrimary() {
         return {
             text: __("Next"),
-            attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (this.resourceName.length === 0 || this.alertNameExists) }]
-        }
+            attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0) }]
+        };
     },
 
     ocResourceToConnectPrimary() {
       return {
             text: __("Next"),
             attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: Object.keys(this.selectedServiceToConnect).length === 0 }]
-        }
+        };
     },
 
     cancelProps() {
@@ -125,7 +126,9 @@ export default {
   watch: {
     selected: function(val) {
       if(Object.keys(val).length > 0) {
-        this.resourceName = val.name;
+        if(!this.userEditedResourceName) {
+          this.resourceName = val.name;
+        }
       }
     },
 
@@ -190,7 +193,7 @@ export default {
   },
 
   async beforeMount() {
-        window.addEventListener("beforeunload", await this.preventLeave)
+        window.addEventListener("beforeunload", await this.preventLeave);
   },
 
   methods: {
@@ -208,12 +211,12 @@ export default {
     ]),
 
     async preventLeave(event) {
-        event.preventDefault()
+        event.preventDefault();
         // eslint-disable-next-line no-param-reassign
         // event.returnValue = ""
         if(this.dataUnsaved) {
           // eslint-disable-next-line no-console
-          console.log(__("Saving changes before leave...."))
+          console.log(__("Saving changes before leave...."));
           await this.triggerSave();
           // eslint-disable-next-line no-console
           console.log(__("Saved content"));
@@ -313,6 +316,7 @@ export default {
     cleanModalResource() {
       this.resourceName = '';
       this.selected = {};
+      this.userEditedResourceName = false;
     },
 
     async onSubmitDeleteTemplateModal() {
@@ -336,6 +340,7 @@ export default {
     async onSubmitTemplateResourceModal() {
       try {
         const { name } = this.selected;
+        console.log('selected', this.selected);
         const titleCard = this.resourceName || name;
         await this.autoSaveTemplate();
         const created = await this.createNodeResource({titleCard, selection: this.selected, action: "create"});
@@ -385,7 +390,7 @@ export default {
             nword = nword + nword.slice(nword.length-1, nword.length);
         }
         return nword + 'ing';
-      }
+      };
       // eslint-disable-next-line @gitlab/require-i18n-strings
       return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b> ? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other (nodes ?) which are linked to it.`;
     },
@@ -398,7 +403,7 @@ export default {
       return str.replace(/ /g, '-');
     }
   },
-}
+};
 </script>
 <template>
   <div>
@@ -478,10 +483,10 @@ export default {
             @cancel="cleanModalResource"
             >
 
-            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" />
+            <oc-list-resource  @input="e => selected = e" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" />
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-              <gl-form-input id="input1" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+              <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
             </gl-form-group>
       </gl-modal>
 
