@@ -11,5 +11,6 @@ mutation createTemplate(
     templates {
         title
     }
+    errors
   }
 }

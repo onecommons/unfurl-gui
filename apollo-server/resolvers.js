@@ -38,12 +38,18 @@ export default {
     createTemplate: (root, { input }, { pubsub, db }) => { 
       const { projectPath, template } = input;
       const overview = db.get('projects').value()[projectPath];
+      if (overview.templates.find(t => t.slug == template.slug)) {
+        return {
+          errors: [`A template already exists with the slug "${template.slug}"`],
+          templates: overview.templates,
+        };
+      }
       const newTemplate = { ...template };
       newTemplate.resource_templates = template.resourceTemplates;
       delete newTemplate.resourceTemplates;
       overview.templates.push(newTemplate);
       db.write();
-      return overview.templates;
+      return {errors: [], templates: overview.templates};
     },
 
     removeTemplate: (root, { input }, { pubsub, db }) => {
