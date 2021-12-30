@@ -8,15 +8,23 @@ export default {
         GlIcon
     },
 
+    data() {
+      return {
+        value: {}
+      };
+    },
+
     props: {
         filteredResourceByType: {
             type: Array,
             required: true,
         },
+        /*
         value: {
             type: [Object, String],
             required: true,
         },
+        */
         nameOfResource: {
             type: String,
             required: true,
@@ -67,7 +75,7 @@ export default {
             <div
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2"
             >
-            <gl-form-radio v-model="selectedVal" :value="resource" class="gl-mt-4" :disabled="!checkCompatibility(resource.platform)"  />
+            <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" :disabled="!checkCompatibility(resource.platform)"  />
             <div class="oc_resource_icon gl-mr-3">
                 <img v-if="resource.avatar !== null" :src="resource.avatar" :alt="resource.name" />
             </div>

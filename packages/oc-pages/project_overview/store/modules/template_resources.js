@@ -63,7 +63,7 @@ const mutations = {
     },
 
     putCardInStack(_state, { card, position=null }) {
-        const index = _state.cards.map(c => c.title).indexOf(card.title)
+        const index = _state.cards.map(c => c.title).indexOf(card.title);
 
         if(index === -1 && !position){
             // _state.cards.unshift(card);
