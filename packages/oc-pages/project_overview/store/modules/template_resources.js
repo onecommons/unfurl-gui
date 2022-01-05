@@ -2,17 +2,22 @@ import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import updateTemplateResource from '../../graphql/mutations/update_template_resource.mutation.graphql';
+import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
 
 const state = {
-    resourcesOfTemplates: {},
-    templateResourceScafold: {
+    //resourcesOfTemplates: {},
+    resourcesOfTemplates: {//templateResourceScafold: {
         title: '',
         type: '',
         description: __('A short description of the template can be showed here'),
         status: null,
-        inputs: []
+        inputs: [],
+
+        //
+        primary: {title: '', properties: [] }
 
     },
+    lastFetchedFrom: {}, 
     cards: [],
 };
 
@@ -21,7 +26,7 @@ const deleteReference = (arrg, by, value, nestingKey, parent ) => (
         if (a) return a;
         if (item[by] === value ) {
             item.fullfilled_by =  null;
-            item.connectedOrCreated = null;
+            item.completionStatus = 'required';
             item.status = null;
             return item;
         }
@@ -32,7 +37,8 @@ const deleteReference = (arrg, by, value, nestingKey, parent ) => (
 const mutations = {
     setTemplateResources(_state, resourcesObject) {
         // eslint-disable-next-line no-param-reassign
-        _state.resourcesOfTemplates = { ...resourcesObject };
+      const primary = resourcesObject.newApplicationBlueprint.primary
+        _state.resourcesOfTemplates.primary = { ...primary };
     },
 
     updatePrimaryCard(_state, primaryOBject) {
@@ -91,7 +97,7 @@ const mutations = {
         if(index !== -1){
             const element = _state.resourcesOfTemplates.primary.requirements[index];
             element.fullfilled_by = null;
-            element.connectedOrCreated = null;
+            element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
             _state.resourcesOfTemplates.primary.requirements[index] = { ...element };
@@ -99,13 +105,16 @@ const mutations = {
             _state.resourcesOfTemplates.primary.status = null;
         }
     },
+    updateLastFetchedFrom(_state, {projectPath, templateSlug}) {
+      _state.lastFetchedFrom = {projectPath, templateSlug}
+    },
 
     deleteReferenceSubrequirements(_state, {title, titleKey}) {
         const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.fullfilled_by).indexOf(title);
         if(index !== -1){
             const element = _state.resourcesOfTemplates[titleKey].requirements[index];
             element.fullfilled_by = null;
-            element.connectedOrCreated = null;
+            element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
             _state.resourcesOfTemplates[titleKey].requirements[index] = { ...element };
@@ -186,7 +195,7 @@ const actions = {
             cards.forEach((c, idx) => {
                 // eslint-disable-next-line no-prototype-builtins
                 if(c.hasOwnProperty('requirements')){
-                    const subRequirements = c.requirements.filter(r => r.fullfilled_by !== null && r.connectedOrCreated === "created");
+                    const subRequirements = c.requirements.filter(r => r.fullfilled_by !== null && r.completionStatus === "created");
                     subRequirements.forEach(r => {
                         commit("putCardInStack", { card: {..._state.resourcesOfTemplates[r.fullfilled_by]}, position: idx });
                     });
@@ -198,12 +207,38 @@ const actions = {
         }
     },
 
+    async fetchTemplateResources({state, commit, dispatch}, {projectPath, templateSlug}) {
+      try {
+        commit('updateLastFetchedFrom', {projectPath, templateSlug})
+
+        const {errors, data} = await graphqlClient.clients.defaultClient.query({
+          query: getTemplateBySlug,
+          errorPolicy: 'all',
+          variables: { projectPath, templateSlug }
+        })
+
+        const {requirements} = data.newApplicationBlueprint.primary
+        const cards = requirements//I'm supposed to filter this apparently
+        cards.forEach(c => {
+          if(c.completionStatus == 'created') //NOTE: c.completionStatus
+            commit('putCardInStack', {card: c.name})
+        })
+
+        commit('setTemplateResources', data)
+        dispatch('createSubCards')
+        return true
+      } catch(err) {
+        throw new Error(err.message)
+      }
+    },
+
+    /*
     setResourcesOfTemplate({commit, dispatch}, resourcesOBject) {
         try {
             const { requirements } = resourcesOBject.primary;
             const cards = requirements.filter(c => c.fullfilled_by !== null);
             cards.forEach(c => {
-                if(c.connectedOrCreated === 'created'){
+                if(c.completionStatus === 'created'){
                     commit("putCardInStack", { card: resourcesOBject[c.fullfilled_by] });
                 }
             });
@@ -214,11 +249,12 @@ const actions = {
             throw new Error(err.message);
         }
     },
+    */
 
     updateStackOfCards({commit, dispatch, state: _state}) {
         try {
             const { requirements } = _state.resourcesOfTemplates.primary;
-            const cards = requirements.filter(c => c.fullfilled_by !== null && c.connectedOrCreated === 'created');
+            const cards = requirements.filter(c => c.fullfilled_by !== null && c.completionStatus === 'created');
             cards.forEach(c => {
                 commit("putCardInStack", { card: _state.resourcesOfTemplates[c.fullfilled_by] });
             });
@@ -248,7 +284,8 @@ const actions = {
                 arrayOfCards.forEach((c) => {
                     commit('updateStackedInState', {rObject: c, key: c.title});
                 });
-                dispatch('setResourcesOfTemplate', _state.resourcesOfTemplates);
+                //dispatch('setResourcesOfTemplate', _state.resourcesOfTemplates);
+                dispatch('fetchTemplateResources', _state.lastFetchedFrom);
             }
             return true;
         }catch(err) {
@@ -289,7 +326,7 @@ const actions = {
 
             const fieldsToReplace = {
                 fullfilled_by: titleCard,
-                connectedOrCreated: "created",
+                completionStatus: "created",
                 status: true
             };
             commit("createTemplateResource", { titleKey: titleCard, nodeObject: nodeTarget });
@@ -306,7 +343,7 @@ const actions = {
             const { requirement, titleKey } = rootGetters.getRequirementSelected;
             const fieldsToReplace = {
                 fullfilled_by: nodeTitle,
-                connectedOrCreated: "connected",
+                completionStatus: "connected",
                 status: true
             };
             commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.title, fieldsToReplace });

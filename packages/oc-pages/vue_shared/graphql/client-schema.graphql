@@ -5,6 +5,7 @@ extend type ApplicationBlueprint {
         overview: Overview! @client
 }
 
+
 type Overview {
   """
   Number of Deployments
@@ -126,12 +127,12 @@ type Input {
   """
   Value of input
   """
-  value: JSON
+  value: String
 
   """
   Value of input
   """
-  default: JSON
+  default: String
 
   """
   Value of input
@@ -286,25 +287,7 @@ type ServiceToConnect {
 ######## new schema ###########
 ###############################
 
-type NewApplicationBlueprint {
-  
-  primary: ResourceType!
 
-  """
-  Live preview url from unfurl file
-  """
-  livePreview: String
-
-  """
-  Name of the project (without namespace).
-  """
-  name: String!
-
-  """
-  Source code url
-  """
-  sourceCodeUrl: String
-}
 
 type DeploymentTemplate {
   """
@@ -312,7 +295,7 @@ type DeploymentTemplate {
   """
   description: String
 
-  blueprint: ApplicationBlueprint!
+  blueprint: NewApplicationBlueprint!
 
   """
   Required cloud provider
@@ -451,4 +434,29 @@ enum State {
   Starting
   Stopped
   Stopping
+}
+
+extend type Template {
+  resourceTemplates: [ResourceTemplate!]
+}
+
+type NewApplicationBlueprint {
+  primary: ResourceType!
+  overview: Overview!
+  #resources: [Resource!] @client
+}
+extend type Query {
+  """Do I really need documentation for this?"""
+  newApplicationBlueprint(
+    """
+    The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
+    """
+    fullPath: ID!
+  ): NewApplicationBlueprint
+
+  deploymentTemplate(
+    fullPath: ID!
+  ): DeploymentTemplate
+
+  servicesToConnect: [ServiceToConnect!]
 }

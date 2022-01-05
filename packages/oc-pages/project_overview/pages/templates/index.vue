@@ -256,6 +256,8 @@ export default {
     },
 
     async fetchItems() {
+        this.activeSkeleton = true
+        
         try {
           const { overview } = await this.$store.dispatch('fetchTemplateBySlug', {
             projectPath: this.$projectGlobal.projectPath,
@@ -266,6 +268,8 @@ export default {
           }
         } catch (e) {
           createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        } finally {
+          this.activeSkeleton = false
         }
     },
 
@@ -385,7 +389,6 @@ export default {
         }
         return nword + 'ing';
       }
-      // eslint-disable-next-line @gitlab/require-i18n-strings
       return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b> ? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other (nodes ?) which are linked to it.`;
     },
 
@@ -401,7 +404,8 @@ export default {
 </script>
 <template>
   <div>
-    <div v-if="Object.keys(getTemplate).length > 0 && getPrimaryCard !== undefined && !activeSkeleton" :key="componentKey">
+    <!--div v-if="Object.keys(getTemplate).length > 0 && getPrimaryCard !== undefined && !activeSkeleton" :key="componentKey"-->
+    <div v-if="!activeSkeleton" :key="componentKey">
 
       <!-- Header of templates -->
       <oc-template-header
@@ -417,7 +421,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <oc-inputs :main-inputs="getPrimaryCard.inputs" :component-key="1" />
+            <oc-inputs :main-inputs="getPrimaryCard.properties" :component-key="1" />
 
             <!-- Requirements List -->
             <oc-list

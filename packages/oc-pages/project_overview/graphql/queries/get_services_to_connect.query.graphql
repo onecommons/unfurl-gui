@@ -1,19 +1,11 @@
-query getServicesToConnect($projectPath: ID!) {
-  applicationBlueprint(fullPath: $projectPath) {
+query getServicesToConnect {
+  servicesToConnect {
     __typename
-    json
-    overview @client {
-      __typename
-      id
-      servicesToConnect {
-        __typename
-        name
-        value
-        avatar
-        description
-        platform
-        type
-      }
-    }
+    name
+    value
+    avatar
+    description
+    platform
+    type
   }
 }

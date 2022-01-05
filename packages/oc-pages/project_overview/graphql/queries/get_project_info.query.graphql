@@ -4,47 +4,93 @@
 #import "../fragments/environment_item.fragment.graphql"
 #import "../fragments/template_item.fragment.graphql"
 #import "../fragments/resource_item.fragment.graphql"
+#import "../fragments/resource_type.fragment.graphql"
+
+#query getProjectInfo($projectPath: ID!, $searchBySlug: String) {
+#    newApplicationBlueprint(fullPath: $projectPath) {
+#      __typename
+#      primary {
+#
+#      }
+#      overview {
+#        __typename
+#        id
+#        description
+#        fullPath
+#        name
+#        webUrl
+#        image
+#        livePreview
+#        sourceCodeUrl
+#        deployments
+#        title
+#        inputs {
+#          __typename
+#          ...InputItems
+#        }
+#        outputs {
+#          __typename
+#          ...OutputItems
+#        }
+#        requirements {
+#          __typename
+#          ...RequirementItem
+#        }
+#        environments {
+#          __typename
+#          ...EnvironmentItem
+#        }
+#        templates(searchBySlug: $searchBySlug){
+#          __typename
+#          ...TemplateItem
+#        }
+#        resources {
+#          __typename
+#          ...ResourceItem
+#        }
+#    }
+#  }
+#}
+
 
 query getProjectInfo($projectPath: ID!) {
-    applicationBlueprint(fullPath: $projectPath) {
+  newApplicationBlueprint(fullPath: $projectPath) {
+    __typename
+    primary {
       __typename
-      json
-      overview @client {
-        __typename
-        id
-        description
-        fullPath
-        name
-        webUrl
-        image
-        livePreview
-        sourceCodeUrl
-        deployments
+      name
+      properties { # analogous to inputs
+      title
+      value
+      instructions
+      }
+      outputs {
         title
-        inputs {
-          __typename
-          ...InputItems
-        }
-        outputs {
-          __typename
-          ...OutputItems
-        }
-        requirements {
-          __typename
-          ...RequirementItem
-        }
-        environments {
-          __typename
-          ...EnvironmentItem
-        }
-        templates {
-          __typename
-          ...TemplateItem
-        }
-        resources {
-          __typename
-          ...ResourceItem
-        }
+        #no value field
+        instructions
+      }
+      requirements { #assuming we don't want to recurse further
+      resourceType {...ResourceTypes}
+      }
     }
+    overview {
+      id
+      title
+      description
+      livePreview
+      name
+      sourceCodeUrl
+      webUrl
+    }
+
+  }
+  servicesToConnect {
+    __typename
+    name
+    value
+    avatar
+    description
+    platform
+    type
   }
 }

@@ -1,17 +1,48 @@
 
 #import "../fragments/template_item.fragment.graphql"
+#import "../fragments/resource_type.fragment.graphql"
+#import "../fragments/input_item.fragment.graphql"
 
-query getTemplateBySlug($projectPath: ID!) {
-  applicationBlueprint(fullPath: $projectPath) {
-      __typename
-      json
-      overview @client {
-        __typename
-        id
-        templates {
-          __typename
-          ...TemplateItem
-        }
+#query getTemplateBySlug($projectPath: ID!) {
+#  applicationBlueprint(fullPath: $projectPath) {
+#      __typename
+#      json
+#      overview @client {
+#        __typename
+#        id
+#        templates {
+#          __typename
+#          ...TemplateItem
+#        }
+#    }
+#  }
+#}
+
+query getTemplateBySlug($projectPath: ID!, $projectSlug: String) {
+  newApplicationBlueprint(fullPath: $projectPath) {
+    __typename
+    primary {
+      name
+      properties {...InputItems}
+      requirements {
+        name
+        description
+        resourceType {...ResourceTypes}
+        min
+        max
+      }
     }
+    overview {
+      id
+      title
+      livePreview
+      name
+      sourceCodeUrl
+      webUrl
+      templates(searchBySlug: $projectSlug) {
+        ...TemplateItem
+      }
+    }
+
   }
 }

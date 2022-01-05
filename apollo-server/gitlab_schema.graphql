@@ -23964,10 +23964,10 @@ type Template {
   """
   environment: String
 
-  """
-  Template requirements
-  """
-  resourceTemplates: JSON
+  #"""
+  #Template requirements
+  #"""
+  #resourceTemplates: JSON
 
   """
   Slug of template

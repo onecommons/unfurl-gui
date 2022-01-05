@@ -104,7 +104,7 @@ const mutations = {
         _state.projectInfo = { ...projectInfo };
     },
 
-    SET_TEMPLATE_SELECTED(_state, { template }) {
+    SET_TEMPLATE_SELECTED(_state,  template) {
         // eslint-disable-next-line no-param-reassign
         _state.template = {...template};
     },
@@ -183,8 +183,12 @@ const actions = {
             errorPolicy: 'all',
             variables: { projectPath, defaultBranch },
         });
-        const overview = data.applicationBlueprint.overview;
-        const {  id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
+        const overview = data.newApplicationBlueprint.overview;
+        // NOTE we don't have title,image
+        const fullPath = projectPath
+        const {  id ,description, name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
+        //const {  id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
+        //commit('SET_PROJECT_INFO', { id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl});
         commit('SET_PROJECT_INFO', { id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl});
         if(!errors) {
             commit('SET_PROJECT_INFO', overview);
@@ -200,15 +204,15 @@ const actions = {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getTemplateBySlug,
             errorPolicy: 'all',
-            variables: { projectPath },
+            variables: { projectPath, templateSlug },
         });
         if (errors) {
             throw new Error(errors.map(e => e).join(", "));
         }
-        const match = _.find(data.applicationBlueprint.overview.templates, { slug: templateSlug });
-        const template = { ...match };
-        if(Object.keys(template).length > 0) commit("SET_TEMPLATE_SELECTED", {template});
-        if(Object.keys(template).length > 0) dispatch('setResourcesOfTemplate', template.resourceTemplates, {root: true});
+        //const match = _.find(data.applicationBlueprint.overview.templates, { slug: templateSlug });
+        const template = { ...data.newApplicationBlueprint.overview.templates[0] };
+        if(Object.keys(template).length > 0) commit("SET_TEMPLATE_SELECTED", template);
+        //if(Object.keys(template).length > 0) dispatch('setResourcesOfTemplate', template, {root: true});
         return data.applicationBlueprint;
     },
 
@@ -226,16 +230,18 @@ const actions = {
     },
 
     async fetchServicesToConnect({ commit }, { projectPath }) {
+        //const {errors, data} = await graphqlClient.clients.defaultClient.query({
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
-            query: getServicesToConnect,
+            query: getServicesToConnect, //TODO don't query entire blueprint here
             errorPolicy: 'all',
-            variables: { projectPath },
+            //variables: { projectPath },
         });
         if (errors) {
             throw new Error(errors.map(e => e).join(", "));
         }
 
-        const services = [...data.applicationBlueprint.overview.servicesToConnect];
+        //const services = [...data.applicationBlueprint.overview.servicesToConnect];
+        const services = data.servicesToConnect
         commit("SET_SERVICES_TO_CONNECT", services);
         return services;
 

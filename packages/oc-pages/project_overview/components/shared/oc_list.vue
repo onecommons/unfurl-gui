@@ -47,6 +47,7 @@ export default {
     data() {
         return {
             resourceName: '',
+            DEFAULT_ACTION_LABEL: 'Add a new provider'
         }
     },
 
@@ -81,13 +82,20 @@ export default {
             bus.$emit('placeTempRequirement');
         },
 
+        //TODO add an option to add a new service
         openDeleteModal(title, action=__("Remove")) {
             bus.$emit('deleteNode', {title, level: this.level, titleKey: this.titleKey, action});
         },
 
-        getRemoveOrDisconnectLabel(requirement) {
-            if(!requirement.connectedOrCreated) return '';
-            return requirement.connectedOrCreated === "connected" ? __('Disconnect') : __("Remove")
+        //TODO 
+        getCurrentActionLabel(requirement) {
+            //if(!requirement.completionStatus) return '';
+            switch(requirement.completionStatus) {
+              case 'connected': return __('Disconnect')
+              case 'created': return __('Remove')
+              default: return __(this.DEFAULT_ACTION_LABEL)
+            }
+            //return requirement.completionStatus === "connected" ? __('Disconnect') : __("Remove")
         },
 
         hasTemplateResources({type}) {
@@ -97,6 +105,7 @@ export default {
         },
 
         hasResourcesToConnect({type}) {
+          console.log(this.servicesToConnect)
             const result = this.servicesToConnect.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
             if(result.length > 0) return true;
             return false;
@@ -128,10 +137,15 @@ export default {
                             class="gl-responsive-table-row oc_table_row">
                             <div
                                 class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
-                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.title)" />
-                                <span class="text-break-word title">{{  showTypeFirst ? requirement.type : requirement.title }}</span>
+                                <!-- 
+                                  NOTE not sure if this shoulde be requirement.name
+                                  this wasn't fun to debug the first time
+                                -->
+                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.resourceType.name)" />
+                                <span class="text-break-word title">{{ requirement.resourceType.name }}</span>
+                                <!--span class="text-break-word title">{{  showTypeFirst ? requirement.type : requirement.name }}</span-->
                                 <div class="oc_requirement_description gl-mb-2">
-                                {{ requirement.description }}
+                                {{ requirement.resourceType.description }}
                                 </div>
                             </div>
                             <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
@@ -162,10 +176,10 @@ export default {
                             </div>
 
                             <div
-                                v-if="requirement.fullfilled_by !== null"
+                                v-if="requirement.fullfilled_by/*requirement.fullfilled_by !== null*/"
                                 class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
                                 <gl-button
-                                v-if="getRemoveOrDisconnectLabel(requirement) !== 'Disconnect'"
+                                v-if="getCurrentActionLabel(requirement) !== 'Disconnect'"
                                     title="edit"
                                     :aria-label="__(`edit`)"
                                     type="button"
@@ -173,13 +187,13 @@ export default {
                                     @click.prevent="findElementToScroll({requirement})"
                                     >{{ __('Edit') }}</gl-button>
                                 <gl-button
-                                    title="edit"
-                                    :aria-label="__(`edit`)"
+                                    :title="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
+                                    :aria-label="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
                                     type="button"
                                     class="gl-ml-3 oc_requirements_actions"
-                                    @click.prevent="openDeleteModal(requirement.fullfilled_by, getRemoveOrDisconnectLabel(requirement))">
+                                    @click.prevent="openDeleteModal(requirement.fullfilled_by, getCurrentActionLabel(requirement))">
                                     {{
-                                        getRemoveOrDisconnectLabel(requirement) 
+                                        getCurrentActionLabel(requirement) 
                                     }}</gl-button>
                             </div>
                             <div

@@ -1,3 +1,12 @@
+fragment ResourceTemplates on ResourceTemplate {
+  name
+  title
+  type {
+    name
+  }
+  description
+
+}
 fragment TemplateItem on Template {
     title
     slug
@@ -7,5 +16,8 @@ fragment TemplateItem on Template {
     totalDeployments
     url
     type
-    resourceTemplates
+    #resourceTemplates
+    resourceTemplates {
+      ...ResourceTemplates
+    }
 }

@@ -5,3 +5,11 @@ fragment InputItems on Input {
     required
     default
 }
+
+fragment InputItems on Properties {
+    instructions
+    title
+    value
+    required
+    default
+}

@@ -8,6 +8,7 @@ export default {
 
     async beforeCreate() {
         try {
+            await this.$store.dispatch('fetchTemplateResources', { projectPath: this.$projectGlobal.projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
             await this.$store.dispatch('fetchProjectInfo', { projectPath: this.$projectGlobal.projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
             await this.$store.dispatch('fetchEnvironments', { projectPath: this.$projectGlobal.projectPath});
             await this.$store.dispatch('fetchServicesToConnect', {projectPath: this.$projectGlobal.projectPath});

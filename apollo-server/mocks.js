@@ -2,6 +2,36 @@
 // Customize mocking: https://www.apollographql.com/docs/graphql-tools/mocking.html#Customizing-mocks
 
 const unfurl_json = require("./unfurl.json");
+/*
+function* resourceTypeIter() {
+  let i = 0;
+  const values = [
+    {name: 'Compute'},
+    {name: 'MongoDB'},
+    {name: 'DNS'}, 
+    {name: 'Mail'}, 
+  ]
+  while(true) {
+    const value =  values[i++ % values.length]
+    console.log({value})
+    yield value
+  }
+}
+
+const resourceTypes = resourceTypeIter()
+
+*/
+
+function* sampleFrom(arr) {
+  let i = 0;
+  while(true) {
+    const value =  arr[i++ % arr.length]
+    yield value
+  }
+}
+
+const resourceNames = sampleFrom(['Compute', 'MongoDB', 'DNS', 'Mail'])
+
 
 export default {
   // Mock resolvers here
@@ -13,6 +43,26 @@ export default {
     "path": "/root/test/-/environments/1",
     "state": "available",
   }),
+  
+  String: (_0, _1, _2, {path}) => {
+    const {key, typename} = path
+    console.log({key,typename})
+    if(key == 'name' && typename == 'ResourceType') {
+      const result = resourceNames.next()
+      console.log({result})
+      return result.value
+
+    }
+    return `Hello ${typename}.${key}`
+  }
+
+  /*
+  ResourceType: (...args) => {
+    console.log(args[3])
+    return resourceTypes.next()
+  }
+  */
+
   
   /*
   Template: () => ({

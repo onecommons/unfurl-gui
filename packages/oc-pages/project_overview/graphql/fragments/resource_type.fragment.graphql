@@ -1,0 +1,8 @@
+fragment ResourceTypes on ResourceType{
+  __typename
+  name #analogous to requirement.type?
+  title
+  description
+  badge
+}
+
