@@ -41625,6 +41625,38 @@
               },
               "isDeprecated": false,
               "deprecationReason": null
+            },
+            {
+              "name": "json",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "JSON",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "deployments",
+              "description": "Deployments deployed into this environment",
+              "args": [],
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Deployment",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
             }
           ],
           "inputFields": null,
@@ -41679,7 +41711,7 @@
         },
         {
           "kind": "OBJECT",
-          "name": "ApplicationBlueprint",
+          "name": "ApplicationBlueprintProject",
           "description": null,
           "fields": [
             {
@@ -41740,6 +41772,22 @@
                 "ofType": {
                   "kind": "OBJECT",
                   "name": "Overview",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "applicationBlueprint",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ApplicationBlueprint",
                   "ofType": null
                 }
               },
@@ -51487,7 +51535,7 @@
               ],
               "type": {
                 "kind": "OBJECT",
-                "name": "ApplicationBlueprint",
+                "name": "ApplicationBlueprintProject",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -71131,7 +71179,7 @@
         },
         {
           "kind": "OBJECT",
-          "name": "NewApplicationBlueprint",
+          "name": "ApplicationBlueprint",
           "description": null,
           "fields": [
             {
@@ -71151,13 +71199,42 @@
               "deprecationReason": null
             },
             {
-              "name": "livePreview",
-              "description": "Live preview url from unfurl file",
-              "args": [],
+              "name": "deploymentTemplates",
+              "description": "Public deployment templates",
+              "args": [
+                {
+                  "name": "searchBySlug",
+                  "description": "If we want to search template by slug.",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "searchByTitle",
+                  "description": "If we want to search template by title.",
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
               "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "DeploymentTemplate",
+                    "ofType": null
+                  }
+                }
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -71174,6 +71251,18 @@
                   "name": "String",
                   "ofType": null
                 }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "livePreview",
+              "description": "Live preview url from unfurl file",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -71231,7 +71320,7 @@
             },
             {
               "name": "cloud",
-              "description": "Required cloud provider",
+              "description": "Required cloud provider\n\nTODO: should be ResourceType",
               "args": [],
               "type": {
                 "kind": "SCALAR",
@@ -71730,7 +71819,7 @@
             },
             {
               "name": "environment",
-              "description": "Environment",
+              "description": "Environment (maybe?)",
               "args": [],
               "type": {
                 "kind": "OBJECT",
@@ -71797,13 +71886,17 @@
               "deprecationReason": null
             },
             {
-              "name": "blueprint",
+              "name": "deploymentTemplate",
               "description": null,
               "args": [],
               "type": {
-                "kind": "OBJECT",
-                "name": "ApplicationBlueprint",
-                "ofType": null
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "DeploymentTemplate",
+                  "ofType": null
+                }
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -71889,18 +71982,6 @@
               "type": {
                 "kind": "SCALAR",
                 "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "deployment",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "OBJECT",
-                "name": "Deployment",
                 "ofType": null
               },
               "isDeprecated": false,

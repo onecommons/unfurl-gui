@@ -10473,6 +10473,10 @@ type OcEnvironment {
 
   """Name of environment"""
   name: String!
+  json: JSON
+
+  """Deployments deployed into this environment"""
+  deployments: [Deployment!]
 }
 
 """Input type for Oc input"""
@@ -10487,7 +10491,7 @@ input InputInput {
   value: String
 }
 
-type ApplicationBlueprint {
+type ApplicationBlueprintProject {
   """Full path of the project."""
   fullPath: ID!
 
@@ -10499,6 +10503,7 @@ type ApplicationBlueprint {
 
   """Oc Project Overview"""
   overview: Overview!
+  applicationBlueprint: ApplicationBlueprint!
 }
 
 """
@@ -13135,7 +13140,7 @@ type Query {
     The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
     """
     fullPath: ID!
-  ): ApplicationBlueprint
+  ): ApplicationBlueprintProject
 
   """Find a package."""
   package(
@@ -18301,14 +18306,23 @@ type ServiceToConnect {
   value: String
 }
 
-type NewApplicationBlueprint {
+type ApplicationBlueprint {
   primary: ResourceType!
 
-  """Live preview url from unfurl file"""
-  livePreview: String
+  """Public deployment templates"""
+  deploymentTemplates(
+    """If we want to search template by slug."""
+    searchBySlug: String
+
+    """If we want to search template by title."""
+    searchByTitle: String
+  ): [DeploymentTemplate!]
 
   """Name of the project (without namespace)."""
   name: String!
+
+  """Live preview url from unfurl file"""
+  livePreview: String
 
   """Source code url"""
   sourceCodeUrl: String
@@ -18319,7 +18333,11 @@ type DeploymentTemplate {
   description: String
   blueprint: ApplicationBlueprint!
 
-  """Required cloud provider"""
+  """
+  Required cloud provider
+  
+  TODO: should be ResourceType
+  """
   cloud: String
 
   """Slug of template"""
@@ -18378,13 +18396,13 @@ type Deployment {
   """Title of template"""
   title: String!
 
-  """Environment"""
+  """Environment (maybe?)"""
   environment: OcEnvironment
   primary: Resource
   resources: [Resource!]
   job: Job
   ready: Boolean
-  blueprint: ApplicationBlueprint
+  deploymentTemplate: DeploymentTemplate!
   sourceDeploymentTemplateName: String
 
   """Live preview url from unfurl file"""
@@ -18399,7 +18417,6 @@ type Job {
 type Resource {
   name: String!
   url: String
-  deployment: Deployment
   template: ResourceTemplate!
   status: Status
   state: State

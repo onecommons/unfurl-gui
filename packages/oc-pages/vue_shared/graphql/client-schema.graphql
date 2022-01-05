@@ -1,8 +1,18 @@
-extend type ApplicationBlueprint {
+extend type  ApplicationBlueprintProject {
         """
         Oc Project Overview
         """
         overview: Overview! @client
+        applicationBlueprint: ApplicationBlueprintProject! @client
+}
+
+extend type OcEnvironment {
+  """
+  Deployments deployed into this environment
+  """
+  deployments: [Deployment!] @client
+
+  # TODO: replace cloud: string with cloud: ResourceType @client
 }
 
 
@@ -288,17 +298,18 @@ type ServiceToConnect {
 ###############################
 
 
-
 type DeploymentTemplate {
   """
   Description of template
   """
   description: String
 
-  blueprint: NewApplicationBlueprint!
+  blueprint: ApplicationBlueprint!
 
   """
   Required cloud provider
+
+  TODO: should be ResourceType
   """
   cloud: String
 
@@ -376,7 +387,7 @@ type Deployment {
   title: String!
 
   """
-  Environment
+  Environment (maybe?)
   """
   environment: OcEnvironment
 
@@ -387,7 +398,7 @@ type Deployment {
   job: Job
   ready: Boolean
 
-  blueprint: ApplicationBlueprint
+  deploymentTemplate: DeploymentTemplate!
   sourceDeploymentTemplateName: String
 
   """
@@ -404,7 +415,6 @@ type Job {
 type Resource {
   name: String!
   url: String
-  deployment: Deployment
   template: ResourceTemplate!
   status: Status
   state: State
@@ -440,7 +450,7 @@ extend type Template {
   resourceTemplates: [ResourceTemplate!]
 }
 
-type NewApplicationBlueprint {
+type ApplicationBlueprint {
   primary: ResourceType!
   overview: Overview!
   #resources: [Resource!] @client
@@ -452,7 +462,7 @@ extend type Query {
     The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
     """
     fullPath: ID!
-  ): NewApplicationBlueprint
+  ): ApplicationBlueprint
 
   deploymentTemplate(
     fullPath: ID!
