@@ -12,11 +12,11 @@ export default {
         //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
         // demo/apostrophe-demo
         return db.get('projects').value()[args.fullPath]
-    }
+    }      
   },
 
   // fields with JSON type need explicit resolvers
-  ApplicationBlueprint: {
+  ApplicationBlueprintProject: {
     json: (obj, args, { }) => obj
   },    
   

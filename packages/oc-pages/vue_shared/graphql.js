@@ -80,7 +80,7 @@ function patchTypenameInArr(typename, overview, args, ctx, info) {
 
 export const resolvers = {
 
-    ApplicationBlueprint: {
+    ApplicationBlueprintProject: {
         overview: (root, variables, { cache }, info) => {
             // query must retrieve the json field
             root.json.__typename = 'Overview';

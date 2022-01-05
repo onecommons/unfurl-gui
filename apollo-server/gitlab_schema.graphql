@@ -16100,6 +16100,8 @@ type OcEnvironment {
   Name of environment
   """
   name: String!
+
+  json: JSON
 }
 
 """
@@ -16122,7 +16124,7 @@ input InputInput {
   value: String
 }
 
-type ApplicationBlueprint {
+type ApplicationBlueprintProject {
   """
   Full path of the project.
   """
@@ -20145,7 +20147,7 @@ type Query {
     The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
     """
     fullPath: ID!
-  ): ApplicationBlueprint
+  ): ApplicationBlueprintProject
 
   """
   Find a package.
