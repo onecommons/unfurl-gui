@@ -1,11 +1,27 @@
 <template>
-  <div class="hello">
-    <FormProvider :form="form" style="height: 100vh">
-      <SchemaField :schema="schema"/>
-      <span style="display: flex;justify-content: center">
+  <div class="container">
+    <div class="json-editor">
+      <gl-form-textarea
+          :value="sourceSchema"
+          placeholder="source-json-schema"
+      />
+      <gl-button
+          category="primary"
+          variant="default"
+          size="medium"
+          @click="convert"
+      >
+        Convert
+      </gl-button>
+    </div>
+    <div>
+      <FormProvider :form="form" style="height: 100vh">
+        <SchemaField :schema="schema"/>
+        <span style="display: flex;justify-content: center">
     <Submit @submit="onSubmit">submit</Submit>
    </span>
-    </FormProvider>
+      </FormProvider>
+    </div>
   </div>
 </template>
 
@@ -26,6 +42,7 @@ import {
   Editable,
   Space
 } from "@formily/element";
+import {GlButton, GlFormTextarea, GlToast} from "@gitlab/ui";
 
 setValidateLanguage('en-US');
 
@@ -231,21 +248,7 @@ const schema = {
   }
 }
 
-const form = createForm({
-      initialValues: {
-        confirm: true,
-        checkbox: ['A', 'C'],
-        config: {
-          id: 'test',
-          name: 'test',
-          describe: 'test'
-        },
-        recursive: [
-          {input: 'test', select: 1}
-        ]
-      } // set form's values
-    }
-)
+const form = createForm({})
 const fields = createSchemaField({
   components: {
     FormLayout,
@@ -261,23 +264,139 @@ const fields = createSchemaField({
     Editable
   },
 })
+
+const ComponentMap = {
+  string: 'Input',// ? password/select/
+  boolean: 'Checkbox', // ?? 怎么区分Checkbox/Radio/
+  number: 'InputNumber',
+  enum: 'Select',
+  object: 'Editable.Popover',
+};
+
+
 export default {
-  components: {FormProvider, ...fields, Submit},
+  components: {
+    FormProvider, ...fields, Submit,
+    GlButton,
+    GlFormTextarea,
+  },
+
   data() {
     return {
       form,
-      schema
+      schema,
+      sourceSchema: '\n' +
+          '{\n' +
+          '  "type": "object",\n' +
+          '  "properties": {\n' +
+          '  "checkboxField": {\n' +
+          '    "type": "boolean"\n' +
+          '  },\n' +
+          '  "selectField": {\n' +
+          '    "type": "string",\n' +
+          '      "enum": ["A", "B", "C"]\n' +
+          '  },\n' +
+          '  "defaultValueField": {\n' +
+          '    "type": "string",\n' +
+          '      "default": "defaultValue"\n' +
+          '  },\n' +
+          '  "numberInputField": {\n' +
+          '    "type": "number"\n' +
+          '  },\n' +
+          '  "readonlyField": {\n' +
+          '    "const": "readonly"\n' +
+          '  },\n' +
+          '  "hiddenField": {\n' +
+          '    "const": null\n' +
+          '  },\n' +
+          '  "sensitiveField": {\n' +
+          '    "type": "string",\n' +
+          '      "sensitive": true\n' +
+          '  },\n' +
+          '  "recursiveField": {\n' +
+          '    "type": "object",\n' +
+          '      "properties": {\n' +
+          '      "nestedField": {\n' +
+          '        "type": "string"\n' +
+          '      },\n' +
+          '      "test": {\n' +
+          '        "type": "string"\n' +
+          '      }\n' +
+          '    }\n' +
+          '  }\n' +
+          '}\n' +
+          '}'
     }
   },
   methods: {
     onSubmit(value) {
       // handle form values
       console.log(value);
-    }
+    },
+    convertProperties(properties) {
+      const temp = {};
+      Object.keys(properties).forEach(i => {
+        //default string
+        let componentType = properties[i].type || 'string';
+        // Special Handle Enum
+        if (componentType === 'object') {
+          temp[i] = {
+            type: componentType,
+            title: i,
+            'x-decorator': 'FormItem',
+            'x-component': ComponentMap[i],
+            'x-component-props': {
+              title: i,
+            },
+            properties: this.convertProperties(properties[i].properties),
+          };
+        } else {
+          // json type is no enum filed,so containing enum fields is render Select;
+          if (properties[i].enum) {
+            componentType = 'enum';
+          }
+          temp[i] = {
+            type: properties[i].type || 'string',
+            title: i,
+            'x-decorator': 'FormItem',
+            'x-component': ComponentMap[componentType],
+          };
+          if (componentType === 'enum') {
+            temp[i].enum = properties[i].enum;
+          }
+        }
+      });
+      return temp;
+    },
+    convert() {
+      const source = JSON.parse(this.sourceSchema);
+      const formilyJSON = {};
+      if (source.type !== 'object' && !source.properties) {
+        return;
+      }
+      formilyJSON.type = 'object';
+      const properties = source.properties;
+      formilyJSON.properties = this.convertProperties(properties);
+      this.schema = formilyJSON;
+    },
+
   }
 };
 </script>
 
-<style scoped>
+<style scoped type="less">
+.container {
+  display: flex;
+  height: 100VH;
+  width: 100%;
+}
 
+.json-editor {
+  width: 50%;
+  margin-right: 50px;
+}
+
+.gl-form-textarea {
+  height: 100%;
+}
 </style>
