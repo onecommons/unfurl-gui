@@ -271,6 +271,7 @@ const ComponentMap = {
   number: 'InputNumber',
   enum: 'Select',
   object: 'Editable.Popover',
+  password: 'Password',
 };
 
 
@@ -354,6 +355,8 @@ export default {
           // json type is no enum filed,so containing enum fields is render Select;
           if (properties[i].enum) {
             componentType = 'enum';
+          } else if (properties[i].sensitive) {
+            componentType = 'password';
           }
           temp[i] = {
             type: properties[i].type || 'string',
@@ -361,8 +364,21 @@ export default {
             'x-decorator': 'FormItem',
             'x-component': ComponentMap[componentType],
           };
+
           if (componentType === 'enum') {
             temp[i].enum = properties[i].enum;
+          }
+
+          if (properties[i].default) {
+            temp[i].default = properties[i].default;
+          }
+
+          if (properties[i].const === null) {
+            temp[i]['x-hidden'] = true;
+          }
+
+          if (properties[i].const === 'readonly') {
+            temp[i]['x-read-only'] = true;
           }
         }
       });
