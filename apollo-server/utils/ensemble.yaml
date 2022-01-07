@@ -1,0 +1,150 @@
+# Requirements:
+
+# - source -> artifact
+# - compute (ec2 / gcp / kubernetes )
+# - MongoDB (self-hosted / amazon / atlas)
+# - dns (route53 / godaddy / googledns )
+
+# Resource templates:
+
+# * compute
+# - Amazon EC2
+# - GCP
+
+# * MongoDB:
+# - Self-hosted
+# - Amazon DocumentDB
+# - MongoDB Atlas service
+
+apiVersion: unfurl/v1alpha1
+kind: Ensemble
+spec:
+  inputs:
+      # added to cloud init
+      env_url: {get_env: CI_API_URL}
+      env_token: {get_env: CI_TOKEN}
+      image: {get_env: CI_REGISTRY_IMAGE}
+      domain: foo.com
+
+  service_template:
+    template_name: Apostrophe Demo
+    metadata:
+      "livePreview": "https://demo-apostrophe-demo.dev3.unfurl.cloud/"
+      "image": "https://app.dev2.unfurl.cloud/demo/apostrophe-demo/-/raw/dc4b22d93e34ef232573f5a4223d0e76b8a92433/.unfurl/Screen_Shot_2021-09-15_at_1.02.07_PM.png"
+      "sourceCodeUrl": "https://github.com/aszs/apostrophe-sandbox.git"
+      "deployments": 164
+      "webUrl": "https://github.com/aszs/apostrophe-sandbox"
+      
+    node_types:
+      Base:
+        derived_from: tosca.nodes.Root
+        # properties: 
+        #   platform: 
+
+      Compute:
+        derived_from: Base
+        metadata:
+          badge: COMPUTE
+        properties: 
+          CPUs:
+            type: integer
+          Memory:
+            type: number
+          storage:
+            type: number
+
+      MongoDb:
+        derived_from: Base
+        metadata:
+          badge: Database        
+
+      Atlas:
+        derived_from: MongoDb
+        properties:
+          login: 
+            type: string
+          password:
+            metadata:
+              sensitive: true
+            type: string
+      
+      SelfHostedMongoDb:
+        derived_from: MongoDb        
+        requirements:
+          host: Compute
+
+      DNS:
+        derived_from: Base
+        "description": "DNS provider for domain name configuration"
+        metadata:
+          badge: DNS 
+
+      Mail:
+        derived_from: Base
+        "description": "Mail server to use for sending mail (optional)"
+        metadata:
+          title: Mail Server
+          badge: MAIL        
+
+      DockerHost:
+        derived_from: Compute
+
+      MEANStack:
+        properties:
+          image: 
+            type: string
+          domain:
+            type: string
+        requirements:
+          - host: 
+              "description": "A compute instance with at least 512MB RAM"
+              node: Compute
+          - resolver: DNSZone
+          - db: 
+              node: MongoDb
+              "description": "MongoDB database service"
+          - mail: Mail
+    
+
+    topology_template:
+      inputs:
+        domain: 
+          type: string
+          description: "the domain"
+
+      node_templates:
+        # generated from deployment template:
+
+        the_app:
+          type: MEANStack
+            # artifact:
+            #   source: the_app
+            # Standard:
+            #   configure: docker build
+          properties:
+            image: the_app_image
+            domain: {get_input: domain}
+          requirements:
+          - host: Compute
+          - resolver: DNSZone
+          - db: MongoDb
+  
+        app_container:
+            type: DockerHost
+            artifacts:
+              image: the_app_image
+            requirements:
+              - dns: dnszone
+
+        atlas_service:
+          type: Atlas
+
+        # dnszone.com:
+        #   type: DNSZone
+        #   properties:
+        #     domain: {get_input: domain}
+
+
+  
+  
+  

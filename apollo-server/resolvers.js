@@ -17,7 +17,10 @@ export default {
     */
 
     unfurlRootBlob(root, args, {db}){
-      const result = db.get('projects').value()[args.fullPath]
+      let result = {}
+      if(args.fullPath == 'demo/apostrophe-demo')
+        result = db.get('newschema').value()
+
       return result
     }
   },

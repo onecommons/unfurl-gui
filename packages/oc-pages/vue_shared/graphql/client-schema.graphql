@@ -1,8 +1,7 @@
-extend type  ApplicationBlueprintProject {
-        """
-        Oc Project Overview """
+extend type ApplicationBlueprintProject {
+        """ Oc Project Overview """
         overview: Overview! @client
-        applicationBlueprint: ApplicationBlueprintProject! @client
+        applicationBlueprint: ApplicationBlueprint! @client
 }
 
 extend type OcEnvironment {
@@ -296,6 +295,40 @@ type ServiceToConnect {
 ######## new schema ###########
 ###############################
 
+type ApplicationBlueprint {
+  
+  primary: ResourceType!
+
+  """
+  Public deployment templates
+  """
+  deploymentTemplates(
+    """
+    If we want to search template by slug.
+    """
+    searchBySlug: String
+
+    """
+    If we want to search template by title.
+    """
+    searchByTitle: String
+  ): [DeploymentTemplate!]
+
+  """
+  Name of the project (without namespace).
+  """
+  name: String!
+
+  """
+  Live preview url from unfurl file
+  """
+  livePreview: String
+
+  """
+  Source code url
+  """
+  sourceCodeUrl: String
+}
 
 type DeploymentTemplate {
   """
@@ -450,16 +483,7 @@ extend type Template {
   resourceTemplates: [ResourceTemplate!]
 }
 
-type ApplicationBlueprint {
-  primary: ResourceType!
-  name: String!
-  #overview: Overview!
-  deploymentTemplates: [DeploymentTemplate!]
-  
-  #resources: [Resource!] @client
-}
 extend type Query {
-  """Do I really need documentation for this?"""
   newApplicationBlueprint(
     """
     The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.

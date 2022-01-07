@@ -358,7 +358,8 @@ description: String
       required: (obj, args, { }) => obj.required ?? false,
 
       // type JSON
-      schema: (obj, args, { }) => {
+    schema: (obj, args, { }) => {
+        // return self, add minimal json-schema definition if missing
         if (!obj.type) ob.type = "string";
         return obj;
       },
