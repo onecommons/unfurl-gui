@@ -56,7 +56,7 @@
 query getProjectInfo($projectPath: ID!) {
   newApplicationBlueprint(fullPath: $projectPath) {
     __typename
-    primary {
+    primary @client {
       __typename
       name
       properties { # analogous to inputs
@@ -73,15 +73,15 @@ query getProjectInfo($projectPath: ID!) {
       resourceType {...ResourceTypes}
       }
     }
-    overview {
-      id
-      title
-      description
-      livePreview
-      name
-      sourceCodeUrl
-      webUrl
-    }
+    #overview {
+    #  id
+    #  title
+    #  description
+    #  livePreview
+    #  name
+    #  sourceCodeUrl
+    #  webUrl
+    #}
 
   }
   servicesToConnect {

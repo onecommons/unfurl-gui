@@ -1,0 +1,20 @@
+query getUnfurlRoot($fullPath: ID!) {
+  unfurlRootBlob(fullPath: $fullPath) 
+}
+
+query getResourceType($fullPath: ID, $name: String) {
+  resourceType(fullPath: $fullPath, name: $name) @client
+}
+
+query getResourceTemplate($fullPath: ID, $name: String) {
+  resourceTemplate(fullPath: $fullPath, name: $name) @client
+}
+
+query getDeploymentTemplates($fullPath: ID!, $deploymentTemplates: [String]) {
+  deploymentTemplates(deploymentTemplates: $deploymentTemplates, fullPath: $fullPath) @client
+}
+
+#TODO implement name check?
+query getBlueprint($fullPath: ID!, $name: String) {
+  newApplicationBlueprint(fullPath: $fullPath, name: $name) @client
+}

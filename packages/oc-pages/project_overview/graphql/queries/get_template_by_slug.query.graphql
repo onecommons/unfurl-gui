@@ -18,31 +18,109 @@
 #  }
 #}
 
-query getTemplateBySlug($projectPath: ID!, $projectSlug: String) {
-  newApplicationBlueprint(fullPath: $projectPath) {
+#query getTemplateBySlug($projectPath: ID!) {
+#  newApplicationBlueprint(fullPath: $projectPath) @client {
+#    name
+#    deploymentTemplates {
+#      name
+#      blueprint {
+#        name
+#        deploymentTemplates {
+#          name
+#          blueprint {
+#            name
+#          }
+#        }
+#      }
+#    }
+#}
+#}
+
+#query getTemplateBySlug($projectPath: ID!) {
+#  newApplicationBlueprint(fullPath: $projectPath) @client {
+#    __typename
+#    name
+#    primary {
+#      name
+#      properties {...InputItems}
+#      requirements {
+#       name
+#        description
+#        resourceType {...ResourceTypes}
+#        min
+#        max
+#      }
+#      outputs {
+#        instructions
+#        title
+#      }
+#    }
+#    deploymentTemplates {
+#      name
+#      title
+#      cloud
+#      slug
+#      blueprint {
+#        name
+#        primary {
+#          name
+#        }
+#      }
+#      resourceTemplates {
+#        name
+#        title
+#        description
+#        type
+#        properties
+#        outputs
+#        requirements
+#      }
+#      primary
+#    }
+#  }
+#}
+
+query getTemplateBySlug($projectPath: ID!) {
+  newApplicationBlueprint(fullPath: $projectPath) @client {
     __typename
+    name
     primary {
       name
       properties {...InputItems}
       requirements {
-        name
+       name
         description
         resourceType {...ResourceTypes}
         min
         max
       }
-    }
-    overview {
-      id
-      title
-      livePreview
-      name
-      sourceCodeUrl
-      webUrl
-      templates(searchBySlug: $projectSlug) {
-        ...TemplateItem
+      outputs {
+        instructions
+        title
       }
     }
-
+    deploymentTemplates {
+      name
+      title
+      cloud
+      slug
+      blueprint {
+        name
+        primary {
+          name
+        }
+      }
+      resourceTemplates {
+        name
+        title
+        description
+        type
+        properties
+        outputs
+        requirements
+      }
+      primary
+    }
   }
 }
+

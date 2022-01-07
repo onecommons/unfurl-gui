@@ -1,7 +1,6 @@
 extend type  ApplicationBlueprintProject {
         """
-        Oc Project Overview
-        """
+        Oc Project Overview """
         overview: Overview! @client
         applicationBlueprint: ApplicationBlueprintProject! @client
 }
@@ -370,6 +369,7 @@ type ResourceTemplate {
   description: String
   # input has schema and value
   properties: [Input!]
+  outputs: [Output!] # TODO check if this is still a thing
   requirements: [Requirement!]
 }
 
@@ -452,7 +452,10 @@ extend type Template {
 
 type ApplicationBlueprint {
   primary: ResourceType!
-  overview: Overview!
+  name: String!
+  #overview: Overview!
+  deploymentTemplates: [DeploymentTemplate!]
+  
   #resources: [Resource!] @client
 }
 extend type Query {
@@ -464,9 +467,11 @@ extend type Query {
     fullPath: ID!
   ): ApplicationBlueprint
 
-  deploymentTemplate(
-    fullPath: ID!
-  ): DeploymentTemplate
+  
+  unfurlRootBlob(fullPath: ID!): JSON
+  resourceType(name: String): ResourceType
+  resourceTemplate(name: String): ResourceTemplate
+  deploymentTemplates(deploymentTemplates: [String], fullPath: ID!): [DeploymentTemplate]
 
   servicesToConnect: [ServiceToConnect!]
 }

@@ -4,5 +4,10 @@ fragment ResourceTypes on ResourceType{
   title
   description
   badge
+  properties {
+    title
+    required
+    type
+  }
 }
 
