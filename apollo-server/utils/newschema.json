@@ -885,7 +885,7 @@
           "description": "",
           "min": 1,
           "max": 1,
-          "resourceType": "DNSZone"
+          "resourceType": "DNS"
         },
         {
           "name": "db",
@@ -907,6 +907,21 @@
     }
   },
   "ResourceTemplate": {
+    "foo.com-zone": {
+      "type": "DNS",
+      "name": "foo.com-zone",
+      "title": "foo.com-zone",
+      "description": "",
+      "__typename": "ResourceTemplate",
+      "properties": [
+        {
+          "title": "domain",
+          "value": "foo.com"
+        }
+      ],
+      "outputs": [],
+      "requirements": []
+    },
     "the_app": {
       "type": "MEANStack",
       "name": "the_app",
@@ -942,7 +957,7 @@
           },
           "name": "host",
           "__typename": "Requirement",
-          "match": null
+          "match": "app_container"
         },
         {
           "constaint": {
@@ -951,11 +966,11 @@
             "description": "",
             "min": 1,
             "max": 1,
-            "resourceType": "DNSZone"
+            "resourceType": "DNS"
           },
           "name": "resolver",
           "__typename": "Requirement",
-          "match": null
+          "match": "foo.com-zone"
         },
         {
           "constaint": {
@@ -968,7 +983,7 @@
           },
           "name": "db",
           "__typename": "Requirement",
-          "match": null
+          "match": "atlas_service"
         }
       ]
     },
@@ -983,34 +998,24 @@
           "title": "CPUs",
           "required": true,
           "$toscatype": "integer",
-          "type": "number"
+          "type": "number",
+          "value": 2
         },
         {
           "title": "Memory",
           "required": true,
-          "type": "number"
+          "type": "number",
+          "value": 512
         },
         {
           "title": "storage",
           "required": true,
-          "type": "number"
+          "type": "number",
+          "value": 200
         }
       ],
       "outputs": [],
-      "requirements": [
-        {
-          "constaint": {
-            "name": "dns",
-            "min": 1,
-            "max": 1,
-            "resourceType": "tosca.nodes.Root",
-            "__typename": "RequirementConstraint"
-          },
-          "name": "dns",
-          "__typename": "Requirement",
-          "match": null
-        }
-      ]
+      "requirements": []
     },
     "atlas_service": {
       "type": "Atlas",
@@ -1022,13 +1027,15 @@
         {
           "title": "login",
           "required": true,
-          "type": "string"
+          "type": "string",
+          "value": "admin"
         },
         {
           "title": "password",
           "required": true,
           "sensitive": true,
-          "type": "string"
+          "type": "string",
+          "value": "*******"
         }
       ],
       "outputs": [],
@@ -1044,6 +1051,7 @@
       "blueprint": "Apostrophe Demo",
       "primary": "the_app",
       "resourceTemplates": [
+        "foo.com-zone",
         "the_app",
         "app_container",
         "atlas_service"
@@ -1066,5 +1074,173 @@
     "sourceCodeUrl": "https://github.com/aszs/apostrophe-sandbox.git",
     "deployments": 164,
     "webUrl": "https://github.com/aszs/apostrophe-sandbox"
+  },
+  "Resource": {
+    "::app_container": {
+      "name": "::app_container",
+      "title": "app_container",
+      "template": "app_container",
+      "state": 5,
+      "status": 1,
+      "attributes": [],
+      "connections": []
+    },
+    "::the_app": {
+      "name": "::the_app",
+      "title": "the_app",
+      "template": "the_app",
+      "state": null,
+      "status": 4,
+      "attributes": [],
+      "connections": [
+        {
+          "constaint": {
+            "name": "host",
+            "title": "host",
+            "description": "A compute instance with at least 512MB RAM",
+            "min": 1,
+            "max": 1,
+            "resourceType": "Compute"
+          },
+          "name": "host",
+          "__typename": "Requirement",
+          "match": "app_container",
+          "target": "::app_container"
+        },
+        {
+          "constaint": {
+            "name": "resolver",
+            "title": "resolver",
+            "description": "",
+            "min": 1,
+            "max": 1,
+            "resourceType": "DNS"
+          },
+          "name": "resolver",
+          "__typename": "Requirement",
+          "match": "foo.com-zone",
+          "target": "::foo.com-zone"
+        },
+        {
+          "constaint": {
+            "name": "db",
+            "title": "db",
+            "description": "MongoDB database service",
+            "min": 1,
+            "max": 1,
+            "resourceType": "MongoDb"
+          },
+          "name": "db",
+          "__typename": "Requirement",
+          "match": "atlas_service",
+          "target": "::atlas_service"
+        }
+      ]
+    },
+    "::foo.com-zone": {
+      "name": "::foo.com-zone",
+      "title": "foo.com-zone",
+      "template": "foo.com-zone",
+      "state": 5,
+      "status": 1,
+      "attributes": [],
+      "connections": []
+    },
+    "::atlas_service": {
+      "name": "::atlas_service",
+      "title": "atlas_service",
+      "template": "atlas_service",
+      "state": 5,
+      "status": 1,
+      "attributes": [],
+      "connections": []
+    }
+  },
+  "Deployment": {
+    "unnamed": {
+      "title": "unnamed",
+      "resources": [
+        {
+          "name": "::app_container",
+          "title": "app_container",
+          "template": "app_container",
+          "state": 5,
+          "status": 1,
+          "attributes": [],
+          "connections": []
+        },
+        {
+          "name": "::the_app",
+          "title": "the_app",
+          "template": "the_app",
+          "state": null,
+          "status": 4,
+          "attributes": [],
+          "connections": [
+            {
+              "constaint": {
+                "name": "host",
+                "title": "host",
+                "description": "A compute instance with at least 512MB RAM",
+                "min": 1,
+                "max": 1,
+                "resourceType": "Compute"
+              },
+              "name": "host",
+              "__typename": "Requirement",
+              "match": "app_container",
+              "target": "::app_container"
+            },
+            {
+              "constaint": {
+                "name": "resolver",
+                "title": "resolver",
+                "description": "",
+                "min": 1,
+                "max": 1,
+                "resourceType": "DNS"
+              },
+              "name": "resolver",
+              "__typename": "Requirement",
+              "match": "foo.com-zone",
+              "target": "::foo.com-zone"
+            },
+            {
+              "constaint": {
+                "name": "db",
+                "title": "db",
+                "description": "MongoDB database service",
+                "min": 1,
+                "max": 1,
+                "resourceType": "MongoDb"
+              },
+              "name": "db",
+              "__typename": "Requirement",
+              "match": "atlas_service",
+              "target": "::atlas_service"
+            }
+          ]
+        },
+        {
+          "name": "::foo.com-zone",
+          "title": "foo.com-zone",
+          "template": "foo.com-zone",
+          "state": 5,
+          "status": 1,
+          "attributes": [],
+          "connections": []
+        },
+        {
+          "name": "::atlas_service",
+          "title": "atlas_service",
+          "template": "atlas_service",
+          "state": 5,
+          "status": 1,
+          "attributes": [],
+          "connections": []
+        }
+      ],
+      "primary": "the_app"
+    }
   }
 }
