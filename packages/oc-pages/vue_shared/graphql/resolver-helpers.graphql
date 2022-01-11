@@ -18,3 +18,8 @@ query getDeploymentTemplates($fullPath: ID!, $deploymentTemplates: [String]) {
 query getBlueprint($fullPath: ID!, $name: String) {
   newApplicationBlueprint(fullPath: $fullPath, name: $name) @client
 }
+
+
+query getOverview($fullPath: ID!) {
+  overview(fullPath: $fullPath) @client
+}

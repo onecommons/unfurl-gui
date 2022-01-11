@@ -1,6 +1,7 @@
 import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
+import gql from 'graphql-tag';
 import updateTemplateResource from '../../graphql/mutations/update_template_resource.mutation.graphql';
 import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
 
@@ -17,6 +18,7 @@ const state = {
         primary: {title: '', properties: [] }
 
     },
+    availableResourceTypes: [],
     lastFetchedFrom: {}, 
     cards: [],
 };
@@ -25,7 +27,7 @@ const deleteReference = (arrg, by, value, nestingKey, parent ) => (
     Object.values(arrg).reduce((a, item) => {
         if (a) return a;
         if (item[by] === value ) {
-            item.fullfilled_by =  null;
+            item.match =  null;
             item.completionStatus = 'required';
             item.status = null;
             return item;
@@ -35,10 +37,9 @@ const deleteReference = (arrg, by, value, nestingKey, parent ) => (
 );
 
 const mutations = {
-    setTemplateResources(_state, resourcesObject) {
+    setTemplateResources(_state, deploymentTemplate) {
         // eslint-disable-next-line no-param-reassign
-      const primary = resourcesObject.newApplicationBlueprint.primary
-        _state.resourcesOfTemplates.primary = { ...primary };
+        _state.resourcesOfTemplates = {...deploymentTemplate} 
     },
 
     updatePrimaryCard(_state, primaryOBject) {
@@ -61,7 +62,7 @@ const mutations = {
     },
 
     createReferenceInPrimary(_state, { titleKey, requirementTitle, fieldsToReplace }){
-        const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.title ).indexOf(requirementTitle);
+        const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.name ).indexOf(requirementTitle);
         Object.keys(fieldsToReplace).forEach((key) => {
             // eslint-disable-next-line no-param-reassign
             _state.resourcesOfTemplates[titleKey].requirements[index][key] = fieldsToReplace[key];
@@ -93,10 +94,10 @@ const mutations = {
     },
 
     deleteReferencePrimary(_state, {title}) {
-        const index = _state.resourcesOfTemplates.primary.requirements.map((e) =>  e.fullfilled_by).indexOf(title);
+        const index = _state.resourcesOfTemplates.primary.requirements.map((e) =>  e.match).indexOf(title);
         if(index !== -1){
             const element = _state.resourcesOfTemplates.primary.requirements[index];
-            element.fullfilled_by = null;
+            element.match = null;
             element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
@@ -110,10 +111,10 @@ const mutations = {
     },
 
     deleteReferenceSubrequirements(_state, {title, titleKey}) {
-        const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.fullfilled_by).indexOf(title);
+        const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.match).indexOf(title);
         if(index !== -1){
             const element = _state.resourcesOfTemplates[titleKey].requirements[index];
-            element.fullfilled_by = null;
+            element.match = null;
             element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
@@ -128,7 +129,7 @@ const mutations = {
         // eslint-disable-next-line no-prototype-builtins
         if(copy[title].hasOwnProperty('requirements')){
             copy[title].requirements.forEach((re) => {
-                delete copy[re.fullfilled_by];
+                delete copy[re.match];
             });
         }
         delete copy[title];
@@ -144,7 +145,7 @@ const mutations = {
             const card = copyCards[index];
             // eslint-disable-next-line no-prototype-builtins
             if(card.hasOwnProperty('requirements')){
-                const newKeys = card.requirements.map(c => c.fullfilled_by);
+                const newKeys = card.requirements.map(c => c.match);
                 if(newKeys.length > 0){
                     keyToSearch = [...keyToSearch, ...newKeys];
                 }
@@ -158,8 +159,12 @@ const mutations = {
     },
 
     deleteDeep(_state, {title}) {
-        deleteReference(_state.resourcesOfTemplates, 'fullfilled_by', title, 'requirements', null);
+        deleteReference(_state.resourcesOfTemplates, 'match', title, 'requirements', null);
     },
+
+    setAvailableResourceTypes(_state, {availableResourceTypes}) {
+        state.availableResourceTypes = availableResourceTypes
+    }
 };
 
 const actions = {
@@ -185,6 +190,7 @@ const actions = {
             commit('updateResourceObject', resourceObject);
             return data;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -195,20 +201,44 @@ const actions = {
             cards.forEach((c, idx) => {
                 // eslint-disable-next-line no-prototype-builtins
                 if(c.hasOwnProperty('requirements')){
-                    const subRequirements = c.requirements.filter(r => r.fullfilled_by !== null && r.completionStatus === "created");
+                    const subRequirements = c.requirements.filter(r => r.match !== null && r.completionStatus === "created");
                     subRequirements.forEach(r => {
-                        commit("putCardInStack", { card: {..._state.resourcesOfTemplates[r.fullfilled_by]}, position: idx });
+                        commit("putCardInStack", { card: {..._state.resourcesOfTemplates[r.match]}, position: idx });
                     });
                 }
             });
             return true;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
 
+
+    async populateAvailableResourceTypes({commit}, {projectPath}) {
+        const {errors, data} = await graphqlClient.clients.defaultClient.query({
+            query: gql`
+            {
+                ResourceType @client {
+                    name
+                    title
+                    implements
+                    description
+                    badge
+                    properties
+                    outputs
+                    requirements
+                }
+            }`,
+            variables: {projectPath}
+        })
+
+        commit('setAvailableResourceTypes', {availableResourceTypes: data.ResourceType})
+        
+    },
+
     async fetchTemplateResources({state, commit, dispatch}, {projectPath, templateSlug}) {
-      try {
+      //try {
         commit('updateLastFetchedFrom', {projectPath, templateSlug})
 
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
@@ -217,6 +247,7 @@ const actions = {
           variables: { projectPath, templateSlug }
         })
 
+        const blueprint = data.newApplicationBlueprint
         const {requirements} = data.newApplicationBlueprint.primary
         const cards = requirements//I'm supposed to filter this apparently
         cards.forEach(c => {
@@ -224,43 +255,46 @@ const actions = {
             commit('putCardInStack', {card: c.name})
         })
 
-        commit('setTemplateResources', data)
+        commit('setTemplateResources', blueprint.deploymentTemplates[0])
         dispatch('createSubCards')
+        dispatch('populateAvailableResourceTypes', {projectPath})
         return true
+          /*
       } catch(err) {
-        throw new Error(err.message)
+        throw err
       }
+      */
     },
 
-    /*
     setResourcesOfTemplate({commit, dispatch}, resourcesOBject) {
         try {
             const { requirements } = resourcesOBject.primary;
-            const cards = requirements.filter(c => c.fullfilled_by !== null);
+            const cards = requirements.filter(c => c.match !== null);
             cards.forEach(c => {
                 if(c.completionStatus === 'created'){
-                    commit("putCardInStack", { card: resourcesOBject[c.fullfilled_by] });
+                    commit("putCardInStack", { card: resourcesOBject[c.match] });
                 }
             });
             commit('setTemplateResources', resourcesOBject);
             dispatch('createSubCards');
             return true;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
-    */
 
     updateStackOfCards({commit, dispatch, state: _state}) {
         try {
             const { requirements } = _state.resourcesOfTemplates.primary;
-            const cards = requirements.filter(c => c.fullfilled_by !== null && c.completionStatus === 'created');
+            const cards = requirements.filter(c => c.match !== null && c.completionStatus === 'created');
             cards.forEach(c => {
-                commit("putCardInStack", { card: _state.resourcesOfTemplates[c.fullfilled_by] });
+                commit("putCardInStack", { card: _state.resourcesOfTemplates[c.match] });
             });
             // dispatch('createSubCards');
             return true;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -270,6 +304,7 @@ const actions = {
             commit('updatePrimaryCard', primaryObject);
             return true;
         }catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -284,11 +319,11 @@ const actions = {
                 arrayOfCards.forEach((c) => {
                     commit('updateStackedInState', {rObject: c, key: c.title});
                 });
-                //dispatch('setResourcesOfTemplate', _state.resourcesOfTemplates);
-                dispatch('fetchTemplateResources', _state.lastFetchedFrom);
+                dispatch('setResourcesOfTemplate', _state.resourcesOfTemplates);
             }
             return true;
         }catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -305,8 +340,8 @@ const actions = {
 
             // Clean __typename
             delete nodeTarget.__typename;
-            if(nodeTarget.inputs.length > 0) {
-                nodeTarget.inputs = nodeTarget.inputs.map(i => {
+            if(nodeTarget.properties.length > 0) {
+                nodeTarget.properties = nodeTarget.properties.map(i => {
                     delete i.__typename;
                     return i;
                 });
@@ -318,6 +353,7 @@ const actions = {
                 });
             }
 
+
             // Delete un used properties
             delete nodeTarget.name;
             delete nodeTarget.badge;
@@ -325,15 +361,16 @@ const actions = {
             delete nodeTarget.platform;
 
             const fieldsToReplace = {
-                fullfilled_by: titleCard,
+                match: titleCard,
                 completionStatus: "created",
                 status: true
             };
             commit("createTemplateResource", { titleKey: titleCard, nodeObject: nodeTarget });
-            commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.title, fieldsToReplace });
+            commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.name, fieldsToReplace });
             commit("putCardInStack", { card: nodeTarget });
             return true;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -342,14 +379,15 @@ const actions = {
         try {
             const { requirement, titleKey } = rootGetters.getRequirementSelected;
             const fieldsToReplace = {
-                fullfilled_by: nodeTitle,
+                match: nodeTitle,
                 completionStatus: "connected",
                 status: true
             };
-            commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.title, fieldsToReplace });
+            commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.name, fieldsToReplace });
             dispatch("updateStackOfCards");
             return true;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -377,6 +415,7 @@ const actions = {
             }
             return true;
         } catch(err) {
+            console.error(err)
             throw new Error(err.message);
         }
     },
@@ -386,6 +425,43 @@ const getters = {
     getResourcesOfTemplate: _state => (cloneDeep(_state.resourcesOfTemplates)),
     getPrimaryCard: _state => (cloneDeep(_state.resourcesOfTemplates.primary)),
     getCardsStacked: _state => (cloneDeep(_state.cards)),
+    getAvailableResourceTypes: _state => (cloneDeep(_state.availableResourceTypes)),
+
+    getValidResourceTypesByRequirement(state) {
+        return function(requirementName){
+            function filteredByType(typeName) {
+                return state.availableResourceTypes.filter(type => {
+                    return type.implements.includes(typeName)
+                })
+            }
+            let result = filteredByType(requirementName)
+
+            if(result.length == 0) {
+                const requirement = state.resourcesOfTemplates.primary.requirements
+                    .find(requirement => requirement.name == requirementName)
+                if(requirement) {
+                    result = filteredByType(requirement.constraint.resourceType)
+                }
+            }
+            
+            const CLOUD_MAPPINGS = {
+                'AzureAccount': 'unknown',
+                'GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
+                'AWSAccount': 'unfurl.nodes.AWSResource',
+            }
+
+            if(state.resourcesOfTemplates.cloud) {
+                const allowedCloudVendor = CLOUD_MAPPINGS[state.resourcesOfTemplates]
+                result = result.filter(type => {
+                    return !type.implements.includes('unfurl.nodes.CloudObject') ||
+                        type.implements.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+
+                })
+            }
+            
+            return result
+        }
+    }
 };
 
 export default {

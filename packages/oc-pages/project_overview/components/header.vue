@@ -35,9 +35,9 @@ export default {
                 .post(this.$projectGlobal.buttonStar.endpoint)
                 .then(({ data }) => {
                     const { star_count } = data;
-                    // eslint-disable-next-line babel/camelcase
+                    // // eslint-disable-next-line babel/camelcase
                     this.star.count = star_count;
-                    // eslint-disable-next-line babel/camelcase
+                    // // eslint-disable-next-line babel/camelcase
                     if (star_count > this.$projectGlobal.buttonStar.count) {
                         this.star.text = __("Unstar");
                         this.star.icon = 'star';

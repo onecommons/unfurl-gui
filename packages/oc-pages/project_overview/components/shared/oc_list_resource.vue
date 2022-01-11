@@ -1,6 +1,7 @@
 <script>
 import {  GlFormRadio, GlIcon } from '@gitlab/ui';
 import { __ } from '~/locale';
+import {mapGetters} from 'vuex'
 export default {
     name: 'OcListResource',
     components: {
@@ -9,10 +10,18 @@ export default {
     },
 
     props: {
+      /*
         filteredResourceByType: {
             type: Array,
             required: true,
         },
+        */
+      /*
+        validResourceTypes: {
+          type: Array,
+          required: true
+        },
+        */
         value: {
             type: [Object, String],
             required: true,
@@ -23,7 +32,7 @@ export default {
         },
         cloud: {
             type: String,
-            required: true,
+            required: false,
         }
     },
 
@@ -35,39 +44,40 @@ export default {
             set(val) {
                 this.$emit("input", val); 
             }
-        }
+        },
+        ...mapGetters([
+          'getValidResourceTypesByRequirement'
+        ]),
     },
 
     methods: {
         checkCompatibility(itemPlatform) {
-            return itemPlatform === this.cloud ||
-                    itemPlatform === __("SaaS Service") ||
-                    itemPlatform === __("Self-Hosted");
+            //console.log(itemPlatform)
+            if(!this.cloud) return true
         }
     }
 };
 </script>
 <template>
     <div>
-        <p>
+        <!--p>
         {{
             filteredResourceByType.length > 0
             ? __('Choose one of these options')
             : __('Does not exist template for')
         }}
         {{ nameOfResource }}
-        </p>
+        </p-->
         <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in filteredResourceByType"
+            v-for="(resource, idx) in getValidResourceTypesByRequirement(nameOfResource)"
             :key="resource + idx"
             class="gl-responsive-table-row oc_table_row"
         >
-            <div  v-if="!checkCompatibility(resource.platform)" class="uf-faded-row"></div>
             <div
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2"
             >
-            <gl-form-radio v-model="selectedVal" :value="resource" class="gl-mt-4" :disabled="!checkCompatibility(resource.platform)"  />
+            <gl-form-radio v-model="selectedVal" :value="resource" class="gl-mt-4" />
             <div class="oc_resource_icon gl-mr-3">
                 <img v-if="resource.avatar !== null" :src="resource.avatar" :alt="resource.name" />
             </div>
@@ -82,7 +92,7 @@ export default {
             <span class="text-break-word oc_resource-type">{{ resource.platform }}</span>
             </div>
             <div class="table-section oc-table-section section-wrap text-truncate section-20">
-            <span class="text-break-word oc_resource-type">{{ resource.type }}</span>
+            <span class="text-break-word oc_resource-type">{{ resource.name }}</span>
             </div>
 
             <div

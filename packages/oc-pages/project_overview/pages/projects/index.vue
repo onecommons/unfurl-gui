@@ -166,9 +166,9 @@ export default {
         <div v-if="projectInfo.id">
             <!-- Project Description -->
             <ProjectDescriptionBox 
-                    :requirements="projectInfo.requirements" 
-                    :inputs="projectInfo.inputs" 
-                    :outputs="projectInfo.outputs"
+                    :requirements="projectInfo.primary.requirements" 
+                    :inputs="projectInfo.primary.properties" 
+                    :outputs="projectInfo.primary.outputs"
                     :project-description="projectInfo.description"
                     :project-image="projectInfo.image"
                     :live-url="projectInfo.livePreview"

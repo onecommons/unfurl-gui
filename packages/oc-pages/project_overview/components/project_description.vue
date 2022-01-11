@@ -96,7 +96,7 @@ export default {
                 <div class="col-lg-12">
                     <div class="gl-display-flex">
                         <h4 class="project-title gl-display-flex">
-                            {{ projectTitle }}
+                            {{ projectName }} <!-- TODO project name vs project title? -->
                         </h4>
                         <div class="gl-display-flex">
                             <a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
@@ -130,14 +130,14 @@ export default {
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
                                             <div class="gl-display-flex">
-                                                <gl-icon :size="12" :name="detectIcon(requirement.title)" class="gl-mt-1" />
+                                                <gl-icon :size="12" :name="detectIcon(requirement.resourceType.title)" class="gl-mt-1" />
                                             </div>
                                             <div class="gl-display-flex">
-                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
+                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
-                                            <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.badge? capitalizeFirstLetter(requirement.badge) : 'Lorem Ipsum'  }}</gl-badge> 
+                                            <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.resourceType.badge? capitalizeFirstLetter(requirement.resourceType.badge) : 'Lorem Ipsum'  }}</gl-badge> 
                                             <!-- <div class="live-preview gl-ml-2"><a href="javascript:void(0);">{{ __("More info") }}</a></div> -->
                                         </div>
                                     </div>

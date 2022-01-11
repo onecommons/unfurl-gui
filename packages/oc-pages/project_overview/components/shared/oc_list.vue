@@ -17,6 +17,10 @@ export default {
     mixins: [commonMethods],
 
     props: {
+        validResourceTypesByRequirement: {
+            type: Object,
+            default: () => {}
+        },
         tabsTitle: {
             type: String,
             required: false,
@@ -43,6 +47,11 @@ export default {
             required: false,
             default: null
         },
+
+        card: {
+            type: Object,
+            required: true
+        }
     },
     data() {
         return {
@@ -53,8 +62,10 @@ export default {
 
     computed: {
         ...mapGetters({
-            resources: 'getResources',
+            resources: 'getResourceTemplates',
             servicesToConnect: 'getServicesToConnect',
+            servicesToConnect: 'getServicesToConnect',
+            getValidResourceTypesByRequirement: 'getValidResourceTypesByRequirement'
         }),
         checkRequirements() {
             const flag = this.templateRequirements.filter((r) => r.status === true).length === this.templateRequirements.length;
@@ -69,7 +80,7 @@ export default {
         ]),
 
         findElementToScroll({requirement}) {
-            bus.$emit('moveToElement', {elId: requirement.fullfilled_by});
+            bus.$emit('moveToElement', {elId: requirement.match});
         },
 
         connectToResource({requirement}) {
@@ -98,17 +109,15 @@ export default {
             //return requirement.completionStatus === "connected" ? __('Disconnect') : __("Remove")
         },
 
-        hasTemplateResources({type}) {
-            const result = this.resources.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
-            if(result.length > 0) return true;
-            return false;
-        },
 
-        hasResourcesToConnect({type}) {
-          console.log(this.servicesToConnect)
-            const result = this.servicesToConnect.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
-            if(result.length > 0) return true;
-            return false;
+        hasResourcesToConnect(requirement) {
+            return false
+            const type = requirement.name
+            const result = this.servicesToConnect.some(r => r.type.toLowerCase().includes(type.toLowerCase()));
+            return result
+            //const result = this.servicesToConnect.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
+            //if(result.length > 0) return true;
+            //return false;
         },
     }
 }
@@ -137,15 +146,10 @@ export default {
                             class="gl-responsive-table-row oc_table_row">
                             <div
                                 class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
-                                <!-- 
-                                  NOTE not sure if this shoulde be requirement.name
-                                  this wasn't fun to debug the first time
-                                -->
-                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.resourceType.name)" />
-                                <span class="text-break-word title">{{ requirement.resourceType.name }}</span>
-                                <!--span class="text-break-word title">{{  showTypeFirst ? requirement.type : requirement.name }}</span-->
+                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
+                                <span class="text-break-word title">{{ requirement.name }}</span>
                                 <div class="oc_requirement_description gl-mb-2">
-                                {{ requirement.resourceType.description }}
+                                {{ requirement.description }}
                                 </div>
                             </div>
                             <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
@@ -160,7 +164,7 @@ export default {
                                 :name="requirement.status ? 'check-circle-filled' : 'warning-solid'"
                                 />
                                 <span
-                                v-if="requirement.fullfilled_by !== null"
+                                v-if="requirement.match !== null"
                                 class="text-break-word oc_resource-details"
                                 >
                                 <a
@@ -169,14 +173,14 @@ export default {
                                     findElementToScroll({requirement})
                                     "
                                 >
-                                    {{ requirement.fullfilled_by }}
+                                    {{ requirement.match }}
                                     </a
                                 >
                                 </span>
                             </div>
 
                             <div
-                                v-if="requirement.fullfilled_by/*requirement.fullfilled_by !== null*/"
+                                v-if="requirement.match/*requirement.match !== null*/"
                                 class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
                                 <gl-button
                                 v-if="getCurrentActionLabel(requirement) !== 'Disconnect'"
@@ -191,7 +195,7 @@ export default {
                                     :aria-label="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
                                     type="button"
                                     class="gl-ml-3 oc_requirements_actions"
-                                    @click.prevent="openDeleteModal(requirement.fullfilled_by, getCurrentActionLabel(requirement))">
+                                    @click.prevent="openDeleteModal(requirement.match, getCurrentActionLabel(requirement))">
                                     {{
                                         getCurrentActionLabel(requirement) 
                                     }}</gl-button>
@@ -213,7 +217,7 @@ export default {
                                     :aria-label="__(`create`)"
                                     type="button"
                                     class="gl-ml-3 oc_requirements_actions"
-                                    :disabled="!hasTemplateResources(requirement)"
+                                    :disabled="getValidResourceTypesByRequirement(requirement.resourceType || requirement.constraint && requirement.constraint.resourceType).length == 0"
                                     @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
                             </div>
                         </div>

@@ -10,7 +10,7 @@ import OcCard from '../../components/shared/oc_card.vue';
 import OcInputs from '../../components/shared/oc_inputs.vue';
 import OcList from '../../components/shared/oc_list.vue';
 import OcListResource from '../../components/shared/oc_list_resource.vue';
-import  OcTemplateHeader from '../../components/shared/oc_template_header.vue';
+import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
 
@@ -66,14 +66,14 @@ export default {
 
   computed: {
     ...mapGetters({
-      resources: 'getResources',
+      resources: 'getResourceTemplates',
       projectInfo: 'getProjectInfo',
       getRequirementSelected: 'getRequirementSelected',
       getTemplate: 'getTemplate',
       servicesToConnect: 'getServicesToConnect',
       getPrimaryCard: 'getPrimaryCard',
       getCardsStacked: 'getCardsStacked',
-      getResourcesOfTemplate: 'getResourcesOfTemplate'
+      getResourcesOfTemplate: 'getResourcesOfTemplate',
     }),
 
     getMainInputs() {
@@ -81,11 +81,8 @@ export default {
     },
 
     getServicesToConnect() {
-      return this.fetchServices(this.servicesToConnect);
-    },
-
-    filteredResourceByType() {
-      return this.fetchServices(this.resources);
+      //return this.fetchServices(this.servicesToConnect);
+      return []
     },
 
     primaryPropsDelete() {
@@ -97,7 +94,7 @@ export default {
 
     getNameResourceModal() {
       return this.getRequirementSelected.requirement
-              ? this.getRequirementSelected.requirement.title 
+              ? this.getRequirementSelected.requirement.name 
               : __('Resource');
     },
 
@@ -223,6 +220,7 @@ export default {
       this.componentKey += 1;
     },
 
+    /*
     fetchServices(array) {
         return array.filter(resource => {
           // eslint-disable-next-line no-prototype-builtins
@@ -236,6 +234,7 @@ export default {
             }
         });
     },
+    */
 
     scrollDown(elId, timeOut=0) {
       setTimeout(
@@ -409,11 +408,11 @@ export default {
 
       <!-- Header of templates -->
       <oc-template-header
-        :header-info="{ title: getTemplate.title, cloud: getTemplate.cloud, environment: getTemplate.environment}"/>
+        :header-info="{ title: getResourcesOfTemplate.title, cloud: getResourcesOfTemplate.cloud, environment: getResourcesOfTemplate.environment}"/>
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
-          :custom-title="getPrimaryCard.title"
+          :custom-title="getPrimaryCard.type"
           :main-card-class="'primary-card'"
           :icon-title="true"
           :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
@@ -430,6 +429,7 @@ export default {
               :template-requirements="getPrimaryCard.requirements"
               :level="1"
               :show-type-first="true"
+              :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">
               <div class="gl-pl-6 gl-pr-6">
@@ -446,14 +446,16 @@ export default {
                   :level="idx"
                   class="gl-mt-6">
                   <template #content>
-                    <oc-inputs :main-inputs="card.inputs" :component-key="2" />
+                    <oc-inputs :main-inputs="card.properties" :component-key="2" />
 
                     <oc-list
                       tabs-title="Requirements"
                       :template-requirements="card.requirements"
                       :level="idx"
                       :title-key="card.title"
-                      :show-type-first="true" />
+                      :show-type-first="true" 
+                      :card="card"
+                      />
 
                   </template>
                 </oc-card>
@@ -481,7 +483,8 @@ export default {
             @cancel="cleanModalResource"
             >
 
-            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" />
+            <!--oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
+            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getResourcesOfTemplate.cloud"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
@@ -516,7 +519,8 @@ export default {
       >
         <!-- <p v-if="getServicesToConnect.length > 0">{{ `Select a ${getNameResourceModal} instance to connect.`}}</p>
         <p v-else class="gl-mb-4">{{ `Not resources availabe for  ${getNameResourceModal} .`}}</p> -->
-        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getTemplate.cloud" />
+        <!--oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getTemplate.cloud" /-->
+        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getResourcesOfTemplate.cloud"/>
       </gl-modal>
 
       <!-- Modal to confirm the action to delete template -->

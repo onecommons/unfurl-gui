@@ -54,9 +54,23 @@
 
 
 query getProjectInfo($projectPath: ID!) {
-  newApplicationBlueprint(fullPath: $projectPath) {
+  newApplicationBlueprint(fullPath: $projectPath) @client {
     __typename
-    primary @client {
+    name
+    deploymentTemplates {
+      title
+      slug
+      resourceTemplates {
+        name
+        title
+        description
+        type
+        properties
+        outputs
+        requirements
+      }
+    }
+    primary {
       __typename
       name
       properties { # analogous to inputs
@@ -70,18 +84,18 @@ query getProjectInfo($projectPath: ID!) {
         instructions
       }
       requirements { #assuming we don't want to recurse further
-      resourceType {...ResourceTypes}
+        resourceType {...ResourceTypes}
       }
     }
-    #overview {
-    #  id
-    #  title
-    #  description
-    #  livePreview
-    #  name
-    #  sourceCodeUrl
-    #  webUrl
-    #}
+    overview {
+      id
+      title
+      description
+      livePreview
+      name
+      sourceCodeUrl
+      webUrl
+    }
 
   }
   servicesToConnect {

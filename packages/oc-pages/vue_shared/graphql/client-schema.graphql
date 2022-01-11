@@ -328,6 +328,8 @@ type ApplicationBlueprint {
   Source code url
   """
   sourceCodeUrl: String
+
+  overview: Overview
 }
 
 type DeploymentTemplate {
@@ -493,6 +495,7 @@ extend type Query {
 
   
   unfurlRootBlob(fullPath: ID!): JSON
+  overview(fullPath: ID!): Overview
   resourceType(name: String): ResourceType
   resourceTemplate(name: String): ResourceTemplate
   deploymentTemplates(deploymentTemplates: [String], fullPath: ID!): [DeploymentTemplate]

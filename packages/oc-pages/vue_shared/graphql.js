@@ -104,12 +104,26 @@ async function fetchRootBlob(root, _variables, context) {
 
 async function fetchResourceType(variables, context){
     const {client} = context
+    if (!variables.name) {throw new Error('Cannot map resource type without a name.')}
     const {errors, data} = await client.query({
         query: getResourceType,
         variables: {...variables, fullPath: getProjectPath(null, variables, context)}
     })
     if(errors) {errors.forEach(console.error)}
-    if(data === null) return null
+    //if(data === null) return null
+    if(data === null) {
+        const name = `Unresolved Resource Type: ${variables.name}`
+        return {
+            __typename: 'ResourceType',
+            name: name,
+            title: name,
+            badge: 'ERR',
+            description: null,
+            properties: [],
+            outputs: [],
+            requirements: [],
+        }
+    }
     const {resourceType} = data
     resourceType.__typename = 'ResourceType'
     return resourceType
@@ -117,6 +131,7 @@ async function fetchResourceType(variables, context){
 
 async function fetchResourceTemplate(variables, context){
     const {client} = context
+    if (!variables.name) {throw new Error('Cannot map resource template without a name.')}
     const {errors, data} = await client.query({
         query: getResourceTemplate,
         errorPolicy: 'all',
@@ -145,6 +160,18 @@ async function fetchDeploymentTemplates(variables, context) {
     return deploymentTemplates
 }
 
+async function fetchOverview(variables, context) {
+    const {client} = context
+    const {errors, data} = await client.query({
+        query: getOverview,
+        variables: {...variables, fullPath: getProjectPath(null, variables, context)}
+    })
+
+    if(errors) {errors.forEach(console.error)}
+    const {overview} = data
+    return overview
+}
+
 async function fetchApplicationBlueprint(variables, context) {
     const {client} = context
     const {errors, data} = await client.query({
@@ -155,6 +182,11 @@ async function fetchApplicationBlueprint(variables, context) {
     const {newApplicationBlueprint} = data
 
     return newApplicationBlueprint
+}
+
+function missingResolverVariableError(missingField, args) {
+    const [parent, _1, _2, info] = args
+    return new Error(`Cannot get ${info.field.name.value} without '${missingField}' in ${parent.__typename}`)
 }
 
 export const resolvers = {
@@ -169,25 +201,33 @@ export const resolvers = {
 
     Query: {
         newApplicationBlueprint: async (...args) => {
-            const {ApplicationBlueprint} = await fetchRootBlob(...args)
+            const {ApplicationBlueprint, Overview} = await fetchRootBlob(...args)
             const variables = args[1]
             const result = variables.name?
                 ApplicationBlueprint[variables.name] :
                 Object.values(ApplicationBlueprint)[0]
 
-            Object.assign(result, variables) // propogate fullPath
+            const {livePreview, sourceCodeUrl} = Overview
+            Object.assign(result, variables, {livePreview, sourceCodeUrl}) // propogate fullPath
+            result.overview = Overview
+            result.overview.__typename = 'Overview'
+
             return result
         },
         resourceType: async (...args) => {
             const {ResourceType} = await fetchRootBlob(...args)
-            const {name} = args[1]
+            let name
+            try { name = args[1].name }
+            catch(e) { throw missingResolverVariableError('name', args) }
             const result = ResourceType[name]
             //result.fullPath = args[1].fullPath
             return result
         },
         resourceTemplate: async (...args) => {
             const {ResourceTemplate} = await fetchRootBlob(...args)
-            const {name} = args[1]
+            let name
+            try { name = args[1].name }
+            catch(e) { throw missingResolverVariableError('name', args) }
             const result = ResourceTemplate[name]
             //result.fullPath = args[1].fullPath
             return result
@@ -202,6 +242,16 @@ export const resolvers = {
             }
             //result.fullPath = args[1].fullPath
             return result
+        },
+        overview: async (...args) => {
+            const {Overview} = await fetchRootBlob(...args)
+            return Overview
+        },
+
+        async ResourceType(...args) {
+            const {ResourceType} = await fetchRootBlob(...args) // NOTE I guess I need to be able to do this for globally defined resources even when there may be no full path
+            for(const rt of Object.values(ResourceType)) {rt.__typename = 'ResourceType'}
+            return Object.values(ResourceType)
         }
     },
 
@@ -211,10 +261,18 @@ export const resolvers = {
             return fetchResourceType(variables, context)
 
         },
-        deploymentTemplates(parent, _, context) {
+        async deploymentTemplates(parent, _, context) {
             const {fullPath, deploymentTemplates} = parent
             const variables = {fullPath, deploymentTemplates}
-            return fetchDeploymentTemplates(variables, context)
+            let result = await fetchDeploymentTemplates(variables, context)
+            if(variables.searchBySlug) {
+                // NOTE maybe this is supposed to be find(), but we're returning an array
+                result = result.filter(deploymentTemplate => deploymentTemplate.slug == variables.searchBySlug)
+            } else if (variables.searchByTitle) {
+                result = result.filter(deploymentTemplate => deploymentTemplate.title == variables.searchByTitle)
+            }
+
+            return result
         },
 
 
@@ -226,14 +284,15 @@ export const resolvers = {
             return fetchResourceType(variables, context)
         },
         name: (obj, args, { }) => (obj && obj.name) ?? null,
-        requirements: _.partial(patchTypenameInArr, "RequirementConstraint"),
+        requirements: _.partial(patchTypenameInArr, "Requirement"),
         properties: _.partial(patchTypenameInArr, "Input"),
     },
 
     ResourceType: {
         name: (obj, args, { }) => (obj && obj.name) ?? null,
         badge: (obj, args, { }) => (obj && obj.badge) ?? null,
-        requirements: _.partial(patchTypenameInArr, "RequirementConstraint"),
+        desrcription: (obj, args, { }) => (obj && obj.desrcription) ?? null,
+        requirements: _.partial(patchTypenameInArr, "RequirementConstraint"), // NOTE we cannot remove null, unresolved requirement names here, because the resolution has not been done yet
         properties: _.partial(patchTypenameInArr, "Input"),
         outputs: _.partial(patchTypenameInArr, "Output")
 
@@ -257,7 +316,6 @@ export const resolvers = {
         primary(parent, _, context) {
             const variables = {name: parent.primary, fullPath: parent.fullPath}
             return fetchResourceTemplate(variables, context)
-
         },
 
 
@@ -293,13 +351,24 @@ description: String
 
     RequirementConstraint: {
         resourceType(parent, _, context) {
+            if(!parent) return
             const variables = {name: parent.resourceType, fullPath: parent.fullPath}
             return fetchResourceType(variables, context)
         }
+        
+    },
+
+    Requirement: {
+        constraint: _.partial(patchTypenameInArr, "Constraint"),
     },
 
 
     Overview: {
+
+        title: (obj, args, { }) => (obj && obj.title) ?? null,
+        name: (obj, args, { }) => (obj && obj.name) ?? null,
+        id: (obj, args, { }) => (obj && obj.id) ?? null,
+        description: (obj, args, { }) => (obj && obj.description) ?? null,
 
         inputs: _.partial(patchTypenameInArr, "Input"),
 

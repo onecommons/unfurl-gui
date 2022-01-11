@@ -21,7 +21,7 @@ const state = {
     },
     mainRequirement: {},
     globalVars: {},
-    resources: [],
+    resourceTemplates: [],
     servicesToConnect: []
 };
 
@@ -127,9 +127,9 @@ const mutations = {
         _state.templateList = [...templates ];
     },
 
-    SET_RESOURCES_LIST(_state, resources) {
+    SET_RESOURCES_LIST(_state, resourceTemplates) {
         // eslint-disable-next-line no-param-reassign
-        _state.resources = [...resources ];
+        _state.resourceTemplates = [...resourceTemplates ];
     },
 
     CHECK_REQUIREMENT(_state,  { requirementTitle }) {
@@ -178,6 +178,7 @@ const mutations = {
 const actions = {
 
     async fetchProjectInfo({ commit }, { projectPath, defaultBranch }) {
+        // TODO we need to change this query if we're using it for RESOURCES_LIST (aka) resourceTemplates, because it doesn't seem to pick a specific blueprint by slug
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getProjectInfo,
             errorPolicy: 'all',
@@ -185,15 +186,19 @@ const actions = {
         });
         const overview = data.newApplicationBlueprint.overview;
         // NOTE we don't have title,image
-        const fullPath = projectPath
-        const {  id ,description, name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
+        const projectInfo = {...data.newApplicationBlueprint.overview, ...data.newApplicationBlueprint, fullPath: projectPath}
         //const {  id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
         //commit('SET_PROJECT_INFO', { id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl});
-        commit('SET_PROJECT_INFO', { id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl});
+        commit('SET_PROJECT_INFO', projectInfo)
         if(!errors) {
-            commit('SET_PROJECT_INFO', overview);
-            commit('SET_TEMPLATES_LIST', overview.templates);
-            commit('SET_RESOURCES_LIST', overview.resources);
+            // NOTE I'm doing this in template_resources
+            //commit('SET_PROJECT_INFO', overview);
+
+            commit('SET_TEMPLATES_LIST', data.newApplicationBlueprint.deploymentTemplates);
+
+            // NOTE this is strange because it populates something used by another view
+            // It would be a good idea to move into the template_resources store when refactoring
+            commit('SET_RESOURCES_LIST', data.newApplicationBlueprint.deploymentTemplates[0].resourceTemplates);
         } else {
             throw new Error(errors[0].message);
         }
@@ -305,7 +310,7 @@ const getters = {
     getEnvironmentsList: _state => _state.environmentList,
     getTemplatesList: _state => _state.templateList,
     getTemplate: _state => _state.template,
-    getResources: _state => _state.resources,
+    getResourceTemplates: _state => _state.resourceTemplates,
     getMainRequirement: _state => _state.mainRequirement,
     getRequirementSelected: _state => _state.requirementSelected,
     getServicesToConnect: _state => _state.servicesToConnect,

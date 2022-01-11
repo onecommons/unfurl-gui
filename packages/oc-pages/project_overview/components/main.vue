@@ -14,6 +14,7 @@ export default {
             await this.$store.dispatch('fetchServicesToConnect', {projectPath: this.$projectGlobal.projectPath});
             return true;
         } catch(err) {
+            console.error(err)
             return createFlash({ message: err.message, type: FLASH_TYPES.ALERT });
         }
     }
