@@ -34,7 +34,11 @@ spec:
       "sourceCodeUrl": "https://github.com/aszs/apostrophe-sandbox.git"
       "deployments": 164
       "webUrl": "https://github.com/aszs/apostrophe-sandbox"
-      
+    
+    imports:
+      - repository: unfurl
+        file: tosca_plugins/googlecloud.yaml
+     
     node_types:
       Base:
         derived_from: tosca.nodes.Root
@@ -52,6 +56,12 @@ spec:
             type: number
           storage:
             type: number
+
+      AWSInstance:
+        derived_from: [Compute, unfurl.nodes.AWSResource]
+
+      GCPInstance:
+        derived_from: [Compute, unfurl.nodes.GoogleCloudObject]
 
       MongoDb:
         derived_from: Base
@@ -71,7 +81,7 @@ spec:
       SelfHostedMongoDb:
         derived_from: MongoDb        
         requirements:
-          host: Compute
+          - host: Compute
 
       DNS:
         derived_from: Base
@@ -138,6 +148,9 @@ spec:
 
         atlas_service:
           type: Atlas
+
+        # an_ec2:
+        #   type: AWSInstance
 
         # dnszone.com:
         #   type: DNSZone
