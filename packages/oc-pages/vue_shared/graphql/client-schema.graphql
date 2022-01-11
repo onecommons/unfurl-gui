@@ -1,5 +1,7 @@
 extend type ApplicationBlueprintProject {
-        """ Oc Project Overview """
+        """
+        Oc Project Overview
+        """
         overview: Overview! @client
         applicationBlueprint: ApplicationBlueprint! @client
 }
@@ -449,6 +451,7 @@ type Job {
 
 type Resource {
   name: String!
+  title: String!
   url: String
   template: ResourceTemplate!
   status: Status
@@ -458,27 +461,27 @@ type Resource {
 }
 
 enum Status {
-  Absent
+  Unknown
+  Ok
   Degraded
   Error
-  Ok
   Pending
-  Unknown
+  Absent
 }
 
 enum State {
-  Configured
-  Configuring
-  Created
-  Creating
-  Deleted
-  Deleting
-  Error
   Initial
-  Started
+  Creating
+  Created
+  Configuring
+  Configured
   Starting
-  Stopped
+  Started
   Stopping
+  Stopped
+  Deleting
+  Deleted
+  Error  
 }
 
 extend type Template {
