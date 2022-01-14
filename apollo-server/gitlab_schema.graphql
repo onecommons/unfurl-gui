@@ -27871,3 +27871,10 @@ enum VisibilityScopesEnum {
   """
   public
 }
+type UpdateDeploymentObjResult {
+  isOk: Boolean,
+  errors: [String!]
+}
+extend type Mutation {
+  updateDeploymentObj(projectPath: ID!, typename: String!, patch: JSON!): UpdateDeploymentObjResult
+}

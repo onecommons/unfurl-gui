@@ -46,10 +46,8 @@ export default {
   
   String: (_0, _1, _2, {path}) => {
     const {key, typename} = path
-    console.log({key,typename})
     if(key == 'name' && typename == 'ResourceType') {
       const result = resourceNames.next()
-      console.log({result})
       return result.value
 
     }

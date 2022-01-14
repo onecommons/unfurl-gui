@@ -18,8 +18,8 @@ export default {
 
     unfurlRootBlob(root, args, {db}){
       let result = {}
-      if(args.fullPath == 'demo/apostrophe-demo')
-        result = db.get('newschema').value()
+      if(args.fullPath)
+        result = db.get('projects').value()[args.fullPath]
 
       return result
     }
@@ -31,6 +31,33 @@ export default {
   },    
   
   Mutation: {
+
+    /*
+    deleteResourceTemplate: (root, {fullPath, name}, {db}) => {
+      const projectRoot = db.get('projects').value()[fullPath]
+      const {ResourceTemplate} = projectRoot
+      const isOk  = delete ResourceTemplate[name]
+
+      projectRoot.ResourceTemplate = ResourceTemplate
+      db.write()
+      return isOk? name: ''
+    },
+    */
+
+
+    updateDeploymentObj(root, {projectPath, typename, patch}, {db}) {
+      const patchTarget = db.get('projects').value()[projectPath][typename]
+      if(!patchTarget) return {isOk: false, errors: [`Typename '${typename}' does not exist in the target project`]}
+      for(let key in patch) {
+        if (patch[key] === null) {
+          delete patchTarget[key]
+        } else {
+          patchTarget[key] = patch[key]
+        }
+      }
+      db.write()
+      return {isOk: true, errors: []}
+    },
 
     updateTemplateResource: (root, { input }, { pubsub, db }) => {
       const { projectPath, title, resourceObject } = input; 

@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs')
 
 // this alias is used by code copied from gitlab
 const alias = {
@@ -8,9 +9,40 @@ const alias = {
   //'oc': path.join(__dirname, 'src/gitlab-oc')
 }
 
+const httpProxyMiddleware = require('http-proxy-middleware');
 const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || "https://unfurl.cloud"
 
+const JSON_EXT = '.json'
+const projectDataDir = path.join(__dirname, 'apollo-server/data')
+const projectPages = {}
+const projectPageBase = {
+  entry: "src/pages/project_overview/index.js",
+  template: 'public/demo.html',
+  unfurlCloudBaseUrl
+}
+
+for(const tld of fs.readdirSync(projectDataDir)) {
+  for(const f of fs.readdirSync(path.join(projectDataDir, tld))) {
+    if(path.extname(f) != JSON_EXT) continue
+    const projectPath = `${tld}/${path.basename(f, JSON_EXT)}`
+    projectPages[projectPath] = {...projectPageBase, projectPath}
+  }
+}
+
+
 module.exports = {
+  devServer: {
+    before(app) {
+      const proxy = httpProxyMiddleware('/graphql', {
+        target: 'http://localhost:4000/graphql',
+        changeOrigin: true,
+        ws: true,
+        ignorePath: true,
+      })
+      app.use(proxy)
+    }
+    
+  },
   pluginOptions: {
     apollo: {
       enableMocks: true,
@@ -37,6 +69,7 @@ module.exports = {
       template: 'public/demo.html',
       unfurlCloudBaseUrl
     },
+    ...projectPages,
 
     dashboard: {
       title: "Unfurl Cloud Dashboard",
