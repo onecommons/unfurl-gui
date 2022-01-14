@@ -104,16 +104,44 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!) {
       title
       slug
       cloud
-      resourceTemplates {
+      primary {
         name
         title
         description
-        type
         properties
         outputs
-        requirements
+        requirements {
+          constraint {
+            resourceType {
+              name
+            }
+          }
+          title
+          name
+          match {
+            name
+            title
+            description
+            type
+            properties
+            outputs
+            requirements {
+              title
+              name
+              match {
+                name
+                title
+                description
+                type
+                properties
+                outputs
+              }
+            }
+
+          }
+
+        }
       }
-      primary
      }
   }
 }

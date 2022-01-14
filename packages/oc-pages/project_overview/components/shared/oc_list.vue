@@ -51,7 +51,7 @@ export default {
         card: {
             type: Object,
             required: true
-        }
+        },
     },
     data() {
         return {
@@ -65,7 +65,7 @@ export default {
             resources: 'getResourceTemplates',
             servicesToConnect: 'getServicesToConnect',
             servicesToConnect: 'getServicesToConnect',
-            getValidResourceTypesByRequirement: 'getValidResourceTypesByRequirement'
+            getValidResourceTypes: 'getValidResourceTypes'
         }),
         checkRequirements() {
             const flag = this.templateRequirements.filter((r) => r.status === true).length === this.templateRequirements.length;
@@ -80,7 +80,7 @@ export default {
         ]),
 
         findElementToScroll({requirement}) {
-            bus.$emit('moveToElement', {elId: requirement.match});
+            bus.$emit('moveToElement', {elId: requirement.match.name});
         },
 
         connectToResource({requirement}) {
@@ -89,13 +89,16 @@ export default {
         },
 
         sendRequirement(requirement) {
-            this.setRequirementSelected({requirement, titleKey: this.titleKey});
-            bus.$emit('placeTempRequirement');
+            this.setRequirementSelected({requirement, titleKey: this.titleKey});  // TODO trying to make this redundant
+            
+            bus.$emit('placeTempRequirement', {dependentName: this.titleKey, dependentRequirement: requirement.name, requirement, action: 'create'});
         },
 
         //TODO add an option to add a new service
-        openDeleteModal(title, action=__("Remove")) {
-            bus.$emit('deleteNode', {title, level: this.level, titleKey: this.titleKey, action});
+        openDeleteModal(index, action=__("Remove")) {
+            const requirement = this.card.requirements[index]
+            const card = requirement.match
+            bus.$emit('deleteNode', {...card, level: this.level, action, dependentRequirement: requirement.name, dependentName: this.titleKey});
         },
 
         //TODO 
@@ -173,7 +176,7 @@ export default {
                                     findElementToScroll({requirement})
                                     "
                                 >
-                                    {{ requirement.match }}
+                                    {{ (requirement.match && requirement.match.title || requirement.match) }}
                                     </a
                                 >
                                 </span>
@@ -195,7 +198,7 @@ export default {
                                     :aria-label="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
                                     type="button"
                                     class="gl-ml-3 oc_requirements_actions"
-                                    @click.prevent="openDeleteModal(requirement.match, getCurrentActionLabel(requirement))">
+                                    @click.prevent="openDeleteModal(idx, getCurrentActionLabel(requirement))">
                                     {{
                                         getCurrentActionLabel(requirement) 
                                     }}</gl-button>
@@ -217,7 +220,7 @@ export default {
                                     :aria-label="__(`create`)"
                                     type="button"
                                     class="gl-ml-3 oc_requirements_actions"
-                                    :disabled="getValidResourceTypesByRequirement(requirement.resourceType || requirement.constraint && requirement.constraint.resourceType).length == 0"
+                                    :disabled="getValidResourceTypes(requirement).length == 0"
                                     @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
                             </div>
                         </div>

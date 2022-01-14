@@ -498,6 +498,9 @@ extend type Query {
 
   
   unfurlRootBlob(fullPath: ID!): JSON
+  blueprintRaw(fullPath: ID!, name: String): JSON
+  deploymentTemplateRaw(fullPath: ID!, name: String): JSON
+  resourceTemplateRaw(fullPath: ID!, name: String): JSON
   overview(fullPath: ID!): Overview
   resourceType(name: String): ResourceType
   resourceTemplate(name: String): ResourceTemplate

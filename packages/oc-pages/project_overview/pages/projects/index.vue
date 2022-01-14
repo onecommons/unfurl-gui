@@ -1,7 +1,7 @@
 <script>
 import { GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
@@ -33,6 +33,7 @@ export default {
             projectSlugName: null,
             dropdownText: __("Select"),
             templateForkedName: null,
+            resourceTemplateName: null,
             templateSelected: {},
             modalNextStatus: true,
             showBannerIntro: true,
@@ -71,6 +72,7 @@ export default {
         }
     },
     created() {
+        this.syncGlobalVars(this.$projectGlobal);
         bus.$on('setTemplate', (template) => {
             this.templateSelected = {...template};
             this.projectSlugName = template.slug;
@@ -90,6 +92,7 @@ export default {
             this.dropdownText = __("Select");
             this.modalNextStatus = false;
             this.templateForkedName = null;
+            this.resourceTemplateName = null;
         },
 
         setTemplateBase() {
@@ -97,11 +100,10 @@ export default {
             this.projectSlugName = '';
         },
 
-        onSubmitModal() {
+        async onSubmitModal() {
             if (this.projectSlugName !== null) {
                 this.prepareTemplateNew();
-                this.$store.dispatch('setTemplateSelected', this.templateSelected);
-                this.$store.dispatch('createTemplate', { projectPath: this.$projectGlobal.projectPath});
+                await this.createDeploymentTemplate(this.templateSelected)
                 this.redirectToTemplate();
             }
 
@@ -110,6 +112,7 @@ export default {
         prepareTemplateNew() {
             this.templateSelected.title = this.templateForkedName;
             this.templateSelected.slug = this.slugify(this.templateForkedName);
+            this.templateSelected.primary = this.resourceTemplateName
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.dropdownText;
             this.templateSelected.type = "deployment";
@@ -140,6 +143,11 @@ export default {
         handleClose() {
             this.showBannerIntro = false;
         },
+
+        ...mapActions([
+            'createDeploymentTemplate',
+            'syncGlobalVars'
+        ])
     }
 }
 </script>
@@ -163,9 +171,10 @@ export default {
         <!-- Header of project view -->
         <HeaderProjectView :project-info="projectInfo" />
 
-        <div v-if="projectInfo.id">
+        <div v-if="projectInfo.name">
             <!-- Project Description -->
             <ProjectDescriptionBox 
+                    :project-info="projectInfo"
                     :requirements="projectInfo.primary.requirements" 
                     :inputs="projectInfo.primary.properties" 
                     :outputs="projectInfo.primary.outputs"
@@ -224,6 +233,18 @@ export default {
                     name="input['template-name']"
                     type="text"
                     />
+
+                </gl-form-group>
+                <gl-form-group
+                    label="Resource name"
+                    class="col-md-4 align_left gl-pl-0"
+                >
+                    <gl-form-input
+                    v-model="resourceTemplateName"
+                    name="input['resource-template-name']"
+                    type="text"
+                    />
+
                 </gl-form-group>
                 <p>{{ __("Select an environment to deploy this template to:") }}</p>
                 <gl-dropdown :text="dropdownText">

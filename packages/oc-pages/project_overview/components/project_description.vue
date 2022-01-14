@@ -13,6 +13,10 @@ export default {
     },
     mixins: [commonMethods],
     props: {
+        projectInfo: {
+            type: Object,
+            required: false
+        },
         requirements: {
             type: Array,
             required: false,

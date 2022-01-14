@@ -73,7 +73,7 @@ export const link = new ApolloLink((operation, forward) => {
 // annoyingly we need to add __typename manually when writing client-only resolvers
 function patchTypenameInArr(typename, overview, args, ctx, info) {
     const arr = overview[info.field.name.value];
-    if (!arr)
+    if (!(arr && arr.forEach))
         return [];
     arr.forEach((elem) => { elem.__typename = typename; });
     return arr;
@@ -83,6 +83,7 @@ function getProjectPath(root, variables, context) {
     return (
         (root && root.fullPath) ||
         (variables && variables.fullPath) || 
+        //context.fullPath // NOTE this doesn't work
         location.pathname.split('/').slice(1,3).join('/') // TODO don't do this
     )
 }
@@ -99,7 +100,7 @@ async function fetchRootBlob(root, _variables, context) {
         errors.forEach(console.error)
     }
     const {unfurlRootBlob} = data
-    return unfurlRootBlob
+    return _.cloneDeep(unfurlRootBlob)
 }
 
 async function fetchResourceType(variables, context){
@@ -146,16 +147,18 @@ async function fetchResourceTemplate(variables, context){
 
 async function fetchDeploymentTemplates(variables, context) {
     const {client} = context
+    const fullPath = getProjectPath(null, variables, context)
     const {errors, data} = await client.query({
         query: getDeploymentTemplates,
-        variables: {...variables, fullPath: getProjectPath(null, variables, context)}
+        variables: {...variables, fullPath}
     })
+    //context.fullPath = fullPath // NOTE this doesn't work
     if(errors) {errors.forEach(console.error)}
     const deploymentTemplates = data.deploymentTemplates.map(dt => {
+        if(!dt) return null
         dt.__typename = "DeploymentTemplate"
         dt.name = dt.slug
         return dt
-
     })
     return deploymentTemplates
 }
@@ -200,18 +203,42 @@ export const resolvers = {
     },
 
     Query: {
-        newApplicationBlueprint: async (...args) => {
-            const {ApplicationBlueprint, Overview} = await fetchRootBlob(...args)
+        blueprintRaw: async (...args) => {
+            const {ApplicationBlueprint} = await fetchRootBlob(...args)
             const variables = args[1]
             const result = variables.name?
                 ApplicationBlueprint[variables.name] :
                 Object.values(ApplicationBlueprint)[0]
+            result.__typename = 'JSON'
+            return result
+        },
+        resourceTemplateRaw: async (...args) => {
+            const {ResourceTemplate} = await fetchRootBlob(...args)
+            const variables = args[1]
+            const result = ResourceTemplate[variables.name]
+            result.__typename = 'JSON'
+            return result
+        },
+        deploymentTemplateRaw: async (...args) => {
+            const {DeploymentTemplate} = await fetchRootBlob(...args)
+            const variables = args[1]
+            console.log(DeploymentTemplate, variables)
+            const result = DeploymentTemplate[variables.name]
+            result.__typename = 'JSON'
+            return result
+        },
+        newApplicationBlueprint: async (...args) => {
+            const {ApplicationBlueprint, Overview} = await fetchRootBlob(...args)
+            const variables = args[1]
+            const target = variables.name?
+                ApplicationBlueprint[variables.name] :
+                Object.values(ApplicationBlueprint)[0]
+            const result = {...target}
 
             const {livePreview, sourceCodeUrl} = Overview
-            Object.assign(result, variables, {livePreview, sourceCodeUrl}) // propogate fullPath
+            Object.assign(result, variables, {livePreview, sourceCodeUrl}) // propogate fullPath?
             result.overview = Overview
             result.overview.__typename = 'Overview'
-
             return result
         },
         resourceType: async (...args) => {
@@ -220,7 +247,6 @@ export const resolvers = {
             try { name = args[1].name }
             catch(e) { throw missingResolverVariableError('name', args) }
             const result = ResourceType[name]
-            //result.fullPath = args[1].fullPath
             return result
         },
         resourceTemplate: async (...args) => {
@@ -229,7 +255,6 @@ export const resolvers = {
             try { name = args[1].name }
             catch(e) { throw missingResolverVariableError('name', args) }
             const result = ResourceTemplate[name]
-            //result.fullPath = args[1].fullPath
             return result
 
         },
@@ -240,7 +265,6 @@ export const resolvers = {
             for(const deploymentKey of deploymentTemplates) {
                 result.push(DeploymentTemplate[deploymentKey])
             }
-            //result.fullPath = args[1].fullPath
             return result
         },
         overview: async (...args) => {
@@ -261,15 +285,37 @@ export const resolvers = {
             return fetchResourceType(variables, context)
 
         },
-        async deploymentTemplates(parent, _, context) {
+        async deploymentTemplates(parent, vars, context) {
             const {fullPath, deploymentTemplates} = parent
-            const variables = {fullPath, deploymentTemplates}
+            // TODO add search by title
+            const variables = {fullPath, deploymentTemplates: deploymentTemplates}
             let result = await fetchDeploymentTemplates(variables, context)
-            if(variables.searchBySlug) {
-                // NOTE maybe this is supposed to be find(), but we're returning an array
-                result = result.filter(deploymentTemplate => deploymentTemplate.slug == variables.searchBySlug)
-            } else if (variables.searchByTitle) {
-                result = result.filter(deploymentTemplate => deploymentTemplate.title == variables.searchByTitle)
+            if(vars) {
+                
+                /*
+                result = result.filter(deploymentTemplate => {
+                    if(vars.searchBySlug) {
+                        return deploymentTemplate.slug == vars.searchBySlug
+                    } else if (vars.searchByTitle) {
+                        return deploymentTeplmate.title == vars.searchByTitle
+                    }
+                    return true
+                })
+                
+                */
+                /*
+                result = result.map(deploymentTemplate => {
+                    let keep = true
+                    if(vars.searchBySlug) {
+                        keep = deploymentTemplate.slug == vars.searchBySlug
+                    } else if (vars.searchByTitle) {
+                        keep = deploymentTeplmate.title == vars.searchByTitle
+                    }
+                    if(keep) return deploymentTemplate
+                    else return null
+                })
+                */
+
             }
 
             return result
@@ -286,12 +332,14 @@ export const resolvers = {
         name: (obj, args, { }) => (obj && obj.name) ?? null,
         requirements: _.partial(patchTypenameInArr, "Requirement"),
         properties: _.partial(patchTypenameInArr, "Input"),
+        description: (obj, args, { }) => (obj && obj.descriptio) ?? null,
+        outputs: (obj, args, { }) => (obj && obj.outputs) ?? [],
     },
 
     ResourceType: {
         name: (obj, args, { }) => (obj && obj.name) ?? null,
         badge: (obj, args, { }) => (obj && obj.badge) ?? null,
-        desrcription: (obj, args, { }) => (obj && obj.desrcription) ?? null,
+        description: (obj, args, { }) => (obj && obj.description) ?? null,
         requirements: _.partial(patchTypenameInArr, "RequirementConstraint"), // NOTE we cannot remove null, unresolved requirement names here, because the resolution has not been done yet
         properties: _.partial(patchTypenameInArr, "Input"),
         outputs: _.partial(patchTypenameInArr, "Output")
@@ -359,7 +407,17 @@ description: String
     },
 
     Requirement: {
-        constraint: _.partial(patchTypenameInArr, "Constraint"),
+        title: (obj, args, { }) => (obj && obj.title) ?? null,
+        constraint(parent, _, context) {
+            return {...parent.constraint, __typename: 'RequirementConstraint'}
+        },
+
+        match(parent, _, context) {
+            if(!parent.match) return null
+            const variables = {name: parent.match, fullPath: parent.fullPath}
+            return fetchResourceTemplate(variables, context)
+        }
+        
     },
 
 

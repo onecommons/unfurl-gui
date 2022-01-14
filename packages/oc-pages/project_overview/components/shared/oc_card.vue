@@ -1,5 +1,5 @@
 <script>
-import { GlCard, GlIcon, GlBadge } from "@gitlab/ui";
+import { GlCard, GlIcon, GlBadge, GlDropdown, GlDropdownItem} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import { bus } from '../../bus.js';
 
@@ -11,6 +11,8 @@ export default {
         GlCard,
         GlIcon,
         GlBadge,
+        GlDropdown,
+        GlDropdownItem
     },
     mixins: [commonMethods],
     props: {
@@ -18,6 +20,10 @@ export default {
             type: String,
             required: false,
             default: __("OC Card"),
+        },
+        card: {
+            type: Object,
+            required: false,
         },
         iconTitle: {
             type: Boolean,
@@ -59,6 +65,11 @@ export default {
             type: String,
             required: false,
             default: ''
+        },
+        dependent: {
+            type: Object,
+            required: false,
+            default: () => {name: 'primary'}
         }
     },
     data() {
@@ -83,9 +94,9 @@ export default {
     },
     methods: {
 
-        openDeletemodal(title, action=__("RemoveFromElipsis")) {
+        openDeletemodal(title, action=__("Delete")) {
             // eslint-disable-next-line no-unused-expressions
-            bus.$emit('deleteNode', {title, level: this.level, titleKey: this.customTitle, action});
+            bus.$emit('deleteNode', {...this.card, level: this.level, action});
         },
 
         getLegend(title) {
@@ -114,8 +125,34 @@ export default {
                 >{{ badgeHeader.text }}</gl-badge
                 >
             </div>
-            <div v-if="actions" class="dropdown more-actions">
-                <button title="More actions" data-toggle="dropdown" type="button" class="btn note-action-button more-actions-toggle btn btn-transparent btn-default btn-sm gl-button btn-default-tertiary btn-icon" aria-expanded="false">
+            <div class="dropdown-container">
+                <gl-dropdown
+                    v-if="actions"
+                    text="More actions"
+                    icon="ellipsis_v"
+                    textSrOnly
+                    size="small"
+                    :block="false"
+                    :disabled="false"
+                    no-caret=""
+                    category="tertiary"
+                    >
+                    <gl-dropdown-item>
+                        {{ __("Rename") }}
+                    </gl-dropdown-item>
+                    <gl-dropdown-item>
+                        <!--$button data-clipboard-text="onecommons.org" role="menuitem" type="button" class="dropdown-item"-->
+                        {{ __("Advance view") }}
+                    </gl-dropdown-item>
+                    <gl-dropdown-item @click="openDeletemodal(customTitle)">
+                        <!--button  data-testid="assign-user" role="menuitem" type="button" class="dropdown-item"-->
+                            {{ __("Delete") }}
+                    </gl-dropdown-item>
+
+
+                </gl-dropdown>
+                <!--div
+                <button title="More actions" data-toggle="dropdown" data-target=".more-actions-dropdown" type="button" class="btn note-action-button more-actions-toggle btn btn-transparent btn-default btn-sm gl-button btn-default-tertiary btn-icon" aria-expanded="false">
                     <gl-icon
                     :size="16"
                     name="ellipsis_v"
@@ -145,9 +182,10 @@ export default {
                         </button>
                     </li>
                 </ul>
-            </div>
+            </div-->
             <div v-else class="dropdown more-actions">
                 <span>{{ __("Advanced view") }}</span>
+            </div>
             </div>
         </template>
         <slot :class="'contenido-oc'" name="content"></slot>
@@ -179,5 +217,12 @@ export default {
     background: #DBDBDB !important;
     color: #525252;
     font-weight: normal !important;
+}
+</style>
+
+<style scoped>
+/*issue with line height on other header items*/
+.dropdown-container >>> button.dropdown-toggle {
+    margin: -0.5rem 0;
 }
 </style>

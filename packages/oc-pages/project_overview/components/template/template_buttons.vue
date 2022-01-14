@@ -54,8 +54,8 @@ export default {
                 >{{ __('Save Template') }}</gl-button
             >
             <gl-button
-                title="Save Template"
-                :aria-label="__(`Save Template`)"
+                title="Delete Template"
+                :aria-label="__(`Delete Template`)"
                 type="button"
                 icon="remove"
                 class="gl-mr-3"

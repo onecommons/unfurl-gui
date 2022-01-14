@@ -46,7 +46,7 @@ export default {
             }
         },
         ...mapGetters([
-          'getValidResourceTypesByRequirement'
+          'getValidResourceTypes'
         ]),
     },
 
@@ -70,7 +70,7 @@ export default {
         </p-->
         <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in getValidResourceTypesByRequirement(nameOfResource)"
+            v-for="(resource, idx) in getValidResourceTypes(nameOfResource)"
             :key="resource + idx"
             class="gl-responsive-table-row oc_table_row"
         >

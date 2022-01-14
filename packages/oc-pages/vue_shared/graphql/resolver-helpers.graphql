@@ -2,6 +2,10 @@ query getUnfurlRoot($fullPath: ID!) {
   unfurlRootBlob(fullPath: $fullPath) 
 }
 
+query getBlueprintRaw($fullPath: ID!, $name: String) {
+  blueprintRaw(fullPath: $fullPath, name: $name) @client
+}
+
 query getResourceType($fullPath: ID, $name: String) {
   resourceType(fullPath: $fullPath, name: $name) @client
 }

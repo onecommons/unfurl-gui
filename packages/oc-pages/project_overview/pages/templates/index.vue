@@ -13,6 +13,7 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
+import {slugify} from '../../../vue_shared/util'
 
 export default {
   name: 'TemplatesPage',
@@ -37,6 +38,8 @@ export default {
 
   data() {
     return {
+      createNodeResourceData: {},
+      deleteNodeData: {},
       componentKey: 0,
       loadingDeployment: false,
       deployButton: false,
@@ -66,7 +69,6 @@ export default {
 
   computed: {
     ...mapGetters({
-      resources: 'getResourceTemplates',
       projectInfo: 'getProjectInfo',
       getRequirementSelected: 'getRequirementSelected',
       getTemplate: 'getTemplate',
@@ -81,6 +83,7 @@ export default {
     },
 
     getServicesToConnect() {
+      // TODO
       //return this.fetchServices(this.servicesToConnect);
       return []
     },
@@ -167,9 +170,11 @@ export default {
       this.scrollDown(this.replaceSpaceWithDash(elId), 500);
     });
 
-    bus.$on('placeTempRequirement', () => {
+    bus.$on('placeTempRequirement', (obj) => {
+      const ref = this.$refs['oc-template-resource']
       setTimeout(() => {
-        this.$refs['oc-template-resource'].show();
+        this.createNodeResourceData = obj
+        ref.show();
       }, 100);
     });
 
@@ -178,6 +183,7 @@ export default {
     });
 
     bus.$on('deleteNode', (obj) => {
+      this.deleteNodeData = obj
       this.nodeTitle = obj.title;
       this.nodeLevel = obj.level;
       this.titleKey = obj.titleKey;
@@ -200,7 +206,9 @@ export default {
       'deleteNode',
       'saveResourceInState',
       'connectNodeResource',
-      'deleteTemplate'
+      'deleteDeploymentTemplate',
+      'commitPreparedMutations',
+      'fetchTemplateResources'
     ]),
 
     async preventLeave(event) {
@@ -249,8 +257,9 @@ export default {
     
 
     launchModal(refId, timeToWait) {
+      const ref = this.$refs[refId]
       setTimeout(() => {
-        this.$refs[refId].show();
+        ref.show();
       }, timeToWait);
     },
 
@@ -258,14 +267,19 @@ export default {
         this.activeSkeleton = true
         
         try {
-          const { overview } = await this.$store.dispatch('fetchTemplateBySlug', {
-            projectPath: this.$projectGlobal.projectPath,
-            templateSlug: this.$route.params.slug,
-          });
+          const projectPath = this.$projectGlobal.projectPath
+          const templateSlug =  this.$route.params.slug
+          //const { overview } = await this.$store.dispatch('fetchTemplateBySlug', { projectPath, templateSlug });
+          await this.fetchTemplateResources({projectPath, templateSlug})
+          // TODO  we should probably catch errors here instead and push home
+          // if(!this.getPrimaryCard)
+          /*
           if (overview.templates.length === 0) {
             this.$router.push({ name: 'projectHome' });
           }
+          */
         } catch (e) {
+          console.error(e)
           createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
         } finally {
           this.activeSkeleton = false
@@ -273,14 +287,19 @@ export default {
     },
 
     async autoSaveTemplate() {
+      /*
       await this.savePrimaryCard({primaryObject: this.getPrimaryCard});
       await this.saveResourceInState({arrayOfCards: this.getCardsStacked});
+      */
     },
 
     async triggerSave() {
         try {
             this.autoSaveTemplate();
+            await this.commitPreparedMutations()
+          /*
             const { updateTemplateResource } = await this.saveTemplateResources();
+            */
             createFlash({
               message: updateTemplateResource.isOk
                 ? __('Template was saved successfully!')
@@ -290,6 +309,7 @@ export default {
             });
             return true;
         } catch (e) {
+          console.error(e)
           createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
           return false;
         }
@@ -320,13 +340,14 @@ export default {
     async onSubmitDeleteTemplateModal() {
       try {
         this.activeSkeleton = true;
-        const {isOk} = await this.deleteTemplate({projectTitle: this.getTemplate.title});
-        if (isOk) {
-          this.activeSkeleton = false;
-          this.$router.push({ name: 'projectHome' });
-        }
+        await this.deleteDeploymentTemplate(this.$route.params.slug);
+        //if (isOk) { deleteDeploymentTemplate should throw errors
+        this.activeSkeleton = false;
+        this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
+        //}
       }catch (e) {
         this.activeSkeleton = false;
+        console.error(e)
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
@@ -335,23 +356,29 @@ export default {
       this.launchModal('oc-delete-template', 500);
     },
 
+
+    // NOTE this kicks off instantiation of a ResourceTemplate from a ResourceType
     async onSubmitTemplateResourceModal() {
       try {
         const { name } = this.selected;
         const titleCard = this.resourceName || name;
         await this.autoSaveTemplate();
-        const created = await this.createNodeResource({titleCard, selection: this.selected, action: "create"});
+        this.createNodeResourceData.name = slugify(this.resourceName)
+        this.createNodeResourceData.title = this.resourceName
+        const created = await this.createNodeResource({...this.createNodeResourceData, selection: this.selected});
         if(created){
           this.cleanModalResource();
-          this.scrollDown(this.replaceSpaceWithDash(titleCard), 500);
+          this.scrollDown(this.createNodeResourceData.name, 500);
           this.dataUnsaved = true;
         }
       }catch (e) {
+        console.error(e)
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
 
     async onSubmitModalConnect() {
+      throw new Error('connectNodeResource needs to be reimplemented')
       try { 
         const { name } = this.selectedServiceToConnect;
         await this.autoSaveTemplate();
@@ -361,15 +388,18 @@ export default {
           this.dataUnsaved = true;
         }
       }catch(e) {
+        console.error(e)
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
 
     async handleDeleteNode() {
       try {
-        const deleted = await this.deleteNode({ nodeTitle: this.nodeTitle, action: this.nodeAction, titleKey: this.titleKey});
+        const deleted = await this.deleteNode(this.deleteNodeData)
+
         if(deleted) this.dataUnsaved = true;
       } catch (e) {
+        console.error(e)
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
@@ -392,7 +422,7 @@ export default {
     },
 
     legendDeleteTemplate() {
-      return `Are you sure you want to delete <b>${this.getTemplate.title}</b> template ?`;
+      return `Are you sure you want to delete <b>${this.getResourcesOfTemplate.title}</b> template ?`;
     },
 
     replaceSpaceWithDash(str){
@@ -412,8 +442,9 @@ export default {
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
-          :custom-title="getPrimaryCard.type"
+          :custom-title="getPrimaryCard.title"
           :main-card-class="'primary-card'"
+          :card="getPrimaryCard"
           :icon-title="true"
           :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
           :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"
@@ -435,10 +466,11 @@ export default {
               <div class="gl-pl-6 gl-pr-6">
                 <oc-card
                   v-for="(card, idx) in getCardsStacked"
-                  :id="replaceSpaceWithDash(card.title)"
+                  :id="card.name"
                   :key="__('levelOne-') + card.title"
                   :custom-title="card.title"
-                  :badge-header="{ isActive: true, text: card.type }"
+                  :card="card"
+                  :badge-header="{ isActive: true, text: card.type.name }"
                   :icon-title="true"
                   :icon-color="card.status ? 'icon-green' : 'icon-red'"
                   :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
@@ -512,8 +544,7 @@ export default {
         :ref="__('oc-connect-resource')"
         :modal-id="__('oc-connect-resource')"
         size="lg"
-        :title="`Connect to  ${getNameResourceModal} resource`"
-        :action-primary="ocResourceToConnectPrimary"
+        :title="`Connect to  ${getNameResourceModal} resource`" :action-primary="ocResourceToConnectPrimary"
         :action-cancel="cancelProps"
         @primary="onSubmitModalConnect"
       >

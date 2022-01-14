@@ -21,20 +21,8 @@ const state = {
     availableResourceTypes: [],
     lastFetchedFrom: {}, 
     cards: [],
+    preparedMutations: []
 };
-
-const deleteReference = (arrg, by, value, nestingKey, parent ) => (
-    Object.values(arrg).reduce((a, item) => {
-        if (a) return a;
-        if (item[by] === value ) {
-            item.match =  null;
-            item.completionStatus = 'required';
-            item.status = null;
-            return item;
-        }
-        if(item[nestingKey]) return deleteReference(item[nestingKey], by, value, nestingKey, item);
-    }, null)
-);
 
 const mutations = {
     setTemplateResources(_state, deploymentTemplate) {
@@ -56,20 +44,37 @@ const mutations = {
         // eslint-disable-next-line no-param-reassign
         _state.resourcesOfTemplates = {...resourceObject};
     },
-    createTemplateResource(_state, { titleKey, nodeObject}) {
+    createTemplateResource(_state, { target }) {
         // eslint-disable-next-line no-param-reassign
-        _state.resourcesOfTemplates[titleKey] = { ...nodeObject };
+        _state.resourcesOfTemplates[target.name] = { ...target };
     },
 
-    createReferenceInPrimary(_state, { titleKey, requirementTitle, fieldsToReplace }){
-        const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.name ).indexOf(requirementTitle);
-        Object.keys(fieldsToReplace).forEach((key) => {
-            // eslint-disable-next-line no-param-reassign
-            _state.resourcesOfTemplates[titleKey].requirements[index][key] = fieldsToReplace[key];
-        });
+    pushPreparedMutation(_state, {mutation, variables}) {
+        _state.preparedMutations = _state.preparedMutations.concat({mutation, variables})
     },
+
+    clearPreparedMutations(_state, {isAutosave}) {
+        if (isAutosave) { _state.preparedMutations = _state.preparedMutations.filter(pm => !pm.commitOnAutosave) }
+        else { _state.preparedMutations = [] }
+    },
+
+    createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
+        const dependent = _state.resourcesOfTemplates[dependentName]
+        const index = dependent.requirements.findIndex(req => req.name == dependentRequirement)
+        dependent.requirements[index] = {...dependent.requirements[index], ...fieldsToReplace}
+        dependent.requirements[index].match = {...resourceTemplate, dependentRequirement, dependentName}
+        _state.resourcesOfTemplates = {..._state.resourcesOfTemplates}
+    },
+
+    deleteReference(_state, { dependentName, dependentRequirement}) {
+        const dependent = _state.resourcesOfTemplates[dependentName]
+        const index = dependent.requirements.findIndex(req => req.name == dependentRequirement)
+        dependent.requirements[index] = {...dependent.requirements[index], match: null, completionStatus: null, status: false}
+    },
+
 
     putCardInStack(_state, { card, position=null }) {
+        if(!card) return
         const index = _state.cards.map(c => c.title).indexOf(card.title)
 
         if(index === -1 && !position){
@@ -93,8 +98,9 @@ const mutations = {
         });
     },
 
-    deleteReferencePrimary(_state, {title}) {
-        const index = _state.resourcesOfTemplates.primary.requirements.map((e) =>  e.match).indexOf(title);
+
+    deleteReferencePrimary(_state, {name}) {
+        const index = _state.resourcesOfTemplates.primary.requirements.map((e) =>  e.match.name).indexOf(name);
         if(index !== -1){
             const element = _state.resourcesOfTemplates.primary.requirements[index];
             element.match = null;
@@ -110,38 +116,38 @@ const mutations = {
       _state.lastFetchedFrom = {projectPath, templateSlug}
     },
 
-    deleteReferenceSubrequirements(_state, {title, titleKey}) {
-        const index = _state.resourcesOfTemplates[titleKey].requirements.map((e) =>  e.match).indexOf(title);
+    deleteReferenceSubrequirements(_state, {name, dependentName}) {
+        const index = _state.resourcesOfTemplates[dependentName].requirements.map((e) =>  e.match.name).indexOf(name);
         if(index !== -1){
-            const element = _state.resourcesOfTemplates[titleKey].requirements[index];
+            const element = _state.resourcesOfTemplates[dependentName].requirements[index];
             element.match = null;
             element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
-            _state.resourcesOfTemplates[titleKey].requirements[index] = { ...element };
+            _state.resourcesOfTemplates[dependentName].requirements[index] = { ...element };
             // eslint-disable-next-line no-param-reassign
-            _state.resourcesOfTemplates[titleKey].status = null;
+            _state.resourcesOfTemplates[dependentName].status = null;
         }
     },
 
-    deleteNodeResource(_state, {title}) {
+    deleteNodeResource(_state, {name}) {
         const copy = cloneDeep(_state.resourcesOfTemplates);
         // eslint-disable-next-line no-prototype-builtins
-        if(copy[title].hasOwnProperty('requirements')){
-            copy[title].requirements.forEach((re) => {
-                delete copy[re.match];
+        if(copy[name].hasOwnProperty('requirements')){
+            copy[name].requirements.forEach((re) => {
+                delete copy[re.match.name];
             });
         }
-        delete copy[title];
+        delete copy[name];
         // eslint-disable-next-line no-param-reassign
         _state.resourcesOfTemplates = {...copy};
     },
 
-    deleteNodeOfStack(_state, {title}) {
+    deleteNodeOfStack(_state, {name}) {
         const copyCards = cloneDeep(_state.cards);
-        const index = copyCards.map(card => card.title).indexOf(title);
+        const index = copyCards.map(card => card.name).indexOf(name);
         if(index !== -1){
-            let keyToSearch = [title];
+            let keyToSearch = [name];
             const card = copyCards[index];
             // eslint-disable-next-line no-prototype-builtins
             if(card.hasOwnProperty('requirements')){
@@ -151,15 +157,15 @@ const mutations = {
                 }
             }
             const newArray = copyCards.filter(c => {
-                return keyToSearch.indexOf(c.title) === -1;
+                return keyToSearch.indexOf(c.name) === -1;
             });
             // eslint-disable-next-line no-param-reassign
             _state.cards = [...newArray];
         }
     },
 
-    deleteDeep(_state, {title}) {
-        deleteReference(_state.resourcesOfTemplates, 'match', title, 'requirements', null);
+    deleteDeep(_state, {name}) {
+        deleteReference(_state.resourcesOfTemplates, 'match', name, 'requirements', null);
     },
 
     setAvailableResourceTypes(_state, {availableResourceTypes}) {
@@ -238,9 +244,11 @@ const actions = {
     },
 
     async fetchTemplateResources({state, commit, dispatch}, {projectPath, templateSlug}) {
-      //try {
+        dispatch('populateAvailableResourceTypes', {projectPath})
+        if(!templateSlug) return
         commit('updateLastFetchedFrom', {projectPath, templateSlug})
 
+        // NOTE this query doesn't filter properly
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
           query: getTemplateBySlug,
           errorPolicy: 'all',
@@ -248,34 +256,22 @@ const actions = {
         })
 
         const blueprint = data.newApplicationBlueprint
-        const {requirements} = data.newApplicationBlueprint.primary
-        const cards = requirements//I'm supposed to filter this apparently
-        cards.forEach(c => {
-          if(c.completionStatus == 'created') //NOTE: c.completionStatus
-            commit('putCardInStack', {card: c.name})
-        })
+        const deploymentTemplate = blueprint.deploymentTemplates.find(dt => dt.slug == templateSlug)
+        const {requirements} = deploymentTemplate.primary
 
-        commit('setTemplateResources', blueprint.deploymentTemplates[0])
-        dispatch('createSubCards')
-        dispatch('populateAvailableResourceTypes', {projectPath})
+        for(const requirement of requirements) {
+            if(!requirement.match) continue
+            requirement.status = true
+            requirement.completionStatus = 'created'
+            commit('putCardInStack', {card: {...requirement.match, status: true, dependentRequirement: requirement.name, dependentName: 'primary'}})
+        }
+        dispatch('setResourcesOfTemplate', {populate: true, deploymentTemplate})
         return true
-          /*
-      } catch(err) {
-        throw err
-      }
-      */
     },
 
-    setResourcesOfTemplate({commit, dispatch}, resourcesOBject) {
+    setResourcesOfTemplate({commit, dispatch}, {populate, deploymentTemplate}) {
         try {
-            const { requirements } = resourcesOBject.primary;
-            const cards = requirements.filter(c => c.match !== null);
-            cards.forEach(c => {
-                if(c.completionStatus === 'created'){
-                    commit("putCardInStack", { card: resourcesOBject[c.match] });
-                }
-            });
-            commit('setTemplateResources', resourcesOBject);
+            commit('setTemplateResources', deploymentTemplate);
             dispatch('createSubCards');
             return true;
         } catch(err) {
@@ -317,9 +313,9 @@ const actions = {
         try {
             if(arrayOfCards.length > 0){
                 arrayOfCards.forEach((c) => {
-                    commit('updateStackedInState', {rObject: c, key: c.title});
+                    commit('updateStackedInState', {rObject: c, key: c.name});
                 });
-                dispatch('setResourcesOfTemplate', _state.resourcesOfTemplates);
+                dispatch('setResourcesOfTemplate', {deploymentTemplate: _state.resourcesOfTemplates});
             }
             return true;
         }catch(err) {
@@ -328,46 +324,44 @@ const actions = {
         }
     },
 
-    async createNodeResource({ commit, rootGetters, state: _state}, {titleCard, selection, action}) {
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
         try {
-            const { requirement, titleKey } = rootGetters.getRequirementSelected;
-            const { type, description } = requirement;
-            const nodeTarget = cloneDeep(selection);
-            nodeTarget.title = titleCard;
-            nodeTarget.type = type;
-            nodeTarget.description = description;
-            nodeTarget.status = true;
+            const target = cloneDeep(selection);
+            target.type = {...target};
+            target.description = requirement.description;
+            target.status = true;
+            target.name = name
+            target.title = title
 
-            // Clean __typename
-            delete nodeTarget.__typename;
-            if(nodeTarget.properties.length > 0) {
-                nodeTarget.properties = nodeTarget.properties.map(i => {
+            delete target.__typename;
+            if(target.properties.length > 0) {
+                target.properties = target.properties.map(i => {
                     delete i.__typename;
                     return i;
                 });
             }
-            if(nodeTarget.requirements.length > 0) {
-                nodeTarget.requirements = nodeTarget.requirements.map(i => {
-                    delete i.__typename;
-                    return i;
-                });
+            if(target.requirements.length > 0) {
+                target.requirements.map(req => {
+                    return {
+                        constraint: req,
+                        name: req.name,
+                        match: null,
+                        target: null
+                    }
+
+                })
             }
 
-
-            // Delete un used properties
-            delete nodeTarget.name;
-            delete nodeTarget.badge;
-            delete nodeTarget.avatar;
-            delete nodeTarget.platform;
-
+            const actualName = dependentName == 'primary'? getters.getPrimaryCard.name: dependentName
+            dispatch('createResourceTemplate', {type: target.type, name, title, description: target.description, deploymentTemplateSlug: _state.lastFetchedFrom.templateSlug, dependentName: actualName, dependentRequirement})
             const fieldsToReplace = {
-                match: titleCard,
                 completionStatus: "created",
                 status: true
             };
-            commit("createTemplateResource", { titleKey: titleCard, nodeObject: nodeTarget });
-            commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.name, fieldsToReplace });
-            commit("putCardInStack", { card: nodeTarget });
+
+            commit("createTemplateResource", { target });
+            commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace})
+            commit("putCardInStack", { card: target });
             return true;
         } catch(err) {
             console.error(err)
@@ -375,15 +369,15 @@ const actions = {
         }
     },
 
-    async connectNodeResource({commit, rootGetters, dispatch}, { nodeTitle }) {
+    async connectNodeResource({commit, rootGetters, dispatch}, { name }) {
         try {
             const { requirement, titleKey } = rootGetters.getRequirementSelected;
             const fieldsToReplace = {
-                match: nodeTitle,
                 completionStatus: "connected",
                 status: true
             };
-            commit("createReferenceInPrimary", { titleKey, requirementTitle: requirement.name, fieldsToReplace });
+            //commit("createReferenceInPrimary", { name, fieldsToReplace });
+            commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace})
             dispatch("updateStackOfCards");
             return true;
         } catch(err) {
@@ -392,26 +386,25 @@ const actions = {
         }
     },
 
-    async deleteNode({commit, dispatch, getters}, {nodeTitle, action, titleKey}) {
+    async deleteNode({commit, dispatch, getters}, {name, action, dependentName, dependentRequirement}) {
         try {
             await dispatch("savePrimaryCard", {primaryObject: getters.getPrimaryCard});
             await dispatch("saveResourceInState", {arrayOfCards: getters.getCardsStacked});
             const actionLowerCase = action.toLowerCase();
-            if(actionLowerCase === "removefromelipsis") {
-                commit("deleteDeep", {title: nodeTitle});
-                commit("deleteNodeResource", {title: nodeTitle});
-                commit("deleteNodeOfStack", {title: nodeTitle});
+            commit('deleteReference', {dependentName, dependentRequirement})
+
+            if(actionLowerCase === "delete") {
+                //commit("deleteDeep", {name}); // NOTE add this back in ?
+                dispatch('deleteResourceTemplate', {templateName: name, deploymentTemplateSlug: getters.getResourcesOfTemplate.slug})
+                commit("deleteNodeResource", {name});
+                commit("deleteNodeOfStack", {name});
+                
                 return true;
-            }
-            if(titleKey !== "primary") {
-                commit("deleteReferenceSubrequirements", {title: nodeTitle, titleKey});
-            }else{
-                commit("deleteReferencePrimary", {title: nodeTitle});
             }
 
             if(actionLowerCase === "remove"){
-                commit("deleteNodeResource", {title: nodeTitle});
-                commit("deleteNodeOfStack", {title: nodeTitle});
+                commit("deleteNodeResource", {name});
+                commit("deleteNodeOfStack", {name});
             }
             return true;
         } catch(err) {
@@ -419,6 +412,33 @@ const actions = {
             throw new Error(err.message);
         }
     },
+    /*
+    async commitPreparedMutations({commit, dispatch, getters, rootState, state}, options) {
+        const {isAutosave} = options || {}
+        for(const prepared of getters.getPreparedMutations) {
+            const {mutation, variables, commitOnAutosave} = prepared
+            const _variables = {...rootState.project.globalVars, ...variables}
+            _variables.fullPath = _variables.projectPath
+            console.log({
+                mutation,
+                errorPolicy: 'all',
+                variables: _variables
+            })
+
+
+            if(!isAutosave || commitOnAutosave) {
+                await graphqlClient.clients.defaultClient.mutate({
+                    mutation,
+                    errorPolicy: 'all',
+                    variables: _variables
+                })
+            }
+        }
+        commit('clearPreparedMutations', {isAutosave})
+    },
+
+    */
+    
 };
 
 const getters = {
@@ -426,9 +446,13 @@ const getters = {
     getPrimaryCard: _state => (cloneDeep(_state.resourcesOfTemplates.primary)),
     getCardsStacked: _state => (cloneDeep(_state.cards)),
     getAvailableResourceTypes: _state => (cloneDeep(_state.availableResourceTypes)),
+    getPreparedMutations: _state => (cloneDeep(_state.preparedMutations)),
 
-    getValidResourceTypesByRequirement(state) {
-        return function(requirementName){
+    getValidResourceTypes(state) {
+        return function(requirement){
+            if(!requirement) return []
+            const requirementName = typeof(requirement) == 'string'? requirement:
+                requirement.resourceType || requirement.constraint && requirement.constraint.resourceType.name
             function filteredByType(typeName) {
                 return state.availableResourceTypes.filter(type => {
                     return type.implements.includes(typeName)
@@ -440,10 +464,11 @@ const getters = {
                 const requirement = state.resourcesOfTemplates.primary.requirements
                     .find(requirement => requirement.name == requirementName)
                 if(requirement) {
-                    result = filteredByType(requirement.constraint.resourceType)
+                    result = filteredByType(requirement.constraint.resourceType.name)
                 }
             }
             
+            // TODO query for this information
             const CLOUD_MAPPINGS = {
                 'AzureAccount': 'unknown',
                 'GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
