@@ -1,5 +1,7 @@
 query getUnfurlRoot($fullPath: ID!) {
-  unfurlRootBlob(fullPath: $fullPath) 
+  applicationBlueprint(fullPath: $fullPath)  {
+    json
+  }
 }
 
 query getBlueprintRaw($fullPath: ID!, $name: String) {

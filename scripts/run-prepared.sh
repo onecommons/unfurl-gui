@@ -1,4 +1,4 @@
-
+#!/usr/bin/env bash
 ENDPOINT=$1
 #ENDPOINT="https://unfurl.cloud/api/graphql"
 

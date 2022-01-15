@@ -1,10 +1,10 @@
-extend type ApplicationBlueprintProject {
-        """
-        Oc Project Overview
-        """
-        overview: Overview! @client
-        applicationBlueprint: ApplicationBlueprint! @client
-}
+#extend type ApplicationBlueprintProject {
+#        """
+#        Oc Project Overview
+#        """
+#        overview: Overview! @client
+#        applicationBlueprint: ApplicationBlueprint! @client
+#}
 
 extend type OcEnvironment {
   """
@@ -497,7 +497,8 @@ extend type Query {
   ): ApplicationBlueprint
 
   
-  unfurlRootBlob(fullPath: ID!): JSON
+  #unfurlRootJSON(fullPath: ID!): JSON
+  #applicationBlueprint(fullPath: ID!): JSON
   blueprintRaw(fullPath: ID!, name: String): JSON
   deploymentTemplateRaw(fullPath: ID!, name: String): JSON
   resourceTemplateRaw(fullPath: ID!, name: String): JSON

@@ -99,8 +99,8 @@ async function fetchRootBlob(root, _variables, context) {
     if(errors) {
         errors.forEach(console.error)
     }
-    const {unfurlRootBlob} = data
-    return _.cloneDeep(unfurlRootBlob)
+    const jsonPayload = data?.applicationBlueprint?.json
+    return _.cloneDeep(jsonPayload)
 }
 
 async function fetchResourceType(variables, context){

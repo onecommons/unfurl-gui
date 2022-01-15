@@ -8,14 +8,13 @@ export default {
     
     accounts: (root, args, { db }) => db.get('accounts').value(),
 
-    /*
     applicationBlueprint: (root, args, { db }) => {
         //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
         // demo/apostrophe-demo
         return db.get('projects').value()[args.fullPath]
     },      
-    */
 
+    /*
     unfurlRootBlob(root, args, {db}){
       let result = {}
       if(args.fullPath)
@@ -23,6 +22,7 @@ export default {
 
       return result
     }
+    */
   },
 
   // fields with JSON type need explicit resolvers
