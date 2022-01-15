@@ -74,3 +74,7 @@ const vue = new Vue({
     return createElement(Layout);
   },
 }).$mount("#app");
+
+if(window.Cypress) {
+  window.app = vue
+}
