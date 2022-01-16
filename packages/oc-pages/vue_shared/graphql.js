@@ -222,7 +222,6 @@ export const resolvers = {
         deploymentTemplateRaw: async (...args) => {
             const {DeploymentTemplate} = await fetchRootBlob(...args)
             const variables = args[1]
-            console.log(DeploymentTemplate, variables)
             const result = DeploymentTemplate[variables.name]
             result.__typename = 'JSON'
             return result
@@ -247,6 +246,8 @@ export const resolvers = {
             try { name = args[1].name }
             catch(e) { throw missingResolverVariableError('name', args) }
             const result = ResourceType[name]
+            if(!result) return
+            result.__typename = 'ResourceType'
             return result
         },
         resourceTemplate: async (...args) => {
@@ -255,6 +256,8 @@ export const resolvers = {
             try { name = args[1].name }
             catch(e) { throw missingResolverVariableError('name', args) }
             const result = ResourceTemplate[name]
+            if(!result) return
+            result.__typename = 'ResourceTemplate'
             return result
 
         },
@@ -330,7 +333,7 @@ export const resolvers = {
             return fetchResourceType(variables, context)
         },
         name: (obj, args, { }) => (obj && obj.name) ?? null,
-        requirements: _.partial(patchTypenameInArr, "Requirement"),
+        dependencies: _.partial(patchTypenameInArr, "Dependency"),
         properties: _.partial(patchTypenameInArr, "Input"),
         description: (obj, args, { }) => (obj && obj.descriptio) ?? null,
         outputs: (obj, args, { }) => (obj && obj.outputs) ?? [],
@@ -406,7 +409,7 @@ description: String
         
     },
 
-    Requirement: {
+    Dependency: {
         title: (obj, args, { }) => (obj && obj.title) ?? null,
         constraint(parent, _, context) {
             return {...parent.constraint, __typename: 'RequirementConstraint'}

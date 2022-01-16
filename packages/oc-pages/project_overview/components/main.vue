@@ -27,7 +27,7 @@ newApplicationBlueprint(fullPath: $projectPath) @client {
         type
         properties
         outputs
-        requirements {
+        dependencies {
           title
           name
           match {
@@ -48,7 +48,7 @@ newApplicationBlueprint(fullPath: $projectPath) @client {
         type
         properties
         outputs
-        requirements {
+        dependencies {
           title
           name
           match {

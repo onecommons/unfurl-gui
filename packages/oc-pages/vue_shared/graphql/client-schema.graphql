@@ -354,6 +354,7 @@ type DeploymentTemplate {
   """
   slug: String!
 
+  name: String!
   """
   Title of template
   """
@@ -407,10 +408,17 @@ type ResourceTemplate {
   # input has schema and value
   properties: [Input!]
   outputs: [Output!] # TODO check if this is still a thing
-  requirements: [Requirement!]
+  dependencies: [Dependency]
 }
 
 type Requirement {
+  name: String
+  constraint: RequirementConstraint!
+  match: ResourceTemplate
+  target: Resource
+}
+
+type Dependency {
   name: String
   constraint: RequirementConstraint!
   match: ResourceTemplate

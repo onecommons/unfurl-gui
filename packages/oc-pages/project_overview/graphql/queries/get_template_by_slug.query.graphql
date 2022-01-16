@@ -110,7 +110,7 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!) {
         description
         properties
         outputs
-        requirements {
+        dependencies {
           constraint {
             resourceType {
               name
@@ -125,7 +125,7 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!) {
             type
             properties
             outputs
-            requirements {
+            dependencies {
               title
               name
               match {

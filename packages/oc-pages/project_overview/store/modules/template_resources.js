@@ -60,16 +60,16 @@ const mutations = {
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
         const dependent = _state.resourcesOfTemplates[dependentName]
-        const index = dependent.requirements.findIndex(req => req.name == dependentRequirement)
-        dependent.requirements[index] = {...dependent.requirements[index], ...fieldsToReplace}
-        dependent.requirements[index].match = {...resourceTemplate, dependentRequirement, dependentName}
+        const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement)
+        dependent.dependencies[index] = {...dependent.dependencies[index], ...fieldsToReplace}
+        dependent.dependencies[index].match = {...resourceTemplate, dependentRequirement, dependentName}
         _state.resourcesOfTemplates = {..._state.resourcesOfTemplates}
     },
 
     deleteReference(_state, { dependentName, dependentRequirement}) {
         const dependent = _state.resourcesOfTemplates[dependentName]
-        const index = dependent.requirements.findIndex(req => req.name == dependentRequirement)
-        dependent.requirements[index] = {...dependent.requirements[index], match: null, completionStatus: null, status: false}
+        const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement)
+        dependent.dependencies[index] = {...dependent.dependencies[index], match: null, completionStatus: null, status: false}
     },
 
 
@@ -100,14 +100,14 @@ const mutations = {
 
 
     deleteReferencePrimary(_state, {name}) {
-        const index = _state.resourcesOfTemplates.primary.requirements.map((e) =>  e.match.name).indexOf(name);
+        const index = _state.resourcesOfTemplates.primary.dependencies.map((e) =>  e.match.name).indexOf(name);
         if(index !== -1){
-            const element = _state.resourcesOfTemplates.primary.requirements[index];
+            const element = _state.resourcesOfTemplates.primary.dependencies[index];
             element.match = null;
             element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
-            _state.resourcesOfTemplates.primary.requirements[index] = { ...element };
+            _state.resourcesOfTemplates.primary.dependencies[index] = { ...element };
             // eslint-disable-next-line no-param-reassign
             _state.resourcesOfTemplates.primary.status = null;
         }
@@ -117,14 +117,14 @@ const mutations = {
     },
 
     deleteReferenceSubrequirements(_state, {name, dependentName}) {
-        const index = _state.resourcesOfTemplates[dependentName].requirements.map((e) =>  e.match.name).indexOf(name);
+        const index = _state.resourcesOfTemplates[dependentName].dependencies.map((e) =>  e.match.name).indexOf(name);
         if(index !== -1){
-            const element = _state.resourcesOfTemplates[dependentName].requirements[index];
+            const element = _state.resourcesOfTemplates[dependentName].dependencies[index];
             element.match = null;
             element.completionStatus = 'required';
             element.status = null;
             // eslint-disable-next-line no-param-reassign
-            _state.resourcesOfTemplates[dependentName].requirements[index] = { ...element };
+            _state.resourcesOfTemplates[dependentName].dependencies[index] = { ...element };
             // eslint-disable-next-line no-param-reassign
             _state.resourcesOfTemplates[dependentName].status = null;
         }
@@ -133,8 +133,8 @@ const mutations = {
     deleteNodeResource(_state, {name}) {
         const copy = cloneDeep(_state.resourcesOfTemplates);
         // eslint-disable-next-line no-prototype-builtins
-        if(copy[name].hasOwnProperty('requirements')){
-            copy[name].requirements.forEach((re) => {
+        if(copy[name].hasOwnProperty('dependencies')){
+            copy[name].dependencies.forEach((re) => {
                 delete copy[re.match.name];
             });
         }
@@ -150,8 +150,8 @@ const mutations = {
             let keyToSearch = [name];
             const card = copyCards[index];
             // eslint-disable-next-line no-prototype-builtins
-            if(card.hasOwnProperty('requirements')){
-                const newKeys = card.requirements.map(c => c.match);
+            if(card.hasOwnProperty('dependencies')){
+                const newKeys = card.dependencies.map(c => c.match);
                 if(newKeys.length > 0){
                     keyToSearch = [...keyToSearch, ...newKeys];
                 }
@@ -164,9 +164,12 @@ const mutations = {
         }
     },
 
+    // NOTE not in use
+    /*
     deleteDeep(_state, {name}) {
         deleteReference(_state.resourcesOfTemplates, 'match', name, 'requirements', null);
     },
+    */
 
     setAvailableResourceTypes(_state, {availableResourceTypes}) {
         state.availableResourceTypes = availableResourceTypes
@@ -206,8 +209,8 @@ const actions = {
             const cards = cloneDeep(_state.cards);
             cards.forEach((c, idx) => {
                 // eslint-disable-next-line no-prototype-builtins
-                if(c.hasOwnProperty('requirements')){
-                    const subRequirements = c.requirements.filter(r => r.match !== null && r.completionStatus === "created");
+                if(c.hasOwnProperty('dependencies')){
+                    const subRequirements = c.dependencies.filter(r => r.match !== null && r.completionStatus === "created");
                     subRequirements.forEach(r => {
                         commit("putCardInStack", { card: {..._state.resourcesOfTemplates[r.match]}, position: idx });
                     });
@@ -257,13 +260,13 @@ const actions = {
 
         const blueprint = data.newApplicationBlueprint
         const deploymentTemplate = blueprint.deploymentTemplates.find(dt => dt.slug == templateSlug)
-        const {requirements} = deploymentTemplate.primary
+        const {dependencies} = deploymentTemplate.primary
 
-        for(const requirement of requirements) {
-            if(!requirement.match) continue
-            requirement.status = true
-            requirement.completionStatus = 'created'
-            commit('putCardInStack', {card: {...requirement.match, status: true, dependentRequirement: requirement.name, dependentName: 'primary'}})
+        for(const dependency of dependencies) {
+            if(!dependency.match) continue
+            dependency.status = true
+            dependency.completionStatus = 'created'
+            commit('putCardInStack', {card: {...dependency.match, status: true, dependentRequirement: dependency.name, dependentName: 'primary'}})
         }
         dispatch('setResourcesOfTemplate', {populate: true, deploymentTemplate})
         return true
@@ -282,8 +285,8 @@ const actions = {
 
     updateStackOfCards({commit, dispatch, state: _state}) {
         try {
-            const { requirements } = _state.resourcesOfTemplates.primary;
-            const cards = requirements.filter(c => c.match !== null && c.completionStatus === 'created');
+            const { dependencies } = _state.resourcesOfTemplates.primary;
+            const cards = dependencies.filter(c => c.match !== null && c.completionStatus === 'created');
             cards.forEach(c => {
                 commit("putCardInStack", { card: _state.resourcesOfTemplates[c.match] });
             });
@@ -341,7 +344,7 @@ const actions = {
                 });
             }
             if(target.requirements.length > 0) {
-                target.requirements.map(req => {
+                target.dependencies = target.requirements.map(req => {
                     return {
                         constraint: req,
                         name: req.name,
@@ -350,6 +353,8 @@ const actions = {
                     }
 
                 })
+
+                delete target.requirements
             }
 
             const actualName = dependentName == 'primary'? getters.getPrimaryCard.name: dependentName
@@ -449,22 +454,22 @@ const getters = {
     getPreparedMutations: _state => (cloneDeep(_state.preparedMutations)),
 
     getValidResourceTypes(state) {
-        return function(requirement){
-            if(!requirement) return []
-            const requirementName = typeof(requirement) == 'string'? requirement:
-                requirement.resourceType || requirement.constraint && requirement.constraint.resourceType.name
+        return function(dependency){
+            if(!dependency) return []
+            const dependencyName = typeof(dependency) == 'string'? dependency:
+                dependency.resourceType || dependency.constraint && dependency.constraint.resourceType.name
             function filteredByType(typeName) {
                 return state.availableResourceTypes.filter(type => {
                     return type.implements.includes(typeName)
                 })
             }
-            let result = filteredByType(requirementName)
+            let result = filteredByType(dependencyName)
 
             if(result.length == 0) {
-                const requirement = state.resourcesOfTemplates.primary.requirements
-                    .find(requirement => requirement.name == requirementName)
-                if(requirement) {
-                    result = filteredByType(requirement.constraint.resourceType.name)
+                const dependency = state.resourcesOfTemplates.primary.dependencies
+                    .find(dependency => dependency.name == dependencyName)
+                if(dependency) {
+                    result = filteredByType(dependency.constraint.resourceType.name)
                 }
             }
             

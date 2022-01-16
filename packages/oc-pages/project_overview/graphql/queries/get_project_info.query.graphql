@@ -67,7 +67,7 @@ query getProjectInfo($projectPath: ID!) {
         type
         properties
         outputs
-        requirements
+        dependencies
       }
     }
     primary {

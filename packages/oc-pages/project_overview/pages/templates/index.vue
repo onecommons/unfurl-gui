@@ -457,7 +457,7 @@ export default {
             <oc-list
               tabs-title="Requirements"
               title-key="primary"
-              :template-requirements="getPrimaryCard.requirements"
+              :template-dependencies="getPrimaryCard.dependencies"
               :level="1"
               :show-type-first="true"
               :card="getPrimaryCard"
@@ -482,7 +482,7 @@ export default {
 
                     <oc-list
                       tabs-title="Requirements"
-                      :template-requirements="card.requirements"
+                      :template-dependencies="card.dependencies"
                       :level="idx"
                       :title-key="card.title"
                       :show-type-first="true" 

@@ -920,7 +920,7 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     },
     "the_app": {
       "type": "MEANStack",
@@ -945,7 +945,7 @@
         }
       ],
       "outputs": [],
-      "requirements": [
+      "dependencies": [
         {
           "constraint": {
             "name": "host",
@@ -956,7 +956,7 @@
             "resourceType": "Compute"
           },
           "name": "host",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": "app_container"
         },
         {
@@ -969,7 +969,7 @@
             "resourceType": "DNS"
           },
           "name": "resolver",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": "foo.com-zone"
         },
         {
@@ -982,7 +982,7 @@
             "resourceType": "MongoDb"
           },
           "name": "db",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": "atlas_service"
         }
       ]
@@ -1015,7 +1015,7 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     },
     "atlas_service": {
       "type": "Atlas",
@@ -1039,7 +1039,7 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     }
   },
   "DeploymentTemplate": {

@@ -197,7 +197,7 @@
         }
       ],
       "outputs": [],
-      "requirements": [
+      "dependencies": [
         {
           "constraint": {
             "name": "host",
@@ -208,7 +208,7 @@
             "resourceType": "Compute"
           },
           "name": "host",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": null
         },
         {
@@ -221,7 +221,7 @@
             "resourceType": "DNSZone"
           },
           "name": "resolver",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": null
         },
         {
@@ -234,7 +234,7 @@
             "resourceType": "MongoDb"
           },
           "name": "db",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": null
         }
       ]
@@ -264,7 +264,7 @@
         }
       ],
       "outputs": [],
-      "requirements": [
+      "dependencies": [
         {
           "constraint": {
             "name": "dns",
@@ -274,7 +274,7 @@
             "__typename": "RequirementConstraint"
           },
           "name": "dns",
-          "__typename": "Requirement",
+          "__typename": "Dependency",
           "match": null
         }
       ]
@@ -299,7 +299,7 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     }
   },
   "DeploymentTemplate": {

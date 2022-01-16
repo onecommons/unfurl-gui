@@ -26,7 +26,7 @@ export default {
             required: false,
             default: __('List')
         },
-        templateRequirements: {
+        templateDependencies: {
             type: Array,
             required: true,
             default: () => []
@@ -68,7 +68,7 @@ export default {
             getValidResourceTypes: 'getValidResourceTypes'
         }),
         checkRequirements() {
-            const flag = this.templateRequirements.filter((r) => r.status === true).length === this.templateRequirements.length;
+            const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
             bus.$emit('completeRequirements', this.level, flag);
             return flag;
         }
@@ -126,7 +126,7 @@ export default {
 }
 </script>
 <template>
-    <div v-if="templateRequirements.length > 0">
+    <div v-if="templateDependencies.length > 0">
         <gl-tabs class="gl-mt-6">
             <gl-tab class="gl-mt-6">
                 <template slot="title">
@@ -144,7 +144,7 @@ export default {
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
                         <div
-                            v-for="(requirement, idx) in templateRequirements"
+                            v-for="(requirement, idx) in templateDependencies"
                             :key="requirement + idx + '-template'"
                             class="gl-responsive-table-row oc_table_row">
                             <div

@@ -367,7 +367,7 @@ const actions = {
         const {resourceTemplateRaw} = queryResponse.data
 
 
-        resourceTemplateRaw.requirements = transformList(resourceTemplateRaw.requirements)
+        resourceTemplateRaw.dependencies = transformList(resourceTemplateRaw.dependencies)
         resourceTemplateRaw.__typename = 'ResourceTemplate'
         const patch = { [resourceTemplateRaw.name]: resourceTemplateRaw }
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
@@ -529,12 +529,12 @@ const actions = {
 
         const resourceType = typeof(type) == 'string'? getters.getAvailableResourceTypes.find(rt => rt.name == type): type
         const properties = resourceType.properties
-        const requirements = resourceType.requirements.map(req => ({
+        const dependencies = resourceType.requirements.map(req => ({
             constraint: req,
             match: null,
             target: null,
             name: req.name,
-            __typename: 'Requirement'
+            __typename: 'Dependency'
         }))
         const patch = {
             [name]: {
@@ -544,7 +544,7 @@ const actions = {
                 description,
                 __typename: "ResourceTemplate",
                 properties,
-                requirements
+                dependencies
             }
         }
 
