@@ -83,6 +83,9 @@ export default {
             this.redirectToTemplate();
         });
     },
+    mounted() {
+        this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
+    },
     methods: {
         redirectToTemplate() {
             this.$router.push({ name: 'templatePage', params: { slug: this.templateSelected.slug}});
@@ -146,7 +149,8 @@ export default {
 
         ...mapActions([
             'createDeploymentTemplate',
-            'syncGlobalVars'
+            'syncGlobalVars',
+            'fetchProjectInfo'
         ])
     }
 }

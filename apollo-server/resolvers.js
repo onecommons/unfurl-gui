@@ -1,5 +1,7 @@
 import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
+import {readFileSync} from 'fs'
+import {resolve} from 'path'
 
 export default {
   JSON: GraphQLJSON,
@@ -46,13 +48,19 @@ export default {
 
 
     updateDeploymentObj(root, {projectPath, typename, patch}, {db}) {
-      const patchTarget = db.get('projects').value()[projectPath][typename]
-      if(!patchTarget) return {isOk: false, errors: [`Typename '${typename}' does not exist in the target project`]}
-      for(let key in patch) {
-        if (patch[key] === null) {
-          delete patchTarget[key]
-        } else {
-          patchTarget[key] = patch[key]
+      const _patch = typeof(patch) == 'string'? JSON.stringify(patch): patch
+      const patchTarget = typename === '*'? db.get('projects').value()[projectPath] : db.get('projects').value()[projectPath][typename]
+      console.log(typename, patch)
+      if(typename === '*') {
+        Object.assign(patchTarget, JSON.parse(readFileSync(resolve(__dirname, 'data', projectPath) + '.json', 'utf-8')))
+      } else {
+        if(!patchTarget) return {isOk: false, errors: [`Typename '${typename}' does not exist in the target project`]}
+        for(let key in patch) {
+          if (_patch[key] === null) {
+            delete patchTarget[key]
+          } else {
+            patchTarget[key] = _patch[key]
+          }
         }
       }
       db.write()

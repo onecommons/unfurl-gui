@@ -263,26 +263,29 @@ export default {
       }, timeToWait);
     },
 
-    async fetchItems() {
+    async fetchItems(n=0) {
         this.activeSkeleton = true
         
         try {
-          const projectPath = this.$projectGlobal.projectPath
-          const templateSlug =  this.$route.params.slug
-          //const { overview } = await this.$store.dispatch('fetchTemplateBySlug', { projectPath, templateSlug });
-          await this.fetchTemplateResources({projectPath, templateSlug})
-          // TODO  we should probably catch errors here instead and push home
-          // if(!this.getPrimaryCard)
-          /*
+            const projectPath = this.$projectGlobal.projectPath
+            const templateSlug =  this.$route.params.slug
+            //const { overview } = await this.$store.dispatch('fetchTemplateBySlug', { projectPath, templateSlug });
+            if(!await this.fetchTemplateResources({projectPath, templateSlug, fetchPolicy: n>0? 'network-only': 'cache-first'})) {
+                if (n<2) { await this.fetchItems(++n) }
+                return
+            }
+            // TODO  we should probably catch errors here instead and push home
+            // if(!this.getPrimaryCard)
+            /*
           if (overview.templates.length === 0) {
             this.$router.push({ name: 'projectHome' });
           }
-          */
+             */
         } catch (e) {
-          console.error(e)
-          createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+            console.error(e)
+            createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
         } finally {
-          this.activeSkeleton = false
+            this.activeSkeleton = false
         }
     },
 

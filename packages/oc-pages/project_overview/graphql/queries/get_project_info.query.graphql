@@ -54,7 +54,7 @@
 
 
 query getProjectInfo($projectPath: ID!) {
-  newApplicationBlueprint(fullPath: $projectPath) @client {
+  newApplicationBlueprint(fullPath: $projectPath, fetchPolicy: "network-only") @client {
     __typename
     name
     deploymentTemplates {

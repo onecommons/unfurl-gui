@@ -1,9 +1,35 @@
 const BASE_URL = Cypress.env('CYPRESS_BASE_URL')
-const MY_AWESOME_TEMPLATE = BASE_URL + '/demo/apostrophe-demo/-/overview/templates/my-awesome-template'
+const DEMO_URL = BASE_URL + '/demo/apostrophe-demo/-/overview'
+const MY_AWESOME_TEMPLATE = DEMO_URL + '/templates/my-awesome-template'
 
 const ocTableRow = () => cy.get('.oc_table_row').contains('.oc_table_row', 'AWSInstance')
+import gql from 'graphql-tag'
 
-describe('projec overview', () => {
+describe('project overview', () => {
+
+  before(() => {
+    cy.visit(DEMO_URL)
+      .should('have.property', 'app')
+      .then(app => {
+        app.$apolloProvider.clients.defaultClient.mutate({
+          mutation: gql`
+            mutation {
+            updateDeploymentObj(projectPath: "demo/apostrophe-demo", typename: "*", patch: "null") {errors}
+            }
+          `,
+          variables: {}
+        })
+
+      })
+      /*.$apolloProvider.clients.defaultClient.mutate({
+      mutation: gql`
+        updateDeploymentObj(projectPath: "demo/apostrophe-demo", typename: "*", patch: "null") {errors}
+      `,
+      variables: {}
+    })
+    */
+  })
+
   describe('overview page', () => {
     beforeEach(() => {
       cy.visit(BASE_URL + '/demo/apostrophe-demo/~/overview')
@@ -155,6 +181,19 @@ describe('projec overview', () => {
 
 
       cy.get('#awsinstance').should('not.exist')
+    })
+
+
+    it('can delete a template', () => {
+      cy.get('button[title="Delete Template"]').click()
+      cy.wait(250)
+
+      cy.get('#oc-delete-template').within(() => {
+        cy.get('button').contains('button','Delete').click()
+        cy.wait(250)
+        cy.url().should('equal', DEMO_URL + '/')
+      })
+      cy.get('.ci-table').contains('My awesome template').should('not.exist')
     })
   })
 

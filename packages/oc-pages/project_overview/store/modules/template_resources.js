@@ -5,8 +5,7 @@ import gql from 'graphql-tag';
 import updateTemplateResource from '../../graphql/mutations/update_template_resource.mutation.graphql';
 import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
 
-const state = {
-    //resourcesOfTemplates: {},
+const baseState = () => ({
     resourcesOfTemplates: {//templateResourceScafold: {
         title: '',
         type: '',
@@ -22,9 +21,15 @@ const state = {
     lastFetchedFrom: {}, 
     cards: [],
     preparedMutations: []
-};
+})
+
+const state = baseState()
 
 const mutations = {
+    resetState({state}) {
+        state = baseState()
+
+    },
     setTemplateResources(_state, deploymentTemplate) {
         // eslint-disable-next-line no-param-reassign
         _state.resourcesOfTemplates = {...deploymentTemplate} 
@@ -61,6 +66,8 @@ const mutations = {
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
         const dependent = _state.resourcesOfTemplates[dependentName]
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement)
+        resourceTemplate.dependentName = dependentName
+        resourceTemplate.dependentRequirement = dependentRequirement
         dependent.dependencies[index] = {...dependent.dependencies[index], ...fieldsToReplace}
         dependent.dependencies[index].match = {...resourceTemplate, dependentRequirement, dependentName}
         _state.resourcesOfTemplates = {..._state.resourcesOfTemplates}
@@ -135,7 +142,9 @@ const mutations = {
         // eslint-disable-next-line no-prototype-builtins
         if(copy[name].hasOwnProperty('dependencies')){
             copy[name].dependencies.forEach((re) => {
-                delete copy[re.match.name];
+                if(re.match) {
+                    delete copy[re.match.name];
+                }
             });
         }
         delete copy[name];
@@ -246,20 +255,21 @@ const actions = {
         
     },
 
-    async fetchTemplateResources({state, commit, dispatch}, {projectPath, templateSlug}) {
-        dispatch('populateAvailableResourceTypes', {projectPath})
-        if(!templateSlug) return
-        commit('updateLastFetchedFrom', {projectPath, templateSlug})
+    async fetchTemplateResources({state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy}) {
+        if(!templateSlug) return false
+        commit('resetState')
 
         // NOTE this query doesn't filter properly
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
-          query: getTemplateBySlug,
-          errorPolicy: 'all',
-          variables: { projectPath, templateSlug }
+            query: getTemplateBySlug,
+            errorPolicy: 'all',
+            variables: { projectPath, templateSlug, fetchPolicy },
+            fetchPolicy
         })
 
         const blueprint = data.newApplicationBlueprint
         const deploymentTemplate = blueprint.deploymentTemplates.find(dt => dt.slug == templateSlug)
+        if(!deploymentTemplate) return false
         const {dependencies} = deploymentTemplate.primary
 
         for(const dependency of dependencies) {
@@ -269,6 +279,7 @@ const actions = {
             commit('putCardInStack', {card: {...dependency.match, status: true, dependentRequirement: dependency.name, dependentName: 'primary'}})
         }
         dispatch('setResourcesOfTemplate', {populate: true, deploymentTemplate})
+        commit('updateLastFetchedFrom', {projectPath, templateSlug})
         return true
     },
 
@@ -327,6 +338,8 @@ const actions = {
         }
     },
 
+    // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
+    // we can use part of this function to set app state on page load
     async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
         try {
             const target = cloneDeep(selection);

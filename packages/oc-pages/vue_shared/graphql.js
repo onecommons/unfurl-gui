@@ -90,11 +90,12 @@ function getProjectPath(root, variables, context) {
 
 async function fetchRootBlob(root, _variables, context) {
     const {client} = context
-    const variables = {fullPath: getProjectPath(root, _variables, context)}
+    const variables = {fullPath: getProjectPath(root, _variables, context), fetchPolicy: _variables?.fetchPolicy}
 
     const {errors, data} = await client.query({
         query: getUnfurlRoot,
-        variables
+        variables,
+        fetchPolicy: _variables?.fetchPolicy
     })
     if(errors) {
         errors.forEach(console.error)

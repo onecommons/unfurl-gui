@@ -72,10 +72,11 @@ newApplicationBlueprint(fullPath: $projectPath) @client {
             return 
         }
         try {
-            await this.$store.dispatch('fetchProjectInfo', { projectPath: this.$projectGlobal.projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
-            await this.$store.dispatch('fetchTemplateResources', { projectPath: this.$projectGlobal.projectPath, templateSlug: this.$route.params.slug});
-            await this.$store.dispatch('fetchEnvironments', { projectPath: this.$projectGlobal.projectPath});
-            await this.$store.dispatch('fetchServicesToConnect', {projectPath: this.$projectGlobal.projectPath});
+            const {projectPath} = this.$projectGlobal
+            await this.$store.dispatch('populateAvailableResourceTypes', {projectPath})
+            await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
+            await this.$store.dispatch('fetchEnvironments', { projectPath});
+            await this.$store.dispatch('fetchServicesToConnect', {projectPath});
             return true;
         } catch(err) {
             console.error(err)

@@ -80,8 +80,8 @@
 #  }
 #}
 
-query getTemplateBySlug($projectPath: ID!, $templateSlug: String!) {
-  newApplicationBlueprint(fullPath: $projectPath) @client {
+query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy: String) {
+  newApplicationBlueprint(fullPath: $projectPath, fetchPolicy: $fetchPolicy) @client {
     __typename
     name
     primary {

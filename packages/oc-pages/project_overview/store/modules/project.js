@@ -203,6 +203,7 @@ const actions = {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getProjectInfo,
             errorPolicy: 'all',
+            fetchPolicy: 'network-only',
             variables: { projectPath, defaultBranch },
         });
         const overview = data.newApplicationBlueprint.overview;
