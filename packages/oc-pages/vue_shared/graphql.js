@@ -75,7 +75,7 @@ function patchTypenameInArr(typename, overview, args, ctx, info) {
     const arr = overview[info.field.name.value];
     if (!(arr && arr.forEach))
         return [];
-    arr.forEach((elem) => { elem.__typename = typename; });
+    arr.forEach((elem) => { if(elem) elem.__typename = typename; });
     return arr;
 }
 
@@ -89,108 +89,147 @@ function getProjectPath(root, variables, context) {
 }
 
 async function fetchRootBlob(root, _variables, context) {
-    const {client} = context
-    const variables = {fullPath: getProjectPath(root, _variables, context), fetchPolicy: _variables?.fetchPolicy}
+    try {
+        const {client} = context
+        const variables = {fullPath: getProjectPath(root, _variables, context), fetchPolicy: _variables?.fetchPolicy}
 
-    const {errors, data} = await client.query({
-        query: getUnfurlRoot,
-        variables,
-        fetchPolicy: _variables?.fetchPolicy
-    })
-    if(errors) {
-        errors.forEach(console.error)
+        const {errors, data} = await client.query({
+            query: getUnfurlRoot,
+            variables,
+            fetchPolicy: _variables?.fetchPolicy
+        })
+        if(errors) {
+            errors.forEach(console.error)
+        }
+        const jsonPayload = data?.applicationBlueprint?.json
+        return _.cloneDeep(jsonPayload)
+    } catch(e) {
+        console.error(e)
     }
-    const jsonPayload = data?.applicationBlueprint?.json
-    return _.cloneDeep(jsonPayload)
+
 }
 
 async function fetchResourceType(variables, context){
-    const {client} = context
-    if (!variables.name) {throw new Error('Cannot map resource type without a name.')}
-    const {errors, data} = await client.query({
-        query: getResourceType,
-        variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-    })
-    if(errors) {errors.forEach(console.error)}
-    //if(data === null) return null
-    if(data === null) {
-        const name = `Unresolved Resource Type: ${variables.name}`
-        return {
-            __typename: 'ResourceType',
-            name: name,
-            title: name,
-            badge: 'ERR',
-            description: null,
-            properties: [],
-            outputs: [],
-            requirements: [],
+    try {
+        const {client} = context
+        if (!variables.name) {throw new Error('Cannot map resource type without a name.')}
+        const {errors, data} = await client.query({
+            query: getResourceType,
+            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
+        })
+        if(errors) {errors.forEach(console.error)}
+        //if(data === null) return null
+        if(data === null) {
+            const name = `Unresolved Resource Type: ${variables.name}`
+            return {
+                __typename: 'ResourceType',
+                name: name,
+                title: name,
+                badge: 'ERR',
+                description: null,
+                properties: [],
+                outputs: [],
+                requirements: [],
+            }
         }
+        if(!data) return null
+        const {resourceType} = data
+        if(!resourceType) return null
+        resourceType.__typename = 'ResourceType'
+        return resourceType
+    } catch(e) {
+        console.error(e)
     }
-    const {resourceType} = data
-    resourceType.__typename = 'ResourceType'
-    return resourceType
 }
 
 async function fetchResourceTemplate(variables, context){
-    const {client} = context
-    if (!variables.name) {throw new Error('Cannot map resource template without a name.')}
-    const {errors, data} = await client.query({
-        query: getResourceTemplate,
-        errorPolicy: 'all',
-        variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-    })
-    if(errors) {errors.forEach(console.error)}
-    if(data === null) return null
-    const {resourceTemplate} = data
-    resourceTemplate.__typename = 'ResourceTemplate'
-    return resourceTemplate
+    try {
+        const {client} = context
+        if (!variables.name) {throw new Error('Cannot map resource template without a name.')}
+        const {errors, data} = await client.query({
+            query: getResourceTemplate,
+            errorPolicy: 'all',
+            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
+        })
+        if(errors) {errors.forEach(console.error)}
+        if(!data) return null
+        const {resourceTemplate} = data
+        if(!resourceTemplate) return null
+        resourceTemplate.__typename = 'ResourceTemplate'
+        return resourceTemplate
+    }
+    catch(e) {
+        console.error(e)
+    }
 }
 
 async function fetchDeploymentTemplates(variables, context) {
-    const {client} = context
-    const fullPath = getProjectPath(null, variables, context)
-    const {errors, data} = await client.query({
-        query: getDeploymentTemplates,
-        variables: {...variables, fullPath}
-    })
-    //context.fullPath = fullPath // NOTE this doesn't work
-    if(errors) {errors.forEach(console.error)}
-    const deploymentTemplates = data.deploymentTemplates.map(dt => {
-        if(!dt) return null
-        dt.__typename = "DeploymentTemplate"
-        dt.name = dt.slug
-        return dt
-    })
-    return deploymentTemplates
+    try {
+        const {client} = context
+        const fullPath = getProjectPath(null, variables, context)
+        const {errors, data} = await client.query({
+            query: getDeploymentTemplates,
+            variables: {...variables, fullPath}
+        })
+        //context.fullPath = fullPath // NOTE this doesn't work
+        if(errors) {errors.forEach(console.error)}
+        const deploymentTemplates = data.deploymentTemplates.map(dt => {
+            if(!dt) return null
+            dt.__typename = "DeploymentTemplate"
+            dt.name = dt.slug
+            return dt
+        })
+        return deploymentTemplates
+    } catch(e) {
+        console.error(e)
+    }
 }
 
 async function fetchOverview(variables, context) {
-    const {client} = context
-    const {errors, data} = await client.query({
-        query: getOverview,
-        variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-    })
+    try {
+        const {client} = context
+        const {errors, data} = await client.query({
+            query: getOverview,
+            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
+        })
 
-    if(errors) {errors.forEach(console.error)}
-    const {overview} = data
-    return overview
+        if(errors) {errors.forEach(console.error)}
+        const {overview} = data
+        return overview
+    }
+    catch(e) {
+        console.error(e)
+    }
 }
 
 async function fetchApplicationBlueprint(variables, context) {
-    const {client} = context
-    const {errors, data} = await client.query({
-        query: getBlueprint,
-        variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-    })
-    if(errors) {errors.forEach(console.error)}
-    const {newApplicationBlueprint} = data
+    try {
+        const {client} = context
+        const {errors, data} = await client.query({
+            query: getBlueprint,
+            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
+        })
+        if(errors) {errors.forEach(console.error)}
+        const {newApplicationBlueprint} = data
 
-    return newApplicationBlueprint
+        return newApplicationBlueprint
+    }
+    catch(e) {
+        console.error(e)
+    }
 }
 
 function missingResolverVariableError(missingField, args) {
     const [parent, _1, _2, info] = args
-    return new Error(`Cannot get ${info.field.name.value} without '${missingField}' in ${parent.__typename}`)
+    const e = `Cannot get ${info.field.name.value} without '${missingField}' in ${parent && parent.__typename}`
+    console.error(e)
+    return new Error(`Cannot get ${info.field.name.value} without '${missingField}' in ${parent && parent.__typename}`)
+}
+
+function clientResolverError(e, baseMessage) {
+    const _e = `${baseMessage}: ${e.message}`
+    console.error(_e)
+    return new Error(_e)
 }
 
 export const resolvers = {
@@ -205,27 +244,42 @@ export const resolvers = {
 
     Query: {
         blueprintRaw: async (...args) => {
-            const {ApplicationBlueprint} = await fetchRootBlob(...args)
-            const variables = args[1]
-            const result = variables.name?
-                ApplicationBlueprint[variables.name] :
-                Object.values(ApplicationBlueprint)[0]
-            result.__typename = 'JSON'
-            return result
+            try {
+                const {ApplicationBlueprint} = await fetchRootBlob(...args)
+                const variables = args[1]
+                const result = variables.name?
+                    ApplicationBlueprint[variables.name] :
+                    Object.values(ApplicationBlueprint)[0]
+                if(!result) throw new Error(`ApplicationBlueprint ${variables.name} not found`)
+                result.__typename = 'JSON'
+                return result
+            } catch(e) {
+                throw new clientResolverError(e,'Could not fetch application blueprint JSON')
+            }
         },
         resourceTemplateRaw: async (...args) => {
-            const {ResourceTemplate} = await fetchRootBlob(...args)
-            const variables = args[1]
-            const result = ResourceTemplate[variables.name]
-            result.__typename = 'JSON'
-            return result
+            try {
+                const {ResourceTemplate} = await fetchRootBlob(...args)
+                const variables = args[1]
+                const result = ResourceTemplate[variables.name]
+                if(!result) throw new Error(`ResourceTemplate ${variables.name} not found`)
+                result.__typename = 'JSON'
+                return result
+            } catch(e) {
+                throw new clientResolverError(e,'Could not fetch resource template JSON')
+            }
         },
         deploymentTemplateRaw: async (...args) => {
-            const {DeploymentTemplate} = await fetchRootBlob(...args)
-            const variables = args[1]
-            const result = DeploymentTemplate[variables.name]
-            result.__typename = 'JSON'
-            return result
+            try { 
+                const {DeploymentTemplate} = await fetchRootBlob(...args)
+                const variables = args[1]
+                const result = DeploymentTemplate[variables.name]
+                if(!result) throw new Error(`DeploymentTemplate ${variables.name} not found`)
+                result.__typename = 'JSON'
+                return result
+            } catch(e) {
+                throw new clientResolverError(e,'Could not fetch resource template JSON')
+            }
         },
         newApplicationBlueprint: async (...args) => {
             const {ApplicationBlueprint, Overview} = await fetchRootBlob(...args)
@@ -278,7 +332,7 @@ export const resolvers = {
 
         async ResourceType(...args) {
             const {ResourceType} = await fetchRootBlob(...args) // NOTE I guess I need to be able to do this for globally defined resources even when there may be no full path
-            for(const rt of Object.values(ResourceType)) {rt.__typename = 'ResourceType'}
+            for(const rt of Object.values(ResourceType)) {if (rt) rt.__typename = 'ResourceType'}
             return Object.values(ResourceType)
         }
     },

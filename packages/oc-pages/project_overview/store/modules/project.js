@@ -398,6 +398,18 @@ const actions = {
         }
         return dispatch('editResourcesTemplateInDependent', {dependentName, transformList})
     },
+    async deleteResourceTemplateInDependent ({dispatch}, {dependentName, dependentRequirement}) {
+        function transformList(list) {
+            return list.map(req => {
+                if(req.name == dependentRequirement) {
+                    req.match = null
+                }
+                return req
+            })
+        }
+        return dispatch('editResourcesTemplateInDependent', {dependentName, transformList})
+
+    },
     async editResourcesInDeploymentTemplate({state}, {deploymentTemplateSlug, transformList}) {
         const queryResponse = await graphqlClient.clients.defaultClient.query({
             query: gql`

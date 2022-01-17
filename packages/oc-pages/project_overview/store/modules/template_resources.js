@@ -411,6 +411,8 @@ const actions = {
             const actionLowerCase = action.toLowerCase();
             commit('deleteReference', {dependentName, dependentRequirement})
 
+            const actualName = dependentName == 'primary'? getters.getPrimaryCard.name: dependentName
+
             if(actionLowerCase === "delete") {
                 //commit("deleteDeep", {name}); // NOTE add this back in ?
                 dispatch('deleteResourceTemplate', {templateName: name, deploymentTemplateSlug: getters.getResourcesOfTemplate.slug})
@@ -421,6 +423,8 @@ const actions = {
             }
 
             if(actionLowerCase === "remove"){
+
+                dispatch('deleteResourceTemplateInDependent', {dependentName: actualName, dependentRequirement})
                 commit("deleteNodeResource", {name});
                 commit("deleteNodeOfStack", {name});
             }

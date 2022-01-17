@@ -96,9 +96,9 @@ export default {
 
         //TODO add an option to add a new service
         openDeleteModal(index, action=__("Remove")) {
-            const requirement = this.card.requirements[index]
-            const card = requirement.match
-            bus.$emit('deleteNode', {...card, level: this.level, action, dependentRequirement: requirement.name, dependentName: this.titleKey});
+            const dependency = this.card.dependencies[index]
+            const card = dependency.match
+            bus.$emit('deleteNode', {...card, level: this.level, action, dependentRequirement: dependency.name, dependentName: this.titleKey});
         },
 
         //TODO 

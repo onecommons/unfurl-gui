@@ -2,7 +2,34 @@ const BASE_URL = Cypress.env('CYPRESS_BASE_URL')
 const DEMO_URL = BASE_URL + '/demo/apostrophe-demo/-/overview'
 const MY_AWESOME_TEMPLATE = DEMO_URL + '/templates/my-awesome-template'
 
-const ocTableRow = () => cy.get('.oc_table_row').contains('.oc_table_row', 'AWSInstance')
+const ocTableRow = (name) => cy.get('.oc_table_row').contains('.oc_table_row', name)
+const withinOcTableRow = (name, withinFn) => ocTableRow(name).within(withinFn)
+
+
+const clickTableRowButton = (dependency, buttonName) => {
+
+  cy.get('.oc_table_row')
+    .contains('.oc_table_row', dependency)
+    .within(()  => cy.get('button').contains('button', buttonName).click())
+
+  cy.wait(100)
+
+}
+
+const launchResourceTemplateDialog = () => {
+  /*
+  cy.get('.oc_table_row')
+    .contains('.oc_table_row', 'host')
+    .within(()  => cy.get('button').contains('button', 'Create').click())
+
+  cy.wait(100)
+  */
+
+  clickTableRowButton('host', 'Create')
+}
+
+const launchRemoveDialog = () => { clickTableRowButton('host', 'Remove') }
+
 import gql from 'graphql-tag'
 
 describe('project overview', () => {
@@ -111,14 +138,8 @@ describe('project overview', () => {
 
     it('can create a resource template', () => {
 
-      cy.get('.oc_table_row')
-        .contains('host')
-        .get('button')
-        .contains('Create')
-        .click()
+      launchResourceTemplateDialog()
 
-
-      cy.wait(100)
 
 
       // TODO change all awsinstance to some-stupid-name
@@ -131,7 +152,7 @@ describe('project overview', () => {
 
         // fails nextButton().should('be.disabled')
 
-        ocTableRow().within(_ => cy.get('input[type="radio"]').click({force: true}))
+        ocTableRow('AWSInstance').within(_ => cy.get('input[type="radio"]').click({force: true}))
 
         // fails input().should('have.value', 'Some stupid name'); input().type('AWSInstance')
 
@@ -141,13 +162,14 @@ describe('project overview', () => {
       })
 
       // TODO 
+      withinOcTableRow('AWSInstance', () => cy.get('[data-testid="check-circle-filled-icon"]').should('be.visible'))
 
       cy.get('#awsinstance').should('be.visible')
     })
 
     it('scrolls down when we click edit', () => {
       cy.scrollTo(0,0)
-      ocTableRow().within(_ => cy.get('button').contains('button', 'Edit').click())
+      ocTableRow('AWSInstance').within(_ => cy.get('button').contains('button', 'Edit').click())
       cy.wait(500)
 
       cy.get('#awsinstance').should('be.visible')
@@ -179,10 +201,34 @@ describe('project overview', () => {
       cy.wait(500)
       cy.get('.modal-dialog button').contains('button', 'Delete').click()
 
-
       cy.get('#awsinstance').should('not.exist')
+
+      cy.wait(500).reload() // we have to wait for the Delete request to finish
+
+      withinOcTableRow('host', () => cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist'))
     })
 
+    it('can remove a resource', () => {
+      launchResourceTemplateDialog()
+
+      cy.get('.modal-content').within(() => {
+        const input = () => cy.get('input#input1')
+        const nextButton = () => cy.get('button').contains('button', 'Next')
+
+        withinOcTableRow('AWSInstance', _ => {
+          cy.get('input[type="radio"]').click({force: true})
+        })
+        nextButton().click()
+      })
+      
+
+      launchRemoveDialog() 
+
+      cy.get('#oc-delete-node').within(() => cy.get('button').contains('button', 'Remove').click())
+
+      cy.reload()
+      withinOcTableRow('host', () => cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist'))
+    })
 
     it('can delete a template', () => {
       cy.get('button[title="Delete Template"]').click()
