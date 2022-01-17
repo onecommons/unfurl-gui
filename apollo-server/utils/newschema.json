@@ -553,7 +553,7 @@
           "description": "",
           "min": 1,
           "max": 1,
-          "resourceType": "unfurl.nodes.AzureAccount"
+          "resourceType": "unfurl.nodes.AWSAccount"
         },
         {
           "name": "cloud",
@@ -603,7 +603,7 @@
           "description": "",
           "min": 1,
           "max": 1,
-          "resourceType": "unfurl.nodes.AzureAccount"
+          "resourceType": "unfurl.nodes.AWSAccount"
         },
         {
           "name": "cloud",
@@ -920,7 +920,7 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     },
     "the_app": {
       "type": "MEANStack",
@@ -945,9 +945,9 @@
         }
       ],
       "outputs": [],
-      "requirements": [
+      "dependencies": [
         {
-          "constaint": {
+          "constraint": {
             "name": "host",
             "title": "host",
             "description": "A compute instance with at least 512MB RAM",
@@ -960,7 +960,7 @@
           "match": "app_container"
         },
         {
-          "constaint": {
+          "constraint": {
             "name": "resolver",
             "title": "resolver",
             "description": "",
@@ -973,7 +973,7 @@
           "match": "foo.com-zone"
         },
         {
-          "constaint": {
+          "constraint": {
             "name": "db",
             "title": "db",
             "description": "MongoDB database service",
@@ -1015,7 +1015,7 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     },
     "atlas_service": {
       "type": "Atlas",
@@ -1039,13 +1039,14 @@
         }
       ],
       "outputs": [],
-      "requirements": []
+      "dependencies": []
     }
   },
   "DeploymentTemplate": {
-    "Apostrophe Demo": {
+    "apostrophe-demo": {
       "__typename": "DeploymentTemplate",
       "title": "Apostrophe Demo",
+      "name": "apostrophe-demo",
       "slug": "apostrophe-demo",
       "description": null,
       "blueprint": "Apostrophe Demo",
@@ -1094,7 +1095,7 @@
       "attributes": [],
       "connections": [
         {
-          "constaint": {
+          "constraint": {
             "name": "host",
             "title": "host",
             "description": "A compute instance with at least 512MB RAM",
@@ -1108,7 +1109,7 @@
           "target": "::app_container"
         },
         {
-          "constaint": {
+          "constraint": {
             "name": "resolver",
             "title": "resolver",
             "description": "",
@@ -1122,7 +1123,7 @@
           "target": "::foo.com-zone"
         },
         {
-          "constaint": {
+          "constraint": {
             "name": "db",
             "title": "db",
             "description": "MongoDB database service",
@@ -1178,7 +1179,7 @@
           "attributes": [],
           "connections": [
             {
-              "constaint": {
+              "constraint": {
                 "name": "host",
                 "title": "host",
                 "description": "A compute instance with at least 512MB RAM",
@@ -1192,7 +1193,7 @@
               "target": "::app_container"
             },
             {
-              "constaint": {
+              "constraint": {
                 "name": "resolver",
                 "title": "resolver",
                 "description": "",
@@ -1206,7 +1207,7 @@
               "target": "::foo.com-zone"
             },
             {
-              "constaint": {
+              "constraint": {
                 "name": "db",
                 "title": "db",
                 "description": "MongoDB database service",
