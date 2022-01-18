@@ -16,5 +16,12 @@ db.defaults({
   accounts: [],
   uploads: [],
   projects: { "demo/apostrophe-demo": unfurl_json },
-  newschema: newschema_json
+  newschema: newschema_json,
+  users: {
+    "root": {
+      environments: [
+        { name: "production", cloud: "AWS" },
+        {name: "staging", cloud: "GCP"}
+      ]
+  }}
 }).write()

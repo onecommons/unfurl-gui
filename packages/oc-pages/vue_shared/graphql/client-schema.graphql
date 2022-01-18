@@ -1,18 +1,14 @@
 extend type ApplicationBlueprintProject {
-        """
-        Oc Project Overview
-        """
         overview: Overview! @client
         applicationBlueprint: ApplicationBlueprint! @client
 }
 
-extend type OcEnvironment {
-  """
-  Deployments deployed into this environment
-  """
-  deployments: [Deployment!] @client
+extend type Environments {
+  environments: [DeploymentEnvironment] @client
+}
 
-  # TODO: replace cloud: string with cloud: ResourceType @client
+extend type ResourceTemplates {
+  resourceTemplates: [ResourceTemplate!] @client
 }
 
 type Overview {
@@ -30,11 +26,6 @@ type Overview {
   The GitLab Flavored Markdown rendering of `description`
   """
   descriptionHtml: String
-
-  """
-  OneCommons general Environments
-  """
-  environments: [OcEnvironment!]
 
   """
   Full path of the project.
@@ -400,6 +391,19 @@ type Requirement {
   target: Resource
 }
 
+type DeploymentEnvironment {
+name: String!
+
+services: [Resource!]
+
+"""
+TODO: should just use primary_provider
+"""
+cloud: String
+primary_provider: Resource
+deployments: [Deployment!]
+}
+
 type Deployment {
   """
   Title of template
@@ -407,9 +411,9 @@ type Deployment {
   title: String!
 
   """
-  Environment (maybe?)
+  Environment
   """
-  environment: OcEnvironment
+  environment: DeploymentEnvironment
 
   primary: Resource
 

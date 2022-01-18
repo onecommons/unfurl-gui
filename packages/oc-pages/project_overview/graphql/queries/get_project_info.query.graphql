@@ -1,7 +1,6 @@
 #import "../fragments/input_item.fragment.graphql"
 #import "../fragments/output_item.fragment.graphql"
 #import "../fragments/requirement_item.fragment.graphql"
-#import "../fragments/environment_item.fragment.graphql"
 #import "../fragments/template_item.fragment.graphql"
 #import "../fragments/resource_item.fragment.graphql"
 
@@ -32,10 +31,6 @@ query getProjectInfo($projectPath: ID!) {
         requirements {
           __typename
           ...RequirementItem
-        }
-        environments {
-          __typename
-          ...EnvironmentItem
         }
         templates {
           __typename

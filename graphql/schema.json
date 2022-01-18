@@ -41594,77 +41594,6 @@
           "possibleTypes": null
         },
         {
-          "kind": "OBJECT",
-          "name": "OcEnvironment",
-          "description": null,
-          "fields": [
-            {
-              "name": "cloud",
-              "description": "Cloud used by environment",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "name",
-              "description": "Name of environment",
-              "args": [],
-              "type": {
-                "kind": "NON_NULL",
-                "name": null,
-                "ofType": {
-                  "kind": "SCALAR",
-                  "name": "String",
-                  "ofType": null
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "json",
-              "description": null,
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "JSON",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "deployments",
-              "description": "Deployments deployed into this environment",
-              "args": [],
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "Deployment",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            }
-          ],
-          "inputFields": null,
-          "interfaces": [],
-          "enumValues": null,
-          "possibleTypes": null
-        },
-        {
           "kind": "INPUT_OBJECT",
           "name": "InputInput",
           "description": "Input type for Oc input",
@@ -41764,7 +41693,7 @@
             },
             {
               "name": "overview",
-              "description": "Oc Project Overview",
+              "description": null,
               "args": [],
               "type": {
                 "kind": "NON_NULL",
@@ -51061,12 +50990,130 @@
         },
         {
           "kind": "OBJECT",
+          "name": "Environments",
+          "description": null,
+          "fields": [
+            {
+              "name": "namespace",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "name",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "clientPayload",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "JSON",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "environments",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "DeploymentEnvironment",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
+          "name": "ResourceTemplates",
+          "description": null,
+          "fields": [
+            {
+              "name": "namespace",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "clientPayload",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "JSON",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "resourceTemplates",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "ResourceTemplate",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
           "name": "Query",
           "description": null,
           "fields": [
             {
               "name": "accounts",
-              "description": "Oc Accounts",
+              "description": "Oc Accounts\nTODO: unused, remove",
               "args": [],
               "type": {
                 "kind": "LIST",
@@ -51080,6 +51127,62 @@
                     "ofType": null
                   }
                 }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "environments",
+              "description": null,
+              "args": [
+                {
+                  "name": "namespace",
+                  "description": null,
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                },
+                {
+                  "name": "name",
+                  "description": null,
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "OBJECT",
+                "name": "Environments",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "resourceTemplates",
+              "description": null,
+              "args": [
+                {
+                  "name": "namespace",
+                  "description": null,
+                  "type": {
+                    "kind": "SCALAR",
+                    "name": "String",
+                    "ofType": null
+                  },
+                  "defaultValue": null
+                }
+              ],
+              "type": {
+                "kind": "OBJECT",
+                "name": "ResourceTemplates",
+                "ofType": null
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -70402,26 +70505,6 @@
               "deprecationReason": null
             },
             {
-              "name": "environments",
-              "description": "OneCommons general Environments",
-              "args": [],
-              "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "OcEnvironment",
-                    "ofType": null
-                  }
-                }
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "fullPath",
               "description": "Full path of the project.",
               "args": [],
@@ -70692,20 +70775,8 @@
           "description": null,
           "fields": [
             {
-              "name": "instructions",
-              "description": "Description of input",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "String",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "title",
-              "description": "Title of input",
+              "name": "name",
+              "description": "Name of the property",
               "args": [],
               "type": {
                 "kind": "NON_NULL",
@@ -70722,42 +70793,6 @@
             {
               "name": "value",
               "description": "Value of input",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "JSON",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "default",
-              "description": "Value of input",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "JSON",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "required",
-              "description": "Value of input",
-              "args": [],
-              "type": {
-                "kind": "SCALAR",
-                "name": "Boolean",
-                "ofType": null
-              },
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "schema",
-              "description": "json-schema",
               "args": [],
               "type": {
                 "kind": "SCALAR",
@@ -71482,21 +71517,13 @@
               "deprecationReason": null
             },
             {
-              "name": "properties",
-              "description": null,
+              "name": "inputsSchema",
+              "description": "json-schema for inputs, will have a \"properties\" object that enumerates inputs  ",
               "args": [],
               "type": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "OBJECT",
-                    "name": "Input",
-                    "ofType": null
-                  }
-                }
+                "kind": "SCALAR",
+                "name": "JSON",
+                "ofType": null
               },
               "isDeprecated": false,
               "deprecationReason": null
@@ -71689,7 +71716,7 @@
             },
             {
               "name": "properties",
-              "description": "input has schema and value",
+              "description": "Maps to an object that conforms to type.inputsSchema",
               "args": [],
               "type": {
                 "kind": "LIST",
@@ -71798,6 +71825,97 @@
         },
         {
           "kind": "OBJECT",
+          "name": "DeploymentEnvironment",
+          "description": null,
+          "fields": [
+            {
+              "name": "name",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "services",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Resource",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "cloud",
+              "description": "TODO: should just use primary_provider",
+              "args": [],
+              "type": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "primary_provider",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "OBJECT",
+                "name": "Resource",
+                "ofType": null
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "deployments",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "Deployment",
+                    "ofType": null
+                  }
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            }
+          ],
+          "inputFields": null,
+          "interfaces": [],
+          "enumValues": null,
+          "possibleTypes": null
+        },
+        {
+          "kind": "OBJECT",
           "name": "Deployment",
           "description": null,
           "fields": [
@@ -71819,11 +71937,11 @@
             },
             {
               "name": "environment",
-              "description": "Environment (maybe?)",
+              "description": "Environment",
               "args": [],
               "type": {
                 "kind": "OBJECT",
-                "name": "OcEnvironment",
+                "name": "DeploymentEnvironment",
                 "ofType": null
               },
               "isDeprecated": false,
@@ -71976,6 +72094,22 @@
               "deprecationReason": null
             },
             {
+              "name": "title",
+              "description": null,
+              "args": [],
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                }
+              },
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
               "name": "url",
               "description": null,
               "args": [],
@@ -72082,7 +72216,13 @@
           "interfaces": null,
           "enumValues": [
             {
-              "name": "Absent",
+              "name": "Unknown",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "Ok",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
@@ -72100,19 +72240,13 @@
               "deprecationReason": null
             },
             {
-              "name": "Ok",
-              "description": null,
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
               "name": "Pending",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "Unknown",
+              "name": "Absent",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
@@ -72129,19 +72263,7 @@
           "interfaces": null,
           "enumValues": [
             {
-              "name": "Configured",
-              "description": null,
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "Configuring",
-              "description": null,
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "Created",
+              "name": "Initial",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
@@ -72153,31 +72275,19 @@
               "deprecationReason": null
             },
             {
-              "name": "Deleted",
+              "name": "Created",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "Deleting",
+              "name": "Configuring",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
-              "name": "Error",
-              "description": null,
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "Initial",
-              "description": null,
-              "isDeprecated": false,
-              "deprecationReason": null
-            },
-            {
-              "name": "Started",
+              "name": "Configured",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
@@ -72189,13 +72299,37 @@
               "deprecationReason": null
             },
             {
-              "name": "Stopped",
+              "name": "Started",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null
             },
             {
               "name": "Stopping",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "Stopped",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "Deleting",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "Deleted",
+              "description": null,
+              "isDeprecated": false,
+              "deprecationReason": null
+            },
+            {
+              "name": "Error",
               "description": null,
               "isDeprecated": false,
               "deprecationReason": null

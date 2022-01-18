@@ -78,16 +78,30 @@ function patchTypenameInArr(typename, overview, args, ctx, info) {
     return arr;
 }
 
+function makeClientResolver(typename, field) {
+  return (root, variables, { cache }, info) => {
+      // query must retrieve the json field
+      const json = root[field];
+      json.__typename = typename;
+      return json;
+    }
+}
+
 export const resolvers = {
 
-    ApplicationBlueprintProject: {
-        overview: (root, variables, { cache }, info) => {
-            // query must retrieve the json field
-            root.json.__typename = 'Overview';
-            return root.json;
-        }
-    },
-
+  ApplicationBlueprintProject: {
+        overview: makeClientResolver('Overview', 'json'),
+        applicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json')
+  },
+  
+  Environments: {
+    environments: makeClientResolver('DeploymentEnvironment', 'clientPayload')
+  },
+  
+  ResourceTemplates: {
+    resourceTemplates: makeClientResolver('ResourceTemplate', 'clientPayload')      
+  },
+  
     Overview: {
 
         inputs: _.partial(patchTypenameInArr, "Input"),
@@ -100,8 +114,6 @@ export const resolvers = {
 
         servicesToConnect: _.partial(patchTypenameInArr, "ServiceToConnect"),
         
-        environments: _.partial(patchTypenameInArr, "OcEnvironment"),
-
         templates: (overview, args, { }) => {
             if (args) {
                 for (const key in Object.keys(args)) {
