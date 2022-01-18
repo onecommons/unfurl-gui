@@ -38,6 +38,7 @@ module.exports = {
         changeOrigin: true,
         ws: true,
         ignorePath: true,
+        protocolRewrite: process.env.SSL_PROXY,
       })
       app.use(proxy)
     }

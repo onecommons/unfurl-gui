@@ -15,6 +15,8 @@ import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
 import {slugify} from '../../../vue_shared/util'
 
+
+
 export default {
   name: 'TemplatesPage',
   components: {
@@ -76,6 +78,7 @@ export default {
       getPrimaryCard: 'getPrimaryCard',
       getCardsStacked: 'getCardsStacked',
       getResourcesOfTemplate: 'getResourcesOfTemplate',
+      hasPreparedMutations: 'hasPreparedMutations',
     }),
 
     getMainInputs() {
@@ -192,8 +195,13 @@ export default {
     });
   },
 
-  async beforeMount() {
-        window.addEventListener("beforeunload", await this.preventLeave)
+  beforeMount() {
+    // NOTE this doesn't work without https
+    window.addEventListener('beforeunload', this.unloadHandler)
+  },
+
+  beforeDestroy() {
+    window.removeEventListener('beforeunload', this.unloadHandler)
   },
 
   methods: {
@@ -211,17 +219,10 @@ export default {
       'fetchTemplateResources'
     ]),
 
-    async preventLeave(event) {
-        event.preventDefault()
-        // eslint-disable-next-line no-param-reassign
-        // event.returnValue = ""
-        if(this.dataUnsaved) {
-          // eslint-disable-next-line no-console
-          console.log(__("Saving changes before leave...."))
-          await this.triggerSave();
-          // eslint-disable-next-line no-console
-          console.log(__("Saved content"));
-        }
+    unloadHandler(e) {
+      if(this.hasPreparedMutations) {
+        e.returnValue = "You have unsaved changes."
+      }
     },
 
     forceRerender() {
