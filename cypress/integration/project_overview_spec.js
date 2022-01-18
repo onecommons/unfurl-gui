@@ -6,6 +6,10 @@ const ocTableRow = (name) => cy.get('.oc_table_row').contains('.oc_table_row', n
 const withinOcTableRow = (name, withinFn) => ocTableRow(name).within(withinFn)
 
 
+const clickSaveTemplate = () => {
+  cy.get('[data-testid="save-template-btn"]').click()
+}
+
 const clickTableRowButton = (dependency, buttonName) => {
 
   cy.get('.oc_table_row')
@@ -165,6 +169,12 @@ describe('project overview', () => {
       withinOcTableRow('AWSInstance', () => cy.get('[data-testid="check-circle-filled-icon"]').should('be.visible'))
 
       cy.get('#awsinstance').should('be.visible')
+
+      clickSaveTemplate()
+
+      cy.wait(500).reload()
+
+      cy.get('#awsinstance').should('be.visible')
     })
 
     it('scrolls down when we click edit', () => {
@@ -203,6 +213,8 @@ describe('project overview', () => {
 
       cy.get('#awsinstance').should('not.exist')
 
+      clickSaveTemplate()
+
       cy.wait(500).reload() // we have to wait for the Delete request to finish
 
       withinOcTableRow('host', () => cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist'))
@@ -226,7 +238,9 @@ describe('project overview', () => {
 
       cy.get('#oc-delete-node').within(() => cy.get('button').contains('button', 'Remove').click())
 
-      cy.reload()
+      clickSaveTemplate()
+
+      cy.wait(500).reload()
       withinOcTableRow('host', () => cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist'))
     })
 

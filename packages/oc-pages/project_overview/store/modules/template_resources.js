@@ -4,31 +4,28 @@ import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import updateTemplateResource from '../../graphql/mutations/update_template_resource.mutation.graphql';
 import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
+import {createResourceTemplate, deleteResourceTemplate, deleteResourceTemplateInDependent} from './deployment_template_updates.js'
 
-const baseState = () => ({
+const baseState = (availableResourceTypes) => ({
     resourcesOfTemplates: {//templateResourceScafold: {
         title: '',
         type: '',
         description: __('A short description of the template can be showed here'),
         status: null,
         inputs: [],
-
-        //
         primary: {title: '', properties: [] }
 
     },
-    availableResourceTypes: [],
+    availableResourceTypes: availableResourceTypes || [],
     lastFetchedFrom: {}, 
     cards: [],
-    preparedMutations: []
 })
 
 const state = baseState()
 
 const mutations = {
-    resetState({state}) {
-        state = baseState()
-
+    resetState(state) {
+        Object.assign(state, baseState(state.availableResourceTypes))
     },
     setTemplateResources(_state, deploymentTemplate) {
         // eslint-disable-next-line no-param-reassign
@@ -52,15 +49,6 @@ const mutations = {
     createTemplateResource(_state, { target }) {
         // eslint-disable-next-line no-param-reassign
         _state.resourcesOfTemplates[target.name] = { ...target };
-    },
-
-    pushPreparedMutation(_state, {mutation, variables}) {
-        _state.preparedMutations = _state.preparedMutations.concat({mutation, variables})
-    },
-
-    clearPreparedMutations(_state, {isAutosave}) {
-        if (isAutosave) { _state.preparedMutations = _state.preparedMutations.filter(pm => !pm.commitOnAutosave) }
-        else { _state.preparedMutations = [] }
     },
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
@@ -371,7 +359,11 @@ const actions = {
             }
 
             const actualName = dependentName == 'primary'? getters.getPrimaryCard.name: dependentName
-            dispatch('createResourceTemplate', {type: target.type, name, title, description: target.description, deploymentTemplateSlug: _state.lastFetchedFrom.templateSlug, dependentName: actualName, dependentRequirement})
+            commit(
+                'pushPreparedMutation',
+                createResourceTemplate({type: target.type, name, title, description: target.description, deploymentTemplateSlug: _state.lastFetchedFrom.templateSlug, dependentName: actualName, dependentRequirement}),
+                {root: true}
+            )
             const fieldsToReplace = {
                 completionStatus: "created",
                 status: true
@@ -415,7 +407,8 @@ const actions = {
 
             if(actionLowerCase === "delete") {
                 //commit("deleteDeep", {name}); // NOTE add this back in ?
-                dispatch('deleteResourceTemplate', {templateName: name, deploymentTemplateSlug: getters.getResourcesOfTemplate.slug})
+                commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateSlug: getters.getResourcesOfTemplate.slug}), {root: true})
+
                 commit("deleteNodeResource", {name});
                 commit("deleteNodeOfStack", {name});
                 
@@ -424,7 +417,7 @@ const actions = {
 
             if(actionLowerCase === "remove"){
 
-                dispatch('deleteResourceTemplateInDependent', {dependentName: actualName, dependentRequirement})
+                commit('pushPreparedMutation', deleteResourceTemplateInDependent({dependentName: actualName, dependentRequirement}), {root: true})
                 commit("deleteNodeResource", {name});
                 commit("deleteNodeOfStack", {name});
             }
@@ -434,33 +427,6 @@ const actions = {
             throw new Error(err.message);
         }
     },
-    /*
-    async commitPreparedMutations({commit, dispatch, getters, rootState, state}, options) {
-        const {isAutosave} = options || {}
-        for(const prepared of getters.getPreparedMutations) {
-            const {mutation, variables, commitOnAutosave} = prepared
-            const _variables = {...rootState.project.globalVars, ...variables}
-            _variables.fullPath = _variables.projectPath
-            console.log({
-                mutation,
-                errorPolicy: 'all',
-                variables: _variables
-            })
-
-
-            if(!isAutosave || commitOnAutosave) {
-                await graphqlClient.clients.defaultClient.mutate({
-                    mutation,
-                    errorPolicy: 'all',
-                    variables: _variables
-                })
-            }
-        }
-        commit('clearPreparedMutations', {isAutosave})
-    },
-
-    */
-    
 };
 
 const getters = {
@@ -468,7 +434,6 @@ const getters = {
     getPrimaryCard: _state => (cloneDeep(_state.resourcesOfTemplates.primary)),
     getCardsStacked: _state => (cloneDeep(_state.cards)),
     getAvailableResourceTypes: _state => (cloneDeep(_state.availableResourceTypes)),
-    getPreparedMutations: _state => (cloneDeep(_state.preparedMutations)),
 
     getValidResourceTypes(state) {
         return function(dependency){

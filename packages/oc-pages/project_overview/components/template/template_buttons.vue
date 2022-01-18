@@ -1,6 +1,8 @@
 <script>
 import { GlButton } from '@gitlab/ui';
 
+import {mapGetters} from 'vuex'
+
 export default {
     name: 'TemplateButtons',
     components: {
@@ -29,6 +31,10 @@ export default {
         launchModalDeleteTemplate() {
             this.$emit('launchModalDeleteTemplate');
         }
+    },
+    computed: {
+        ...mapGetters(['hasPreparedMutations'])
+
     }
 }
 </script>
@@ -45,10 +51,12 @@ export default {
                 >{{ __('Merge Request') }}</gl-button
             >
             <gl-button
+                data-testid="save-template-btn"
                 title="Save Template"
                 :aria-label="__(`Save Template`)"
                 type="button"
                 icon="doc-new"
+                :disabled="!hasPreparedMutations"
                 class="gl-mr-3"
                 @click.prevent="saveTemplate"
                 >{{ __('Save Template') }}</gl-button

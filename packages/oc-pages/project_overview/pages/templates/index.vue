@@ -300,9 +300,15 @@ export default {
         try {
             this.autoSaveTemplate();
             await this.commitPreparedMutations()
-          /*
+            /*
             const { updateTemplateResource } = await this.saveTemplateResources();
             */
+            createFlash({
+                message: __('Template was saved successfully!'),
+                type: FLASH_TYPES.SUCCESS,
+                duration: this.durationOfAlerts,
+            })
+            /*
             createFlash({
               message: updateTemplateResource.isOk
                 ? __('Template was saved successfully!')
@@ -310,6 +316,8 @@ export default {
               type: updateTemplateResource.isOk ? FLASH_TYPES.SUCCESS : FLASH_TYPES.ALERT,
               duration: this.durationOfAlerts,
             });
+
+            */
             return true;
         } catch (e) {
           console.error(e)

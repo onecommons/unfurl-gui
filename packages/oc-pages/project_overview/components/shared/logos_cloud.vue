@@ -12,7 +12,6 @@ export default {
     props: {
         cloud: {
             type: String,
-            required: true,
             default: ""
         }
     },
