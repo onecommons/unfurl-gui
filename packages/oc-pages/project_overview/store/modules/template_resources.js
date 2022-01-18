@@ -492,13 +492,13 @@ const getters = {
             
             // TODO query for this information
             const CLOUD_MAPPINGS = {
-                'AzureAccount': 'unknown',
-                'GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
-                'AWSAccount': 'unfurl.nodes.AWSResource',
+                'unfurl.nodes.AzureAccount': 'unfurl.nodes.AzureResources',
+                'unfurl.nodes.GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
+                'unfurl.nodes.AWSAccount': 'unfurl.nodes.AWSResource',
             }
 
             if(state.resourcesOfTemplates.cloud) {
-                const allowedCloudVendor = CLOUD_MAPPINGS[state.resourcesOfTemplates]
+                const allowedCloudVendor = `unfurl.nodes.${state.resourcesOfTemplates.cloud}`
                 result = result.filter(type => {
                     return !type.implements.includes('unfurl.nodes.CloudObject') ||
                         type.implements.includes(CLOUD_MAPPINGS[allowedCloudVendor])

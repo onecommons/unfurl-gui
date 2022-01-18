@@ -8,8 +8,8 @@ import { __ } from '~/locale';
 export default {
     name: 'HeaderProjectView',
     components: {
-        GlIcon,
-        GlButton,
+        //GlIcon,
+        //GlButton,
     },
     props: {
         projectInfo: {
@@ -74,8 +74,7 @@ export default {
                     </div>
                 </div>
             </div>
-            <div class="project-repo-buttons gl-display-flex gl-justify-content-md-end gl-align-items-start gl-flex-wrap gl-mt-3">
-                <!-- Deployment button -->
+            <!--div class="project-repo-buttons gl-display-flex gl-justify-content-md-end gl-align-items-start gl-flex-wrap gl-mt-3">
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button @click="redirectTo($projectGlobal.linkDeployment)">
                         <gl-icon
@@ -87,7 +86,6 @@ export default {
                     <a :href="this.$projectGlobal.linkDeployment" class="gl-button btn btn-default btn-sm  count">{{ projectInfo.deployments }}</a>
                 </div>
 
-                <!-- Star button -->
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
@@ -101,7 +99,6 @@ export default {
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
 
-                <!-- Fork Btton -->
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
@@ -114,7 +111,7 @@ export default {
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonFork.link" class="gl-button btn btn-default btn-sm star-count count">{{ this.$projectGlobal.buttonFork.count }}</a>
                 </div>
-            </div>
+            </div-->
         </div>
     </div>
 </template>

@@ -15,18 +15,6 @@ export default {
             required: true,
         }
     },
-    methods: {
-        checkPlatform() {
-            switch (this.headerInfo.cloud) {
-                case __('Google Cloud Platform'):
-                    return 'GPC'
-                case __('Amazon Web Services'):
-                    return 'AWS'
-                default:
-                    return ''
-            }
-        }
-    }
 }
 </script>
 <template>
@@ -34,13 +22,14 @@ export default {
         <div class="col-md-12 col-lg-6 d-flex">
             <h1 class="gl-mt-3 gl-mb-0 template-title">{{ headerInfo.title }}</h1>
         </div>
-        <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end gl-pt-4">
-            <LogosCloud :cloud="checkPlatform()" :class="['gl-mr-1', 'logo-mt']" />
-            <span v-if="checkPlatform() !== ''">/</span>
-            <span class="gl-pl-2 oc_environment_name">{{ headerInfo.environment }}</span> 
+        <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end gl-pt-4" style="align-items: center">
+            <LogosCloud :cloud="headerInfo.cloud" :class="['gl-mr-1', 'logo-mt']" />
+            <span style="line-height: 0;" v-if="headerInfo.cloud">{{headerInfo.cloud.split(/(?=[A-Z])/).slice(0, -1).join(' ')}}</span>
+            <!--span class="gl-pl-2 oc_environment_name">{{ headerInfo.environment }}</span--> 
             <gl-icon
                 :size="12"
-                :class="['gl-ml-2', 'gl-mt-2', 'icon-blue']"
+                :class="['icon-blue']"
+                style="margin: 0.25rem"
                 :name="'information-o'"
                 />
         </div>

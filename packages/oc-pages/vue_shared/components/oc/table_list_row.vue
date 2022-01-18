@@ -48,7 +48,7 @@ export default {
                 </div>
 
                 <div class="table-section oc-table-section section-wrap text-truncate section-15">
-                    <a href="javascript:void(0);" @click="redirectToDeployment()">
+                    <a v-if="item.totalDeployments" href="javascript:void(0);" @click="redirectToDeployment()">
                         <span>
                             <gl-icon
                                 name="upload"

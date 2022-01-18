@@ -1,12 +1,14 @@
 <script>
 import {  GlFormRadio, GlIcon } from '@gitlab/ui';
+import OcListResourceIcon from './oc_list_resource/icon.vue'
 import { __ } from '~/locale';
 import {mapGetters} from 'vuex'
 export default {
     name: 'OcListResource',
     components: {
         GlFormRadio,
-        GlIcon
+        GlIcon,
+        OcListResourceIcon
     },
 
     props: {
@@ -48,6 +50,8 @@ export default {
         ...mapGetters([
           'getValidResourceTypes'
         ]),
+
+
     },
 
     methods: {
@@ -78,9 +82,7 @@ export default {
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2"
             >
             <gl-form-radio v-model="selectedVal" :value="resource" class="gl-mt-4" />
-            <div class="oc_resource_icon gl-mr-3">
-                <img v-if="resource.avatar !== null" :src="resource.avatar" :alt="resource.name" />
-            </div>
+            <oc-list-resource-icon :badge="resource.badge" :alt="resource.name"/>
             <div>
                 <span class="text-break-word title">{{ resource.name }}</span>
                 <div class="oc_resource_description gl-mb-2">
@@ -109,14 +111,3 @@ export default {
         </div>
     </div>
 </template>
-<style scoped>
-.oc_resource_icon {
-    width: 36px;
-    height: 36px;
-    background-color: #ffffff;
-}
-.oc_resource_icon img {
-    width: 100%;
-    height: 100%;
-}
-</style>
