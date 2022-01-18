@@ -136,7 +136,9 @@ export const resolvers = {
   Input: {
       instructions: (obj, args, { }) => obj.instructions ?? obj.description,
 
-      title: (obj, args, { }) => obj.title,
+      name: (obj, args, { }) => obj.name ?? obj.title,
+
+      title: (obj, args, { }) => obj.title ?? obj.name,
 
       // type JSON
       value: (obj, args, { }) => obj.value ?? null,
@@ -145,13 +147,6 @@ export const resolvers = {
       default: (obj, args, { }) => obj.default ?? null,
 
       required: (obj, args, { }) => obj.required ?? false,
-
-      // type JSON
-    schema: (obj, args, { }) => {
-        // return self, add minimal json-schema definition if missing
-        if (!obj.type) ob.type = "string";
-        return obj;
-      },
     },
 
     Template: {

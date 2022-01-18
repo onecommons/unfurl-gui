@@ -123,35 +123,16 @@ type Overview {
 }
 
 type Input {
-  """
-  Description of input
-  """
-  instructions: String
 
   """
-  Title of input
+  Name of the property
   """
-  title: String!
+  name: String!
 
   """
   Value of input
   """
   value: JSON
-
-  """
-  Value of input
-  """
-  default: JSON
-
-  """
-  Value of input
-  """
-  required: Boolean
-
-  """
-  json-schema
-  """
-  schema: JSON
 }
 
 type Output {
@@ -368,7 +349,10 @@ type ResourceType {
   description: String
   badge: String
 
-  properties: [Input!]
+  """
+  json-schema for inputs, will have a "properties" object that enumerates inputs  
+  """
+  inputsSchema: JSON
   outputs: [Output!]
   requirements: [RequirementConstraint!]
 }
@@ -401,7 +385,10 @@ type ResourceTemplate {
   type: ResourceType!
 
   description: String
-  # input has schema and value
+  
+  """
+  Maps to an object that conforms to type.inputsSchema
+  """
   properties: [Input!]
   requirements: [Requirement!]
 }
