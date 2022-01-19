@@ -79,13 +79,25 @@ function patchTypenameInArr(typename, overview, args, ctx, info) {
 }
 
 function makeClientResolver(typename, field) {
-  return (root, variables, { cache }, info) => {
-      // query must retrieve the json field
-      const json = root[field];
-      json.__typename = typename;
-      return json;
-    }
+  return (root, variables, context, info) => {
+    // query must retrieve the json field
+    const json = root[field];
+    json.__typename = typename; // ensure __typename
+    context.jsondb = json;
+    return json;
+  }
 }
+
+function makeObjectLookupResolver(typename) {
+  return (parent, args, { cache, jsondb }, { fieldName }) => {
+    const obj = jsondb[typename][ parent [ fieldName] ];
+    if (obj) {
+      obj.__typename = typename; // ensure __typename
+    }
+    return obj ?? null;
+  }
+} 
+
 
 export const resolvers = {
 
@@ -102,7 +114,32 @@ export const resolvers = {
     resourceTemplates: makeClientResolver('ResourceTemplate', 'clientPayload')      
   },
   
-    Overview: {
+  ApplicationBlueprint: {
+    deploymentTemplates: (parent, args, { cache, jsondb }, { }) => {
+      const templates = Object.values(jsondb['DeploymentTemplate']);
+      if (args) {
+          for (const key in Object.keys(args)) {
+              // one of searchByType, searchBySlug, searchByTitle, strip "searchBy"
+              const lookup = args[0].substring("searchBy".length).toLowerCase();
+              const match = _.find(templates, { [lookup]: args[key] });
+              if (match) {
+                  return [match];
+              } else {
+                  return [];
+              }
+          }
+      }
+      return templates;
+    },
+  },
+
+  DeploymentTemplate: {
+    blueprint: makeObjectLookupResolver('ApplicationBlueprint'),
+    primary: makeObjectLookupResolver('ResourceTemplate'),
+    // XXX resourceTemplates: makeArrayLookupResolver('ResourceTemplate')
+  },
+
+  Overview: {
 
         inputs: _.partial(patchTypenameInArr, "Input"),
 
