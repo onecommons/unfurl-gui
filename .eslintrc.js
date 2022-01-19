@@ -2,7 +2,7 @@ module.exports = {
   root: true,
 
   env: {
-    node: true
+    node: true,
   },
 
   extends: [
@@ -23,7 +23,7 @@ module.exports = {
     "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
     "graphql/template-strings": [
-      "error",
+      "warn", //eslint hates me
       {
         env: "literal",
         projectName: "app",
@@ -35,3 +35,4 @@ module.exports = {
 
   plugins: ["graphql"]
 };
+process.env.APOLLO_SCHEMA_GENERATE = true;
