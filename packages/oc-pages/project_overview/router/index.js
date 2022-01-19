@@ -10,6 +10,16 @@ export default function createRouter(base) {
       mode: 'history',
       base: joinPaths(gon.relative_url_root || '', `${base}/-/overview`),
       routes,
+      
     });
+
+
+    router.beforeEach((to, from, next) => {
+        if(router.app.$store) {
+            router.app.$store.getters.getRouterHook(to, from, next)
+        }
+        else next()
+    })
+
     return router;
-  }
+}

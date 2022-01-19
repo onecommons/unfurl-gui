@@ -214,6 +214,9 @@ const mutations = {
     },
     setBaseState(state, baseState) {
         state.accumulator = baseState
+    },
+    clearPreparedMutations(state) {
+        state.preparedMutations = []
     }
 }
 

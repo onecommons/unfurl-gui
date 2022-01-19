@@ -5,6 +5,7 @@ import environments from "./modules/environments";
 import project from "./modules/project";
 import deployment_template_updates from "./modules/deployment_template_updates"
 import templateResources from "./modules/template_resources";
+import misc from './modules/misc'
 
 Vue.use(Vuex);
 
@@ -15,7 +16,8 @@ const store = new Vuex.Store({
         environments,
         project,
         templateResources,
-        deployment_template_updates
+        deployment_template_updates,
+        misc
     },
     strict: debug,
     plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],

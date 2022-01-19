@@ -1,7 +1,7 @@
 <script>
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
@@ -198,13 +198,27 @@ export default {
   beforeMount() {
     // NOTE this doesn't work without https
     window.addEventListener('beforeunload', this.unloadHandler)
+    this.setRouterHook((to, from, next) => {
+      if(this.hasPreparedMutations) {
+        const result = confirm(__('You have unsaved changes.  Press OK to continue'))
+        console.log(result)
+        if(!result) { next(false); return } // never call next twice
+      }
+      next()
+    })
   },
 
   beforeDestroy() {
     window.removeEventListener('beforeunload', this.unloadHandler)
+    this.setRouterHook()
+    this.clearPreparedMutations()
   },
 
   methods: {
+    ...mapMutations([
+      'setRouterHook',
+      'clearPreparedMutations'
+    ]),
     ...mapActions([
       'syncGlobalVars',
       'createNodeResource',
@@ -221,6 +235,7 @@ export default {
 
     unloadHandler(e) {
       if(this.hasPreparedMutations) {
+        // NOTE most users will not see this message because browsers can override it
         e.returnValue = "You have unsaved changes."
       }
     },
