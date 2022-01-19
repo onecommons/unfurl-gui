@@ -3,9 +3,11 @@ import {GlTabs, GlTab, GlIcon, GlFormGroup, GlFormInput} from '@gitlab/ui';
 import {debounce} from 'lodash';
 import {bus} from '../../bus';
 import {__} from '~/locale';
+import {mapMutations} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormItem, Input} from "@formily/element";
 import {createForm, onFieldValueChange} from "@formily/core";
+import {updatePropertyInResourceTemplate} from '../../store/modules/deployment_template_updates.js'
 
 const ComponentMap = {
   string: 'Input',
@@ -41,29 +43,102 @@ export default {
       required: false,
       default: __('Inputs')
     },
+    card: {
+      type: Object
+    },
+    /*
     mainInputs: {
       type: Array,
       required: true
     },
+    */
     componentKey: {
       type: Number,
       required: true
     }
   },
 
+  computed: {
+    mainInputs() {
+      const result = []
+      let fromSchema, templateProperties
+      try {
+        fromSchema = this.card.type.inputsSchema.properties
+        templateProperties = this.card.properties
+      }
+      catch(e) { return result }
+      for (const property of templateProperties) {
+        try{
+          const next = {...property, ...fromSchema[property.name]}
+          next.initialValue = next.value || next.default
+          result.push(next)
+        } catch (e) {
+          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.card.type.name}'`)
+        }
+      }
+
+      return result
+
+    },
+
+    initialFormValues() {
+      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.initialValue}), {})
+      return result
+    },
+
+    schema() {
+      const result =  {
+        type: this.card?.type?.inputsSchema?.type,
+        properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
+          //const title = `${currentValue.title}${currentIndex}${this.componentKey}${this.getRandomKey(7)}-template`;
+          const title = currentValue.name
+          previousValue[title] = {
+            type: 'string',//currentValue.type,
+            title: currentValue.title,
+            'x-decorator': 'FormItem',
+            'x-component': 'Input',//ComponentMap[currentValue.type],
+            'description': currentValue.instructions,
+            'x-data': currentValue,
+            'x-component-props': {
+              placeholder: currentValue.title,
+            },
+          }
+          return previousValue;
+        }, {}),
+      }
+      return result
+    },
+
+    form() {
+      return createForm({
+        initialValues: this.initialFormValues,
+        effects: () => {
+          onFieldValueChange('*', async (field) => {
+            this.checkInputsInline();
+            this.triggerSave(field.data.title, field.value);
+          })
+        }
+      })
+    }
+  },
+
   data() {
     return {
+      /*
       form: createForm({
+        initialValues: this.initialFormValues,
         effects: () => {
-          onFieldValueChange('*', async () => {
+          onFieldValueChange('*', async (field) => {
             this.checkInputsInline();
-            this.triggerSave();
+            this.triggerSave(field.data.title, field.value);
           })
         }
       }),
+      */
       inputsKey: 0,
       inputsComplete: null,
       autoSaveTimer: 3000,
+      /*
       schema: {
         type: 'object',
         properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
@@ -82,6 +157,7 @@ export default {
           return previousValue;
         }, {}),
       }
+       */
     }
   },
 
@@ -91,6 +167,9 @@ export default {
   },
 
   methods: {
+    ...mapMutations([
+      'pushPreparedMutation'
+    ]),
     convertProperties(properties) {
       const temp = {};
       Object.keys(properties).forEach(i => {
@@ -155,9 +234,11 @@ export default {
       this.checkInputs();
     }, 300),
 
-    triggerSave: debounce(function preview() {
-      bus.$emit("triggerAutoSave");
-    }, 100),
+    triggerSave: debounce(function preview(field, value) {
+      this.pushPreparedMutation(
+        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field, propertyValue: value})
+      )
+    }, 200),
 
     getRandomKey(length) {
       return Math.random().toString(36).replace(/[^a-z][0-9]+/g, '').substr(0, length);

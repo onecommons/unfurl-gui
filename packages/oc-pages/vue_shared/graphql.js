@@ -400,6 +400,7 @@ export const resolvers = {
         description: (obj, args, { }) => (obj && obj.description) ?? null,
         requirements: _.partial(patchTypenameInArr, "RequirementConstraint"), // NOTE we cannot remove null, unresolved requirement names here, because the resolution has not been done yet
         //properties: _.partial(patchTypenameInArr, "Input"),
+        inputsSchema: (obj) => (obj && obj.inputsSchema) ?? {},
         outputs: _.partial(patchTypenameInArr, "Output")
     },
 
@@ -475,6 +476,7 @@ description: String
         }
         
     },
+
 
 
   ApplicationBlueprintProject: {

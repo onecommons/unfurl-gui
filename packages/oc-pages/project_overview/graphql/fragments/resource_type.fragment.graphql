@@ -4,6 +4,8 @@ fragment ResourceTypes on ResourceType{
   title
   description
   badge
+  inputsSchema
+  
   # TODO add back properties
   #properties {
   #  title

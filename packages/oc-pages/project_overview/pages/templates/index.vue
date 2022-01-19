@@ -478,7 +478,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <oc-inputs :main-inputs="getPrimaryCard.properties" :component-key="1" />
+            <oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1" />
 
             <!-- Requirements List -->
             <oc-list
@@ -505,7 +505,7 @@ export default {
                   :level="idx"
                   class="gl-mt-6">
                   <template #content>
-                    <oc-inputs :main-inputs="card.properties" :component-key="2" />
+                    <oc-inputs :card="card" :main-inputs="card.properties" :component-key="2" />
 
                     <oc-list
                       tabs-title="Requirements"

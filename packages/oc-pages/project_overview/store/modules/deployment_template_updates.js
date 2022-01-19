@@ -24,6 +24,17 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(data?.data?.errors?.length) throw new Error(data.data.errors)
 }
 
+export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue}) {
+    return function(accumulator) {
+        const patch = accumulator['ResourceTemplate'][templateName]
+        const property = patch.properties.find(p => p.name == propertyName)
+        property.value = propertyValue
+
+        console.log(patch)
+        return [ {typename: 'ResourceTemplate', target: templateName, patch} ]
+    }
+}
+
 export function appendResourceTemplateInDT({templateName, deploymentTemplateSlug}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateSlug]
