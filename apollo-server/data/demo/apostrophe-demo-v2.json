@@ -1065,7 +1065,7 @@
       "name": "Apostrophe Demo",
       "primary": "MEANStack",
       "deploymentTemplates": [
-        "Apostrophe Demo"
+        "apostrophe-demo"
       ]
     }
   },
