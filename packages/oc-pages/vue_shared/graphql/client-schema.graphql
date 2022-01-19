@@ -1,18 +1,14 @@
-#extend type ApplicationBlueprintProject {
-#        """
-#        Oc Project Overview
-#        """
-#        overview: Overview! @client
-#        applicationBlueprint: ApplicationBlueprint! @client
-#}
+extend type ApplicationBlueprintProject {
+        overview: Overview! @client
+        applicationBlueprint: ApplicationBlueprint! @client
+}
 
-extend type OcEnvironment {
-  """
-  Deployments deployed into this environment
-  """
-  deployments: [Deployment!] @client
+extend type Environments {
+  environments: [DeploymentEnvironment] @client
+}
 
-  # TODO: replace cloud: string with cloud: ResourceType @client
+extend type ResourceTemplates {
+  resourceTemplates: [ResourceTemplate!] @client
 }
 
 
@@ -31,11 +27,6 @@ type Overview {
   The GitLab Flavored Markdown rendering of `description`
   """
   descriptionHtml: String
-
-  """
-  OneCommons general Environments
-  """
-  environments: [OcEnvironment!]
 
   """
   Full path of the project.
@@ -124,35 +115,16 @@ type Overview {
 }
 
 type Input {
-  """
-  Description of input
-  """
-  instructions: String
 
   """
-  Title of input
+  Name of the property
   """
-  title: String!
+  name: String!
 
   """
   Value of input
   """
-  value: String
-
-  """
-  Value of input
-  """
-  default: String
-
-  """
-  Value of input
-  """
-  required: Boolean
-
-  """
-  json-schema
-  """
-  schema: JSON
+  value: JSON
 }
 
 type Output {
@@ -372,7 +344,10 @@ type ResourceType {
   description: String
   badge: String
 
-  properties: [Input!]
+  """
+  json-schema for inputs, will have a "properties" object that enumerates inputs  
+  """
+  inputsSchema: JSON
   outputs: [Output!]
   requirements: [RequirementConstraint!]
 }
@@ -405,7 +380,10 @@ type ResourceTemplate {
   type: ResourceType!
 
   description: String
-  # input has schema and value
+  
+  """
+  Maps to an object that conforms to type.inputsSchema
+  """
   properties: [Input!]
   outputs: [Output!] # TODO check if this is still a thing
   dependencies: [Dependency]
@@ -425,6 +403,19 @@ type Dependency {
   target: Resource
 }
 
+type DeploymentEnvironment {
+  name: String!
+
+  services: [Resource!]
+
+  """
+  TODO: should just use primary_provider
+  """
+  cloud: String
+  primary_provider: Resource
+  deployments: [Deployment!]
+}
+
 type Deployment {
   """
   Title of template
@@ -432,9 +423,9 @@ type Deployment {
   title: String!
 
   """
-  Environment (maybe?)
+  Environment
   """
-  environment: OcEnvironment
+  environment: DeploymentEnvironment
 
   primary: Resource
 

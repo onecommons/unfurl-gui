@@ -3,90 +3,12 @@
 #import "../fragments/resource_type.fragment.graphql"
 #import "../fragments/input_item.fragment.graphql"
 
-#query getTemplateBySlug($projectPath: ID!) {
-#  applicationBlueprint(fullPath: $projectPath) {
-#      __typename
-#      json
-#      overview @client {
-#        __typename
-#        id
-#        templates {
-#          __typename
-#          ...TemplateItem
-#        }
-#    }
-#  }
-#}
-
-#query getTemplateBySlug($projectPath: ID!) {
-#  newApplicationBlueprint(fullPath: $projectPath) @client {
-#    name
-#    deploymentTemplates {
-#      name
-#      blueprint {
-#        name
-#        deploymentTemplates {
-#          name
-#          blueprint {
-#            name
-#          }
-#        }
-#      }
-#    }
-#}
-#}
-
-#query getTemplateBySlug($projectPath: ID!) {
-#  newApplicationBlueprint(fullPath: $projectPath) @client {
-#    __typename
-#    name
-#    primary {
-#      name
-#      properties {...InputItems}
-#      requirements {
-#       name
-#        description
-#        resourceType {...ResourceTypes}
-#        min
-#        max
-#      }
-#      outputs {
-#        instructions
-#        title
-#      }
-#    }
-#    deploymentTemplates {
-#      name
-#      title
-#      cloud
-#      slug
-#      blueprint {
-#        name
-#        primary {
-#          name
-#        }
-#      }
-#      resourceTemplates {
-#        name
-#        title
-#        description
-#        type
-#        properties
-#        outputs
-#        requirements
-#      }
-#      primary
-#    }
-#  }
-#}
-
 query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy: String) {
   newApplicationBlueprint(fullPath: $projectPath, fetchPolicy: $fetchPolicy) @client {
     __typename
     name
     primary {
       name
-      properties {...InputItems}
       requirements {
         name
         title
@@ -108,7 +30,7 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy:
         name
         title
         description
-        properties
+        properties {...InputItems}
         outputs
         dependencies {
           constraint {
@@ -122,8 +44,8 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy:
             name
             title
             description
-            type
-            properties
+            type {...ResourceTypes}
+            properties {...InputItems}
             outputs
             dependencies {
               title
@@ -132,9 +54,7 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy:
                 name
                 title
                 description
-                type
-                properties
-                outputs
+                type {...ResourceTypes}
               }
             }
 

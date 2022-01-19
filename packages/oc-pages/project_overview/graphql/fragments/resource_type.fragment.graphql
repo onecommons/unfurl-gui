@@ -4,10 +4,11 @@ fragment ResourceTypes on ResourceType{
   title
   description
   badge
-  properties {
-    title
-    required
-    type
-  }
+  # TODO add back properties
+  #properties {
+  #  title
+  #  required
+  #  type
+  #}
 }
 

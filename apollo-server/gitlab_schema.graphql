@@ -16090,20 +16090,6 @@ type NugetMetadata {
   projectUrl: String
 }
 
-type OcEnvironment {
-  """
-  Cloud used by environment
-  """
-  cloud: String
-
-  """
-  Name of environment
-  """
-  name: String!
-
-  json: JSON
-}
-
 """
 Input type for Oc input
 """
@@ -19962,12 +19948,28 @@ type PypiMetadata {
   requiredPython: String
 }
 
+type Environments {
+  namespace: String,
+  name: String,
+  clientPayload: JSON
+}
+
+type ResourceTemplates {
+  namespace: String,
+  clientPayload: JSON
+}
+
 type Query {
   """
   Oc Accounts
+  TODO: unused, remove
   """
   accounts: [Account!]
 
+  environments(namespace: String, name: String): Environments
+  
+  resourceTemplates(namespace: String): ResourceTemplates
+  
   """
   Find an issue board list.
   """

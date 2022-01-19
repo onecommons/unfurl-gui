@@ -1,15 +1,9 @@
 fragment InputItems on Input {
-    instructions
-    title
+    name
     value
-    required
-    default
 }
 
 fragment InputItems on Properties {
-    instructions
-    title
+    name
     value
-    required
-    default
 }

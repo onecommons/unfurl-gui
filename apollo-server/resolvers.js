@@ -8,30 +8,53 @@ export default {
 
   Query: {
     
+    // XXX unused, delete
     accounts: (root, args, { db }) => db.get('accounts').value(),
 
     applicationBlueprint: (root, args, { db }) => {
         //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
         // demo/apostrophe-demo
         return db.get('projects').value()[args.fullPath]
-    },      
+    },
 
-    /*
-    unfurlRootBlob(root, args, {db}){
-      let result = {}
-      if(args.fullPath)
-        result = db.get('projects').value()[args.fullPath]
+    environments: (root, args, { db }) => {
+      const namespace = args.namespace;
+      const name = args.name;
+      const userdata = db.get('users').value()[namespace];
+      let environments = [];
+      if (userdata) {
+        environments = userdata.environments;
+        if (environments) {
+          if (name) {
+            environments = _.filter(environments, { name });
+          }
+        }
+      }
+      return {
+        namespace,
+        name,
+        clientPayload: environments
+      }
+    },
 
-      return result
-    }
-    */
+    resourceTemplates: (root, args, { db }) => {
+      // (namespace: String): => ResourceTemplates
+    },
   },
 
   // fields with JSON type need explicit resolvers
   ApplicationBlueprintProject: {
     json: (obj, args, { }) => obj
-  },    
-  
+  }, 
+ 
+  Environments: {
+    clientPayload: (obj, args, { }) => obj
+  },
+
+  ResourceTemplates: {
+    clientPayload: (obj, args, { }) => obj
+  },
+
   Mutation: {
 
     /*

@@ -222,6 +222,7 @@ const actions = {
 
 
     async populateAvailableResourceTypes({commit}, {projectPath}) {
+        // TODO add new properties back in
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: gql`
             {
@@ -231,7 +232,7 @@ const actions = {
                     implements
                     description
                     badge
-                    properties
+                    #properties
                     outputs
                     requirements
                 }
@@ -256,7 +257,7 @@ const actions = {
         })
 
         const blueprint = data.newApplicationBlueprint
-        const deploymentTemplate = blueprint.deploymentTemplates.find(dt => dt.slug == templateSlug)
+        const deploymentTemplate = blueprint.deploymentTemplates.find(dt => dt?.slug == templateSlug)
         if(!deploymentTemplate) return false
         const {dependencies} = deploymentTemplate.primary
 
@@ -338,7 +339,8 @@ const actions = {
             target.title = title
 
             delete target.__typename;
-            if(target.properties.length > 0) {
+            // TODO changing resource type properties
+            if(target?.properties?.length > 0) {
                 target.properties = target.properties.map(i => {
                     delete i.__typename;
                     return i;

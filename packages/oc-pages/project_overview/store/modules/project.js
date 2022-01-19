@@ -530,6 +530,7 @@ const actions = {
         throwErrorsFromDeploymentUpdateResponse(errors, data)
     },
 
+    // TODO create fix properties here
     async createResourceTemplate({commit, dispatch, getters, rootState, state}, {type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}) {
 
         if(deploymentTemplateSlug) {

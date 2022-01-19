@@ -10467,18 +10467,6 @@ type NugetMetadata {
   projectUrl: String
 }
 
-type OcEnvironment {
-  """Cloud used by environment"""
-  cloud: String
-
-  """Name of environment"""
-  name: String!
-  json: JSON
-
-  """Deployments deployed into this environment"""
-  deployments: [Deployment!]
-}
-
 """Input type for Oc input"""
 input InputInput {
   """Description of input"""
@@ -10500,8 +10488,6 @@ type ApplicationBlueprintProject {
 
   """Application overview as JSON"""
   json: JSON!
-
-  """Oc Project Overview"""
   overview: Overview!
   applicationBlueprint: ApplicationBlueprint!
 }
@@ -13019,9 +13005,27 @@ type PypiMetadata {
   requiredPython: String
 }
 
+type Environments {
+  namespace: String
+  name: String
+  clientPayload: JSON
+  environments: [DeploymentEnvironment]
+}
+
+type ResourceTemplates {
+  namespace: String
+  clientPayload: JSON
+  resourceTemplates: [ResourceTemplate!]
+}
+
 type Query {
-  """Oc Accounts"""
+  """
+  Oc Accounts
+  TODO: unused, remove
+  """
   accounts: [Account!]
+  environments(namespace: String, name: String): Environments
+  resourceTemplates(namespace: String): ResourceTemplates
 
   """Find an issue board list."""
   boardList(
@@ -18145,9 +18149,6 @@ type Overview {
   """The GitLab Flavored Markdown rendering of `description`"""
   descriptionHtml: String
 
-  """OneCommons general Environments"""
-  environments: [OcEnvironment!]
-
   """Full path of the project."""
   fullPath: ID!
 
@@ -18201,23 +18202,11 @@ type Overview {
 }
 
 type Input {
-  """Description of input"""
-  instructions: String
-
-  """Title of input"""
-  title: String!
+  """Name of the property"""
+  name: String!
 
   """Value of input"""
   value: JSON
-
-  """Value of input"""
-  default: JSON
-
-  """Value of input"""
-  required: Boolean
-
-  """json-schema"""
-  schema: JSON
 }
 
 type Output {
@@ -18355,7 +18344,11 @@ type ResourceType {
   implements: [ResourceType!]
   description: String
   badge: String
-  properties: [Input!]
+
+  """
+  json-schema for inputs, will have a "properties" object that enumerates inputs  
+  """
+  inputsSchema: JSON
   outputs: [Output!]
   requirements: [RequirementConstraint!]
 }
@@ -18380,7 +18373,7 @@ type ResourceTemplate {
   type: ResourceType!
   description: String
 
-  """input has schema and value"""
+  """Maps to an object that conforms to type.inputsSchema"""
   properties: [Input!]
   requirements: [Requirement!]
 }
@@ -18392,12 +18385,22 @@ type Requirement {
   target: Resource
 }
 
+type DeploymentEnvironment {
+  name: String!
+  services: [Resource!]
+
+  """TODO: should just use primary_provider"""
+  cloud: String
+  primary_provider: Resource
+  deployments: [Deployment!]
+}
+
 type Deployment {
   """Title of template"""
   title: String!
 
-  """Environment (maybe?)"""
-  environment: OcEnvironment
+  """Environment"""
+  environment: DeploymentEnvironment
   primary: Resource
   resources: [Resource!]
   job: Job
@@ -18416,6 +18419,7 @@ type Job {
 
 type Resource {
   name: String!
+  title: String!
   url: String
   template: ResourceTemplate!
   status: Status
@@ -18425,25 +18429,25 @@ type Resource {
 }
 
 enum Status {
-  Absent
+  Unknown
+  Ok
   Degraded
   Error
-  Ok
   Pending
-  Unknown
+  Absent
 }
 
 enum State {
-  Configured
-  Configuring
-  Created
-  Creating
-  Deleted
-  Deleting
-  Error
   Initial
-  Started
+  Creating
+  Created
+  Configuring
+  Configured
   Starting
-  Stopped
+  Started
   Stopping
+  Stopped
+  Deleting
+  Deleted
+  Error
 }

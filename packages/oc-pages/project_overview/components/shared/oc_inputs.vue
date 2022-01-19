@@ -89,16 +89,16 @@ export default {
                 </template>
                 <gl-form-group
                     v-for="(input, idx) in mainInputs"
-                    :key="input.title+idx+componentKey+ 'group'"
-                    :label="input.title"
+                    :key="input.name+idx+componentKey+ 'group'"
+                    :label="input.name"
                     class="col-md-4 align_left"
                 >
                     <small>{{ input.instructions }}</small>
                     <gl-form-input
-                        :id="input.title + idx + componentKey + getRandomKey(7)+'-template'"
+                        :id="input.name + idx + componentKey + getRandomKey(7)+'-template'"
                         v-model="input.value"
                         type="text"
-                        :placeholder="input.title"
+                        :placeholder="input.name"
                         @keyup="checkInputsInline(); triggerSave()"
                     />
                 </gl-form-group>

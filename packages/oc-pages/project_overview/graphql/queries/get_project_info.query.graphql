@@ -1,56 +1,9 @@
 #import "../fragments/input_item.fragment.graphql"
 #import "../fragments/output_item.fragment.graphql"
 #import "../fragments/requirement_item.fragment.graphql"
-#import "../fragments/environment_item.fragment.graphql"
 #import "../fragments/template_item.fragment.graphql"
 #import "../fragments/resource_item.fragment.graphql"
 #import "../fragments/resource_type.fragment.graphql"
-
-#query getProjectInfo($projectPath: ID!, $searchBySlug: String) {
-#    newApplicationBlueprint(fullPath: $projectPath) {
-#      __typename
-#      primary {
-#
-#      }
-#      overview {
-#        __typename
-#        id
-#        description
-#        fullPath
-#        name
-#        webUrl
-#        image
-#        livePreview
-#        sourceCodeUrl
-#        deployments
-#        title
-#        inputs {
-#          __typename
-#          ...InputItems
-#        }
-#        outputs {
-#          __typename
-#          ...OutputItems
-#        }
-#        requirements {
-#          __typename
-#          ...RequirementItem
-#        }
-#        environments {
-#          __typename
-#          ...EnvironmentItem
-#        }
-#        templates(searchBySlug: $searchBySlug){
-#          __typename
-#          ...TemplateItem
-#        }
-#        resources {
-#          __typename
-#          ...ResourceItem
-#        }
-#    }
-#  }
-#}
 
 
 query getProjectInfo($projectPath: ID!) {
@@ -65,7 +18,6 @@ query getProjectInfo($projectPath: ID!) {
         title
         description
         type
-        properties
         outputs
         dependencies
       }
@@ -73,18 +25,14 @@ query getProjectInfo($projectPath: ID!) {
     primary {
       __typename
       name
-      properties { # analogous to inputs
-      title
-      value
-      instructions
-      }
+      #properties { ...InputItems }
       outputs {
         title
         #no value field
         instructions
       }
       requirements { #assuming we don't want to recurse further
-        resourceType {...ResourceTypes}
+      resourceType {...ResourceTypes}
       }
     }
     overview {
@@ -105,6 +53,6 @@ query getProjectInfo($projectPath: ID!) {
     avatar
     description
     platform
-    type
+    #type
   }
 }

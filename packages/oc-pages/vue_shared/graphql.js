@@ -127,7 +127,6 @@ async function fetchResourceType(variables, context){
                 title: name,
                 badge: 'ERR',
                 description: null,
-                properties: [],
                 outputs: [],
                 requirements: [],
             }
@@ -232,15 +231,16 @@ function clientResolverError(e, baseMessage) {
     return new Error(_e)
 }
 
-export const resolvers = {
+function makeClientResolver(typename, field) {
+  return (root, variables, { cache }, info) => {
+      // query must retrieve the json field
+      const json = root[field];
+      json.__typename = typename;
+      return json;
+    }
+}
 
-    ApplicationBlueprintProject: {
-        overview: (root, variables, { cache }, info) => {
-            // query must retrieve the json field
-            root.json.__typename = 'Overview';
-            return root.json;
-        }
-    },
+export const resolvers = {
 
     Query: {
         blueprintRaw: async (...args) => {
@@ -390,7 +390,7 @@ export const resolvers = {
         name: (obj, args, { }) => (obj && obj.name) ?? null,
         dependencies: _.partial(patchTypenameInArr, "Dependency"),
         properties: _.partial(patchTypenameInArr, "Input"),
-        description: (obj, args, { }) => (obj && obj.descriptio) ?? null,
+        description: (obj, args, { }) => (obj && obj.description) ?? null,
         outputs: (obj, args, { }) => (obj && obj.outputs) ?? [],
     },
 
@@ -399,10 +399,8 @@ export const resolvers = {
         badge: (obj, args, { }) => (obj && obj.badge) ?? null,
         description: (obj, args, { }) => (obj && obj.description) ?? null,
         requirements: _.partial(patchTypenameInArr, "RequirementConstraint"), // NOTE we cannot remove null, unresolved requirement names here, because the resolution has not been done yet
-        properties: _.partial(patchTypenameInArr, "Input"),
+        //properties: _.partial(patchTypenameInArr, "Input"),
         outputs: _.partial(patchTypenameInArr, "Output")
-
-
     },
 
     DeploymentTemplate: {
@@ -479,6 +477,19 @@ description: String
     },
 
 
+  ApplicationBlueprintProject: {
+        overview: makeClientResolver('Overview', 'json'),
+        applicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json')
+  },
+  
+  Environments: {
+    environments: makeClientResolver('DeploymentEnvironment', 'clientPayload')
+  },
+  
+  ResourceTemplates: {
+    resourceTemplates: makeClientResolver('ResourceTemplate', 'clientPayload')      
+  },
+  
     Overview: {
 
         title: (obj, args, { }) => (obj && obj.title) ?? null,
@@ -496,8 +507,6 @@ description: String
 
         servicesToConnect: _.partial(patchTypenameInArr, "ServiceToConnect"),
         
-        environments: _.partial(patchTypenameInArr, "OcEnvironment"),
-
         templates: (overview, args, { }) => {
             if (args) {
                 for (const key in Object.keys(args)) {
@@ -530,24 +539,17 @@ description: String
     // note: fields with JSON type need explicit resolvers
 
   Input: {
-      instructions: (obj, args, { }) => obj.instructions ?? obj.description ?? null,
-
-      title: (obj, args, { }) => obj.title,
+      //instructions: (obj, args, { }) => obj.instructions ?? obj.description ?? null,
+      name: (obj, args, { }) => obj.name ?? obj.title,
+      //title: (obj, args, { }) => obj.title ?? obj.name,
 
       // type JSON
       value: (obj, args, { }) => obj.value ?? null,
 
       // type JSON
-      default: (obj, args, { }) => obj.default ?? null,
+      //default: (obj, args, { }) => obj.default ?? null,
 
-      required: (obj, args, { }) => obj.required ?? false,
-
-      // type JSON
-    schema: (obj, args, { }) => {
-        // return self, add minimal json-schema definition if missing
-        if (!obj.type) ob.type = "string";
-        return obj;
-      },
+      //required: (obj, args, { }) => obj.required ?? false,
     },
 
     Template: {

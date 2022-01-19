@@ -27,4 +27,11 @@ db.defaults({
   accounts: [],
   uploads: [],
   projects,
+  users: {
+    "root": {
+      environments: [
+        { name: "production", cloud: "AWS" },
+        {name: "staging", cloud: "GCP"}
+      ]
+  }}
 }).write()
