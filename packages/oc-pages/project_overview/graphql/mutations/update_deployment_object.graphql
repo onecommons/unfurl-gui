@@ -1,0 +1,4 @@
+mutation UpdateDeploymentObject($fullPath: ID!, $typename: String!, $patch: JSON!) {
+  updateDeploymentObj(input: {projectPath: $fullPath, typename: $typename, patch: $patch}) {isOk, errors}
+}
+

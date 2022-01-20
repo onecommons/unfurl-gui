@@ -4,6 +4,7 @@ import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import {slugify} from '../../../vue_shared/util'
 import {getUnfurlRoot} from '../../../vue_shared/graphql/resolver-helpers.graphql'
+import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(!args.length) return
@@ -29,8 +30,6 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
         property.value = propertyValue
-
-        console.log(patch)
         return [ {typename: 'ResourceTemplate', target: templateName, patch} ]
     }
 }
@@ -247,14 +246,7 @@ const actions = {
         for(let key in getters.getPatches) {
             const patch = getters.getPatches[key]
             graphqlClient.clients.defaultClient.mutate({
-                mutation: gql`
-                    mutation UpdatePart($fullPath: ID!, $typename: String!, $patch: JSON!) {
-                        updateDeploymentObj(projectPath: $fullPath, typename: $typename, patch: $patch) {
-                            isOk
-                            errors
-                        }
-                    }
-                `,
+                mutation: UpdateDeploymentObject,
                 variables: {fullPath: rootState.project.globalVars.projectPath, typename: key, patch}
             })
         }

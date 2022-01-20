@@ -70,7 +70,8 @@ export default {
     */
 
 
-    updateDeploymentObj(root, {projectPath, typename, patch}, {db}) {
+    updateDeploymentObj(root, {input}, {db}) {
+      const {projectPath, typename, patch} = input
       const _patch = typeof(patch) == 'string'? JSON.stringify(patch): patch
       const patchTarget = typename === '*'? db.get('projects').value()[projectPath] : db.get('projects').value()[projectPath][typename]
       console.log(typename, patch)

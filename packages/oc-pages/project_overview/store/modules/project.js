@@ -8,6 +8,7 @@ import getEnvironments from '../../graphql/queries/get_environments.query.graphq
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
 import getServicesToConnect from '../../graphql/queries/get_services_to_connect.query.graphql';
+import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
 import removeTemplate from '../../graphql/mutations/remove_template.mutation.graphql';
 import {slugify} from '../../../vue_shared/util'
 
@@ -335,18 +336,11 @@ const actions = {
         dispatch('deleteDeploymentTemplateInBlueprint', slug)
 
         const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-            mutation DeleteResourceTemplate($fullPath: ID!, $patch: JSON!) {
-                updateDeploymentObj(projectPath: $fullPath, typename: "DeploymentTemplate", patch: $patch) {
-                    isOk
-                    errors
-                }
-
-            }
-            `,
+            mutation: UpdateDeploymentObject,
             variables: {
                 patch: { [slug]: null },
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'DeploymentTemplate'
             }
 
         })
@@ -374,17 +368,11 @@ const actions = {
         resourceTemplateRaw.__typename = 'ResourceTemplate'
         const patch = { [resourceTemplateRaw.name]: resourceTemplateRaw }
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-            mutation UpdateResourceTemplate($fullPath: ID!, $patch: JSON!) {
-                updateDeploymentObj(projectPath: $fullPath, typename: "ResourceTemplate", patch: $patch) {
-                    isOk
-                    errors
-                }
-            }
-            `,
+            mutation: UpdateDeploymentObject,
             variables: {
                 patch, 
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'ResourceTemplate'
             }
         })
         throwErrorsFromDeploymentUpdateResponse(errors, data)
@@ -429,17 +417,11 @@ const actions = {
         deploymentTemplateRaw.__typename = 'DeploymentTemplate'
         const patch = { [deploymentTemplateRaw.slug]: deploymentTemplateRaw }
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-            mutation UpdateDeploymentTemplate($fullPath: ID!, $patch: JSON!) {
-                updateDeploymentObj(projectPath: $fullPath, typename: "DeploymentTemplate", patch: $patch) {
-                    isOk
-                    errors
-                }
-            }
-            `,
+            mutation: UpdateDeploymentObject,
             variables: {
                 patch, 
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'DeploymentTemplate'
             }
         })
     },
@@ -479,17 +461,11 @@ const actions = {
         blueprintRaw.__typename = 'ApplicationBlueprint'
         const patch = { [blueprintRaw.name]: blueprintRaw }
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-            mutation UpdateApplicationBlueprint($fullPath: ID!, $patch: JSON!) {
-                updateDeploymentObj(projectPath: $fullPath, typename: "ApplicationBlueprint", patch: $patch) {
-                    isOk
-                    errors
-                }
-            }
-            `,
+            mutation: UpdateDeploymentObject,
             variables: {
                 patch, 
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'ApplicationBlueprint'
             }
         })
         throwErrorsFromDeploymentUpdateResponse(errors, data)
@@ -517,14 +493,11 @@ const actions = {
             await dispatch('deleteResourceTemplateInDT', {templateName, deploymentTemplateSlug})
         }
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-                mutation DeleteResourceTemplate($fullPath: ID!, $patch: JSON!) {
-                    updateDeploymentObj(projectPath: $fullPath, typename: "ResourceTemplate", patch: $patch) {isOk, errors}
-                }
-            `,
+            mutation: UpdateResourceTemplate,
             variables: {
                 patch: { [templateName]: null },
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'ResourceTemplate'
             },
             errorPolicy: 'all'
         })
@@ -565,17 +538,11 @@ const actions = {
         }
 
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-            mutation CreateResourceTemplate($fullPath: ID!, $patch: JSON!) {
-                updateDeploymentObj(projectPath: $fullPath, typename: "ResourceTemplate", patch: $patch) {
-                    isOk
-                    errors
-                }
-            }
-            `,
+            mutation: UpdateDeploymentObject,
             variables: {
                 patch, 
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'ResourceTemplate'
             }
         })
 
@@ -604,17 +571,11 @@ const actions = {
         }
 
         const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: gql`
-            mutation CreateDeploymentTemplate($fullPath: ID!, $patch: JSON!) {
-                updateDeploymentObj(projectPath: $fullPath, typename: "DeploymentTemplate", patch: $patch) {
-                    isOk
-                    errors
-                }
-            }
-            `,
+            mutation: UpdateDeploymentObject,
             variables: {
                 patch, 
-                fullPath: state.globalVars.projectPath
+                fullPath: state.globalVars.projectPath,
+                typename: 'DeploymentTemplate'
             }
         })
 
