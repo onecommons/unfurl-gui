@@ -258,6 +258,7 @@ const actions = {
 
     async fetchServicesToConnect({ commit }, { projectPath }) {
         //const {errors, data} = await graphqlClient.clients.defaultClient.query({
+        /*
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getServicesToConnect, //TODO don't query entire blueprint here
             errorPolicy: 'all',
@@ -272,6 +273,7 @@ const actions = {
         commit("SET_SERVICES_TO_CONNECT", services);
         return services;
 
+        */
     },
 
     /*

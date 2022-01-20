@@ -46,13 +46,4 @@ query getProjectInfo($projectPath: ID!) {
     }
 
   }
-  servicesToConnect {
-    __typename
-    name
-    value
-    avatar
-    description
-    platform
-    #type
-  }
 }

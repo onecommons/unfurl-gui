@@ -12,58 +12,17 @@ export default {
             const {data} = await  graphqlClient.clients.defaultClient.query({
                 query: gql`
 {
-newApplicationBlueprint(fullPath: $projectPath) @client {
-    __typename
-    name
-    
-    deploymentTemplates (searchBySlug: $templateSlug){
-      title
-      slug
-      cloud
-      resourceTemplates {
-        name
-        title
-        description
-        type
-        properties
-        outputs
-        dependencies {
-          title
-          name
-          match {
-            name
-            title
-            description
-            type
-            properties
-            outputs
-          }
 
-        }
-      }
-      primary {
-        name
-        title
-        description
-        type
-        properties
-        outputs
-        dependencies {
-          title
-          name
-          match {
-            name
-            title
-            description
-            type
-            properties
-            outputs
-          }
-
-        }
-      }
-     }
-  }
+                ResourceType @client {
+                    name
+                    title
+                    implements
+                    description
+                    badge
+                    #properties
+                    outputs
+                    requirements
+                }
 }`, 
             variables: {projectPath: this.$projectGlobal.projectPath, templateSlug: 'apostrophe-demo'}
             })
