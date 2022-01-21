@@ -488,16 +488,18 @@ extend type Template {
 }
 
 extend type Query {
-  newApplicationBlueprint(
-    """
-    The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
-    """
-    fullPath: ID!
-  ): ApplicationBlueprint
+  #newApplicationBlueprint(
+  #  """
+  #  The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
+  #  """
+  #  fullPath: ID!
+  #): ApplicationBlueprint
 
   
   #unfurlRootJSON(fullPath: ID!): JSON
-  #applicationBlueprint(fullPath: ID!): JSON
+
+  applicationBlueprint(fullPath: ID!): JSON
+  unfurlRoot(fullPath: ID!):  ApplicationBlueprintProject
   blueprintRaw(fullPath: ID!, name: String): JSON
   deploymentTemplateRaw(fullPath: ID!, name: String): JSON
   resourceTemplateRaw(fullPath: ID!, name: String): JSON

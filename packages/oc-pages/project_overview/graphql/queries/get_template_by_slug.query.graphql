@@ -4,67 +4,69 @@
 #import "../fragments/input_item.fragment.graphql"
 
 query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy: String) {
-  newApplicationBlueprint(fullPath: $projectPath, fetchPolicy: $fetchPolicy) @client {
-    __typename
-    name
-    primary {
+  unfurlRoot(fullPath: $projectPath, fetchPolicy: $fetchPolicy) @client {
+    applicationBlueprint{
+      __typename
       name
-      requirements {
-        name
-        title
-        description
-        resourceType {...ResourceTypes}
-        min
-        max
-      }
-      outputs {
-        instructions
-        title
-      }
-    }
-    deploymentTemplates (searchBySlug: $templateSlug){
-      title
-      slug
-      cloud
       primary {
         name
-        title
-        description
-        properties {...InputItems}
-        type {...ResourceTypes}
-        outputs
-        dependencies {
-          constraint {
-            resourceType {
-              name
-            }
-          }
-          title
+        requirements {
           name
-          match {
-            type {...ResourceTypes}
-            name
-            title
-            description
-            type {...ResourceTypes}
-            properties {...InputItems}
-            outputs
-            dependencies {
-              title
-              name
-              match {
-                name
-                title
-                description
-                type {...ResourceTypes}
-              }
-            }
-
-          }
-
+          title
+          description
+          resourceType {...ResourceTypes}
+          min
+          max
+        }
+        outputs {
+          instructions
+          title
         }
       }
-     }
+      deploymentTemplates (searchBySlug: $templateSlug){
+        title
+        slug
+        cloud
+        primary {
+          name
+          title
+          description
+          properties {...InputItems}
+          type {...ResourceTypes}
+          outputs
+          dependencies {
+            constraint {
+              resourceType {
+                name
+              }
+            }
+            title
+            name
+            match {
+              type {...ResourceTypes}
+              name
+              title
+              description
+              type {...ResourceTypes}
+              properties {...InputItems}
+              outputs
+              dependencies {
+                title
+                name
+                match {
+                  name
+                  title
+                  description
+                  type {...ResourceTypes}
+                }
+              }
+
+            }
+
+          }
+        }
+      }
+    }
   }
 }
 

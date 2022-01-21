@@ -127,8 +127,12 @@ export function createResourceTemplate({type, name, title, description, deployme
             )
         }
 
-        const resourceType = typeof(type) == 'string'? getters.getAvailableResourceTypes.find(rt => rt.name == type): type
-        const properties = resourceType.properties
+        const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
+        let properties 
+        try {
+            properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
+        } catch(e) { properties = [] }
+
         const dependencies = resourceType.requirements.map(req => ({
             constraint: req,
             match: null,

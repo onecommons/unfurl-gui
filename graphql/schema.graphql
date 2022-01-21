@@ -10124,6 +10124,11 @@ type Mutation {
     """Parameters for UserCalloutCreate"""
     input: UserCalloutCreateInput!
   ): UserCalloutCreatePayload
+
+  """
+  updateDeploymentObj(projectPath: ID!, typename: String!, patch: JSON!): UpdateDeploymentObjResult
+  """
+  updateDeploymentObj(input: UpdateDeploymentObjPayload): UpdateDeploymentObjResult
 }
 
 """Different toggles for changing mutator behavior"""
@@ -13419,6 +13424,25 @@ type Query {
     """List of usernames."""
     usernames: [String!]
   ): UserCoreConnection
+  newApplicationBlueprint(
+    """
+    The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
+    """
+    fullPath: ID!
+  ): ApplicationBlueprint
+
+  """
+  unfurlRootJSON(fullPath: ID!): JSON
+  applicationBlueprint(fullPath: ID!): JSON
+  """
+  blueprintRaw(fullPath: ID!, name: String): JSON
+  deploymentTemplateRaw(fullPath: ID!, name: String): JSON
+  resourceTemplateRaw(fullPath: ID!, name: String): JSON
+  overview(fullPath: ID!): Overview
+  resourceType(name: String): ResourceType
+  resourceTemplate(name: String): ResourceTemplate
+  deploymentTemplates(deploymentTemplates: [String], fullPath: ID!): [DeploymentTemplate]
+  servicesToConnect: [ServiceToConnect!]
 }
 
 type QueryComplexity {
@@ -15553,9 +15577,6 @@ type Template {
   """Environment of template"""
   environment: String
 
-  """Template requirements"""
-  resourceTemplates: JSON
-
   """Slug of template"""
   slug: String!
 
@@ -15570,6 +15591,7 @@ type Template {
 
   """Url of deployments"""
   url: String
+  resourceTemplates: [ResourceTemplate!]
 }
 
 """Input type for Templates"""
@@ -18139,6 +18161,17 @@ enum VisibilityScopesEnum {
   public
 }
 
+type UpdateDeploymentObjResult {
+  isOk: Boolean
+  errors: [String!]
+}
+
+input UpdateDeploymentObjPayload {
+  projectPath: ID!
+  typename: String!
+  patch: JSON!
+}
+
 type Overview {
   """Number of Deployments"""
   deployments: Int
@@ -18315,6 +18348,7 @@ type ApplicationBlueprint {
 
   """Source code url"""
   sourceCodeUrl: String
+  overview: Overview
 }
 
 type DeploymentTemplate {
@@ -18331,6 +18365,7 @@ type DeploymentTemplate {
 
   """Slug of template"""
   slug: String!
+  name: String!
 
   """Title of template"""
   title: String!
@@ -18375,10 +18410,18 @@ type ResourceTemplate {
 
   """Maps to an object that conforms to type.inputsSchema"""
   properties: [Input!]
-  requirements: [Requirement!]
+  outputs: [Output!]
+  dependencies: [Dependency]
 }
 
 type Requirement {
+  name: String
+  constraint: RequirementConstraint!
+  match: ResourceTemplate
+  target: Resource
+}
+
+type Dependency {
   name: String
   constraint: RequirementConstraint!
   match: ResourceTemplate

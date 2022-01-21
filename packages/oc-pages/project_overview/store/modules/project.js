@@ -9,6 +9,7 @@ import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql
 import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
 import getServicesToConnect from '../../graphql/queries/get_services_to_connect.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
+import {createResourceTemplate} from './deployment_template_updates.js'
 import removeTemplate from '../../graphql/mutations/remove_template.mutation.graphql';
 import {slugify} from '../../../vue_shared/util'
 
@@ -207,9 +208,9 @@ const actions = {
             fetchPolicy: 'network-only',
             variables: { projectPath, defaultBranch },
         });
-        const overview = data.newApplicationBlueprint.overview;
+        const overview = data.unfurlRoot.applicationBlueprint.overview;
         // NOTE we don't have title,image
-        const projectInfo = {...data.newApplicationBlueprint.overview, ...data.newApplicationBlueprint, fullPath: projectPath}
+        const projectInfo = {...data.unfurlRoot.applicationBlueprint.overview, ...data.unfurlRoot.applicationBlueprint, fullPath: projectPath}
         //const {  id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl } = overview;
         //commit('SET_PROJECT_INFO', { id ,description ,fullPath ,name ,webUrl ,image ,livePreview, title, sourceCodeUrl});
         commit('SET_PROJECT_INFO', projectInfo)
@@ -217,11 +218,11 @@ const actions = {
             // NOTE I'm doing this in template_resources
             //commit('SET_PROJECT_INFO', overview);
 
-            commit('SET_TEMPLATES_LIST', data.newApplicationBlueprint.deploymentTemplates);
+            commit('SET_TEMPLATES_LIST', data.unfurlRoot.applicationBlueprint.deploymentTemplates);
 
             // NOTE this is strange because it populates something used by another view
             // It would be a good idea to move into the template_resources store when refactoring
-            commit('SET_RESOURCES_LIST', data.newApplicationBlueprint.deploymentTemplates[0].resourceTemplates);
+            commit('SET_RESOURCES_LIST', data.unfurlRoot.applicationBlueprint.deploymentTemplates[0].resourceTemplates);
         } else {
             throw new Error(errors[0].message);
         }
@@ -238,7 +239,7 @@ const actions = {
             throw new Error(errors.map(e => e).join(", "));
         }
         //const match = _.find(data.applicationBlueprint.overview.templates, { slug: templateSlug });
-        const template = { ...data.newApplicationBlueprint.overview.templates[0] };
+        const template = { ...data.unfurlRoot.applicationBlueprint.overview.templates[0] };
         if(Object.keys(template).length > 0) commit("SET_TEMPLATE_SELECTED", template);
         //if(Object.keys(template).length > 0) dispatch('setResourcesOfTemplate', template, {root: true});
         return data.applicationBlueprint;
@@ -332,6 +333,7 @@ const actions = {
         commit("UPDATE_MAIN_INPUTS", mainInputs);
     },
 
+    // TODO remove this
     async deleteDeploymentTemplate({commit, dispatch, getters, rootState, state}, slug) {
         dispatch('deleteDeploymentTemplateInBlueprint', slug)
 
@@ -348,6 +350,7 @@ const actions = {
         throwErrorsFromDeploymentUpdateResponse(errors, data)
 
     },
+    // TODO remove this
     async editResourcesTemplateInDependent({state}, {dependentName, transformList}) {
         const queryResponse = await graphqlClient.clients.defaultClient.query({
             query: gql`
@@ -377,6 +380,7 @@ const actions = {
         })
         throwErrorsFromDeploymentUpdateResponse(errors, data)
     },
+    // TODO remove this
     async appendResourceTemplateInDependent ({dispatch}, {templateName, dependentName, dependentRequirement}) {
         function transformList(list) {
             return list.map(req => {
@@ -388,6 +392,7 @@ const actions = {
         }
         return dispatch('editResourcesTemplateInDependent', {dependentName, transformList})
     },
+    // TODO remove this
     async deleteResourceTemplateInDependent ({dispatch}, {dependentName, dependentRequirement}) {
         function transformList(list) {
             return list.map(req => {
@@ -400,6 +405,7 @@ const actions = {
         return dispatch('editResourcesTemplateInDependent', {dependentName, transformList})
 
     },
+    // TODO remove this
     async editResourcesInDeploymentTemplate({state}, {deploymentTemplateSlug, transformList}) {
         const queryResponse = await graphqlClient.clients.defaultClient.query({
             query: gql`
@@ -426,6 +432,7 @@ const actions = {
         })
     },
 
+    // TODO remove this
     appendResourceTemplateInDT({dispatch}, {templateName, deploymentTemplateSlug}) {
         function transformList(list) {
             const filtered = list.filter(li => li != templateName)
@@ -435,6 +442,7 @@ const actions = {
         return dispatch('editResourcesInDeploymentTemplate', {transformList, deploymentTemplateSlug})
     },
 
+    // TODO remove this
     deleteResourceTemplateInDT({dispatch}, {templateName, deploymentTemplateSlug}) {
         function transformList(list) {
             const filtered = list.filter(li => li != templateName)
@@ -444,6 +452,7 @@ const actions = {
     },
 
 
+    // TODO remove this
     async editDeploymentTemplatesInBlueprint({state}, {transformList}) {
         const queryResponse = await graphqlClient.clients.defaultClient.query({
             query: gql`
@@ -471,6 +480,7 @@ const actions = {
         throwErrorsFromDeploymentUpdateResponse(errors, data)
     },
 
+    // TODO remove this
     appendDeploymentTemplateInBlueprint({dispatch}, templateName) {
         function transformList(list) {
             const filtered = list.filter(li => li != templateName)
@@ -480,6 +490,7 @@ const actions = {
         return dispatch('editDeploymentTemplatesInBlueprint', {transformList})
     },
 
+    // TODO remove this
     deleteDeploymentTemplateInBlueprint({dispatch}, templateName) {
         function transformList(list) {
             const filtered = list.filter(li => li != templateName)
@@ -488,6 +499,7 @@ const actions = {
         return dispatch('editDeploymentTemplatesInBlueprint', {transformList})
     },
 
+    // TODO remove this
     async deleteResourceTemplate({dispatch}, {templateName, deploymentTemplateSlug}) {
         if(deploymentTemplateSlug) {
             await dispatch('deleteResourceTemplateInDT', {templateName, deploymentTemplateSlug})
@@ -505,9 +517,13 @@ const actions = {
         throwErrorsFromDeploymentUpdateResponse(errors, data)
     },
 
-    // TODO create fix properties here
+    // TODO remove this
     async createResourceTemplate({commit, dispatch, getters, rootState, state}, {type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}) {
+        //deployment_template_updates.js
+        commit('pushPreparedMutation', createResourceTemplate({type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}))
+        await dispatch('commitPreparedMutations')
 
+        /*
         if(deploymentTemplateSlug) {
             await dispatch('appendResourceTemplateInDT', {templateName: name, deploymentTemplateSlug})
         }
@@ -547,8 +563,11 @@ const actions = {
         })
 
         throwErrorsFromDeploymentUpdateResponse(errors, data)
+        */
+
     },
 
+    // TODO remove this
     async createDeploymentTemplate({commit, dispatch, getters, rootState, state}, {primary, name, title, slug, description}) {
         const type = getters.getProjectInfo.primary.name
 

@@ -11,23 +11,26 @@ export default {
         if(location.search == '?test-queries') {
             const {data} = await  graphqlClient.clients.defaultClient.query({
                 query: gql`
-{
 
-                ResourceType @client {
-                    name
-                    title
-                    implements
-                    description
-                    badge
-                    #properties
-                    outputs
-                    requirements
-                }
-}`, 
-            variables: {projectPath: this.$projectGlobal.projectPath, templateSlug: 'apostrophe-demo'}
+                  query getUnfurlRoot($fullPath: ID!) {
+                      newApplicationBlueprint(fullPath: $fullPath) @client {
+                          #applicationBlueprint {
+                              primary {
+                                  requirements {
+                                      resourceType
+                                  }
+                              }
+                              deploymentTemplates
+                          #}
+                      }
+                  }
+
+`, 
+            variables: {fullPath: this.$projectGlobal.projectPath, templateSlug: 'apostrophe-demo'}
             })
 
             console.log(data)
+            window.data = data
             return 
         }
         try {

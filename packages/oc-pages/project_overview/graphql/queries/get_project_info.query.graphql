@@ -7,43 +7,38 @@
 
 
 query getProjectInfo($projectPath: ID!) {
-  newApplicationBlueprint(fullPath: $projectPath, fetchPolicy: "network-only") @client {
-    __typename
-    name
-    deploymentTemplates {
-      title
-      slug
-      resourceTemplates {
-        name
-        title
-        description
-        type
-        outputs
-        dependencies
-      }
-    }
-    primary {
+  unfurlRoot(fullPath: $projectPath, fetchPolicy: "network-only") @client {
+    applicationBlueprint{
       __typename
       name
-      #properties { ...InputItems }
-      outputs {
+      deploymentTemplates {
         title
-        #no value field
-        instructions
+        slug
+        resourceTemplates {
+          name
+          title
+          description
+          type
+          outputs
+          dependencies
+        }
       }
-      requirements { #assuming we don't want to recurse further
-      resourceType {...ResourceTypes}
+      primary {
+        ...ResourceTypes        
+        requirements {
+          resourceType {...ResourceTypes}
+        }
       }
-    }
-    overview {
-      id
-      title
-      description
-      livePreview
-      name
-      sourceCodeUrl
-      webUrl
-    }
+      overview {
+        id
+        title
+        description
+        livePreview
+        name
+        sourceCodeUrl
+        webUrl
+      }
 
+    }
   }
 }

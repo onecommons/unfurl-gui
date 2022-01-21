@@ -233,6 +233,7 @@ const actions = {
                     description
                     badge
                     #properties
+                    inputsSchema
                     outputs
                     requirements
                 }
@@ -256,7 +257,7 @@ const actions = {
             fetchPolicy
         })
 
-        const blueprint = data.newApplicationBlueprint
+        const blueprint = data.unfurlRoot.applicationBlueprint
         const deploymentTemplate = blueprint.deploymentTemplates.find(dt => dt?.slug == templateSlug)
         if(!deploymentTemplate) return false
         const {dependencies} = deploymentTemplate.primary
@@ -339,13 +340,9 @@ const actions = {
             target.title = title
 
             delete target.__typename;
-            // TODO changing resource type properties
-            if(target?.properties?.length > 0) {
-                target.properties = target.properties.map(i => {
-                    delete i.__typename;
-                    return i;
-                });
-            }
+            try { target.properties = Object.values(target.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))}
+            catch { target.properties = [] }
+
             if(target.requirements.length > 0) {
                 target.dependencies = target.requirements.map(req => {
                     return {

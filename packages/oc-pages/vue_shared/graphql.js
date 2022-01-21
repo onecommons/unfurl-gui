@@ -75,7 +75,12 @@ function patchTypenameInArr(typename, overview, args, ctx, info) {
     const arr = overview[info.field.name.value];
     if (!(arr && arr.forEach))
         return [];
-    arr.forEach((elem) => { if(elem) elem.__typename = typename; });
+    arr.forEach((elem) => { 
+        if(typeof(elem) == 'object') elem.__typename = typename; 
+        else {
+            throw new Error(`Expected element '${JSON.stringify(elem)}' to be an object representing type '${typename}' in field '${info.field.name.value}' of '${overview.__typename}'`)
+        }
+    });
     return arr;
 }
 
@@ -83,7 +88,7 @@ function getProjectPath(root, variables, context) {
     return (
         (root && root.fullPath) ||
         (variables && variables.fullPath) || 
-        //context.fullPath // NOTE this doesn't work
+        //context.fullPath
         location.pathname.split('/').slice(1,3).join('/') // TODO don't do this
     )
 }
@@ -109,114 +114,6 @@ async function fetchRootBlob(root, _variables, context) {
 
 }
 
-async function fetchResourceType(variables, context){
-    try {
-        const {client} = context
-        if (!variables.name) {throw new Error('Cannot map resource type without a name.')}
-        const {errors, data} = await client.query({
-            query: getResourceType,
-            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-        })
-        if(errors) {errors.forEach(console.error)}
-        //if(data === null) return null
-        if(data === null) {
-            const name = `Unresolved Resource Type: ${variables.name}`
-            return {
-                __typename: 'ResourceType',
-                name: name,
-                title: name,
-                badge: 'ERR',
-                description: null,
-                outputs: [],
-                requirements: [],
-            }
-        }
-        if(!data) return null
-        const {resourceType} = data
-        if(!resourceType) return null
-        resourceType.__typename = 'ResourceType'
-        return resourceType
-    } catch(e) {
-        console.error(e)
-    }
-}
-
-async function fetchResourceTemplate(variables, context){
-    try {
-        const {client} = context
-        if (!variables.name) {throw new Error('Cannot map resource template without a name.')}
-        const {errors, data} = await client.query({
-            query: getResourceTemplate,
-            errorPolicy: 'all',
-            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-        })
-        if(errors) {errors.forEach(console.error)}
-        if(!data) return null
-        const {resourceTemplate} = data
-        if(!resourceTemplate) return null
-        resourceTemplate.__typename = 'ResourceTemplate'
-        return resourceTemplate
-    }
-    catch(e) {
-        console.error(e)
-    }
-}
-
-async function fetchDeploymentTemplates(variables, context) {
-    try {
-        const {client} = context
-        const fullPath = getProjectPath(null, variables, context)
-        const {errors, data} = await client.query({
-            query: getDeploymentTemplates,
-            variables: {...variables, fullPath}
-        })
-        //context.fullPath = fullPath // NOTE this doesn't work
-        if(errors) {errors.forEach(console.error)}
-        const deploymentTemplates = data.deploymentTemplates.map(dt => {
-            if(!dt) return null
-            dt.__typename = "DeploymentTemplate"
-            dt.name = dt.slug
-            return dt
-        })
-        return deploymentTemplates
-    } catch(e) {
-        console.error(e)
-    }
-}
-
-async function fetchOverview(variables, context) {
-    try {
-        const {client} = context
-        const {errors, data} = await client.query({
-            query: getOverview,
-            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-        })
-
-        if(errors) {errors.forEach(console.error)}
-        const {overview} = data
-        return overview
-    }
-    catch(e) {
-        console.error(e)
-    }
-}
-
-async function fetchApplicationBlueprint(variables, context) {
-    try {
-        const {client} = context
-        const {errors, data} = await client.query({
-            query: getBlueprint,
-            variables: {...variables, fullPath: getProjectPath(null, variables, context)}
-        })
-        if(errors) {errors.forEach(console.error)}
-        const {newApplicationBlueprint} = data
-
-        return newApplicationBlueprint
-    }
-    catch(e) {
-        console.error(e)
-    }
-}
 
 function missingResolverVariableError(missingField, args) {
     const [parent, _1, _2, info] = args
@@ -231,267 +128,90 @@ function clientResolverError(e, baseMessage) {
     return new Error(_e)
 }
 
-function makeClientResolver(typename, field) {
-  return (root, variables, { cache }, info) => {
-      // query must retrieve the json field
-      const json = root[field];
-      json.__typename = typename;
-      return json;
+function makeClientResolver(typename, field=null, selector) {
+    return (root, variables, context, info) => {
+        // query must retrieve the json field
+        console.log(context.jsondb, root)
+        const json = field !== null ? context.jsondb[field]: context.jsondb;
+        let target
+        try {
+            target = json[typename]
+        } catch {
+            console.error(typename, json)
+            throw new Error('Cannot use constructed client resolver')
+        }
+        target.__typename = typename; // ensure __typename
+        //context.jsondb = json;
+        return typeof(selector) == 'function'? selector(target, root, variables, context, info): target;
     }
 }
 
+function makeObjectLookupResolver(typename) {
+  return (parent, args, { cache, jsondb }, info) => {
+      const obj = jsondb[typename][ parent [ info.field.name.value] ];
+      if (obj) {
+          obj.__typename = typename; // ensure __typename
+      }
+      return obj ?? null;
+  }
+} 
+
+function listMakeObjectLookupResolver(typename) {
+    return (parent, args, {cache, jsondb}, info) => {
+        const result = []
+        for(const itemKey of parent[info.field.name.value]) {
+            const item = jsondb[typename][itemKey]
+            if(item) {
+                item.__typename = typename
+            }
+            result.push(item)
+        }
+        return result
+    }
+}
+
+
 export const resolvers = {
 
-    Query: {
-        blueprintRaw: async (...args) => {
-            try {
-                const {ApplicationBlueprint} = await fetchRootBlob(...args)
-                const variables = args[1]
-                const result = variables.name?
-                    ApplicationBlueprint[variables.name] :
-                    Object.values(ApplicationBlueprint)[0]
-                if(!result) throw new Error(`ApplicationBlueprint ${variables.name} not found`)
-                result.__typename = 'JSON'
-                return result
-            } catch(e) {
-                throw new clientResolverError(e,'Could not fetch application blueprint JSON')
-            }
-        },
-        resourceTemplateRaw: async (...args) => {
-            try {
-                const {ResourceTemplate} = await fetchRootBlob(...args)
-                const variables = args[1]
-                const result = ResourceTemplate[variables.name]
-                if(!result) throw new Error(`ResourceTemplate ${variables.name} not found`)
-                result.__typename = 'JSON'
-                return result
-            } catch(e) {
-                throw new clientResolverError(e,'Could not fetch resource template JSON')
-            }
-        },
-        deploymentTemplateRaw: async (...args) => {
-            try { 
-                const {DeploymentTemplate} = await fetchRootBlob(...args)
-                const variables = args[1]
-                const result = DeploymentTemplate[variables.name]
-                if(!result) throw new Error(`DeploymentTemplate ${variables.name} not found`)
-                result.__typename = 'JSON'
-                return result
-            } catch(e) {
-                throw new clientResolverError(e,'Could not fetch resource template JSON')
-            }
-        },
-        newApplicationBlueprint: async (...args) => {
-            const {ApplicationBlueprint, Overview} = await fetchRootBlob(...args)
-            const variables = args[1]
-            const target = variables.name?
-                ApplicationBlueprint[variables.name] :
-                Object.values(ApplicationBlueprint)[0]
-            const result = {...target}
+    ApplicationBlueprintProject: {
+        overview: makeClientResolver('Overview'),
+        applicationBlueprint: makeClientResolver('ApplicationBlueprint', null, (target) => {
+            return Object.values(target)[0] // TODO take slug
+        })
+    },
 
-            const {livePreview, sourceCodeUrl} = Overview
-            Object.assign(result, variables, {livePreview, sourceCodeUrl}) // propogate fullPath?
-            result.overview = Overview
-            result.overview.__typename = 'Overview'
-            return result
-        },
-        resourceType: async (...args) => {
-            const {ResourceType} = await fetchRootBlob(...args)
-            let name
-            try { name = args[1].name }
-            catch(e) { throw missingResolverVariableError('name', args) }
-            const result = ResourceType[name]
-            if(!result) return
-            result.__typename = 'ResourceType'
-            return result
-        },
-        resourceTemplate: async (...args) => {
-            const {ResourceTemplate} = await fetchRootBlob(...args)
-            let name
-            try { name = args[1].name }
-            catch(e) { throw missingResolverVariableError('name', args) }
-            const result = ResourceTemplate[name]
-            if(!result) return
-            result.__typename = 'ResourceTemplate'
-            return result
+    Environments: {
+      environments: makeClientResolver('DeploymentEnvironment', 'clientPayload')
+    },
 
-        },
-        deploymentTemplates: async (...args) => {
-            const {deploymentTemplates} = args[1]
-            const {DeploymentTemplate} = await fetchRootBlob(...args)
-            const result = []
-            for(const deploymentKey of deploymentTemplates) {
-                result.push(DeploymentTemplate[deploymentKey])
-            }
-            return result
-        },
-        overview: async (...args) => {
-            const {Overview} = await fetchRootBlob(...args)
-            return Overview
-        },
-
-        async ResourceType(...args) {
-            const {ResourceType} = await fetchRootBlob(...args) // NOTE I guess I need to be able to do this for globally defined resources even when there may be no full path
-            for(const rt of Object.values(ResourceType)) {if (rt) rt.__typename = 'ResourceType'}
-            return Object.values(ResourceType)
-        }
+    ResourceTemplates: {
+      resourceTemplates: makeClientResolver('ResourceTemplate', 'clientPayload')      
     },
 
     ApplicationBlueprint: {
-        primary(parent, _, context) {
-            const variables = {name: parent.primary, fullPath: parent.fullPath}
-            return fetchResourceType(variables, context)
-
-        },
-        async deploymentTemplates(parent, vars, context) {
-            const {fullPath, deploymentTemplates} = parent
-            // TODO add search by title
-            const variables = {fullPath, deploymentTemplates: deploymentTemplates}
-            let result = await fetchDeploymentTemplates(variables, context)
-            if(vars) {
-                
-                /*
-                result = result.filter(deploymentTemplate => {
-                    if(vars.searchBySlug) {
-                        return deploymentTemplate.slug == vars.searchBySlug
-                    } else if (vars.searchByTitle) {
-                        return deploymentTeplmate.title == vars.searchByTitle
+        primary: makeObjectLookupResolver('ResourceType'),
+        // TODO implement filtering
+        deploymentTemplates: listMakeObjectLookupResolver('DeploymentTemplate'),
+        /*
+        deploymentTemplates: (parent, args, { cache, jsondb }, { }) => {
+            const templates = Object.values(jsondb['DeploymentTemplate']);
+            if (args) {
+                for (const key of Object.keys(args)) {
+                    const lookup = args[key].substring("searchBy".length).toLowerCase();
+                    const match = _.find(templates, { [lookup]: args[key] });
+                    if (match) {
+                        return [match];
+                    } else {
+                        return [];
                     }
-                    return true
-                })
-                
-                */
-                /*
-                result = result.map(deploymentTemplate => {
-                    let keep = true
-                    if(vars.searchBySlug) {
-                        keep = deploymentTemplate.slug == vars.searchBySlug
-                    } else if (vars.searchByTitle) {
-                        keep = deploymentTeplmate.title == vars.searchByTitle
-                    }
-                    if(keep) return deploymentTemplate
-                    else return null
-                })
-                */
-
+                }
             }
-
-            return result
+            return templates;
         },
-
+        */
+        overview: makeClientResolver('Overview'),
 
     },
-
-    ResourceTemplate: {
-        type(parent, _, context) {
-            const variables = {name: parent.type, fullPath: parent.fullPath}
-            return fetchResourceType(variables, context)
-        },
-        name: (obj, args, { }) => (obj && obj.name) ?? null,
-        dependencies: _.partial(patchTypenameInArr, "Dependency"),
-        properties: _.partial(patchTypenameInArr, "Input"),
-        description: (obj, args, { }) => (obj && obj.description) ?? null,
-        outputs: (obj, args, { }) => (obj && obj.outputs) ?? [],
-    },
-
-    ResourceType: {
-        name: (obj, args, { }) => (obj && obj.name) ?? null,
-        badge: (obj, args, { }) => (obj && obj.badge) ?? null,
-        description: (obj, args, { }) => (obj && obj.description) ?? null,
-        requirements: _.partial(patchTypenameInArr, "RequirementConstraint"), // NOTE we cannot remove null, unresolved requirement names here, because the resolution has not been done yet
-        //properties: _.partial(patchTypenameInArr, "Input"),
-        inputsSchema: (obj) => (obj && obj.inputsSchema) ?? {},
-        outputs: _.partial(patchTypenameInArr, "Output")
-    },
-
-    DeploymentTemplate: {
-        cloud: (obj, args, { }) => (obj && obj.cloud) ?? null,
-        blueprint(parent, _, context) {
-            const variables = {name: parent.blueprint, fullPath: parent.fullPath}
-            return fetchApplicationBlueprint(variables, context) 
-        },
-        resourceTemplates(parent, _, context) {
-            const subRequests = parent.resourceTemplates.map(name => {
-                const variables = {name, fullPath: parent.fullPath}
-                return fetchResourceTemplate(variables, context)
-            })
-            return Promise.all(subRequests)
-        },
-
-        primary(parent, _, context) {
-            const variables = {name: parent.primary, fullPath: parent.fullPath}
-            return fetchResourceTemplate(variables, context)
-        },
-
-
-/*
-description: String
-
-  blueprint: ApplicationBlueprint!
-
-  """
-  Required cloud provider
-
-  TODO: should be ResourceType
-  """
-  cloud: String
-
-  """
-  Slug of template
-  """
-  slug: String!
-
-  """
-  Title of template
-  """
-  title: String!
-
-  primary: ResourceTemplate!
-
-  resourceTemplates: [ResourceTemplate!]
-
-*/
-
-    },
-
-    RequirementConstraint: {
-        resourceType(parent, _, context) {
-            if(!parent) return
-            const variables = {name: parent.resourceType, fullPath: parent.fullPath}
-            return fetchResourceType(variables, context)
-        }
-        
-    },
-
-    Dependency: {
-        title: (obj, args, { }) => (obj && obj.title) ?? null,
-        constraint(parent, _, context) {
-            return {...parent.constraint, __typename: 'RequirementConstraint'}
-        },
-
-        match(parent, _, context) {
-            if(!parent.match) return null
-            const variables = {name: parent.match, fullPath: parent.fullPath}
-            return fetchResourceTemplate(variables, context)
-        }
-        
-    },
-
-
-
-  ApplicationBlueprintProject: {
-        overview: makeClientResolver('Overview', 'json'),
-        applicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json')
-  },
-  
-  Environments: {
-    environments: makeClientResolver('DeploymentEnvironment', 'clientPayload')
-  },
-  
-  ResourceTemplates: {
-    resourceTemplates: makeClientResolver('ResourceTemplate', 'clientPayload')      
-  },
-  
     Overview: {
 
         title: (obj, args, { }) => (obj && obj.title) ?? null,
@@ -504,11 +224,11 @@ description: String
         outputs: _.partial(patchTypenameInArr, "Output"),
 
         requirements: _.partial(patchTypenameInArr, "OldRequirement"),
-      
+
         resources: _.partial(patchTypenameInArr, "OldResource"),
 
         servicesToConnect: _.partial(patchTypenameInArr, "ServiceToConnect"),
-        
+
         templates: (overview, args, { }) => {
             if (args) {
                 for (const key in Object.keys(args)) {
@@ -526,22 +246,47 @@ description: String
             overview.templates.forEach((elem) => { elem.__typename = 'Template'; });
             return overview.templates
         }
-      },
+    },
+    DeploymentTemplate: {
+        cloud: (obj, args, { }) => (obj && obj.cloud) ?? null,
+        blueprint: makeObjectLookupResolver('ApplicationBlueprint'),
+        primary: makeObjectLookupResolver('ResourceTemplate'),
 
-    OldRequirement: {
-        inputs: _.partial(patchTypenameInArr, "Input"),
+        resourceTemplates: listMakeObjectLookupResolver('ResourceTemplate')
 
-        outputs: _.partial(patchTypenameInArr, "Output"),
-
-        requirements: _.partial(patchTypenameInArr, "OldRequirement"),
-
-        status: (obj, args, { }) => obj.status ?? null,
     },
 
-    // note: fields with JSON type need explicit resolvers
+    ResourceType: {
+        name: (obj, args, { }) => (obj && obj.name) ?? null,
+        badge: (obj, args, { }) => (obj && obj.badge) ?? null,
+        description: (obj, args, { }) => (obj && obj.description) ?? null,
+        requirements: _.partial(patchTypenameInArr, "RequirementConstraint"), // NOTE we cannot remove null, unresolved requirement names here, because the resolution has not been done yet
+        //properties: _.partial(patchTypenameInArr, "Input"),
+        inputsSchema: (obj) => {
+            const schema = (obj && obj.inputsSchema) ?? {}
+            schema.__typename = 'JSON'
+            return schema
+        },
+        outputs: _.partial(patchTypenameInArr, "Output")
+    },
 
-  Input: {
-      //instructions: (obj, args, { }) => obj.instructions ?? obj.description ?? null,
+    ResourceTemplate: {
+        type: makeObjectLookupResolver('ResourceType'),
+        name: (obj, args, { }) => (obj && obj.name) ?? null,
+        dependencies: _.partial(patchTypenameInArr, "Dependency"),
+        properties: _.partial(patchTypenameInArr, "Input"),
+        description: (obj, args, { }) => (obj && obj.description) ?? null,
+        outputs: (obj, args, { }) => (obj && obj.outputs) ?? [],
+    },
+
+
+
+    RequirementConstraint: {
+        resourceType: makeObjectLookupResolver('ResourceType')
+    },
+
+    Input: {
+        //instructions: (obj, args, { }) => obj.instructions ?? obj.description ?? null,
       name: (obj, args, { }) => obj.name ?? obj.title,
       //title: (obj, args, { }) => obj.title ?? obj.name,
 
@@ -554,18 +299,71 @@ description: String
       //required: (obj, args, { }) => obj.required ?? false,
     },
 
-    Template: {
-        // type JSON
-        resourceTemplates: (template, args, {}) => template.resource_templates,
-    
-        // type Int
-        totalDeployments: (template, args, {}) => template.total_deployments,     
+    Dependency: {
+        title: (obj, args, { }) => (obj && obj.title) ?? null,
+        constraint(parent, _, context) {
+            return {...parent.constraint, __typename: 'RequirementConstraint'}
+        },
+
+        match: makeObjectLookupResolver('ResourceTemplate')
+
     },
 
-    OldResource: {
-        inputs: _.partial(patchTypenameInArr, "Input"),
 
-        // type JSON
-        requirements: (resource, args, {}) => resource.requirements
-    },    
+    Query: {
+        async unfurlRoot(...args) {
+            const json = await fetchRootBlob(...args) 
+            args[2].fullPath = args[1].fullPath
+            args[2].jsondb = json
+            return {json, __typename: 'ApplicationBlueprintProject'}
+        },
+    
+        async ResourceType(...args) {
+            const {ResourceType} = await fetchRootBlob(...args) // NOTE I guess I need to be able to do this for globally defined resources even when there may be no full path
+            for(const rt of Object.values(ResourceType)) {if (rt) rt.__typename = 'ResourceType'}
+            return Object.values(ResourceType)
+        },
+
+        blueprintRaw: async (...args) => {
+            try {
+                const {ApplicationBlueprint} = await fetchRootBlob(...args)
+                const variables = args[1]
+                const result = variables.name?
+                    ApplicationBlueprint[variables.name] :
+                    Object.values(ApplicationBlueprint)[0]
+                if(!result) throw new Error(`ApplicationBlueprint ${variables.name} not found`)
+                result.__typename = 'JSON'
+                return result
+            } catch(e) {
+                throw new clientResolverError(e,'Could not fetch application blueprint JSON')
+            }
+        },
+
+        // TODO remove this
+        resourceTemplateRaw: async (...args) => {
+            try {
+                const {ResourceTemplate} = await fetchRootBlob(...args)
+                const variables = args[1]
+                const result = ResourceTemplate[variables.name]
+                if(!result) throw new Error(`ResourceTemplate ${variables.name} not found`)
+                result.__typename = 'JSON'
+                return result
+            } catch(e) {
+                throw new clientResolverError(e,'Could not fetch resource template JSON')
+            }
+        },
+        // TODO remove this
+        deploymentTemplateRaw: async (...args) => {
+            try { 
+                const {DeploymentTemplate} = await fetchRootBlob(...args)
+                const variables = args[1]
+                const result = DeploymentTemplate[variables.name]
+                if(!result) throw new Error(`DeploymentTemplate ${variables.name} not found`)
+                result.__typename = 'JSON'
+                return result
+            } catch(e) {
+                throw new clientResolverError(e,'Could not fetch resource template JSON')
+            }
+        },
+    }
 }

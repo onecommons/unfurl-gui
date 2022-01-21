@@ -45,7 +45,7 @@ describe('project overview', () => {
         app.$apolloProvider.clients.defaultClient.mutate({
           mutation: gql`
             mutation {
-            updateDeploymentObj(projectPath: "demo/apostrophe-demo", typename: "*", patch: "null") {errors}
+              updateDeploymentObj(input: {projectPath: "demo/apostrophe-demo", typename: "*", patch: "null"}) {errors}
             }
           `,
           variables: {}
