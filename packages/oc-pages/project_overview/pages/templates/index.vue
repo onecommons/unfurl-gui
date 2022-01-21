@@ -201,8 +201,8 @@ export default {
     this.setRouterHook((to, from, next) => {
       if(this.hasPreparedMutations) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'))
-        console.log(result)
         if(!result) { next(false); return } // never call next twice
+        this.clearPreparedMutations()
       }
       next()
     })
@@ -370,6 +370,7 @@ export default {
         await this.deleteDeploymentTemplate(this.$route.params.slug);
         //if (isOk) { deleteDeploymentTemplate should throw errors
         this.activeSkeleton = false;
+        this.clearPreparedMutations()
         this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
         //}
       }catch (e) {
@@ -422,6 +423,7 @@ export default {
 
     async handleDeleteNode() {
       try {
+        this.clearPreparedMutations()
         const deleted = await this.deleteNode(this.deleteNodeData)
 
         if(deleted) this.dataUnsaved = true;
