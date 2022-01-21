@@ -131,7 +131,6 @@ function clientResolverError(e, baseMessage) {
 function makeClientResolver(typename, field=null, selector) {
     return (root, variables, context, info) => {
         // query must retrieve the json field
-        console.log(context.jsondb, root)
         const json = field !== null ? context.jsondb[field]: context.jsondb;
         let target
         try {
