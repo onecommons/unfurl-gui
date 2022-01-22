@@ -21,13 +21,12 @@ export default {
         }
     },
     methods: {
-        selectTemplate(template) {
-            bus.$emit('setTemplate', template);
+        deployTemplate(template) {
+            bus.$emit('deployTemplate', template);
         },
 
         editTemplate(template) {
             bus.$emit('editTemplate', template);
-            // this.$router.push({ name: 'templatePage', params: { slug: this.templateSelected.slug}});
         },
         redirectToDeployment() {
             window.location.href = this.$projectGlobal.linkDeployment;
@@ -73,7 +72,7 @@ export default {
                                 class="deploy-action"
                                 icon="upload"
                                 type="button"
-                                @click="selectTemplate(item)" >{{ __("Deploy") }}</gl-button>
+                                @click="deployTemplate(item)" >{{ __("Deploy") }}</gl-button>
                     </span>
                 </div>
             </div>

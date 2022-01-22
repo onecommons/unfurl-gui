@@ -5,6 +5,15 @@ const MY_AWESOME_TEMPLATE = DEMO_URL + '/templates/my-awesome-template'
 const ocTableRow = (name) => cy.get('.oc_table_row').contains('.oc_table_row', name)
 const withinOcTableRow = (name, withinFn) => ocTableRow(name).within(withinFn)
 
+const withinCreateDeploymentTemplateDialog = (withinfn) => {
+  cy.wait(50)
+  cy.get('button').contains('button', 'Create new template')
+    .click()
+
+  cy.wait(100)
+  return cy.get('#oc-templates-deploy').within(withinfn)
+}
+
 
 const clickSaveTemplate = () => {
   cy.get('[data-testid="save-template-btn"]').click()
@@ -92,32 +101,32 @@ describe('project overview', () => {
     })
 
     it('should be able to create a new template', () => {
-      cy.get('button[title="Create new template"]')
-        .click()
+      withinCreateDeploymentTemplateDialog(() => {
 
-      cy.wait(100)
-      const ocTemplatesDeploy = cy.get('#oc-templates-deploy')
-      ocTemplatesDeploy.get(`input[name="input['template-name']"]`)
-        .type('My awesome template')
+        cy.get(`input[name="input['template-name']"]`)
+          .type('My awesome template')
 
-      ocTemplatesDeploy.get(`input[name="input['resource-template-name']"]`)
-        .type('My beautiful resource')
+        cy.get(`input[name="input['resource-template-name']"]`)
+          .type('My beautiful resource')
 
-      ocTemplatesDeploy.get('.dropdown')
-        .click()
+        /*
+         * Do not specify an environment when creating deployment template
+        cy.get('.dropdown')
+          .click()
 
-      cy.wait(100)
-      ocTemplatesDeploy.get('.gl-new-dropdown-item-text-wrapper')
-        .first()
-        .click()
+        cy.wait(100)
+        cy.get('.gl-new-dropdown-item-text-wrapper')
+          .first()
+          .click()
 
-      ocTemplatesDeploy.get('button.js-modal-action-primary')
-        .click()
+        */
+        cy.get('button').contains('button', 'Next')
+          .click()
 
-      cy.wait(100)
-      cy.url().should('eq', MY_AWESOME_TEMPLATE)
+        cy.wait(100)
+        cy.url().should('eq', MY_AWESOME_TEMPLATE)
+      })
     })
-
   }) 
 
   describe('templates page', () => {
@@ -141,6 +150,11 @@ describe('project overview', () => {
       tab().within(() => {cy.get('svg').should('have.attr', 'data-testid', 'check-circle-filled-icon')})
       //})
 
+    })
+
+    it("shouldn't have an option to connect", () => {
+      ocTableRow('host').within(_ => cy.get('button').contains('Create').should('be.visible'))
+      ocTableRow('host').within(_ => cy.get('button').contains('Connect').should('not.exist'))
     })
 
     it('can create a resource template', () => {

@@ -85,6 +85,9 @@ export default {
             const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
             bus.$emit('completeRequirements', this.level, flag);
             return flag;
+        },
+        canConnectServices() {
+            return this.$route.name != 'templatePage'
         }
     },
 
@@ -221,6 +224,7 @@ export default {
                                 v-else
                                 class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
                                 <gl-button
+                                    v-if="canConnectServices"
                                     title="connect"
                                     :aria-label="__(`connect`)"
                                     type="button"

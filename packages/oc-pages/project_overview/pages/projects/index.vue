@@ -6,6 +6,7 @@ import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import { bus } from '../../bus';
+import { slugify } from '../../../vue_shared/util'
 
 export default {
     name: 'ProjectPageHome',
@@ -30,6 +31,7 @@ export default {
     },
     data() {
         return {
+            instantiateAs: null,
             projectSlugName: null,
             dropdownText: __("Select"),
             templateForkedName: null,
@@ -44,6 +46,12 @@ export default {
         }
     },
     computed: {
+        shouldDisableSubmitTemplate() {
+            if(!this.templateForkedName || !this.resourceTemplateName) return true
+            if(this.instantiateAs != 'template' && this.dropdownText == __("Select")) return true
+
+            return false
+        },
         ...mapGetters({
             environmentsList: 'getEnvironmentsList',
             projectInfo: 'getProjectInfo',
@@ -52,7 +60,7 @@ export default {
         primaryProps() {
             return {
                 text: __('Next'),
-                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled:  this.dropdownText === __("Select") || this.modalNextStatus}],
+                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled:  this.shouldDisableSubmitTemplate}],
             };
         },
         cancelProps() {
@@ -61,44 +69,45 @@ export default {
             };
         }
     },
-    watch: {
-        templateForkedName(val) {
-            //  Activate next button with string more that one character
-            if (val && val.length > 0) {
-                this.modalNextStatus = false;
-            } else {
-                this.modalNextStatus = true;
-            }
-        }
-    },
     created() {
         this.syncGlobalVars(this.$projectGlobal);
-        bus.$on('setTemplate', (template) => {
+        bus.$on('deployTemplate', (template) => {
             this.templateSelected = {...template};
+            this.instantiateAs = 'deployment'
             this.projectSlugName = template.slug;
         });
 
         bus.$on('editTemplate', (template) => {
             this.templateSelected = {...template};
-            this.redirectToTemplate();
+            this.redirectToTemplateEditor();
         });
     },
+    beforeDestroy() {
+        // breaks without iife ;)
+        // also works with setTimeout and console.log
+        (function() {
+            bus.$off('deployTemplate')
+            bus.$off('editTemplate')
+        })()
+    },
+
     mounted() {
         this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
     },
     methods: {
-        redirectToTemplate() {
-            this.$router.push({ name: 'templatePage', params: { slug: this.templateSelected.slug}});
+        redirectToTemplateEditor(page='templatePage') {
+            this.$router.push({ name: page, params: { slug: this.templateSelected.slug}});
         },
 
         clearModalTemplate() {
             this.dropdownText = __("Select");
-            this.modalNextStatus = false;
             this.templateForkedName = null;
             this.resourceTemplateName = null;
+            this.instantiateAs = null
         },
 
-        setTemplateBase() {
+        instantiatePrimaryDeploymentTemplate() {
+            this.instantiateAs = 'template'
             this.templateSelected = {...this.templatesList[0]};
             this.projectSlugName = '';
         },
@@ -107,14 +116,18 @@ export default {
             if (this.projectSlugName !== null) {
                 this.prepareTemplateNew();
                 await this.createDeploymentTemplate(this.templateSelected)
-                this.redirectToTemplate();
+                if(this.instantiateAs == 'deployment'){
+                    this.redirectToTemplateEditor('deploymentPage');
+                } else {
+                    this.redirectToTemplateEditor();
+                }
             }
 
         },
 
         prepareTemplateNew() {
             this.templateSelected.title = this.templateForkedName;
-            this.templateSelected.slug = this.slugify(this.templateForkedName);
+            this.templateSelected.slug = slugify(this.templateForkedName);
             this.templateSelected.primary = this.resourceTemplateName
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.dropdownText;
@@ -128,19 +141,6 @@ export default {
         redirectToNewEnvironment() {
             const url = `${window.origin}${window.location.pathname.split("/").slice(0, -1).join("/")}/environments/new`;
             window.location = url;
-        },
-
-        slugify(text) {
-            return text
-                .toString() 
-                .toLowerCase()
-                .normalize('NFD')
-                .trim()
-                .replace(/\s+/g, '-')
-                // eslint-disable-next-line no-useless-escape
-                .replace(/[^\w\-]+/g, '')
-                // eslint-disable-next-line no-useless-escape
-                .replace(/\-\-+/g, '-');
         },
 
         handleClose() {
@@ -206,7 +206,7 @@ export default {
                                 variant="confirm"
                                 class="btn-uf-teal"
                                 type="button"
-                                @click="setTemplateBase"
+                                @click="instantiatePrimaryDeploymentTemplate"
                                 >
                                 {{ $options.i18n.buttonLabel}}
                             </gl-button>
@@ -250,14 +250,16 @@ export default {
                     />
 
                 </gl-form-group>
-                <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                <gl-dropdown :text="dropdownText">
-                    <div v-if="environmentsList.length > 0">
-                        <gl-dropdown-item v-for="(env , idx) in environmentsList" :key="idx" @click="setEnvironmentName(env.name)">{{ env.name }}</gl-dropdown-item>
-                        <gl-dropdown-divider />
-                    </div>
-                    <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
-                </gl-dropdown>
+                <div v-if="instantiateAs!='template'">
+                    <p>{{ __("Select an environment to deploy this template to:") }}</p>
+                    <gl-dropdown :text="dropdownText">
+                        <div v-if="environmentsList.length > 0">
+                            <gl-dropdown-item v-for="(env , idx) in environmentsList" :key="idx" @click="setEnvironmentName(env.name)">{{ env.name }}</gl-dropdown-item>
+                            <gl-dropdown-divider />
+                        </div>
+                        <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
+                    </gl-dropdown>
+                </div>
             </gl-modal>
         </div>
     </div>
