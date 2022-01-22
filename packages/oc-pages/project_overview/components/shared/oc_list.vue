@@ -52,6 +52,16 @@ export default {
             type: Object,
             required: true
         },
+        cloud: {
+            type: String,
+            required: false,
+        },
+        deploymentTemplate: {
+            type: Object,
+            required: true
+        }
+
+
     },
     data() {
         return {
@@ -65,7 +75,11 @@ export default {
             resources: 'getResourceTemplates',
             servicesToConnect: 'getServicesToConnect',
             servicesToConnect: 'getServicesToConnect',
-            getValidResourceTypes: 'getValidResourceTypes'
+            getValidResourceTypes: 'getValidResourceTypes',
+            //resolveResourceTemplate: 'resolveResourceTemplate',
+            matchIsValid: 'matchIsValid',
+            resolveMatchTitle: 'resolveMatchTitle'
+            
         }),
         checkRequirements() {
             const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
@@ -80,7 +94,7 @@ export default {
         ]),
 
         findElementToScroll({requirement}) {
-            bus.$emit('moveToElement', {elId: requirement.match.name});
+            bus.$emit('moveToElement', {elId: requirement.match});
         },
 
         connectToResource({requirement}) {
@@ -91,14 +105,14 @@ export default {
         sendRequirement(requirement) {
             this.setRequirementSelected({requirement, titleKey: this.titleKey});  // TODO trying to make this redundant
             
-            bus.$emit('placeTempRequirement', {dependentName: this.titleKey, dependentRequirement: requirement.name, requirement, action: 'create'});
+            bus.$emit('placeTempRequirement', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'create'});
         },
 
         //TODO add an option to add a new service
         openDeleteModal(index, action=__("Remove")) {
             const dependency = this.card.dependencies[index]
-            const card = dependency.match
-            bus.$emit('deleteNode', {...card, level: this.level, action, dependentRequirement: dependency.name, dependentName: this.titleKey});
+            //const card = this.resolveResourceTemplate(dependency.match)
+            bus.$emit('deleteNode', {name: dependency.match, level: this.level, action, dependentRequirement: dependency.name, dependentName: this.card.name});
         },
 
         //TODO 
@@ -126,7 +140,7 @@ export default {
 }
 </script>
 <template>
-    <div v-if="templateDependencies.length > 0">
+    <div v-if="card.dependencies && card.dependencies.length > 0">
         <gl-tabs class="gl-mt-6">
             <gl-tab class="gl-mt-6">
                 <template slot="title">
@@ -144,15 +158,15 @@ export default {
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
                         <div
-                            v-for="(requirement, idx) in templateDependencies"
-                            :key="requirement + idx + '-template'"
+                            v-for="(requirement, idx) in card.dependencies"
+                            :key="requirement.name + idx + '-template'"
                             class="gl-responsive-table-row oc_table_row">
                             <div
                                 class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
                                 <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
                                 <span class="text-break-word title">{{ requirement.name }}</span>
                                 <div class="oc_requirement_description gl-mb-2">
-                                {{ requirement.description }}
+                                {{ requirement.description}}
                                 </div>
                             </div>
                             <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
@@ -167,7 +181,7 @@ export default {
                                 :name="requirement.status ? 'check-circle-filled' : 'warning-solid'"
                                 />
                                 <span
-                                v-if="requirement.match !== null"
+                                v-if="matchIsValid(requirement.match)"
                                 class="text-break-word oc_resource-details"
                                 >
                                 <a
@@ -176,14 +190,14 @@ export default {
                                     findElementToScroll({requirement})
                                     "
                                 >
-                                    {{ (requirement.match && requirement.match.title || requirement.match) }}
+                                    {{ resolveMatchTitle(requirement.match) }}
                                     </a
                                 >
                                 </span>
                             </div>
 
                             <div
-                                v-if="requirement.match/*requirement.match !== null*/"
+                                v-if="matchIsValid(requirement.match)"
                                 class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
                                 <gl-button
                                 v-if="getCurrentActionLabel(requirement) !== 'Disconnect'"
@@ -220,7 +234,7 @@ export default {
                                     :aria-label="__(`create`)"
                                     type="button"
                                     class="gl-ml-3 oc_requirements_actions"
-                                    :disabled="getValidResourceTypes(requirement).length == 0"
+                                    :disabled="getValidResourceTypes(requirement, deploymentTemplate).length == 0"
                                     @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
                             </div>
                         </div>

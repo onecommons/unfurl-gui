@@ -35,4 +35,3 @@ module.exports = {
 
   plugins: ["graphql"]
 };
-process.env.APOLLO_SCHEMA_GENERATE = true;

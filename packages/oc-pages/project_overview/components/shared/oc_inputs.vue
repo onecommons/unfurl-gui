@@ -3,7 +3,7 @@ import {GlTabs, GlTab, GlIcon, GlFormGroup, GlFormInput} from '@gitlab/ui';
 import {debounce} from 'lodash';
 import {bus} from '../../bus';
 import {__} from '~/locale';
-import {mapMutations} from 'vuex'
+import {mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormItem, Input} from "@formily/element";
 import {createForm, onFieldValueChange} from "@formily/core";
@@ -59,11 +59,13 @@ export default {
   },
 
   computed: {
+    ...mapGetters(['resolveResourceType']),
+
     mainInputs() {
       const result = []
       let fromSchema, templateProperties
       try {
-        fromSchema = this.card.type.inputsSchema.properties
+        fromSchema = this.resolveResourceType(this.card.type).inputsSchema.properties
         templateProperties = this.card.properties
       }
       catch(e) { return result }

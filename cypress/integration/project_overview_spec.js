@@ -32,6 +32,9 @@ const launchResourceTemplateDialog = () => {
   clickTableRowButton('host', 'Create')
 }
 
+const getAWSCard = () => cy.get('[data-testid="card-awsinstance"]').parent()
+const awsCardShould = (should) => cy.get('[data-testid="card-awsinstance"]').should(should)
+
 const launchRemoveDialog = () => { clickTableRowButton('host', 'Remove') }
 
 import gql from 'graphql-tag'
@@ -168,13 +171,13 @@ describe('project overview', () => {
       // TODO 
       withinOcTableRow('AWSInstance', () => cy.get('[data-testid="check-circle-filled-icon"]').should('be.visible'))
 
-      cy.get('#awsinstance').should('be.visible')
+      awsCardShould('be.visible')
 
       clickSaveTemplate()
 
       cy.wait(500).reload()
 
-      cy.get('#awsinstance').should('be.visible')
+      awsCardShould('be.visible')
     })
 
     it('scrolls down when we click edit', () => {
@@ -182,12 +185,12 @@ describe('project overview', () => {
       ocTableRow('AWSInstance').within(_ => cy.get('button').contains('button', 'Edit').click())
       cy.wait(500)
 
-      cy.get('#awsinstance').should('be.visible')
+      awsCardShould('be.visible')
     })
 
 
     it('has card requirements that turn green when inputs are filled', () => {
-      cy.get('#awsinstance').within(() => {
+      getAWSCard().within(() => {
         const tab = () => cy.get('.gl-tabs a[role="tab"]').first()
 
         tab().within(() => {cy.get('svg').should('not.have.attr', 'data-testid', 'check-circle-filled-icon')})
@@ -199,8 +202,8 @@ describe('project overview', () => {
     })
 
     it('can delete a resource', () => {
-      cy.get('#awsinstance').within(() => {
-        cy.get('.gl-card-header .dropdown button')
+      getAWSCard().within(() => {
+        cy.get('.dropdown button')
           .first()
           .click()
 
@@ -211,7 +214,7 @@ describe('project overview', () => {
       cy.wait(500)
       cy.get('.modal-dialog button').contains('button', 'Delete').click()
 
-      cy.get('#awsinstance').should('not.exist')
+      awsCardShould('not.exist')
 
       clickSaveTemplate()
 

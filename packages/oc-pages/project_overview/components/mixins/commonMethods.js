@@ -3,7 +3,7 @@ export default {
     methods: {
         detectIcon(str) {
             const searchPhrases = ["dns", "email", "mail"];
-            const lowerTitle = (str || '').toLowerCase();
+            const lowerTitle = ((typeof(str) == 'string' && str) || '').toLowerCase();
             let idx = null;
             searchPhrases.forEach((e, i) => {
                 if(lowerTitle.search(e) !== -1){

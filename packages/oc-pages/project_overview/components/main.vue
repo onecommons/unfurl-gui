@@ -13,20 +13,15 @@ export default {
                 query: gql`
 
                   query getUnfurlRoot($fullPath: ID!) {
-                      newApplicationBlueprint(fullPath: $fullPath) @client {
-                          #applicationBlueprint {
-                              primary {
-                                  requirements {
-                                      resourceType
-                                  }
-                              }
-                              deploymentTemplates
-                          #}
+                      unfurlRoot(fullPath: $fullPath) @client {
+                          applicationBlueprint 
+                          ResourceType
+
                       }
                   }
 
 `, 
-            variables: {fullPath: this.$projectGlobal.projectPath, templateSlug: 'apostrophe-demo'}
+            variables: {dehydrated: true, fullPath: this.$projectGlobal.projectPath, templateSlug: 'apostrophe-demo'}
             })
 
             console.log(data)
@@ -35,7 +30,6 @@ export default {
         }
         try {
             const {projectPath} = this.$projectGlobal
-            await this.$store.dispatch('populateAvailableResourceTypes', {projectPath})
             await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
             await this.$store.dispatch('fetchEnvironments', { projectPath});
             await this.$store.dispatch('fetchServicesToConnect', {projectPath});

@@ -40,6 +40,7 @@ export default {
 
   data() {
     return {
+      uiTimeout: null,
       createNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
@@ -52,7 +53,8 @@ export default {
       dataUnsaved: false,
       completedRequirements: false,
       completedMainInputs: false,
-      activeSkeleton: false,
+      activeSkeleton: true,
+      failedToLoad: false,
       selected: {},
       autoSaveTime: 2000,
       nodeTitle: '',
@@ -77,10 +79,16 @@ export default {
       servicesToConnect: 'getServicesToConnect',
       getPrimaryCard: 'getPrimaryCard',
       getCardsStacked: 'getCardsStacked',
-      getResourcesOfTemplate: 'getResourcesOfTemplate',
+      getDeploymentTemplate: 'getDeploymentTemplate',
+      getDependencies: 'getDependencies',
       hasPreparedMutations: 'hasPreparedMutations',
+      matchIsValid: 'matchIsValid',
+      resolveMatchTitle: 'resolveMatchTitle',
     }),
 
+    shouldRenderTemplates() {
+        return !this.activeSkeleton && !this.failedToLoad
+    },
     getMainInputs() {
       return cloneDeep(this.$store.getters.getProjectInfo.inputs);
     },
@@ -133,11 +141,7 @@ export default {
     },
 
     resourceName: function(val) {
-      if(this.getResourcesOfTemplate[val] !== undefined) {
-        this.alertNameExists = true;
-      }else {
-        this.alertNameExists = false;
-      }
+      this.alertNameExists = this.matchIsValid(slugify(val))
     }
   },
 
@@ -170,7 +174,7 @@ export default {
 
     bus.$on('moveToElement', (obj) => {
       const { elId } = obj;
-      this.scrollDown(this.replaceSpaceWithDash(elId), 500);
+      this.scrollDown(elId, 500);
     });
 
     bus.$on('placeTempRequirement', (obj) => {
@@ -187,10 +191,9 @@ export default {
 
     bus.$on('deleteNode', (obj) => {
       this.deleteNodeData = obj
-      this.nodeTitle = obj.title;
-      this.nodeLevel = obj.level;
-      this.titleKey = obj.titleKey;
-      this.nodeAction = obj.action? obj.action : __('Delete');
+      this.nodeAction = obj.action? obj.action : __('Delete')
+        
+      this.nodeTitle = this.resolveMatchTitle(obj.name)
       this.launchModal('oc-delete-node', 500);
     });
   },
@@ -210,14 +213,16 @@ export default {
 
   beforeDestroy() {
     window.removeEventListener('beforeunload', this.unloadHandler)
+    this.resetTemplateResourceState()
     this.setRouterHook()
-    this.clearPreparedMutations()
   },
 
   methods: {
     ...mapMutations([
+      'resetTemplateResourceState',
       'setRouterHook',
-      'clearPreparedMutations'
+      'clearPreparedMutations',
+      'onApplicationBlueprintLoaded',
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -230,7 +235,8 @@ export default {
       'connectNodeResource',
       'deleteDeploymentTemplate',
       'commitPreparedMutations',
-      'fetchTemplateResources'
+      'fetchTemplateResources',
+      'fetchProject',
     ]),
 
     unloadHandler(e) {
@@ -261,9 +267,11 @@ export default {
     */
 
     scrollDown(elId, timeOut=0) {
-      setTimeout(
+      clearTimeout(this.uiTimeout)  
+      const anchorId = btoa(elId).replace(/=/g, '')
+      const anchor = document.querySelector(`#${anchorId}`);
+      this.uiTimeout = setTimeout(
         () => {
-          const anchor = document.querySelector(`#${elId}`);
           anchor.scrollIntoView({behavior: "smooth", block: "center", inline: "start"});
         },
         timeOut,
@@ -279,46 +287,34 @@ export default {
       }, timeToWait);
     },
 
-    async fetchItems(n=0) {
-        this.activeSkeleton = true
-        
+    async fetchItems(n=1) {
         try {
             const projectPath = this.$projectGlobal.projectPath
             const templateSlug =  this.$route.params.slug
-            //const { overview } = await this.$store.dispatch('fetchTemplateBySlug', { projectPath, templateSlug });
-            if(!await this.fetchTemplateResources({projectPath, templateSlug, fetchPolicy: n>0? 'network-only': 'cache-first'})) {
-                if (n<2) { await this.fetchItems(++n) }
+            await this.fetchProject({projectPath, fetchPolicy: 'network-only', n})
+            if(! await this.fetchTemplateResources({projectPath, templateSlug}) ) {
+                if(n < 5) {
+                    setTimeout(
+                        _ => this.fetchItems(++n),
+                        50
+                    )
+                } else {
+                    throw new Error(`Could not load project within ${n} attempts`)
+                }
                 return
             }
-            // TODO  we should probably catch errors here instead and push home
-            // if(!this.getPrimaryCard)
-            /*
-          if (overview.templates.length === 0) {
-            this.$router.push({ name: 'projectHome' });
-          }
-             */
         } catch (e) {
             console.error(e)
             createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+            this.failedToLoad = true
         } finally {
             this.activeSkeleton = false
         }
     },
 
-    async autoSaveTemplate() {
-      /*
-      await this.savePrimaryCard({primaryObject: this.getPrimaryCard});
-      await this.saveResourceInState({arrayOfCards: this.getCardsStacked});
-      */
-    },
-
     async triggerSave() {
         try {
-            this.autoSaveTemplate();
             await this.commitPreparedMutations()
-            /*
-            const { updateTemplateResource } = await this.saveTemplateResources();
-            */
             createFlash({
                 message: __('Template was saved successfully!'),
                 type: FLASH_TYPES.SUCCESS,
@@ -390,7 +386,6 @@ export default {
       try {
         const { name } = this.selected;
         const titleCard = this.resourceName || name;
-        await this.autoSaveTemplate();
         this.createNodeResourceData.name = slugify(this.resourceName)
         this.createNodeResourceData.title = this.resourceName
         const created = await this.createNodeResource({...this.createNodeResourceData, selection: this.selected});
@@ -409,7 +404,6 @@ export default {
       throw new Error('connectNodeResource needs to be reimplemented')
       try { 
         const { name } = this.selectedServiceToConnect;
-        await this.autoSaveTemplate();
         const connected = await this.connectNodeResource({ nodeTitle: name});
         if(connected) {
           this.selectedServiceToConnect = '';
@@ -451,7 +445,7 @@ export default {
     },
 
     legendDeleteTemplate() {
-      return `Are you sure you want to delete <b>${this.getResourcesOfTemplate.title}</b> template ?`;
+      return `Are you sure you want to delete <b>${this.getDeploymentTemplate.title}</b> template ?`;
     },
 
     replaceSpaceWithDash(str){
@@ -462,12 +456,11 @@ export default {
 </script>
 <template>
   <div>
-    <!--div v-if="Object.keys(getTemplate).length > 0 && getPrimaryCard !== undefined && !activeSkeleton" :key="componentKey"-->
-    <div v-if="!activeSkeleton" :key="componentKey">
+    <div v-if="shouldRenderTemplates" :key="componentKey">
 
       <!-- Header of templates -->
       <oc-template-header
-        :header-info="{ title: getResourcesOfTemplate.title, cloud: getResourcesOfTemplate.cloud, environment: getResourcesOfTemplate.environment}"/>
+        :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: getDeploymentTemplate.environment}"/>
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
@@ -485,8 +478,10 @@ export default {
             <!-- Requirements List -->
             <oc-list
               tabs-title="Requirements"
-              title-key="primary"
-              :template-dependencies="getPrimaryCard.dependencies"
+              :title-key="getPrimaryCard.title"
+              :cloud="getDeploymentTemplate.cloud"
+              :deployment-template="getDeploymentTemplate"
+              :template-dependencies="getDependencies(getPrimaryCard.name)"
               :level="1"
               :show-type-first="true"
               :card="getPrimaryCard"
@@ -495,11 +490,10 @@ export default {
               <div class="gl-pl-6 gl-pr-6">
                 <oc-card
                   v-for="(card, idx) in getCardsStacked"
-                  :id="card.name"
                   :key="__('levelOne-') + card.title"
                   :custom-title="card.title"
                   :card="card"
-                  :badge-header="{ isActive: true, text: card.type.name }"
+                  :badge-header="{ isActive: true, text: card.type }"
                   :icon-title="true"
                   :icon-color="card.status ? 'icon-green' : 'icon-red'"
                   :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
@@ -511,7 +505,8 @@ export default {
 
                     <oc-list
                       tabs-title="Requirements"
-                      :template-dependencies="card.dependencies"
+                      :template-dependencies="getDependencies(card.name)"
+                      :deployment-template="getDeploymentTemplate"
                       :level="idx"
                       :title-key="card.title"
                       :show-type-first="true" 
@@ -545,7 +540,7 @@ export default {
             >
 
             <!--oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
-            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getResourcesOfTemplate.cloud"/>
+            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
@@ -580,7 +575,7 @@ export default {
         <!-- <p v-if="getServicesToConnect.length > 0">{{ `Select a ${getNameResourceModal} instance to connect.`}}</p>
         <p v-else class="gl-mb-4">{{ `Not resources availabe for  ${getNameResourceModal} .`}}</p> -->
         <!--oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getTemplate.cloud" /-->
-        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getResourcesOfTemplate.cloud"/>
+        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getDeploymentTemplate.cloud"/>
       </gl-modal>
 
       <!-- Modal to confirm the action to delete template -->
@@ -598,7 +593,7 @@ export default {
       </gl-modal>
 
     </div>
-    <div v-else class="gl-mt-6">
+    <div v-else-if="activeSkeleton" class="gl-mt-6">
       <gl-skeleton-loader />
     </div>
   </div>

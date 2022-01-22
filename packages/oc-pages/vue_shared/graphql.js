@@ -96,7 +96,7 @@ function getProjectPath(root, variables, context) {
 async function fetchRootBlob(root, _variables, context) {
     try {
         const {client} = context
-        const variables = {fullPath: getProjectPath(root, _variables, context), fetchPolicy: _variables?.fetchPolicy}
+        const variables = {..._variables, fullPath: getProjectPath(root, _variables, context), fetchPolicy: _variables?.fetchPolicy}
 
         const {errors, data} = await client.query({
             query: getUnfurlRoot,
@@ -146,7 +146,8 @@ function makeClientResolver(typename, field=null, selector) {
 }
 
 function makeObjectLookupResolver(typename) {
-  return (parent, args, { cache, jsondb }, info) => {
+  return (parent, args, { cache, jsondb, dehydrated }, info) => {
+      if (dehydrated) return  parent [info.field.name.value] 
       const obj = jsondb[typename][ parent [ info.field.name.value] ];
       if (obj) {
           obj.__typename = typename; // ensure __typename
@@ -156,9 +157,10 @@ function makeObjectLookupResolver(typename) {
 } 
 
 function listMakeObjectLookupResolver(typename) {
-    return (parent, args, {cache, jsondb}, info) => {
+    return (parent, args, {cache, jsondb, dehydrated}, info) => {
         const result = []
         for(const itemKey of parent[info.field.name.value]) {
+            if(dehydrated) return itemKey
             const item = jsondb[typename][itemKey]
             if(item) {
                 item.__typename = typename
@@ -176,7 +178,15 @@ export const resolvers = {
         overview: makeClientResolver('Overview'),
         applicationBlueprint: makeClientResolver('ApplicationBlueprint', null, (target) => {
             return Object.values(target)[0] // TODO take slug
-        })
+        }),
+        ResourceType: makeClientResolver('ResourceType'),
+        ApplicationBlueprint: makeClientResolver('ApplicationBlueprint'),
+        Overview: makeClientResolver('Overview'),
+        ResourceTemplate: makeClientResolver('ResourceTemplate'),
+        ResourceType: makeClientResolver('ResourceType'),
+        DeploymentTemplate: makeClientResolver('DeploymentTemplate'),
+        Resource: makeClientResolver('Resource'),
+        Deployment: makeClientResolver('Deployment'),
     },
 
     Environments: {
@@ -314,6 +324,7 @@ export const resolvers = {
             const json = await fetchRootBlob(...args) 
             args[2].fullPath = args[1].fullPath
             args[2].jsondb = json
+            args[2].dehydrated = args[1].dehydrated
             return {json, __typename: 'ApplicationBlueprintProject'}
         },
     

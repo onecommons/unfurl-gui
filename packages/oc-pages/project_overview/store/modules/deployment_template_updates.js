@@ -212,12 +212,12 @@ const mutations = {
         for(const preparedMutation of state.preparedMutations) {
             for(const patchDefinition of preparedMutation(state.accumulator)){
                 const {typename, target, patch} = patchDefinition
-                
+
                 if(!state.accumulator[typename]) state.accumulator[typename] = {}
                 if(!state.patches[typename]) state.patches[typename] = {}
 
                 state.patches[typename][target] = patch
-                state.accumulator[typename][target], patch
+                state.accumulator[typename][target] = patch
             }
         }
         state.preparedMutations = []

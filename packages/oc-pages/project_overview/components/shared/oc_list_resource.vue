@@ -35,7 +35,12 @@ export default {
         cloud: {
             type: String,
             required: false,
+        },
+        deploymentTemplate: {
+            type: Object,
+            required: true
         }
+
     },
 
     computed: {
@@ -53,13 +58,6 @@ export default {
 
 
     },
-
-    methods: {
-        checkCompatibility(itemPlatform) {
-            //console.log(itemPlatform)
-            if(!this.cloud) return true
-        }
-    }
 };
 </script>
 <template>
@@ -74,7 +72,7 @@ export default {
         </p-->
         <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in getValidResourceTypes(nameOfResource)"
+            v-for="(resource, idx) in getValidResourceTypes(nameOfResource, deploymentTemplate)"
             :key="resource + idx"
             class="gl-responsive-table-row oc_table_row"
         >

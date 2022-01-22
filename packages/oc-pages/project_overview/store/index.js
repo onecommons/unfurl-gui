@@ -5,6 +5,7 @@ import environments from "./modules/environments";
 import project from "./modules/project";
 import deployment_template_updates from "./modules/deployment_template_updates"
 import templateResources from "./modules/template_resources";
+import project_application_blueprint from './modules/project_application_blueprint'
 import misc from './modules/misc'
 
 Vue.use(Vuex);
@@ -17,6 +18,7 @@ const store = new Vuex.Store({
         project,
         templateResources,
         deployment_template_updates,
+        project_application_blueprint,
         misc
     },
     strict: debug,

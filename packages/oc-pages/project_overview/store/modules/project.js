@@ -222,7 +222,7 @@ const actions = {
 
             // NOTE this is strange because it populates something used by another view
             // It would be a good idea to move into the template_resources store when refactoring
-            commit('SET_RESOURCES_LIST', data.unfurlRoot.applicationBlueprint.deploymentTemplates[0].resourceTemplates);
+            //commit('SET_RESOURCES_LIST', data.unfurlRoot.applicationBlueprint.deploymentTemplates[0].resourceTemplates);
         } else {
             throw new Error(errors[0].message);
         }
@@ -520,8 +520,8 @@ const actions = {
     // TODO remove this
     async createResourceTemplate({commit, dispatch, getters, rootState, state}, {type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}) {
         //deployment_template_updates.js
-        commit('pushPreparedMutation', createResourceTemplate({type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}))
-        await dispatch('commitPreparedMutations')
+        commit('pushPreparedMutation', createResourceTemplate({type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}), {root: true})
+        await dispatch('commitPreparedMutations', {root: true})
 
         /*
         if(deploymentTemplateSlug) {

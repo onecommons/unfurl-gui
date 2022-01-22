@@ -90,6 +90,9 @@ export default {
             return {
                 text: __("Cancel"),
             };
+        },
+        id() {
+            return btoa(this.card.name).replace(/=/g, '')
         }
     },
     methods: {
@@ -108,7 +111,7 @@ export default {
 <template>
     <gl-card :header-class="['gl-display-flex',  'header-oc', mainCardClass]">
         <template #header>
-            <div class="align_left gl-display-flex flex-one gl-pt-1">
+            <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex flex-one gl-pt-1">
                 <gl-icon v-if="mainCardClass === ''" :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeader.text)" />
                 <h4 class="gl-my-0 oc_card_title">{{ customTitle }}</h4>
                 <gl-icon
