@@ -1,6 +1,7 @@
 <script>
 import { GlCard, GlIcon, GlBadge, GlDropdown, GlDropdownItem} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
+import {mapGetters} from 'vuex'
 import { bus } from '../../bus.js';
 
 import { __ } from '~/locale';
@@ -93,7 +94,8 @@ export default {
         },
         id() {
             return btoa(this.card.name).replace(/=/g, '')
-        }
+        },
+        ...mapGetters(['cardIsValid'])
     },
     methods: {
 
@@ -107,6 +109,7 @@ export default {
         },
     }
 };
+
 </script>
 <template>
     <gl-card :header-class="['gl-display-flex',  'header-oc', mainCardClass]">
@@ -117,8 +120,8 @@ export default {
                 <gl-icon
                 v-if="iconTitle"
                 :size="14"
-                :class="['gl-ml-3', 'gl-mt-1', iconColor]"
-                :name="iconName"
+                :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
+                :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
                 />
 
                 <gl-badge
@@ -154,38 +157,6 @@ export default {
 
 
                 </gl-dropdown>
-                <!--div
-                <button title="More actions" data-toggle="dropdown" data-target=".more-actions-dropdown" type="button" class="btn note-action-button more-actions-toggle btn btn-transparent btn-default btn-sm gl-button btn-default-tertiary btn-icon" aria-expanded="false">
-                    <gl-icon
-                    :size="16"
-                    name="ellipsis_v"
-                    />
-                </button> 
-                <ul class="dropdown-menu more-actions-dropdown" style="">
-                    <li role="presentation" class="gl-new-dropdown-item">
-                        <a role="menuitem" target="_self" href="javascript: void(0);" class="dropdown-item">
-                            <div class="gl-new-dropdown-item-text-wrapper">
-                                <p class="gl-new-dropdown-item-text-primary">{{ __("Rename") }}</p> 
-                            </div>
-                        </a>
-                    </li> 
-                    <li role="presentation" class="gl-new-dropdown-item js-btn-copy-note-link">
-                        <button data-clipboard-text="onecommons.org" role="menuitem" type="button" class="dropdown-item">
-                            <div class="gl-new-dropdown-item-text-wrapper">
-                                <p class="gl-new-dropdown-item-text-primary">{{ __("Advance view") }}</p> 
-                            </div>
-                        </button>
-                    </li>
-                    <li role="presentation" class="gl-new-dropdown-item">
-                        <button data-testid="assign-user" role="menuitem" type="button" class="dropdown-item">
-                            <div class="gl-new-dropdown-item-text-wrapper"
-                                @click="openDeletemodal(customTitle)"
-                            ><p class="gl-new-dropdown-item-text-primary">{{ __("Delete") }}</p> 
-                            </div> 
-                        </button>
-                    </li>
-                </ul>
-            </div-->
             <div v-else class="dropdown more-actions">
                 <span>{{ __("Advanced view") }}</span>
             </div>

@@ -17,6 +17,26 @@ const ComponentMap = {
   object: 'Editable.Popover',
   password: 'Password',
 };
+
+const ValidationFunctions = {
+  string(input, value) {
+    return !input.required || !!(value?.length)
+  },
+  number(input, value) {
+    if(typeof value == 'string' && value.length == 0) return false
+    return !input.required || !isNaN(value)
+  }
+
+}
+
+function validateInput(input, value) {
+  if(input?.type) {
+    const result = ValidationFunctions[input.type](input, value)
+    return result
+  }
+  return false
+}
+
 const fields = createSchemaField({
   components: {
     FormItem,
@@ -59,7 +79,7 @@ export default {
   },
 
   computed: {
-    ...mapGetters(['resolveResourceType']),
+    ...mapGetters(['resolveResourceType', 'cardInputsAreValid']),
 
     mainInputs() {
       const result = []
@@ -116,61 +136,16 @@ export default {
         initialValues: this.initialFormValues,
         effects: () => {
           onFieldValueChange('*', async (field) => {
-            this.checkInputsInline();
-            this.triggerSave(field.data.title, field.value);
+            this.triggerSave(field.data, field.value);
           })
         }
       })
     }
   },
 
-  data() {
-    return {
-      /*
-      form: createForm({
-        initialValues: this.initialFormValues,
-        effects: () => {
-          onFieldValueChange('*', async (field) => {
-            this.checkInputsInline();
-            this.triggerSave(field.data.title, field.value);
-          })
-        }
-      }),
-      */
-      inputsKey: 0,
-      inputsComplete: null,
-      autoSaveTimer: 3000,
-      /*
-      schema: {
-        type: 'object',
-        properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
-          const title = `${currentValue.title}${currentIndex}${this.componentKey}${this.getRandomKey(7)}-template`;
-          previousValue[title] = {
-            type: 'string',
-            title: currentValue.title,
-            'x-decorator': 'FormItem',
-            'x-component': 'Input',
-            'description': currentValue.instructions,
-            'x-data': currentValue,
-            'x-component-props': {
-              placeholder: currentValue.title,
-            },
-          }
-          return previousValue;
-        }, {}),
-      }
-       */
-    }
-  },
-
-  mounted() {
-
-    this.checkInputs();
-  },
-
   methods: {
     ...mapMutations([
-      'pushPreparedMutation'
+      'pushPreparedMutation', 'setInputValidStatus'
     ]),
     convertProperties(properties) {
       const temp = {};
@@ -223,22 +198,14 @@ export default {
       return temp;
     },
 
-    checkInputs() {
-      this.inputsComplete = this.mainInputs.length === this.mainInputs.filter((e) => e.value !== '').length;
-      bus.$emit('completeMainInputs', this.inputsComplete);
+    updateFieldValidation(field, value) {
+      this.setInputValidStatus({card: this.card, input: field, status: validateInput(field, value)})
     },
-
-    refreshInputs() {
-      this.inputsKey += 1;
-    },
-
-    checkInputsInline: debounce(function preview() {
-      this.checkInputs();
-    }, 300),
 
     triggerSave: debounce(function preview(field, value) {
+      this.updateFieldValidation(field, value)
       this.pushPreparedMutation(
-        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field, propertyValue: value})
+        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field.title, propertyValue: value})
       )
     }, 200),
 
@@ -249,8 +216,8 @@ export default {
 }
 </script>
 <template>
-  <div :key="inputsKey">
-    <gl-tabs>
+  <div data-testid="oc_inputs">
+    <gl-tabs v-if="mainInputs.length > 0">
       <gl-tab>
         <template slot="title">
 
@@ -259,13 +226,13 @@ export default {
               :size="14"
               :class="{
                             'icon-green':
-                                inputsComplete,
+                                cardInputsAreValid(card),
                             'icon-red':
-                                !inputsComplete,
+                                !cardInputsAreValid(card),
                             'gl-ml-4 gl-mt-1': true,
                         }"
               :name="
-                            inputsComplete
+                            cardInputsAreValid(card)
                                 ? 'check-circle-filled'
                                 : 'warning-solid'
                         "/>

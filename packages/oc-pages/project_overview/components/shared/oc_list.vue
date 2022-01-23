@@ -78,8 +78,9 @@ export default {
             getValidResourceTypes: 'getValidResourceTypes',
             //resolveResourceTemplate: 'resolveResourceTemplate',
             matchIsValid: 'matchIsValid',
-            resolveMatchTitle: 'resolveMatchTitle'
-            
+            resolveMatchTitle: 'resolveMatchTitle',
+            cardDependenciesAreValid: 'cardDependenciesAreValid',
+
         }),
         checkRequirements() {
             const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
@@ -151,11 +152,11 @@ export default {
                     <gl-icon
                         :size="14"
                         :class="{
-                            'icon-green': checkRequirements,
-                            'icon-red': !checkRequirements,
+                            'icon-green': cardDependenciesAreValid(card),
+                            'icon-red': !cardDependenciesAreValid(card),
                             'gl-ml-4 gl-mt-1': true
                         }"
-                        :name="checkRequirements ? 'check-circle-filled' : 'warning-solid'"
+                        :name="cardDependenciesAreValid(card) ? 'check-circle-filled' : 'warning-solid'"
                         />
                 </template>
                 <div class="row-fluid">

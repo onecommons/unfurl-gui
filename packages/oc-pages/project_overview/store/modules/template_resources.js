@@ -9,6 +9,7 @@ import {createResourceTemplate, deleteResourceTemplate, deleteResourceTemplateIn
 const baseState = () => ({
     deploymentTemplate: {},
     resourceTemplates: {},
+    inputValidationStatus: {},
 })
 
 const state = baseState()
@@ -17,6 +18,17 @@ const mutations = {
     resetTemplateResourceState(state) {
         state.deploymentTemplate = {}
         state.resourceTemplates = {}
+        state.inputValidationStatus = {}
+    },
+
+    setInputValidStatus(state, {card, input, status}) {
+        const byCard = state.inputValidationStatus[card.name] || {}
+        if(status)
+            byCard[input.name] = true
+        else
+            delete byCard[input.name]
+
+        state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard}
     },
 
     setDeploymentTemplate(_state, deploymentTemplate) {
@@ -80,10 +92,15 @@ const actions = {
          
 
         function createMatchedTemplateResources(resourceTemplate) {
+            for(const property of resourceTemplate.properties) {
+                commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)})
+            }
+
             for(const dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue
                 const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match)
                 dependency.status = !!resolvedDependencyMatch
+
                 dependency.completionStatus = dependency.status? 'created': null
                 const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '')
 
@@ -216,7 +233,32 @@ const getters = {
     }),
     resolveMatchTitle: (_state => {
         return function(match) { return '' + _state.resourceTemplates[match]?.title }
-    })
+    }),
+    cardInputsAreValid(state) {
+        return function(_card) {
+            const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card
+            if(!card?.properties?.length) return true
+            let validInputsCount
+            try {
+                validInputsCount = Object.keys(state.inputValidationStatus[card.name]).length
+            } catch { return false }
+            return card.properties.length == validInputsCount
+
+        }
+    },
+    cardDependenciesAreValid(state, getters) {
+        return function(_card) {
+            const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card
+            if(!card?.dependencies?.length) return true
+            return card.dependencies.every(dependency => getters.matchIsValid(dependency.match) && getters.cardIsValid(dependency.match))
+        }
+
+    },
+    cardIsValid(state, getters) {
+        return function(card) {
+            return getters.cardInputsAreValid(card) && getters.cardDependenciesAreValid(card)
+        }
+    }
 };
 
 export default {

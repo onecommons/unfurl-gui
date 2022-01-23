@@ -883,6 +883,7 @@
       "title": "Apostrophe Demo",
       "name": "apostrophe-demo",
       "slug": "apostrophe-demo",
+      "cloud": "GoogleCloudAccount",
       "description": null,
       "blueprint": "Apostrophe Demo",
       "primary": "the_app",

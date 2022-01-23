@@ -1,6 +1,8 @@
 const BASE_URL = Cypress.env('CYPRESS_BASE_URL')
 const DEMO_URL = BASE_URL + '/demo/apostrophe-demo/-/overview'
 const MY_AWESOME_TEMPLATE = DEMO_URL + '/templates/my-awesome-template'
+const DEMO_URL2 = BASE_URL + '/demo/apostrophe-demo-v2/-/overview'
+const MY_AWESOME_TEMPLATE2 = DEMO_URL2 + '/templates/my-awesome-template'
 
 const ocTableRow = (name) => cy.get('.oc_table_row').contains('.oc_table_row', name)
 const withinOcTableRow = (name, withinFn) => ocTableRow(name).within(withinFn)
@@ -15,8 +17,27 @@ const withinCreateDeploymentTemplateDialog = (withinfn) => {
 }
 
 
+const createMyAwesomeTemplate = () => {
+  withinCreateDeploymentTemplateDialog(() => {
+
+    cy.get(`input[name="input['template-name']"]`)
+      .type('My awesome template')
+
+    cy.get(`input[name="input['resource-template-name']"]`)
+      .type('My beautiful resource')
+
+    cy.get('button').contains('button', 'Next')
+      .click()
+
+    cy.wait(100)
+  })
+
+}
+
+
 const clickSaveTemplate = () => {
-  cy.get('[data-testid="save-template-btn"]').click()
+  // needs to debounce sometimes
+  cy.wait(500).get('[data-testid="save-template-btn"]').click()
 }
 
 const clickTableRowButton = (dependency, buttonName) => {
@@ -29,18 +50,38 @@ const clickTableRowButton = (dependency, buttonName) => {
 
 }
 
-const launchResourceTemplateDialog = () => {
-  /*
-  cy.get('.oc_table_row')
-    .contains('.oc_table_row', 'host')
-    .within(()  => cy.get('button').contains('button', 'Create').click())
+const launchResourceTemplateDialog = () => clickTableRowButton('host', 'Create')
 
-  cy.wait(100)
-  */
-
-  clickTableRowButton('host', 'Create')
+function getCard(name) {return cy.get(`[data-testid="card-${name}"]`).parent().parent()}
+function withinCard(name, cb) {return getCard(name).within(cb)}
+function withinCardHeader(cb) {return cy.get('.gl-card-header').within(cb)}
+function withinOcInput(cb) { return cy.get('[data-testid="oc_inputs"]').within(cb) }
+function withinModal(cb) {return cy.get('.modal-content').within(cb)}
+function expectInvalidInput(exclusively=false) {
+  cy.get('[data-testid="warning-solid-icon"]').should('exist')
+  if(exclusively) cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist')
 }
+function expectValidInput(exclusively=false) {
+  cy.get('[data-testid="check-circle-filled-icon"]').should('exist')
+  if(exclusively) cy.get('[data-testid="warning-solid-icon"]').should('not.exist')
+}
+function selectDependency(dependencyName) {
+  cy.get('.oc_table_row').contains('.oc_table_row', dependencyName).within(() => {
+    cy.get('input[type="radio"]').click({force: true})
+  })
+  cy.get('button').contains('button', 'Next').click()
 
+}
+function deleteCard(name) {
+  withinCard(name, () => {
+    cy.get('.dropdown button.dropdown-toggle').click().wait(100)
+    cy.get('button.dropdown-item').contains('button.dropdown-item', 'Delete').click()
+  })
+  cy.wait(200)
+  withinModal(() => {
+    cy.get('button').contains('button', 'Delete').click()
+  })
+}
 const getAWSCard = () => cy.get('[data-testid="card-awsinstance"]').parent()
 const awsCardShould = (should) => cy.get('[data-testid="card-awsinstance"]').should(should)
 
@@ -48,29 +89,194 @@ const launchRemoveDialog = () => { clickTableRowButton('host', 'Remove') }
 
 import gql from 'graphql-tag'
 
-describe('project overview', () => {
-
-  before(() => {
-    cy.visit(DEMO_URL)
-      .should('have.property', 'app')
-      .then(app => {
-        app.$apolloProvider.clients.defaultClient.mutate({
-          mutation: gql`
-            mutation {
-              updateDeploymentObj(input: {projectPath: "demo/apostrophe-demo", typename: "*", patch: "null"}) {errors}
+function resetData(url, projectPath) {
+  cy.visit(url)
+    .wait(100)
+    .should('have.property', 'app')
+    .then(app => {
+      app.$apolloProvider.clients.defaultClient.mutate({
+        mutation: gql`
+            mutation ClearProjectPath($projectPath: String!) {
+              updateDeploymentObj(input: {projectPath: $projectPath, typename: "*", patch: "null"}) {errors}
             }
           `,
-          variables: {}
-        })
-
+        variables: {projectPath}
       })
-      /*.$apolloProvider.clients.defaultClient.mutate({
-      mutation: gql`
-        updateDeploymentObj(projectPath: "demo/apostrophe-demo", typename: "*", patch: "null") {errors}
-      `,
-      variables: {}
     })
-    */
+}
+
+describe('project overview v2', () => {
+  before(() => {
+    resetData(DEMO_URL2, 'demo/apostrophe-demo-v2')
+  })
+  describe('overview page', () => {
+    beforeEach(() => {
+      cy.visit(DEMO_URL2).wait(100)
+    })
+
+    it('can create a deployment template', () => {
+      createMyAwesomeTemplate()
+    }) 
+  })
+
+  describe('template page', () => {
+    beforeEach(() => {
+      cy.visit(MY_AWESOME_TEMPLATE2)
+    })
+
+    it('should be invalid', () => {
+      withinCard('my-beautiful-resource', () => {
+        withinCardHeader(() => {
+          expectInvalidInput()
+        })
+      })
+    })
+
+    it('should have invalid inputs', () => {
+      withinCard('my-beautiful-resource', () => {
+        withinOcInput(() => {
+          expectInvalidInput()
+        })
+      })
+    })
+
+    it('should be able to create valid inputs', () => {
+      withinCard('my-beautiful-resource', () => {
+        withinOcInput(() => {
+          expectInvalidInput()
+          cy.get('input[placeholder="image"]').type('my amazing image')
+          expectInvalidInput()
+          cy.get('input[placeholder="domain"]').type('unfurl.cloud')
+          expectValidInput()
+        })
+      })
+    })
+
+    it('should keep valid inputs when saved', () => {
+      withinCard('my-beautiful-resource', () => {
+        withinOcInput(() => {
+          cy.get('input[placeholder="image"]').type('my amazing image')
+          cy.get('input[placeholder="domain"]').type('unfurl.cloud')
+        })
+      })
+      clickSaveTemplate()
+
+      cy.wait(500).reload()
+
+      withinCard('my-beautiful-resource', () => {
+        withinOcInput(() => {
+          expectValidInput()
+        })
+      })
+    })
+
+    it('should be able to fill inputs in a dependency', () => {
+      withinCard('my-beautiful-resource', () => {
+        clickTableRowButton('host', 'Create')
+      })
+      withinModal(() => {
+        selectDependency('Compute')
+      })
+      withinCard('compute', () => {
+        withinOcInput(() =>  {
+          expectInvalidInput()
+          cy.get('input[placeholder="CPUs"]').type('8')
+          cy.get('input[placeholder="Memory"]').type('64')
+          cy.get('input[placeholder="storage"]').type('1')
+          expectValidInput()
+        })
+        expectValidInput()
+      })
+
+      clickSaveTemplate()
+      cy.reload()
+      withinCard('compute', () => {
+        expectValidInput(true)
+      })
+    })
+
+    it('becomes invalid when an input is removed', () => {
+      withinCard('compute', () => {
+        withinOcInput(() => {
+          cy.get('input[placeholder="CPUs"]').clear()
+        })
+        expectInvalidInput(true)
+      })
+    })
+
+    it('can handle recursive dependencies', () => {
+      withinCard('my-beautiful-resource', () => {
+        clickTableRowButton('db', 'Create')
+      })
+      withinModal(() => {
+        selectDependency('SelfHostedMongoDb')
+      })
+
+      withinCard('selfhostedmongodb', () => {
+        clickTableRowButton('host', 'Create')
+      })
+
+      withinModal(() => {
+        selectDependency('DockerHost')
+      })
+
+      withinCard('dockerhost', () => {
+        withinOcInput(() => {
+          cy.get('input[placeholder="CPUs"]').type('8')
+          cy.get('input[placeholder="Memory"]').type('64')
+          cy.get('input[placeholder="storage"]').type('1')
+        })
+        expectValidInput(true)
+      })
+
+      withinCard('selfhostedmongodb', () => {
+        expectValidInput(true)
+      })
+
+      clickSaveTemplate()
+
+      cy.reload()
+
+      withinCard('dockerhost', () => {
+        expectValidInput(true)
+      })
+
+      withinCard('selfhostedmongodb', () => {
+        expectValidInput(true)
+      })
+
+
+    })
+
+    it('can retain recursive reactivity', () => {
+      withinCard('dockerhost', () => {
+        withinOcInput(() => {
+          cy.get('input[placeholder="CPUs"]').clear()
+        })
+        expectInvalidInput(true)
+      })
+
+      withinCard('selfhostedmongodb', () => {
+        expectInvalidInput()
+      })
+
+    })
+
+    it('reacts properly to a deleted node', () => {
+      deleteCard('dockerhost')
+      withinCard('selfhostedmongodb', () => {
+        expectInvalidInput(true)
+      })
+
+    })
+
+  })
+
+})
+
+describe('project overview', () => {
+  before(() => {
+    resetData(DEMO_URL, 'demo/apostrophe-demo')
   })
 
   describe('overview page', () => {
@@ -101,31 +307,8 @@ describe('project overview', () => {
     })
 
     it('should be able to create a new template', () => {
-      withinCreateDeploymentTemplateDialog(() => {
-
-        cy.get(`input[name="input['template-name']"]`)
-          .type('My awesome template')
-
-        cy.get(`input[name="input['resource-template-name']"]`)
-          .type('My beautiful resource')
-
-        /*
-         * Do not specify an environment when creating deployment template
-        cy.get('.dropdown')
-          .click()
-
-        cy.wait(100)
-        cy.get('.gl-new-dropdown-item-text-wrapper')
-          .first()
-          .click()
-
-        */
-        cy.get('button').contains('button', 'Next')
-          .click()
-
-        cy.wait(100)
-        cy.url().should('eq', MY_AWESOME_TEMPLATE)
-      })
+      createMyAwesomeTemplate()
+      cy.url().should('eq', MY_AWESOME_TEMPLATE)
     })
   }) 
 
