@@ -1,18 +1,26 @@
-const BASE_URL = Cypress.env('CYPRESS_BASE_URL')
-const DEMO_URL = BASE_URL + '/demo/apostrophe-demo/-/overview'
+const BASE_URL = Cypress.env('OC_URL') || 'http://localhost:8080'
+// TODO move this into a plugin
+const GRAPHQL_ENDPOINT = (function(baseUrl){
+  const url = new URL(baseUrl)
+  const cypressEnvDefined = Cypress.env('OC_GRAPHQL_ENDPOINT')
+  if(cypressEnvDefined) return cypressEnvDefined
+  if(parseInt(url.port) >= 8080) return '/graphql'
+  else return '/api/graphql'
+
+})(BASE_URL)
+const NAMESPACE = Cypress.env('OC_NAMESPACE') || 'demo'
+const DEMO_URL = `${BASE_URL}/${NAMESPACE}/apostrophe-demo/-/overview`
 const MY_AWESOME_TEMPLATE = DEMO_URL + '/templates/my-awesome-template'
-const DEMO_URL2 = BASE_URL + '/demo/apostrophe-demo-v2/-/overview'
+const DEMO_URL2 = `${BASE_URL}/${NAMESPACE}/apostrophe-demo-v2/-/overview`
 const MY_AWESOME_TEMPLATE2 = DEMO_URL2 + '/templates/my-awesome-template'
 
 const ocTableRow = (name) => cy.get('.oc_table_row').contains('.oc_table_row', name)
 const withinOcTableRow = (name, withinFn) => ocTableRow(name).within(withinFn)
 
 const withinCreateDeploymentTemplateDialog = (withinfn) => {
-  cy.wait(50)
   cy.get('button').contains('button', 'Create new template')
     .click()
 
-  cy.wait(100)
   return cy.get('#oc-templates-deploy').within(withinfn)
 }
 
@@ -29,25 +37,30 @@ const createMyAwesomeTemplate = () => {
     cy.get('button').contains('button', 'Next')
       .click()
 
-    cy.wait(100)
+    cy.url().should('include', 'templates/my-awesome-template')
   })
 
 }
 
+function waitForGraphql() {
+  cy.intercept({
+    method: "POST",
+    url: "**/graphql",
+  }).as("dataGetFirst");
+  cy.wait("@dataGetFirst");
+}
+
 
 const clickSaveTemplate = () => {
-  // needs to debounce sometimes
-  cy.wait(500).get('[data-testid="save-template-btn"]').click()
+  cy.wait(300) // needs to debounce sometimes
+  cy.get('[data-testid="save-template-btn"]').click()
+  waitForGraphql()
 }
 
 const clickTableRowButton = (dependency, buttonName) => {
-
   cy.get('.oc_table_row')
     .contains('.oc_table_row', dependency)
     .within(()  => cy.get('button').contains('button', buttonName).click())
-
-  cy.wait(100)
-
 }
 
 const launchResourceTemplateDialog = () => clickTableRowButton('host', 'Create')
@@ -87,31 +100,52 @@ const awsCardShould = (should) => cy.get('[data-testid="card-awsinstance"]').sho
 
 const launchRemoveDialog = () => { clickTableRowButton('host', 'Remove') }
 
-import gql from 'graphql-tag'
+const operationName = "ClearProjectPath"
+const query = "mutation ClearProjectPath($projectPath: ID!, $typename: String!, $patch: JSON!) {\n  updateDeploymentObj(\n    input: {projectPath: $projectPath, typename: $typename, patch: $patch}\n  ) {\n    errors\n    __typename\n  }\n}\n"
 
-function resetData(url, projectPath) {
-  cy.visit(url)
-    .wait(100)
-    .should('have.property', 'app')
-    .then(app => {
-      app.$apolloProvider.clients.defaultClient.mutate({
-        mutation: gql`
-            mutation ClearProjectPath($projectPath: String!) {
-              updateDeploymentObj(input: {projectPath: $projectPath, typename: "*", patch: "null"}) {errors}
+function resetDataFromFixture(url, projectPath) {
+  cy.on('uncaught:exception', (e) => false) // don't care if we error in here
+
+  cy.visit(`${BASE_URL}/${NAMESPACE}`)
+
+  cy.document().then(doc => {
+    const csrfToken = doc.querySelector('meta[name="csrf-token"]')?.content
+
+    cy.fixture(projectPath.replace(NAMESPACE, 'demo')).then((payload) => {
+      try {
+        cy.log(`resetting data for ${projectPath}`)
+        for(const key in payload) {
+          const variables = {projectPath, typename: key, patch: payload[key]}
+          if (key == 'Overview') continue
+          cy.request({
+            method:'POST', 
+            url: GRAPHQL_ENDPOINT, 
+            body: {
+              variables, operationName, query,
+            },
+            headers: {
+              'X-CSRF-Token': csrfToken,
+              'Content-Type': 'application/json'
             }
-          `,
-        variables: {projectPath}
-      })
+          })
+        }
+      } catch(e) {
+        cy.log(`failed to reset data for ${projectPath}: ${e.message}`)
+        throw e
+      }
     })
+    return 
+  })
 }
 
 describe('project overview v2', () => {
   before(() => {
-    resetData(DEMO_URL2, 'demo/apostrophe-demo-v2')
+    resetDataFromFixture(DEMO_URL2, `${NAMESPACE}/apostrophe-demo-v2`)
   })
   describe('overview page', () => {
     beforeEach(() => {
-      cy.visit(DEMO_URL2).wait(100)
+      cy.visit(DEMO_URL2)
+      waitForGraphql()
     })
 
     it('can create a deployment template', () => {
@@ -122,6 +156,7 @@ describe('project overview v2', () => {
   describe('template page', () => {
     beforeEach(() => {
       cy.visit(MY_AWESOME_TEMPLATE2)
+      waitForGraphql()
     })
 
     it('should be invalid', () => {
@@ -160,8 +195,6 @@ describe('project overview v2', () => {
         })
       })
       clickSaveTemplate()
-
-      cy.wait(500).reload()
 
       withinCard('my-beautiful-resource', () => {
         withinOcInput(() => {
@@ -276,12 +309,13 @@ describe('project overview v2', () => {
 
 describe('project overview', () => {
   before(() => {
-    resetData(DEMO_URL, 'demo/apostrophe-demo')
+    resetDataFromFixture(DEMO_URL, `${NAMESPACE}/apostrophe-demo`)
   })
 
   describe('overview page', () => {
     beforeEach(() => {
-      cy.visit(BASE_URL + '/demo/apostrophe-demo/~/overview')
+      cy.visit(DEMO_URL)
+      waitForGraphql()
     })
 
     it('correctly loads project description box', () => {
@@ -289,9 +323,11 @@ describe('project overview', () => {
         .should('be.visible')
     })
 
+    /*
     it('should have a store', () => {
       cy.window().its('app.$store').should('exist')
     })
+    */
 
     it('should be able to navigate to a deployment template', () => {
       cy.url().then(url => {
@@ -308,13 +344,14 @@ describe('project overview', () => {
 
     it('should be able to create a new template', () => {
       createMyAwesomeTemplate()
-      cy.url().should('eq', MY_AWESOME_TEMPLATE)
+      cy.url().should('include', MY_AWESOME_TEMPLATE)
     })
   }) 
 
   describe('templates page', () => {
     beforeEach(() => {
       cy.visit(MY_AWESOME_TEMPLATE)
+      waitForGraphql()
     })
 
 
@@ -323,6 +360,7 @@ describe('project overview', () => {
       cy.get('h4').contains('My beautiful resource').should('be.visible') 
     })
 
+    /*
     it('has a primary card that turns green when inputs are filled', () => {
       //cy.get('.gl-card-body > .gl-tabs').contains('.gl-tabs, Inputs').first().within(() => {
       const tab = () => cy.get('.gl-tabs a[role="tab"]').first()
@@ -334,6 +372,7 @@ describe('project overview', () => {
       //})
 
     })
+    */
 
     it("shouldn't have an option to connect", () => {
       ocTableRow('host').within(_ => cy.get('button').contains('Create').should('be.visible'))
@@ -372,7 +411,7 @@ describe('project overview', () => {
 
       clickSaveTemplate()
 
-      cy.wait(500).reload()
+      cy.reload()
 
       awsCardShould('be.visible')
     })
@@ -386,6 +425,7 @@ describe('project overview', () => {
     })
 
 
+    /*
     it('has card requirements that turn green when inputs are filled', () => {
       getAWSCard().within(() => {
         const tab = () => cy.get('.gl-tabs a[role="tab"]').first()
@@ -397,6 +437,7 @@ describe('project overview', () => {
         tab().within(() => {cy.get('svg').should('have.attr', 'data-testid', 'check-circle-filled-icon')})
       })
     })
+    */
 
     it('can delete a resource', () => {
       getAWSCard().within(() => {
@@ -415,7 +456,7 @@ describe('project overview', () => {
 
       clickSaveTemplate()
 
-      cy.wait(500).reload() // we have to wait for the Delete request to finish
+      cy.reload() // we have to wait for the Delete request to finish
 
       withinOcTableRow('host', () => cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist'))
     })
@@ -440,7 +481,7 @@ describe('project overview', () => {
 
       clickSaveTemplate()
 
-      cy.wait(500).reload()
+      cy.reload()
       withinOcTableRow('host', () => cy.get('[data-testid="check-circle-filled-icon"]').should('not.exist'))
     })
 
@@ -451,7 +492,7 @@ describe('project overview', () => {
       cy.get('#oc-delete-template').within(() => {
         cy.get('button').contains('button','Delete').click()
         cy.wait(250)
-        cy.url().should('equal', DEMO_URL + '/')
+        cy.url().should('include', DEMO_URL)
       })
       cy.get('.ci-table').contains('My awesome template').should('not.exist')
     })

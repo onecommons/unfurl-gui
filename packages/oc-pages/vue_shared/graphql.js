@@ -128,6 +128,10 @@ function clientResolverError(e, baseMessage) {
     return new Error(_e)
 }
 
+function resolutionError(itemKey, typename, parent) {
+  return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent.name}: ${parent.__typename}`)
+}
+
 function makeClientResolver(typename, field=null, selector) {
     return (root, variables, context, info) => {
         // query must retrieve the json field
@@ -151,6 +155,8 @@ function makeObjectLookupResolver(typename) {
       const obj = jsondb[typename][ parent [ info.field.name.value] ];
       if (obj) {
           obj.__typename = typename; // ensure __typename
+      } else {
+          throw resolutionError(itemKey, typename, parent)
       }
       return obj ?? null;
   }
@@ -164,6 +170,8 @@ function listMakeObjectLookupResolver(typename) {
             const item = jsondb[typename][itemKey]
             if(item) {
                 item.__typename = typename
+            } else {
+                throw resolutionError(itemKey, typename, parent)
             }
             result.push(item)
         }
@@ -296,7 +304,7 @@ export const resolvers = {
 
     Input: {
         //instructions: (obj, args, { }) => obj.instructions ?? obj.description ?? null,
-      name: (obj, args, { }) => obj.name ?? obj.title,
+      name: (obj, args, { }) => obj && (obj.name ?? obj.title),
       //title: (obj, args, { }) => obj.title ?? obj.name,
 
       // type JSON
