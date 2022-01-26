@@ -47,7 +47,7 @@ function waitForGraphql() {
     method: "POST",
     url: "**/graphql",
   }).as("dataGetFirst");
-  cy.wait("@dataGetFirst");
+  cy.wait("@dataGetFirst").wait(100);
 }
 
 

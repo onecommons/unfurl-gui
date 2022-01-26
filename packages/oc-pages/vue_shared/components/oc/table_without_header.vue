@@ -11,6 +11,10 @@ export default {
         dataRows: {
             type: Array,
             required: true
+        },
+        editable: {
+            type: Boolean,
+            required: true
         }
     },
     data() {
@@ -24,7 +28,7 @@ export default {
 <template>
   <div class="row-fluid">
       <div class="ci-table" role="grid">
-          <TableListRow :items="dataRows" />
+          <TableListRow :items="dataRows" :editable="editable" />
       </div>
   </div>
 </template>
