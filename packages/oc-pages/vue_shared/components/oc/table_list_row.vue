@@ -18,6 +18,10 @@ export default {
         items: {
             type: Array,
             required: true
+        },
+        editable: {
+            type: Boolean,
+            required: false
         }
     },
     methods: {
@@ -60,6 +64,7 @@ export default {
                 <div class="table-section oc-table-section section-wrap text-truncate section-20">
                     <span class="text-break-word deploy-button-group">
                             <gl-button
+                                v-if="editable"
                                 :title="__('Edit')"
                                 :aria-label="__('Edit')"
                                 icon="pencil"

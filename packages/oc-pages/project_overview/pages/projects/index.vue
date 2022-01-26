@@ -55,7 +55,8 @@ export default {
         ...mapGetters({
             environmentsList: 'getEnvironmentsList',
             projectInfo: 'getProjectInfo',
-            templatesList: 'getTemplatesList'
+            templatesList: 'getTemplatesList',
+            hasEditPermissions: 'hasEditPermissions'
         }),
         primaryProps() {
             return {
@@ -215,7 +216,7 @@ export default {
                 </div>
             </div>
             <!-- Table -->
-            <TableWithoutHeader :data-rows="templatesList" />
+            <TableWithoutHeader :data-rows="templatesList" :editable="hasEditPermissions" />
 
             <!-- Modal -->
             <gl-modal
