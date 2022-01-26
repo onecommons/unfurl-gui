@@ -2,6 +2,7 @@
 import { GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import { mapGetters, mapActions } from 'vuex';
+import _ from 'lodash'
 import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
@@ -68,8 +69,27 @@ export default {
             return {
                 text: __('Cancel'),
             };
+        },
+        querySpec() {
+            if(this.instantiateAs == 'deployment' && this.templateSelected?.slug)
+                return {
+                    fn: this.templateForkedName || undefined,
+                    rtn: this.resourceTemplateName || undefined,
+                    ts: this.templateSelected.slug || undefined
+
+                }
+            else return {}
         }
     },
+    watch: {
+        querySpec: _.debounce(function(query, oldQuery) {
+            if(_.isEqual(query, oldQuery)) return
+            const path = this.$route.path
+            this.$router.replace({path, query})
+        }, 100)
+
+    },
+
     created() {
         this.syncGlobalVars(this.$projectGlobal);
         bus.$on('deployTemplate', (template) => {
@@ -92,8 +112,17 @@ export default {
         })()
     },
 
-    mounted() {
-        this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
+    async mounted() {
+        await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
+        const templateSelected = this.$route.query?.ts?
+            this.$store.getters.getTemplatesList.find(template => template.slug == this.$route.query.ts) : null 
+        if(templateSelected) {
+            bus.$emit('deployTemplate', templateSelected)
+            this.$refs['oc-templates-deploy'].show()
+
+            this.templateForkedName = this.$route.query?.fn
+            this.resourceTemplateName = this.$route.query?.rtn
+        }
     },
     methods: {
         redirectToTemplateEditor(page='templatePage') {
@@ -140,7 +169,8 @@ export default {
         },
 
         redirectToNewEnvironment() {
-            const url = `${window.origin}${window.location.pathname.split("/").slice(0, -1).join("/")}/environments/new`;
+            const redirectTarget = `${window.location.pathname}${window.location.search}`
+            const url = `${window.origin}${window.location.pathname.split("/").slice(0, -2).join("/")}/environments/new_unfurl?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
             window.location = url;
         },
 
@@ -220,13 +250,14 @@ export default {
 
             <!-- Modal -->
             <gl-modal
+                ref="oc-templates-deploy"
                 modal-id="oc-templates-deploy"
                 :title="s__('OcDeployments|Create new deployment')"
                 :action-primary="primaryProps"
                 :action-cancel="cancelProps"
                 no-fade
                 @primary="onSubmitModal"
-                @cancel="clearModalTemplate"
+                @hidden="clearModalTemplate"
             >
                 <gl-form-group
                     label="Name"
