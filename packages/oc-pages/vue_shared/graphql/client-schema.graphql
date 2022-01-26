@@ -406,13 +406,13 @@ type Dependency {
 type DeploymentEnvironment {
   name: String!
 
-  services: [Resource!]
+  connections: [ResourceTemplate!]
 
   """
   TODO: should just use primary_provider
   """
   cloud: String
-  primary_provider: Resource
+  primary_provider: ResourceTemplate
   deployments: [Deployment!]
 }
 
@@ -456,7 +456,7 @@ type Resource {
   status: Status
   state: State
   attributes: [Input!]
-  connections: [Requirement!]
+  dependencies: [Requirement!]
 }
 
 enum Status {

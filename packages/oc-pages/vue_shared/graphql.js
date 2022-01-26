@@ -198,9 +198,28 @@ export const resolvers = {
     },
 
     Environments: {
-      environments: makeClientResolver('DeploymentEnvironment', 'clientPayload')
+      environments: makeClientResolver('DeploymentEnvironment', 'clientPayload'),
     },
 
+    DeploymentEnvironment: {
+      connections: (parent, args, { cache, jsondb, dehydrated }, info) => {
+        const resourceTemplates = Object.values(parent.connections);
+        resourceTemplates.forEach((elem) => {
+          elem.__typename = 'ResourceTemplate';
+        });
+        return resourceTemplates
+      },
+
+      primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
+        const pp = parent.connections.primary_provider;
+        if (pp) {
+          pp.__typename = 'ResourceTemplate';
+        }
+        return pp;
+      },
+    },
+    
+    
     ResourceTemplates: {
       resourceTemplates: makeClientResolver('ResourceTemplate', 'clientPayload')      
     },
