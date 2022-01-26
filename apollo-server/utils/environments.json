@@ -1,0 +1,65 @@
+{
+  "DeploymentEnvironment": {
+    "production-gcp": {
+      "name": "production-gcp",
+      "connections": {
+        "primary_provider": {
+          "type": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
+          "name": "primary_provider",
+          "title": "primary_provider",
+          "description": "",
+          "__typename": "ResourceTemplate",
+          "properties": [],
+          "dependencies": []
+        }
+      }
+    }
+  },
+  "ResourceType": {
+    "unfurl.relationships.ConnectsTo.GoogleCloudProject": {
+      "name": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
+      "title": "GoogleCloudProject",
+      "description": "",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {
+          "scopes": {
+            "title": "scopes",
+            "type": "array",
+            "items": {
+              "required": true,
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "unfurl.relationships.ConnectsTo.CloudAccount": {
+      "name": "unfurl.relationships.ConnectsTo.CloudAccount",
+      "title": "CloudAccount",
+      "description": "",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "tosca.relationships.ConnectsTo": {
+      "name": "tosca.relationships.ConnectsTo",
+      "title": "ConnectsTo",
+      "description": "",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    },
+    "tosca.relationships.Root": {
+      "name": "tosca.relationships.Root",
+      "title": "Root",
+      "description": "The TOSCA root Relationship Type all other TOSCA base Relationship Types derive from.\n",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      }
+    }
+  }
+}
