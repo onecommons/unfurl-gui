@@ -288,10 +288,8 @@ type ApplicationBlueprint {
     searchByTitle: String
   ): [DeploymentTemplate!]
 
-  """
-  Name of the project (without namespace).
-  """
   name: String!
+  title: String!
 
   """
   Live preview url from unfurl file
