@@ -938,7 +938,7 @@
       "slug": "aws",
       "blueprint": "apostrophe-demo",
       "primary": "the_app",
-      "cloud": "unfurl.relationships.ConnectsTo.GoogleCloudProject"
+      "cloud": "unfurl.relationships.ConnectsTo.AWSAccount"
     },
     "k8s": {
       "__typename": "DeploymentTemplate",

@@ -14,7 +14,7 @@ spec:
       cloud: unfurl.relationships.ConnectsTo.GoogleCloudProject
     aws:
       title: Amazon Web Services EC2
-      cloud: unfurl.relationships.ConnectsTo.GoogleCloudProject        
+      cloud: unfurl.relationships.ConnectsTo.AWSAccount        
     k8s:
       title: Kubernetes
       cloud: unfurl.relationships.ConnectsTo.K8sCluster        
