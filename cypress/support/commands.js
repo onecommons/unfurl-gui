@@ -23,3 +23,55 @@
 //
 // -- This will overwrite an existing command --
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
+//
+//
+Cypress.Commands.add('waitForGraphql', () => {
+  cy.intercept({
+    method: "POST",
+    url: "**/graphql",
+  }).as("dataGetFirst");
+  cy.wait("@dataGetFirst").wait(250);
+})
+
+
+const operationName = "ClearProjectPath"
+const query = "mutation ClearProjectPath($projectPath: ID!, $typename: String!, $patch: JSON!) {\n  updateDeploymentObj(\n    input: {projectPath: $projectPath, typename: $typename, patch: $patch}\n  ) {\n    errors\n    __typename\n  }\n}\n"
+
+Cypress.Commands.add('resetDataFromFixture', (projectPath, fixture) => {
+  cy.on('uncaught:exception', (e) => false) // don't care if we error in here
+
+
+  let _fixture = fixture || projectPath
+  if(!_fixture.endsWith('.json')) _fixture = _fixture + '.json'
+  const _projectPath = projectPath.replace(/\.json$/, '')
+  cy.visit(Cypress.env('OC_URL'))
+
+  cy.document().then(doc => {
+    const csrfToken = doc.querySelector('meta[name="csrf-token"]')?.content
+
+    cy.fixture(`blueprints/${_fixture}`).then((payload) => {
+      try {
+        cy.log(`resetting data for ${projectPath}`)
+        for(const key in payload) {
+          const variables = {projectPath, typename: key, patch: payload[key]}
+          if (key == 'Overview') continue
+          cy.request({
+            method:'POST', 
+            url: Cypress.env('OC_GRAPHQL_ENDPOINT'), 
+            body: {
+              variables, operationName, query, projectPath: _projectPath
+            },
+            headers: {
+              'X-CSRF-Token': csrfToken,
+              'Content-Type': 'application/json'
+            }
+          })
+        }
+      } catch(e) {
+        cy.log(`failed to reset data for ${projectPath}: ${e.message}`)
+        throw e
+      }
+    })
+    return 
+  })
+})

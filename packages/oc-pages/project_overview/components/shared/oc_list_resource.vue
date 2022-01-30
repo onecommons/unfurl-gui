@@ -18,12 +18,10 @@ export default {
             required: true,
         },
         */
-      /*
         validResourceTypes: {
           type: Array,
           required: true
         },
-        */
         value: {
             type: [Object, String],
             required: true,
@@ -36,10 +34,6 @@ export default {
             type: String,
             required: false,
         },
-        deploymentTemplate: {
-            type: Object,
-            required: true
-        }
 
     },
 
@@ -52,9 +46,6 @@ export default {
                 this.$emit("input", val); 
             }
         },
-        ...mapGetters([
-          'getValidResourceTypes'
-        ]),
 
 
     },
@@ -72,7 +63,7 @@ export default {
         </p-->
         <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in getValidResourceTypes(nameOfResource, deploymentTemplate)"
+            v-for="(resource, idx) in validResourceTypes"
             :key="resource + idx"
             class="gl-responsive-table-row oc_table_row"
         >

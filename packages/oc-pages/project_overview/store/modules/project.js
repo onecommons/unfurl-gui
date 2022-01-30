@@ -259,6 +259,7 @@ const actions = {
         return data.applicationBlueprint;
     },
 
+  /*
     async fetchEnvironments({ commit }, { projectPath }) {
         const { errors, data } = await graphqlClient.clients.defaultClient.query({
             query: getEnvironments,
@@ -272,6 +273,7 @@ const actions = {
         return false;
     },
 
+*/
     async fetchServicesToConnect({ commit }, { projectPath }) {
         //const {errors, data} = await graphqlClient.clients.defaultClient.query({
         /*
@@ -618,7 +620,7 @@ const actions = {
 
 const getters = {
     getProjectInfo: _state => _state.projectInfo,
-    getEnvironmentsList: _state => _state.environmentList,
+    //getEnvironmentsList: _state => _state.environmentList,
     getTemplatesList: _state => _state.templateList,
     getTemplate: _state => _state.template,
     getResourceTemplates: _state => _state.resourceTemplates,

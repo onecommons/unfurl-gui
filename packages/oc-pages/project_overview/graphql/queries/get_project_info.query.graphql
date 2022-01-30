@@ -26,7 +26,13 @@ query getProjectInfo($projectPath: ID!) {
       primary {
         ...ResourceTypes        
         requirements {
+          name
+          title
+          description
           resourceType {...ResourceTypes}
+          min
+          max
+
         }
       }
       overview {

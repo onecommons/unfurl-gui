@@ -45,3 +45,18 @@ directive @deprecated(
 
 # es-linter needs this 
 directive @client on FIELD_DEFINITION
+
+type UpdateDeploymentObjResult {
+  isOk: Boolean
+  errors: [String!]
+}
+
+input UpdateDeploymentObjPayload {
+  projectPath: ID!
+  typename: String!
+  path: String
+  patch: JSON!
+}
+extend type Mutation {
+  updateDeploymentObj(input: UpdateDeploymentObjPayload): UpdateDeploymentObjResult
+}

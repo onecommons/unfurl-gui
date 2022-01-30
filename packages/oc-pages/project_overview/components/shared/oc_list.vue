@@ -74,8 +74,8 @@ export default {
         ...mapGetters({
             resources: 'getResourceTemplates',
             servicesToConnect: 'getServicesToConnect',
-            servicesToConnect: 'getServicesToConnect',
             getValidResourceTypes: 'getValidResourceTypes',
+            getValidConnections: 'getValidConnections',
             //resolveResourceTemplate: 'resolveResourceTemplate',
             matchIsValid: 'matchIsValid',
             resolveMatchTitle: 'resolveMatchTitle',
@@ -101,9 +101,9 @@ export default {
             bus.$emit('moveToElement', {elId: requirement.match});
         },
 
-        connectToResource({requirement}) {
-            this.setRequirementSelected({requirement, titleKey: this.titleKey});
-            bus.$emit('launchModalToConnect');
+        connectToResource(requirement) {
+            this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: requirement.name, requirement, titleKey: this.titleKey}); // TODO trying to make this redundant
+            bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'connect'});
         },
 
         sendRequirement(requirement) {
@@ -130,16 +130,6 @@ export default {
             //return requirement.completionStatus === "connected" ? __('Disconnect') : __("Remove")
         },
 
-
-        hasResourcesToConnect(requirement) {
-            return false
-            const type = requirement.name
-            const result = this.servicesToConnect.some(r => r.type.toLowerCase().includes(type.toLowerCase()));
-            return result
-            //const result = this.servicesToConnect.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
-            //if(result.length > 0) return true;
-            //return false;
-        },
     }
 }
 </script>
@@ -163,7 +153,7 @@ export default {
                     <div class="ci-table" role="grid">
                         <div
                             v-for="(requirement, idx) in card.dependencies"
-                            :key="requirement.name + idx + '-template'"
+                            :key="requirement.name + '-template'"
                             class="gl-responsive-table-row oc_table_row">
                             <div
                                 class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
@@ -230,8 +220,8 @@ export default {
                                     :aria-label="__(`connect`)"
                                     type="button"
                                     class="oc_requirements_actions"
-                                    :disabled="!hasResourcesToConnect(requirement)"
-                                    @click.prevent="connectToResource({requirement})"
+                                    :disabled="getValidConnections($route.params.environment, requirement).length == 0"
+                                    @click.prevent="connectToResource(requirement)"
                                 >{{ __('Connect') }}</gl-button>
 
                                 <gl-button

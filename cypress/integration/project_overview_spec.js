@@ -1,14 +1,6 @@
-const BASE_URL = Cypress.env('OC_URL') || 'http://localhost:8080'
-// TODO move this into a plugin
-const GRAPHQL_ENDPOINT = (function(baseUrl){
-  const url = new URL(baseUrl)
-  const cypressEnvDefined = Cypress.env('OC_GRAPHQL_ENDPOINT')
-  if(cypressEnvDefined) return cypressEnvDefined
-  if(parseInt(url.port) >= 8080) return '/graphql'
-  else return '/api/graphql'
-
-})(BASE_URL)
-const NAMESPACE = Cypress.env('OC_NAMESPACE') || 'demo'
+const BASE_URL = Cypress.env('OC_URL')
+const GRAPHQL_ENDPOINT = Cypress.env('OC_GRAPHQL_ENDPOINT')
+const NAMESPACE = Cypress.env('OC_NAMESPACE')
 const DEMO_URL = `${BASE_URL}/${NAMESPACE}/apostrophe-demo/-/overview`
 const MY_AWESOME_TEMPLATE = DEMO_URL + '/templates/my-awesome-template'
 const DEMO_URL2 = `${BASE_URL}/${NAMESPACE}/apostrophe-demo-v2/-/overview`
@@ -43,11 +35,7 @@ const createMyAwesomeTemplate = () => {
 }
 
 function waitForGraphql() {
-  cy.intercept({
-    method: "POST",
-    url: "**/graphql",
-  }).as("dataGetFirst");
-  cy.wait("@dataGetFirst").wait(100);
+  cy.waitForGraphql()
 }
 
 
@@ -100,47 +88,10 @@ const awsCardShould = (should) => cy.get('[data-testid="card-awsinstance"]').sho
 
 const launchRemoveDialog = () => { clickTableRowButton('host', 'Remove') }
 
-const operationName = "ClearProjectPath"
-const query = "mutation ClearProjectPath($projectPath: ID!, $typename: String!, $patch: JSON!) {\n  updateDeploymentObj(\n    input: {projectPath: $projectPath, typename: $typename, patch: $patch}\n  ) {\n    errors\n    __typename\n  }\n}\n"
-
-function resetDataFromFixture(url, projectPath) {
-  cy.on('uncaught:exception', (e) => false) // don't care if we error in here
-
-  cy.visit(`${BASE_URL}/${NAMESPACE}`)
-
-  cy.document().then(doc => {
-    const csrfToken = doc.querySelector('meta[name="csrf-token"]')?.content
-
-    cy.fixture(projectPath.replace(NAMESPACE, 'demo')).then((payload) => {
-      try {
-        cy.log(`resetting data for ${projectPath}`)
-        for(const key in payload) {
-          const variables = {projectPath, typename: key, patch: payload[key]}
-          if (key == 'Overview') continue
-          cy.request({
-            method:'POST', 
-            url: GRAPHQL_ENDPOINT, 
-            body: {
-              variables, operationName, query,
-            },
-            headers: {
-              'X-CSRF-Token': csrfToken,
-              'Content-Type': 'application/json'
-            }
-          })
-        }
-      } catch(e) {
-        cy.log(`failed to reset data for ${projectPath}: ${e.message}`)
-        throw e
-      }
-    })
-    return 
-  })
-}
-
 describe('project overview v2', () => {
   before(() => {
-    resetDataFromFixture(DEMO_URL2, `${NAMESPACE}/apostrophe-demo-v2`)
+    //resetDataFromFixture(DEMO_URL2, `${NAMESPACE}/apostrophe-demo-v2`)
+    cy.resetDataFromFixture(`${NAMESPACE}/apostrophe-demo-v2`, 'demo/apostrophe-demo-v2')
   })
   describe('overview page', () => {
     beforeEach(() => {
@@ -309,7 +260,7 @@ describe('project overview v2', () => {
 
 describe('project overview', () => {
   before(() => {
-    resetDataFromFixture(DEMO_URL, `${NAMESPACE}/apostrophe-demo`)
+    cy.resetDataFromFixture(`${NAMESPACE}/apostrophe-demo`, 'demo/apostrophe-demo')
   })
 
   describe('overview page', () => {
@@ -322,12 +273,6 @@ describe('project overview', () => {
       cy.get('.oc-project-description-box')
         .should('be.visible')
     })
-
-    /*
-    it('should have a store', () => {
-      cy.window().its('app.$store').should('exist')
-    })
-    */
 
     it('should be able to navigate to a deployment template', () => {
       cy.url().then(url => {
@@ -360,19 +305,6 @@ describe('project overview', () => {
       cy.get('h4').contains('My beautiful resource').should('be.visible') 
     })
 
-    /*
-    it('has a primary card that turns green when inputs are filled', () => {
-      //cy.get('.gl-card-body > .gl-tabs').contains('.gl-tabs, Inputs').first().within(() => {
-      const tab = () => cy.get('.gl-tabs a[role="tab"]').first()
-
-      tab().within(() => {cy.get('svg').should('not.have.attr', 'data-testid', 'check-circle-filled-icon')})
-      cy.get('.gl-tab-content input[placeholder="image"]').type('my-docker-image')
-      cy.get('.gl-tab-content input[placeholder="domain"]').type('unfurl.cloud')
-      tab().within(() => {cy.get('svg').should('have.attr', 'data-testid', 'check-circle-filled-icon')})
-      //})
-
-    })
-    */
 
     it("shouldn't have an option to connect", () => {
       ocTableRow('host').within(_ => cy.get('button').contains('Create').should('be.visible'))
@@ -423,21 +355,6 @@ describe('project overview', () => {
 
       awsCardShould('be.visible')
     })
-
-
-    /*
-    it('has card requirements that turn green when inputs are filled', () => {
-      getAWSCard().within(() => {
-        const tab = () => cy.get('.gl-tabs a[role="tab"]').first()
-
-        tab().within(() => {cy.get('svg').should('not.have.attr', 'data-testid', 'check-circle-filled-icon')})
-        cy.get('.gl-tab-content input[placeholder="CPUs"]').type('16')
-        cy.get('.gl-tab-content input[placeholder="Memory"]').type('32GB')
-        cy.get('.gl-tab-content input[placeholder="storage"]').type('512GB')
-        tab().within(() => {cy.get('svg').should('have.attr', 'data-testid', 'check-circle-filled-icon')})
-      })
-    })
-    */
 
     it('can delete a resource', () => {
       getAWSCard().within(() => {

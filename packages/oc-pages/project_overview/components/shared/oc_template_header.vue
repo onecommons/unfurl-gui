@@ -24,8 +24,8 @@ export default {
         </div>
         <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end gl-pt-4" style="align-items: center">
             <LogosCloud :cloud="headerInfo.cloud" :class="['gl-mr-1', 'logo-mt']" />
-            <span style="line-height: 0;" v-if="headerInfo.cloud">{{headerInfo.cloud.split(/(?=[A-Z])/).slice(0, -1).join(' ')}}</span>
-            <!--span class="gl-pl-2 oc_environment_name">{{ headerInfo.environment }}</span--> 
+            <!--span style="line-height: 0;" v-if="headerInfo.cloud">{{headerInfo.cloud.split(/(?=[A-Z])/).slice(0, -1).join(' ')}}</span-->
+            <span class="gl-pl-2 oc_environment_name">{{ headerInfo.environment }}</span> 
             <gl-icon
                 :size="12"
                 :class="['icon-blue']"

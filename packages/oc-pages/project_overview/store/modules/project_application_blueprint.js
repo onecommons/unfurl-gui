@@ -107,7 +107,8 @@ const getters = {
                 dependency.name
                 //dependency.resourceType || dependency.constraint && dependency.constraint.resourceType.name
 
-            function filteredByType(typeName) {
+            function filteredByType(resourceType) {
+                let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
                 return Object.values(state.ResourceType).filter(type => {
                     return Array.isArray(type.implements) && type.implements.includes(typeName)
                 })

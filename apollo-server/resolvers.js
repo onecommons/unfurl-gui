@@ -2,6 +2,7 @@ import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
 import {readFileSync} from 'fs'
 import {resolve} from 'path'
+const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 
 export default {
   JSON: GraphQLJSON,
@@ -19,27 +20,43 @@ export default {
 
     environments: (root, args, { db }) => {
       const namespace = args.namespace;
-      const name = args.name;
-      const userdata = db.get('users').value()[namespace];
-      let environments = [];
-      if (userdata) {
-        environments = userdata.environments;
-        if (environments) {
-          if (name) {
-            environments = _.filter(environments, { name });
-          }
+      try{
+        const environments = db.get('environments').value()[namespace].clientPayload // accidentally double wrapped this one
+        return {
+          namespace,
+          name: 'placeholder',
+          ...environments
         }
-      }
-      return {
-        namespace,
-        name,
-        clientPayload: environments
+      } catch(e) {
+        return {
+          namespace,
+          name: 'placeholder',
+          clientPayload: {}
+        }
       }
     },
 
     resourceTemplates: (root, args, { db }) => {
       // (namespace: String): => ResourceTemplates
     },
+
+    project(root, args, context) {
+      context.fullPath = args.fullPath
+      return {__typename: 'Project'}
+    },
+
+
+  },
+
+  Project: {
+    userPermissions(root, args, context) {
+      return {__typeName: 'ProjectPermissions'}
+    }
+  },
+  ProjectPermissions: {
+    pushCode(root, args, context) {
+      return context.fullPath.startsWith(username)
+    }
   },
 
   // fields with JSON type need explicit resolvers

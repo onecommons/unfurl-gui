@@ -11,6 +11,8 @@ const alias = {
 
 const httpProxyMiddleware = require('http-proxy-middleware');
 const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || "https://unfurl.cloud"
+const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
+const fullname = process.env.UNFURL_CLOUD_FULLNAME || "Unfurl Cloud Craftsman"
 
 const JSON_EXT = '.json'
 const projectDataDir = path.join(__dirname, 'apollo-server/data')
@@ -18,20 +20,23 @@ const projectPages = {}
 const projectPageBase = {
   entry: "src/pages/project_overview/index.js",
   template: 'public/demo.html',
-  unfurlCloudBaseUrl
+  unfurlCloudBaseUrl,
+  username,
+  fullname
 }
 
-for(const tld of fs.readdirSync(projectDataDir)) {
-  for(const f of fs.readdirSync(path.join(projectDataDir, tld))) {
-    if(path.extname(f) != JSON_EXT) continue
-    const projectPath = `${tld}/${path.basename(f, JSON_EXT)}`
+try {
+  const liveDb = JSON.parse(fs.readFileSync('live/db.json', 'utf-8'))
+  for(const projectPath in liveDb.projects) {
     projectPages[projectPath] = {...projectPageBase, projectPath}
   }
+} catch(e) {
+  console.error('could not read live/db.json for html templates')
 }
-
 
 module.exports = {
   devServer: {
+    disableHostCheck: true,
     before(app) {
       const proxy = httpProxyMiddleware('/graphql', {
         target: 'http://localhost:4000/graphql',
@@ -66,6 +71,7 @@ module.exports = {
     },
 
     demo: {
+      ...projectPageBase,
       entry: "src/pages/project_overview/index.js",
       template: 'public/demo.html',
       unfurlCloudBaseUrl

@@ -129,12 +129,14 @@ function clientResolverError(e, baseMessage) {
 }
 
 function resolutionError(itemKey, typename, parent) {
-  return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent.name}: ${parent.__typename}`)
+  return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent?.name}: ${parent.__typename}`)
 }
 
 function makeClientResolver(typename, field=null, selector) {
     return (root, variables, context, info) => {
         // query must retrieve the json field
+        if(!context.jsondb) context.jsondb = root
+        if(variables?.dehydrated) {context.dehydrated = true}
         const json = field !== null ? context.jsondb[field]: context.jsondb;
         let target
         try {
@@ -143,9 +145,12 @@ function makeClientResolver(typename, field=null, selector) {
             console.error(typename, json)
             throw new Error('Cannot use constructed client resolver')
         }
-        target.__typename = typename; // ensure __typename
         //context.jsondb = json;
-        return typeof(selector) == 'function'? selector(target, root, variables, context, info): target;
+        if(!target) return null
+        target = (typeof(selector) == 'function'? selector(target, root, variables, context, info): target)
+        if(Array.isArray(target)) target.forEach(t => {if(t) {t.__typename = typename}})
+        else target.__typename = typename; // ensure __typename
+        return target
     }
 }
 
@@ -165,7 +170,15 @@ function makeObjectLookupResolver(typename) {
 function listMakeObjectLookupResolver(typename) {
     return (parent, args, {cache, jsondb, dehydrated}, info) => {
         const result = []
-        for(const itemKey of parent[info.field.name.value]) {
+        //if(!parent[info.field.name.value]) {
+            //throw new Error(`Could not lookup ${info.field.name.value} to resolve list of ${typename} in ${parent.name}: ${parent.__typename}`)
+
+        let items = parent[info.field.name.value]
+        if(!Array.isArray(items)) {
+            console.error(`items is not an array ${items}`)
+            items = []
+        }
+        for(const itemKey of items) {
             if(dehydrated) return itemKey
             const item = jsondb[typename][itemKey]
             if(item) {
@@ -198,25 +211,50 @@ export const resolvers = {
     },
 
     Environments: {
-      environments: makeClientResolver('DeploymentEnvironment', 'clientPayload'),
+        environments: makeClientResolver('DeploymentEnvironment', 'clientPayload', (target) => {
+            return Object.values(target).map(env => {
+                for(const conn of Object.values(env.connections)) {
+                    if(conn) conn.__typename = 'ResourceTemplate'
+                }
+                return env
+            })
+        })
+        /*
+        environments: makeClientResolver('DeploymentEnvironment', 'clientPayload', (target) => {
+            const result =  object.values(target).map(env => {env.__typename = 'deploymentEnvironment'; return env})
+            for(const env of result) {
+                env.connections = Object.values(env.connections)
+                for(const connection of env.connections) {
+                    connection.__typename = 'ResourceTemplate'
+                }
+            } 
+            return result
+        }),
+        */
     },
 
     DeploymentEnvironment: {
-      connections: (parent, args, { cache, jsondb, dehydrated }, info) => {
-        const resourceTemplates = Object.values(parent.connections);
-        resourceTemplates.forEach((elem) => {
-          elem.__typename = 'ResourceTemplate';
-        });
-        return resourceTemplates
-      },
+        connections: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            if(dehydrated) return Object.keys(parent.connections)
+            const resourceTemplates = Object.values(parent.connections);
+            resourceTemplates.forEach((elem) => {
+                if(elem) elem.__typename = 'ResourceTemplate';
+            });
 
-      primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
-        const pp = parent.connections.primary_provider;
-        if (pp) {
-          pp.__typename = 'ResourceTemplate';
-        }
-        return pp;
-      },
+            return resourceTemplates
+        },
+
+        primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            const pp = parent.connections.primary_provider;
+            if(dehydrated) return pp?.name
+            if (pp) {
+                pp.__typename = 'ResourceTemplate';
+            }
+            return pp;
+        },
+
+        cloud: (parent) => parent && (parent.cloud || parent.primary_provider || ''),
+        deployments: (parent) => parent && (parent.deployments || [])
     },
     
     

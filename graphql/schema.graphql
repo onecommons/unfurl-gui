@@ -43,6 +43,18 @@ type File {
   encoding: String!
 }
 
+type UpdateDeploymentObjResult {
+  isOk: Boolean
+  errors: [String!]
+}
+
+input UpdateDeploymentObjPayload {
+  projectPath: ID!
+  typename: String!
+  path: String
+  patch: JSON!
+}
+
 """
 Represents the access level of a relationship between a User and object that it is related to
 """
@@ -10124,10 +10136,6 @@ type Mutation {
     """Parameters for UserCalloutCreate"""
     input: UserCalloutCreateInput!
   ): UserCalloutCreatePayload
-
-  """
-  updateDeploymentObj(projectPath: ID!, typename: String!, patch: JSON!): UpdateDeploymentObjResult
-  """
   updateDeploymentObj(input: UpdateDeploymentObjPayload): UpdateDeploymentObjResult
 }
 
@@ -13424,17 +13432,9 @@ type Query {
     """List of usernames."""
     usernames: [String!]
   ): UserCoreConnection
-  newApplicationBlueprint(
-    """
-    The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
-    """
-    fullPath: ID!
-  ): ApplicationBlueprint
 
-  """
-  unfurlRootJSON(fullPath: ID!): JSON
-  applicationBlueprint(fullPath: ID!): JSON
-  """
+  """applicationBlueprint(fullPath: ID!): JSON"""
+  unfurlRoot(fullPath: ID!): ApplicationBlueprintProject
   blueprintRaw(fullPath: ID!, name: String): JSON
   deploymentTemplateRaw(fullPath: ID!, name: String): JSON
   resourceTemplateRaw(fullPath: ID!, name: String): JSON
@@ -18161,17 +18161,6 @@ enum VisibilityScopesEnum {
   public
 }
 
-type UpdateDeploymentObjResult {
-  isOk: Boolean
-  errors: [String!]
-}
-
-input UpdateDeploymentObjPayload {
-  projectPath: ID!
-  typename: String!
-  patch: JSON!
-}
-
 type Overview {
   """Number of Deployments"""
   deployments: Int
@@ -18339,9 +18328,8 @@ type ApplicationBlueprint {
     """If we want to search template by title."""
     searchByTitle: String
   ): [DeploymentTemplate!]
-
-  """Name of the project (without namespace)."""
   name: String!
+  title: String!
 
   """Live preview url from unfurl file"""
   livePreview: String
@@ -18430,11 +18418,11 @@ type Dependency {
 
 type DeploymentEnvironment {
   name: String!
-  services: [Resource!]
+  connections: [ResourceTemplate!]
 
   """TODO: should just use primary_provider"""
   cloud: String
-  primary_provider: Resource
+  primary_provider: ResourceTemplate
   deployments: [Deployment!]
 }
 
@@ -18468,7 +18456,7 @@ type Resource {
   status: Status
   state: State
   attributes: [Input!]
-  connections: [Requirement!]
+  dependencies: [Requirement!]
 }
 
 enum Status {

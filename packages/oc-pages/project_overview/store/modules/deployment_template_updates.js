@@ -37,7 +37,8 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
 export function appendResourceTemplateInDT({templateName, deploymentTemplateSlug}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateSlug]
-        patch.resourceTemplates.push(templateName)
+        if(Array.isArray(patch.resourceTemplates)) patch.resourceTemplates.push(templateName)
+        else patch.resourceTemplates = [templateName]
         return [ {typename: 'DeploymentTemplate', target: deploymentTemplateSlug, patch} ]
     }
 }
@@ -45,6 +46,8 @@ export function appendResourceTemplateInDT({templateName, deploymentTemplateSlug
 export function deleteResourceTemplateInDT({templateName, deploymentTemplateSlug}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateSlug]
+        if(!patch.resourceTemplates)
+            patch.resourceTemplates = []
         const index = patch.resourceTemplates.indexOf(templateName)
         if(index != -1) patch.resourceTemplates.splice(index, 1)
         return [ {typename: 'DeploymentTemplate', target: deploymentTemplateSlug, patch} ]
@@ -78,7 +81,7 @@ export function deleteResourceTemplate({templateName, deploymentTemplateSlug}) {
         const result = [ {typename: 'ResourceTemplate', target: templateName, patch} ]
         if(deploymentTemplateSlug) { 
             result.push(
-                deleteResourceTemplateInDT({templateName, deploymentTemplateSlug})(accumulator)[0]
+                deleteResourceTemplateInDT({templateName, deploymentTemplateSlug})//(accumulator)[0]
             )
         }
 
@@ -117,13 +120,13 @@ export function createResourceTemplate({type, name, title, description, deployme
 
         if(deploymentTemplateSlug) {
             result.push(
-                appendResourceTemplateInDT({templateName: name, deploymentTemplateSlug})(accumulator)[0]
+                appendResourceTemplateInDT({templateName: name, deploymentTemplateSlug})//(accumulator)[0]
             )
         }
 
         if(dependentName && dependentRequirement) {
             result.push(
-                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement})(accumulator)[0]
+                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement})//(accumulator)[0]
             )
         }
 
@@ -133,13 +136,13 @@ export function createResourceTemplate({type, name, title, description, deployme
             properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
-        const dependencies = resourceType.requirements.map(req => ({
+        const dependencies = resourceType?.requirements?.map(req => ({
             constraint: req,
             match: null,
             target: null,
             name: req.name,
             __typename: 'Dependency'
-        }))
+        })) || []
         const patch = {
             type: typeof(type) == 'string'? type: type.name,
             name,
@@ -157,7 +160,15 @@ export function createResourceTemplate({type, name, title, description, deployme
 }
 
 
-export function createDeploymentTemplate({primary, primaryType, name, title, slug, description}) {
+function expectParam(paramName, functionName, paramValue) {
+    if(!paramValue) {
+        throw new Error(`Expected valid ${paramName} in ${functionName} (got ${paramValue})`)
+    }
+}
+
+export function createDeploymentTemplate({blueprintName, primary, primaryType, name, title, slug, description}) {
+    expectParam('blueprintName', 'createDeploymentTemplate', blueprintName)
+    expectParam('name', 'createDeploymentTemplate', name || slug)
     console.warn('prepared createDeploymentTemplate is untested')
     return function(accumulator) {
         const result = []
@@ -167,27 +178,30 @@ export function createDeploymentTemplate({primary, primaryType, name, title, slu
         const _slug = slug || name
         const _name = name || slug
 
-        result.push(
-            createResourceTemplate({type, name: slugify(primary), title: primary, description})(accumulator)[0]
-        )
-
-        result.push(
-            appendDeploymentTemplateInBlueprint({templateName: _name})(accumulator)[0]
-        )
-
-
         const patch = {
             primary: slugify(primary),
             name: _name,
-            blueprint: getters.getProjectInfo.name,
+            blueprint: blueprintName,
             slug: _slug,
             description,
             title,
             __typename: "DeploymentTemplate",
-            resourceTemplates: [slugify(primary)],
+            //resourceTemplates: [slugify(primary)], gets added in createResourceTemplate
         }
 
-        return [ {patch, target: name, typename: 'DeploymentTemplate'} ]
+        result.push({patch, target: _name, typename: 'DeploymentTemplate'})
+
+        result.push(
+            createResourceTemplate({type, name: slugify(primary), title: primary, description, deploymentTemplateSlug: slug})//(accumulator)[0]
+        )
+
+        result.push(
+            appendDeploymentTemplateInBlueprint({templateName: _name})//(accumulator)[0]
+        )
+
+        return result
+
+
     }
 }
 
@@ -205,26 +219,51 @@ const getters = {
 }
 
 const mutations = {
+    setUpdateObjectPath(state, path) {
+        if(state.preparedMutations.length > 0) {
+            throw new Error('Cannot update path - you have uncommitted mutations')
+        }
+        state.path = path
+    },
+    setUpdateObjectProjectPath(state, projectPath) {
+        if(state.preparedMutations.length > 0) {
+            throw new Error('Cannot update projectPath - you have uncommitted mutations')
+        }
+        state.projectPath = projectPath
+    },
     pushPreparedMutation(state, preparedMutation) {
         state.preparedMutations.push(preparedMutation)
     },
-    applyMutations(state) {
+    applyMutations(state, o) {
+
+        function applyPatchDefinition(patchDefinition) {
+            if(typeof patchDefinition == 'function') {
+                for(const _patchDefinition of patchDefinition(state.accumulator)) {
+                    applyPatchDefinition(_patchDefinition)
+                }
+                return
+            }
+            const {typename, target, patch} = patchDefinition
+            if(!state.accumulator[typename]) state.accumulator[typename] = {}
+            if(!state.patches[typename]) state.patches[typename] = {}
+
+            state.patches[typename][target] = patch
+            state.accumulator[typename][target] = patch
+        }
         for(const preparedMutation of state.preparedMutations) {
             for(const patchDefinition of preparedMutation(state.accumulator)){
-                const {typename, target, patch} = patchDefinition
-
-                if(!state.accumulator[typename]) state.accumulator[typename] = {}
-                if(!state.patches[typename]) state.patches[typename] = {}
-
-                state.patches[typename][target] = patch
-                state.accumulator[typename][target] = patch
+                applyPatchDefinition(patchDefinition)
             }
         }
-        state.preparedMutations = []
+        if(!o?.dryRun) state.preparedMutations = []
     },
-    resetStagedChanges(state) {
+    resetStagedChanges(state, o) {
         state.accumulator = {}
         state.patches = {}
+        if(!o?.dryRun) {
+            state.path = undefined
+            state.projectPath = undefined
+        }
     },
     setBaseState(state, baseState) {
         state.accumulator = baseState
@@ -245,22 +284,35 @@ const actions = {
         commit('setBaseState', data?.applicationBlueprint?.json)
     },
 
-    async sendUpdateSubrequests({getters, rootState}){
+    async sendUpdateSubrequests({state, getters, rootState}, o){
 
         for(let key in getters.getPatches) {
             const patch = getters.getPatches[key]
+            const variables = {
+                fullPath: state.projectPath || rootState.project.globalVars.projectPath, 
+                typename: key, 
+                patch, 
+                path: state.path
+            }
+
+            if(o?.dryRun) {
+                console.log(variables)
+                continue
+            }
+
             graphqlClient.clients.defaultClient.mutate({
                 mutation: UpdateDeploymentObject,
-                variables: {fullPath: rootState.project.globalVars.projectPath, typename: key, patch}
+                variables
             })
         }
     },
 
-    async commitPreparedMutations({state, dispatch, commit}) {
+    async commitPreparedMutations({state, dispatch, commit}, o) {
+        let dryRun = o?.dryRun
         await dispatch('fetchRoot')
-        commit('applyMutations')
-        await dispatch('sendUpdateSubrequests')
-        commit('resetStagedChanges')
+        commit('applyMutations', {dryRun})
+        await dispatch('sendUpdateSubrequests', {dryRun})
+        commit('resetStagedChanges', {dryRun})
     }
 }
 

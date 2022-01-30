@@ -4,7 +4,10 @@ import GCP from '../../assets/gcp.svg?inline'
 import Azure from '../../assets/azure.svg?inline'
 const MAPPINGS = {
     AWSAccount: AWS,
+    aws: AWS,
     GoogleCloudAccount: GCP,
+    gcp: GCP,
+    'unfurl.relationships.ConnectsTo.GoogleCloudProject': GCP,
     AzureAccount: Azure,
 }
 export default {

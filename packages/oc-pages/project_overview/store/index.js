@@ -14,12 +14,12 @@ const debug = process.env.NODE_ENV !== "production";
 
 const store = new Vuex.Store({
     modules: {
+        misc,
         environments,
         project,
         templateResources,
         deployment_template_updates,
         project_application_blueprint,
-        misc
     },
     strict: debug,
     plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],

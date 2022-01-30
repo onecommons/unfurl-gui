@@ -31,8 +31,9 @@ export default {
         try {
             const {projectPath} = this.$projectGlobal
             await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
-            await this.$store.dispatch('fetchEnvironments', { projectPath});
+            await this.$store.dispatch('fetchEnvironments', projectPath.split('/')[0]);
             await this.$store.dispatch('fetchServicesToConnect', {projectPath});
+            this.fetchingComplete = true
             return true;
         } catch(err) {
             console.error(err)
@@ -44,11 +45,17 @@ export default {
         shouldTestQueries() {
             return location.search == '?test-queries'
         }
+    },
+
+    data() {
+        return {
+            fetchingComplete: false
+        }
     }
 }
 </script>
 <template>
-    <div v-if="!shouldTestQueries" id="OcAppDeployments">
+    <div v-if="fetchingComplete && !shouldTestQueries" id="OcAppDeployments">
         <router-view />
     </div>
 </template>

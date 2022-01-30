@@ -1,6 +1,6 @@
 import ProjectPageHome from '../pages/projects/index.vue';
 import TemplatesPage from '../pages/templates/index.vue';
-import { OC_PROJECT_VIEW_HOME, OC_PROJECT_VIEW_CREATE_TEMPLATE, OC_PROJECT_VIEW_EDIT_DEPLOYMENT } from './constants';
+import { OC_PROJECT_VIEW_HOME, OC_PROJECT_VIEW_CREATE_TEMPLATE, OC_PROJECT_VIEW_EDIT_DEPLOYMENT, OC_PROJECT_VIEW_DRAFT_DEPLOYMENT } from './constants';
 
 export default [
   {
@@ -15,10 +15,14 @@ export default [
   },
   {
     name: OC_PROJECT_VIEW_EDIT_DEPLOYMENT,
-    path: '/deployments/:slug',
+    path: '/deployments/:environment/:slug',
     component: TemplatesPage,
   },
-
+  {
+    name: OC_PROJECT_VIEW_DRAFT_DEPLOYMENT,
+    path: '/deployment-drafts/:environment/:slug',
+    component: TemplatesPage,
+  },
   {
     path: "*",
     redirect: "/"

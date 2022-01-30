@@ -72,19 +72,67 @@ export default {
   },
 
   computed: {
-    ...mapGetters({
-      projectInfo: 'getProjectInfo',
-      getRequirementSelected: 'getRequirementSelected',
-      getTemplate: 'getTemplate',
-      servicesToConnect: 'getServicesToConnect',
-      getPrimaryCard: 'getPrimaryCard',
-      getCardsStacked: 'getCardsStacked',
-      getDeploymentTemplate: 'getDeploymentTemplate',
-      getDependencies: 'getDependencies',
-      hasPreparedMutations: 'hasPreparedMutations',
-      matchIsValid: 'matchIsValid',
-      resolveMatchTitle: 'resolveMatchTitle',
-    }),
+    ...mapGetters([
+      'getProjectInfo',
+      'getRequirementSelected',
+      'getTemplate',
+      'getServicesToConnect',
+      'getPrimaryCard',
+      'getCardsStacked',
+      'getDeploymentTemplate',
+      'getDependencies',
+      'hasPreparedMutations',
+      'matchIsValid',
+      'resolveMatchTitle',
+      'cardIsValid',
+      'getUsername',
+      'getValidResourceTypes',
+      'getValidConnections',
+    ]),
+
+    saveStatus() {
+      switch(this.$route.name) {
+        case 'deploymentDraftPage':
+          return 'hidden'
+        default: 
+          return this.hasPreparedMutations? 'enabled': 'disabled'
+      }
+    },
+
+    deleteStatus() {
+      switch(this.$route.name) {
+        case 'deploymentDraftPage':
+          return 'hidden'
+        default: 
+          return 'enabled'
+      }
+    },
+
+    mergeStatus() {
+      switch(this.$route.name) {
+        case 'deploymentDraftPage':
+          return 'hidden'
+        default: 
+          return 'enabled'
+      }
+    },
+
+    deployStatus() {
+      return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled'
+      /*
+      switch(this.$route.name) {
+        case 'deploymentDraftPage':
+          return 'hidden'
+        default: 
+          return 'enabled'
+      }
+      */
+    },
+
+
+    cancelStatus() {
+      return this.$route.name == 'deploymentDraftPage'? 'enabled': 'hidden'
+    },
 
     shouldRenderTemplates() {
         return !this.activeSkeleton && !this.failedToLoad
@@ -155,23 +203,6 @@ export default {
 
   created() {
     this.syncGlobalVars(this.$projectGlobal);
-    bus.$on('completeRequirements', (level, flag) => {
-      if(level === 1) {
-        this.deployButton = flag;
-        this.completedRequirements = flag;
-        this.checkAllRequirements();
-      }
-    });
-
-    bus.$on('completeMainInputs', (flag) => {
-      this.completedMainInputs = flag;
-      this.checkAllRequirements();
-    });
-    bus.$on('triggerAutoSave', () => {
-
-      this.dataUnsaved = true;
-    });
-
     bus.$on('moveToElement', (obj) => {
       const { elId } = obj;
       this.scrollDown(elId, 500);
@@ -186,6 +217,7 @@ export default {
     });
 
     bus.$on('launchModalToConnect', (obj) => {
+      this.connectNodeResourceData = obj
       this.launchModal('oc-connect-resource', 250);
     });
 
@@ -223,6 +255,8 @@ export default {
       'setRouterHook',
       'clearPreparedMutations',
       'onApplicationBlueprintLoaded',
+      'setUpdateObjectPath',
+      'setUpdateObjectProjectPath'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -235,7 +269,7 @@ export default {
       'connectNodeResource',
       'deleteDeploymentTemplate',
       'commitPreparedMutations',
-      'fetchTemplateResources',
+      'populateTemplateResources',
       'fetchProject',
     ]),
 
@@ -288,11 +322,29 @@ export default {
     },
 
     async fetchItems(n=1) {
-        try {
-            const projectPath = this.$projectGlobal.projectPath
-            const templateSlug =  this.$route.params.slug
-            await this.fetchProject({projectPath, fetchPolicy: 'network-only', n})
-            if(! await this.fetchTemplateResources({projectPath, templateSlug}) ) {
+      try {
+        const projectPath = this.$projectGlobal.projectPath
+        const templateSlug =  this.$route.query.ts || this.$route.params.slug
+        const renamePrimary = this.$route.query.rtn
+        const renameDeploymentTemplate = this.$route.query.fn
+        const projectName = this.$projectGlobal.projectPath.split('/')
+        if(this.$route.name != 'templatePage') {
+          this.setUpdateObjectPath(
+            `${this.$route.params.environment}/${this.getProjectInfo.name}/${slugify(this.$route.query.fn)}/deployment-blueprint.json`
+          )
+          this.setUpdateObjectProjectPath(`${this.getUsername}/unfurl-home`)
+
+        }
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n})
+        if(! await this.populateTemplateResources({
+          projectPath, 
+          templateSlug, 
+          renamePrimary, 
+          renameDeploymentTemplate,
+          environmentName: this.$route.params.environment,
+          syncState: this.$route.name == 'deploymentDraftPage'
+        })) {
+          /*
                 if(n < 5) {
                     setTimeout(
                         _ => this.fetchItems(++n),
@@ -302,14 +354,15 @@ export default {
                     throw new Error(`Could not load project within ${n} attempts`)
                 }
                 return
-            }
-        } catch (e) {
-            console.error(e)
-            createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
-            this.failedToLoad = true
-        } finally {
-            this.activeSkeleton = false
+           */
         }
+      } catch (e) {
+        console.error(e)
+        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.failedToLoad = true
+      } finally {
+        this.activeSkeleton = false
+      }
     },
 
     async triggerSave() {
@@ -401,14 +454,10 @@ export default {
     },
 
     async onSubmitModalConnect() {
-      throw new Error('connectNodeResource needs to be reimplemented')
+      //throw new Error('connectNodeResource needs to be reimplemented')
       try { 
         const { name } = this.selectedServiceToConnect;
-        const connected = await this.connectNodeResource({ nodeTitle: name});
-        if(connected) {
-          this.selectedServiceToConnect = '';
-          this.dataUnsaved = true;
-        }
+        await this.connectNodeResource({ nodeResource: name, ...this.connectNodeResourceData })
       }catch(e) {
         console.error(e)
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
@@ -417,7 +466,7 @@ export default {
 
     async handleDeleteNode() {
       try {
-        this.clearPreparedMutations()
+        //this.clearPreparedMutations()
         const deleted = await this.deleteNode(this.deleteNodeData)
 
         if(deleted) this.dataUnsaved = true;
@@ -460,7 +509,7 @@ export default {
 
       <!-- Header of templates -->
       <oc-template-header
-        :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: getDeploymentTemplate.environment}"/>
+        :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: $route.params.environment}"/>
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
@@ -524,7 +573,18 @@ export default {
       <!-- End Content -->
 
       <!-- Buttons -->
-      <template-buttons :loading-deployment="loadingDeployment" :deploy-button="deployButton" @saveTemplate="triggerSave()" @triggerDeploy="triggerDeployment()" @launchModalDeleteTemplate="openModalDeleteTemplate()" />
+      <template-buttons 
+            :loading-deployment="loadingDeployment"
+            :deploy-button="deployButton"
+            :save-status="saveStatus"
+            :delete-status="deleteStatus"
+            :merge-status="mergeStatus"
+            :cancel-status="cancelStatus"
+            :deploy-status="deployStatus"
+            @saveTemplate="triggerSave()"
+            @triggerDeploy="triggerDeployment()"
+            @launchModalDeleteTemplate="openModalDeleteTemplate()"
+            />
 
 
       <!-- Modal Resource Template -->
@@ -540,7 +600,7 @@ export default {
             >
 
             <!--oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
-            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud"/>
+            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate)"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
@@ -575,7 +635,7 @@ export default {
         <!-- <p v-if="getServicesToConnect.length > 0">{{ `Select a ${getNameResourceModal} instance to connect.`}}</p>
         <p v-else class="gl-mb-4">{{ `Not resources availabe for  ${getNameResourceModal} .`}}</p> -->
         <!--oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getTemplate.cloud" /-->
-        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getDeploymentTemplate.cloud"/>
+        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidConnections($route.params.environment, getRequirementSelected.requirement)"/>
       </gl-modal>
 
       <!-- Modal to confirm the action to delete template -->

@@ -1,13 +1,14 @@
 <script>
 import { GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
 import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import { bus } from '../../bus';
 import { slugify } from '../../../vue_shared/util'
+import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
     name: 'ProjectPageHome',
@@ -53,12 +54,13 @@ export default {
 
             return false
         },
-        ...mapGetters({
-            environmentsList: 'getEnvironmentsList',
-            projectInfo: 'getProjectInfo',
-            templatesList: 'getTemplatesList',
-            hasEditPermissions: 'hasEditPermissions'
-        }),
+        ...mapGetters([
+            'getEnvironments',
+            'getProjectInfo',
+            'getTemplatesList',
+            'hasEditPermissions',
+            'getUsername'
+        ]),
         primaryProps() {
             return {
                 text: __('Next'),
@@ -71,22 +73,30 @@ export default {
             };
         },
         querySpec() {
-            if(this.instantiateAs == 'deployment' && this.templateSelected?.slug)
+            if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.slug)
                 return {
                     fn: this.templateForkedName || undefined,
                     rtn: this.resourceTemplateName || undefined,
-                    ts: this.templateSelected.slug || undefined
+                    ts: this.projectSlugName || undefined
 
                 }
             else return {}
         }
     },
     watch: {
-        querySpec: _.debounce(function(query, oldQuery) {
+        querySpec: function(query, oldQuery) {
             if(_.isEqual(query, oldQuery)) return
             const path = this.$route.path
-            this.$router.replace({path, query})
-        }, 100)
+            if(document.activeElement.tagName == 'INPUT') {
+                const el = document.activeElement
+                el.onblur = _ => {
+                    this.$router.replace({path, query})
+                    el.onblur = null
+                }
+            } else {
+                this.$router.replace({path, query})
+            }
+        }
 
     },
 
@@ -94,7 +104,7 @@ export default {
         this.syncGlobalVars(this.$projectGlobal);
         bus.$on('deployTemplate', (template) => {
             this.templateSelected = {...template};
-            this.instantiateAs = 'deployment'
+            this.instantiateAs = 'deployment-draft'
             this.projectSlugName = template.slug;
         });
 
@@ -126,28 +136,48 @@ export default {
     },
     methods: {
         redirectToTemplateEditor(page='templatePage') {
-            this.$router.push({ name: page, params: { slug: this.templateSelected.slug}});
+            const query = this.$route.query || {}
+            if(Object.keys(query).length != 0) this.$router.replace({query: {}})
+            this.$router.push({ query, name: page, params: { environment: this.templateSelected.environment, slug: this.templateSelected.slug}});
         },
 
         clearModalTemplate() {
             this.dropdownText = __("Select");
             this.templateForkedName = null;
             this.resourceTemplateName = null;
-            this.instantiateAs = null
+            this.templateSelected = null
+            //this.instantiateAs = null
+            // TODO test that this doesn't break
         },
 
         instantiatePrimaryDeploymentTemplate() {
             this.instantiateAs = 'template'
-            this.templateSelected = {...this.templatesList[0]};
+            this.templateSelected = {...this.getTemplatesList[0]};
             this.projectSlugName = '';
         },
 
         async onSubmitModal() {
             if (this.projectSlugName !== null) {
                 this.prepareTemplateNew();
-                await this.createDeploymentTemplate(this.templateSelected)
-                if(this.instantiateAs == 'deployment'){
-                    this.redirectToTemplateEditor('deploymentPage');
+
+                if(this.instantiateAs == 'deployment-draft') {
+                    // NOTE doesn't use this.prepareTemplateNew atm
+                    /*
+                    //<envname>/<blueprintname>/<deploymentname>/deployment-blueprint.json
+                    this.setUpdateObjectPath(
+                        `${this.templateSelected.environment}/${this.getProjectInfo.name}/${this.templateForkedName}/deployment-blueprint.json`
+                    )
+                    this.setUpdateObjectProjectPath(`${this.getUsername}/unfurl-home`)
+                    */
+                } else {
+
+                    const args = {...this.templateSelected, blueprintName: this.getProjectInfo.name}
+                    this.pushPreparedMutation(createDeploymentTemplate(args))
+                }
+                await this.commitPreparedMutations()
+
+                if(this.instantiateAs == 'deployment-draft'){
+                    this.redirectToTemplateEditor('deploymentDraftPage');
                 } else {
                     this.redirectToTemplateEditor();
                 }
@@ -161,7 +191,8 @@ export default {
             this.templateSelected.primary = this.resourceTemplateName
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.dropdownText;
-            this.templateSelected.type = "deployment";
+            this.templateSelected.primaryType = this.getProjectInfo.primary
+            this.templateSelected.type = 'deployment-draft';
         },
 
         setEnvironmentName(envName) {
@@ -179,9 +210,14 @@ export default {
         },
 
         ...mapActions([
-            'createDeploymentTemplate',
             'syncGlobalVars',
-            'fetchProjectInfo'
+            'fetchProjectInfo',
+            'commitPreparedMutations'
+        ]),
+        ...mapMutations([
+            'pushPreparedMutation',
+            'setUpdateObjectPath',
+            'setUpdateObjectProjectPath'
         ])
     }
 }
@@ -204,21 +240,21 @@ export default {
         </gl-banner>
 
         <!-- Header of project view -->
-        <HeaderProjectView :project-info="projectInfo" />
+        <HeaderProjectView :project-info="getProjectInfo" />
 
-        <div v-if="projectInfo.name">
+        <div v-if="getProjectInfo.name">
             <!-- Project Description -->
             <ProjectDescriptionBox 
-                    :project-info="projectInfo"
-                    :requirements="projectInfo.primary.requirements" 
-                    :inputs="projectInfo.primary.properties" 
-                    :outputs="projectInfo.primary.outputs"
-                    :project-description="projectInfo.description"
-                    :project-image="projectInfo.image"
-                    :live-url="projectInfo.livePreview"
-                    :project-name="projectInfo.name"
-                    :project-title="projectInfo.title"
-                    :code-source-url="projectInfo.sourceCodeUrl"
+                    :project-info="getProjectInfo"
+                    :requirements="getProjectInfo.primary.requirements" 
+                    :inputs="getProjectInfo.primary.properties" 
+                    :outputs="getProjectInfo.primary.outputs"
+                    :project-description="getProjectInfo.description"
+                    :project-image="getProjectInfo.image"
+                    :live-url="getProjectInfo.livePreview"
+                    :project-name="getProjectInfo.name"
+                    :project-title="getProjectInfo.title"
+                    :code-source-url="getProjectInfo.sourceCodeUrl"
                     />
 
             <!-- Create new template part -->
@@ -246,7 +282,7 @@ export default {
                 </div>
             </div>
             <!-- Table -->
-            <TableWithoutHeader :data-rows="templatesList" :editable="hasEditPermissions" />
+            <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
 
             <!-- Modal -->
             <gl-modal
@@ -285,8 +321,8 @@ export default {
                 <div v-if="instantiateAs!='template'">
                     <p>{{ __("Select an environment to deploy this template to:") }}</p>
                     <gl-dropdown :text="dropdownText">
-                        <div v-if="environmentsList.length > 0">
-                            <gl-dropdown-item v-for="(env , idx) in environmentsList" :key="idx" @click="setEnvironmentName(env.name)">{{ env.name }}</gl-dropdown-item>
+                        <div v-if="getEnvironments.length > 0">
+                            <gl-dropdown-item v-for="(env , idx) in getEnvironments" :key="idx" @click="setEnvironmentName(env.name)">{{ env.name }}</gl-dropdown-item>
                             <gl-dropdown-divider />
                         </div>
                         <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>

@@ -11,7 +11,6 @@ extend type ResourceTemplates {
   resourceTemplates: [ResourceTemplate!] @client
 }
 
-
 type Overview {
   """
   Number of Deployments
@@ -485,6 +484,7 @@ extend type Template {
   resourceTemplates: [ResourceTemplate!]
 }
 
+
 extend type Query {
   #newApplicationBlueprint(
   #  """
@@ -496,7 +496,7 @@ extend type Query {
   
   #unfurlRootJSON(fullPath: ID!): JSON
 
-  applicationBlueprint(fullPath: ID!): JSON
+  #applicationBlueprint(fullPath: ID!): JSON
   unfurlRoot(fullPath: ID!):  ApplicationBlueprintProject
   blueprintRaw(fullPath: ID!, name: String): JSON
   deploymentTemplateRaw(fullPath: ID!, name: String): JSON
