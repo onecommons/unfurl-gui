@@ -52,7 +52,7 @@
 
 <script>
 import * as GlComponents from "@gitlab/ui";
-import Status from "./Status.vue";
+import Status from "../gitlab-oc/vue_shared/components/oc/Status.vue";
 import Instance from "./Instance.vue";
 
 export default {

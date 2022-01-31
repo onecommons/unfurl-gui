@@ -13,7 +13,7 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
-import {slugify} from '../../../vue_shared/util'
+import {slugify} from '../../../vue_shared/util';
 
 
 
@@ -48,6 +48,7 @@ export default {
       deployButton: false,
       requirementTemp: {},
       resourceName: '',
+      userEditedResourceName: false,
       alertNameExists: null,
       titleKey: '',
       dataUnsaved: false,
@@ -68,7 +69,7 @@ export default {
         fullName: `refs/heads/${this.$projectGlobal.ref}`,
       },
       pipelinesPath: `/${this.$projectGlobal.projectPath}/-/pipelines`,
-    }
+    };
   },
 
   computed: {
@@ -93,32 +94,32 @@ export default {
     saveStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
-          return 'hidden'
+          return 'hidden';
         default: 
-          return this.hasPreparedMutations? 'enabled': 'disabled'
+          return this.hasPreparedMutations? 'enabled': 'disabled';
       }
     },
 
     deleteStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
-          return 'hidden'
+          return 'hidden';
         default: 
-          return 'enabled'
+          return 'enabled';
       }
     },
 
     mergeStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
-          return 'hidden'
+          return 'hidden';
         default: 
-          return 'enabled'
+          return 'enabled';
       }
     },
 
     deployStatus() {
-      return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled'
+      return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
       /*
       switch(this.$route.name) {
         case 'deploymentDraftPage':
@@ -131,11 +132,11 @@ export default {
 
 
     cancelStatus() {
-      return this.$route.name == 'deploymentDraftPage'? 'enabled': 'hidden'
+      return this.$route.name == 'deploymentDraftPage'? 'enabled': 'hidden';
     },
 
     shouldRenderTemplates() {
-        return !this.activeSkeleton && !this.failedToLoad
+        return !this.activeSkeleton && !this.failedToLoad;
     },
     getMainInputs() {
       return cloneDeep(this.$store.getters.getProjectInfo.inputs);
@@ -144,7 +145,7 @@ export default {
     getServicesToConnect() {
       // TODO
       //return this.fetchServices(this.servicesToConnect);
-      return []
+      return [];
     },
 
     primaryPropsDelete() {
@@ -163,15 +164,15 @@ export default {
     ocTemplateResourcePrimary() {
         return {
             text: __("Next"),
-            attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (this.resourceName.length === 0 || this.alertNameExists) }]
-        }
+            attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0) }]
+        };
     },
 
     ocResourceToConnectPrimary() {
       return {
             text: __("Next"),
             attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: Object.keys(this.selectedServiceToConnect).length === 0 }]
-        }
+        };
     },
 
     cancelProps() {
@@ -184,12 +185,14 @@ export default {
   watch: {
     selected: function(val) {
       if(Object.keys(val).length > 0) {
-        this.resourceName = val.name;
+        if(!this.userEditedResourceName) {
+          this.resourceName = val.name;
+        }
       }
     },
 
     resourceName: function(val) {
-      this.alertNameExists = this.matchIsValid(slugify(val))
+      this.alertNameExists = this.matchIsValid(slugify(val));
     }
   },
 
@@ -209,44 +212,44 @@ export default {
     });
 
     bus.$on('placeTempRequirement', (obj) => {
-      const ref = this.$refs['oc-template-resource']
+      const ref = this.$refs['oc-template-resource'];
       setTimeout(() => {
-        this.createNodeResourceData = obj
+        this.createNodeResourceData = obj;
         ref.show();
       }, 100);
     });
 
     bus.$on('launchModalToConnect', (obj) => {
-      this.connectNodeResourceData = obj
+      this.connectNodeResourceData = obj;
       this.launchModal('oc-connect-resource', 250);
     });
 
     bus.$on('deleteNode', (obj) => {
-      this.deleteNodeData = obj
-      this.nodeAction = obj.action? obj.action : __('Delete')
+      this.deleteNodeData = obj;
+      this.nodeAction = obj.action? obj.action : __('Delete');
         
-      this.nodeTitle = this.resolveMatchTitle(obj.name)
+      this.nodeTitle = this.resolveMatchTitle(obj.name);
       this.launchModal('oc-delete-node', 500);
     });
   },
 
   beforeMount() {
     // NOTE this doesn't work without https
-    window.addEventListener('beforeunload', this.unloadHandler)
+    window.addEventListener('beforeunload', this.unloadHandler);
     this.setRouterHook((to, from, next) => {
       if(this.hasPreparedMutations) {
-        const result = confirm(__('You have unsaved changes.  Press OK to continue'))
-        if(!result) { next(false); return } // never call next twice
-        this.clearPreparedMutations()
+        const result = confirm(__('You have unsaved changes.  Press OK to continue'));
+        if(!result) { next(false); return; } // never call next twice
+        this.clearPreparedMutations();
       }
-      next()
-    })
+      next();
+    });
   },
 
   beforeDestroy() {
-    window.removeEventListener('beforeunload', this.unloadHandler)
-    this.resetTemplateResourceState()
-    this.setRouterHook()
+    window.removeEventListener('beforeunload', this.unloadHandler);
+    this.resetTemplateResourceState();
+    this.setRouterHook();
   },
 
   methods: {
@@ -276,7 +279,7 @@ export default {
     unloadHandler(e) {
       if(this.hasPreparedMutations) {
         // NOTE most users will not see this message because browsers can override it
-        e.returnValue = "You have unsaved changes."
+        e.returnValue = "You have unsaved changes.";
       }
     },
 
@@ -301,8 +304,8 @@ export default {
     */
 
     scrollDown(elId, timeOut=0) {
-      clearTimeout(this.uiTimeout)  
-      const anchorId = btoa(elId).replace(/=/g, '')
+      clearTimeout(this.uiTimeout);  
+      const anchorId = btoa(elId).replace(/=/g, '');
       const anchor = document.querySelector(`#${anchorId}`);
       this.uiTimeout = setTimeout(
         () => {
@@ -315,7 +318,7 @@ export default {
     
 
     launchModal(refId, timeToWait) {
-      const ref = this.$refs[refId]
+      const ref = this.$refs[refId];
       setTimeout(() => {
         ref.show();
       }, timeToWait);
@@ -323,19 +326,19 @@ export default {
 
     async fetchItems(n=1) {
       try {
-        const projectPath = this.$projectGlobal.projectPath
-        const templateSlug =  this.$route.query.ts || this.$route.params.slug
-        const renamePrimary = this.$route.query.rtn
-        const renameDeploymentTemplate = this.$route.query.fn
-        const projectName = this.$projectGlobal.projectPath.split('/')
+        const projectPath = this.$projectGlobal.projectPath;
+        const templateSlug =  this.$route.query.ts || this.$route.params.slug;
+        const renamePrimary = this.$route.query.rtn;
+        const renameDeploymentTemplate = this.$route.query.fn;
+        const projectName = this.$projectGlobal.projectPath.split('/');
         if(this.$route.name != 'templatePage') {
           this.setUpdateObjectPath(
             `${this.$route.params.environment}/${this.getProjectInfo.name}/${slugify(this.$route.query.fn)}/deployment-blueprint.json`
-          )
-          this.setUpdateObjectProjectPath(`${this.getUsername}/unfurl-home`)
+          );
+          this.setUpdateObjectProjectPath(`${this.getUsername}/unfurl-home`);
 
         }
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n})
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n});
         if(! await this.populateTemplateResources({
           projectPath, 
           templateSlug, 
@@ -357,22 +360,22 @@ export default {
            */
         }
       } catch (e) {
-        console.error(e)
+        console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
-        this.failedToLoad = true
+        this.failedToLoad = true;
       } finally {
-        this.activeSkeleton = false
+        this.activeSkeleton = false;
       }
     },
 
     async triggerSave() {
         try {
-            await this.commitPreparedMutations()
+            await this.commitPreparedMutations();
             createFlash({
                 message: __('Template was saved successfully!'),
                 type: FLASH_TYPES.SUCCESS,
                 duration: this.durationOfAlerts,
-            })
+            });
             /*
             createFlash({
               message: updateTemplateResource.isOk
@@ -385,7 +388,7 @@ export default {
             */
             return true;
         } catch (e) {
-          console.error(e)
+          console.error(e);
           createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
           return false;
         }
@@ -411,6 +414,7 @@ export default {
     cleanModalResource() {
       this.resourceName = '';
       this.selected = {};
+      this.userEditedResourceName = false;
     },
 
     async onSubmitDeleteTemplateModal() {
@@ -419,12 +423,12 @@ export default {
         await this.deleteDeploymentTemplate(this.$route.params.slug);
         //if (isOk) { deleteDeploymentTemplate should throw errors
         this.activeSkeleton = false;
-        this.clearPreparedMutations()
+        this.clearPreparedMutations();
         this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
         //}
       }catch (e) {
         this.activeSkeleton = false;
-        console.error(e)
+        console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
@@ -439,8 +443,8 @@ export default {
       try {
         const { name } = this.selected;
         const titleCard = this.resourceName || name;
-        this.createNodeResourceData.name = slugify(this.resourceName)
-        this.createNodeResourceData.title = this.resourceName
+        this.createNodeResourceData.name = slugify(this.resourceName);
+        this.createNodeResourceData.title = this.resourceName;
         const created = await this.createNodeResource({...this.createNodeResourceData, selection: this.selected});
         if(created){
           this.cleanModalResource();
@@ -448,7 +452,7 @@ export default {
           this.dataUnsaved = true;
         }
       }catch (e) {
-        console.error(e)
+        console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
@@ -457,9 +461,9 @@ export default {
       //throw new Error('connectNodeResource needs to be reimplemented')
       try { 
         const { name } = this.selectedServiceToConnect;
-        await this.connectNodeResource({ nodeResource: name, ...this.connectNodeResourceData })
+        await this.connectNodeResource({ nodeResource: name, ...this.connectNodeResourceData });
       }catch(e) {
-        console.error(e)
+        console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
@@ -467,11 +471,11 @@ export default {
     async handleDeleteNode() {
       try {
         //this.clearPreparedMutations()
-        const deleted = await this.deleteNode(this.deleteNodeData)
+        const deleted = await this.deleteNode(this.deleteNodeData);
 
         if(deleted) this.dataUnsaved = true;
       } catch (e) {
-        console.error(e)
+        console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
@@ -489,7 +493,7 @@ export default {
             nword = nword + nword.slice(nword.length-1, nword.length);
         }
         return nword + 'ing';
-      }
+      };
       return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b> ? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other (nodes ?) which are linked to it.`;
     },
 
@@ -501,7 +505,7 @@ export default {
       return str.replace(/ /g, '-');
     }
   },
-}
+};
 </script>
 <template>
   <div>
@@ -600,10 +604,11 @@ export default {
             >
 
             <!--oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
-            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate)"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate)"/>
+            <!--oc-list-resource  @input="e => selected = e" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-              <gl-form-input id="input1" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+              <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
             </gl-form-group>
       </gl-modal>
 

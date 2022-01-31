@@ -1,19 +1,21 @@
 <template>
-  <div class="status-badge">
+  <div>
     <gl-badge
       v-if="status in statusBadges"
-      href="javascript:void(0)"
       :variant="statusBadges[status][0]"
       :icon="statusBadges[status][1]"
+      class="status-icon"
+      :title="status[0].toUpperCase() + status.slice(1)"
+      v-gl-tooltip.hover
     >
-      <span>
+      <!--span>
         {{ status[0].toUpperCase() + status.slice(1) }}
-      </span>
+      </span-->
     </gl-badge>
   </div>
 </template>
 <script>
-import * as GlComponents from "@gitlab/ui";
+import { GlBadge, GlTooltipDirective } from '@gitlab/ui';
 
 export default {
   name: "Status",
@@ -33,16 +35,16 @@ export default {
       }
     };
   },
+  directives: {
+    GlTooltip: GlTooltipDirective,
+  },
   components: {
-    ...GlComponents
+    GlBadge
   }
 };
 </script>
 <style scoped>
-.status-badge * {
-  cursor: default;
-}
-.status-badge span {
-  padding: 0 0.3rem;
+.status-icon {
+  padding: 4px !important;
 }
 </style>
