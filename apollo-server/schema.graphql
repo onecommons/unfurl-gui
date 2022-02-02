@@ -57,6 +57,11 @@ input UpdateDeploymentObjPayload {
   path: String
   patch: JSON!
 }
+
 extend type Mutation {
   updateDeploymentObj(input: UpdateDeploymentObjPayload): UpdateDeploymentObjResult
+}
+
+extend type Query {
+  deployments(projectPath: ID!, applicationBlueprint: ID): JSON
 }

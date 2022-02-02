@@ -924,13 +924,13 @@
     }
   },
   "ApplicationBlueprint": {
-    "apostrophe-demo": {
+    "blueprints/apostrophe-demo": {
       "__typename": "ApplicationBlueprint",
       "name": "apostrophe-demo",
       "title": "Apostrophe Demo",
       "primary": "MEANStack",
       "deploymentTemplates": [
-        "Apostrophe Demo"
+        "apostrophe-demo"
       ]
     }
   },
@@ -1019,6 +1019,7 @@
     "unnamed": {
       "name": "unnamed",
       "title": "unnamed",
+      "deploymentTemplate": "apostrophe-demo",
       "resources": [
         {
           "name": "::app_container",

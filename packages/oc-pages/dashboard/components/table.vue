@@ -1,6 +1,8 @@
 <script>
 import TableComponent from '../../vue_shared/components/oc/table.vue';
 import Status from '../../vue_shared/components/oc/Status.vue';
+import {mapGetters, mapActions} from 'vuex';
+import _ from 'lodash';
 import { __ } from '~/locale';
 
 /*
@@ -10,8 +12,8 @@ import { __ } from '~/locale';
         ok: ["success", "status_success_solid"],
         error: ["danger", "status_warning"],
         degraded: ["warning", "status_running"]
-*/
 
+* this is the shape that the items can be passed in NOTE the tooltips
 const items = [
   {
     name: "A",
@@ -67,30 +69,78 @@ const items = [
   },
 ]; 
 
+*/
+
 const fields = [
-  {key: 'project',  label: __('Projects')},
-  {key: 'maintainer', groupBy: 'project', label: __('Maintainer')},
+  {key: 'application',  label: __('Applications')},
+  {key: 'environmentName', label: __('Environments')},
   {key: 'deployment', label: __('Deployment')},
   {key: 'type', label: __('Type')},
   {key: 'name', label: __('Name')},
   {key: 'status', groupBy: 'name', label: __('Status')},
-  {key: 'uptime', groupBy: 'name', label: __('Uptime')},
 ];
 
-//const groupByColumns = ['project', 'deployment', 'type', 'name']
 export default {
   name: 'TableComponentContainer',
-  components: {TableComponent, Status},
+  //components: {TableComponent, Status},
+  components: {TableComponent},
   data() {
-    return { items, fields };
+    return { fields, items: [], loaded: false};
+  },
+
+  computed: {
+    ...mapGetters([
+      'getApplicationBlueprint',
+      'getDeployments',
+      'resolveResourceTemplate',
+      'resolveResourceType',
+      'resolveDeploymentTemplate'
+    ]),
+  },
+
+  methods: {
+    ...mapActions([
+      'fetchProject'
+    ])
+  },
+
+  async beforeCreate() {
+    await this.$store.dispatch('fetchDeployments', {projectPath: 'user1/unfurl-home'});
+  },
+
+  async mounted() {
+    this.loaded = false;
+    await this.$store.dispatch('fetchDeployments', {projectPath: 'user1/unfurl-home'});
+    const items = [];
+    
+    const groups = _.groupBy(this.getDeployments, 'blueprint');
+    for(const blueprint in groups) {
+      await this.fetchProject({projectPath: blueprint});
+      for(const deployment of groups[blueprint]) {
+        const application = this.getApplicationBlueprint.title;
+        const environmentName = deployment.environment.name;
+        for(const resource of deployment.resources) {
+          const resourceTemplate = this.resolveResourceTemplate(resource.template);
+          const resourceType = this.resolveResourceType(resourceTemplate.type);
+
+          items.push({application, deployment: deployment.title, environmentName, type: resourceType.title, name: resource.title, status: resource.status.toString()});
+        }
+
+
+      }
+    }
+
+    this.loaded = true;
+    this.items = items;
   }
 };
 
 </script>
 <template>
-  <TableComponent :items="items" :fields="fields">
+  <TableComponent v-if="loaded" :items="items" :fields="fields">
     <template #status=scope>
-        <Status :status="scope.item.status"/>
+      {{scope.item.status}}
+      <!--Status :status="scope.item.status"/-->
     </template>
   </TableComponent> 
 </template>

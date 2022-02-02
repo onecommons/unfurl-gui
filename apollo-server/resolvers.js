@@ -1,11 +1,15 @@
 import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
-import {readFileSync} from 'fs'
-import {resolve} from 'path'
+import {readFileSync, readdirSync} from 'fs'
+import {resolve, dirname} from 'path'
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
+
+const apolloServerDir = resolve(dirname(import.meta.url.replace('file://', '')))
+const REPOS_DIR = resolve(apolloServerDir, 'repos')
 
 export default {
   JSON: GraphQLJSON,
+
 
   Query: {
     
@@ -18,6 +22,46 @@ export default {
         return db.get('projects').value()[args.fullPath]
     },
 
+    deployments: (root, args, {db}) => {
+        const {projectPath, applicationBlueprint} = args
+        const result = []
+
+        const environments = JSON.parse(readFileSync(resolve(REPOS_DIR, projectPath, "environments.json"), 'utf-8')).DeploymentEnvironment
+
+
+        for(const environment of readdirSync(resolve(REPOS_DIR, projectPath, 'environments'))) {
+            const environmentAbsolute = resolve(REPOS_DIR, projectPath, 'environments', environment)
+            for(const deployment of readdirSync(environmentAbsolute)) {
+                const deploymentAbsolute = resolve(environmentAbsolute, deployment)
+                let ensembleJSONRaw 
+                try {
+                    ensembleJSONRaw = readFileSync(resolve(deploymentAbsolute, 'ensemble.json'), 'utf-8')
+                } catch(e) {}
+                if(!ensembleJSONRaw) {
+                    try {
+                        ensembleJSONRaw = readFileSync(resolve(deploymentAbsolute, 'deployment.json'), 'utf-8')
+                    } catch(e) {}
+                }
+
+                const ensemble = JSON.parse(ensembleJSONRaw)
+                if(applicationBlueprint) {
+                    if(!ensemble.ApplicationBlueprint[applicationBlueprint])
+                        continue
+                }
+
+                for(const deployment of Object.values(ensemble.Deployment)) { 
+                    if(typeof deployment == 'object') {
+                        const assignEnvironment = environments[environment]
+                        result.push(Object.assign(
+                            deployment, 
+                            {environment: assignEnvironment, blueprint: Object.keys(ensemble.ApplicationBlueprint)[0]}
+                    ))
+                    }
+                }
+            }
+        }
+        return result
+    },
     environments: (root, args, { db }) => {
       const namespace = args.namespace;
       try{
@@ -68,6 +112,7 @@ export default {
     clientPayload: (obj, args, { }) => obj
   },
 
+
   ResourceTemplates: {
     clientPayload: (obj, args, { }) => obj
   },
@@ -93,7 +138,7 @@ export default {
       const patchTarget = typename === '*'? db.get('projects').value()[projectPath] : db.get('projects').value()[projectPath][typename]
       console.log(typename, patch)
       if(typename === '*') {
-        Object.assign(patchTarget, JSON.parse(readFileSync(resolve(__dirname, 'data', projectPath) + '.json', 'utf-8')))
+        Object.assign(patchTarget, JSON.parse(readFileSync(resolve(apolloServerDir, 'data', projectPath) + '.json', 'utf-8')))
       } else {
         if(!patchTarget) return {isOk: false, errors: [`Typename '${typename}' does not exist in the target project`]}
         for(let key in patch) {
@@ -169,4 +214,5 @@ export default {
 
   Subscription: {
   },
+
 }
