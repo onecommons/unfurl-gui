@@ -201,7 +201,7 @@ export default {
 
         redirectToNewEnvironment() {
             const redirectTarget = `${window.location.pathname}${window.location.search}`
-            const url = `${window.origin}${window.location.pathname.split("/").slice(0, -2).join("/")}/environments/new_unfurl?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
+            const url = `${window.origin}${window.location.pathname.split("/").slice(0, -2).join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
             window.location = url;
         },
 
