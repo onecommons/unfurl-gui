@@ -10,3 +10,5 @@ export function slugify(text) {
     // eslint-disable-next-line no-useless-escape
         .replace(/\-\-+/g, '-');
 }
+
+export const USER_HOME_PROJECT = 'dashboard';

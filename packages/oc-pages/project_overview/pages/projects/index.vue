@@ -7,7 +7,7 @@ import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import { bus } from '../../bus';
-import { slugify } from '../../../vue_shared/util'
+import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
@@ -167,7 +167,7 @@ export default {
                     this.setUpdateObjectPath(
                         `${this.templateSelected.environment}/${this.getProjectInfo.name}/${this.templateForkedName}/deployment-blueprint.json`
                     )
-                    this.setUpdateObjectProjectPath(`${this.getUsername}/unfurl-home`)
+                    this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`)
                     */
                 } else {
 
