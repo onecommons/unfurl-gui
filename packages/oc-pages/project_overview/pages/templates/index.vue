@@ -13,7 +13,7 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
-import {slugify} from '../../../vue_shared/util';
+import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util'
 
 
 
@@ -335,7 +335,7 @@ export default {
           this.setUpdateObjectPath(
             `${this.$route.params.environment}/${this.getProjectInfo.name}/${slugify(this.$route.query.fn)}/deployment-blueprint.json`
           );
-          this.setUpdateObjectProjectPath(`${this.getUsername}/unfurl-home`);
+          this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
 
         }
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n});

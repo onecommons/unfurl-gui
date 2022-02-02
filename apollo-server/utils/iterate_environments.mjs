@@ -1,6 +1,7 @@
+import { constants } from 'buffer'
 import fs from 'fs'
 import path from 'path'
-
+import {USER_HOME_PROJECT} from 'constants';
 
 export default function iterateEnvironments(reposDir) {
   const environments = []
@@ -8,7 +9,7 @@ export default function iterateEnvironments(reposDir) {
     if (repo == 'blueprints') continue
 
     try {
-      const environmentsJSON = fs.readFileSync(path.join(reposDir, `${repo}/unfurl-home/environments.json`), 'utf-8')
+      const environmentsJSON = fs.readFileSync(path.join(reposDir, `${repo}/${USER_HOME_PROJECT}/environments.json`), 'utf-8')
       const parsed = JSON.parse(environmentsJSON)
 
       const {DeploymentEnvironment} = parsed
