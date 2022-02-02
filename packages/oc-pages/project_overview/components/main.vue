@@ -13,7 +13,7 @@ export default {
                 query: gql`
 
                   query getUnfurlRoot($fullPath: ID!) {
-                      unfurlRoot(fullPath: $fullPath) @client {
+                      applicationBlueprint(fullPath: $fullPath) @client {
                           applicationBlueprint 
                           ResourceType
 

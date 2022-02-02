@@ -3,15 +3,8 @@ import _ from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag'
-import createTemplate from '../../graphql/mutations/create_template.mutation.graphql';
-import getEnvironments from '../../graphql/queries/get_environments.query.graphql';
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
-import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
-import getServicesToConnect from '../../graphql/queries/get_services_to_connect.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
-import {createResourceTemplate} from './deployment_template_updates.js'
-import removeTemplate from '../../graphql/mutations/remove_template.mutation.graphql';
-import {slugify} from '../../../vue_shared/util'
 
 
 const state = {
@@ -207,7 +200,7 @@ const actions = {
             fetchPolicy: 'network-only',
             variables: { projectPath, defaultBranch },
         });
-        const overview = data.unfurlRoot.applicationBlueprint.overview;
+        const overview = data.applicationBlueprintProject.applicationBlueprint.overview;
         // NOTE we don't have title,image
 
         async function fetchProjectPermissions(projectPath) {
@@ -233,47 +226,16 @@ const actions = {
         const hasEditPermissions = await fetchProjectPermissions(projectPath)
 
 
-        const projectInfo = {...data.unfurlRoot.applicationBlueprint.overview, ...data.unfurlRoot.applicationBlueprint, fullPath: projectPath, hasEditPermissions}
+        const projectInfo = {...data.applicationBlueprintProject.applicationBlueprint.overview, ...data.applicationBlueprintProject.applicationBlueprint, fullPath: projectPath, hasEditPermissions}
         commit('SET_PROJECT_INFO', projectInfo)
         if(!errors) {
-            commit('SET_TEMPLATES_LIST', data.unfurlRoot.applicationBlueprint.deploymentTemplates);
+            commit('SET_TEMPLATES_LIST', data.applicationBlueprintProject.applicationBlueprint.deploymentTemplates);
         } else {
             throw new Error(errors[0].message);
         }
         return false;
     },
 
-    async fetchTemplateBySlug({ commit, dispatch }, { projectPath, templateSlug }) {
-        const {errors, data} = await graphqlClient.clients.defaultClient.query({
-            query: getTemplateBySlug,
-            errorPolicy: 'all',
-            variables: { projectPath, templateSlug },
-        });
-        if (errors) {
-            throw new Error(errors.map(e => e).join(", "));
-        }
-        //const match = _.find(data.applicationBlueprint.overview.templates, { slug: templateSlug });
-        const template = { ...data.unfurlRoot.applicationBlueprint.overview.templates[0] };
-        if(Object.keys(template).length > 0) commit("SET_TEMPLATE_SELECTED", template);
-        //if(Object.keys(template).length > 0) dispatch('setResourcesOfTemplate', template, {root: true});
-        return data.applicationBlueprint;
-    },
-
-  /*
-    async fetchEnvironments({ commit }, { projectPath }) {
-        const { errors, data } = await graphqlClient.clients.defaultClient.query({
-            query: getEnvironments,
-            errorPolicy: 'all',
-            variables: { projectPath }
-        });
-        if ( errors ) {
-            throw new Error(errors.map(e => e).join(", "));
-        }
-        commit('SET_ENVIRONMENT_LIST', data.project.environments.nodes);
-        return false;
-    },
-
-*/
     async fetchServicesToConnect({ commit }, { projectPath }) {
         //const {errors, data} = await graphqlClient.clients.defaultClient.query({
         /*
@@ -293,41 +255,6 @@ const actions = {
 
         */
     },
-
-    /*
-    async createTemplate({ state: _state }, { projectPath }) {
-        const template = _.cloneDeep(state.template);
-        // eslint-disable-next-line no-underscore-dangle
-        delete template.__typename;
-        template.resourceTemplates.primary.requirements = deletePropertyFromArray(template.resourceTemplates.primary.requirements);
-        const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-            mutation: createTemplate,
-            errorPolicy: 'all',
-            variables: { projectPath, template }
-        });
-        if ( errors ) {
-            throw new Error(errors.map(e => e.message).join(", "));
-        };
-        return data;
-    },
-    */
-
-    // eslint-disable-next-line no-empty-pattern
-    /*
-    async deleteTemplate({ commit, state: _state}, { projectTitle }) {
-        const { projectPath }= _state.globalVars;
-        const { errors, data } = await graphqlClient.clients.defaultClient.mutate({
-            mutation: removeTemplate,
-            errorPolicy: 'all',
-            variables: { projectPath, title: projectTitle }
-        });
-        if ( errors ) {
-            throw new Error(errors.map(e => e.message).join(", "));
-        };
-        commit('SET_TEMPLATES_LIST', data.removeTemplate.templates);
-        return data.removeTemplate;
-    },
-    */
 
     completeRequirement({ commit }, { requirementTitle }) {
         commit('CHECK_REQUIREMENT', { requirementTitle });
@@ -367,108 +294,6 @@ const actions = {
 
     },
     // TODO remove this
-    async editResourcesTemplateInDependent({state}, {dependentName, transformList}) {
-        const queryResponse = await graphqlClient.clients.defaultClient.query({
-            query: gql`
-            query getResourceTemplateRaw($fullPath: ID!, $name: String) {
-                resourceTemplateRaw(fullPath: $fullPath, name: $name) @client
-            }
-            `,
-            variables: { fullPath: state.globalVars.projectPath, name: dependentName },
-            errorPolicy: 'all'
-        })
-
-        throwErrorsFromDeploymentUpdateResponse(queryResponse)
-
-        const {resourceTemplateRaw} = queryResponse.data
-
-
-        resourceTemplateRaw.dependencies = transformList(resourceTemplateRaw.dependencies)
-        resourceTemplateRaw.__typename = 'ResourceTemplate'
-        const patch = { [resourceTemplateRaw.name]: resourceTemplateRaw }
-        const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: UpdateDeploymentObject,
-            variables: {
-                patch, 
-                fullPath: state.globalVars.projectPath,
-                typename: 'ResourceTemplate'
-            }
-        })
-        throwErrorsFromDeploymentUpdateResponse(errors, data)
-    },
-    // TODO remove this
-    async appendResourceTemplateInDependent ({dispatch}, {templateName, dependentName, dependentRequirement}) {
-        function transformList(list) {
-            return list.map(req => {
-                if(req.name == dependentRequirement) {
-                    req.match = templateName
-                }
-                return req
-            })
-        }
-        return dispatch('editResourcesTemplateInDependent', {dependentName, transformList})
-    },
-    // TODO remove this
-    async deleteResourceTemplateInDependent ({dispatch}, {dependentName, dependentRequirement}) {
-        function transformList(list) {
-            return list.map(req => {
-                if(req.name == dependentRequirement) {
-                    req.match = null
-                }
-                return req
-            })
-        }
-        return dispatch('editResourcesTemplateInDependent', {dependentName, transformList})
-
-    },
-    // TODO remove this
-    async editResourcesInDeploymentTemplate({state}, {deploymentTemplateSlug, transformList}) {
-        const queryResponse = await graphqlClient.clients.defaultClient.query({
-            query: gql`
-            query getDeploymentTemplateRaw($fullPath: ID!, $name: String) {
-                deploymentTemplateRaw(fullPath: $fullPath, name: $name) @client
-            }
-            `,
-            variables: { fullPath: state.globalVars.projectPath, name: deploymentTemplateSlug }
-        })
-
-        const {deploymentTemplateRaw} = queryResponse.data
-
-
-        deploymentTemplateRaw.resourceTemplates = transformList(deploymentTemplateRaw.resourceTemplates)
-        deploymentTemplateRaw.__typename = 'DeploymentTemplate'
-        const patch = { [deploymentTemplateRaw.slug]: deploymentTemplateRaw }
-        const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: UpdateDeploymentObject,
-            variables: {
-                patch, 
-                fullPath: state.globalVars.projectPath,
-                typename: 'DeploymentTemplate'
-            }
-        })
-    },
-
-    // TODO remove this
-    appendResourceTemplateInDT({dispatch}, {templateName, deploymentTemplateSlug}) {
-        function transformList(list) {
-            const filtered = list.filter(li => li != templateName)
-            filtered.push(templateName)
-            return filtered
-        }
-        return dispatch('editResourcesInDeploymentTemplate', {transformList, deploymentTemplateSlug})
-    },
-
-    // TODO remove this
-    deleteResourceTemplateInDT({dispatch}, {templateName, deploymentTemplateSlug}) {
-        function transformList(list) {
-            const filtered = list.filter(li => li != templateName)
-            return filtered
-        }
-        return dispatch('editResourcesInDeploymentTemplate', {transformList, deploymentTemplateSlug})
-    },
-
-
-    // TODO remove this
     async editDeploymentTemplatesInBlueprint({state}, {transformList}) {
         const queryResponse = await graphqlClient.clients.defaultClient.query({
             query: gql`
@@ -497,16 +322,6 @@ const actions = {
     },
 
     // TODO remove this
-    appendDeploymentTemplateInBlueprint({dispatch}, templateName) {
-        function transformList(list) {
-            const filtered = list.filter(li => li != templateName)
-            filtered.push(templateName)
-            return filtered
-        }
-        return dispatch('editDeploymentTemplatesInBlueprint', {transformList})
-    },
-
-    // TODO remove this
     deleteDeploymentTemplateInBlueprint({dispatch}, templateName) {
         function transformList(list) {
             const filtered = list.filter(li => li != templateName)
@@ -515,107 +330,6 @@ const actions = {
         return dispatch('editDeploymentTemplatesInBlueprint', {transformList})
     },
 
-    // TODO remove this
-    async deleteResourceTemplate({dispatch}, {templateName, deploymentTemplateSlug}) {
-        if(deploymentTemplateSlug) {
-            await dispatch('deleteResourceTemplateInDT', {templateName, deploymentTemplateSlug})
-        }
-        const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: UpdateResourceTemplate,
-            variables: {
-                patch: { [templateName]: null },
-                fullPath: state.globalVars.projectPath,
-                typename: 'ResourceTemplate'
-            },
-            errorPolicy: 'all'
-        })
-
-        throwErrorsFromDeploymentUpdateResponse(errors, data)
-    },
-
-    // TODO remove this
-    async createResourceTemplate({commit, dispatch, getters, rootState, state}, {type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}) {
-        //deployment_template_updates.js
-        commit('pushPreparedMutation', createResourceTemplate({type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}), {root: true})
-        await dispatch('commitPreparedMutations', {root: true})
-
-        /*
-        if(deploymentTemplateSlug) {
-            await dispatch('appendResourceTemplateInDT', {templateName: name, deploymentTemplateSlug})
-        }
-
-        if(dependentName && dependentRequirement) {
-            await dispatch('appendResourceTemplateInDependent', {templateName: name, dependentName, dependentRequirement})
-        }
-
-        const resourceType = typeof(type) == 'string'? getters.getAvailableResourceTypes.find(rt => rt.name == type): type
-        const properties = resourceType.properties
-        const dependencies = resourceType.requirements.map(req => ({
-            constraint: req,
-            match: null,
-            target: null,
-            name: req.name,
-            __typename: 'Dependency'
-        }))
-        const patch = {
-            [name]: {
-                type: typeof(type) == 'string'? type: type.name,
-                name,
-                title,
-                description,
-                __typename: "ResourceTemplate",
-                properties,
-                dependencies
-            }
-        }
-
-        const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: UpdateDeploymentObject,
-            variables: {
-                patch, 
-                fullPath: state.globalVars.projectPath,
-                typename: 'ResourceTemplate'
-            }
-        })
-
-        throwErrorsFromDeploymentUpdateResponse(errors, data)
-        */
-
-    },
-
-    // TODO remove this
-    async createDeploymentTemplate({commit, dispatch, getters, rootState, state}, {primary, name, title, slug, description}) {
-        const type = getters.getProjectInfo.primary.name
-
-        const _slug = slug || name
-        const _name = name || slug
-        await dispatch('createResourceTemplate', {type, name: slugify(primary), title: primary, description})
-        await dispatch('appendDeploymentTemplateInBlueprint', _name)
-
-        const patch = {
-            [_slug]: {
-                primary: slugify(primary),
-                name: _name,
-                blueprint: getters.getProjectInfo.name,
-                slug: _slug,
-                description,
-                title,
-                __typename: "DeploymentTemplate",
-                resourceTemplates: [slugify(primary)],
-            }
-        }
-
-        const {errors, data} = await graphqlClient.clients.defaultClient.mutate({
-            mutation: UpdateDeploymentObject,
-            variables: {
-                patch, 
-                fullPath: state.globalVars.projectPath,
-                typename: 'DeploymentTemplate'
-            }
-        })
-
-        throwErrorsFromDeploymentUpdateResponse(errors, data)
-    }
 };
 
 const getters = {

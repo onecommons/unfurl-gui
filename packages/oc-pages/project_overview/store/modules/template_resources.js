@@ -1,10 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util';
-import graphqlClient from '../../graphql';
-import gql from 'graphql-tag';
-import updateTemplateResource from '../../graphql/mutations/update_template_resource.mutation.graphql';
-import getTemplateBySlug from '../../graphql/queries/get_template_by_slug.query.graphql';
 import {appendDeploymentTemplateInBlueprint, createResourceTemplate, deleteResourceTemplate, deleteResourceTemplateInDependent} from './deployment_template_updates.js';
 
 const baseState = () => ({

@@ -7,7 +7,7 @@
 
 
 query getProjectInfo($projectPath: ID!) {
-  unfurlRoot(fullPath: $projectPath, fetchPolicy: "network-only") @client {
+  applicationBlueprintProject(fullPath: $projectPath, fetchPolicy: "network-only") @client {
     applicationBlueprint{
       __typename
       name

@@ -485,7 +485,7 @@ extend type Template {
 }
 
 
-extend type Query {
+#extend type Query {
   #newApplicationBlueprint(
   #  """
   #  The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
@@ -497,14 +497,14 @@ extend type Query {
   #unfurlRootJSON(fullPath: ID!): JSON
 
   #applicationBlueprint(fullPath: ID!): JSON
-  unfurlRoot(fullPath: ID!):  ApplicationBlueprintProject
-  blueprintRaw(fullPath: ID!, name: String): JSON
-  deploymentTemplateRaw(fullPath: ID!, name: String): JSON
-  resourceTemplateRaw(fullPath: ID!, name: String): JSON
-  overview(fullPath: ID!): Overview
-  resourceType(name: String): ResourceType
-  resourceTemplate(name: String): ResourceTemplate
-  deploymentTemplates(deploymentTemplates: [String], fullPath: ID!): [DeploymentTemplate]
+  #unfurlRoot(fullPath: ID!):  ApplicationBlueprintProject
+  #blueprintRaw(fullPath: ID!, name: String): JSON
+  #deploymentTemplateRaw(fullPath: ID!, name: String): JSON
+  #resourceTemplateRaw(fullPath: ID!, name: String): JSON
+  #overview(fullPath: ID!): Overview
+  #resourceType(name: String): ResourceType
+  #resourceTemplate(name: String): ResourceTemplate
+  #deploymentTemplates(deploymentTemplates: [String], fullPath: ID!): [DeploymentTemplate]
 
-  servicesToConnect: [ServiceToConnect!]
-}
+  #servicesToConnect: [ServiceToConnect!]
+#}

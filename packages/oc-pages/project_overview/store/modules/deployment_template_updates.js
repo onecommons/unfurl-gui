@@ -3,7 +3,6 @@ import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import {slugify} from '../../../vue_shared/util'
-import {getUnfurlRoot} from '../../../vue_shared/graphql/resolver-helpers.graphql'
 import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
@@ -276,12 +275,17 @@ const mutations = {
 
 const actions = {
     async fetchRoot({commit, rootState}) {
+        const query = gql`
+            query GetTemplateStateBeforeUpdating($fullPath: ID!) {
+                applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client
+            }
+        `
         const {data, errors} = await graphqlClient.clients.defaultClient.query({
-            query: getUnfurlRoot,
+            query,
             variables: {fullPath: rootState.project.globalVars.projectPath}
         })
 
-        commit('setBaseState', data?.applicationBlueprint?.json)
+        commit('setBaseState', data?.applicationBlueprintProject?.json)
     },
 
     async sendUpdateSubrequests({state, getters, rootState}, o){

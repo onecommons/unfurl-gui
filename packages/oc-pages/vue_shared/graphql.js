@@ -2,7 +2,7 @@ import { ApolloLink } from 'apollo-link';
 import { visit } from 'graphql/language';
 import _ from "lodash";
 import typeDefs from './graphql/client-schema.graphql';
-import {getDeploymentTemplates, getResourceType, getResourceTemplate, getUnfurlRoot, getBlueprint} from './graphql/resolver-helpers.graphql'
+import gql from 'graphql-tag'
 
 export { typeDefs };
 
@@ -98,8 +98,16 @@ async function fetchRootBlob(root, _variables, context) {
         const {client} = context
         const variables = {..._variables, fullPath: getProjectPath(root, _variables, context), fetchPolicy: _variables?.fetchPolicy}
 
+        const query = gql`
+            query getApplicationBlueprintProject($fullPath: ID!) {
+                applicationBlueprint(fullPath: $fullPath)  {
+                    json
+                }      
+            }
+        `
+
         const {errors, data} = await client.query({
-            query: getUnfurlRoot,
+            query,
             variables,
             fetchPolicy: _variables?.fetchPolicy
         })
@@ -142,7 +150,7 @@ function makeClientResolver(typename, field=null, selector) {
         try {
             target = json[typename]
         } catch {
-            console.error(typename, json)
+            console.error({typename, json, root})
             throw new Error('Cannot use constructed client resolver')
         }
         //context.jsondb = json;
@@ -196,18 +204,13 @@ function listMakeObjectLookupResolver(typename) {
 export const resolvers = {
 
     ApplicationBlueprintProject: {
-        overview: makeClientResolver('Overview'),
         applicationBlueprint: makeClientResolver('ApplicationBlueprint', null, (target) => {
             return Object.values(target)[0] // TODO take slug
         }),
         ResourceType: makeClientResolver('ResourceType'),
         ApplicationBlueprint: makeClientResolver('ApplicationBlueprint'),
-        Overview: makeClientResolver('Overview'),
         ResourceTemplate: makeClientResolver('ResourceTemplate'),
-        ResourceType: makeClientResolver('ResourceType'),
         DeploymentTemplate: makeClientResolver('DeploymentTemplate'),
-        Resource: makeClientResolver('Resource'),
-        Deployment: makeClientResolver('Deployment'),
     },
 
     Environments: {
@@ -266,23 +269,6 @@ export const resolvers = {
         primary: makeObjectLookupResolver('ResourceType'),
         // TODO implement filtering
         deploymentTemplates: listMakeObjectLookupResolver('DeploymentTemplate'),
-        /*
-        deploymentTemplates: (parent, args, { cache, jsondb }, { }) => {
-            const templates = Object.values(jsondb['DeploymentTemplate']);
-            if (args) {
-                for (const key of Object.keys(args)) {
-                    const lookup = args[key].substring("searchBy".length).toLowerCase();
-                    const match = _.find(templates, { [lookup]: args[key] });
-                    if (match) {
-                        return [match];
-                    } else {
-                        return [];
-                    }
-                }
-            }
-            return templates;
-        },
-        */
         overview: makeClientResolver('Overview'),
 
     },
@@ -385,7 +371,7 @@ export const resolvers = {
 
 
     Query: {
-        async unfurlRoot(...args) {
+        async applicationBlueprintProject(...args) {
             const json = await fetchRootBlob(...args) 
             args[2].fullPath = args[1].fullPath
             args[2].jsondb = json
@@ -411,33 +397,6 @@ export const resolvers = {
                 return result
             } catch(e) {
                 throw new clientResolverError(e,'Could not fetch application blueprint JSON')
-            }
-        },
-
-        // TODO remove this
-        resourceTemplateRaw: async (...args) => {
-            try {
-                const {ResourceTemplate} = await fetchRootBlob(...args)
-                const variables = args[1]
-                const result = ResourceTemplate[variables.name]
-                if(!result) throw new Error(`ResourceTemplate ${variables.name} not found`)
-                result.__typename = 'JSON'
-                return result
-            } catch(e) {
-                throw new clientResolverError(e,'Could not fetch resource template JSON')
-            }
-        },
-        // TODO remove this
-        deploymentTemplateRaw: async (...args) => {
-            try { 
-                const {DeploymentTemplate} = await fetchRootBlob(...args)
-                const variables = args[1]
-                const result = DeploymentTemplate[variables.name]
-                if(!result) throw new Error(`DeploymentTemplate ${variables.name} not found`)
-                result.__typename = 'JSON'
-                return result
-            } catch(e) {
-                throw new clientResolverError(e,'Could not fetch resource template JSON')
             }
         },
     }

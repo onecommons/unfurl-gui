@@ -54,16 +54,12 @@ const actions = {
         const {projectPath, fullPath, fetchPolicy} = params
         commit('loaded', false)
         const query = gql`
-          query getUnfurlRoot($fullPath: ID!) {
-              unfurlRoot(fullPath: $fullPath, fetchPolicy: $fetchPolicy) @client {
+          query GetDeploymentTemplateDictionaries($fullPath: ID!) {
+              applicationBlueprintProject(fullPath: $fullPath, fetchPolicy: $fetchPolicy) @client {
                   ResourceType
                   ApplicationBlueprint
                   ResourceTemplate
                   DeploymentTemplate
-
-                  Overview
-                  Resource
-                  Deployment
               }
           }
         `
@@ -80,7 +76,7 @@ const actions = {
 
         })
         const {data, errors} = result
-        const root = data.unfurlRoot
+        const root = data.applicationBlueprintProject
 
         for(const key in root) {
             commit('setProjectState', {key, value: root[key]})
