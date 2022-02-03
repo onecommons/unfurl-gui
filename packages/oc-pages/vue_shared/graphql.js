@@ -212,28 +212,9 @@ export const resolvers = {
         ResourceTemplate: makeClientResolver('ResourceTemplate'),
         DeploymentTemplate: makeClientResolver('DeploymentTemplate'),
     },
-
-    Environments: {
-        environments: makeClientResolver('DeploymentEnvironment', 'clientPayload', (target) => {
-            return Object.values(target).map(env => {
-                for(const conn of Object.values(env.connections)) {
-                    if(conn) conn.__typename = 'ResourceTemplate'
-                }
-                return env
-            })
-        })
-        /*
-        environments: makeClientResolver('DeploymentEnvironment', 'clientPayload', (target) => {
-            const result =  object.values(target).map(env => {env.__typename = 'deploymentEnvironment'; return env})
-            for(const env of result) {
-                env.connections = Object.values(env.connections)
-                for(const connection of env.connections) {
-                    connection.__typename = 'ResourceTemplate'
-                }
-            } 
-            return result
-        }),
-        */
+  
+    Environment: {
+      deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload')
     },
 
     DeploymentEnvironment: {

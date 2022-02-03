@@ -3,8 +3,8 @@ extend type ApplicationBlueprintProject {
         applicationBlueprint: ApplicationBlueprint! @client
 }
 
-extend type Environments {
-  environments: [DeploymentEnvironment] @client
+extend type Environment {
+  deploymentEnvironment @client
 }
 
 extend type ResourceTemplates {
