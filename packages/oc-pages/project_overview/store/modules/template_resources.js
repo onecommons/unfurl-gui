@@ -1,6 +1,6 @@
 import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
-import { slugify } from '../../../vue_shared/util';
+import { slugify } from '../../../vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, createResourceTemplate, deleteResourceTemplate, deleteResourceTemplateInDependent} from './deployment_template_updates.js';
 
 const baseState = () => ({

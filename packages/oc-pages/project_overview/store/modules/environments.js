@@ -17,6 +17,10 @@ const mutations = {
 
     setEnvironments(state, environments) {
         state.environments = environments
+    },
+
+    setProjectEnvironments(state, environments) {
+        state.projectEnvironments = environments
     }
 
 };
@@ -28,7 +32,40 @@ const actions = {
     },
 
 
-    async fetchEnvironments({ commit, rootGetters }) {
+    async fetchProjectEnvironments({commit}, {fullPath}) {
+        const query = gql`
+        query getProjectEnvironments($fullPath: ID!) {
+          project(fullPath: $fullPath) {
+            environments {
+              nodes {
+                name
+                state
+              }
+            }
+          }
+        }`
+        let environments
+        try {
+            const {data, errors} = await graphqlClient.clients.defaultClient.query({
+                query,
+                errorPolicy: 'all',
+                variables: {fullPath}
+            })
+
+            environments = data?.project?.environments?.nodes
+        }
+        catch(e){
+            console.error('could not fetch project environments')
+            console.error(e)
+            environments = []
+
+        }
+
+        commit('setProjectEnvironments', environments)
+
+    },
+    async fetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
+        await dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath})
         const query = gql`
         query getEnvironments($namespace: String!) {
             environments(namespace: $namespace) {
@@ -78,22 +115,27 @@ const actions = {
 
     }
 };
+function envFilter(name){
+    return env => env.name == name
+} 
 
 const getters = {
     getEnvironmentName: _state => _state.environmentName,
-    getEnvironments: state => state.environments,
+    getEnvironments: state => state.environments.concat(state.projectEnvironments),
     getValidConnections: state => function(environmentName, requirement) {
         let constraintType
         if(typeof requirement != 'string') { constraintType = requirement?.constraint?.resourceType 
         } else { constraintType  = requirement }
-        const environment = state.environments.find(env => env.name == environmentName)
+        const filter = envFilter(environmentName)
+        const environment = state.environments.find(filter) || state.projectEnvironments.find(filter)
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return []
         const result = environment.connections.filter(conn => conn.type == constraintType)
         return result
     },
     lookupConnection: state => function(environmentName, connectedResource) {
-        const environment = state.environments.find(env => env.name == environmentName)
+        const filter = envFilter(environmentName)
+        const environment = state.environments.find(filter) || state.projectEnvironments.find(filter)
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return null
         const result = _.cloneDeep(environment.connections.find(conn => conn.name == connectedResource))

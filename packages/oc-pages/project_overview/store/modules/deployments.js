@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 import graphqlClient from '../../graphql';
-import {USER_HOME_PROJECT} from '../../../vue_shared/util'
+import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 
 const state = {loaded: false, callbacks: []};
 const mutations = {
@@ -17,18 +17,27 @@ const actions = {
           }
         `;
 
-        const result = await graphqlClient.defaultClient.query({
-            query,
-            variables: {
-                ...params,
-                projectPath: projectPath || fullPath || `${username}/${USER_HOME_PROJECT}`,
-            },
-            fetchPolicy
+        let deployments = []
+        try {
 
-        });
-        const {data, errors} = result;
+            const result = await graphqlClient.defaultClient.query({
+                query,
+                variables: {
+                    ...params,
+                    projectPath: projectPath || fullPath || `${username}/${USER_HOME_PROJECT}`,
+                },
+                fetchPolicy
 
-        commit('setDeployments', data.deployments);
+            });
+
+            const {data, errors} = result;
+            if(data?.deployments) deployments = data.deployments
+        } catch(e) {
+            console.error(e)
+
+        }
+
+        commit('setDeployments', deployments);
 
     }
 };

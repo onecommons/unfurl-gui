@@ -12,3 +12,7 @@ export function slugify(text) {
 }
 
 export const USER_HOME_PROJECT = 'dashboard';
+
+export function userDefaultPath() {
+    return 'unfurl.json'
+}

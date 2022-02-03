@@ -2,8 +2,9 @@ import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
-import {slugify} from '../../../vue_shared/util'
+import {slugify} from '../../../vue_shared/util.mjs'
 import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
+import {userDefaultPath} from '../../../vue_shared/util.mjs'
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(!args.length) return
@@ -296,7 +297,7 @@ const actions = {
                 fullPath: state.projectPath || rootState.project.globalVars.projectPath, 
                 typename: key, 
                 patch, 
-                path: state.path
+                path: state.path || userDefaultPath()
             }
 
             if(o?.dryRun) {

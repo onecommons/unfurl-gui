@@ -7,7 +7,7 @@ import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import { bus } from '../../bus';
-import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util'
+import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
@@ -49,7 +49,7 @@ export default {
     computed: {
         shouldDisableSubmitTemplate() {
             if(!this.templateForkedName) return true
-            if(this.instantiateAs != 'template' && this?.$refs?.dropdown?.text == __("Select")) return true
+            if(this.instantiateAs != 'template' && this.defaultEnvironmentName == __("Select")) return true
 
             return false
         },

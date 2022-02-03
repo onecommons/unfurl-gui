@@ -26,6 +26,7 @@
 //
 //
 Cypress.Commands.add('waitForGraphql', () => {
+  cy.wait(100)
   cy.intercept({
     method: "POST",
     url: "**/graphql",
@@ -35,7 +36,7 @@ Cypress.Commands.add('waitForGraphql', () => {
 
 
 const operationName = "ClearProjectPath"
-const query = "mutation ClearProjectPath($projectPath: ID!, $typename: String!, $patch: JSON!) {\n  updateDeploymentObj(\n    input: {projectPath: $projectPath, typename: $typename, patch: $patch}\n  ) {\n    errors\n    __typename\n  }\n}\n"
+const query = "mutation ClearProjectPath($projectPath: ID!, $typename: String!, $patch: JSON!, $path: String!) {\n  updateDeploymentObj(\n    input: {projectPath: $projectPath, typename: $typename, patch: $patch, path: $path}\n  ) {\n    errors\n    __typename\n  }\n}\n"
 
 Cypress.Commands.add('resetDataFromFixture', (projectPath, fixture) => {
   cy.on('uncaught:exception', (e) => false) // don't care if we error in here
@@ -53,7 +54,7 @@ Cypress.Commands.add('resetDataFromFixture', (projectPath, fixture) => {
       try {
         cy.log(`resetting data for ${projectPath}`)
         for(const key in payload) {
-          const variables = {projectPath, typename: key, patch: payload[key]}
+          const variables = {projectPath, typename: key, patch: payload[key], path: 'unfurl.json'}
           if (key == 'Overview') continue
           cy.request({
             method:'POST', 

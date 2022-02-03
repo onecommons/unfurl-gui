@@ -105,6 +105,7 @@ describe('project overview v2', () => {
     beforeEach(() => {
       cy.visit(MY_AWESOME_TEMPLATE2)
       waitForGraphql()
+      cy.contains('h4', 'Apostrophe').should('be.visible')
     })
 
     it('should be invalid', () => {
@@ -294,13 +295,14 @@ describe('project overview', () => {
     beforeEach(() => {
       cy.visit(MY_AWESOME_TEMPLATE)
       waitForGraphql()
+      cy.contains('h1', 'My awesome template').should('be.visible') 
     })
 
 
+    /*
     it('should have my names', () => {
-      cy.get('h1').contains('My awesome template').should('be.visible') 
     })
-
+*/
 
     it("shouldn't have an option to connect", () => {
       ocTableRow('host').within(_ => cy.get('button').contains('Create').should('be.visible'))

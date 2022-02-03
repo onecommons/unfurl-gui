@@ -5,6 +5,7 @@ import graphqlClient from '../../graphql';
 import gql from 'graphql-tag'
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
+import {userDefaultPath} from '../../../vue_shared/util.mjs'
 
 
 const state = {
@@ -285,7 +286,8 @@ const actions = {
             variables: {
                 patch: { [slug]: null },
                 fullPath: state.globalVars.projectPath,
-                typename: 'DeploymentTemplate'
+                typename: 'DeploymentTemplate',
+                path: userDefaultPath()
             }
 
         })
@@ -315,7 +317,8 @@ const actions = {
             variables: {
                 patch, 
                 fullPath: state.globalVars.projectPath,
-                typename: 'ApplicationBlueprint'
+                typename: 'ApplicationBlueprint',
+                path: userDefaultPath()
             }
         })
         throwErrorsFromDeploymentUpdateResponse(errors, data)

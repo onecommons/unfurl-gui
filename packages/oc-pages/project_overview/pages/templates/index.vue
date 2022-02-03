@@ -13,7 +13,7 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
-import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util'
+import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 
 
 

@@ -30,11 +30,12 @@ export default {
         }
         try {
             const {projectPath} = this.$projectGlobal
-            await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch});
-            await this.$store.dispatch('fetchEnvironments', projectPath.split('/')[0]);
-            await this.$store.dispatch('fetchServicesToConnect', {projectPath});
-            await this.$store.dispatch('fetchDeployments', {username: this.$store.getters.getUsername})
-            this.fetchingComplete = true
+            const promises = [
+                this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch}),
+                this.$store.dispatch('fetchEnvironments', {projectPath}),
+                this.$store.dispatch('fetchDeployments', {username: this.$store.getters.getUsername})
+            ]
+            Promise.all(promises).then(_ => this.fetchingComplete = true )
             return true;
         } catch(err) {
             console.error(err)
