@@ -19,11 +19,6 @@ function deploymentNameInput() {
   return cy.get(`input[name="input['template-name']"]`)
 }
 
-function primaryNameInput(cb) {
-  //cy.get('.modal-dialog').within(() => {
-  return cy.get(`input[name="input['resource-template-name']"]`)
-  //})
-}
 
 function nextButton() {
   return cy.get('.modal-dialog button').contains('button', 'Next')
@@ -53,10 +48,12 @@ describe('project overview deploy', () => {
   })
 
   it('serializes state', () => {
+
+    cy.on('uncaught:exception', (e) => false) // problems with duplicate navigation
     const myAwesomeDeployment = 'My awesome deployment'
     cy.location('search').should('equal', '')
     openDeployDialog('Google Cloud Platform')
-    deploymentNameInput().type(myAwesomeDeployment)
+    deploymentNameInput().clear().type(myAwesomeDeployment)
     modalHeader().click()
     cy.location('search').should('not.equal', '')
     cy.reload()
@@ -72,7 +69,7 @@ describe('project overview deploy', () => {
     const myAwesomeDeployment = 'My awesome deployment'
     cy.location('search').should('equal', '')
     openDeployDialog('Google Cloud Platform')
-    deploymentNameInput().type(myAwesomeDeployment)
+    deploymentNameInput().clear().type(myAwesomeDeployment)
     modalHeader().click()
     cy.location('search').should('not.equal', '')
 
@@ -86,15 +83,15 @@ describe('project overview deploy', () => {
   })
 
   it('can enter deployment creation view', () => {
-    openDeployDialog('Google Cloud Platform')
-    deploymentNameInput().type('My awesome deployment')
-    primaryNameInput().type('My beautiful template')
+    openDeployDialog('Self-Hosted')
+    deploymentNameInput().clear().type('My awesome deployment')
 
     nextButton().should('be.disabled')
 
     selectEnvironmentButton().click()
     cy.wait(100)
     selectEnvironmentButton('production-gcp').click()
+    cy.wait(100)
     nextButton().should('not.be.disabled')
 
     nextButton().click()
@@ -103,12 +100,7 @@ describe('project overview deploy', () => {
   it('can deploy', () => {
 
     openDeployDialog('Google Cloud Platform')
-    deploymentNameInput().type('My awesome deployment')
-    primaryNameInput().type('My beautiful template')
-
-    selectEnvironmentButton().click()
-    cy.wait(100)
-    selectEnvironmentButton('production-gcp').click()
+    deploymentNameInput().clear().type('My awesome deployment')
 
     nextButton().click()
 

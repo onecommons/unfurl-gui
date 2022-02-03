@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import yaml from 'yaml'
+import {USER_HOME_PROJECT} from '../../src/gitlab-oc/vue_shared/util.mjs';
 
 export default function iterateProjects(reposDir) {
   const projects = []
@@ -8,7 +8,7 @@ export default function iterateProjects(reposDir) {
 
 
     for(const project of fs.readdirSync(path.join(reposDir, repo))) {
-      if(project == 'unfurl-home') continue
+      if(project == USER_HOME_PROJECT) continue
       const fullPath = path.join(reposDir, repo, project, 'blueprint.json')
       const projectPath = `${repo}/${project}`
       try {

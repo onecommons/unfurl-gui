@@ -16,8 +16,8 @@ const mutations = {
 
 const getters = {
     getRouterHook(state) {return state.routerHook},
-    getUsername(state) {return window.gon.current_username},
-    getFullname(state) {return window.gon.current_user_fullname}
+    getUsername(state) {return '' + window.gon.current_username},
+    getFullname(state) {return '' + window.gon.current_user_fullname}
 }
 
 

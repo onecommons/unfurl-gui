@@ -35,10 +35,9 @@ export default {
         return {
             instantiateAs: null,
             projectSlugName: null,
-            dropdownText: __("Select"),
             templateForkedName: null,
-            resourceTemplateName: null,
             templateSelected: {},
+            selectedEnvironment: null,
             modalNextStatus: true,
             showBannerIntro: true,
             bannerInfo: {
@@ -49,8 +48,8 @@ export default {
     },
     computed: {
         shouldDisableSubmitTemplate() {
-            if(!this.templateForkedName || !this.resourceTemplateName) return true
-            if(this.instantiateAs != 'template' && this.dropdownText == __("Select")) return true
+            if(!this.templateForkedName) return true
+            if(this.instantiateAs != 'template' && this?.$refs?.dropdown?.text == __("Select")) return true
 
             return false
         },
@@ -59,7 +58,8 @@ export default {
             'getProjectInfo',
             'getTemplatesList',
             'hasEditPermissions',
-            'getUsername'
+            'getUsername',
+            'getNextDefaultDeploymentName'
         ]),
         primaryProps() {
             return {
@@ -76,11 +76,25 @@ export default {
             if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.slug)
                 return {
                     fn: this.templateForkedName || undefined,
-                    rtn: this.resourceTemplateName || undefined,
                     ts: this.projectSlugName || undefined
 
                 }
             else return {}
+        },
+        matchingEnvironments() {
+            if(this.templateSelected?.cloud) {
+                return this.getEnvironments.filter(env => env.primary_provider.type == this.templateSelected.cloud)
+            }
+            return this.getEnvironments
+
+        },
+        // NOTE I probably should have just used a watcher here
+        defaultEnvironmentName() {
+            return (
+                this.selectedEnvironment ||
+                (this?.templateSelected?.cloud && this.matchingEnvironments[0]?.name) ||
+                __("Select")
+            )
         }
     },
     watch: {
@@ -96,15 +110,20 @@ export default {
             } else {
                 this.$router.replace({path, query})
             }
-        }
+        },
+        templateSelected: function(val) {
+            if(this.templateForkedName) return
+            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(val.title)
+            else this.templateForkedName = ''
 
+        }
     },
 
     created() {
         this.syncGlobalVars(this.$projectGlobal);
         bus.$on('deployTemplate', (template) => {
-            this.templateSelected = {...template};
             this.instantiateAs = 'deployment-draft'
+            this.templateSelected = {...template};
             this.projectSlugName = template.slug;
         });
 
@@ -131,7 +150,6 @@ export default {
             this.$refs['oc-templates-deploy'].show()
 
             this.templateForkedName = this.$route.query?.fn
-            this.resourceTemplateName = this.$route.query?.rtn
         }
     },
     methods: {
@@ -142,12 +160,9 @@ export default {
         },
 
         clearModalTemplate() {
-            this.dropdownText = __("Select");
             this.templateForkedName = null;
-            this.resourceTemplateName = null;
             this.templateSelected = null
-            //this.instantiateAs = null
-            // TODO test that this doesn't break
+            this.selectedEnvironment = null
         },
 
         instantiatePrimaryDeploymentTemplate() {
@@ -186,17 +201,12 @@ export default {
         },
 
         prepareTemplateNew() {
+            this.templateSelected.primary = this.templateSelected.title
             this.templateSelected.title = this.templateForkedName;
             this.templateSelected.slug = slugify(this.templateForkedName);
-            this.templateSelected.primary = this.resourceTemplateName
             this.templateSelected.totalDeployments = 0;
-            this.templateSelected.environment = this.dropdownText;
+            this.templateSelected.environment = this.$refs?.dropdown?.text;
             this.templateSelected.primaryType = this.getProjectInfo.primary
-            this.templateSelected.type = 'deployment-draft';
-        },
-
-        setEnvironmentName(envName) {
-            this.dropdownText =  envName;
         },
 
         redirectToNewEnvironment() {
@@ -307,22 +317,11 @@ export default {
                     />
 
                 </gl-form-group>
-                <gl-form-group
-                    label="Resource name"
-                    class="col-md-4 align_left gl-pl-0"
-                >
-                    <gl-form-input
-                    v-model="resourceTemplateName"
-                    name="input['resource-template-name']"
-                    type="text"
-                    />
-
-                </gl-form-group>
                 <div v-if="instantiateAs!='template'">
                     <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                    <gl-dropdown :text="dropdownText">
+                    <gl-dropdown ref="dropdown" :text="defaultEnvironmentName">
                         <div v-if="getEnvironments.length > 0">
-                            <gl-dropdown-item v-for="(env , idx) in getEnvironments" :key="idx" @click="setEnvironmentName(env.name)">{{ env.name }}</gl-dropdown-item>
+                            <gl-dropdown-item v-for="(env , idx) in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="idx">{{ env.name }}</gl-dropdown-item>
                             <gl-dropdown-divider />
                         </div>
                         <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>

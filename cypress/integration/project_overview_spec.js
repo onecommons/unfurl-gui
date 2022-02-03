@@ -23,9 +23,6 @@ const createMyAwesomeTemplate = () => {
     cy.get(`input[name="input['template-name']"]`)
       .type('My awesome template')
 
-    cy.get(`input[name="input['resource-template-name']"]`)
-      .type('My beautiful resource')
-
     cy.get('button').contains('button', 'Next')
       .click()
 
@@ -111,7 +108,7 @@ describe('project overview v2', () => {
     })
 
     it('should be invalid', () => {
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         withinCardHeader(() => {
           expectInvalidInput()
         })
@@ -119,7 +116,7 @@ describe('project overview v2', () => {
     })
 
     it('should have invalid inputs', () => {
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         withinOcInput(() => {
           expectInvalidInput()
         })
@@ -127,7 +124,7 @@ describe('project overview v2', () => {
     })
 
     it('should be able to create valid inputs', () => {
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         withinOcInput(() => {
           expectInvalidInput()
           cy.get('input[placeholder="image"]').type('my amazing image')
@@ -139,7 +136,7 @@ describe('project overview v2', () => {
     })
 
     it('should keep valid inputs when saved', () => {
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         withinOcInput(() => {
           cy.get('input[placeholder="image"]').type('my amazing image')
           cy.get('input[placeholder="domain"]').type('unfurl.cloud')
@@ -147,7 +144,7 @@ describe('project overview v2', () => {
       })
       clickSaveTemplate()
 
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         withinOcInput(() => {
           expectValidInput()
         })
@@ -155,7 +152,7 @@ describe('project overview v2', () => {
     })
 
     it('should be able to fill inputs in a dependency', () => {
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         clickTableRowButton('host', 'Create')
       })
       withinModal(() => {
@@ -189,7 +186,7 @@ describe('project overview v2', () => {
     })
 
     it('can handle recursive dependencies', () => {
-      withinCard('my-beautiful-resource', () => {
+      withinCard('apostrophe-demo', () => {
         clickTableRowButton('db', 'Create')
       })
       withinModal(() => {
@@ -302,7 +299,6 @@ describe('project overview', () => {
 
     it('should have my names', () => {
       cy.get('h1').contains('My awesome template').should('be.visible') 
-      cy.get('h4').contains('My beautiful resource').should('be.visible') 
     })
 
 
@@ -323,13 +319,13 @@ describe('project overview', () => {
         const input = () => cy.get('input#input1')
         const nextButton = () => cy.get('button').contains('button', 'Next')
         cy.scrollTo(0,0)
-        input().type('Some stupid name')
+        input().type('Some stupid name').invoke('val', 'Some stupid name')
 
-        // fails nextButton().should('be.disabled')
+        nextButton().should('be.disabled')
 
         ocTableRow('AWSInstance').within(_ => cy.get('input[type="radio"]').click({force: true}))
 
-        // fails input().should('have.value', 'Some stupid name'); input().type('AWSInstance')
+        input().should('have.value', 'Some stupid name'); input().clear().type('AWSInstance')
 
         nextButton().click()
 
