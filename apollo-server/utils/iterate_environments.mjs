@@ -1,7 +1,6 @@
-import { constants } from 'buffer'
 import fs from 'fs'
 import path from 'path'
-import {USER_HOME_PROJECT} from 'constants';
+import {USER_HOME_PROJECT} from '../../src/gitlab-oc/vue_shared/util.mjs';
 
 export default function iterateEnvironments(reposDir) {
   const environments = []
