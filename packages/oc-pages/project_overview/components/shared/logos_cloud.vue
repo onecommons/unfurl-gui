@@ -2,13 +2,12 @@
 import AWS from '../../assets/aws.svg?inline'
 import GCP from '../../assets/gcp.svg?inline'
 import Azure from '../../assets/azure.svg?inline'
+import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
+
 const MAPPINGS = {
-    AWSAccount: AWS,
-    aws: AWS,
-    GoogleCloudAccount: GCP,
-    gcp: GCP,
-    'unfurl.relationships.ConnectsTo.GoogleCloudProject': GCP,
-    AzureAccount: Azure,
+    [lookupCloudProviderAlias('gcp')]: GCP,
+    [lookupCloudProviderAlias('aws')]: AWS,
+    [lookupCloudProviderAlias('aws')]: Azure
 }
 export default {
     name: "LogosCloud",
@@ -21,7 +20,14 @@ export default {
     computed: {
         icon() {
 
-            return MAPPINGS[this.cloud]
+            const icon = MAPPINGS[lookupCloudProviderAlias(this.cloud)]
+            try {
+                const url = new URL(icon)
+                return icon
+            } catch(e) {
+                const blob = new Blob([icon], {type: 'image/svg+xml'})
+                return URL.createObjectURL(blob)
+            }
         }
         
     }
