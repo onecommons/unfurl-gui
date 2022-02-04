@@ -257,6 +257,7 @@ export default {
       'resetTemplateResourceState',
       'setRouterHook',
       'clearPreparedMutations',
+      'resetStagedChanges',
       'onApplicationBlueprintLoaded',
       'setUpdateObjectPath',
       'setUpdateObjectProjectPath'
@@ -330,7 +331,6 @@ export default {
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
-        const projectName = this.$projectGlobal.projectPath.split('/');
         if(this.$route.name != 'templatePage') {
           this.setUpdateObjectPath(
             `${this.$route.params.environment}/${this.getProjectInfo.name}/${slugify(this.$route.query.fn)}/deployment-blueprint.json`
@@ -424,6 +424,7 @@ export default {
         //if (isOk) { deleteDeploymentTemplate should throw errors
         this.activeSkeleton = false;
         this.clearPreparedMutations();
+        this.resetStagedChanges();
         this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
         //}
       }catch (e) {

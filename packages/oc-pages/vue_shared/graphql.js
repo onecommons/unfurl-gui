@@ -140,19 +140,22 @@ function resolutionError(itemKey, typename, parent) {
   return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent?.name}: ${parent.__typename}`)
 }
 
-function makeClientResolver(typename, field=null, selector) {
+// TODO pack selector and indexTypename into options
+function makeClientResolver(typename, field=null, selector, indexTypename=true) {
     return (root, variables, context, info) => {
         // query must retrieve the json field
         if(!context.jsondb) context.jsondb = root
         if(variables?.dehydrated) {context.dehydrated = true}
         const json = field !== null ? context.jsondb[field]: context.jsondb;
         let target
-        try {
-            target = json[typename]
-        } catch {
-            console.error({typename, json, root})
-            throw new Error('Cannot use constructed client resolver')
-        }
+        if(indexTypename) {
+            try {
+                target = json[typename]
+            } catch {
+                console.error({typename, json, root})
+                throw new Error('Cannot use constructed client resolver')
+            }
+        } else {target = json}
         //context.jsondb = json;
         if(!target) return null
         target = (typeof(selector) == 'function'? selector(target, root, variables, context, info): target)
@@ -214,7 +217,7 @@ export const resolvers = {
     },
   
     Environment: {
-      deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload')
+      deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, false)
     },
 
     DeploymentEnvironment: {

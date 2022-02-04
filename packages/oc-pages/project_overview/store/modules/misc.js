@@ -1,4 +1,5 @@
 
+import { USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
 const state = {
@@ -16,8 +17,9 @@ const mutations = {
 
 const getters = {
     getRouterHook(state) {return state.routerHook},
-    getUsername(state) {return '' + window.gon.current_username},
-    getFullname(state) {return '' + window.gon.current_user_fullname}
+    getHomeProjectPath(_, getters)  {return `${getters.getUsername}/${USER_HOME_PROJECT}`},
+    getUsername() {return window.gon.current_username},
+    getFullname() {return window.gon.current_user_fullname}
 }
 
 

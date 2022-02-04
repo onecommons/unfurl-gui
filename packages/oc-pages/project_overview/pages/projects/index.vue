@@ -7,7 +7,7 @@ import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import { bus } from '../../bus';
-import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
+import { slugify, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
@@ -38,6 +38,7 @@ export default {
             templateForkedName: null,
             templateSelected: {},
             selectedEnvironment: null,
+            newEnvironmentProvider: null,
             modalNextStatus: true,
             showBannerIntro: true,
             bannerInfo: {
@@ -59,7 +60,9 @@ export default {
             'getTemplatesList',
             'hasEditPermissions',
             'getUsername',
-            'getNextDefaultDeploymentName'
+            'getNextDefaultDeploymentName',
+            'getMatchingEnvironments',
+            'getDefaultEnvironmentName'
         ]),
         primaryProps() {
             return {
@@ -82,18 +85,12 @@ export default {
             else return {}
         },
         matchingEnvironments() {
-            if(this.templateSelected?.cloud) {
-                return this.getEnvironments.filter(env => env.primary_provider.type == this.templateSelected.cloud)
-            }
-            return this.getEnvironments
-
+            return this.getMatchingEnvironments(this.templateSelected?.cloud)
         },
         // NOTE I probably should have just used a watcher here
         defaultEnvironmentName() {
             return (
-                this.selectedEnvironment ||
-                (this?.templateSelected?.cloud && this.matchingEnvironments[0]?.name) ||
-                __("Select")
+                this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud) || __("Select")
             )
         }
     },
@@ -142,9 +139,26 @@ export default {
     },
 
     async mounted() {
+
         await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
+        this.selectedEnvironment = this.$route.query?.env
+        this.newEnvironmentProvider = this.$route.query?.provider
+
+        // add environment to environments.json
+        // TODO break this off into a function
+        if(this.selectedEnvironment && this.newEnvironmentProvider) {
+            const primary_provider = {type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
+
+            await this.updateEnvironment({
+                envName: this.selectedEnvironment,
+                patch: {primary_provider, connections: {primary_provider}}
+            })
+        }
+        //
+
         const templateSelected = this.$route.query?.ts?
             this.$store.getters.getTemplatesList.find(template => template.slug == this.$route.query.ts) : null 
+        
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
             this.$refs['oc-templates-deploy'].show()
@@ -222,7 +236,8 @@ export default {
         ...mapActions([
             'syncGlobalVars',
             'fetchProjectInfo',
-            'commitPreparedMutations'
+            'commitPreparedMutations',
+            'updateEnvironment'
         ]),
         ...mapMutations([
             'pushPreparedMutation',
@@ -319,6 +334,7 @@ export default {
                 </gl-form-group>
                 <div v-if="instantiateAs!='template'">
                     <p>{{ __("Select an environment to deploy this template to:") }}</p>
+                    <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
                     <gl-dropdown ref="dropdown" :text="defaultEnvironmentName">
                         <div v-if="getEnvironments.length > 0">
                             <gl-dropdown-item v-for="(env , idx) in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="idx">{{ env.name }}</gl-dropdown-item>
