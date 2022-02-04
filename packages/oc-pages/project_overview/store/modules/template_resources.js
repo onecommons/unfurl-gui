@@ -89,9 +89,10 @@ const actions = {
         if(renameDeploymentTemplate) {
             deploymentTemplate.title = renameDeploymentTemplate;
             deploymentTemplate.name = slugify(renameDeploymentTemplate);
-            if(renamePrimary) deploymentTemplate.primary = slugify(renamePrimary);
+            deploymentTemplate.slug = deploymentTemplate.name
         }
         if(renamePrimary) {
+            deploymentTemplate.primary = slugify(renamePrimary);
             primary.name = slugify(renamePrimary);
             primary.title = renamePrimary;
         }

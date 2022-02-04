@@ -53,6 +53,9 @@ export default {
         return {
             fetchingComplete: false
         }
+    },
+    mounted() {
+        window.vm = this
     }
 }
 </script>

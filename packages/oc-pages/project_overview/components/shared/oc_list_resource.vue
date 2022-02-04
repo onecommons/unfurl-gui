@@ -82,17 +82,23 @@ export default {
             <oc-list-resource-icon :badge="resource.badge" :alt="resource.name"/>
             <div>
                 <span class="text-break-word title">{{ resource.name }}</span>
-                <div class="oc_resource_description gl-mb-2">
+                <!--div class="oc_resource_description gl-mb-2">
                 {{ resource.description }}
-                </div>
+                </div-->
             </div>
             </div>
+            <div class="table-section oc-table-section section-wrap text-truncate section-40">
+            <span class="text-break-word oc_resource-type">{{ resource.description }}</span>
+            </div>
+
+            <!--
             <div class="table-section oc-table-section section-wrap text-truncate section-20">
             <span class="text-break-word oc_resource-type">{{ resource.platform }}</span>
             </div>
             <div class="table-section oc-table-section section-wrap text-truncate section-20">
             <span class="text-break-word oc_resource-type">{{ resource.name }}</span>
             </div>
+            -->
 
             <div
             class="table-section oc-table-section section-wrap text-truncate section-20 text-center"

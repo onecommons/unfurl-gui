@@ -1,7 +1,7 @@
 import { __ } from "~/locale";
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
-import _ from 'lodash'
+import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 
 const state = {
@@ -191,10 +191,11 @@ const getters = {
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return []
         let result = []
-        if(environment.connections) environment.connections.filter(conn => conn.type && conn.type == constraintType)
+        if(environment.connections) result = environment.connections.filter(conn => conn.implements && conn.implements.includes(constraintType))
         return result
     },
-    getMatchingEnvironments: (state, getters) => function(type) {
+    getMatchingEnvironments: (_, getters) => function(type) {
+
         if(!type) { return getters.getEnvironments }
         const result = getters.getEnvironments.filter(env => {
             if(env?.primary_provider) return lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type)
@@ -206,12 +207,11 @@ const getters = {
         if(!type) return null
         return getters.getMatchingEnvironments(type).find(env => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
     },
-    lookupConnection: state => function(environmentName, connectedResource) {
-        const filter = envFilter(environmentName)
-        const environment = state.environments.find(filter) || state.projectEnvironments.find(filter)
+    lookupConnection: (_, getters) => function(environmentName, connectedResource) {
+        const environment = getters.lookupEnvironment(environmentName)
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(! Array.isArray(environment?.connections) ) return null
-        return _.cloneDeep(environment.connections.find(conn => conn.type && conn.name == connectedResource))
+        return cloneDeep(environment.connections.find(conn => conn.name == connectedResource))
     }
 };
 

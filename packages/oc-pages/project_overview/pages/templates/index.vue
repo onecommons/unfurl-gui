@@ -119,6 +119,7 @@ export default {
     },
 
     deployStatus() {
+      if(this.$route.name != 'deploymentDraftPage') return 'hidden'
       return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
       /*
       switch(this.$route.name) {

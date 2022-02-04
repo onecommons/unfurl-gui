@@ -112,11 +112,18 @@ const getters = {
             let result = filteredByType(dependencyName)
 
 
+            /*
+             * I changed this to support the temporary deployment draft
+             * if you're tracking down a bug in here this may be it
             const deploymentTemplate = getters.resolveDeploymentTemplate(
                 typeof(_deploymentTemplate) == 'string'? 
                 _deploymentTemplate: _deploymentTemplate.slug
             )
+            */
 
+            const deploymentTemplate = typeof _deploymentTemplate == 'string'?
+                getters.resolveDeploymentTemplate(_deploymentTemplate) :
+                new DeploymentTemplate(_deploymentTemplate, state)
 
             if(result.length == 0 && deploymentTemplate) {
                 const dependency = deploymentTemplate._primary.dependencies
