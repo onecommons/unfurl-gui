@@ -63,8 +63,8 @@ const mutations = {
             _state.resourceTemplates[dependentName] = {...dependent};
 
             if(deleteFromDeploymentTemplate) {
-                _state.deploymentTemplate.resourceTemplates = _state.deploymentTemplate.resourceTemplates.filter(rt => rt == templateName);
-                delete _state.resourceTemplates[templateName];
+                _state.deploymentTemplate.resourceTemplates = _state.deploymentTemplate.resourceTemplates.filter(rt => rt != templateName);
+               delete _state.resourceTemplates[templateName];
 
             }
             _state.resourceTemplates = {..._state.resourceTemplates};
@@ -226,7 +226,11 @@ const actions = {
     async deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
         try {
             const actionLowerCase = action.toLowerCase();
-            commit('deleteReference', {dependentName, dependentRequirement, deleteFromDeploymentTemplate: actionLowerCase == 'delete'});
+            commit('deleteReference', {
+                dependentName,
+                dependentRequirement,
+                deleteFromDeploymentTemplate: actionLowerCase == 'delete' || actionLowerCase == 'remove'
+            });
 
             if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
                 commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateSlug: getters.getDeploymentTemplate.slug}), {root: true});
