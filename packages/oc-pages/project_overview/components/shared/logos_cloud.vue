@@ -21,6 +21,7 @@ export default {
         icon() {
 
             const icon = MAPPINGS[lookupCloudProviderAlias(this.cloud)]
+            if(!icon) return ''
             try {
                 const url = new URL(icon)
                 return icon

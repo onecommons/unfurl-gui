@@ -7,7 +7,7 @@ import { __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import { bus } from '../../bus';
-import { slugify, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
+import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
@@ -225,7 +225,9 @@ export default {
 
         redirectToNewEnvironment() {
             const redirectTarget = `${window.location.pathname}${window.location.search}`
-            const url = `${window.origin}${window.location.pathname.split("/").slice(0, -2).join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
+            const pathComponents = window.location.pathname.split("/").slice(0, -2)
+            pathComponents[2] = USER_HOME_PROJECT
+            const url = `${window.origin}${pathComponents.join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
             window.location = url;
         },
 

@@ -68,7 +68,7 @@ export default {
         shortName: this.$projectGlobal.ref,
         fullName: `refs/heads/${this.$projectGlobal.ref}`,
       },
-      pipelinesPath: `/${this.$projectGlobal.projectPath}/-/pipelines`,
+      //pipelinesPath: `/${this.$projectGlobal.projectPath}/-/pipelines`,
     };
   },
 
@@ -89,7 +89,13 @@ export default {
       'getUsername',
       'getValidResourceTypes',
       'getValidConnections',
+      'getHomeProjectPath'
+
     ]),
+    
+    piplinesPath(){
+      return `/${this.getHomeProjectPath}/-/pipelines`
+    },
 
     saveStatus() {
       switch(this.$route.name) {

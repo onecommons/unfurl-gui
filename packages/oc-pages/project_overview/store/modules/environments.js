@@ -11,6 +11,7 @@ const state = {
 };
 
 function connectionsToArray(environment) {
+    if(Array.isArray(environment)) return environment
     if(environment.connections) {
         for(const key in environment.connections) { 
             if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
@@ -33,7 +34,13 @@ const mutations = {
         state.environments = environments
     },
 
-    resetEnvironments(state) {
+    patchEnvironment(state, { envName, patch }) {
+        const env = state.projectEnvironments.find(env => env.name == envName)
+        Object.assign(env, patch)
+        state.environments = state.environments
+    },
+
+    environmentsToArray(state) {
         // map is kinda pointless here
         state.environments = state.environments.map(connectionsToArray)
         state.projectEnvironments = state.projectEnvironments.map(connectionsToArray)
@@ -52,26 +59,24 @@ const actions = {
     },
 
     // effectively async
-    updateEnvironment({getters, commit, dispatch, rootGetters}, {env, envName, patch}) {
-        const _envName = env || envName
-        let _env
-        if(typeof _envName != 'string') {
-            _env = _envName
-        } else {_env = getters.lookupEnvironment(_envName)}
-
-        Object.assign(_env, patch)
-        commit('resetEnvironments')
+    async updateEnvironment({getters, commit, dispatch, rootGetters}, {env, envName, patch}) {
+        const _envName =  envName || env?.name
+        commit('patchEnvironment', {envName: _envName, patch})
+        const _env = getters.lookupEnvironment(_envName)
 
         commit('setUpdateObjectPath', `environments.json`, {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit(
             'pushPreparedMutation', 
             _ => {
-                return [ {typename: 'DeploymentEnvironment', target: _env.name, patch: _env}]
+                // I thought awaiting commit prepared mutations would make it so I don't have to clone env
+                // apparently not
+                return [ {typename: 'DeploymentEnvironment', target: _env.name, patch: cloneDeep(_env)}]
             },
             {root: true}
         )
-        return dispatch('commitPreparedMutations', null,  {root: true})
+        await dispatch('commitPreparedMutations', null,  {root: true})
+        commit('environmentsToArray')
     },
 
 

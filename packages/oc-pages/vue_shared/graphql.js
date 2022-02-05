@@ -140,22 +140,24 @@ function resolutionError(itemKey, typename, parent) {
   return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent?.name}: ${parent.__typename}`)
 }
 
-// TODO pack selector and indexTypename into options
-function makeClientResolver(typename, field=null, selector, indexTypename=true) {
+// TODO pack everything after field into options
+function makeClientResolver(typename, field=null, selector, indexTypename=true, setContext=true) {
     return (root, variables, context, info) => {
         // query must retrieve the json field
-        if(!context.jsondb) context.jsondb = root
+        let target = root
+        if(!context.jsondb && setContext) context.jsondb = root
         if(variables?.dehydrated) {context.dehydrated = true}
-        const json = field !== null ? context.jsondb[field]: context.jsondb;
-        let target
+        if(field !== null) {
+            target = target = target[field]
+        }
         if(indexTypename) {
             try {
-                target = json[typename]
+                target = target[typename]
             } catch {
-                console.error({typename, json, root})
+                console.error({typename, target, root})
                 throw new Error('Cannot use constructed client resolver')
             }
-        } else {target = json}
+        }
         //context.jsondb = json;
         if(!target) return null
         target = (typeof(selector) == 'function'? selector(target, root, variables, context, info): target)
@@ -207,17 +209,17 @@ function listMakeObjectLookupResolver(typename) {
 export const resolvers = {
 
     ApplicationBlueprintProject: {
-        applicationBlueprint: makeClientResolver('ApplicationBlueprint', null, (target) => {
+        applicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json', (target) => {
             return Object.values(target)[0] // TODO take slug
         }),
-        ResourceType: makeClientResolver('ResourceType'),
-        ApplicationBlueprint: makeClientResolver('ApplicationBlueprint'),
-        ResourceTemplate: makeClientResolver('ResourceTemplate'),
-        DeploymentTemplate: makeClientResolver('DeploymentTemplate'),
+        ResourceType: makeClientResolver('ResourceType', 'json'),
+        ApplicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json'),
+        ResourceTemplate: makeClientResolver('ResourceTemplate', 'json'),
+        DeploymentTemplate: makeClientResolver('DeploymentTemplate', 'json'),
     },
   
     Environment: {
-      deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, false)
+      deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, false, false)
     },
 
     DeploymentEnvironment: {
@@ -237,7 +239,7 @@ export const resolvers = {
             if (pp) {
                 pp.__typename = 'ResourceTemplate';
             }
-            return pp;
+            return pp || null;
         },
 
         cloud: (parent) => parent && (parent.cloud || parent.primary_provider || ''),
