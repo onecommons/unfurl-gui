@@ -92,6 +92,9 @@ export default {
             return (
                 this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud) || __("Select")
             )
+        },
+        inputProperties() {
+            return Object.values(this.getProjectInfo.primary?.inputsSchema?.properties) || []
         }
     },
     watch: {
@@ -274,7 +277,7 @@ export default {
             <ProjectDescriptionBox 
                     :project-info="getProjectInfo"
                     :requirements="getProjectInfo.primary.requirements" 
-                    :inputs="getProjectInfo.primary.properties" 
+                    :inputs="inputProperties"
                     :outputs="getProjectInfo.primary.outputs"
                     :project-description="getProjectInfo.description"
                     :project-image="getProjectInfo.image"
