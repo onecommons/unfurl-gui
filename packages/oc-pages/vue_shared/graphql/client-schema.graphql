@@ -337,7 +337,7 @@ type DeploymentTemplate {
 type ResourceType {
   name: String!
   title: String
-  implements: [ResourceType!]
+  extends: [ResourceType!]
   description: String
   badge: String
 

@@ -106,7 +106,7 @@ const getters = {
             function filteredByType(resourceType) {
                 let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
                 return Object.values(state.ResourceType).filter(type => {
-                    return Array.isArray(type.implements) && type.implements.includes(typeName)
+                    return Array.isArray(type.extends) && type.extends.includes(typeName)
                 })
             }
             let result = filteredByType(dependencyName)
@@ -143,8 +143,8 @@ const getters = {
             if(deploymentTemplate?.cloud) {
                 const allowedCloudVendor = `unfurl.nodes.${deploymentTemplate.cloud}`
                 result = result.filter(type => {
-                    return !type.implements.includes('unfurl.nodes.CloudObject') ||
-                        type.implements.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+                    return !type.extends.includes('unfurl.nodes.CloudObject') ||
+                        type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
 
                 })
             }

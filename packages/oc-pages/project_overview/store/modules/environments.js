@@ -196,7 +196,7 @@ const getters = {
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return []
         let result = []
-        if(environment.connections) result = environment.connections.filter(conn => conn.implements && conn.implements.includes(constraintType))
+        if(environment.connections) result = environment.connections.filter(conn => conn.extends && conn.extends.includes(constraintType))
         return result
     },
     getMatchingEnvironments: (_, getters) => function(type) {
