@@ -1,6 +1,6 @@
+# unfurl -v --home '' export --format environments > environments.json
 apiVersion: unfurl/v1alpha1
 kind: Project
-# unfurl -v --home '' export --format environments
 
 environments:
   defaults:

@@ -8,10 +8,54 @@
           "name": "primary_provider",
           "title": "primary_provider",
           "description": "",
-          "__typename": "ResourceTemplate",
+          "properties": [],
+          "dependencies": []
+        },
+        "sendgrid": {
+          "type": "SendGrid",
+          "name": "sendgrid",
+          "title": "sendgrid",
+          "description": "SendGrid Mail Delivery Service",
           "properties": [],
           "dependencies": []
         }
+      },
+      "primary_provider": {
+        "type": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
+        "name": "primary_provider",
+        "title": "primary_provider",
+        "description": "",
+        "properties": [],
+        "dependencies": []
+      }
+    },
+    "staging-aws": {
+      "name": "staging-aws",
+      "connections": {
+        "primary_provider": {
+          "type": "unfurl.relationships.ConnectsTo.AWSAccount",
+          "name": "primary_provider",
+          "title": "primary_provider",
+          "description": "",
+          "properties": [],
+          "dependencies": []
+        },
+        "sendgrid": {
+          "type": "SendGrid",
+          "name": "sendgrid",
+          "title": "sendgrid",
+          "description": "SendGrid Mail Delivery Service",
+          "properties": [],
+          "dependencies": []
+        }
+      },
+      "primary_provider": {
+        "type": "unfurl.relationships.ConnectsTo.AWSAccount",
+        "name": "primary_provider",
+        "title": "primary_provider",
+        "description": "",
+        "properties": [],
+        "dependencies": []
       }
     }
   },
@@ -32,7 +76,13 @@
             }
           }
         }
-      }
+      },
+      "extends": [
+        "unfurl.relationships.ConnectsTo.GoogleCloudProject",
+        "unfurl.relationships.ConnectsTo.CloudAccount",
+        "tosca.relationships.ConnectsTo",
+        "tosca.relationships.Root"
+      ]
     },
     "unfurl.relationships.ConnectsTo.CloudAccount": {
       "name": "unfurl.relationships.ConnectsTo.CloudAccount",
@@ -41,7 +91,12 @@
       "inputsSchema": {
         "type": "object",
         "properties": {}
-      }
+      },
+      "extends": [
+        "unfurl.relationships.ConnectsTo.CloudAccount",
+        "tosca.relationships.ConnectsTo",
+        "tosca.relationships.Root"
+      ]
     },
     "tosca.relationships.ConnectsTo": {
       "name": "tosca.relationships.ConnectsTo",
@@ -50,16 +105,46 @@
       "inputsSchema": {
         "type": "object",
         "properties": {}
-      }
+      },
+      "extends": [
+        "tosca.relationships.ConnectsTo",
+        "tosca.relationships.Root"
+      ]
     },
-    "tosca.relationships.Root": {
-      "name": "tosca.relationships.Root",
-      "title": "Root",
-      "description": "The TOSCA root Relationship Type all other TOSCA base Relationship Types derive from.\n",
+    "SendGrid": {
+      "name": "SendGrid",
+      "title": "SendGrid",
+      "description": "",
       "inputsSchema": {
         "type": "object",
         "properties": {}
-      }
+      },
+      "extends": [
+        "SendGrid",
+        "Mail",
+        "tosca.relationships.Root"
+      ]
+    },
+    "unfurl.relationships.ConnectsTo.AWSAccount": {
+      "name": "unfurl.relationships.ConnectsTo.AWSAccount",
+      "title": "AWSAccount",
+      "description": "",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {
+          "endpoints": {
+            "title": "endpoints",
+            "description": "custom service endpoints",
+            "type": "object"
+          }
+        }
+      },
+      "extends": [
+        "unfurl.relationships.ConnectsTo.AWSAccount",
+        "unfurl.relationships.ConnectsTo.CloudAccount",
+        "tosca.relationships.ConnectsTo",
+        "tosca.relationships.Root"
+      ]
     }
   }
 }

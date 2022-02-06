@@ -291,6 +291,11 @@ type ApplicationBlueprint {
   title: String!
 
   """
+  Short description of the project.
+  """
+  description: String
+
+  """
   Live preview url from unfurl file
   """
   livePreview: String
@@ -300,7 +305,10 @@ type ApplicationBlueprint {
   """
   sourceCodeUrl: String
 
-  overview: Overview
+  """
+  Image from unfurl file
+  """
+  image: String
 }
 
 type DeploymentTemplate {
@@ -345,8 +353,9 @@ type ResourceType {
   json-schema for inputs, will have a "properties" object that enumerates inputs  
   """
   inputsSchema: JSON
-  outputs: [Output!]
+  outputsSchema: JSON
   requirements: [RequirementConstraint!]
+  implementations: [String!]
 }
 
 type RequirementConstraint {
@@ -405,10 +414,6 @@ type DeploymentEnvironment {
 
   connections: [ResourceTemplate!]
 
-  """
-  TODO: should just use primary_provider
-  """
-  cloud: String
   primary_provider: ResourceTemplate
   deployments: [Deployment!]
 }
