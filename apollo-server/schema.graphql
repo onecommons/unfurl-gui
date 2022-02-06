@@ -19,17 +19,6 @@ input MessageInput {
   text: String!
 }
 
-"Input from user to create account"
-input AccountInput {
-  account: String!
-  network: String!
-  group: String!
-  resource: String!
-  service: String!
-  emsemble: String!
-  description: String
-}
-
 type File {
   id: ID!
   path: String!
@@ -45,22 +34,6 @@ directive @deprecated(
 
 # es-linter needs this 
 directive @client on FIELD_DEFINITION
-
-type UpdateDeploymentObjResult {
-  isOk: Boolean
-  errors: [String!]
-}
-
-input UpdateDeploymentObjPayload {
-  projectPath: ID!
-  typename: String!
-  path: String
-  patch: JSON!
-}
-
-extend type Mutation {
-  updateDeploymentObj(input: UpdateDeploymentObjPayload): UpdateDeploymentObjResult
-}
 
 extend type Query {
   deployments(projectPath: ID!, applicationBlueprint: ID): JSON

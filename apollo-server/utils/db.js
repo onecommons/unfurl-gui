@@ -13,7 +13,6 @@ export const db = new Lowdb(new FileSync(resolve(__dirname, '../../live/db.json'
 
 const dataDir = resolve(__dirname, '../data')
 const projects = {}
-const environments = {}
 
 const JSON_EXT = '.json'
 for(const tld of fs.readdirSync(dataDir)) {
@@ -28,9 +27,7 @@ for(const {projectPath, blueprint} of iterateProjects(resolve(__dirname, '../rep
   projects[projectPath] = blueprint
 }
 
-for (const environmentsObj of iterateEnvironments(resolve(__dirname, '../repos'))) {
-  environments[environmentsObj.namespace] = environmentsObj
-}
+const environments = iterateEnvironments(resolve(__dirname, '../repos'));
 
 // Seed an empty DB
 db.defaults({

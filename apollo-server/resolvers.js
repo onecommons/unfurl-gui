@@ -12,10 +12,7 @@ export default {
 
 
   Query: {
-    
-    // XXX unused, delete
-    accounts: (root, args, { db }) => db.get('accounts').value(),
-
+  
     applicationBlueprint: (root, args, { db }) => {
         //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
         // demo/apostrophe-demo
@@ -62,41 +59,46 @@ export default {
         }
         return result
     },
-    environments: (root, args, { db }) => {
-      const namespace = args.namespace;
-      try{
-        const environments = db.get('environments').value()[namespace].clientPayload // accidentally double wrapped this one
-        return {
-          namespace,
-          name: 'placeholder',
-          ...environments
-        }
-      } catch(e) {
-        return {
-          namespace,
-          name: 'placeholder',
-          clientPayload: {}
-        }
-      }
-    },
 
-    resourceTemplates: (root, args, { db }) => {
-      // (namespace: String): => ResourceTemplates
-    },
+    // resourceTemplates: (root, args, { db }) => {
+    //   // (namespace: String): => ResourceTemplates
+    // },
 
     project(root, args, context) {
       context.fullPath = args.fullPath
       return {__typename: 'Project'}
     },
-
-
   },
 
   Project: {
     userPermissions(root, args, context) {
       return {__typeName: 'ProjectPermissions'}
-    }
+    },
+
+    // name, path, state, clientPayload
+    environments: (root, args, { db }) => {
+      const namespace = root.fullPath;
+      try {
+        // get the environments associated with this project
+        const environments = db.get('environments').value()[namespace]
+        if (!environments) {
+          return [];
+        }
+        return Object.entries(environments).map(([key, value]) => ({
+            __typeName: 'Environment',
+            path: key,
+            name: key,
+            state: 'available',
+            clientPayload: value
+        }));
+      } catch (e) {
+          console.log(`bad environments: ${e}`);
+          return [];
+      }
+    },
+
   },
+
   ProjectPermissions: {
     pushCode(root, args, context) {
       return context.fullPath.startsWith(username)
@@ -108,14 +110,10 @@ export default {
     json: (obj, args, { }) => obj
   }, 
  
-  Environments: {
-    clientPayload: (obj, args, { }) => obj
-  },
 
-
-  ResourceTemplates: {
-    clientPayload: (obj, args, { }) => obj
-  },
+  // ResourceTemplates: {
+  //   clientPayload: (obj, args, { }) => obj
+  // },
 
   Mutation: {
 
@@ -187,29 +185,6 @@ export default {
         templates: overview["templates"]
       }
     },
-
-  /*
-    addAccount: ( root, { input }, { pubsub, db }) => {
-      const account = {
-        id: shortid.generate(),
-        account: input.account,
-        network: input.network,
-        group: input.group,
-        resource: input.resource,
-        service: input.service,
-        emsemble: input.emsemble,
-        description: input.description
-      }
-
-      db
-        .get('accounts')
-        .push(account)
-        .last()
-        .write()
-
-      return account;
-    },
-*/
   },
 
   Subscription: {
