@@ -80,12 +80,15 @@ export default {
             matchIsValid: 'matchIsValid',
             resolveMatchTitle: 'resolveMatchTitle',
             cardDependenciesAreValid: 'cardDependenciesAreValid',
-
+            getDisplayableDependencies: 'getDisplayableDependencies'
         }),
         checkRequirements() {
             const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
             bus.$emit('completeRequirements', this.level, flag);
             return flag;
+        },
+        displayableDependencies() {
+            return this.getDisplayableDependencies(this.card.name)
         },
         canConnectServices() {
             return this.$route.name != 'templatePage'
@@ -134,7 +137,7 @@ export default {
 }
 </script>
 <template>
-    <div v-if="card.dependencies && card.dependencies.length > 0">
+    <div v-if="displayableDependencies && displayableDependencies.length > 0">
         <gl-tabs class="gl-mt-6">
             <gl-tab class="gl-mt-6">
                 <template slot="title">
@@ -152,7 +155,7 @@ export default {
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
                         <div
-                            v-for="(requirement, idx) in card.dependencies"
+                            v-for="(requirement, idx) in displayableDependencies"
                             :key="requirement.name + '-template'"
                             class="gl-responsive-table-row oc_table_row">
                             <div

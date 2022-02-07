@@ -885,7 +885,7 @@
       "slug": "apostrophe-demo",
       "cloud": "GoogleCloudAccount",
       "description": null,
-      "blueprint": "Apostrophe Demo",
+      "blueprint": "apostrophe-demo",
       "primary": "the_app",
       "resourceTemplates": [
         "foo.com-zone",
@@ -896,9 +896,9 @@
     }
   },
   "ApplicationBlueprint": {
-    "Apostrophe Demo": {
+    "apostrophe-demo": {
       "__typename": "ApplicationBlueprint",
-      "name": "Apostrophe Demo",
+      "name": "apostrophe-demo",
       "primary": "MEANStack",
       "deploymentTemplates": [
         "apostrophe-demo"

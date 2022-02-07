@@ -269,6 +269,14 @@ const getters = {
             return _state.resourceTemplates[resourceTemplateName]?.dependencies;
         };
     },
+    // TODO this is a hack and checking for name == cloud is not a permanent solution
+    getDisplayableDependencies(_, getters) {
+        return function(resourceTemplateName) {
+            const dependencies = getters.getDependencies(resourceTemplateName)
+            if(!Array.isArray(dependencies)) return []
+            return dependencies.filter(dep => dep.name != 'cloud')
+        }
+    },
     matchIsValid: (_state, getters)=> function(match) {
         return typeof(match) == 'string'? !!getters.resolveMatchTitle(match): false;
     },

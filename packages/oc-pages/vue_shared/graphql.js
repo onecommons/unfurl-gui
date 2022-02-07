@@ -173,16 +173,7 @@ function makeClientResolver(typename, field=null, selector, o) {
         else if(targetIsDictionary && typeof target == 'object') {
             Object.values(target).forEach(child => child.__typename = typename)
             target.__typename = 'JSON'
-        } else {
-          target.__typename = typename
-
-        }
-
-        if(typename == 'ResourceTemplate') {
-            console.log(target)
-
-        }
-        //else target.__typename = typename; // ensure __typename
+        } else { target.__typename = typename }
         return target
     }
 }
@@ -350,7 +341,6 @@ export const resolvers = {
         name: (obj, args, { }) => (obj && obj.name) ?? null,
         dependencies(parent, args, { cache, jsondb, dehydrated }, info) {
             const type = jsondb['ResourceType'][parent.type]
-            console.log(type)
             return parent.dependencies || null
         },
         properties: _.partial(patchTypenameInArr, "Input"),
