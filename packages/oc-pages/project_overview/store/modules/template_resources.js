@@ -233,8 +233,7 @@ const actions = {
             });
 
             if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
-                commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name}), {root: true});
-
+                commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name, dependentName, dependentRequirement}), {root: true});
                 return true;
             }
 

@@ -29,9 +29,38 @@ class DeploymentTemplate {
     }
 
     get _primary() {
-        return this._state['ResourceTemplate'][this.primary]
+        return new ResourceTemplate(this._state['ResourceTemplate'][this.primary], this._state)
     }
 
+}
+
+class ResourceTemplate {
+    
+    constructor(source, state) {
+        for(const key in source) {
+            this[key] = source[key]
+        }
+
+        this._state = state
+
+        /*
+        for(const requirement of this._type.requirements) {
+            if(!this.dependencies.find(dep => dep.constraint.name == requirement.name)) {
+
+                this.dependencies.push({
+                    __typename: 'Dependency',
+                    name: requirement.name,
+                    match: null,
+                    target: null
+                })
+            }
+        }
+        */
+    }
+
+    get _type() {
+        return this._state['ResourceType'][this.type]
+    }
 }
 
 
@@ -50,7 +79,7 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit}, params) {
+    async fetchProject({commit, getters}, params) {
         const {projectPath, fullPath, fetchPolicy} = params
         commit('loaded', false)
         const query = gql`
@@ -75,11 +104,36 @@ const actions = {
             fetchPolicy
 
         })
+
+
+        // normalize messy data in here
+        const transforms = {
+            ResourceTemplate(resourceTemplate) {
+                const generated = getters.getMissingDependencies(resourceTemplate)
+                if(generated.length) {
+                    for(const generatedDep of generated) {
+                        if(!resourceTemplate.dependencies.some(dep => dep.name == generatedDep.name)) {
+                            resourceTemplate.dependencies.push(generatedDep)
+                        }
+                    }
+                }
+            },
+            DeploymentTemplate(deploymentTemplate) {
+                if(!deploymentTemplate.resourceTemplates) {
+                    deploymentTemplate.resourceTemplates = []
+                }
+            }
+        }
+
         const {data, errors} = result
         const root = data.applicationBlueprintProject
 
-        for(const key in root) {
-            commit('setProjectState', {key, value: root[key]})
+        // guarunteed ordering
+        for(const key of ['ResourceType', 'ApplicationBlueprint', 'ResourceTemplate', 'DeploymentTemplate']) {
+            const value = root[key]
+            if(typeof transforms[key] == 'function')
+                Object.values(value).forEach(entry => {if(typeof entry == 'object') {transforms[key](entry)}})
+            commit('setProjectState', {key, value})
         }
         if(root.ApplicationBlueprint) {
             commit('setProjectState', {key: 'applicationBlueprint', value: Object.values(root.ApplicationBlueprint)[0]})
@@ -90,66 +144,105 @@ const actions = {
 }
 const getters = {
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
-    resolveResourceTemplate(state) { return name =>  state['ResourceTemplate'][name] },
+    resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
     resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveResource(state) { return name =>  state['Resource'][name] },
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
+    dependenciesFromResourceType(_, getters) {
+        return function(resourceTypeName) {
+            let resourceType
+            if(typeof resourceTypeName == 'string') {
+                resourceType = getters.resolveResourceType(resourceTypeName)
+            } else { resourceType = resourceTypeName }
+
+            if(!resourceType.requirements) return []
+            return resourceType.requirements.map(req => ({
+                name: req.name,
+                constraint: req,
+                match: null,
+                target: null,
+                __typename: 'Dependency'
+            }))
+        }
+    },
+    getMissingDependencies(_, getters) {
+        return function(resourceTemplate) {
+            const generatedDependencies = getters.dependenciesFromResourceType(resourceTemplate.type)
+            if(generatedDependencies.length == resourceTemplate.dependencies?.length) {
+                return [] // assuming they're correct
+            }
+            const result = []
+            for(const generated of generatedDependencies) {
+                if(!resourceTemplate.dependencies.some(dep => dep.name == generated.name)) {
+                    result.push(generated)
+                }
+            }
+            return result
+        }
+    },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
     applicationBlueprintIsLoaded(state) {return state.loaded},
     getValidResourceTypes(state, getters) {
         return function(dependency, _deploymentTemplate) {
-            if(!dependency) return []
-            const dependencyName = typeof(dependency) == 'string'? dependency:
-                dependency.name
+            // having trouble getting fetches finished before the ui starts rendering
+            try {
+                if(!dependency) return []
+                const dependencyName = typeof(dependency) == 'string'? dependency:
+                    dependency.name
                 //dependency.resourceType || dependency.constraint && dependency.constraint.resourceType.name
 
-            function filteredByType(resourceType) {
-                let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
-                return Object.values(state.ResourceType).filter(type => {
-                    return Array.isArray(type.extends) && type.extends.includes(typeName)
-                })
-            }
-            let result = filteredByType(dependencyName)
+                function filteredByType(resourceType) {
+                    let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
+                    return Object.values(state.ResourceType).filter(type => {
+                        return Array.isArray(type.extends) && type.extends.includes(typeName)
+                    })
+                }
+                let result = filteredByType(dependencyName)
 
 
-            /*
-             * I changed this to support the temporary deployment draft
-             * if you're tracking down a bug in here this may be it
+                /*
+                 * I changed this to support the temporary deployment draft
+                 * if you're tracking down a bug in here this may be it
             const deploymentTemplate = getters.resolveDeploymentTemplate(
                 typeof(_deploymentTemplate) == 'string'? 
                 _deploymentTemplate: _deploymentTemplate.slug
             )
             */
 
-            const deploymentTemplate = typeof _deploymentTemplate == 'string'?
-                getters.resolveDeploymentTemplate(_deploymentTemplate) :
-                new DeploymentTemplate(_deploymentTemplate, state)
 
-            if(result.length == 0 && deploymentTemplate) {
-                const dependency = deploymentTemplate._primary.dependencies
-                    .find(dependency => dependency.name == dependencyName)
-                if(dependency) {
-                    result = filteredByType(dependency.constraint.resourceType)
+                const deploymentTemplate = typeof _deploymentTemplate == 'string'?
+                    getters.resolveDeploymentTemplate(_deploymentTemplate) :
+                    new DeploymentTemplate(_deploymentTemplate, state)
+
+                if(result.length == 0 && deploymentTemplate) {
+                    const dependency = deploymentTemplate._primary.dependencies
+                        .find(dependency => dependency.name == dependencyName)
+                    if(dependency) {
+                        result = filteredByType(dependency.constraint.resourceType)
+                    }
                 }
-            }
-            
-            // TODO query for this information
-            const CLOUD_MAPPINGS = {
-                'unfurl.nodes.AzureAccount': 'unfurl.nodes.AzureResources',
-                'unfurl.nodes.GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
-                'unfurl.nodes.AWSAccount': 'unfurl.nodes.AWSResource',
-            }
 
-            if(deploymentTemplate?.cloud) {
-                const allowedCloudVendor = `unfurl.nodes.${deploymentTemplate.cloud}`
-                result = result.filter(type => {
-                    return !type.extends.includes('unfurl.nodes.CloudObject') ||
-                        type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+                // TODO query for this information
+                const CLOUD_MAPPINGS = {
+                    'unfurl.nodes.AzureAccount': 'unfurl.nodes.AzureResources',
+                    'unfurl.nodes.GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
+                    'unfurl.nodes.AWSAccount': 'unfurl.nodes.AWSResource',
+                }
 
-                })
+                if(deploymentTemplate?.cloud) {
+                    const allowedCloudVendor = `unfurl.nodes.${deploymentTemplate.cloud}`
+                    result = result.filter(type => {
+                        return !type.extends.includes('unfurl.nodes.CloudObject') ||
+                            type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+
+                    })
+                }
+
+                return result
+            } catch(e) {
+                console.error(e)
+                return []
             }
-            
-            return result
         }
     }
 }

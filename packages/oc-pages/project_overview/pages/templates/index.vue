@@ -14,6 +14,7 @@ import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
 import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
+import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 
 
 
@@ -68,7 +69,6 @@ export default {
         shortName: this.$projectGlobal.ref,
         fullName: `refs/heads/${this.$projectGlobal.ref}`,
       },
-      //pipelinesPath: `/${this.$projectGlobal.projectPath}/-/pipelines`,
     };
   },
 
@@ -93,7 +93,7 @@ export default {
 
     ]),
     
-    piplinesPath(){
+    pipelinesPath(){
       return `/${this.getHomeProjectPath}/-/pipelines`
     },
 
@@ -267,7 +267,8 @@ export default {
       'resetStagedChanges',
       'onApplicationBlueprintLoaded',
       'setUpdateObjectPath',
-      'setUpdateObjectProjectPath'
+      'setUpdateObjectProjectPath',
+      'pushPreparedMutation'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -415,11 +416,13 @@ export default {
     async onSubmitDeleteTemplateModal() {
       try {
         this.activeSkeleton = true;
-        await this.deleteDeploymentTemplate(this.$route.params.slug);
-        //if (isOk) { deleteDeploymentTemplate should throw errors
-        this.activeSkeleton = false;
         this.clearPreparedMutations();
         this.resetStagedChanges();
+        this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug}))
+
+        await this.commitPreparedMutations()
+        //if (isOk) { deleteDeploymentTemplate should throw errors
+        this.activeSkeleton = false;
         this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
         //}
       }catch (e) {

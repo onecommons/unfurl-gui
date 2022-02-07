@@ -64,6 +64,22 @@ export function appendDeploymentTemplateInBlueprint({templateName}) {
     }
 }
 
+export function deleteDeploymentTemplate({slug, name}) {
+    const target = slug || name
+    return function(accumulator) {
+        const deploymentTemplate = accumulator['DeploymentTemplate'][target]
+        const result = []
+        for(const resourceTemplate of deploymentTemplate.resourceTemplates) {
+            result.push(deleteResourceTemplate({templateName: resourceTemplate}))
+        }
+
+        result.push(deleteDeploymentTemplateInBlueprint({templateName: deploymentTemplate.name, blueprintName: deploymentTemplate.blueprint}))
+        result.push({typename: 'DeploymentTemplate', target, patch: null})
+
+        return result
+    }
+}
+
 export function deleteDeploymentTemplateInBlueprint({templateName}) {
     return function(accumulator) {
         // TODO should we take this as an arg?
@@ -75,7 +91,7 @@ export function deleteDeploymentTemplateInBlueprint({templateName}) {
     }
 }
 
-export function deleteResourceTemplate({templateName, deploymentTemplateName}) {
+export function deleteResourceTemplate({templateName, deploymentTemplateName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const patch = null
         const result = [ {typename: 'ResourceTemplate', target: templateName, patch} ]
@@ -83,6 +99,13 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName}) {
             result.push(
                 deleteResourceTemplateInDT({templateName, deploymentTemplateName})//(accumulator)[0]
             )
+        }
+        if(dependentName && dependentRequirement) {
+            console.warn("this isn't tested yet")
+            result.push(
+                deleteResourceTemplateInDependent({dependentName, dependentRequirement})
+            )
+
         }
 
         return result
@@ -101,7 +124,7 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
     }
 }
 
-export function deleteResourceTemplateInDependent({templateName, dependentName, dependentRequirement}) {
+export function deleteResourceTemplateInDependent({dependentName, dependentRequirement}) {
     return function (accumulator) {
         const patch = accumulator['ResourceTemplate'][dependentName]
         for(const dependency of patch.dependencies) {
@@ -166,7 +189,7 @@ function expectParam(paramName, functionName, paramValue) {
     }
 }
 
-export function createDeploymentTemplate({blueprintName, primary, primaryType, name, title, slug, description}) {
+export function createDeploymentTemplate({blueprintName, primary, primaryName, primaryType, name, title, slug, description}) {
     expectParam('blueprintName', 'createDeploymentTemplate', blueprintName)
     expectParam('name', 'createDeploymentTemplate', name || slug)
     console.warn('prepared createDeploymentTemplate is untested')
@@ -178,8 +201,9 @@ export function createDeploymentTemplate({blueprintName, primary, primaryType, n
         const _slug = slug || name
         const _name = name || slug
 
+        const _primaryName = primaryName? primaryName: slugify(`${_name} ${primary}`)
         const patch = {
-            primary: slugify(primary),
+            primary: _primaryName,
             name: _name,
             blueprint: blueprintName,
             slug: _slug,
@@ -192,7 +216,7 @@ export function createDeploymentTemplate({blueprintName, primary, primaryType, n
         result.push({patch, target: _name, typename: 'DeploymentTemplate'})
 
         result.push(
-            createResourceTemplate({type, name: slugify(primary), title: primary, description, deploymentTemplateName: slug})//(accumulator)[0]
+            createResourceTemplate({type, name: _primaryName, title: primary, description, deploymentTemplateName: name})//(accumulator)[0]
         )
 
         result.push(

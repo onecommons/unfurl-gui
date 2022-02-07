@@ -68,6 +68,7 @@ function selectDependency(dependencyName) {
     cy.get('input[type="radio"]').click({force: true})
   })
   cy.get('button').contains('button', 'Next').click()
+  cy.wait(100)
 
 }
 function deleteCard(name) {
@@ -109,7 +110,7 @@ describe('project overview v2', () => {
     })
 
     it('should be invalid', () => {
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         withinCardHeader(() => {
           expectInvalidInput()
         })
@@ -117,7 +118,7 @@ describe('project overview v2', () => {
     })
 
     it('should have invalid inputs', () => {
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         withinOcInput(() => {
           expectInvalidInput()
         })
@@ -125,7 +126,7 @@ describe('project overview v2', () => {
     })
 
     it('should be able to create valid inputs', () => {
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         withinOcInput(() => {
           expectInvalidInput()
           cy.get('input[placeholder="image"]').type('my amazing image')
@@ -137,7 +138,7 @@ describe('project overview v2', () => {
     })
 
     it('should keep valid inputs when saved', () => {
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         withinOcInput(() => {
           cy.get('input[placeholder="image"]').type('my amazing image')
           cy.get('input[placeholder="domain"]').type('unfurl.cloud')
@@ -145,7 +146,7 @@ describe('project overview v2', () => {
       })
       clickSaveTemplate()
 
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         withinOcInput(() => {
           expectValidInput()
         })
@@ -153,7 +154,7 @@ describe('project overview v2', () => {
     })
 
     it('should be able to fill inputs in a dependency', () => {
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         clickTableRowButton('host', 'Create')
       })
       withinModal(() => {
@@ -187,7 +188,7 @@ describe('project overview v2', () => {
     })
 
     it('can handle recursive dependencies', () => {
-      withinCard('apostrophe-demo', () => {
+      withinCard('my-awesome-template-apostrophe-demo', () => {
         clickTableRowButton('db', 'Create')
       })
       withinModal(() => {
@@ -401,6 +402,7 @@ describe('project overview', () => {
     })
 
     it('can delete a template', () => {
+      Cypress.config('defaultCommandTimeout', 10000); // last step ends up being really slow
       cy.get('button[title="Delete Template"]').click()
       cy.wait(250)
 

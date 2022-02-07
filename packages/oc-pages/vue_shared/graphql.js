@@ -140,8 +140,15 @@ function resolutionError(itemKey, typename, parent) {
   return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent?.name}: ${parent.__typename}`)
 }
 
-// TODO pack everything after field into options
-function makeClientResolver(typename, field=null, selector, indexTypename=true, setContext=true) {
+function makeClientResolver(typename, field=null, selector, o) {
+    const {indexTypename, setContext, targetIsDictionary} = Object.assign(
+        {
+            indexTypename: true,
+            setContext: false,
+            targetIsDictionary: false
+        },
+        o
+    )
     return (root, variables, context, info) => {
         // query must retrieve the json field
         let target = root
@@ -161,8 +168,21 @@ function makeClientResolver(typename, field=null, selector, indexTypename=true, 
         //context.jsondb = json;
         if(!target) return null
         target = (typeof(selector) == 'function'? selector(target, root, variables, context, info): target)
-        if(Array.isArray(target)) target.forEach(t => {if(t) {t.__typename = typename}})
-        else target.__typename = typename; // ensure __typename
+
+        if(Array.isArray(target)) target.forEach(t => {if(typeof t == 'object') {t.__typename = typename}})
+        else if(targetIsDictionary && typeof target == 'object') {
+            Object.values(target).forEach(child => child.__typename = typename)
+            target.__typename = 'JSON'
+        } else {
+          target.__typename = typename
+
+        }
+
+        if(typename == 'ResourceTemplate') {
+            console.log(target)
+
+        }
+        //else target.__typename = typename; // ensure __typename
         return target
     }
 }
@@ -171,10 +191,11 @@ function makeObjectLookupResolver(typename) {
   return (parent, args, { cache, jsondb, dehydrated }, info) => {
       if (dehydrated) return  parent [info.field.name.value] 
       const obj = jsondb[typename][ parent [ info.field.name.value] ];
-      if (obj) {
+      if (typeof obj == 'object') {
           obj.__typename = typename; // ensure __typename
       } else {
-          throw resolutionError(itemKey, typename, parent)
+          // not sure this is the right item key
+          throw resolutionError(info.field.name.value, typename, parent)
       }
       return obj ?? null;
   }
@@ -194,7 +215,7 @@ function listMakeObjectLookupResolver(typename) {
         for(const itemKey of items) {
             if(dehydrated) return itemKey
             const item = jsondb[typename][itemKey]
-            if(item) {
+            if(typeof item == 'object') {
                 item.__typename = typename
             } else {
                 throw resolutionError(itemKey, typename, parent)
@@ -214,12 +235,12 @@ export const resolvers = {
         }),
         ResourceType: makeClientResolver('ResourceType', 'json'),
         ApplicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json'),
-        ResourceTemplate: makeClientResolver('ResourceTemplate', 'json'),
+        ResourceTemplate: makeClientResolver('ResourceTemplate', 'json', null, {targetIsDictionary: true}),
         DeploymentTemplate: makeClientResolver('DeploymentTemplate', 'json'),
     },
   
     Environment: {
-      deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, false, false)
+        deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, {indexTypename: false, setContext: false})
     },
 
     DeploymentEnvironment: {
@@ -227,7 +248,7 @@ export const resolvers = {
             if(dehydrated) return Object.keys(parent.connections)
             const resourceTemplates = Object.values(parent.connections);
             resourceTemplates.forEach((elem) => {
-                if(elem) elem.__typename = 'ResourceTemplate';
+                if(typeof elem == 'object') elem.__typename = 'ResourceTemplate';
             });
 
             return resourceTemplates
@@ -236,7 +257,7 @@ export const resolvers = {
         primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
             const pp = parent.connections.primary_provider;
             if(dehydrated) return pp?.name
-            if (pp) {
+            if (typeof pp == 'object') {
                 pp.__typename = 'ResourceTemplate';
             }
             return pp || null;
@@ -301,9 +322,8 @@ export const resolvers = {
         cloud: (obj, args, { }) => (obj && obj.cloud) ?? null,
         blueprint: makeObjectLookupResolver('ApplicationBlueprint'),
         primary: makeObjectLookupResolver('ResourceTemplate'),
-
-        resourceTemplates: listMakeObjectLookupResolver('ResourceTemplate')
-
+        name: (obj) => obj.name || obj.slug || null,
+        resourceTemplates: listMakeObjectLookupResolver('ResourceTemplate', 'json')
     },
 
     ResourceType: {
@@ -328,7 +348,11 @@ export const resolvers = {
     ResourceTemplate: {
         type: makeObjectLookupResolver('ResourceType'),
         name: (obj, args, { }) => (obj && obj.name) ?? null,
-        dependencies: _.partial(patchTypenameInArr, "Dependency"),
+        dependencies(parent, args, { cache, jsondb, dehydrated }, info) {
+            const type = jsondb['ResourceType'][parent.type]
+            console.log(type)
+            return parent.dependencies || null
+        },
         properties: _.partial(patchTypenameInArr, "Input"),
         description: (obj, args, { }) => (obj && obj.description) ?? null,
         outputs: (obj, args, { }) => (obj && obj.outputs) ?? [],

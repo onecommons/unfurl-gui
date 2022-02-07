@@ -8,7 +8,7 @@ function openDeployDialog(text) {
     .within(() => {
       cy.get('button').contains('button', 'Deploy').click()
     })
-  cy.wait(200)
+  cy.wait(300)
 }
 
 function modalHeader() {
@@ -83,6 +83,7 @@ describe('project overview deploy', () => {
   })
 
   it('can enter deployment creation view', () => {
+    cy.on('uncaught:exception', (e) => false) // problems with duplicate navigation
     openDeployDialog('Self-Hosted')
     deploymentNameInput().clear().type('My awesome deployment')
 
