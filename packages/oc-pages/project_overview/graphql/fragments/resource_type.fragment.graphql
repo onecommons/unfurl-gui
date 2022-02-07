@@ -5,6 +5,7 @@ fragment ResourceTypes on ResourceType{
   description
   badge
   inputsSchema
+  outputsSchema
   
   # TODO add back properties
   #properties {

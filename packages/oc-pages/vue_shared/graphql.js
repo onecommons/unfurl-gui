@@ -255,9 +255,12 @@ export const resolvers = {
         primary: makeObjectLookupResolver('ResourceType'),
         // TODO implement filtering
         deploymentTemplates: listMakeObjectLookupResolver('DeploymentTemplate'),
-        overview: makeClientResolver('Overview'),
+        image: (obj) => obj.image ?? null,
+        description: (obj) => obj.description ?? null
+        //overview: makeClientResolver('Overview'),
 
     },
+    /*
     Overview: {
 
         title: (obj, args, { }) => (obj && obj.title) ?? null,
@@ -293,6 +296,7 @@ export const resolvers = {
             return overview.templates
         }
     },
+    */
     DeploymentTemplate: {
         cloud: (obj, args, { }) => (obj && obj.cloud) ?? null,
         blueprint: makeObjectLookupResolver('ApplicationBlueprint'),
@@ -310,6 +314,11 @@ export const resolvers = {
         //properties: _.partial(patchTypenameInArr, "Input"),
         inputsSchema: (obj) => {
             const schema = (obj && obj.inputsSchema) ?? {}
+            schema.__typename = 'JSON'
+            return schema
+        },
+        outputsSchema: (obj) => {
+            const schema = (obj && obj.outputsSchema) ?? {}
             schema.__typename = 'JSON'
             return schema
         },

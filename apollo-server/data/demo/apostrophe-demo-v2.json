@@ -4,7 +4,7 @@
       "name": "unfurl.nodes.GoogleCloudObject",
       "title": "GoogleCloudObject",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
@@ -38,7 +38,7 @@
       "name": "unfurl.nodes.CloudObject",
       "title": "CloudObject",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -63,7 +63,7 @@
       "name": "unfurl.nodes.GoogleCloudProject",
       "title": "GoogleCloudProject",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudProject",
         "unfurl.nodes.CloudAccount",
         "tosca.nodes.Root",
@@ -102,7 +102,7 @@
       "name": "unfurl.nodes.CloudAccount",
       "title": "CloudAccount",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.CloudAccount",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -118,7 +118,7 @@
       "name": "unfurl.nodes.GoogleCloudServiceKey",
       "title": "GoogleCloudServiceKey",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudServiceKey",
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
@@ -165,7 +165,7 @@
       "name": "unfurl.nodes.GoogleCloudResource",
       "title": "GoogleCloudResource",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
@@ -219,7 +219,7 @@
       "name": "unfurl.nodes.GoogleCloudOrganization",
       "title": "GoogleCloudOrganization",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudOrganization",
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
@@ -275,7 +275,7 @@
       "name": "unfurl.nodes.GoogleCloudFolder",
       "title": "GoogleCloudFolder",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudFolder",
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
@@ -339,7 +339,7 @@
       "name": "Base",
       "title": "Base",
       "description": "",
-      "implements": [
+      "extends": [
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -356,7 +356,7 @@
       "title": "Compute",
       "description": "",
       "badge": "COMPUTE",
-      "implements": [
+      "extends": [
         "Compute",
         "Base",
         "tosca.nodes.Root",
@@ -390,7 +390,7 @@
       "name": "AWSInstance",
       "title": "AWSInstance",
       "description": "",
-      "implements": [
+      "extends": [
         "AWSInstance",
         "Compute",
         "Base",
@@ -444,7 +444,7 @@
       "name": "unfurl.nodes.AWSResource",
       "title": "AWSResource",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.AWSResource",
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
@@ -478,7 +478,7 @@
       "name": "GCPInstance",
       "title": "GCPInstance",
       "description": "",
-      "implements": [
+      "extends": [
         "GCPInstance",
         "Compute",
         "Base",
@@ -533,7 +533,7 @@
       "title": "MongoDb",
       "description": "",
       "badge": "Database",
-      "implements": [
+      "extends": [
         "MongoDb",
         "Base",
         "tosca.nodes.Root",
@@ -550,7 +550,7 @@
       "name": "Atlas",
       "title": "Atlas",
       "description": "",
-      "implements": [
+      "extends": [
         "Atlas",
         "MongoDb",
         "Base",
@@ -580,7 +580,7 @@
       "name": "SelfHostedMongoDb",
       "title": "SelfHostedMongoDb",
       "description": "",
-      "implements": [
+      "extends": [
         "SelfHostedMongoDb",
         "MongoDb",
         "Base",
@@ -608,7 +608,7 @@
       "title": "DNS",
       "description": "DNS provider for domain name configuration",
       "badge": "DNS",
-      "implements": [
+      "extends": [
         "DNS",
         "Base",
         "tosca.nodes.Root",
@@ -626,7 +626,7 @@
       "title": "Mail Server",
       "description": "Mail server to use for sending mail (optional)",
       "badge": "MAIL",
-      "implements": [
+      "extends": [
         "Mail",
         "Base",
         "tosca.nodes.Root",
@@ -643,7 +643,7 @@
       "name": "DockerHost",
       "title": "DockerHost",
       "description": "",
-      "implements": [
+      "extends": [
         "DockerHost",
         "Compute",
         "Base",
@@ -678,7 +678,7 @@
       "name": "unfurl.nodes.Installer.Terraform",
       "title": "Terraform",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.Installer.Terraform",
         "unfurl.nodes.Installer",
         "tosca.nodes.Root",
@@ -696,7 +696,7 @@
       "name": "unfurl.nodes.Installer",
       "title": "Installer",
       "description": "",
-      "implements": [
+      "extends": [
         "unfurl.nodes.Installer",
         "tosca.nodes.Root",
         "unfurl.capabilities.Installer",
@@ -713,7 +713,7 @@
       "name": "MEANStack",
       "title": "MEANStack",
       "description": "",
-      "implements": [
+      "extends": [
         "MEANStack"
       ],
       "inputsSchema": {

@@ -346,26 +346,14 @@ export default {
 
         }
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n});
-        if(! await this.populateTemplateResources({
+        const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 
           renamePrimary, 
           renameDeploymentTemplate,
           environmentName: this.$route.params.environment,
           syncState: this.$route.name == 'deploymentDraftPage'
-        })) {
-          /*
-                if(n < 5) {
-                    setTimeout(
-                        _ => this.fetchItems(++n),
-                        50
-                    )
-                } else {
-                    throw new Error(`Could not load project within ${n} attempts`)
-                }
-                return
-           */
-        }
+        })
       } catch (e) {
         console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });

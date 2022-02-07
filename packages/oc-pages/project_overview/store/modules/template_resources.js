@@ -195,7 +195,7 @@ const actions = {
 
             commit(
                 'pushPreparedMutation',
-                createResourceTemplate({...target, deploymentTemplateSlug: _state.lastFetchedFrom.templateSlug}),
+                createResourceTemplate({...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
                 {root: true}
             );
             const fieldsToReplace = {
@@ -233,7 +233,7 @@ const actions = {
             });
 
             if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
-                commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateSlug: getters.getDeploymentTemplate.slug}), {root: true});
+                commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name}), {root: true});
 
                 return true;
             }

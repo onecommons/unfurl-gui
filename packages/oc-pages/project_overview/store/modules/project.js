@@ -201,7 +201,6 @@ const actions = {
             fetchPolicy: 'network-only',
             variables: { projectPath, defaultBranch },
         });
-        const overview = data.applicationBlueprintProject.applicationBlueprint.overview;
         // NOTE we don't have title,image
 
         async function fetchProjectPermissions(projectPath) {
@@ -227,7 +226,7 @@ const actions = {
         const hasEditPermissions = await fetchProjectPermissions(projectPath)
 
 
-        const projectInfo = {...data.applicationBlueprintProject.applicationBlueprint.overview, ...data.applicationBlueprintProject.applicationBlueprint, fullPath: projectPath, hasEditPermissions}
+        const projectInfo = {...data.applicationBlueprintProject.applicationBlueprint, fullPath: projectPath, hasEditPermissions}
         commit('SET_PROJECT_INFO', projectInfo)
         if(!errors) {
             commit('SET_TEMPLATES_LIST', data.applicationBlueprintProject.applicationBlueprint.deploymentTemplates);

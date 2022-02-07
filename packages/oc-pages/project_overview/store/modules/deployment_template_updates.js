@@ -34,23 +34,23 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
     }
 }
 
-export function appendResourceTemplateInDT({templateName, deploymentTemplateSlug}) {
+export function appendResourceTemplateInDT({templateName, deploymentTemplateName}) {
     return function(accumulator) {
-        const patch = accumulator['DeploymentTemplate'][deploymentTemplateSlug]
+        const patch = accumulator['DeploymentTemplate'][deploymentTemplateName]
         if(Array.isArray(patch.resourceTemplates)) patch.resourceTemplates.push(templateName)
         else patch.resourceTemplates = [templateName]
-        return [ {typename: 'DeploymentTemplate', target: deploymentTemplateSlug, patch} ]
+        return [ {typename: 'DeploymentTemplate', target: deploymentTemplateName, patch} ]
     }
 }
 
-export function deleteResourceTemplateInDT({templateName, deploymentTemplateSlug}) {
+export function deleteResourceTemplateInDT({templateName, deploymentTemplateName}) {
     return function(accumulator) {
-        const patch = accumulator['DeploymentTemplate'][deploymentTemplateSlug]
+        const patch = accumulator['DeploymentTemplate'][deploymentTemplateName]
         if(!patch.resourceTemplates)
             patch.resourceTemplates = []
         const index = patch.resourceTemplates.indexOf(templateName)
         if(index != -1) patch.resourceTemplates.splice(index, 1)
-        return [ {typename: 'DeploymentTemplate', target: deploymentTemplateSlug, patch} ]
+        return [ {typename: 'DeploymentTemplate', target: deploymentTemplateName, patch} ]
     }
 }
 
@@ -75,13 +75,13 @@ export function deleteDeploymentTemplateInBlueprint({templateName}) {
     }
 }
 
-export function deleteResourceTemplate({templateName, deploymentTemplateSlug}) {
+export function deleteResourceTemplate({templateName, deploymentTemplateName}) {
     return function(accumulator) {
         const patch = null
         const result = [ {typename: 'ResourceTemplate', target: templateName, patch} ]
-        if(deploymentTemplateSlug) { 
+        if(deploymentTemplateName) { 
             result.push(
-                deleteResourceTemplateInDT({templateName, deploymentTemplateSlug})//(accumulator)[0]
+                deleteResourceTemplateInDT({templateName, deploymentTemplateName})//(accumulator)[0]
             )
         }
 
@@ -114,13 +114,13 @@ export function deleteResourceTemplateInDependent({templateName, dependentName, 
     }
 }
 
-export function createResourceTemplate({type, name, title, description, deploymentTemplateSlug, dependentName, dependentRequirement}) {
+export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const result = []
 
-        if(deploymentTemplateSlug) {
+        if(deploymentTemplateName) {
             result.push(
-                appendResourceTemplateInDT({templateName: name, deploymentTemplateSlug})//(accumulator)[0]
+                appendResourceTemplateInDT({templateName: name, deploymentTemplateName})//(accumulator)[0]
             )
         }
 
@@ -192,7 +192,7 @@ export function createDeploymentTemplate({blueprintName, primary, primaryType, n
         result.push({patch, target: _name, typename: 'DeploymentTemplate'})
 
         result.push(
-            createResourceTemplate({type, name: slugify(primary), title: primary, description, deploymentTemplateSlug: slug})//(accumulator)[0]
+            createResourceTemplate({type, name: slugify(primary), title: primary, description, deploymentTemplateName: slug})//(accumulator)[0]
         )
 
         result.push(

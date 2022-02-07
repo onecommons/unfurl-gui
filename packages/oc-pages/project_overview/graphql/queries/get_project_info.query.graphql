@@ -11,9 +11,11 @@ query getProjectInfo($projectPath: ID!) {
     applicationBlueprint{
       __typename
       name
+      image
+      description
       deploymentTemplates {
         title
-        slug
+        name
         cloud
         resourceTemplates {
           name
@@ -36,16 +38,6 @@ query getProjectInfo($projectPath: ID!) {
 
         }
       }
-      overview {
-        id
-        title
-        description
-        livePreview
-        name
-        sourceCodeUrl
-        webUrl
-      }
-
     }
   }
 }

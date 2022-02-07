@@ -4,7 +4,7 @@
       "name": "MEANStack",
       "title": "MEANStack",
       "description": "",
-      "implements": [],
+      "extends": [],
       "properties": [
         {
           "title": "image",
@@ -57,7 +57,7 @@
       "name": "Base",
       "title": "Base",
       "description": "",
-      "implements": [
+      "extends": [
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
         "tosca.capabilities.Root"
@@ -71,7 +71,7 @@
       "title": "Compute",
       "description": "",
       "badge": "COMPUTE",
-      "implements": [
+      "extends": [
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -102,7 +102,7 @@
       "name": "DockerHost",
       "title": "DockerHost",
       "description": "",
-      "implements": [
+      "extends": [
         "Compute",
         "Base",
         "tosca.nodes.Root",
@@ -135,7 +135,7 @@
       "title": "MongoDb",
       "description": "",
       "badge": "Database",
-      "implements": [
+      "extends": [
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -149,7 +149,7 @@
       "name": "Atlas",
       "title": "Atlas",
       "description": "",
-      "implements": [
+      "extends": [
         "MongoDb",
         "Base",
         "tosca.nodes.Root",

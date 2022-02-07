@@ -76,7 +76,7 @@ export default {
             };
         },
         querySpec() {
-            if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.slug)
+            if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.name)
                 return {
                     fn: this.templateForkedName || undefined,
                     ts: this.projectSlugName || undefined
@@ -94,7 +94,19 @@ export default {
             )
         },
         inputProperties() {
-            return Object.values(this.getProjectInfo.primary?.inputsSchema?.properties) || []
+            try {
+                return Object.values(this.getProjectInfo.primary.inputsSchema.properties || {})
+            } catch(e) {
+                return []
+            }
+        },
+        outputProperties() {
+            try {
+                return Object.values(this.getProjectInfo.primary.outputsSchema.properties || {})
+            } catch(e) {
+                return []
+            }
+
         }
     },
     watch: {
@@ -124,7 +136,7 @@ export default {
         bus.$on('deployTemplate', (template) => {
             this.instantiateAs = 'deployment-draft'
             this.templateSelected = {...template};
-            this.projectSlugName = template.slug;
+            this.projectSlugName = template.name;
         });
 
         bus.$on('editTemplate', (template) => {
@@ -160,7 +172,7 @@ export default {
         //
 
         const templateSelected = this.$route.query?.ts?
-            this.$store.getters.getTemplatesList.find(template => template.slug == this.$route.query.ts) : null 
+            this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null 
         
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
@@ -173,7 +185,7 @@ export default {
         redirectToTemplateEditor(page='templatePage') {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
-            this.$router.push({ query, name: page, params: { environment: this.templateSelected.environment, slug: this.templateSelected.slug}});
+            this.$router.push({ query, name: page, params: { environment: this.templateSelected.environment, slug: this.templateSelected.name}});
         },
 
         clearModalTemplate() {
@@ -220,7 +232,7 @@ export default {
         prepareTemplateNew() {
             this.templateSelected.primary = this.templateSelected.title
             this.templateSelected.title = this.templateForkedName;
-            this.templateSelected.slug = slugify(this.templateForkedName);
+            this.templateSelected.name = slugify(this.templateForkedName);
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.$refs?.dropdown?.text;
             this.templateSelected.primaryType = this.getProjectInfo.primary
@@ -278,7 +290,7 @@ export default {
                     :project-info="getProjectInfo"
                     :requirements="getProjectInfo.primary.requirements" 
                     :inputs="inputProperties"
-                    :outputs="getProjectInfo.primary.outputs"
+                    :outputs="outputProperties"
                     :project-description="getProjectInfo.description"
                     :project-image="getProjectInfo.image"
                     :live-url="getProjectInfo.livePreview"

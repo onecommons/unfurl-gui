@@ -25,7 +25,7 @@ query getTemplateBySlug($projectPath: ID!, $templateSlug: String!, $fetchPolicy:
       }
       deploymentTemplates (searchBySlug: $templateSlug){
         title
-        slug
+        name
         cloud
         primary {
           name

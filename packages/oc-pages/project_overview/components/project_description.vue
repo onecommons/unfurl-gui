@@ -163,7 +163,7 @@ export default {
                                 <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-4">
                                     {{input.title}}
                                     <div class="light-gray gl-mt-2">
-                                        {{ input.instructions }}
+                                        {{ input.description }}
                                     </div>
                                 </li>
                             </ul>
@@ -181,7 +181,7 @@ export default {
                                 <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-4">
                                     {{output.title}}
                                     <div class="light-gray gl-mt-2">
-                                        {{ output.instructions }}
+                                        {{ output.description }}
                                     </div>
                                 </li>
                             </ul>
