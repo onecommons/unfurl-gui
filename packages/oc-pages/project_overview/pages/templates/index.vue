@@ -87,6 +87,7 @@ export default {
       'resolveMatchTitle',
       'cardIsValid',
       'getUsername',
+      'getHomeProjectPath',
       'getValidResourceTypes',
       'getValidConnections',
       'getHomeProjectPath'
@@ -363,7 +364,20 @@ export default {
         this.activeSkeleton = false;
       }
     },
-
+    async createDeploymentPathPointer() {
+        this.setUpdateObjectPath('environments.json')
+        const environment = this.$route.params.environment
+        const deploymentPath = `environments/${environment}/${this.getDeploymentTemplate.name}`
+        this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+        this.pushPreparedMutation(() => {
+            return [{
+                typename: 'DeploymentPath',
+                patch: {__typename: 'DeploymentPath', environment},
+                target: deploymentPath
+            }]
+        })
+        await this.commitPreparedMutations()
+    },
     async triggerSave() {
         try {
             await this.commitPreparedMutations();
@@ -395,6 +409,7 @@ export default {
           this.deployButton = false;
           this.loadingDeployment = true;
           await this.triggerSave();
+          await this.createDeploymentPathPointer()
           const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName });
           createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
           return redirectTo(`${this.pipelinesPath}/${data.id}`);
