@@ -7638,6 +7638,8 @@ type Environment {
   """
   clientPayload: JSON
 
+  deployments: JSON
+
   """
   ID of the environment.
   """
