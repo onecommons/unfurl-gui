@@ -1,5 +1,6 @@
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
+import {uniq} from 'lodash'
 
 
 class ApplicationBlueprint {
@@ -69,6 +70,7 @@ const mutations = {
     setProjectState(state, {key, value}) {
         state[key] = value
     },
+    
     loaded(state, status) {
         state.loaded = status
         state.callbacks.forEach(cb => {if(typeof cb == 'function') {cb()} else throw new Error('application blueprint callback is not a function')})  
@@ -79,7 +81,7 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, getters}, params) {
+    async fetchProject({commit, dispatch}, params) {
         const {projectPath, fullPath, fetchPolicy} = params
         commit('loaded', false)
         const query = gql`
@@ -107,6 +109,20 @@ const actions = {
 
 
         // normalize messy data in here
+        const {data, errors} = result
+        const root = data.applicationBlueprintProject
+        if(errors?.length) {
+            for(const error of errors) {
+                console.error(error)
+                throw new Error('Could not fetch project blueprint')
+            }
+        }
+        dispatch('useProjectState', root)
+
+
+        commit('loaded', true)
+    },
+    useProjectState({commit, getters}, root) {
         const transforms = {
             ResourceTemplate(resourceTemplate) {
                 const generated = getters.getMissingDependencies(resourceTemplate)
@@ -122,15 +138,25 @@ const actions = {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
                 }
+            },
+            ApplicationBlueprint(applicationBlueprint) {
+                if(!applicationBlueprint.title) {
+                    applicationBlueprint.title = applicationBlueprint.name
+                }
+            },
+            ResourceType(resourceType) {
+                if(!resourceType.title) {
+                    resourceType.title = resourceType.name
+                }
             }
         }
 
-        const {data, errors} = result
-        const root = data.applicationBlueprintProject
-
         // guarunteed ordering
-        for(const key of ['ResourceType', 'ApplicationBlueprint', 'ResourceTemplate', 'DeploymentTemplate']) {
+        const ordering = uniq(['ResourceType', 'ResourceTemplate', 'DeploymentTemplate'].concat(Object.keys(root)))
+
+        for(const key of ordering) {
             const value = root[key]
+            if(typeof value != 'object') continue
             if(typeof transforms[key] == 'function')
                 Object.values(value).forEach(entry => {if(typeof entry == 'object') {transforms[key](entry)}})
             commit('setProjectState', {key, value})
@@ -138,9 +164,8 @@ const actions = {
         if(root.ApplicationBlueprint) {
             commit('setProjectState', {key: 'applicationBlueprint', value: Object.values(root.ApplicationBlueprint)[0]})
         }
-
-        commit('loaded', true)
     }
+    
 }
 const getters = {
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
@@ -181,6 +206,8 @@ const getters = {
         }
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
+    getResources(state) {return Object.values(state.Resource)},
+    getDeployment(state) {return Object.values(state.Deployment)[0]},
     applicationBlueprintIsLoaded(state) {return state.loaded},
     getValidResourceTypes(state, getters) {
         return function(dependency, _deploymentTemplate) {

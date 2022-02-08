@@ -4,6 +4,7 @@ import Status from '../../vue_shared/components/oc/Status.vue';
 import {mapGetters, mapActions} from 'vuex';
 import _ from 'lodash';
 import { __ } from '~/locale';
+import {USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
 
 /*
         unknown: ["muted", "status_notfound"],
@@ -91,7 +92,9 @@ export default {
   computed: {
     ...mapGetters([
       'getApplicationBlueprint',
-      'getDeployments',
+      'getDeploymentDictionaries',
+      'getDeployment',
+      'getResources',
       'resolveResourceTemplate',
       'resolveResourceType',
       'resolveDeploymentTemplate'
@@ -100,38 +103,37 @@ export default {
 
   methods: {
     ...mapActions([
-      'fetchProject'
+      'useProjectState'
     ])
   },
 
   async beforeCreate() {
-    await this.$store.dispatch('fetchDeployments', {projectPath: 'user1/unfurl-home'});
+    //await this.$store.dispatch('fetchEnvironments', {fullPath: `${window.gon.current_username}/${USER_HOME_PROJECT}`});
   },
 
   async mounted() {
     this.loaded = false;
-    await this.$store.dispatch('fetchDeployments', {projectPath: 'user1/unfurl-home'});
+    await this.$store.dispatch('fetchEnvironments', {fullPath: `${window.gon.current_username}/${USER_HOME_PROJECT}`});
     const items = [];
     
-    const groups = _.groupBy(this.getDeployments, 'blueprint');
-    for(const blueprint in groups) {
-      await this.fetchProject({projectPath: blueprint});
-      for(const deployment of groups[blueprint]) {
+    const groups = _.groupBy(this.getDeploymentDictionaries, '_environment');
+    for(const environmentName in groups) {
+      for(const deploymentDict of groups[environmentName]) {
+        this.useProjectState(_.cloneDeep(deploymentDict))
+        const deployment = this.getDeployment
         const application = this.getApplicationBlueprint.title;
-        const environmentName = deployment.environment.name;
-        for(const resource of deployment.resources) {
+
+        for(const resource of this.getResources) {
           const resourceTemplate = this.resolveResourceTemplate(resource.template);
           const resourceType = this.resolveResourceType(resourceTemplate.type);
 
           items.push({application, deployment: deployment.title, environmentName, type: resourceType.title, name: resource.title, status: resource.status.toString()});
         }
-
-
       }
     }
 
-    this.loaded = true;
     this.items = items;
+    this.loaded = true;
   }
 };
 

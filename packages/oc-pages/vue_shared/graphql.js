@@ -141,11 +141,12 @@ function resolutionError(itemKey, typename, parent) {
 }
 
 function makeClientResolver(typename, field=null, selector, o) {
-    const {indexTypename, setContext, targetIsDictionary} = Object.assign(
+    const {indexTypename, setContext, targetIsDictionary, deepClone} = Object.assign(
         {
             indexTypename: true,
             setContext: false,
-            targetIsDictionary: false
+            targetIsDictionary: false,
+            deepClone: false 
         },
         o
     )
@@ -174,6 +175,9 @@ function makeClientResolver(typename, field=null, selector, o) {
             Object.values(target).forEach(child => child.__typename = typename)
             target.__typename = 'JSON'
         } else { target.__typename = typename }
+        if(deepClone) {
+            target = _.cloneDeep(target)
+        }
         return target
     }
 }

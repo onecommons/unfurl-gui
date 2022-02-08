@@ -90,6 +90,7 @@ const actions = {
                             connections
                             primary_provider
                         }
+                        deployments
                         clientPayload
                         name
                     }
@@ -97,6 +98,7 @@ const actions = {
             }
         }`
         let environments
+        let deployments = []
         try {
             const {data, errors} = await graphqlClient.clients.defaultClient.query({
                 query,
@@ -105,8 +107,15 @@ const actions = {
             })
             if(errors) {throw new Error(errors)}
 
-            environments = data.project.environments.nodes.map(environment => {
+            // cloning in the resolver can't be relied on unless we use a different fetchPolicy
+            // there's probably a better way of getting vuex to stop watching environments when we call this action
+            // alternatively we could check if it's cached
+            environments = cloneDeep(data.project.environments).nodes.map(environment => {
                 Object.assign(environment, environment.deploymentEnvironment)
+                for(const deployment of environment.deployments) {
+                    if(!deployment._environment) deployment._environment = environment.name
+                    deployments.push(deployment)
+                }
                 delete environment.deploymentEnvironment
                 delete environment.clientPayload
                 environment.__typename = 'DeploymentEnvironment' // just documenting this to avoid confusion with __typename Environment
@@ -122,61 +131,13 @@ const actions = {
             environments = []
 
         }
-
+        commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
 
     },
     async fetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
+        // TODO get rid of this alias
         return await dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath})
-        /*
-        const query = gql`
-        query getEnvironments($namespace: String!) {
-            environments(namespace: $namespace) {
-                namespace
-                name
-                clientPayload
-                environments(dehydrated: false) @client {
-                    name
-                    connections 
-                    cloud
-                    primary_provider
-                    deployments
-                }
-            }
-        }
-        `
-
-        const namespace = rootGetters.getUsername
-        let environments
-
-        try {
-            const {data, errors} = await graphqlClient.clients.defaultClient.query({
-                query,
-                errorPolicy: 'all',
-                variables: {namespace}
-            })
-
-            environments = data?.environments?.environments
-            for (const environment of environments) {
-                for(const key in environment.connections) { // at the time of writing this, the local resolver is doing something totally bizarre
-                    if(isNaN(parseInt(key))) {
-                        delete environment.connections[key]
-                    }
-                }
-                environment.connections = Object.values(environment.connections)
-            }
-
-        }
-        catch(e){
-            console.error('could not fetch environments')
-            console.error(e)
-            environments = []
-
-        }
-        commit('setEnvironments', environments)
-        return environments
-        */
-
     }
 };
 function envFilter(name){

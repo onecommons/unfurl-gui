@@ -4,7 +4,7 @@
 
         <h2>Unfurl.cloud Pages:</h2>
         <p>
-          <a href="/demo">Project Overview</a> <br>(Copy of <code>gitlab-oc/oc/app/assets/javascripts/pages/projects/overview/</code>)
+          <a href="/demo/apostrophe-demo/-/overview">Project Overview</a> <br>(Copy of <code>gitlab-oc/oc/app/assets/javascripts/pages/projects/overview/</code>)
         </p>
         <p>
           <a href="/dashboard">Dashboard</a> <br>(Copy of <code>gitlab-oc/oc/app/assets/javascripts/pages/dashboard</code>)

@@ -12,6 +12,7 @@ import __ from '~/locale';
 import '../../gitlab-oc/project_overview/assets/global.css';
 
 import apolloProvider from "~/graphql-shim.js";
+import overview from '../../gitlab-oc/project_overview'
 
 setConfigs();
 if (process.env.NODE_ENV !== 'production') {
@@ -21,6 +22,14 @@ Vue.use(Translate);
 
 // from oc/app/assets/javascripts/pages/projects/overview/index.js
 
+const vue = overview('js-oc-project-overview')
+vue.$mount('#app')
+
+if(window.Cypress) {
+  window.app = vue
+}
+
+/*
 const element = document.getElementById('js-oc-project-overview');
 const {
   projectPath,
@@ -75,6 +84,5 @@ const vue = new Vue({
   },
 }).$mount("#app");
 
-if(window.Cypress) {
-  window.app = vue
-}
+*/
+

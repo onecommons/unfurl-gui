@@ -76,7 +76,8 @@ export default {
   },
 
   Environment: {
-    deployments: (root, args, { db }) => {
+    deployments: (root, args, { db, fullPath }) => {
+      const projectPath = fullPath
       const environment = root;
       const environments = db.get('environments').value()[environment._project]
       if (!environments) {
@@ -110,16 +111,21 @@ export default {
       return {__typeName: 'ProjectPermissions'}
     },
 
-    // name, path, state, clientPayload
-    environments: (root, args, { db }) => {
-      const namespace = root.fullPath;
+    environments() {
+      return {__typename: 'EnvironmentConnection'}
+    }
+  },
+
+  EnvironmentConnection: {
+    nodes(root, args, {db, fullPath}) {
+      const namespace = root.fullPath || fullPath
       try {
         // get the environments associated with this project
-        const environments = db.get('environments').value()[namespace]
+        const environments = db.get('environments').value()[namespace]['DeploymentEnvironment']
         if (!environments) {
           return [];
         }
-        return Object.entries(environments).map(([key, value]) => ({
+        const result = Object.entries(environments).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
             name: key,
@@ -127,14 +133,13 @@ export default {
             clientPayload: value,
             _project: namespace
         }));
+        return result
       } catch (e) {
           console.log(`bad environments: ${e}`);
           return [];
       }
-    },
-
+    }
   },
-
   ProjectPermissions: {
     pushCode(root, args, context) {
       return context.fullPath.startsWith(username)

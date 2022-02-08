@@ -9,8 +9,8 @@ import './assets/global.css';
 
 //export {bus} from 'oc/bus-shim';
 
-export default () => {
-  const element = document.getElementById('js-oc-project-overview');
+export default (elemId='js-oc-project-overview') => {
+  const element = document.getElementById(elemId);
 
   const {
     projectPath,

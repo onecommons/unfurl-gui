@@ -5,7 +5,8 @@ import createLogger from "vuex/dist/logger";
 //import project from "./modules/project";
 //import deployment_template_updates from "./modules/deployment_template_updates";
 //import templateResources from "./modules/template_resources";
-import deployments from './modules/deployments';
+import deployments from '../../project_overview/store/modules/deployments'
+import environments from '../../project_overview/store/modules/environments'
 import project_application_blueprint from '../../project_overview/store/modules/project_application_blueprint';
 //import misc from './modules/misc';
 
@@ -16,7 +17,8 @@ const debug = process.env.NODE_ENV !== "production";
 const store = new Vuex.Store({
     modules: {
         project_application_blueprint,
-        deployments
+        environments,
+        deployments,
     },
     strict: debug,
     plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],

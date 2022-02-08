@@ -14,15 +14,12 @@ const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || "https://unfurl.
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 const fullname = process.env.UNFURL_CLOUD_FULLNAME || "Unfurl Cloud Craftsman"
 
-const JSON_EXT = '.json'
-const projectDataDir = path.join(__dirname, 'apollo-server/data')
 const projectPages = {}
+const unfurlGUIBase = {unfurlCloudBaseUrl, username, fullname}
 const projectPageBase = {
   entry: "src/pages/project_overview/index.js",
   template: 'public/demo.html',
-  unfurlCloudBaseUrl,
-  username,
-  fullname
+  ...unfurlGUIBase
 }
 
 try {
@@ -51,7 +48,7 @@ module.exports = {
   },
   pluginOptions: {
     apollo: {
-      enableMocks: true,
+      enableMocks: false,
       enableEngine: true,
       lintGQL: true
     }
@@ -67,7 +64,7 @@ module.exports = {
     index: {
       entry: "src/main.ts",
       template: 'public/index.html',
-      unfurlCloudBaseUrl
+      ...unfurlGUIBase
     },
 
     demo: {
@@ -81,7 +78,8 @@ module.exports = {
     dashboard: {
       title: "Unfurl Cloud Dashboard",
       entry: "src/pages/dashboard/index.js",
-      unfurlCloudBaseUrl
+      unfurlCloudBaseUrl,
+      ...unfurlGUIBase
     },
 
     form: {

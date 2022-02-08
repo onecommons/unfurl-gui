@@ -146,5 +146,10 @@
         "tosca.relationships.Root"
       ]
     }
+  },
+  "DeploymentPath": {
+    "environments/production-gcp/apostrophe-demo-gcp": {
+      "environment": "production-gcp"
+    }
   }
 }
