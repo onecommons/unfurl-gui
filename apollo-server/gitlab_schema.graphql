@@ -25546,7 +25546,8 @@ input UpdateDeploymentObjInput {
   clientMutationId: String
 
   """
-  Deployment JSON
+  A JSON array of objects to patch. Each object will have a __typename property. 
+  If the object contains a __deleted property the object should be deleted.
   """
   patch: JSON!
 
@@ -25561,9 +25562,9 @@ input UpdateDeploymentObjInput {
   projectPath: ID!
 
   """
-  Deployment Type
+  Optional commit message
   """
-  typename: String
+  commitMsg: String
 }
 
 """
