@@ -7,7 +7,7 @@ import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
 const MAPPINGS = {
     [lookupCloudProviderAlias('gcp')]: GCP,
     [lookupCloudProviderAlias('aws')]: AWS,
-    [lookupCloudProviderAlias('aws')]: Azure
+    [lookupCloudProviderAlias('azure')]: Azure
 }
 export default {
     name: "LogosCloud",
@@ -23,7 +23,11 @@ export default {
             const icon = MAPPINGS[lookupCloudProviderAlias(this.cloud)]
             if(!icon) return ''
             try {
-                const url = new URL(icon)
+                try {
+                    const url = new URL(icon)
+                } catch(e) {}
+                const url = new URL(window.location.origin + icon)
+                // still not checking relative url
                 return icon
             } catch(e) {
                 const blob = new Blob([icon], {type: 'image/svg+xml'})

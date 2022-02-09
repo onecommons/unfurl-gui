@@ -1,6 +1,7 @@
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
+import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
 
 
 class ApplicationBlueprint {
@@ -251,17 +252,17 @@ const getters = {
 
                 // TODO query for this information
                 const CLOUD_MAPPINGS = {
-                    'unfurl.nodes.AzureAccount': 'unfurl.nodes.AzureResources',
-                    'unfurl.nodes.GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
-                    'unfurl.nodes.AWSAccount': 'unfurl.nodes.AWSResource',
+                    [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
+                    [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
+                    [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
+                    //[lookupCloudProviderAlias('k8s')]: unknown
                 }
 
                 if(deploymentTemplate?.cloud) {
-                    const allowedCloudVendor = `unfurl.nodes.${deploymentTemplate.cloud}`
+                    const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
                     result = result.filter(type => {
                         return !type.extends.includes('unfurl.nodes.CloudObject') ||
                             type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
-
                     })
                 }
 

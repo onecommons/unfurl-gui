@@ -96,6 +96,12 @@ const actions = {
             primary.name = slugify(renamePrimary);
             primary.title = renamePrimary;
         }
+        if(environmentName) {
+            const environment = rootGetters.lookupEnvironment(environmentName)
+            if(environment?.primary_provider?.type) {
+                deploymentTemplate.cloud = environment.primary_provider.type
+            }
+        }
 
         if(syncState) {
             commit('pushPreparedMutation', (accumulator) => {
