@@ -7,8 +7,12 @@ const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 const apolloServerDir = resolve(dirname(import.meta.url.replace('file://', '')))
 const REPOS_DIR = resolve(apolloServerDir, 'repos')
 
-function findDeployment(deploymentAbsolute) {
+function findDeployment(deploymentAbsolute, db) {
   let ensembleJSONRaw 
+  const files = db.get('files').value()
+  const lowdbPath = deploymentAbsolute.slice(REPOS_DIR.length + 1) + '/deployment.json'
+  const lowdbFile = files[lowdbPath]
+  if(lowdbFile) return lowdbFile
   try {
       ensembleJSONRaw = readFileSync(resolve(deploymentAbsolute, 'ensemble.json'), 'utf-8')
   } catch(e) {}
@@ -33,41 +37,6 @@ export default {
         // demo/apostrophe-demo
         return db.get('projects').value()[args.fullPath]
     },
-
-    deployments: (root, args, {db}) => {
-        const {projectPath, applicationBlueprint} = args
-        const result = []
-
-        const environments = JSON.parse(readFileSync(resolve(REPOS_DIR, projectPath, "environments.json"), 'utf-8')).DeploymentEnvironment
-
-
-        for(const environment of readdirSync(resolve(REPOS_DIR, projectPath, 'environments'))) {
-            const environmentAbsolute = resolve(REPOS_DIR, projectPath, 'environments', environment)
-          for (const deployment of readdirSync(environmentAbsolute)) {
-                const deploymentAbsolute = resolve(environmentAbsolute, deployment)
-                const ensemble = findDeployment(deploymentAbsolute)
-                if(applicationBlueprint) {
-                    if(!ensemble.ApplicationBlueprint[applicationBlueprint])
-                        continue
-                }
-                
-                for(const deployment of Object.values(ensemble.Deployment)) { 
-                    if(typeof deployment == 'object') {
-                        const assignEnvironment = environments[environment]
-                        result.push(Object.assign(
-                            deployment, 
-                            {environment: assignEnvironment, blueprint: Object.keys(ensemble.ApplicationBlueprint)[0]}
-                    ))
-                    }
-                }
-            }
-        }
-        return result
-    },
-
-    // resourceTemplates: (root, args, { db }) => {
-    //   // (namespace: String): => ResourceTemplates
-    // },
 
     project(root, args, context) {
       context.fullPath = args.fullPath
@@ -96,7 +65,7 @@ export default {
           const path = key;
           if (value['environment'] == environment.name) {
             const deploymentAbsolute = resolve(REPOS_DIR, projectPath, path)
-            const deployment = findDeployment(deploymentAbsolute)
+            const deployment = findDeployment(deploymentAbsolute, db)
             if (deployment)
               deployments.push(deployment)
           }
@@ -172,22 +141,37 @@ export default {
 
 
     updateDeploymentObj(root, {input}, {db}) {
-      const {projectPath, typename, patch} = input
-      const _patch = typeof(patch) == 'string'? JSON.stringify(patch): patch
-      const patchTarget = typename === '*'? db.get('projects').value()[projectPath] : db.get('projects').value()[projectPath][typename]
-      console.log(typename, patch)
-      if(typename === '*') {
-        Object.assign(patchTarget, JSON.parse(readFileSync(resolve(apolloServerDir, 'data', projectPath) + '.json', 'utf-8')))
-      } else {
-        if(!patchTarget) return {isOk: false, errors: [`Typename '${typename}' does not exist in the target project`]}
-        for(let key in patch) {
-          if (_patch[key] === null) {
-            delete patchTarget[key]
-          } else {
-            patchTarget[key] = _patch[key]
+      const {projectPath, patch, path} = input
+      const _path = path || 'unfurl.json'
+      const _patch = typeof(patch) == 'string'? JSON.parse(patch): patch
+      const identifier = `${projectPath}/${_path}`
+      const files = db.get('files').value()
+      if(!files[identifier]) files[identifier] = {}
+      const patchTarget = files[identifier]
+      for(const patchInner of _patch) {
+        const typename = patchInner.__typename
+        const deleted = patchInner.__deleted
+        let patchTargetInner = patchTarget
+        if(typename  != '*') {
+          if(!patchTargetInner[typename]) {
+            patchTargetInner[typename] = {}
           }
+          patchTargetInner = patchTargetInner[typename]
         }
-      }
+        if(deleted) {
+          if(deleted == '*') {
+            if(typename == '*') {
+              for(let key in patchTarget) delete patchTarget[key]
+            } else {
+              delete patchTarget[typename]
+            }
+          } else {
+            delete patchTarget[deleted]
+          }
+          continue
+        }
+        patchTargetInner[patchInner.name] = patchInner
+      } 
       db.write()
       return {isOk: true, errors: []}
     },
