@@ -41,6 +41,7 @@ export default {
             newEnvironmentProvider: null,
             modalNextStatus: true,
             showBannerIntro: true,
+            submitting: false,
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
@@ -189,6 +190,7 @@ export default {
         },
 
         clearModalTemplate() {
+            if(this.submitting) return
             this.templateForkedName = null;
             this.templateSelected = null
             this.selectedEnvironment = null
@@ -202,6 +204,7 @@ export default {
 
         async onSubmitModal() {
             if (this.projectSlugName !== null) {
+                this.submitting = true
                 this.prepareTemplateNew();
 
                 if(this.instantiateAs == 'deployment-draft') {
@@ -218,13 +221,15 @@ export default {
                     const args = {...this.templateSelected, blueprintName: this.getProjectInfo.name}
                     this.pushPreparedMutation(createDeploymentTemplate(args))
                 }
-                await this.commitPreparedMutations()
 
                 if(this.instantiateAs == 'deployment-draft'){
                     this.redirectToTemplateEditor('deploymentDraftPage');
                 } else {
+                    await this.commitPreparedMutations()
                     this.redirectToTemplateEditor();
                 }
+                this.submitting = false
+                this.clearModalTemplate()
             }
 
         },

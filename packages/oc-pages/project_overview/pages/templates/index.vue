@@ -97,7 +97,11 @@ export default {
     pipelinesPath(){
       return `/${this.getHomeProjectPath}/-/pipelines`
     },
-
+    deploymentDir() {
+        const environment = this.$route.params.environment
+        // this.getDeploymentTemplate.name not loaded yet
+        return `environments/${environment}/${this.getProjectInfo.name}/${this.$route.params.slug}`
+    },
     saveStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
@@ -341,9 +345,7 @@ export default {
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
         if(this.$route.name != 'templatePage') {
-          this.setUpdateObjectPath(
-            `${this.$route.params.environment}/${this.getProjectInfo.name}/${slugify(this.$route.query.fn)}/deployment-blueprint.json`
-          );
+          this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
 
         }
@@ -366,14 +368,13 @@ export default {
     },
     async createDeploymentPathPointer() {
         this.setUpdateObjectPath('environments.json')
-        const environment = this.$route.params.environment
-        const deploymentPath = `environments/${environment}/${this.getDeploymentTemplate.name}`
         this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+        const environment = this.$route.params.environment
         this.pushPreparedMutation(() => {
             return [{
                 typename: 'DeploymentPath',
                 patch: {__typename: 'DeploymentPath', environment},
-                target: deploymentPath
+                target: this.deploymentDir
             }]
         })
         await this.commitPreparedMutations()
