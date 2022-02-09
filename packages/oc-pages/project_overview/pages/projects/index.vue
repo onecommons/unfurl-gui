@@ -1,6 +1,7 @@
 <script>
 import { GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
+import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
 import { __ } from '~/locale';
@@ -26,7 +27,8 @@ export default {
         GlDropdownItem,
         GlDropdownDivider,
         ProjectDescriptionBox,
-        GlBanner
+        GlBanner,
+        ErrorSmall
     },
     directives: {
         GlModal: GlModalDirective,
@@ -50,10 +52,21 @@ export default {
     },
     computed: {
         shouldDisableSubmitTemplate() {
+            if(this.deployDialogError) return true
             if(!this.templateForkedName) return true
             if(this.instantiateAs != 'template' && this.defaultEnvironmentName == __("Select")) return true
 
             return false
+        },
+
+        deployDialogError() {
+            if(this.instantiateAs == 'deployment-draft') {
+                const environment = this.defaultEnvironmentName == __("Select")? null : this.defaultEnvironmentName
+                if(environment && this.lookupDeployment(this.templateForkedName, environment)) {
+                    return `'${this.templateForkedName}' already exists in environment '${environment}'`
+                }
+            }
+            return null
         },
         ...mapGetters([
             'getEnvironments',
@@ -63,7 +76,8 @@ export default {
             'getUsername',
             'getNextDefaultDeploymentName',
             'getMatchingEnvironments',
-            'getDefaultEnvironmentName'
+            'getDefaultEnvironmentName',
+            'lookupDeployment'
         ]),
         primaryProps() {
             return {
@@ -364,6 +378,7 @@ export default {
                         </div>
                         <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
                     </gl-dropdown>
+                    <error-small :message="deployDialogError"/>
                 </div>
             </gl-modal>
         </div>

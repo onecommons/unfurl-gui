@@ -74,7 +74,7 @@ const getters = {
             if(!environment) {
                 return getters.getDeployments
             }
-            return getters.getDeployments.filter(dep => dep.name == environment)
+            return getters.getDeployments.filter(dep => dep._environment == environment)
         }
     },
     getNextDefaultDeploymentName: (_, getters) => function(templateTitle, environment) {
@@ -91,7 +91,15 @@ const getters = {
         }
 
         return `${templateTitle} ${max}`
-
+    },
+    lookupDeployment(_, getters) {
+        return function(deploymentName, environment) {
+            const deployments = environment?
+                getters.getDeploymentsByEnvironment(environment) :
+                getters.getDeployments
+            const result = deployments.find(dep => dep.name == deploymentName)
+            return result
+        }
     }
 };
 
