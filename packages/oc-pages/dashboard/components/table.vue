@@ -1,62 +1,16 @@
 <script>
 import TableComponent from '../../vue_shared/components/oc/table.vue';
-import Status from '../../vue_shared/components/oc/Status.vue';
+import StatusIcon from '../../vue_shared/components/oc/Status.vue';
 import {mapGetters, mapActions} from 'vuex';
 import _ from 'lodash';
 import { __ } from '~/locale';
 import {USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
 
-/*
-        unknown: ["muted", "status_notfound"],
-        pending: ["neutral", "status_preparing"],
-        absent: ["info", "status_open"],
-        ok: ["success", "status_success_solid"],
-        error: ["danger", "status_warning"],
-        degraded: ["warning", "status_running"]
 
+
+/*
 * this is the shape that the items can be passed in NOTE the tooltips
 const items = [
-  {
-    name: "A",
-    type: "DB",
-    status: "unknown",
-    project: "Project1",
-    maintainer: "Imran",
-    deployment: 1,
-  },
-  {
-    name: "B",
-    type: "Compute",
-    status: "pending",
-    project: "Project1",
-    deployment: 1,
-    uptime: 1800
-  },
-  {
-    name: "C",
-    type: "Compute",
-    status: "ok",
-    project: "Project1",
-    deployment: 1,
-    uptime: 1800
-  },
-  {
-    name: "A",
-    type: "DB",
-    status: "absent",
-    tooltips: {
-      name: 'missing in action'
-    },
-    project: "Project1",
-    deployment: 2,
-  },
-  {
-    name: "B",
-    type: "Compute",
-    status: "error",
-    project: "Project1",
-    deployment: 2,
-  },
   {
     name: "C",
     type: "Compute",
@@ -83,8 +37,7 @@ const fields = [
 
 export default {
   name: 'TableComponentContainer',
-  //components: {TableComponent, Status},
-  components: {TableComponent},
+  components: {TableComponent, StatusIcon},
   data() {
     return { fields, items: [], loaded: false};
   },
@@ -127,7 +80,7 @@ export default {
           const resourceTemplate = this.resolveResourceTemplate(resource.template);
           const resourceType = this.resolveResourceType(resourceTemplate.type);
 
-          items.push({application, deployment: deployment.title, environmentName, type: resourceType.title, name: resource.title, status: resource.status.toString()});
+          items.push({application, deployment: deployment.title, environmentName, type: resourceType.title, name: resource.title, status: resource.status});
         }
       }
     }
@@ -141,8 +94,7 @@ export default {
 <template>
   <TableComponent v-if="loaded" :items="items" :fields="fields">
     <template #status=scope>
-      {{scope.item.status}}
-      <!--Status :status="scope.item.status"/-->
+      <StatusIcon :status="scope.item.status" />
     </template>
   </TableComponent> 
 </template>

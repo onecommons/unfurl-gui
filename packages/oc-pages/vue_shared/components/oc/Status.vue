@@ -1,39 +1,41 @@
 <template>
   <div>
     <gl-badge
-      v-if="status in statusBadges"
-      :variant="statusBadges[status][0]"
-      :icon="statusBadges[status][1]"
+      v-if="status < StatusIndicators.length"
+      :variant="StatusIndicators[status][0]"
+      :icon="StatusIndicators[status][1]"
       class="status-icon"
-      :title="status[0].toUpperCase() + status.slice(1)"
+      :title="__(StatusIndicators[status][2])"
       v-gl-tooltip.hover
     >
-      <!--span>
-        {{ status[0].toUpperCase() + status.slice(1) }}
-      </span-->
     </gl-badge>
   </div>
 </template>
 <script>
 import { GlBadge, GlTooltipDirective } from '@gitlab/ui';
 
+const StatusIndicators = [
+  // Unknown
+  ["muted", "status_notfound", "Unknown"],
+  // Ok
+  ["success", "status_success_solid", "Ok"],
+  // Degraded
+  ["warning", "status_running", "Degraded"],
+  // Error
+  ["danger", "status_warning", "Error"],
+  // Pending
+  ["neutral", "status_preparing", "Pending"],
+  // Absent
+  ["info", "status_open", "Absent"]
+]
+
 export default {
   name: "Status",
   props: {
-    status: String
+    status: Number
   },
   data() {
-    return {
-      statusBadges: {
-        // status: [variant, icon]
-        unknown: ["muted", "status_notfound"],
-        pending: ["neutral", "status_preparing"],
-        absent: ["info", "status_open"],
-        ok: ["success", "status_success_solid"],
-        error: ["danger", "status_warning"],
-        degraded: ["warning", "status_running"]
-      }
-    };
+    return { StatusIndicators };
   },
   directives: {
     GlTooltip: GlTooltipDirective,
