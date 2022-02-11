@@ -39,7 +39,11 @@ const CLOUD_PROVIDER_ALIASES = {
     azure: Azure,
     K8s,
     k8s: K8s,
-    kubernetes: K8s
+    kubernetes: K8s,
+    'Google Cloud Platform': GCP,
+    'Amazon Web Services': AWS,
+    'Kubernetes': K8s,
+    'Azure': Azure
 }
 
 export function lookupCloudProviderAlias(key) {

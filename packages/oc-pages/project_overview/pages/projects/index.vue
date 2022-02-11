@@ -4,9 +4,10 @@ import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_
 import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
-import { __ } from '~/locale';
+import { s__, __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
+import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import { bus } from '../../bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
@@ -23,6 +24,7 @@ export default {
         GlFormInput,
         HeaderProjectView,
         TableWithoutHeader,
+        EnvironmentCreationDialog,
         GlDropdown,
         GlDropdownItem,
         GlDropdownDivider,
@@ -41,6 +43,9 @@ export default {
             templateSelected: {},
             selectedEnvironment: null,
             newEnvironmentProvider: null,
+            creatingEnvironment: false,
+            createEnvironmentName: '',
+            createEnvironmentProvider: '',
             modalNextStatus: true,
             showBannerIntro: true,
             submitting: false,
@@ -52,13 +57,26 @@ export default {
     },
     computed: {
         shouldDisableSubmitTemplate() {
+            if(this.creatingEnvironment) {
+                return !(this.createEnvironmentProvider && this.createEnvironmentName)
+            }
             if(this.deployDialogError) return true
             if(!this.templateForkedName) return true
             if(this.instantiateAs != 'template' && this.defaultEnvironmentName == __("Select")) return true
 
             return false
         },
+        modalTitle() {
+            if(this.creatingEnvironment) {
+                return s__('OcDeployments|Create New Environment')
+            }
+            if(this.instantiateAs == 'template') {
+                return s__('OcDeployments|Create New Deployment Template')
+            }
 
+            return s__('OcDeployments|Create New Deployment')
+
+        },
         deployDialogError() {
             if(this.instantiateAs == 'deployment-draft') {
                 const environment = this.defaultEnvironmentName == __("Select")? null : this.defaultEnvironmentName
@@ -87,7 +105,7 @@ export default {
         },
         cancelProps() {
             return {
-                text: __('Cancel'),
+                text: this.creatingEnvironment? __('Back'): __('Cancel')
             };
         },
         querySpec() {
@@ -203,7 +221,7 @@ export default {
             this.$router.push({ query, name: page, params: { environment: this.templateSelected.environment, slug: this.templateSelected.name}});
         },
 
-        clearModalTemplate() {
+        clearModalTemplate(e) {
             if(this.submitting) return
             this.templateForkedName = null;
             this.templateSelected = null
@@ -217,6 +235,11 @@ export default {
         },
 
         async onSubmitModal() {
+            // not implemented
+            if(this.creatingEnvironment) {
+                this.redirectToNewEnvironment()
+                return
+            }
             if (this.projectSlugName !== null) {
                 this.submitting = true
                 this.prepareTemplateNew();
@@ -247,7 +270,14 @@ export default {
             }
 
         },
-
+        onCancelModal(e) {
+            if(this.creatingEnvironment) {
+                this.creatingEnvironment = false
+                this.createEnvironmentName = ''
+                this.createEnvironmentProvider = ''
+                e.preventDefault()
+            }
+        },
         prepareTemplateNew() {
             this.templateSelected.primary = this.templateSelected.title
             this.templateSelected.title = this.templateForkedName;
@@ -255,6 +285,10 @@ export default {
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.$refs?.dropdown?.text;
             this.templateSelected.primaryType = this.getProjectInfo.primary
+        },
+
+        createNewEnvironment() {
+            this.creatingEnvironment = true
         },
 
         redirectToNewEnvironment() {
@@ -349,36 +383,44 @@ export default {
             <gl-modal
                 ref="oc-templates-deploy"
                 modal-id="oc-templates-deploy"
-                :title="s__('OcDeployments|Create new deployment')"
+                :title="modalTitle"
                 :action-primary="primaryProps"
                 :action-cancel="cancelProps"
                 no-fade
                 @primary="onSubmitModal"
+                @cancel="onCancelModal"
                 @hidden="clearModalTemplate"
             >
-                <gl-form-group
-                    label="Name"
-                    class="col-md-4 align_left gl-pl-0"
-                >
-                    <gl-form-input
-                    id="input1"
-                    v-model="templateForkedName"
-                    name="input['template-name']"
-                    type="text"
+                <environment-creation-dialog 
+                    v-if="creatingEnvironment"
+                    @environmentNameChange="env => createEnvironmentName = env"
+                    @cloudProviderChange="provider => createEnvironmentProvider = provider"
                     />
+                <div v-else>
+                    <gl-form-group
+                        label="Name"
+                        class="col-md-4 align_left gl-pl-0"
+                    >
+                        <gl-form-input
+                        id="input1"
+                        v-model="templateForkedName"
+                        name="input['template-name']"
+                        type="text"
+                        />
 
-                </gl-form-group>
-                <div v-if="instantiateAs!='template'">
-                    <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                    <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
-                    <gl-dropdown ref="dropdown" :text="defaultEnvironmentName">
-                        <div v-if="getEnvironments.length > 0">
-                            <gl-dropdown-item v-for="(env , idx) in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="idx">{{ env.name }}</gl-dropdown-item>
-                            <gl-dropdown-divider />
-                        </div>
-                        <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
-                    </gl-dropdown>
-                    <error-small :message="deployDialogError"/>
+                    </gl-form-group>
+                    <div v-if="instantiateAs!='template'">
+                        <p>{{ __("Select an environment to deploy this template to:") }}</p>
+                        <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
+                        <gl-dropdown ref="dropdown" :text="defaultEnvironmentName">
+                            <div v-if="getEnvironments.length > 0">
+                                <gl-dropdown-item v-for="(env , idx) in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="idx">{{ env.name }}</gl-dropdown-item>
+                                <gl-dropdown-divider />
+                            </div>
+                            <gl-dropdown-item class="disabled" @click="createNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
+                        </gl-dropdown>
+                        <error-small :message="deployDialogError"/>
+                    </div>
                 </div>
             </gl-modal>
         </div>
