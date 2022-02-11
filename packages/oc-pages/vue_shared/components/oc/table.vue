@@ -276,7 +276,7 @@ export default {
 </script>
 <template>
   <div class="container-fluid">
-    <div class="row fluid filter-searchbox">
+    <div class="row fluid no-gutters filter-searchbox">
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
@@ -296,7 +296,7 @@ export default {
         </div>
       </div>
     </div>
-    <div class="row-fluid">
+    <div class="row-fluid no-gutters">
       <div class="col-md-12">
         <div v-if="$apollo.loading" class="loading apollo">{{ __("Loading...") }}</div>
         <!--div v-else-if="error" class="error apollo">{{ __("An error occured") }}</div-->

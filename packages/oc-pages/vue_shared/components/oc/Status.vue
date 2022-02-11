@@ -1,18 +1,27 @@
 <template>
-  <div>
-    <gl-badge
-      v-if="status < StatusIndicators.length"
-      :variant="StatusIndicators[status][0]"
-      :icon="StatusIndicators[status][1]"
-      class="status-icon"
-      :title="__(StatusIndicators[status][2])"
-      v-gl-tooltip.hover
-    >
-    </gl-badge>
-  </div>
+  <span>
+    <!-- 
+      standard gl-icon doesn't support variants
+      standard gl-badge doesn't have good adequate control
+      normally just gl-icon would be enough with proper variants
+    -->
+    <b-badge class="gl-badge status-icon" :variant="StatusIndicators[status][0]" >
+      <gl-icon
+        v-if="status < StatusIndicators.length"
+        :variant="StatusIndicators[status][0]"
+        :name="StatusIndicators[status][1]"
+        class="status-icon"
+        :size="12"
+        :title="__(StatusIndicators[status][2])"
+        v-gl-tooltip.hover
+        >
+      </gl-icon>
+    </b-badge>
+  </span>
 </template>
 <script>
-import { GlBadge, GlTooltipDirective } from '@gitlab/ui';
+import { BBadge } from 'bootstrap-vue'
+import { GlIcon, GlTooltipDirective } from '@gitlab/ui';
 
 const StatusIndicators = [
   // Unknown
@@ -41,12 +50,19 @@ export default {
     GlTooltip: GlTooltipDirective,
   },
   components: {
-    GlBadge
+    GlIcon, BBadge
   }
 };
 </script>
 <style scoped>
+
 .status-icon {
-  padding: 4px !important;
+  /*TODO maybe add an option to support this*/
+  /*padding: 4px !important;*/
+  padding: 0px !important;
+}
+span {
+  height: 12px;
+  margin: calc(0.5em - 5px) 4px;
 }
 </style>
