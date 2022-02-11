@@ -63,6 +63,7 @@ export default {
 }
 span {
   height: 12px;
-  margin: calc(0.5em - 5px) 4px;
+  margin-right: 4px;
+  margin-bottom: calc(0.5em - 3px);
 }
 </style>

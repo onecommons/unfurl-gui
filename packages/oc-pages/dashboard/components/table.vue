@@ -3,6 +3,7 @@ import TableComponent from '../../vue_shared/components/oc/table.vue';
 import StatusIcon from '../../vue_shared/components/oc/Status.vue';
 import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
 import QuantityCard from './quantity-card.vue'
+import ProjectIcon from './project-icon.vue'
 import {mapGetters, mapActions} from 'vuex';
 import _ from 'lodash';
 import { __ } from '~/locale';
@@ -40,7 +41,7 @@ const fields = [
 
 export default {
     name: 'TableComponentContainer',
-    components: {TableComponent, StatusIcon, LogosCloud, QuantityCard},
+    components: {TableComponent, StatusIcon, LogosCloud, QuantityCard, ProjectIcon},
     data() {
         return { 
             routes,
@@ -130,7 +131,10 @@ export default {
     <TableComponent v-if="loaded" :items="items" :fields="fields">
     <template #application="scope">
         <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.application.name}}">
-            {{scope.item.application.title}}
+            <div class="status-item">
+                <project-icon :projectIcon="scope.item.application.projectIcon" />
+                {{scope.item.application.title}}
+            </div>
         </router-link>
     </template>
     <template #environment="scope">
@@ -166,6 +170,7 @@ export default {
 <style scoped>
 .status-item {
   display: flex;
+  align-items: flex-end;
 }
 
 .quantity-cards {
