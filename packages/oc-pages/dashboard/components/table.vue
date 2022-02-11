@@ -31,11 +31,11 @@ const items = [
 */
 
 const fields = [
-    {key: 'application', groupBy: (item) => item.application.name, label: __('Applications')},
-    {key: 'environment', groupBy: (item) => item.environment.name, label: __('Environments')},
-    {key: 'deployment', groupBy: (item) => item.deployment.name, label: __('Deployments')},
-    {key: 'type', label: __('Resource Type')},
-    {key: 'resource', groupBy: (item) => item.resource.name, label: __('Resources')},
+    {key: 'application', groupBy: (item) => item.application.name, label: 'Applications', s: 'Application'},
+    {key: 'environment', groupBy: (item) => item.environment.name, label: 'Environments', s: 'Environment'},
+    {key: 'deployment', groupBy: (item) => item.deployment.name, label: 'Deployments', s: 'Deployment'},
+    {key: 'type', label: 'Resource Types', s: 'Resource Type'},
+    {key: 'resource', groupBy: (item) => item.resource.name, label: 'Resources', s: 'Resource'},
     //{key: 'status', groupBy: 'name', label: __('Status')},
 ];
 
@@ -123,10 +123,10 @@ export default {
 <template>
 <div>
     <div class="quantity-cards">
-        <quantity-card :count="applications" text="Applications" color="#f4f4f4"/>
-        <quantity-card :count="environments" text="Environments" color="#f4f4f4"/>
-        <quantity-card :count="deployments" text="Running Deployments" color="#e2fbeb"/>
-        <quantity-card :count="stoppedDeployments" text="Stopped Deployments" color="#fff4f4"/>
+        <quantity-card :count="applications" s="Application" p="Applications" color="#f4f4f4"/>
+        <quantity-card :count="environments" s="Environment" p="Environments" color="#f4f4f4"/>
+        <quantity-card :count="deployments" s="Running Deployment" p="Running Deployments" color="#e2fbeb"/>
+        <quantity-card :count="stoppedDeployments" s="Stopped Deployment" p="Stopped Deployments" color="#fff4f4"/>
     </div>
     <TableComponent v-if="loaded" :items="items" :fields="fields">
     <template #application="scope">

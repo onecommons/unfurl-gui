@@ -1,6 +1,6 @@
 // don't bother copying n__, s__, and sprintf from gitlab's locale until we actually use them
 // import { __, n__, s__, sprintf } from '../locale';
-import { __, s__} from '../locale';
+import { __, s__, n__} from '../locale';
 
 export default (Vue) => {
   Vue.mixin({
@@ -47,6 +47,8 @@ export default (Vue) => {
       */
         s__,
       // sprintf,    
+
+      n__ // terrible pluralization implementation
     },
   });
 };

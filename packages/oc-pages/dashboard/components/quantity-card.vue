@@ -2,7 +2,8 @@
 export default {
     props: {
         count: Number,
-        text: String,
+        s: String,
+        p: String,
         color: String
     },
     computed: {
@@ -16,7 +17,7 @@ export default {
 <template>
     <div :style="outerCss">
         <span class="count"> {{count}} </span>
-        <span> {{text}} </span>
+        <span> {{n__(s, p, count)}} </span>
     </div>
 </template>
 
