@@ -16,5 +16,6 @@ img {
     height: 1.5em;
     margin-right: 4px;
     border-radius: 25%;
+    box-shadow: #595959 0px 1.5px 3px;
 }
 </style>
