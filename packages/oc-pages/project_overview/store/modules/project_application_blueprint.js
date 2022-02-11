@@ -83,7 +83,7 @@ const mutations = {
 }
 const actions = {
     async fetchProject({commit, dispatch}, params) {
-        const {projectPath, fullPath, fetchPolicy} = params
+        const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
         commit('loaded', false)
         const query = gql`
           query GetDeploymentTemplateDictionaries($fullPath: ID!) {
@@ -112,6 +112,7 @@ const actions = {
         // normalize messy data in here
         const {data, errors} = result
         const root = data.applicationBlueprintProject
+        root.projectGlobal = projectGlobal
         if(errors?.length) {
             for(const error of errors) {
                 console.error(error)
@@ -144,6 +145,7 @@ const actions = {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
+                applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
             },
             ResourceType(resourceType) {
                 if(!resourceType.title) {
@@ -169,6 +171,7 @@ const actions = {
     
 }
 const getters = {
+    getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
     resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
     resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },

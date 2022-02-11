@@ -299,7 +299,15 @@ const mutations = {
 
 
 const actions = {
-    async fetchRoot({commit, rootState}) {
+    async fetchRoot({commit, rootGetters, rootState}) {
+        // use project_application_blueprint store if it's loaded
+        const state = rootGetters.getApplicationRoot
+        if(state?.loaded) {
+            commit('setBaseState', state)
+            return
+        }
+
+        // TODO stop using this query
         const query = gql`
             query GetTemplateStateBeforeUpdating($fullPath: ID!) {
                 applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client

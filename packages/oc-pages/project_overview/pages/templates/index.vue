@@ -349,7 +349,7 @@ export default {
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
 
         }
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n});
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 

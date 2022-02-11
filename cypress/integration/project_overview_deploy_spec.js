@@ -12,7 +12,7 @@ function openDeployDialog(text) {
 }
 
 function modalHeader() {
-  return cy.get('h4').contains('Create new deployment')
+  return cy.get('h4').contains('Create New Deployment')
 }
 
 function deploymentNameInput() {
