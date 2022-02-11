@@ -341,7 +341,7 @@ export default {
                 <!--span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span-->
                 <span v-else>{{pluralize(scope)}}</span>
               </span>
-              <span v-else-if="scope.item[scope.field.key]"> 
+              <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}"> 
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
                 <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
               </span>
@@ -543,6 +543,10 @@ th .control-cell {
 .primary-toggle >>> svg {
  box-sizing: content-box; color:#00D2D9; height: 1.875em; width: 1.875em;
  cursor: pointer;
+}
+
+.indent-to-widget {
+  margin-left: 1.25em;
 }
 
 </style>

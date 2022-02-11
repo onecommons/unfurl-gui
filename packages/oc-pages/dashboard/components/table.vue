@@ -123,10 +123,14 @@ export default {
 <template>
 <div>
     <div class="quantity-cards">
-        <quantity-card :count="applications" s="Application" p="Applications" color="#f4f4f4"/>
-        <quantity-card :count="environments" s="Environment" p="Environments" color="#f4f4f4"/>
-        <quantity-card :count="deployments" s="Running Deployment" p="Running Deployments" color="#e2fbeb"/>
-        <quantity-card :count="stoppedDeployments" s="Stopped Deployment" p="Stopped Deployments" color="#fff4f4"/>
+        <div style="display: flex;">
+            <quantity-card :count="applications" s="Application" p="Applications" color="#f4f4f4"/>
+            <quantity-card :count="environments" s="Environment" p="Environments" color="#f4f4f4"/>
+        </div>
+        <div style="display: flex">
+            <quantity-card :count="deployments" s="Running Deployment" p="Running Deployments" color="#e2fbeb"/>
+            <quantity-card :count="stoppedDeployments" s="Stopped Deployment" p="Stopped Deployments" color="#fff4f4"/>
+        </div>
     </div>
     <TableComponent v-if="loaded" :items="items" :fields="fields">
     <template #application="scope">
@@ -180,7 +184,4 @@ export default {
   flex-wrap: wrap;
 }
 
-.quantity-cards > * {
-  margin: 1em;
-}
 </style>
