@@ -1,4 +1,4 @@
-import DashboardHome from '../components/table.vue'
+import DashboardHome from '../pages/home.vue'
 import Hello from '../components/hello-router.vue'
 import * as constants from './constants';
 
@@ -27,7 +27,23 @@ export default [
     name: constants.OC_DASHBOARD_APPLICATIONS,
     path: '/applications/:name',
     component: Hello
+  },
+  {
+    name: constants.OC_DASHBOARD_ENVIRONMENTS_INDEX,
+    path: '/environments',
+    component: Hello
+  },
+  {
+    name: constants.OC_DASHBOARD_DEPLOYMENTS_INDEX,
+    path: '/deployments',
+    component: Hello
+  },
+  {
+    name: constants.OC_DASHBOARD_APPLICATIONS_INDEX,
+    path: '/applications',
+    component: Hello
   }
+
 
 
 

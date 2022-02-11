@@ -1,5 +1,4 @@
 import Vue from 'vue';
-import TableComponent from "../../gitlab-oc/dashboard/components/table.vue";
 import { GlToast } from '@gitlab/ui';
 import Translate from '~/vue_shared/translate';
 import Layout from "../../components/Layout.vue";

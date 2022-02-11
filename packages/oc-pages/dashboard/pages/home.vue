@@ -2,8 +2,8 @@
 import TableComponent from '../../vue_shared/components/oc/table.vue';
 import StatusIcon from '../../vue_shared/components/oc/Status.vue';
 import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
-import QuantityCard from './quantity-card.vue'
-import ProjectIcon from './project-icon.vue'
+import QuantityCard from '../components/quantity-card.vue'
+import ProjectIcon from '../components/project-icon.vue'
 import {mapGetters, mapActions} from 'vuex';
 import _ from 'lodash';
 import { __ } from '~/locale';
@@ -124,12 +124,33 @@ export default {
 <div>
     <div class="quantity-cards">
         <div style="display: flex;">
-            <quantity-card :count="applications" s="Application" p="Applications" color="#f4f4f4"/>
-            <quantity-card :count="environments" s="Environment" p="Environments" color="#f4f4f4"/>
+            <quantity-card 
+                :to="{name: routes.OC_DASHBOARD_APPLICATIONS_INDEX}" 
+                :count="applications" 
+                s="Application" 
+                p="Applications" 
+                color="#f4f4f4"/>
+            <quantity-card 
+                :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
+                :count="environments"
+                s="Environment"
+                p="Environments"
+                color="#f4f4f4"/>
         </div>
         <div style="display: flex">
-            <quantity-card :count="deployments" s="Running Deployment" p="Running Deployments" color="#e2fbeb"/>
-            <quantity-card :count="stoppedDeployments" s="Stopped Deployment" p="Stopped Deployments" color="#fff4f4"/>
+            <quantity-card
+                :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
+                :count="deployments"
+                s="Running Deployment"
+                p="Running Deployments"
+                color="#e2fbeb"/>
+            <!-- TODO figure out a better way to show stopped deployments -->
+            <quantity-card
+                :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
+                :count="stoppedDeployments"
+                s="Stopped Deployment"
+                p="Stopped Deployments"
+                color="#fff4f4"/>
         </div>
     </div>
     <TableComponent v-if="loaded" :items="items" :fields="fields">
@@ -180,7 +201,7 @@ export default {
 .quantity-cards {
   display: flex;
   justify-content: center;
-  margin: 2em 0 4em 0;
+  margin: 2em -0.5em 4em -0.5em;
   flex-wrap: wrap;
 }
 

@@ -4,10 +4,14 @@ export default {
         count: Number,
         s: String,
         p: String,
-        color: String
+        color: String,
+        to: {
+            type: Object,
+            default: () =>  '#'
+        }
     },
     computed: {
-        outerCss() {
+        cardCss() {
             return {backgroundColor: this.color}
         },
     }
@@ -15,35 +19,39 @@ export default {
 
 </script>
 <template>
-    <div :style="outerCss">
-        <span class="count"> {{count}} </span>
-        <span> {{n__(s, p, count)}} </span>
+    <div class="card-container">
+        <router-link :to="to">
+            <div class="card" :style="cardCss">
+                <span class="count"> {{count}} </span>
+                <span class="text"> {{n__(s, p, count)}} </span>
+            </div>
+        </router-link>
     </div>
 </template>
 
 <style scoped>
 span {
-    color: #4a5053;
-}
-
-span {
     font-weight: bold;
+    color: #4a5053;
 }
 span.count {
     font-size: 3.5em;
     margin-bottom: 0.2em;
 }
+span.text {margin-bottom: 0.4em;}
 
-div {
-    cursor: default;
-    height: 12em;
-    width: 12em;
+.card-container >>> a { text-decoration: none !important; }
+.card-container {margin: 0.5em 1em;}
+
+.card {
+    height: 13em;
+    width: 13em;
+    border-width: 0; /* not sure why this is necessary */
     border-radius: 1em;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    margin: 1em;
 }
 
 </style>
