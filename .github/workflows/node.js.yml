@@ -15,5 +15,9 @@ jobs:
       - uses: actions/setup-node@v2.5.1
       - name: Install node, yarn
         run: npm install --global yarn
+      - name: Install yarn dependencies
+        run: yarn install
+      - name: Run server
+        run: yarn serve
 
 
