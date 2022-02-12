@@ -22,7 +22,7 @@ export function userDefaultPath() {
 const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
 const AWS = 'unfurl.relationships.ConnectsTo.AWSAccount'
 const Azure = 'unfurl.relationships.ConnectsTo.AzureAccount'
-
+const K8s = 'unfurl.relationships.ConnectsTo.K8sCluster'
 const CLOUD_PROVIDER_ALIASES = {
     AWSAccount: AWS,
     aws: AWS,
@@ -37,6 +37,13 @@ const CLOUD_PROVIDER_ALIASES = {
     [Azure]: Azure,
     Azure,
     azure: Azure,
+    K8s,
+    k8s: K8s,
+    kubernetes: K8s,
+    'Google Cloud Platform': GCP,
+    'Amazon Web Services': AWS,
+    'Kubernetes': K8s,
+    'Azure': Azure
 }
 
 export function lookupCloudProviderAlias(key) {

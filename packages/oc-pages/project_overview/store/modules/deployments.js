@@ -62,6 +62,7 @@ const getters = {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
+            if(typeof dict?.Deployment != 'object') continue
             Object.values(dict.Deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
             })
@@ -73,7 +74,7 @@ const getters = {
             if(!environment) {
                 return getters.getDeployments
             }
-            return getters.getDeployments.filter(dep => dep.name == environment)
+            return getters.getDeployments.filter(dep => dep._environment == environment)
         }
     },
     getNextDefaultDeploymentName: (_, getters) => function(templateTitle, environment) {
@@ -90,7 +91,15 @@ const getters = {
         }
 
         return `${templateTitle} ${max}`
-
+    },
+    lookupDeployment(_, getters) {
+        return function(deploymentName, environment) {
+            const deployments = environment?
+                getters.getDeploymentsByEnvironment(environment) :
+                getters.getDeployments
+            const result = deployments.find(dep => dep.name == deploymentName)
+            return result
+        }
     }
 };
 

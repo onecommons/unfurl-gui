@@ -1,7 +1,7 @@
 <script>
 import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
-import { __ } from '~/locale';
+import { __, n__ } from '~/locale';
 
 function searchMatchingFunction(cellContent, searchKey) {
   if(!(cellContent && cellContent.toLowerCase)) return false;
@@ -191,19 +191,9 @@ export default {
     }
   },
   methods: {
-    // we could use something like this https://www.npmjs.com/package/pluralize
     pluralize(scope) {
-      const count = scope.item[scope.field.key]._children.length;
-      
-      const result = `${count} ${scope.field.label}`;
-
-      if (count == 0) {
-        
-      } else if (count > 1) {
-
-      } else if (count == 1) {
-
-      }
+      const count = scope.item.childrenOfGroup(scope.field.key)
+      const result = `${count} ${n__(scope.field.s, scope.field.label, count)}`;
       return result;
     },
     filterFn(row, filterState) {
@@ -276,7 +266,7 @@ export default {
 </script>
 <template>
   <div class="container-fluid">
-    <div class="row fluid filter-searchbox">
+    <div class="row fluid no-gutters filter-searchbox">
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
@@ -296,7 +286,7 @@ export default {
         </div>
       </div>
     </div>
-    <div class="row-fluid">
+    <div class="row-fluid no-gutters">
       <div class="col-md-12">
         <div v-if="$apollo.loading" class="loading apollo">{{ __("Loading...") }}</div>
         <!--div v-else-if="error" class="error apollo">{{ __("An error occured") }}</div-->
@@ -342,25 +332,25 @@ export default {
             <div class="table-body" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
               <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
-                  <span v-if="scope.field.index != 0">
-                    <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
-                    <gl-icon v-else name="chevron-right" class="accordion-cell" />
-                  </span>
-                  <span v-else style="margin-left: 0.5em;" />
+                <span v-if="scope.field.index != 0">
+                  <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
+                  <gl-icon v-else name="chevron-right" class="accordion-cell" />
+                </span>
+                <span v-else style="margin-left: 0.5em;" />
                 <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
-                <span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span>
+                <!--span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span-->
+                <span v-else>{{pluralize(scope)}}</span>
               </span>
-              <span v-else-if="scope.item[scope.field.key]"> 
+              <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}"> 
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
                 <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
               </span>
-              <span v-else-if="false">
-                <slot :name="scope.field.key + '$count'">
-                {{pluralize(scope)}}
-                </slot>
-              </span>
               <span v-else>
-                <slot :name="scope.field.key + '$empty'"></slot>
+                <slot :name="scope.field.key + '$empty'">
+                  <span v-if="scope.item._depth < scope.field.index">
+                    {{pluralize(scope)}}
+                  </span>
+                </slot>
               </span>
             </div>
           </template>
@@ -553,6 +543,10 @@ th .control-cell {
 .primary-toggle >>> svg {
  box-sizing: content-box; color:#00D2D9; height: 1.875em; width: 1.875em;
  cursor: pointer;
+}
+
+.indent-to-widget {
+  margin-left: 1.25em;
 }
 
 </style>

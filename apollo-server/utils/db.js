@@ -28,6 +28,13 @@ for(const {projectPath, blueprint} of iterateProjects(resolve(__dirname, '../rep
 }
 
 const environments = iterateEnvironments(resolve(__dirname, '../repos'));
+const files = {}
+for(const [key, value] of Object.entries(projects)) {
+  files[key + '/unfurl.json'] = value
+}
+for(const [key, value] of Object.entries(environments)) {
+  files[key + '/environments.json'] = value
+}
 
 // Seed an empty DB
 db.defaults({
@@ -35,6 +42,7 @@ db.defaults({
   accounts: [],
   uploads: [],
   projects,
+  files,
   environments,
   users: {
     "root": {

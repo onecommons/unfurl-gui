@@ -1,6 +1,7 @@
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
+import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
 
 
 class ApplicationBlueprint {
@@ -82,7 +83,7 @@ const mutations = {
 }
 const actions = {
     async fetchProject({commit, dispatch}, params) {
-        const {projectPath, fullPath, fetchPolicy} = params
+        const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
         commit('loaded', false)
         const query = gql`
           query GetDeploymentTemplateDictionaries($fullPath: ID!) {
@@ -111,6 +112,7 @@ const actions = {
         // normalize messy data in here
         const {data, errors} = result
         const root = data.applicationBlueprintProject
+        root.projectGlobal = projectGlobal
         if(errors?.length) {
             for(const error of errors) {
                 console.error(error)
@@ -143,6 +145,7 @@ const actions = {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
+                applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
             },
             ResourceType(resourceType) {
                 if(!resourceType.title) {
@@ -168,6 +171,7 @@ const actions = {
     
 }
 const getters = {
+    getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
     resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
     resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
@@ -251,17 +255,17 @@ const getters = {
 
                 // TODO query for this information
                 const CLOUD_MAPPINGS = {
-                    'unfurl.nodes.AzureAccount': 'unfurl.nodes.AzureResources',
-                    'unfurl.nodes.GoogleCloudAccount': 'unfurl.nodes.GoogleCloudObject',
-                    'unfurl.nodes.AWSAccount': 'unfurl.nodes.AWSResource',
+                    [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
+                    [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
+                    [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
+                    //[lookupCloudProviderAlias('k8s')]: unknown
                 }
 
                 if(deploymentTemplate?.cloud) {
-                    const allowedCloudVendor = `unfurl.nodes.${deploymentTemplate.cloud}`
+                    const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
                     result = result.filter(type => {
                         return !type.extends.includes('unfurl.nodes.CloudObject') ||
                             type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
-
                     })
                 }
 

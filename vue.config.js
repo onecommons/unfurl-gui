@@ -58,6 +58,29 @@ module.exports = {
       alias,
       symlinks: false
     },    
+    module: {
+      rules: [
+        {
+          test: /\.js$/,
+          exclude: /node_modules/,
+          loader: 'eslint-loader',
+          options: {
+            // eslint options (if necessary)
+          },
+        },
+        {
+          test: /\.ts$/,
+          use: [
+            {
+              loader: 'ts-loader',
+              options: {
+                transpileOnly: true
+              }
+            }
+          ]
+        }
+      ],
+  }
   },
 
   pages: {

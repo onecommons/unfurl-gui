@@ -299,7 +299,15 @@ const mutations = {
 
 
 const actions = {
-    async fetchRoot({commit, rootState}) {
+    async fetchRoot({commit, rootGetters, rootState}) {
+        // use project_application_blueprint store if it's loaded
+        const state = rootGetters.getApplicationRoot
+        if(state?.loaded) {
+            commit('setBaseState', state)
+            return
+        }
+
+        // TODO stop using this query
         const query = gql`
             query GetTemplateStateBeforeUpdating($fullPath: ID!) {
                 applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client
@@ -315,25 +323,32 @@ const actions = {
 
     async sendUpdateSubrequests({state, getters, rootState}, o){
 
+        const patch = []
         for(let key in getters.getPatches) {
-            const patch = getters.getPatches[key]
-            const variables = {
-                fullPath: state.projectPath || rootState.project.globalVars.projectPath, 
-                typename: key, 
-                patch, 
-                path: state.path || userDefaultPath()
-            }
-
-            if(o?.dryRun) {
-                console.log(variables)
-                continue
-            }
-
-            graphqlClient.clients.defaultClient.mutate({
-                mutation: UpdateDeploymentObject,
-                variables
+            const patchesByTypename = getters.getPatches[key]
+            Object.entries(patchesByTypename).forEach(([name, record]) => {
+                if(record == null) {
+                    patch.push({__deleted: name, __typename: key})
+                }
+                else {
+                    patch.push({name, ...record, __typename: key})
+                }
             })
         }
+        const variables = {
+            fullPath: state.projectPath || rootState.project.globalVars.projectPath, 
+            patch, 
+            path: state.path || userDefaultPath()
+        }
+
+        if(o?.dryRun) {
+            console.log(variables)
+        }
+        await graphqlClient.clients.defaultClient.mutate({
+            mutation: UpdateDeploymentObject,
+            variables
+        })
+
     },
 
     async commitPreparedMutations({state, dispatch, commit}, o) {
