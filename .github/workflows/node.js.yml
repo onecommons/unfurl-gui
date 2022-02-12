@@ -11,12 +11,28 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: cypress-actions-ci
-      - uses: borales/actions-yarn@v2.3.0
-        with:
-          cmd: install # will run `yarn install` command
+    - uses: actions/checkout@master
+    - name: Install
+      uses: CultureHQ/actions-yarn@master
+      with:
+        args: install
+    - name: Lint
+      uses: CultureHQ/actions-yarn@master
+      with:
+        args: lint
+    - name: Test
+      uses: CultureHQ/actions-yarn@master
+      with:
+        args: test
+#     name: Test
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v2
+#         with:
+#           ref: cypress-actions-ci
+#       - uses: borales/actions-yarn@v2.3.0
+#         with:
+#           cmd: install # will run `yarn install` command
 #       - uses: borales/actions-yarn@v2.3.0
 #         with:
 #           cmd: serve # will run `yarn serve` command
