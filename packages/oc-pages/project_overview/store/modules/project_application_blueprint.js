@@ -170,12 +170,36 @@ const actions = {
     }
     
 }
+
+/*
+ * TODO try this out
+function storeResolver(typename, options) {
+    const defaults = {}
+    const {instantiateAs} = Object.assign(defaults, options)
+    return function(state) {
+        const dictionary = state[typename]
+        return function(name) {
+            let entry
+            if(entry = dictionary[name]) {
+                if(instantiateAs) {
+                    return new instantiateAs(entry, state)
+                }
+                else return entry
+            } else {
+                return null
+            }
+        }
+    }
+}
+*/
+
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
     resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
     resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveResource(state) { return name =>  state['Resource'][name] },
+    //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
     dependenciesFromResourceType(_, getters) {
         return function(resourceTypeName) {
@@ -210,8 +234,14 @@ const getters = {
         }
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
-    getResources(state) {return Object.values(state.Resource)},
-    getDeployment(state) {return Object.values(state.Deployment)[0]},
+
+    /* appease the devtools 
+    *  devtools now break when errors occur in getters
+    */
+    getResources(state) {return Object.values(state.Resource || {})},
+    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
+    /* appease the devtools */
+
     applicationBlueprintIsLoaded(state) {return state.loaded},
     getValidResourceTypes(state, getters) {
         return function(dependency, _deploymentTemplate) {
