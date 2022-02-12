@@ -12,12 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: Install node
+      - name: Install node, yarn
       - uses: actions/setup-node@v2.5.1
-        with:
-          node-version: '14'
       - run: npm install --global yarn
-      - name: Install yarn
       - run: yarn install
 
 
