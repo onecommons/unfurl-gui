@@ -16,7 +16,7 @@ jobs:
       - name: Install node, yarn
         run: npm install --global yarn
       - name: Install yarn dependencies
-        run: yarn install
+        run: YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
       - name: Run server
         run: yarn serve
 
