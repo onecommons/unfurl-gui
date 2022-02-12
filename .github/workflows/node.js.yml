@@ -18,6 +18,10 @@ jobs:
       - name: Install yarn dependencies
         run: YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
       - name: Run server
-        run: yarn serve
+        run: yarn run serve &
+      - name: Add Cypress
+        run: yarn add cypress
+      - name: Run Cypress
+        run: yarn cypress run -e OC_URL="http://0.0.0.0:8081",OC_NAMESPACE="root",OC_USERNAME="root",OC_PASSWORD="c6uRYQKrLuxNCd8"
 
 
