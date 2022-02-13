@@ -59,6 +59,10 @@ module.exports = {
       symlinks: false
     },    
     module: {
+      /*
+      * I'm not sure if these rules are necessary to fix the compiler errors we were having,
+      * but I'm paranoid, so I added them anyway.
+      */
       rules: [
         {
           test: /\.js$/,

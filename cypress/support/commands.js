@@ -51,23 +51,29 @@ Cypress.Commands.add('resetDataFromFixture', (projectPath, fixture) => {
     const csrfToken = doc.querySelector('meta[name="csrf-token"]')?.content
 
     cy.fixture(`blueprints/${_fixture}`).then((payload) => {
+      const patch = []
+      for(const __typename in payload) {
+        const dictionary = payload[__typename] 
+          for(const name in dictionary) {
+            const entry = dictionary[name]
+            patch.push({name, ...entry, __typename})
+          }
+
+      }
       try {
         cy.log(`resetting data for ${projectPath}`)
-        for(const key in payload) {
-          const variables = {projectPath, patch: Object.values(payload), path: 'unfurl.json'}
-          if (key == 'Overview') continue
-          cy.request({
-            method:'POST', 
-            url: Cypress.env('OC_GRAPHQL_ENDPOINT'), 
-            body: {
-              variables, operationName, query, projectPath: _projectPath
-            },
-            headers: {
-              'X-CSRF-Token': csrfToken,
-              'Content-Type': 'application/json'
-            }
-          })
-        }
+        const variables = {projectPath, patch, path: 'unfurl.json'}
+        cy.request({
+          method:'POST', 
+          url: Cypress.env('OC_GRAPHQL_ENDPOINT'), 
+          body: {
+            variables, operationName, query, projectPath: _projectPath
+          },
+          headers: {
+            'X-CSRF-Token': csrfToken,
+            'Content-Type': 'application/json'
+          }
+        })
       } catch(e) {
         cy.log(`failed to reset data for ${projectPath}: ${e.message}`)
         throw e
