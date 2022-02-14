@@ -1,4 +1,5 @@
 import DashboardHome from '../pages/home.vue'
+import DeploymentsIndex from '../pages/deployments-index.vue'
 import Hello from '../components/hello-router.vue'
 import * as constants from './constants';
 
@@ -9,18 +10,13 @@ export default [
     component: DashboardHome,
   },
   {
-    name: constants.OC_DASHBOARD_ENVIRONMENTS_INDEX,
-    path: '/environments',
-    component: Hello
-  },
-  {
     name: constants.OC_DASHBOARD_ENVIRONMENTS,
     path: '/environments/:name',
     component: Hello
   },
   {
     name: constants.OC_DASHBOARD_DEPLOYMENTS,
-    path: '/deployments/:name',
+    path: '/deployments/:environment/:name',
     component: Hello
   },
   {
@@ -29,42 +25,19 @@ export default [
     component: Hello
   },
   {
-    name: constants.OC_DASHBOARD_ENVIRONMENTS_INDEX,
-    path: '/environments',
-    component: Hello
-  },
-  {
     name: constants.OC_DASHBOARD_DEPLOYMENTS_INDEX,
     path: '/deployments',
-    component: Hello
+    component: DeploymentsIndex
   },
   {
     name: constants.OC_DASHBOARD_APPLICATIONS_INDEX,
     path: '/applications',
     component: Hello
-  }
-
-
-
-
-  /*
+  },
   {
     name: constants.OC_DASHBOARD_ENVIRONMENTS_INDEX,
     path: '/environments',
+    component: Hello
   },
-  {
-    name: OC_PROJECT_VIEW_EDIT_DEPLOYMENT,
-    path: '/deployments/:environment/:slug',
-    component: TemplatesPage,
-  },
-  {
-    name: OC_PROJECT_VIEW_DRAFT_DEPLOYMENT,
-    path: '/deployment-drafts/:environment/:slug',
-    component: TemplatesPage,
-  },
-  {
-    path: "*",
-    redirect: "/"
-  }
-  */
+
 ];

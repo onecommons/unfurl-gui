@@ -8,19 +8,25 @@ function searchMatchingFunction(cellContent, searchKey) {
   if(searchKey.length <= 2) {
     return cellContent.toLowerCase() == searchKey.toLowerCase();
   } else {
-    return cellContent.toLowerCase().startsWith(searchKey.toLowerCase());
+    return cellContent.toLowerCase().includes(searchKey.toLowerCase());
   }
 }
 
 function* expandRows(fields, children, _depth = 0, parent=null) {
   if(fields.length == 0) return;
-  const columnName = fields[0].key, remainingColumns = _.tail(fields);
-  const grouped = _.groupBy(children, fields[0].groupBy || columnName);
+  const field = fields[0]
+  const columnName = field.key, remainingColumns = _.tail(fields);
+  const grouped = _.groupBy(children, field.groupBy || field.textValue || columnName);
   for (const key in grouped) {
     const group = grouped[key];
+    const columnTarget = field.textValue?
+      field.textValue(group[0]) :
+      group[0][columnName]
+
     let parentRow = { 
-      [columnName]: group[0][columnName],
+      [columnName]: columnTarget,
       tooltips: group[0].tooltips,
+      context: group[0].context,
       _children: [],
       _childrenByGroup: {},
       _totalChildren: 0,
@@ -30,12 +36,23 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       _controlNodes: []
     };
     // add the child rows
+    let span = 1;
+
+    while(remainingColumns[0]?.shallow) {
+      const field = remainingColumns[0]
+      const columnName = field.key
+      parentRow[columnName] = field.textValue?
+        field.textValue(group[0]) :
+        group[0][columnName]
+
+      span++
+      remainingColumns.shift()
+    }
     for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
       parentRow._totalChildren++;
       parentRow._children.push(row);
     }
 
-    let span = 1;
     const childGroups = _.groupBy(parentRow._children, (child) => child._key);
     for(const key in childGroups){
       const childGroup = childGroups[key];
@@ -347,7 +364,7 @@ export default {
               </span>
               <span v-else>
                 <slot :name="scope.field.key + '$empty'">
-                  <span v-if="scope.item._depth < scope.field.index">
+                  <span v-if="scope.item._depth + scope.item._span < scope.field.index">
                     {{pluralize(scope)}}
                   </span>
                 </slot>
