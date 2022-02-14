@@ -28,3 +28,7 @@ pnpm-debug.log*
 *.sw?
 
 /live/
+
+# because I'm an idiot - Andrew
+./lsync.lua
+**/lsync.lua

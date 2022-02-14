@@ -4,6 +4,7 @@ import StatusIcon from '../../vue_shared/components/oc/Status.vue';
 import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
 import QuantityCard from '../components/quantity-card.vue'
 import ProjectIcon from '../../vue_shared/components/oc/project-icon.vue'
+import {textValueFromKeys} from '../dashboard-utils'
 import {mapGetters} from 'vuex';
 import _ from 'lodash';
 import { __ } from '~/locale';
@@ -30,12 +31,11 @@ const items = [
 */
 
 const fields = [
-    {key: 'application', groupBy: (item) => item.application.name, label: 'Applications', s: 'Application'},
-    {key: 'environment', groupBy: (item) => item.environment.name, label: 'Environments', s: 'Environment'},
-    {key: 'deployment', groupBy: (item) => item.deployment.name, label: 'Deployments', s: 'Deployment'},
+    {key: 'application', textValue: textValueFromKeys('application.title', 'application.name'), label: 'Applications', s: 'Application'},
+    {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
+    {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
     {key: 'type', label: 'Resource Types', s: 'Resource Type'},
-    {key: 'resource', groupBy: (item) => item.resource.name, label: 'Resources', s: 'Resource'},
-    //{key: 'status', groupBy: 'name', label: __('Status')},
+    {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource'},
 ];
 
 export default {
@@ -97,38 +97,34 @@ export default {
     </div>
     <TableComponent :items="getDashboardItems" :fields="fields">
     <template #application="scope">
-        <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.application.name}}">
+        <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}">
             <div class="status-item">
                 <project-icon :projectIcon="scope.item.application.projectIcon" />
-                {{scope.item.application.title}}
+                {{scope.item.context.application.title}}
             </div>
         </router-link>
     </template>
     <template #environment="scope">
-        <router-link :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: scope.item.environment.name}}">
+        <router-link :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: scope.item.context.environment.name}}">
             <div class="status-item">
-                <logos-cloud :small=true :cloud="scope.item.environment.primary_provider.type"/> 
-                {{scope.item.environment.name}}
+                <logos-cloud :small=true :cloud="scope.item.context.environment.primary_provider.type"/> 
+                {{scope.item.context.environment.name}}
             </div>
         </router-link>
     </template>
     <template #deployment="scope">
-        <router-link :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: scope.item.deployment.name}}">
+        <router-link :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: scope.item.context.deployment.name, environment: scope.item.context.environment.name}}">
             <div class="status-item">
-                <status-icon v-for="resource in scope.item.deployment.statuses" :key="resource.name" :status="resource.status"/>
-                    {{scope.item.deployment.title}}
+                <status-icon v-for="resource in scope.item.context.deployment.statuses" :key="resource.name" :status="resource.status"/>
+                    {{scope.item.context.deployment.title}}
             </div>
         </router-link>
     </template>
     <template #resource="scope">
         <div class="status-item">
-            <status-icon :status="scope.item.resource.status" />
-            {{scope.item.resource.title}}
+            <status-icon :status="scope.item.context.resource.status" />
+            {{scope.item.context.resource.title}}
         </div>
-    </template>
-
-    <template #status=scope>
-        <StatusIcon :status="scope.item.status" />
     </template>
     </TableComponent> 
 </div>
