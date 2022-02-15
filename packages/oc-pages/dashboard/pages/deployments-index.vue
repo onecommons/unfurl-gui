@@ -1,14 +1,15 @@
 <script>
-import {GlIcon, GlTabs, GlBreadcrumb} from '@gitlab/ui'
+import {GlTabs} from '@gitlab/ui'
 import OcTab from '../../vue_shared/components/oc/oc-tab.vue'
 import DeploymentsIndexTable from '../components/tables/deployment-index-table.vue'
+import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {mapGetters} from 'vuex'
 import * as routes from '../router/constants'
 import {__} from '~/locale.js'
 
 
 export default {
-    components: {GlIcon, GlTabs, GlBreadcrumb, OcTab, DeploymentsIndexTable},
+    components: {GlTabs, DashboardBreadcrumbs, OcTab, DeploymentsIndexTable},
     data() {
         const query = this.$route.query
         const show = query?.show
@@ -19,7 +20,6 @@ export default {
         )
         
         const breadcrumbItems = [
-            {text: __('Dashboard'), to: {name: routes.OC_DASHBOARD_HOME, query: {}}},
             {text: __('Deployments'), href: '#'}
         ]
 
@@ -63,12 +63,8 @@ export default {
 </script>
 <template>
     <div>
-        <gl-breadcrumb :items="breadcrumbItems">
-            <template #separator>
-                <gl-icon name="chevron-right" />
-            </template>
-        </gl-breadcrumb>
-    <gl-tabs v-model="currentTab">
+      <dashboard-breadcrumbs :items="breadcrumbItems" />
+      <gl-tabs v-model="currentTab">
         <oc-tab title="All" :titleCount="deploymentsCount">
             <deployments-index-table :items="getDashboardItems"/>
         </oc-tab>

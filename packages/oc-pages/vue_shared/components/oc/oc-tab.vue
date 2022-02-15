@@ -20,7 +20,9 @@ export default {
                 {{ titleCount }}
             </gl-badge>
         </template>
-        <slot></slot>
+        <div class="pt-2 mb-2">
+            <slot></slot>
+        </div>
     </gl-tab>
 
 </template>

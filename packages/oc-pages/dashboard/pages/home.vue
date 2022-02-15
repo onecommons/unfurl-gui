@@ -1,9 +1,14 @@
 <script>
 import TableComponent from '../../vue_shared/components/oc/table.vue';
+
+//TODO use components/cells wherever possible
 import StatusIcon from '../../vue_shared/components/oc/Status.vue';
 import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
 import QuantityCard from '../components/quantity-card.vue'
 import ProjectIcon from '../../vue_shared/components/oc/project-icon.vue'
+//
+
+import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {textValueFromKeys} from '../dashboard-utils'
 import {mapGetters} from 'vuex';
 import _ from 'lodash';
@@ -40,7 +45,7 @@ const fields = [
 
 export default {
     name: 'TableComponentContainer',
-    components: {TableComponent, StatusIcon, LogosCloud, QuantityCard, ProjectIcon},
+    components: {TableComponent, StatusIcon, LogosCloud, QuantityCard, ProjectIcon, DashboardBreadcrumbs},
     data() {
         return { 
             routes,
@@ -64,10 +69,11 @@ export default {
 </script>
 <template>
 <div>
+    <dashboard-breadcrumbs />
     <div class="quantity-cards">
-        <div style="display: flex;">
+        <div class="d-flex">
             <quantity-card 
-                :to="{name: routes.OC_DASHBOARD_APPLICATIONS_INDEX}" 
+                :to="{name: routes.OC_DASHBOARD_HOME}" 
                 :count="applicationsCount" 
                 s="Application" 
                 p="Applications" 
@@ -79,7 +85,7 @@ export default {
                 p="Environments"
                 color="#f4f4f4"/>
         </div>
-        <div style="display: flex">
+        <div class="d-flex">
             <quantity-card
                 :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'running'}}"
                 :count="runningDeploymentsCount"

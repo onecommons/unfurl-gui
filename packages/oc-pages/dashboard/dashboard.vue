@@ -18,5 +18,8 @@ export default {
 }
 </script>
 <template>
-<router-view v-if="isDashboardLoaded"/>
+    <!-- forgive me -->
+    <div style="font-size: 0.9em;">
+        <router-view v-if="isDashboardLoaded"/>
+    </div>
 </template>
