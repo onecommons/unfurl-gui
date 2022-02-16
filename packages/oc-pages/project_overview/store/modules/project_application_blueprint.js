@@ -18,6 +18,13 @@ class ApplicationBlueprint {
     getDeploymentTemplate(name) {
         return new DeploymentTemplate(this._state['DeploymentTemplate'][name], this._state)
     }
+
+    toJSON() {
+        const result = {...this}
+        delete result._state
+        return result
+    }
+  
 }
 
 class DeploymentTemplate {
@@ -32,6 +39,12 @@ class DeploymentTemplate {
 
     get _primary() {
         return new ResourceTemplate(this._state['ResourceTemplate'][this.primary], this._state)
+    }
+
+    toJSON() {
+        const result = {...this}
+        delete result._state
+        return result
     }
 
 }
@@ -63,6 +76,14 @@ class ResourceTemplate {
     get _type() {
         return this._state['ResourceType'][this.type]
     }
+
+    toJSON() {
+        const result = {...this}
+        delete result._state
+        return result
+    }
+
+
 }
 
 
