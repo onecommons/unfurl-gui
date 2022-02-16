@@ -26,28 +26,13 @@ export default {
             type: Object,
             required: false,
         },
-        iconTitle: {
-            type: Boolean,
-            required: false,
-            default: false
-        },
-        iconName: {
-            type: String,
-            required: false,
-            default: "warning-solid",
-        },
-        iconColor: {
-            type: String,
-            required: false,
-            default: "icon-red",
-        },
         badgeHeader: {
             type: Object,
             required: false,
             default: () => {
-            return {
-                isActive: false,
-                text: "",
+                return {
+                    isActive: false,
+                    text:"",
                 }
             }
         },
@@ -55,23 +40,20 @@ export default {
             type: Boolean,
             required: false,
         },
-
         level: {
             type: Number,
             required: false,
             default: 1,
         },
-
-        mainCardClass: {
-            type: String,
-            required: false,
-            default: ''
+        displayValidation: {
+            type: Boolean,
+            default: true,
         },
-        dependent: {
-            type: Object,
-            required: false,
-            default: () => {name: 'primary'}
+        displayStatus: {
+            type: Boolean,
+            default: false,
         }
+
     },
     data() {
         return {
@@ -95,7 +77,13 @@ export default {
         id() {
             return btoa(this.card.name).replace(/=/g, '')
         },
-        ...mapGetters(['cardIsValid'])
+        ...mapGetters(['cardIsValid', 'getCardType']),
+
+        badgeHeaderText() {
+            const result = this.$props.badgeHeader.text || this.getCardType(this.card)
+            return result
+        }
+
     },
     methods: {
 
@@ -112,23 +100,21 @@ export default {
 
 </script>
 <template>
-    <gl-card :header-class="['gl-display-flex',  'header-oc', mainCardClass]">
+    <gl-card :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
             <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex flex-one gl-pt-1">
-                <gl-icon v-if="mainCardClass === ''" :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeader.text)" />
-                <h4 class="gl-my-0 oc_card_title">{{ customTitle }}</h4>
+                <gl-icon :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeaderText)" />
+                <h4 class="gl-my-0 oc_card_title">{{ card.title }}</h4>
                 <gl-icon
-                v-if="iconTitle"
-                :size="14"
-                :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
-                :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
-                />
-
+                    v-if="displayValidation"
+                    :size="14"
+                    :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
+                    :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
+                    />
                 <gl-badge
-                v-if="badgeHeader.isActive && badgeHeader.text !== ''"
                 size="sm"
                 class="gl-tab-counter-badge gl-ml-3 badge-oc-card"
-                >{{ badgeHeader.text }}</gl-badge
+                >{{ badgeHeaderText }}</gl-badge
                 >
             </div>
             <div class="dropdown-container">

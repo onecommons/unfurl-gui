@@ -71,17 +71,14 @@ export default {
     },
 
     computed: {
-        ...mapGetters({
-            resources: 'getResourceTemplates',
-            servicesToConnect: 'getServicesToConnect',
-            getValidResourceTypes: 'getValidResourceTypes',
-            getValidConnections: 'getValidConnections',
-            //resolveResourceTemplate: 'resolveResourceTemplate',
-            matchIsValid: 'matchIsValid',
-            resolveMatchTitle: 'resolveMatchTitle',
-            cardDependenciesAreValid: 'cardDependenciesAreValid',
-            getDisplayableDependencies: 'getDisplayableDependencies'
-        }),
+        ...mapGetters([
+            'getValidResourceTypes',
+            'getValidConnections',
+            'matchIsValid',
+            'resolveMatchTitle',
+            'cardDependenciesAreValid',
+            'getDisplayableDependencies'
+        ]),
         checkRequirements() {
             const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
             bus.$emit('completeRequirements', this.level, flag);
@@ -92,6 +89,9 @@ export default {
         },
         canConnectServices() {
             return this.$route.name != 'templatePage'
+        },
+        hasRequirementsSetter() {
+            return Array.isArray(this.$store._actions.setRequirementSelected)
         }
     },
 
@@ -105,12 +105,16 @@ export default {
         },
 
         connectToResource(requirement) {
-            this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: requirement.name, requirement, titleKey: this.titleKey}); // TODO trying to make this redundant
+            if(this.hasRequirementsSetter) {
+                this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: requirement.name, requirement, titleKey: this.titleKey}); // TODO trying to make this redundant
+            }
             bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'connect'});
         },
 
         sendRequirement(requirement) {
-            this.setRequirementSelected({requirement, titleKey: this.titleKey});  // TODO trying to make this redundant
+            if(this.hasRequirementsSetter) {
+                this.setRequirementSelected({requirement, titleKey: this.titleKey});  // TODO trying to make this redundant
+            }
             
             bus.$emit('placeTempRequirement', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'create'});
         },
@@ -172,10 +176,10 @@ export default {
                                 <gl-icon
                                 :size="14"
                                 :class="{
-                                    'icon-green': requirement.status,
-                                    'icon-red': !requirement.status,
+                                    'icon-green': requirement.valid,
+                                    'icon-red': !requirement.valid,
                                 }"
-                                :name="requirement.status ? 'check-circle-filled' : 'warning-solid'"
+                                :name="requirement.valid ? 'check-circle-filled' : 'warning-solid'"
                                 />
                                 <span
                                 v-if="matchIsValid(requirement.match)"

@@ -952,7 +952,7 @@
       "state": null,
       "status": 4,
       "attributes": [],
-      "connections": [
+      "dependencies": [
         {
           "constraint": {
             "name": "host",
@@ -1038,7 +1038,7 @@
           "state": null,
           "status": 4,
           "attributes": [],
-          "connections": [
+          "dependencies": [
             {
               "constraint": {
                 "name": "host",
@@ -1102,7 +1102,7 @@
           "connections": []
         }
       ],
-      "primary": "the_app"
+      "primary": "::the_app"
     }
   }
 }

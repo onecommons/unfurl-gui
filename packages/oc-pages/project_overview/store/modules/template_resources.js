@@ -18,9 +18,9 @@ const mutations = {
         state.inputValidationStatus = {};
     },
 
-    setInputValidStatus(state, {card, input, status}) {
+    setInputValidStatus(state, {card, input, valid}) {
         const byCard = state.inputValidationStatus[card.name] || {};
-        if(status)
+        if(valid)
             byCard[input.name] = true;
         else
             delete byCard[input.name];
@@ -58,7 +58,7 @@ const mutations = {
             const dependent = _state.resourceTemplates[dependentName];
             const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
             const templateName = dependent.dependencies[index].match;
-            dependent.dependencies[index] = {...dependent.dependencies[index], match: null, completionStatus: null, status: false};
+            dependent.dependencies[index] = {...dependent.dependencies[index], match: null, completionStatus: null, valid: false};
 
             _state.resourceTemplates[dependentName] = {...dependent};
 
@@ -78,6 +78,24 @@ const mutations = {
 };
 
 const actions = {
+    populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
+        let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
+        deploymentTemplate = {...deploymentTemplate, ...deployment}
+        let resource = rootGetters.resolveResource(deploymentTemplate.primary)
+        resource = {...resource, template: rootGetters.resolveResourceTemplate(resource.template)}
+        if(!deploymentTemplate.cloud) {
+            const environment = rootGetters.lookupEnvironment(deploymentTemplate._environment)
+            if(environment?.primary_provider?.type) {
+                deploymentTemplate.cloud = environment.primary_provider.type
+            }
+        }
+        commit('updateLastFetchedFrom', {environmentName: deploymentTemplate._environment})
+        dispatch('createMatchedResources', {resource})
+        commit('setDeploymentTemplate', deploymentTemplate)
+        commit('createTemplateResource', resource)
+
+    },
+
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         if(!templateSlug) return false;
 
@@ -129,15 +147,15 @@ const actions = {
                 });
             }
             for(const property of resourceTemplate.properties) {
-                commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
+                commit('setInputValidStatus', {card: resourceTemplate, input: property, valid: !!(property.value ?? false)});
             }
 
             for(const dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
                 const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match);
-                dependency.status = !!resolvedDependencyMatch;
+                dependency.valid = !!resolvedDependencyMatch;
 
-                dependency.completionStatus = dependency.status? 'created': null;
+                dependency.completionStatus = dependency.valid? 'created': null;
                 const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '');
 
                 commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name});
@@ -149,20 +167,27 @@ const actions = {
         }
 
         createMatchedTemplateResources(primary);
-
         
-        dispatch('setResourcesOfTemplate', {populate: true, deploymentTemplate, primary});
+        commit('setDeploymentTemplate', deploymentTemplate)
+        commit('createTemplateResource', primary)
         return true;
     },
 
-    setResourcesOfTemplate({commit, dispatch, rootGetters}, {populate, deploymentTemplate, primary, resourceTemplate}) {
-        try {
-            commit('setDeploymentTemplate', deploymentTemplate);
-            commit('createTemplateResource', primary || resourceTemplate);
-            return true;
-        } catch(err) {
-            console.error(err);
-            throw new Error(err.message);
+    createMatchedResources({commit, dispatch, rootGetters}, {resource}) {
+        for(const attribute of resource.attributes) {
+            commit('setInputValidStatus', {card: resource, input: attribute, valid: !!(attribute.value)})
+        }
+        for(const dependency of resource.dependencies) {
+            const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match)
+            const resolvedDependencyTarget = rootGetters.resolveResource(dependency.target)
+            dependency.valid = !!(resolvedDependencyMatch && resolvedDependencyTarget)
+            const id = dependency.valid && btoa(resolvedDependencyTarget.name).replace(/=/g, '')
+
+            commit('createTemplateResource', {...resolvedDependencyTarget, template: resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name})
+
+            if(dependency.valid) {
+                dispatch('createMatchedResources', {resource: resolvedDependencyTarget})
+            }
         }
     },
 
@@ -174,7 +199,7 @@ const actions = {
             const target = cloneDeep(selection);
             target.type = {...target};
             target.description = requirement.description;
-            target.status = true;
+            target.valid = true;
             target.name = name;
             target.title = title;
 
@@ -206,7 +231,7 @@ const actions = {
             );
             const fieldsToReplace = {
                 completionStatus: "created",
-                status: true
+                valid: true
             };
 
             commit("createTemplateResource", target);
@@ -220,7 +245,7 @@ const actions = {
 
     async connectNodeResource({state,rootGetters, commit}, {dependentName, dependentRequirement, nodeResource}) {
 
-        const fieldsToReplace = {completionStatus: 'connected', status: true};
+        const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const resourceTemplate = rootGetters.lookupConnection(environmentName, nodeResource);
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace});
@@ -263,11 +288,48 @@ const getters = {
     getPrimaryCard: (_state) => {
         return _state.resourceTemplates[_state.deploymentTemplate.primary] || {};
     },
+    primaryCardProperties(state) {
+        const primary = state.resourceTemplates[state.deploymentTemplate.primary]
+        switch(primary.__typename) {
+            case 'Resource':
+                return primary.attributes
+            case 'ResourceTemplate':
+                return primary.properties
+        }
+
+    },
+    getCardProperties(state) {
+        return function(card) {
+            const result = state.resourceTemplates[card?.name || card]
+            switch(result?.__typename) {
+                case 'Resource': return result.attributes
+                case 'ResourceTemplate': return result.properties
+                default: return []
+            }
+        }
+    },
+    getCardType(state) {
+        return function(card) {
+            const result = state.resourceTemplates[card?.name || card]
+            switch(result?.__typename) {
+                case 'Resource': return result.template.type
+                case 'ResourceTemplate': return result.type
+                default: return result
+            }
+        }
+    },
+
     getCardsStacked: _state => {
         return Object.values(_state.resourceTemplates).filter((rt) => {
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
-            return parentDependencies.some(dep => dep.match == rt.name);
+
+            return  (
+                rt.__typename == 'ResourceTemplate'?
+                parentDependencies.some(dep => dep.match == rt.name):
+                parentDependencies.some(dep => dep.target == rt.name)
+            )
+                
         });
     },
     getDependencies: (_state) => {
@@ -278,6 +340,7 @@ const getters = {
     // TODO this is a hack and checking for name == cloud is not a permanent solution
     getDisplayableDependencies(_, getters) {
         return function(resourceTemplateName) {
+            console.log(resourceTemplateName)
             const dependencies = getters.getDependencies(resourceTemplateName)
             if(!Array.isArray(dependencies)) return []
             return dependencies.filter(dep => dep.name != 'cloud')

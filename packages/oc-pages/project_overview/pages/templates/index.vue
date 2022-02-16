@@ -563,8 +563,8 @@ export default {
                   :card="card"
                   :badge-header="{ isActive: true, text: card.type }"
                   :icon-title="true"
-                  :icon-color="card.status ? 'icon-green' : 'icon-red'"
-                  :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
+                  :icon-color="card.valid ? 'icon-green' : 'icon-red'"
+                  :icon-name="card.valid ? 'check-circle-filled' : 'warning-solid'"
                   :actions="true"
                   :level="idx"
                   class="gl-mt-6">

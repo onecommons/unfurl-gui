@@ -140,17 +140,29 @@ const actions = {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
                 }
+                deploymentTemplate.__typename = 'DeploymentTemplate'
             },
             ApplicationBlueprint(applicationBlueprint) {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
                 applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
+                applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             ResourceType(resourceType) {
                 if(!resourceType.title) {
                     resourceType.title = resourceType.name
                 }
+                resourceType.__typename = 'ResourceType'
+            },
+            Resource(resource) {
+                if(!resource.dependencies) {
+                    resource.dependencies = []
+                }
+                if(!resource.attributes) {
+                    resource.attributes = []
+                }
+                resource.__typename = 'Resource'
             }
         }
 
@@ -276,10 +288,12 @@ const getters = {
                     new DeploymentTemplate(_deploymentTemplate, state)
 
                 if(result.length == 0 && deploymentTemplate) {
-                    const dependency = deploymentTemplate._primary.dependencies
-                        .find(dependency => dependency.name == dependencyName)
-                    if(dependency) {
-                        result = filteredByType(dependency.constraint.resourceType)
+                    const dependencies = deploymentTemplate._primary.dependencies
+                    if(dependencies) {
+                        const dependency = dependencies.find(dependency => dependency.name == dependencyName)
+                        if(dependency) {
+                            result = filteredByType(dependency.constraint.resourceType)
+                        }
                     }
                 }
 

@@ -1,6 +1,7 @@
 import DashboardHome from '../pages/home.vue'
 import DeploymentsIndex from '../pages/deployments-index.vue'
 import EnvironmentsIndex from '../pages/environments-index.vue'
+import Deployment from '../pages/deployment.vue'
 import Hello from '../components/hello-router.vue'
 import * as constants from './constants';
 
@@ -18,7 +19,7 @@ export default [
   {
     name: constants.OC_DASHBOARD_DEPLOYMENTS,
     path: '/deployments/:environment/:name',
-    component: Hello
+    component: Deployment
   },
   {
     name: constants.OC_DASHBOARD_APPLICATIONS,
