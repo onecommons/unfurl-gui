@@ -1,0 +1,3 @@
+[submodule "apollo-server/repos/testing/apostrophe-demo"]
+	path = apollo-server/repos/testing/apostrophe-demo
+	url = https://gitlab.com/onecommons/testing/apostrophe-demo.git
