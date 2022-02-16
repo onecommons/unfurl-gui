@@ -240,6 +240,7 @@ export const resolvers = {
 
     DeploymentEnvironment: {
         connections: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            if(!parent?.connections) return []
             if(dehydrated) return Object.keys(parent.connections)
             const resourceTemplates = Object.values(parent.connections);
             resourceTemplates.forEach((elem) => {
@@ -250,6 +251,7 @@ export const resolvers = {
         },
 
         primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            if(!parent?.connections?.primary_provider) return null
             const pp = parent.connections.primary_provider;
             if(dehydrated) return pp?.name
             if (typeof pp == 'object') {

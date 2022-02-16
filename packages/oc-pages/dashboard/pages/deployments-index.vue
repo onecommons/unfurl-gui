@@ -5,7 +5,7 @@ import DeploymentsIndexTable from '../components/tables/deployment-index-table.v
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {mapGetters} from 'vuex'
 import * as routes from '../router/constants'
-import {__} from '~/locale.js'
+import {__} from '~/locale'
 
 
 export default {

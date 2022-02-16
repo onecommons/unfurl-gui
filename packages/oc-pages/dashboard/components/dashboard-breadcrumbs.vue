@@ -2,7 +2,7 @@
 import {GlIcon, GlBreadcrumb} from '@gitlab/ui'
 import BreadcrumbAvatar from './breadcrumb-avatar.vue'
 import * as routes from '../router/constants'
-import {__} from '~/locale.js'
+import {__} from '~/locale'
 
 export default {
     name: 'DashboardBreadcrumbs',

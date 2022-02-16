@@ -1,4 +1,5 @@
 import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import _ from 'lodash'
 const state = {
     loaded: false,
     counters: {deployments: 0, applications: 0, environments: 0, stoppedDeployments: 0},
