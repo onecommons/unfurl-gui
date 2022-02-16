@@ -17,11 +17,13 @@ jobs:
         run: npm install --global yarn
       - name: Install yarn dependencies
         run: YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+      - name: Run apollo
+        run: yarn run apollo:start &
       - name: Run server
         run: yarn run serve &
       - name: Add Cypress
         run: yarn add cypress
       - name: Run Cypress
-        run: yarn cypress run -e OC_NAMESPACE="root",OC_USERNAME="root",OC_PASSWORD="c6uRYQKrLuxNCd8"
+        run: yarn cypress run
 
 
