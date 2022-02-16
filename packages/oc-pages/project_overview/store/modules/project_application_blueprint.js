@@ -255,21 +255,12 @@ const getters = {
                 function filteredByType(resourceType) {
                     let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
                     return Object.values(state.ResourceType).filter(type => {
-                        return Array.isArray(type.extends) && type.extends.includes(typeName)
+                        const isValidImplementation =  Array.isArray(type.extends) && type.extends.includes(typeName)
+                        const isConcreteType = Array.isArray(type.implementations) && type.implementations.length > 0
+                        return isValidImplementation && isConcreteType
                     })
                 }
                 let result = filteredByType(dependencyName)
-
-
-                /*
-                 * I changed this to support the temporary deployment draft
-                 * if you're tracking down a bug in here this may be it
-            const deploymentTemplate = getters.resolveDeploymentTemplate(
-                typeof(_deploymentTemplate) == 'string'? 
-                _deploymentTemplate: _deploymentTemplate.slug
-            )
-            */
-
 
                 const deploymentTemplate = typeof _deploymentTemplate == 'string'?
                     getters.resolveDeploymentTemplate(_deploymentTemplate) :
