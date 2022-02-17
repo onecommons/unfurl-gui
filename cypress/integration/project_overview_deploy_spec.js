@@ -98,6 +98,7 @@ describe('project overview deploy', () => {
     nextButton().click()
   })
 
+  /*
   it('can deploy', () => {
 
     openDeployDialog('Google Cloud Platform')
@@ -109,13 +110,14 @@ describe('project overview deploy', () => {
 
     cy.get('button[title="Deploy"]').click()
 
-    //cy.intercept({method: 'POST', url:'**/graphql'}, (req) => {
+    //cy.intercept({method: 'POST', url:'**$$$remove$$$/graphql'}, (req) => {
       //console.log(req.body.variables)
     //}).as('submissions')
 
     // need the post request to stop crashing us
   })
 
+  */
 
 })
 
