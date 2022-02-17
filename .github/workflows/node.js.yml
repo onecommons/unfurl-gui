@@ -2,7 +2,7 @@ name: Cypress CI
 
 on:
   push:
-    branches: [ cypress-actions-ci ]
+    branches: [ new-schema-coalescing-patch ]
   pull_request:
     branches: [ main ]
     
