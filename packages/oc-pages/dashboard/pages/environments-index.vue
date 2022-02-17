@@ -5,7 +5,7 @@ import CreateEnvironmentModal from '../components/create-environment-modal.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {mapGetters} from 'vuex'
 import * as routes from '../router/constants'
-import {__} from '~/locale.js'
+import {__} from '~/locale'
 
 
 export default {

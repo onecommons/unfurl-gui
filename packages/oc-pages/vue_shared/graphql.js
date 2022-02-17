@@ -136,8 +136,10 @@ function clientResolverError(e, baseMessage) {
     return new Error(_e)
 }
 
-function resolutionError(itemKey, typename, parent) {
-  return new Error(`could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent?.name}: ${parent.__typename}`)
+function resolutionError(itemKey, typename, parent, value) {
+  const msg = `could not resolve key '${itemKey}' of type '${typename}' belonging to ${parent?.name}: ${parent.__typename}: ${value}`;
+  console.log(msg, parent);
+  return new Error(msg);
 }
 
 function makeClientResolver(typename, field=null, selector, o) {
@@ -184,15 +186,16 @@ function makeClientResolver(typename, field=null, selector, o) {
 
 function makeObjectLookupResolver(typename) {
   return (parent, args, { cache, jsondb, dehydrated }, info) => {
-      if (dehydrated) return  parent [info.field.name.value] 
-      const obj = jsondb[typename][ parent [ info.field.name.value] ];
-      if (typeof obj == 'object') {
-          obj.__typename = typename; // ensure __typename
-      } else {
-          // not sure this is the right item key
-          throw resolutionError(info.field.name.value, typename, parent)
-      }
-      return obj ?? null;
+    const value = parent[info.field.name.value];
+    if (dehydrated) return value; 
+    const obj = jsondb[typename][ value ];
+    if (typeof obj == 'object') {
+      obj.__typename = typename; // ensure __typename
+    } else {
+      // not sure this is the right item key
+      throw resolutionError(info.field.name.value, typename, parent, value)
+    }
+    return obj ?? null;
   }
 } 
 
@@ -240,6 +243,7 @@ export const resolvers = {
 
     DeploymentEnvironment: {
         connections: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            if(!parent?.connections) return []
             if(dehydrated) return Object.keys(parent.connections)
             const resourceTemplates = Object.values(parent.connections);
             resourceTemplates.forEach((elem) => {
@@ -250,6 +254,7 @@ export const resolvers = {
         },
 
         primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            if(!parent?.connections?.primary_provider) return null
             const pp = parent.connections.primary_provider;
             if(dehydrated) return pp?.name
             if (typeof pp == 'object') {

@@ -40,6 +40,8 @@ const clickSaveTemplate = () => {
   cy.wait(300) // needs to debounce sometimes
   cy.get('[data-testid="save-template-btn"]').click()
   waitForGraphql()
+  cy.wait(100) // fingers crossed
+    
 }
 
 const clickTableRowButton = (dependency, buttonName) => {
@@ -130,8 +132,10 @@ describe('project overview v2', () => {
         withinOcInput(() => {
           expectInvalidInput()
           cy.get('input[placeholder="image"]').type('my amazing image')
+          cy.wait(100)
           expectInvalidInput()
           cy.get('input[placeholder="domain"]').type('unfurl.cloud')
+          cy.wait(100)
           expectValidInput()
         })
       })
@@ -141,9 +145,11 @@ describe('project overview v2', () => {
       withinCard('my-awesome-template-apostrophe-demo', () => {
         withinOcInput(() => {
           cy.get('input[placeholder="image"]').type('my amazing image')
+          cy.wait(100)
           cy.get('input[placeholder="domain"]').type('unfurl.cloud')
         })
       })
+      cy.wait(300)
       clickSaveTemplate()
 
       withinCard('my-awesome-template-apostrophe-demo', () => {
@@ -164,7 +170,9 @@ describe('project overview v2', () => {
         withinOcInput(() =>  {
           expectInvalidInput()
           cy.get('input[placeholder="CPUs"]').type('8')
+          cy.wait(100)
           cy.get('input[placeholder="Memory"]').type('64')
+          cy.wait(100)
           cy.get('input[placeholder="storage"]').type('1')
           expectValidInput()
         })
@@ -328,7 +336,8 @@ describe('project overview', () => {
 
         ocTableRow('AWSInstance').within(_ => cy.get('input[type="radio"]').click({force: true}))
 
-        input().should('have.value', 'Some stupid name'); input().clear().type('AWSInstance')
+        input().should('have.value', 'Some stupid name'); input().clear().wait(300)
+        input().invoke('val', '').type('AWSInstance')
 
         nextButton().click()
 
