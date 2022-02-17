@@ -1,0 +1,16 @@
+apiVersion: unfurl/v1alpha1
+kind: Ensemble
++include:
+  file: ensemble-template.yaml
+  repository: spec
+spec:
+  service_template:
+    topology_template:
+      node_templates:
+        +?include: deployment.json#/ResourceTemplate
+    repositories:
+    # Files that are shared across ensemble instances should be placed in this "spec" repository
+      spec:
+        url: ssh://git@github.com/onecommons/unfurl-gui.git#:apollo-server/repos/testing/apostrophe-demo
+metadata:
+  uri: ssh://git@github.com/onecommons/unfurl-gui.git#:apollo-server/repos/user1/dashboard/environments/production-gcp/ds/ensemble.yaml
