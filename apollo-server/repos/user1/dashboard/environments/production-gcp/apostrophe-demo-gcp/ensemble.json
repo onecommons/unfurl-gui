@@ -8,7 +8,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
@@ -42,7 +42,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -80,7 +80,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudProject",
         "unfurl.nodes.CloudAccount",
         "tosca.nodes.Root",
@@ -106,7 +106,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.CloudAccount",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -134,7 +134,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudServiceKey",
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
@@ -187,7 +187,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
@@ -242,7 +242,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudOrganization",
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
@@ -298,7 +298,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.GoogleCloudFolder",
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
@@ -343,7 +343,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -377,7 +377,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "Compute",
         "Base",
         "tosca.nodes.Root",
@@ -411,7 +411,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "AWSInstance",
         "Compute",
         "Base",
@@ -448,7 +448,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.AWSResource",
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
@@ -499,7 +499,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "GCPInstance",
         "Compute",
         "Base",
@@ -537,7 +537,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "MongoDb",
         "Base",
         "tosca.nodes.Root",
@@ -566,7 +566,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "Atlas",
         "MongoDb",
         "Base",
@@ -584,7 +584,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "SelfHostedMongoDb",
         "MongoDb",
         "Base",
@@ -612,7 +612,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "DNS",
         "Base",
         "tosca.nodes.Root",
@@ -646,7 +646,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "DockerHost",
         "Compute",
         "Base",
@@ -675,7 +675,7 @@
           }
         }
       },
-      "implements": [
+      "extends": [
         "MEANStack",
         "Base",
         "tosca.nodes.Root",
@@ -726,7 +726,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "Mail",
         "tosca.relationships.Root"
       ]
@@ -739,7 +739,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "tosca.relationships.Root"
       ]
     },
@@ -751,7 +751,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "SendGrid",
         "Mail",
         "tosca.relationships.Root"
@@ -765,7 +765,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.Installer.Terraform",
         "unfurl.nodes.Installer",
         "tosca.nodes.Root",
@@ -783,7 +783,7 @@
         "type": "object",
         "properties": {}
       },
-      "implements": [
+      "extends": [
         "unfurl.nodes.Installer",
         "tosca.nodes.Root",
         "unfurl.capabilities.Installer",

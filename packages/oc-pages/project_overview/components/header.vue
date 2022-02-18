@@ -48,11 +48,17 @@ export default {
                 })
                 .catch(() => createFlash(__('Star toggle failed. Try again later.')));
         },
-
         redirectTo(link) {
             window.location.href = link;
         },
-    }
+    },
+
+    computed: {
+        visitProject() {
+            return window.location.pathname.split('/').slice(0,3).join('/')
+        }
+    },
+
 }
 </script>
 <template>
@@ -70,7 +76,7 @@ export default {
                         </h1>
                     </div>
                     <div class="home-panel-metadata d-flex flex-wrap text-secondary gl-font-base gl-font-weight-normal gl-line-height-normal">
-                        <div class="button_id_project" v-html="this.$projectGlobal.buttonId" ></div>
+                        <a style="color: #4A5053;" :href="visitProject">{{__('View Project')}}</a>
                     </div>
                 </div>
             </div>

@@ -8,6 +8,7 @@ import createLogger from "vuex/dist/logger";
 import deployments from '../../project_overview/store/modules/deployments'
 import environments from '../../project_overview/store/modules/environments'
 import project_application_blueprint from '../../project_overview/store/modules/project_application_blueprint';
+import table_data from './modules/table_data'
 //import misc from './modules/misc';
 
 Vue.use(Vuex);
@@ -19,6 +20,7 @@ const store = new Vuex.Store({
         project_application_blueprint,
         environments,
         deployments,
+        table_data,
     },
     strict: debug,
     plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],

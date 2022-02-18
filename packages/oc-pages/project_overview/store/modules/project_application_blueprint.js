@@ -18,6 +18,13 @@ class ApplicationBlueprint {
     getDeploymentTemplate(name) {
         return new DeploymentTemplate(this._state['DeploymentTemplate'][name], this._state)
     }
+
+    toJSON() {
+        const result = {...this}
+        delete result._state
+        return result
+    }
+  
 }
 
 class DeploymentTemplate {
@@ -32,6 +39,12 @@ class DeploymentTemplate {
 
     get _primary() {
         return new ResourceTemplate(this._state['ResourceTemplate'][this.primary], this._state)
+    }
+
+    toJSON() {
+        const result = {...this}
+        delete result._state
+        return result
     }
 
 }
@@ -63,6 +76,14 @@ class ResourceTemplate {
     get _type() {
         return this._state['ResourceType'][this.type]
     }
+
+    toJSON() {
+        const result = {...this}
+        delete result._state
+        return result
+    }
+
+
 }
 
 
@@ -170,12 +191,36 @@ const actions = {
     }
     
 }
+
+/*
+ * TODO try this out
+function storeResolver(typename, options) {
+    const defaults = {}
+    const {instantiateAs} = Object.assign(defaults, options)
+    return function(state) {
+        const dictionary = state[typename]
+        return function(name) {
+            let entry
+            if(entry = dictionary[name]) {
+                if(instantiateAs) {
+                    return new instantiateAs(entry, state)
+                }
+                else return entry
+            } else {
+                return null
+            }
+        }
+    }
+}
+*/
+
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
     resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
     resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveResource(state) { return name =>  state['Resource'][name] },
+    //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
     dependenciesFromResourceType(_, getters) {
         return function(resourceTypeName) {
@@ -210,8 +255,14 @@ const getters = {
         }
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
-    getResources(state) {return Object.values(state.Resource)},
-    getDeployment(state) {return Object.values(state.Deployment)[0]},
+
+    /* appease the devtools 
+    *  devtools now break when errors occur in getters
+    */
+    getResources(state) {return Object.values(state.Resource || {})},
+    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
+    /* appease the devtools */
+
     applicationBlueprintIsLoaded(state) {return state.loaded},
     getValidResourceTypes(state, getters) {
         return function(dependency, _deploymentTemplate) {
@@ -225,21 +276,12 @@ const getters = {
                 function filteredByType(resourceType) {
                     let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
                     return Object.values(state.ResourceType).filter(type => {
-                        return Array.isArray(type.extends) && type.extends.includes(typeName)
+                        const isValidImplementation =  Array.isArray(type.extends) && type.extends.includes(typeName)
+                        const isConcreteType = Array.isArray(type.implementations) && type.implementations.length > 0
+                        return isValidImplementation && isConcreteType
                     })
                 }
                 let result = filteredByType(dependencyName)
-
-
-                /*
-                 * I changed this to support the temporary deployment draft
-                 * if you're tracking down a bug in here this may be it
-            const deploymentTemplate = getters.resolveDeploymentTemplate(
-                typeof(_deploymentTemplate) == 'string'? 
-                _deploymentTemplate: _deploymentTemplate.slug
-            )
-            */
-
 
                 const deploymentTemplate = typeof _deploymentTemplate == 'string'?
                     getters.resolveDeploymentTemplate(_deploymentTemplate) :

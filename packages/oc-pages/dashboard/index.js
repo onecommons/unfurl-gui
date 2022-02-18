@@ -12,7 +12,7 @@ const router = createRouter()
 export default (elemId='js-table-component') => {
     const element = document.getElementById(elemId);
 
-    return new Vue({
+    const result = new Vue({
         el: element,
         apolloProvider,
         store,
@@ -21,4 +21,6 @@ export default (elemId='js-table-component') => {
             return createElement(Dashboard);
         },
     });
+    //window.app = result
+    return result
 };

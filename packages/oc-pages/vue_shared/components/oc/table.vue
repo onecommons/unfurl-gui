@@ -8,19 +8,25 @@ function searchMatchingFunction(cellContent, searchKey) {
   if(searchKey.length <= 2) {
     return cellContent.toLowerCase() == searchKey.toLowerCase();
   } else {
-    return cellContent.toLowerCase().startsWith(searchKey.toLowerCase());
+    return cellContent.toLowerCase().includes(searchKey.toLowerCase());
   }
 }
 
 function* expandRows(fields, children, _depth = 0, parent=null) {
   if(fields.length == 0) return;
-  const columnName = fields[0].key, remainingColumns = _.tail(fields);
-  const grouped = _.groupBy(children, fields[0].groupBy || columnName);
+  const field = fields[0]
+  const columnName = field.key, remainingColumns = _.tail(fields);
+  const grouped = _.groupBy(children, field.groupBy || field.textValue || columnName);
   for (const key in grouped) {
     const group = grouped[key];
+    const columnTarget = field.textValue?
+      field.textValue(group[0]) :
+      group[0][columnName]
+
     let parentRow = { 
-      [columnName]: group[0][columnName],
+      [columnName]: columnTarget,
       tooltips: group[0].tooltips,
+      context: group[0].context,
       _children: [],
       _childrenByGroup: {},
       _totalChildren: 0,
@@ -30,12 +36,23 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       _controlNodes: []
     };
     // add the child rows
+    let span = 1;
+
+    while(remainingColumns[0]?.shallow) {
+      const field = remainingColumns[0]
+      const columnName = field.key
+      parentRow[columnName] = field.textValue?
+        field.textValue(group[0]) :
+        group[0][columnName]
+
+      span++
+      remainingColumns.shift()
+    }
     for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
       parentRow._totalChildren++;
       parentRow._children.push(row);
     }
 
-    let span = 1;
     const childGroups = _.groupBy(parentRow._children, (child) => child._key);
     for(const key in childGroups){
       const childGroup = childGroups[key];
@@ -134,7 +151,14 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
 
 export default {
   name: 'TableComponent',
-  props: ['items', 'fields'],
+  props: {
+    items: Array,
+    fields: Array,
+    useCollapseAll: {
+      type: Boolean,
+      default: true
+    }
+  },
   directives: {
     GlTooltip: GlTooltipDirective,
   },
@@ -157,7 +181,7 @@ export default {
       return result;
     },
     _fields() {
-      const result = [{key: "selected", label: "", thStyle: {width: '0px'}}];
+      const result = this.useCollapseAll? [{key: "selected", label: "", thStyle: {width: '0px'}}] : [];
       let i = 0;
       for(const field of this.fields) {
         const label = field.label.trim() + '  ';  // dirty trick to keep THs from touching each other
@@ -265,12 +289,12 @@ export default {
 };
 </script>
 <template>
-  <div class="container-fluid">
+  <div class="container-fluid mt-4">
     <div class="row fluid no-gutters filter-searchbox">
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
-          <gl-icon name="filter" style="width: 24px; height: 24px; color: #595959"/>
+          <svg fill="none" height="20" width="20" viewBox="0 0 16 16"  xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><clipPath id="a"><path d="m0 0h16v16h-16z"/></clipPath><g clip-path="url(#a)"><path d="m15.4356.259637c-.1783-.133197-.3887-.1853172-.5907-.259637h-13.6944c-.01668.0376425-.05324.0273471-.08275.0321731-.301831.0663116-.57219.2336739-.76663.4745729-.19444.240898-.30138873.540994-.30326321.850954-.00352784.41536.16580821.75253.45733521 1.0392 1.564438 1.5383 3.128868 3.07671 4.693298 4.61522.04079.03642.07305.08144.09445.13184.0214.05039.03142.10491.02934.15965-.00363 2.40655-.00481 4.81299-.00352 7.21929 0 .232.02052.4582.11802.6725.33226.7322 1.16579 1.0115 1.91626.6376.8393-.4182 1.67283-.8484 2.5163-1.2579.62376-.3031.91466-.7796.90986-1.48-.0135-1.9304-.0035-3.86078-.0074-5.79117-.0026-.05483.0072-.10955.0287-.16004.0215-.05048.0541-.09543.0954-.13144.2941-.27959.5808-.56689.8698-.8513 1.2797-1.25733 2.5583-2.51551 3.836-3.77455.6428-.6351.5853-1.603829-.1161-2.126963zm-.939 1.248633c-1.6696 1.64469-3.3403 3.28831-5.01209 4.93085-.04038.03696-.07209.08245-.09283.13319s-.03.10547-.02711.16023c.00289 2.11763 0 4.23526.00513 6.35286 0 .1355-.0356.2079-.16035.2696-.80724.3974-1.60998.8044-2.41433 1.2075-.04618.0232-.09621.0415-.14432.0627-.03207-.0714-.01795-.1357-.01795-.1978 0-2.5612.00074-5.12273.00224-7.68456.00241-.05997-.00851-.11972-.03198-.17492-.02346-.0552-.05888-.10447-.10368-.14424-1.67326-1.64212-3.34481-3.28595-5.01465-4.93149-.02919-.02864-.05613-.05952-.10616-.11293h13.21078c-.0042.06853-.0574.09298-.0927.12901z" fill="#595959"/></g></svg>
           <span style="padding: 0 5px">Filter: </span>
           <div class="filter-input-container">
             <gl-form-input
@@ -291,7 +315,7 @@ export default {
         <div v-if="$apollo.loading" class="loading apollo">{{ __("Loading...") }}</div>
         <!--div v-else-if="error" class="error apollo">{{ __("An error occured") }}</div-->
 
-        <div class="oc-table" v-else>
+        <div class="oc-table" :class="{'secondary-is-primary': !useCollapseAll}" v-else>
           <!-- Table -->
           <gl-table
             :filter-function="filterFn"
@@ -300,7 +324,6 @@ export default {
             ref="selectableTable"
             tbody-tr-class="oc-table-row"
             responsive="lg"
-            layout
             :items="_items"
             :fields="_fields"
             primary-key="id"
@@ -319,6 +342,13 @@ export default {
             </span>
           </template>
 
+          <template #head()=scope>
+            <slot :name="scope.field.key + '$head'" v-bind="scope">
+              {{scope.field.label}}
+            </slot>
+
+          </template>
+
 
           <template #cell(selected)>
             <div class="control-cell left" />
@@ -329,7 +359,7 @@ export default {
           </template>
 
           <template #cell()=scope>
-            <div class="table-body" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
+            <div class="table-body" :style="scope.field.tableBodyStyles" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
               <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
                 <span v-if="scope.field.index != 0">
@@ -346,8 +376,8 @@ export default {
                 <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
               </span>
               <span v-else>
-                <slot :name="scope.field.key + '$empty'">
-                  <span v-if="scope.item._depth < scope.field.index">
+                <slot :name="scope.field.key + '$empty'" v-bind="scope">
+                  <span v-if="scope.item._depth + scope.item._span < scope.field.index">
                     {{pluralize(scope)}}
                   </span>
                 </slot>
@@ -435,6 +465,10 @@ export default {
   position: relative;
 }
 
+.table-body > span {
+  width: 100%;
+}
+
 .table-body.expanded-row {
   align-items: center;
   padding: 0px;
@@ -451,10 +485,6 @@ export default {
 
 .table-body .collapsable {
   display: flex; align-items: center;
-}
-
-.table-aside {
-  padding: 0.4rem 0px;
 }
 
 .filter-container {
@@ -490,10 +520,10 @@ export default {
 
 .oc-table >>> tr.table-expanded {
   border-color: #D1CFD7;
-  height: 3rem;
+  height: 3em;
 }
 .oc-table >>> tr.table-expanded > td {
-  height: 3rem;
+  height: 3em;
 }
 
 .oc-table >>> th {
@@ -518,7 +548,7 @@ th .control-cell {
   margin-left: -0.5em;
 }
 
-.oc-table >>> td:nth-child(2) {
+.oc-table.second-is-primary >>> td:nth-child(2) {
   color: #0099FF;
   font-weight: bold;
   font-size: 0.88em;

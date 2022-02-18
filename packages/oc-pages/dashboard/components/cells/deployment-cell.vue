@@ -1,0 +1,41 @@
+<script>
+import * as routes from '../../router/constants'
+import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
+export default {
+    components: { StatusIcon },
+    props: {
+        deployment: {
+            type: Object,
+            required: true
+        },
+        environment: {
+            type: Object,
+            required: true
+        },
+        displayStatus: {
+            type: Boolean,
+            default: true
+        }
+    },
+    data() {
+        return {routes}
+    }
+}
+</script>
+<template>
+    <router-link :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: deployment.name, environment: environment.name}}">
+        <div v-if="displayStatus" class="status-item">
+                <status-icon v-for="resource in deployment.statuses" :key="resource.name" :status="resource.status"/>
+                    {{deployment.title}}
+        </div>
+        <div v-else>
+            {{deployment.title}}
+        </div>
+    </router-link>
+</template>
+<style scoped>
+.status-item {
+    display: flex;
+    align-items: flex-end;
+}
+</style>

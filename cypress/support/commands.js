@@ -26,12 +26,22 @@
 //
 //
 Cypress.Commands.add('waitForGraphql', () => {
-  cy.wait(100)
-  cy.intercept({
-    method: "POST",
-    url: "**/graphql",
-  }).as("dataGetFirst");
-  cy.wait("@dataGetFirst").wait(250);
+  // https://stackoverflow.com/questions/59171600/allow-cy-wait-to-fail
+  cy.on('fail', (err) => {
+    if (err.name === 'CypressError' && err.message.includes('Timed out')) {
+      return true;
+    }
+    throw err;
+  });
+
+  for(let i = 0; i < 2; i++) {
+    cy.intercept({
+      method: "POST",
+      url: "**/graphql",
+    }).as("dataGetFirst");
+    cy.wait("@dataGetFirst")
+    cy.wait(200)
+  }
 })
 
 

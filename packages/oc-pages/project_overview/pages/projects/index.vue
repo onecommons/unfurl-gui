@@ -294,6 +294,7 @@ export default {
         redirectToNewEnvironment() {
             const redirectTarget = `${window.location.pathname}${window.location.search}`
             const pathComponents = window.location.pathname.split("/").slice(0, -2)
+            pathComponents[1] = this.getUsername
             pathComponents[2] = USER_HOME_PROJECT
             const url = `${window.origin}${pathComponents.join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
             window.location = url;
