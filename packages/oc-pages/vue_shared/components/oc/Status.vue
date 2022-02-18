@@ -1,21 +1,35 @@
 <template>
-  <span class="gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
-    <!-- 
-      standard gl-icon doesn't support variants
-      standard gl-badge doesn't have good adequate control
-      normally just gl-icon would be enough with proper variants
-    -->
-      <gl-icon
-        v-if="status < StatusIndicators.length"
-        :variant="StatusIndicators[status][0]"
-        :name="StatusIndicators[status][1]"
-        class="status-icon"
-        :size="size"
-        :title="__(StatusIndicators[status][2])"
-        v-gl-tooltip.hover
-        >
-      </gl-icon>
-  </span>
+  <div class="d-inline-flex align-items-center">
+    <div class="gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
+      <!-- 
+        standard gl-icon doesn't support variants
+        standard gl-badge doesn't have good adequate control
+        normally just gl-icon would be enough with proper variants
+      -->
+        <gl-icon
+          v-if="status < StatusIndicators.length"
+          :variant="StatusIndicators[status][0]"
+          :name="StatusIndicators[status][1]"
+          class="status-icon"
+          :size="size"
+          :title="__(StatusIndicators[status][2])"
+          v-gl-tooltip.hover
+          >
+        </gl-icon>
+    </div>
+    <div v-if="text">{{__(StatusIndicators[status])}}</div>
+
+    <!-- starting -->
+    <div v-if="state == 5">
+      {{__(StateNames[state])}}
+      <div style="position: relative; display: inline-block; height: 100%;">
+        <svg class="spinner" viewBox="0 0 50 50">
+          <circle class="path" cx="25" cy="25" r="20" fill="none" stroke="black" stroke-width="5"></circle>
+        </svg>
+      </div>
+    </div>
+    <div v-else-if="StateNames[state]">{{__(StateNames[state])}}</div>
+  </div>
 </template>
 <script>
 //import { BBadge } from 'bootstrap-vue'
@@ -36,6 +50,21 @@ const StatusIndicators = [
   ["info", "status_open", "Absent"]
 ]
 
+const StateNames = [
+  'Initial',
+  'Creating',
+  'Created',
+  'Configuring',
+  'Configured',
+  'Starting',
+  'Started',
+  'Stopping',
+  'Stopped',
+  'Deleting',
+  'Deleted',
+  'Error'
+]
+
 export default {
   name: "Status",
   props: {
@@ -44,11 +73,20 @@ export default {
       type: Number,
       default: 12
     },
+    text: {
+      type: Boolean,
+      default: false
+    },
+    state: {
+      type: Number,
+      default: -1
+    }
+
   },
   data() {
     const hackyBadgeClass = {}
     hackyBadgeClass[`badge-${StatusIndicators[this.$props.status][0]}`] = true
-    return { StatusIndicators, hackyBadgeClass};
+    return { StatusIndicators, hackyBadgeClass, StateNames};
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -65,10 +103,46 @@ export default {
   /*padding: 4px !important;*/
   padding: 0px !important;
 }
-span {
+.gl-badge {
   margin-right: 4px;
-  margin-bottom: calc(0.5em - 3px);
   border-radius: 100%;
   padding: 0;
+}
+
+
+/*
+ * Copyright Fabio Ottaviani https://codepen.io/supah/pen/BjYLdW
+ * modifications made
+*/
+.spinner {
+  /*animation: rotate 2s linear infinite;*/
+  width: 1.25em; height: 1.25em;
+  margin: 0 0.25em;
+}
+.spinner > .path {
+  stroke: hsl(210, 70, 75);
+  stroke-linecap: round;
+  animation: dash 1.5s ease-in-out infinite;
+}
+
+@keyframes rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
 }
 </style>

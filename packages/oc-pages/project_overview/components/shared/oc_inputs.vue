@@ -1,5 +1,4 @@
 <script>
-import {GlTabs, GlTab, GlIcon, GlFormGroup, GlFormInput} from '@gitlab/ui';
 import {debounce} from 'lodash';
 import {bus} from '../../bus';
 import {__} from '~/locale';
@@ -48,9 +47,6 @@ const fields = createSchemaField({
 export default {
   name: 'OcInputs',
   components: {
-    GlTabs,
-    GlTab,
-    GlIcon,
     // GlFormGroup,
     // GlFormInput,
     FormProvider,
@@ -71,11 +67,11 @@ export default {
       type: Array,
       required: true
     },
-    */
     componentKey: {
       type: Number,
       required: true
     }
+    */
   },
 
   computed: {
@@ -217,12 +213,8 @@ export default {
 </script>
 <template>
   <div data-testid="oc_inputs">
-    <gl-tabs v-if="mainInputs.length > 0">
-      <gl-tab>
-        <template slot="title">
-
-          <span>{{ tabsTitle }}</span>
-          <gl-icon
+    
+          <!--gl-icon
               :size="14"
               :class="{
                             'icon-green':
@@ -235,9 +227,7 @@ export default {
                             cardInputsAreValid(card)
                                 ? 'check-circle-filled'
                                 : 'warning-solid'
-                        "/>
-        </template>
-
+                        "/-->
         <FormProvider :form="form">
           <SchemaField :schema="schema"/>
         </FormProvider>
@@ -256,7 +246,5 @@ export default {
         <!--              @keyup="checkInputsInline(); triggerSave()"-->
         <!--          />-->
         <!--        </gl-form-group>-->
-      </gl-tab>
-    </gl-tabs>
   </div>
 </template>

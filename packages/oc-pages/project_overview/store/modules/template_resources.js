@@ -75,10 +75,14 @@ const mutations = {
         _state.lastFetchedFrom = {projectPath, templateSlug, environmentName};
     },
 
+    setIsDeployment(state, isDeployment) {
+        state.isDeployment = isDeployment
+    }
 };
 
 const actions = {
     populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
+        commit('setIsDeployment', true)
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
         deploymentTemplate = {...deploymentTemplate, ...deployment}
         let resource = rootGetters.resolveResource(deploymentTemplate.primary)
@@ -97,6 +101,7 @@ const actions = {
     },
 
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+        commit('setIsDeployment', false)
         if(!templateSlug) return false;
 
         const blueprint = rootGetters.getApplicationBlueprint;
@@ -318,7 +323,6 @@ const getters = {
             }
         }
     },
-
     getCardsStacked: _state => {
         return Object.values(_state.resourceTemplates).filter((rt) => {
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
@@ -337,21 +341,28 @@ const getters = {
             return _state.resourceTemplates[resourceTemplateName]?.dependencies;
         };
     },
+    cardStatus(state) {
+        return function(resourceName) {
+            return state.resourceTemplates[resourceName].status
+        }
+    },
     // TODO this is a hack and checking for name == cloud is not a permanent solution
     getDisplayableDependencies(_, getters) {
         return function(resourceTemplateName) {
-            console.log(resourceTemplateName)
             const dependencies = getters.getDependencies(resourceTemplateName)
             if(!Array.isArray(dependencies)) return []
             return dependencies.filter(dep => dep.name != 'cloud')
         }
     },
-    matchIsValid: (_state, getters)=> function(match) {
-        return typeof(match) == 'string'? !!getters.resolveMatchTitle(match): false;
+    requirementMatchIsValid: (_state, getters)=> function(requirement) {
+        return typeof(requirement) == 'object'? !!getters.resolveRequirementMatchTitle(requirement): false;
     },
-    resolveMatchTitle: (_state, getters, _, rootGetters) => function(match) { 
+
+    resolveRequirementMatchTitle: (_state, getters, _, rootGetters) => function(requirement) { 
+        const match = state.isDeployment ? requirement.target : requirement.match
         const matchInResourceTemplates = _state.resourceTemplates[match]?.title; 
         if(matchInResourceTemplates) return matchInResourceTemplates;
+        // TODO figure out how to handle resources of a service
         return rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
     },
     cardInputsAreValid(state) {
@@ -370,7 +381,7 @@ const getters = {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
             if(!card?.dependencies?.length) return true;
-            return card.dependencies.every(dependency => getters.matchIsValid(dependency.match) && getters.cardIsValid(dependency.match));
+            return card.dependencies.every(dependency => getters.requirementMatchIsValid(dependency.match) && getters.cardIsValid(dependency.match));
         };
 
     },

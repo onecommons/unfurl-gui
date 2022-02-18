@@ -1,17 +1,24 @@
 <script>
-import { GlTabs, GlTab, GlIcon, GlButton } from '@gitlab/ui';
+import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
+import OcTab from '../../../vue_shared/components/oc/oc-tab.vue'
+import OcInputs from './oc_inputs.vue'
 import { bus } from '../../bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'
+import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
+import OcPropertiesList from '../../../vue_shared/components/oc/oc-properties-list.vue'
 
 export default {
     name: 'OcList',
     components: {
         GlTabs,
-        GlTab,
+        OcTab,
         GlIcon,
-        GlButton
+        GlButton,
+        StatusIcon,
+        OcPropertiesList,
+        OcInputs
     },
 
     mixins: [commonMethods],
@@ -25,11 +32,6 @@ export default {
             type: String,
             required: false,
             default: __('List')
-        },
-        templateDependencies: {
-            type: Array,
-            required: true,
-            default: () => []
         },
         showTypeFirst: {
             type: Boolean,
@@ -59,6 +61,26 @@ export default {
         deploymentTemplate: {
             type: Object,
             required: true
+        },
+        displayValidation: {
+            type: Boolean,
+            default: true,
+        },
+        displayStatus: {
+            type: Boolean,
+            default: false,
+        },
+        renderInputs: {
+            type: Boolean,
+            default: true
+        },
+        renderOutputs: {
+            type: Boolean,
+            default: true
+        },
+        readonly: {
+            type: Boolean,
+            default: false
         }
 
 
@@ -74,24 +96,29 @@ export default {
         ...mapGetters([
             'getValidResourceTypes',
             'getValidConnections',
-            'matchIsValid',
-            'resolveMatchTitle',
+            'requirementMatchIsValid',
+            'resolveRequirementMatchTitle',
             'cardDependenciesAreValid',
-            'getDisplayableDependencies'
+            'getDisplayableDependencies',
+            'getCardProperties',
+            'cardStatus'
         ]),
-        checkRequirements() {
-            const flag = this.templateDependencies.filter((r) => r.status === true).length === this.templateDependencies.length;
-            bus.$emit('completeRequirements', this.level, flag);
-            return flag;
-        },
         displayableDependencies() {
-            return this.getDisplayableDependencies(this.card.name)
+            const result = this.getDisplayableDependencies(this.card.name)
+            return result
+
         },
         canConnectServices() {
             return this.$route.name != 'templatePage'
         },
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
+        },
+        propertiesStyle() {
+            if(this.card.dependentName) {
+                return {width: 'max(75%, 400px)'}
+            }
+            return {}
         }
     },
 
@@ -141,39 +168,46 @@ export default {
 }
 </script>
 <template>
-    <div v-if="displayableDependencies && displayableDependencies.length > 0">
-        <gl-tabs class="gl-mt-6">
-            <gl-tab class="gl-mt-6">
-                <template slot="title">
-                    <span>{{ tabsTitle }}</span>
-                    <gl-icon
-                        :size="14"
-                        :class="{
-                            'icon-green': cardDependenciesAreValid(card),
-                            'icon-red': !cardDependenciesAreValid(card),
-                            'gl-ml-4 gl-mt-1': true
-                        }"
-                        :name="cardDependenciesAreValid(card) ? 'check-circle-filled' : 'warning-solid'"
-                        />
-                </template>
-                <div class="row-fluid">
-                    <div class="ci-table" role="grid">
+    <gl-tabs class="">
+        <oc-tab v-if="renderInputs" title="Specs" :titleCount="(card.template && card.template.properties || this.card.properties).length">
+            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
+            <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
+        </oc-tab>
+        <oc-tab v-if="renderOutputs && card.attributes" title="Attributes" :titleCount="card.attributes.length"></oc-tab>
+        <oc-tab v-if="displayableDependencies && displayableDependencies.length > 0" title="Dependencies" :titleCount="displayableDependencies.length">
+            <!--template slot="title">
+                <span>{{ tabsTitle }}</span>
+                <gl-icon
+                    v-if="displayValidation"
+                    :size="14"
+                    :class="{
+                        'icon-green': cardDependenciesAreValid(card),
+                        'icon-red': !cardDependenciesAreValid(card),
+                        'gl-ml-4 gl-mt-1': true
+                    }"
+                    :name="cardDependenciesAreValid(card) ? 'check-circle-filled' : 'warning-solid'"
+                    />
+            </template-->
+            <!-- TODO move this into a dpeendencies table component -->
+            <div class="row-fluid">
+                <div class="ci-table" role="grid">
+                    <div
+                        v-for="(requirement, idx) in displayableDependencies"
+                        :key="requirement.name + '-template'"
+                        class="gl-responsive-table-row oc_table_row">
                         <div
-                            v-for="(requirement, idx) in displayableDependencies"
-                            :key="requirement.name + '-template'"
-                            class="gl-responsive-table-row oc_table_row">
-                            <div
-                                class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
-                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
-                                <span class="text-break-word title">{{ requirement.name }}</span>
-                                <div class="oc_requirement_description gl-mb-2">
-                                {{ requirement.description}}
-                                </div>
+                            class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
+                            <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
+                            <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ requirement.name }}</span>
+                            <div class="oc_requirement_description gl-mb-2">
+                            {{ requirement.description}}
                             </div>
-                            <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
-                            <div
-                                class="table-section oc-table-section section-wrap text-truncate section-20 align_left">
-                                <gl-icon
+                        </div>
+                        <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
+                        <div
+                            class="table-section oc-table-section section-wrap text-truncate section-20 align_left">
+                            <gl-icon
+                                v-if="displayValidation"
                                 :size="14"
                                 :class="{
                                     'icon-green': requirement.valid,
@@ -181,70 +215,65 @@ export default {
                                 }"
                                 :name="requirement.valid ? 'check-circle-filled' : 'warning-solid'"
                                 />
-                                <span
-                                v-if="matchIsValid(requirement.match)"
-                                class="text-break-word oc_resource-details"
-                                >
-                                <a
-                                    href="#"
-                                    @click.prevent="
-                                    findElementToScroll({requirement})
-                                    "
-                                >
-                                    {{ resolveMatchTitle(requirement.match) }}
-                                    </a
-                                >
-                                </span>
-                            </div>
+                            <span v-if="requirementMatchIsValid(requirement)" class="text-break-word oc_resource-details">
 
-                            <div
-                                v-if="matchIsValid(requirement.match)"
-                                class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
-                                <gl-button
-                                v-if="getCurrentActionLabel(requirement) !== 'Disconnect'"
-                                    title="edit"
-                                    :aria-label="__(`edit`)"
-                                    type="button"
-                                    class="oc_requirements_actions"
-                                    @click.prevent="findElementToScroll({requirement})"
-                                    >{{ __('Edit') }}</gl-button>
-                                <gl-button
-                                    :title="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
-                                    :aria-label="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
-                                    type="button"
-                                    class="gl-ml-3 oc_requirements_actions"
-                                    @click.prevent="openDeleteModal(idx, getCurrentActionLabel(requirement))">
-                                    {{
-                                        getCurrentActionLabel(requirement) 
-                                    }}</gl-button>
-                            </div>
-                            <div
-                                v-else
-                                class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
-                                <gl-button
-                                    v-if="canConnectServices"
-                                    title="connect"
-                                    :aria-label="__(`connect`)"
-                                    type="button"
-                                    class="oc_requirements_actions"
-                                    :disabled="getValidConnections($route.params.environment, requirement).length == 0"
-                                    @click.prevent="connectToResource(requirement)"
-                                >{{ __('Connect') }}</gl-button>
+                                <a href="#" @click.prevent=" findElementToScroll({requirement}) ">
+                                    <span v-if="displayStatus">
+                                        <status-icon :status="cardStatus(requirement.target)" />
+                                    </span>
 
-                                <gl-button
-                                    title="create"
-                                    :aria-label="__(`create`)"
-                                    type="button"
-                                    class="gl-ml-3 oc_requirements_actions"
-                                    :disabled="getValidResourceTypes(requirement, deploymentTemplate).length == 0"
-                                    @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
-                            </div>
+                                    {{ resolveRequirementMatchTitle(requirement) }}
+                                </a>
+                            </span>
+                        </div>
+
+                        <div
+                            v-if="!readonly && requirementMatchIsValid(requirement)"
+                            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
+                            <gl-button
+                            v-if="getCurrentActionLabel(requirement) !== 'Disconnect'"
+                                title="edit"
+                                :aria-label="__(`edit`)"
+                                type="button"
+                                class="oc_requirements_actions"
+                                @click.prevent="findElementToScroll({requirement})"
+                                >{{ __('Edit') }}</gl-button>
+                            <gl-button
+                                :title="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
+                                :aria-label="__(requirement.completionStatus || DEFAULT_ACTION_LABEL)"
+                                type="button"
+                                class="gl-ml-3 oc_requirements_actions"
+                                @click.prevent="openDeleteModal(idx, getCurrentActionLabel(requirement))">
+                                {{
+                                    getCurrentActionLabel(requirement) 
+                                }}</gl-button>
+                        </div>
+                        <div
+                            v-else-if="!readonly"
+                            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
+                            <gl-button
+                                v-if="canConnectServices"
+                                title="connect"
+                                :aria-label="__(`connect`)"
+                                type="button"
+                                class="oc_requirements_actions"
+                                :disabled="getValidConnections($route.params.environment, requirement).length == 0"
+                                @click.prevent="connectToResource(requirement)"
+                            >{{ __('Connect') }}</gl-button>
+
+                            <gl-button
+                                title="create"
+                                :aria-label="__(`create`)"
+                                type="button"
+                                class="gl-ml-3 oc_requirements_actions"
+                                :disabled="getValidResourceTypes(requirement, deploymentTemplate).length == 0"
+                                @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
                         </div>
                     </div>
                 </div>
-            </gl-tab>
-        </gl-tabs>
-    </div>
+            </div>
+        </oc-tab>
+    </gl-tabs>
 </template>
 <style scoped>
 .oc_requirements_actions {

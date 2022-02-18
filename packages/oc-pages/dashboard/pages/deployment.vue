@@ -36,6 +36,6 @@ export default {
 <template>
     <div>
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <deployment-resources :bus="bus" />
+        <deployment-resources :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
     </div>
 </template>

@@ -83,8 +83,8 @@ export default {
       'getDeploymentTemplate',
       'getDependencies',
       'hasPreparedMutations',
-      'matchIsValid',
-      'resolveMatchTitle',
+      'requirementMatchIsValid',
+      'resolveRequirementMatchTitle',
       'cardIsValid',
       'getUsername',
       'getHomeProjectPath',
@@ -204,7 +204,7 @@ export default {
     },
 
     resourceName: function(val) {
-      this.alertNameExists = this.matchIsValid(slugify(val));
+      this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     }
   },
 
@@ -240,7 +240,7 @@ export default {
       this.deleteNodeData = obj;
       this.nodeAction = obj.action? obj.action : __('Delete');
         
-      this.nodeTitle = this.resolveMatchTitle(obj.name);
+      this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
       this.launchModal('oc-delete-node', 500);
     });
   },

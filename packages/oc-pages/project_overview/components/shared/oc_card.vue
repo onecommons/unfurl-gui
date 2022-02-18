@@ -1,8 +1,9 @@
 <script>
-import { GlCard, GlIcon, GlBadge, GlDropdown, GlDropdownItem} from "@gitlab/ui";
+import { GlCard, GlIcon, GlBadge} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from '../../bus.js';
+import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
 
 import { __ } from '~/locale';
 
@@ -12,8 +13,7 @@ export default {
         GlCard,
         GlIcon,
         GlBadge,
-        GlDropdown,
-        GlDropdownItem
+        StatusIcon
     },
     mixins: [commonMethods],
     props: {
@@ -57,9 +57,14 @@ export default {
     },
     data() {
         return {
-        title: null,
-        iconSection: false,
+            title: null,
+            iconSection: false,
+            expanded: true,
+            setHeight: false,
         };
+    },
+    updated() {
+        this.adaptWidth()
     },
     computed: {
         primaryPropsDelete() {
@@ -95,6 +100,26 @@ export default {
         getLegend(title) {
             return `Are you sure you want to delete <b>${title}</b> ? Deleting <b>${title}</b> might affect other (nodes ?) which are linked to it.`;
         },
+
+        adaptWidth() {
+            const container = this.$refs.container
+            if(!this.expanded) {
+                container.style.marginTop = `-${container.offsetHeight}px` 
+            } else {
+                container.style.marginTop = '0px'
+            }
+        },
+
+        toggleCard(e) {
+            if (!this.setHeight) {
+                this.adaptWidth()
+                requestAnimationFrame(this.toggleCard)
+                this.setHeight = true
+                return 
+            } 
+            this.expanded = !this.expanded
+            this.adaptWidth()
+        }
     }
 };
 
@@ -117,40 +142,22 @@ export default {
                 >{{ badgeHeaderText }}</gl-badge
                 >
             </div>
-            <div class="dropdown-container">
-                <gl-dropdown
-                    v-if="actions"
-                    text="More actions"
-                    icon="ellipsis_v"
-                    textSrOnly
-                    size="small"
-                    :block="false"
-                    :disabled="false"
-                    no-caret=""
-                    category="tertiary"
-                    >
-                    <gl-dropdown-item>
-                        {{ __("Rename") }}
-                    </gl-dropdown-item>
-                    <gl-dropdown-item>
-                        <!--$button data-clipboard-text="onecommons.org" role="menuitem" type="button" class="dropdown-item"-->
-                        {{ __("Advance view") }}
-                    </gl-dropdown-item>
-                    <gl-dropdown-item @click="openDeletemodal(customTitle)">
-                        <!--button  data-testid="assign-user" role="menuitem" type="button" class="dropdown-item"-->
-                            {{ __("Delete") }}
-                    </gl-dropdown-item>
+            <div v-if="displayStatus">
+                <status-icon :size="16" :state="card.state" :status="card.status" />
+            </div>
+
+            <div @click="toggleCard" class="ml-2" v-if="card.dependentName">
+                <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
+            </div>
 
 
-                </gl-dropdown>
-            <div v-else class="dropdown more-actions">
-                <span>{{ __("Advanced view") }}</span>
-            </div>
-            </div>
         </template>
-        <slot :class="'contenido-oc'" name="content"></slot>
+        <div ref="containerOuter" class="card-content-outer" :class="{active: setHeight}">
+            <div ref="container" class="card-content-container" :class="{collapsed: !expanded, active: setHeight}">
+                <slot name="content"></slot>
+            </div>
+        </div>
     </gl-card>
-
 </template>
 <style >
 .oc_card_title {
@@ -184,5 +191,26 @@ export default {
 /*issue with line height on other header items*/
 .dropdown-container >>> button.dropdown-toggle {
     margin: -0.5rem 0;
+}
+.card-content-outer {
+    overflow: hidden;
+}
+
+.card-content-container {
+    padding: 2em;
+    padding-bottom: 1em;
+}
+.card-content-container.active {
+    transition: margin-top 0.5s;
+}
+
+/*
+.card-content-container.collapsed {
+    transform: translate(0%, -100%);
+}
+*/
+
+.card-content-container >>> .gl-card-body {
+    padding: 0;
 }
 </style>

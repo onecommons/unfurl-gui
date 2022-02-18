@@ -7,7 +7,6 @@ import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../../project_overview/components/shared/oc_card.vue';
-import OcInputs from '../../../project_overview/components/shared/oc_inputs.vue';
 import OcList from '../../../project_overview/components/shared/oc_list.vue';
 import OcListResource from '../../../project_overview/components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../../project_overview/components/shared/oc_template_header.vue';
@@ -30,7 +29,6 @@ export default {
         GlFormInput,
         GlFormCheckbox,
         OcCard,
-        OcInputs,
         OcList,
         OcListResource,
         OcTemplateHeader,
@@ -51,6 +49,10 @@ export default {
         displayStatus: {
             type: Boolean,
             default: false,
+        },
+        readonly: {
+            type: Boolean,
+            default: false
         }
     },
 
@@ -96,8 +98,8 @@ export default {
             'getDeploymentTemplate',
             'getDependencies',
             'hasPreparedMutations',
-            'matchIsValid',
-            'resolveMatchTitle',
+            'requirementMatchIsValid',
+            'resolveRequirementMatchTitle',
             'cardIsValid',
             'getUsername',
             'getHomeProjectPath',
@@ -166,7 +168,7 @@ export default {
         },
 
         resourceName: function(val) {
-            this.alertNameExists = this.matchIsValid(slugify(val));
+            this.alertNameExists = this.requirementMatchIsValid(slugify(val));
         }
     },
     created() {
@@ -196,7 +198,7 @@ export default {
                 this.deleteNodeData = obj;
                 this.nodeAction = obj.action? obj.action : __('Delete');
 
-                this.nodeTitle = this.resolveMatchTitle(obj.name);
+                this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
                 this.launchModal('oc-delete-node', 500);
             });
         }
@@ -427,6 +429,7 @@ export default {
                 :display-validation="displayValidation"
                 :display-status="displayStatus"
                 :main-card-class="'primary-card'"
+                :readonly="readonly"
                 :card="getPrimaryCard"
                 :icon-title="true"
                 :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
@@ -434,11 +437,11 @@ export default {
                 >
                 <template #content>
                     <!-- Inputs -->
-                    <oc-inputs :card="getPrimaryCard" :main-inputs="primaryCardProperties" :component-key="1" />
+                    <!--oc-inputs :card="getPrimaryCard" :main-inputs="primaryCardProperties" :component-key="1" /-->
 
                     <!-- Requirements List -->
                     <oc-list
-                        tabs-title="Requirements"
+                        tabs-title="Dependencies"
                         :display-validation="displayValidation"
                         :display-status="displayStatus"
                         :title-key="getPrimaryCard.title"
@@ -447,40 +450,41 @@ export default {
                         :template-dependencies="getDependencies(getPrimaryCard.name)"
                         :level="1"
                         :show-type-first="true"
+                        :readonly="readonly"
                         :card="getPrimaryCard"
                         />
                     <div v-if="getCardsStacked.length > 0">
-                        <div class="gl-pl-6 gl-pr-6">
-                            <oc-card
-                                v-for="(card, idx) in getCardsStacked"
-                                :key="__('levelOne-') + card.title"
-                                :display-validation="displayValidation"
-                                :display-status="displayStatus"
-                                :card="card"
-                                :icon-title="true"
-                                :icon-color="card.status ? 'icon-green' : 'icon-red'"
-                                :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
-                                :actions="true"
-                                :level="idx"
-                                class="gl-mt-6">
-                                <template #content>
-                                    <oc-inputs :card="card" :main-inputs="getCardProperties(card.name)" :component-key="2" />
+                        <oc-card
+                            v-for="(card, idx) in getCardsStacked"
+                            :key="__('levelOne-') + card.title"
+                            :display-validation="displayValidation"
+                            :display-status="displayStatus"
+                            :readonly="readonly"
+                            :card="card"
+                            :icon-title="true"
+                            :icon-color="card.status ? 'icon-green' : 'icon-red'"
+                            :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
+                            :actions="true"
+                            :level="idx"
+                            class="gl-mt-6">
+                            <template #content>
+                                <!--oc-inputs :card="card" :main-inputs="getCardProperties(card.name)" :component-key="2" /-->
 
-                                    <oc-list
-                                        tabs-title="Requirements"
-                                        :display-validation="displayValidation"
-                                        :display-status="displayStatus"
-                                        :template-dependencies="getDependencies(card.name)"
-                                        :deployment-template="getDeploymentTemplate"
-                                        :level="idx"
-                                        :title-key="card.title"
-                                        :show-type-first="true" 
-                                        :card="card"
-                                        />
+                                <oc-list
+                                    tabs-title="Dependencies"
+                                    :display-validation="displayValidation"
+                                    :display-status="displayStatus"
+                                    :template-dependencies="getDependencies(card.name)"
+                                    :deployment-template="getDeploymentTemplate"
+                                    :level="idx"
+                                    :title-key="card.title"
+                                    :show-type-first="true" 
+                                    :readonly="readonly"
+                                    :card="card"
+                                    />
 
-                                </template>
-                            </oc-card>
-                        </div>
+                            </template>
+                        </oc-card>
                     </div>
                 </template>
             </oc-card>
