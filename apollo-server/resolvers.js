@@ -94,6 +94,8 @@ export default {
         if (!environments) {
           return [];
         }
+        // XXX defaults = db.get('environments').value()[namespace]['defaults']
+        // env_hash['connections'] = defaults.merge(env_hash['connections'] || Hash.new)
         const result = Object.entries(environments).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
