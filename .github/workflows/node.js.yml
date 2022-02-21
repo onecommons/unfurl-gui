@@ -26,12 +26,14 @@ jobs:
       - name: Run Cypress
         run: yarn cypress run
       - name: Archive test screenshots
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: screenshots
           path: |
             cypress/screenshots/
       - name: Archive test videos
+        if: always()
         uses: actions/upload-artifact@v2
         with:
           name: videos
