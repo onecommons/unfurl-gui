@@ -164,6 +164,11 @@ export default {
             //return requirement.completionStatus === "connected" ? __('Disconnect') : __("Remove")
         },
 
+        requirementSatisfied(requirement) {
+            const result =  !!(requirement.constraint.min == 0 || requirement.status)
+            return result
+        }
+
     }
 }
 </script>
@@ -210,11 +215,11 @@ export default {
                                 v-if="displayValidation"
                                 :size="14"
                                 :class="{
-                                    'icon-green': requirement.valid,
-                                    'icon-red': !requirement.valid,
+                                    'icon-green': requirementSatisfied(requirement),
+                                    'icon-red': !requirementSatisfied(requirement),
                                 }"
-                                :name="requirement.valid ? 'check-circle-filled' : 'warning-solid'"
-                                />
+                                :name="requirementSatisfied(requirement) ? 'check-circle-filled' : 'warning-solid'"
+                            />
                             <span v-if="requirementMatchIsValid(requirement)" class="text-break-word oc_resource-details">
 
                                 <a href="#" @click.prevent=" findElementToScroll({requirement}) ">

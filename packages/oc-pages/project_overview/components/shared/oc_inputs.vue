@@ -25,7 +25,6 @@ const ValidationFunctions = {
     if(typeof value == 'string' && value.length == 0) return false
     return !input.required || !isNaN(value)
   }
-
 }
 
 function validateInput(input, value) {
@@ -34,6 +33,22 @@ function validateInput(input, value) {
     return result
   }
   return false
+}
+
+const SerializationFunctions = {
+  number(input, value) {
+    return parseInt(value)
+  }
+}
+function serializeInput(input, value) {
+  if(input?.type) {
+    const serializer = SerializationFunctions[input.type]
+    if(typeof serializer == 'function') {
+      return serializer(input, value)
+    }
+  }
+
+  return value
 }
 
 const fields = createSchemaField({
@@ -200,8 +215,9 @@ export default {
 
     triggerSave: debounce(function preview(field, value) {
       this.updateFieldValidation(field, value)
+      const propertyValue = serializeInput(field, value)
       this.pushPreparedMutation(
-        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field.title, propertyValue: value})
+        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field.title, propertyValue})
       )
     }, 200),
 

@@ -253,6 +253,18 @@ export const resolvers = {
             return resourceTemplates
         },
 
+        instances: (parent, args, { cache, jsondb, dehydrated }, info) => {
+            if(!parent?.instances) return []
+            if(dehydrated) return Object.keys(parent.instances)
+            const resourceTemplates = Object.values(parent.instances);
+            resourceTemplates.forEach((elem) => {
+                if(typeof elem == 'object') elem.__typename = 'ResourceTemplate';
+            });
+            return resourceTemplates
+        },
+
+
+
         primary_provider: (parent, args, { cache, jsondb, dehydrated }, info) => {
             if(!parent?.connections?.primary_provider) return null
             const pp = parent.connections.primary_provider;

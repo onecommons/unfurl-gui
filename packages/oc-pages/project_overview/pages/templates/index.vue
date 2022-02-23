@@ -90,12 +90,22 @@ export default {
       'getHomeProjectPath',
       'getValidResourceTypes',
       'getValidConnections',
-      'getHomeProjectPath'
+      'getHomeProjectPath',
+      'getProjectInfo'
 
     ]),
     
     pipelinesPath(){
       return `/${this.getHomeProjectPath}/-/pipelines`
+    },
+    triggerVariables() {
+      const environment = this.$route.params.environment
+      const projectUrl = `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`
+      return {
+        'variables[DEPLOY_ENVIRONMENT]': environment,
+        'variables[BLUEPRINT_PROJECT_URL]': projectUrl,
+        'variables[DEPLOY_PATH]': this.deploymentDir
+      }
     },
     deploymentDir() {
         const environment = this.$route.params.environment
@@ -192,6 +202,7 @@ export default {
             text: __('Cancel'),
         };
     },
+
   },
 
   watch: {
@@ -411,11 +422,12 @@ export default {
           this.loadingDeployment = true;
           await this.triggerSave();
           await this.createDeploymentPathPointer()
-          const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName });
+          const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName, ...this.triggerVariables });
           createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
           return redirectTo(`${this.pipelinesPath}/${data.id}`);
       } catch (err) {
-          const { errors = [] } = err?.response?.data;
+          console.error(err)
+          const errors = err?.response?.data?.errors || [];
           const [error] = errors;
           this.deployButton = true;
           this.loadingDeployment = false;

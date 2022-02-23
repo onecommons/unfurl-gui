@@ -381,7 +381,7 @@ const getters = {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
             if(!card?.dependencies?.length) return true;
-            return card.dependencies.every(dependency => getters.requirementMatchIsValid(dependency.match) && getters.cardIsValid(dependency.match));
+            return card.dependencies.every(dependency => dependency.constraint.min == 0 || (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match)));
         };
 
     },
