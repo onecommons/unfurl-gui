@@ -133,6 +133,11 @@ export default {
             //return requirement.completionStatus === "connected" ? __('Disconnect') : __("Remove")
         },
 
+        requirementSatisfied(requirement) {
+            const result =  !!(requirement.constraint.min == 0 || requirement.status)
+            return result
+        }
+
     }
 }
 </script>
@@ -172,10 +177,10 @@ export default {
                                 <gl-icon
                                 :size="14"
                                 :class="{
-                                    'icon-green': requirement.status,
-                                    'icon-red': !requirement.status,
+                                    'icon-green': requirementSatisfied(requirement),
+                                    'icon-red': !requirementSatisfied(requirement),
                                 }"
-                                :name="requirement.status ? 'check-circle-filled' : 'warning-solid'"
+                                :name="requirementSatisfied(requirement) ? 'check-circle-filled' : 'warning-solid'"
                                 />
                                 <span
                                 v-if="matchIsValid(requirement.match)"

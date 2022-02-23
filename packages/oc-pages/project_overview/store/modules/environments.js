@@ -20,6 +20,15 @@ function connectionsToArray(environment) {
         }
         environment.connections = Object.values(environment.connections)
     }
+    if(environment.instances) {
+        for(const key in environment.instances) { 
+            if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
+                delete environment.instances[key]
+            }
+        }
+        environment.instances = Object.values(environment.instances)
+    }
+
     return environment
 }
 
@@ -88,6 +97,7 @@ const actions = {
                     nodes {
                         deploymentEnvironment @client {
                             connections
+                            instances
                             primary_provider
                         }
                         deployments
@@ -148,7 +158,7 @@ const getters = {
     getEnvironmentName: _state => _state.environmentName,
     getEnvironments: state => state.projectEnvironments,
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
-    getValidConnections: state => function(environmentName, requirement) {
+    getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         let constraintType
         if(typeof requirement != 'string') { constraintType = requirement?.constraint?.resourceType 
         } else { constraintType  = requirement }
@@ -157,7 +167,10 @@ const getters = {
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return []
         let result = []
-        if(environment.connections) result = environment.connections.filter(conn => conn.extends && conn.extends.includes(constraintType))
+        if(environment.instances) result = environment.instances.filter(conn => {
+            const cextends = rootGetters.resolveResourceType(conn.type)?.extends
+            return cextends && cextends.includes(constraintType)
+        })
         return result
     },
     getMatchingEnvironments: (_, getters) => function(type) {
@@ -176,8 +189,8 @@ const getters = {
     lookupConnection: (_, getters) => function(environmentName, connectedResource) {
         const environment = getters.lookupEnvironment(environmentName)
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
-        if(! Array.isArray(environment?.connections) ) return null
-        return cloneDeep(environment.connections.find(conn => conn.name == connectedResource))
+        if(! Array.isArray(environment?.instances) ) return null
+        return cloneDeep(environment.instances.find(conn => conn.name == connectedResource))
     }
 };
 

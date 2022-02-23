@@ -42,7 +42,19 @@ module.exports = {
         ignorePath: true,
         protocolRewrite: process.env.SSL_PROXY,
       })
+
+      const postProxy = httpProxyMiddleware(
+        function(_, req) {
+          return req.method == 'POST'
+        },
+        {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          protocolRewrite: process.env.SSL_PROXY
+        }
+      )
       app.use(proxy)
+      app.use(postProxy)
     }
     
   },
