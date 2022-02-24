@@ -127,30 +127,30 @@ export default {
 <template>
     <gl-card :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex flex-one gl-pt-1">
-                <gl-icon :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeaderText)" />
-                <h4 class="gl-my-0 oc_card_title">{{ card.title }}</h4>
-                <gl-icon
-                    v-if="displayValidation"
-                    :size="14"
-                    :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
-                    :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
-                    />
-                <gl-badge
-                size="sm"
-                class="gl-tab-counter-badge gl-ml-3 badge-oc-card"
-                >{{ badgeHeaderText }}</gl-badge
-                >
-            </div>
-            <div v-if="displayStatus">
-                <status-icon :size="16" :state="card.state" :status="card.status" />
-            </div>
-
+            <slot name="header">
+                <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex flex-one gl-pt-1">
+                    <gl-icon :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeaderText)" />
+                    <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
+                    <gl-icon
+                        v-if="displayValidation"
+                        :size="14"
+                        :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
+                        :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
+                        />
+                    <gl-badge
+                    size="sm"
+                    class="gl-tab-counter-badge gl-ml-3 badge-oc-card"
+                    >{{ badgeHeaderText }}</gl-badge
+                    >
+                </div>
+                <div v-if="displayStatus">
+                    <status-icon :size="16" :state="card.state" :status="card.status" />
+                </div>
+            </slot>
+            <slot name="controls"></slot>
             <div @click="toggleCard" class="ml-2" v-if="card.dependentName">
                 <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
             </div>
-
-
         </template>
         <div ref="containerOuter" class="card-content-outer" :class="{active: setHeight}">
             <div ref="container" class="card-content-container" :class="{collapsed: !expanded, active: setHeight}">

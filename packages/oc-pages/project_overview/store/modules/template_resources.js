@@ -71,8 +71,8 @@ const mutations = {
         }
     },
 
-    updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName}) {
-        _state.lastFetchedFrom = {projectPath, templateSlug, environmentName};
+    updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName, noPrimary}) {
+        _state.lastFetchedFrom = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false};
     },
 
     setIsDeployment(state, isDeployment) {
@@ -176,6 +176,16 @@ const actions = {
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
         return true;
+    },
+
+
+    populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, isDeployment, environmentName}) {
+        for(const resource of resourceTemplates) {
+            //dispatch('createMatchedResources', {resource})
+            commit('createTemplateResource', {...resource, dependentName: '_'})
+        }
+        commit('updateLastFetchedFrom', {environmentName, noPrimary: true});
+        commit('setIsDeployment', isDeployment)
     },
 
     createMatchedResources({commit, dispatch, rootGetters}, {resource}) {
@@ -324,6 +334,7 @@ const getters = {
         }
     },
     getCardsStacked: _state => {
+        if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
         return Object.values(_state.resourceTemplates).filter((rt) => {
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;

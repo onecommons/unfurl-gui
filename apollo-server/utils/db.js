@@ -2,7 +2,8 @@ import Lowdb from 'lowdb'
 import FileSync from 'lowdb/adapters/FileSync'
 import mkdirp from 'mkdirp'
 import fs from 'fs'
-import { dirname, resolve, basename, extname } from 'path'
+import glob from 'glob'
+import { join, dirname, resolve, basename, extname } from 'path'
 import iterateProjects from './iterate_projects'
 import iterateEnvironments from './iterate_environments'
 
@@ -54,25 +55,42 @@ for(const {projectPath, blueprint} of iterateProjects(resolve(__dirname, '../rep
   projects[projectPath] = blueprint
 }
 
-const environments = iterateEnvironments(resolve(__dirname, '../repos'));
+const REPOS_SEED = resolve(__dirname, '../repos')
+const RECREATE_EXTENSIONS = ['json', 'yaml']
+
+const environments = iterateEnvironments(REPOS_SEED);
 const files = {}
+
+// glob doesn't follow symlinked dirs by default to avoid cyclic links
+// decided to try this for now to just follow symlinks at the top level
+for(const tld of fs.readdirSync(REPOS_SEED)) {
+  for(const ext of RECREATE_EXTENSIONS) {
+    for(const extFile of glob.sync(resolve(REPOS_SEED, tld, `**/**.${ext}`))) {
+      const relativePath = extFile.slice(REPOS_SEED.length + 1)
+      files[relativePath] = fs.readFileSync(extFile, 'utf-8')
+    }
+  }
+}
+/*
 for(const [key, value] of Object.entries(projects)) {
   files[key + '/unfurl.json'] = value
 }
 for(const [key, value] of Object.entries(environments)) {
   files[key + '/environments.json'] = value
 }
+*/
 
 const unfurlYaml = fs.readFileSync(resolve(__dirname, '../repos/testing/dashboard/unfurl.yaml'), 'utf-8')
 for(const filePath in files) {
   const fileContents = files[filePath]
   const targetDir = resolve(REPOS_DIR, dirname(filePath))
   mkdirp.sync(targetDir)
+  /*
   if(filePath.endsWith('environments.json')) {
     fs.writeFileSync(resolve(targetDir, 'unfurl.yaml'), unfurlYaml)
   }
-  //fs.writeFileSync(resolve(REPOS_DIR, filePath), JSON.stringify(fileContents))
-  writeLiveRepoFile(filePath, '', fileContents)
+  */
+  fs.writeFileSync(resolve(REPOS_DIR, filePath), fileContents)
 }
 
 // Seed an empty DB

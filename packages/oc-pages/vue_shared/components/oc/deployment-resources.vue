@@ -53,7 +53,16 @@ export default {
         readonly: {
             type: Boolean,
             default: false
+        },
+        renderInputs: {
+            type: Boolean,
+            default: true
+        },
+        customTitle: {
+            type: String,
+            default: () => ''
         }
+
     },
 
     directives: {
@@ -429,20 +438,28 @@ export default {
                 :display-validation="displayValidation"
                 :display-status="displayStatus"
                 :main-card-class="'primary-card'"
+                :custom-title="customTitle"
                 :readonly="readonly"
                 :card="getPrimaryCard"
                 :icon-title="true"
                 :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
                 :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"
                 >
+                <template v-if="this.$slots.header" #header>
+                    <slot name="header"></slot>
+                </template>
+                <template #controls>
+                    <slot name="primary-controls"></slot>
+                </template>
                 <template #content>
                     <!-- Inputs -->
                     <!--oc-inputs :card="getPrimaryCard" :main-inputs="primaryCardProperties" :component-key="1" /-->
 
                     <!-- Requirements List -->
-                    <oc-list
+                    <oc-list v-if="Object.keys(getPrimaryCard).length > 0"
                         tabs-title="Dependencies"
                         :display-validation="displayValidation"
+                        :render-inputs="renderInputs"
                         :display-status="displayStatus"
                         :title-key="getPrimaryCard.title"
                         :cloud="getDeploymentTemplate.cloud"
@@ -467,12 +484,17 @@ export default {
                             :actions="true"
                             :level="idx"
                             class="gl-mt-6">
+                            <template #controls>
+                                <slot name="controls"></slot>
+                            </template>
                             <template #content>
                                 <!--oc-inputs :card="card" :main-inputs="getCardProperties(card.name)" :component-key="2" /-->
+                                <slot name="card-content-pre"></slot>
 
                                 <oc-list
                                     tabs-title="Dependencies"
                                     :display-validation="displayValidation"
+                                    :render-inputs="renderInputs"
                                     :display-status="displayStatus"
                                     :template-dependencies="getDependencies(card.name)"
                                     :deployment-template="getDeploymentTemplate"

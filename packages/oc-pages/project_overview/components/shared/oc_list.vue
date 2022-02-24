@@ -119,7 +119,17 @@ export default {
                 return {width: 'max(75%, 400px)'}
             }
             return {}
+        },
+        shouldRenderDependencies() {
+            return this.displayableDependencies && this.displayableDependencies.length > 0   
+        },
+        shouldRenderOutputs() {
+            return this.renderOutputs && this.card.attributes
+        },
+        shouldRenderTabs() {
+            return this.shouldRenderDependencies && this.shouldRenderOutputs && this.renderInputs
         }
+
     },
 
     methods: {
@@ -173,13 +183,13 @@ export default {
 }
 </script>
 <template>
-    <gl-tabs class="">
-        <oc-tab v-if="renderInputs" title="Specs" :titleCount="(card.template && card.template.properties || this.card.properties).length">
+    <gl-tabs v-if="shouldRenderTabs" class="">
+        <oc-tab v-if="renderInputs" title="Specs" :titleCount="(card.template && card.template.properties || this.card.properties || []).length">
             <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
         </oc-tab>
-        <oc-tab v-if="renderOutputs && card.attributes" title="Attributes" :titleCount="card.attributes.length"></oc-tab>
-        <oc-tab v-if="displayableDependencies && displayableDependencies.length > 0" title="Dependencies" :titleCount="displayableDependencies.length">
+        <oc-tab v-if="shouldRenderOutputs" title="Attributes" :titleCount="card.attributes.length"></oc-tab>
+        <oc-tab v-if="shouldRenderDependencies" title="Dependencies" :titleCount="displayableDependencies.length">
             <!--template slot="title">
                 <span>{{ tabsTitle }}</span>
                 <gl-icon

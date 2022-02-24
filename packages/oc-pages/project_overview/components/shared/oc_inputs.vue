@@ -100,6 +100,7 @@ export default {
         templateProperties = this.card.properties
       }
       catch(e) { return result }
+      if(! templateProperties) return []
       for (const property of templateProperties) {
         try{
           const next = {...property, ...fromSchema[property.name]}
