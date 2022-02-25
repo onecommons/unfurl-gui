@@ -29,6 +29,7 @@
     "graphql-type-json": "^0.2.1",
     "jed": "1.1.1",
     "jquery": "^3.6.0",
+    "js-cookie": "^2.2.1",
     "lodash": "4.17.20",
     "lowdb": "^1.0.0",
     "mkdirp": "^0.5.5",
@@ -64,7 +65,8 @@
     "prettier": "^1.19.1",
     "typescript": "~3.9.3",
     "vue-cli-plugin-apollo": "~0.22.2",
-    "vue-template-compiler": "2.6.12"
+    "vue-template-compiler": "2.6.12",
+    "webpack-preprocessor-loader": "^1.1.4"
   },
   "workspaces": [
     "packages/oc-pages"

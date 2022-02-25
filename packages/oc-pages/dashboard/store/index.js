@@ -30,9 +30,10 @@ const modules = {
 }
 const variableDataEl = document.querySelector('#js-oc-ci-variables')
 
-if(variableDataEl) {
+if(variableDataEl && !gon.unfurl_gui) {
     const ci_variables = createCiVariablesStore({
         ...variableDataEl.dataset,
+        // TODO properly read these values
         isGroup: false,
         isProtectedByDefault: false
     })

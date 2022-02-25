@@ -23,7 +23,7 @@ export default {
         ]
 
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, gcpProps, sendGridProps, width}
+        return {environment: {}, gcpProps, sendGridProps, width, unfurl_gui: window.gon.unfurl_gui}
     },
     computed: {
         ...mapGetters(['lookupEnvironment']),
@@ -57,7 +57,7 @@ export default {
         <h2>{{__('Cloud Provider')}}</h2>
         <oc-properties-list header="Google Cloud Platform" :containerStyle="{'font-size': '0.8em', ...width}" :properties="gcpProps" />
         <h2>{{__('Variables')}}</h2>
-        <ci-variable-settings />
+        <ci-variable-settings v-if="!unfurl_gui"/>
         <deployment-resources  :render-inputs="false" :external-status-indicator="true">
             <template #header>
                 <!-- potentially tricky to translate -->
