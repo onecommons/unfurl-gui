@@ -127,7 +127,7 @@ export default {
             return this.renderOutputs && this.card.attributes
         },
         shouldRenderTabs() {
-            return this.shouldRenderDependencies && this.shouldRenderOutputs && this.renderInputs
+            return this.shouldRenderDependencies || this.shouldRenderOutputs || this.renderInputs
         }
 
     },
@@ -175,7 +175,7 @@ export default {
         },
 
         requirementSatisfied(requirement) {
-            const result =  !!(requirement.constraint.min == 0 || requirement.status)
+            const result =  !!(requirement.constraint.min == 0 || requirement.status || this.requirementMatchIsValid(requirement))
             return result
         }
 

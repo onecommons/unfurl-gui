@@ -218,7 +218,7 @@ const actions = {
             target.name = name;
             target.title = title;
 
-            delete target.__typename;
+            target.__typename = 'ResourceTemplate'
             try { target.properties = Object.values(target.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}));}
             catch { target.properties = []; }
 
@@ -366,11 +366,12 @@ const getters = {
         }
     },
     requirementMatchIsValid: (_state, getters)=> function(requirement) {
-        return typeof(requirement) == 'object'? !!getters.resolveRequirementMatchTitle(requirement): false;
+        return !!getters.resolveRequirementMatchTitle(requirement)
     },
 
     resolveRequirementMatchTitle: (_state, getters, _, rootGetters) => function(requirement) { 
-        const match = state.isDeployment ? requirement.target : requirement.match
+        const match = typeof requirement == 'string'? requirement:
+            state.isDeployment ? requirement.target : requirement.match
         const matchInResourceTemplates = _state.resourceTemplates[match]?.title; 
         if(matchInResourceTemplates) return matchInResourceTemplates;
         // TODO figure out how to handle resources of a service

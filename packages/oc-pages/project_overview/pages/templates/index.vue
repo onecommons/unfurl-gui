@@ -564,6 +564,7 @@ export default {
               :template-dependencies="getDependencies(getPrimaryCard.name)"
               :level="1"
               :show-type-first="true"
+              :render-inputs="false"
               :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">
@@ -590,6 +591,7 @@ export default {
                       :level="idx"
                       :title-key="card.title"
                       :show-type-first="true" 
+                      :render-inputs="false"
                       :card="card"
                       />
 
