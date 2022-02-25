@@ -63,6 +63,7 @@ export default {
             'environmentsCount',
             'applicationsCount',
         ]),
+        tableItems() { return this.getDashboardItems.filter(item => item.application) }
     },
 };
 
@@ -101,7 +102,7 @@ export default {
                 color="#fff4f4"/>
         </div>
     </div>
-    <TableComponent :items="getDashboardItems" :fields="fields">
+    <TableComponent :items="tableItems" :fields="fields">
     <template #application="scope">
         <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}">
             <div class="status-item">

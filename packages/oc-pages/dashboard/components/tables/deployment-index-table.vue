@@ -7,7 +7,11 @@ import {GlButton, GlIcon} from '@gitlab/ui'
 import * as routes from '../../router/constants'
 
 function deploymentGroupBy(item) {
-    const result = `${item.deployment.name}:${item.application.name}`
+
+    let result 
+    try{
+        result = `${item.deployment.name}:${item.application.name}`
+    } catch(e) {return }
     return result
 }
 
@@ -27,14 +31,14 @@ export default {
                 key: 'status',
                 tableBodyStyles: {'justify-content': 'center'},
                 groupBy: deploymentGroupBy,
-                textValue: (item) => item.deployment.statuses.map(resource => resource.name).join(' '),
+                textValue: (item) => (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
                 label: 'Status'
             },
             {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
             {
                 key: 'environment',
-                label: 'Environment',
-                groupBy: (item) => item.environment.name
+                label: 'Environments',
+                groupBy: (item) => item.environment?.name
             },
           /*
            * TODO figure out how to implement commit lookup
@@ -54,14 +58,14 @@ export default {
             {
                 key: 'resource',
                 label: 'Resources',
-                textValue: (item) => item.resource.title,
-                groupBy: (item) => item.resource.name,
+                textValue: (item) => item.resource?.title,
+                groupBy: (item) => item.resource?.name,
                 s: 'Resource'
             },
             {
                 key: 'open',
                 label: 'Open',
-                groupBy: (item) => item.deployment.name,
+                groupBy: (item) => item.deployment?.name,
                 textValue: () => '',
                 shallow: true
             },
@@ -77,7 +81,7 @@ export default {
 <template>
     <table-component :useCollapseAll="false" :items="items" :fields="fields">
         <template #status="scope">
-            <div class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
+            <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
                 <StatusIcon :size="18" :key="status.name" v-for="status in scope.item.context.deployment.statuses" :status="status.status" />
             </div>
         </template>
@@ -87,7 +91,7 @@ export default {
             </div>
         </template>
         <template #deployment="scope">
-            <div style="display: flex; flex-direction: column;">
+            <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;">
                 <router-link 
                  :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}">
                     <b> {{scope.item.context.application.title}}: </b>
@@ -107,7 +111,7 @@ export default {
 
         <template #open$head> <div></div> </template>
         <template #open$empty="scope">
-            <div class="external-link-container" v-if="scope.item._depth + scope.item._span < scope.field.index">
+            <div class="external-link-container" v-if="scope.item.context.application && scope.item._depth + scope.item._span < scope.field.index">
                 <gl-button target="_blank" rel="noopener noreferrer" :href="scope.item.context.application.livePreview" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Open')}} </gl-button>
             </div>
         </template>

@@ -15,7 +15,7 @@ export default {
 }
 </script>
 <template>
-    <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: application.name}}">
+    <router-link v-if="application && application.name ":to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: application.name}}">
         <div class="status-item">
             <project-icon :projectIcon="application.projectIcon" />
             {{application.title}}

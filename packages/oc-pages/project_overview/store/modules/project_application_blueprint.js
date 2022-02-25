@@ -280,7 +280,7 @@ const getters = {
         return function(dependency, _deploymentTemplate) {
             // having trouble getting fetches finished before the ui starts rendering
             try {
-                if(!dependency) return []
+                if(!dependency || !state.ResourceType) return []
                 const dependencyName = typeof(dependency) == 'string'? dependency:
                     dependency.name
                 //dependency.resourceType || dependency.constraint && dependency.constraint.resourceType.name

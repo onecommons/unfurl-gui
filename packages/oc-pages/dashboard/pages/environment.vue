@@ -3,11 +3,11 @@ import * as routes from '../router/constants'
 import {mapActions, mapGetters} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon} from '@gitlab/ui'
-import {OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
+import {CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
 import { __ } from '~/locale'
 export default {
     name: 'Environment',
-    components: {DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources},
+    components: {CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources},
     data() {
         const gcpProps = [
             {name: 'Status', value: 'Connected', valueStyle: {'font-weight': 'bold'}, icon: 'status_success_solid', outboundLink: 'https://youtube.com', outboundLinkText: 'Go to console'},
@@ -39,6 +39,7 @@ export default {
             'populateTemplateResources2'
         ])
     },
+
     beforeMount() {
         const environmentName = this.$route.params.name
         const environment = this.lookupEnvironment(environmentName)
@@ -56,6 +57,7 @@ export default {
         <h2>{{__('Cloud Provider')}}</h2>
         <oc-properties-list header="Google Cloud Platform" :containerStyle="{'font-size': '0.8em', ...width}" :properties="gcpProps" />
         <h2>{{__('Variables')}}</h2>
+        <ci-variable-settings />
         <deployment-resources  :render-inputs="false" :external-status-indicator="true">
             <template #header>
                 <!-- potentially tricky to translate -->

@@ -145,7 +145,7 @@ const actions = {
         commit('setProjectEnvironments', environments)
 
     },
-    async fetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
+    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
         // TODO get rid of this alias
         return await dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath})
     }

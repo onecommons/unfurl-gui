@@ -184,7 +184,7 @@ export default {
       const result = this.useCollapseAll? [{key: "selected", label: "", thStyle: {width: '0px'}}] : [];
       let i = 0;
       for(const field of this.fields) {
-        const label = field.label.trim() + '  ';  // dirty trick to keep THs from touching each other
+        const label = field.label.trim()
         result.push({index: i++, ...field, label});
       }
       result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
@@ -216,7 +216,8 @@ export default {
   },
   methods: {
     pluralize(scope) {
-      const count = scope.item.childrenOfGroup(scope.field.key)
+      if(!scope.field.s) return ''
+      const count = scope.item.childrenOfGroup(scope.field.key) || 0
       const result = `${count} ${n__(scope.field.s, scope.field.label, count)}`;
       return result;
     },

@@ -13,21 +13,37 @@ import deployment_template_updates from '../../project_overview/store/modules/de
 import template_resources from '../../project_overview/store/modules/template_resources'
 import table_data from './modules/table_data'
 //import misc from './modules/misc';
+import {createCiVariablesStore} from '../../vue_shared/oc-components'
 
 Vue.use(Vuex);
 
 const debug = process.env.NODE_ENV !== "production";
 
+const modules = {
+    project_application_blueprint,
+    environments,
+    deployments,
+    misc,
+    deployment_template_updates,
+    template_resources,
+    table_data
+}
+const variableDataEl = document.querySelector('#js-oc-ci-variables')
+
+if(variableDataEl) {
+    const ci_variables = createCiVariablesStore({
+        ...variableDataEl.dataset,
+        isGroup: false,
+        isProtectedByDefault: false
+    })
+    console.log(ci_variables)
+    ci_variables.namespaced = true
+    modules.ci_variables = ci_variables
+}
+
+
 const store = new Vuex.Store({
-    modules: {
-        project_application_blueprint,
-        environments,
-        deployments,
-        misc,
-        deployment_template_updates,
-        template_resources,
-        table_data,
-    },
+    modules,
     strict: debug,
     plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
 });
