@@ -1,7 +1,8 @@
 import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
-import {join} from 'path'
+import {join, resolve} from 'path'
 import {writeLiveRepoFile, readLiveRepoFile} from './utils/db'
+import {getBlueprintJson} from './utils/iterate_projects'
 
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 
@@ -24,9 +25,11 @@ export default {
   Query: {
   
     applicationBlueprint: (root, args, { db }) => {
-        //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
-        // demo/apostrophe-demo
-        return db.get('projects').value()[args.fullPath]
+        //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`'
+        // or demo/apostrophe-demo
+        const REPOS_DIR = resolve(__dirname, 'repos')
+        return getBlueprintJson(REPOS_DIR, args.fullPath, true)
+        // return db.get('projects').value()[args.fullPath]
     },
 
     project(root, args, context) {

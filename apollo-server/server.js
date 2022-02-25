@@ -18,6 +18,7 @@ export default app => {
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
+    const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
     const BLUEPRINT_PROJECT_URL = req.body['variables[BLUEPRINT_PROJECT_URL]']
     const DEPLOY_ENVIRONMENT = req.body['variables[DEPLOY_ENVIRONMENT]']
     const DEPLOY_PATH = req.body['variables[DEPLOY_PATH]']
@@ -28,9 +29,9 @@ export default app => {
     const cwd = resolveLiveRepoFile(userHome, '')
     const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('/').pop()
     const blueprintProjectURL = 'https://gitlab.com/onecommons/testing/' + repo
-    const clone = `unfurl clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
-    const deploy = `unfurl deploy --approve ${DEPLOY_PATH}`
-    const exportCmd = `unfurl --home '' export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
+    const clone = `${UNFURL_CMD} clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
+    const deploy = `${UNFURL_CMD} deploy --approve ${DEPLOY_PATH}`
+    const exportCmd = `${UNFURL_CMD} --home '' export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
     function execHelper(cmd) {
       console.log(cmd)

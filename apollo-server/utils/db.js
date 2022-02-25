@@ -4,7 +4,7 @@ import mkdirp from 'mkdirp'
 import fs from 'fs'
 import glob from 'glob'
 import { join, dirname, resolve, basename, extname } from 'path'
-import iterateProjects from './iterate_projects'
+import {iterateProjects} from './iterate_projects'
 import iterateEnvironments from './iterate_environments'
 
 const LIVE_DIR = resolve(__dirname, '../../live')
