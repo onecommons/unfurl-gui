@@ -4,7 +4,7 @@ import {bus} from '../../bus';
 import {__} from '~/locale';
 import {mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormItem, Input} from "@formily/element";
+import {FormItem, Input, InputNumber, Checkbox, Select, Password, Editable} from "@formily/element";
 import {createForm, onFieldValueChange} from "@formily/core";
 import {updatePropertyInResourceTemplate} from '../../store/modules/deployment_template_updates.js'
 
@@ -54,7 +54,8 @@ function serializeInput(input, value) {
 const fields = createSchemaField({
   components: {
     FormItem,
-    Input
+    Input,
+    InputNumber, Checkbox, Select, Password, Editable
   }
 })
 
@@ -121,24 +122,26 @@ export default {
     },
 
     schema() {
+
       const result =  {
         type: this.card?.type?.inputsSchema?.type,
-        properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
-          //const title = `${currentValue.title}${currentIndex}${this.componentKey}${this.getRandomKey(7)}-template`;
-          const title = currentValue.name
-          previousValue[title] = {
-            type: 'string',//currentValue.type,
-            title: currentValue.title,
-            'x-decorator': 'FormItem',
-            'x-component': 'Input',//ComponentMap[currentValue.type],
-            'description': currentValue.instructions,
-            'x-data': currentValue,
-            'x-component-props': {
-              placeholder: currentValue.title,
-            },
-          }
-          return previousValue;
-        }, {}),
+        properties: this.convertProperties(this.resolveResourceType(this.card.type).inputsSchema?.properties || {}),
+        // properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
+        //   //const title = `${currentValue.title}${currentIndex}${this.componentKey}${this.getRandomKey(7)}-template`;
+        //   const title = currentValue.name
+        //   previousValue[title] = {
+        //     type: 'string',//currentValue.type,
+        //     title: currentValue.title,
+        //     'x-decorator': 'FormItem',
+        //     'x-component': 'Input',//ComponentMap[currentValue.type],
+        //     'description': currentValue.instructions,
+        //     'x-data': currentValue,
+        //     'x-component-props': {
+        //       placeholder: currentValue.title,
+        //     },
+        //   }
+        //   return previousValue;
+        // }, {}),
       }
       return result
     },
@@ -162,47 +165,52 @@ export default {
     convertProperties(properties) {
       const temp = {};
       Object.keys(properties).forEach(i => {
+        const currentValue = properties[i];
         //default string
-        let componentType = properties[i].type || 'string';
+        let componentType = currentValue.type || 'string';
         // Special Handle Enum
         if (componentType === 'object') {
           temp[i] = {
             type: componentType,
-            title: i,
+            title: currentValue.title || i,
             'x-decorator': 'FormItem',
             'x-component': ComponentMap[i],
             'x-component-props': {
-              title: i,
+              title: currentValue.title || i,
             },
-            properties: this.convertProperties(properties[i].properties),
+            properties: this.convertProperties(currentValue.properties),
           };
         } else {
           // json type is no enum filed,so containing enum fields is render Select;
-          if (properties[i].enum) {
+          if (currentValue.enum) {
             componentType = 'enum';
-          } else if (properties[i].sensitive) {
+          } else if (currentValue.sensitive) {
             componentType = 'password';
           }
           temp[i] = {
-            type: properties[i].type || 'string',
-            title: i,
+            type: currentValue.type || 'string',
+            title: currentValue.title || i,
             'x-decorator': 'FormItem',
             'x-component': ComponentMap[componentType],
+            'x-data': currentValue,
+            'description': currentValue.description,
+            'x-component-props': {
+              placeholder: currentValue.title,
+            },
           };
-
           if (componentType === 'enum') {
-            temp[i].enum = properties[i].enum;
+            temp[i].enum = currentValue.enum;
           }
 
-          if (properties[i].default) {
-            temp[i].default = properties[i].default;
+          if (currentValue.default) {
+            temp[i].default = currentValue.default;
           }
 
-          if (properties[i].const === null) {
+          if (currentValue.const === null) {
             temp[i]['x-hidden'] = true;
           }
 
-          if (properties[i].const === 'readonly') {
+          if (currentValue.const === 'readonly') {
             temp[i]['x-read-only'] = true;
           }
         }
