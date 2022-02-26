@@ -185,8 +185,9 @@ export default {
     triggerSave: _.debounce(function preview(field, value) {
       this.updateFieldValidation(field, value)
       const propertyValue = serializeInput(field, value)
+
       this.pushPreparedMutation(
-        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field.title, propertyValue})
+        updatePropertyInResourceTemplate({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.title, propertyValue, isSensitive: field.sensitive})
       )
     }, 200),
 

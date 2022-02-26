@@ -35,17 +35,13 @@ const actions = {
         }
         let iterationCounter = 0
 
-        let groups = _.groupBy(rootGetters.getDeploymentDictionaries, '_environment')
-        if(Object.keys(groups).length == 0) {
-            groups = _.groupBy(rootGetters.getEnvironments, 'name')
-        }
-        for(const environmentName in groups) {
+        for(const environment of rootGetters.getEnvironments) {
             const i = ++iterationCounter
             environments += 1
-            const environment = rootGetters.lookupEnvironment(environmentName)
+            const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
-            for(const deploymentDict of groups[environmentName]) {
+            for(const deploymentDict of environment.deployments) {
                 if(!deploymentDict.Deployment ) continue
                 dispatch('useProjectState', _.cloneDeep(deploymentDict))
                 const deployment = rootGetters.getDeployment

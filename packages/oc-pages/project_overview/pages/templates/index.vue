@@ -284,6 +284,7 @@ export default {
       'onApplicationBlueprintLoaded',
       'setUpdateObjectPath',
       'setUpdateObjectProjectPath',
+      'setEnvironmentScope',
       'pushPreparedMutation'
     ]),
     ...mapActions([
@@ -355,10 +356,11 @@ export default {
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
+        const environment = this.$route.params.environment
         if(this.$route.name != 'templatePage') {
           this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
-
+          this.setEnvironmentScope(environment)
         }
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
