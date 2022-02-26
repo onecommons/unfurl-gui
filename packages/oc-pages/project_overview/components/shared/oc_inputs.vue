@@ -1,5 +1,5 @@
 <script>
-import {debounce} from 'lodash';
+import _ from 'lodash';
 import {bus} from '../../bus';
 import {__} from '~/locale';
 import {mapMutations, mapGetters} from 'vuex'
@@ -122,28 +122,10 @@ export default {
     },
 
     schema() {
-
-      const result =  {
+      return {
         type: this.card?.type?.inputsSchema?.type,
         properties: this.convertProperties(this.resolveResourceType(this.card.type).inputsSchema?.properties || {}),
-        // properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
-        //   //const title = `${currentValue.title}${currentIndex}${this.componentKey}${this.getRandomKey(7)}-template`;
-        //   const title = currentValue.name
-        //   previousValue[title] = {
-        //     type: 'string',//currentValue.type,
-        //     title: currentValue.title,
-        //     'x-decorator': 'FormItem',
-        //     'x-component': 'Input',//ComponentMap[currentValue.type],
-        //     'description': currentValue.instructions,
-        //     'x-data': currentValue,
-        //     'x-component-props': {
-        //       placeholder: currentValue.title,
-        //     },
-        //   }
-        //   return previousValue;
-        // }, {}),
       }
-      return result
     },
 
     form() {
@@ -162,67 +144,45 @@ export default {
     ...mapMutations([
       'pushPreparedMutation', 'setInputValidStatus'
     ]),
+
     convertProperties(properties) {
-      const temp = {};
-      Object.keys(properties).forEach(i => {
-        const currentValue = properties[i];
-        //default string
-        let componentType = currentValue.type || 'string';
-        // Special Handle Enum
-        if (componentType === 'object') {
-          temp[i] = {
-            type: componentType,
-            title: currentValue.title || i,
-            'x-decorator': 'FormItem',
-            'x-component': ComponentMap[i],
-            'x-component-props': {
-              title: currentValue.title || i,
-            },
-            properties: this.convertProperties(currentValue.properties),
-          };
+      return _.mapValues(properties, (value, name) => {
+        const currentValue = {...value};
+        // console.log('prop', name, currentValue);
+        if (!currentValue.type) {
+          currentValue.type = 'string'
+        }
+        currentValue.title = currentValue.title ?? name;
+        currentValue['x-decorator'] = 'FormItem'
+        currentValue['x-data'] = value
+        currentValue['x-component-props'] = {
+            placeholder: currentValue.title,
+        }
+        let componentType = currentValue.type;
+        if (componentType === 'object' && currentValue.properties) {
+          currentValue.properties = this.convertProperties(currentValue.properties)
         } else {
-          // json type is no enum filed,so containing enum fields is render Select;
           if (currentValue.enum) {
             componentType = 'enum';
           } else if (currentValue.sensitive) {
             componentType = 'password';
           }
-          temp[i] = {
-            type: currentValue.type || 'string',
-            title: currentValue.title || i,
-            'x-decorator': 'FormItem',
-            'x-component': ComponentMap[componentType],
-            'x-data': currentValue,
-            'description': currentValue.description,
-            'x-component-props': {
-              placeholder: currentValue.title,
-            },
-          };
-          if (componentType === 'enum') {
-            temp[i].enum = currentValue.enum;
-          }
-
-          if (currentValue.default) {
-            temp[i].default = currentValue.default;
-          }
-
           if (currentValue.const === null) {
-            temp[i]['x-hidden'] = true;
-          }
-
-          if (currentValue.const === 'readonly') {
-            temp[i]['x-read-only'] = true;
+            currentValue['x-hidden'] = true;
+          } else if (currentValue.const === 'readonly') {
+            currentValue['x-read-only'] = true;
           }
         }
+        currentValue['x-component'] = ComponentMap[componentType]
+        return currentValue;
       });
-      return temp;
     },
 
     updateFieldValidation(field, value) {
       this.setInputValidStatus({card: this.card, input: field, status: validateInput(field, value)})
     },
 
-    triggerSave: debounce(function preview(field, value) {
+    triggerSave: _.debounce(function preview(field, value) {
       this.updateFieldValidation(field, value)
       const propertyValue = serializeInput(field, value)
       this.pushPreparedMutation(
