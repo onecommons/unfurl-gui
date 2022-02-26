@@ -18,9 +18,9 @@ const mutations = {
         state.inputValidationStatus = {};
     },
 
-    setInputValidStatus(state, {card, input, valid}) {
+    setInputValidStatus(state, {card, input, status}) {
         const byCard = state.inputValidationStatus[card.name] || {};
-        if(valid)
+        if(status)
             byCard[input.name] = true;
         else
             delete byCard[input.name];
@@ -152,7 +152,7 @@ const actions = {
                 });
             }
             for(const property of resourceTemplate.properties) {
-                commit('setInputValidStatus', {card: resourceTemplate, input: property, valid: !!(property.value ?? false)});
+                commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
             }
 
             for(const dependency of resourceTemplate.dependencies) {
@@ -190,7 +190,7 @@ const actions = {
 
     createMatchedResources({commit, dispatch, rootGetters}, {resource}) {
         for(const attribute of resource.attributes) {
-            commit('setInputValidStatus', {card: resource, input: attribute, valid: !!(attribute.value)})
+            commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
         }
         for(const dependency of resource.dependencies) {
             const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match)
