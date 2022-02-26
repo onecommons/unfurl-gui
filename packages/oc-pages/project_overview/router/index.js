@@ -11,11 +11,11 @@ export default function createRouter(base) {
         Could not initialize router without a projectPath.
         If you are on unfurl-gui, make sure you are running apollo:start before serve so that live/db.json is populated
     `)
+    
     const router = new VueRouter({
-      mode: 'history',
-      base: joinPaths(gon.relative_url_root || '', `${base}/-/overview`),
-      routes,
-      
+        mode: 'history',
+        base: joinPaths(gon.relative_url_root || '', base),
+        routes,
     });
 
 
