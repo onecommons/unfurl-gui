@@ -94,6 +94,7 @@ export default {
 
     computed: {
         ...mapGetters([
+            'getCurrentEnvironment',
             'getValidResourceTypes',
             'getValidConnections',
             'requirementMatchIsValid',
@@ -281,7 +282,7 @@ export default {
                                 :aria-label="__(`create`)"
                                 type="button"
                                 class="gl-ml-3 oc_requirements_actions"
-                                :disabled="getValidResourceTypes(requirement, deploymentTemplate).length == 0"
+                                :disabled="getValidResourceTypes(requirement, deploymentTemplate, getCurrentEnvironment).length == 0"
                                 @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
                         </div>
                     </div>

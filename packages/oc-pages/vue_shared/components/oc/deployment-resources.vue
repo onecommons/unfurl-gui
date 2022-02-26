@@ -112,6 +112,7 @@ export default {
             'cardIsValid',
             'getUsername',
             'getHomeProjectPath',
+            'getCurrentEnvironment',
             'getValidResourceTypes',
             'getValidConnections',
             'getHomeProjectPath',
@@ -540,7 +541,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-            <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate)"/>
+            <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
                 <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>

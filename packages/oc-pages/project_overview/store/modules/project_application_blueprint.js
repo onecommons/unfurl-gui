@@ -277,7 +277,7 @@ const getters = {
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
     getValidResourceTypes(state, getters) {
-        return function(dependency, _deploymentTemplate) {
+        return function(dependency, _deploymentTemplate, environment) {
             // having trouble getting fetches finished before the ui starts rendering
             try {
                 if(!dependency || !state.ResourceType) return []
@@ -309,23 +309,39 @@ const getters = {
                     }
                 }
 
-                // TODO query for this information
-                const CLOUD_MAPPINGS = {
-                    [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
-                    [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
-                    [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
-                    //[lookupCloudProviderAlias('k8s')]: unknown
-                }
-
-                if(deploymentTemplate?.cloud) {
-                    const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
+                // providing an environment if this is a deployment
+                if(environment) {
+                    // TODO resolve the connection type to check extends
                     result = result.filter(type => {
-                        return !type.extends.includes('unfurl.nodes.CloudObject') ||
-                            type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+                        if(Array.isArray(type.implementation_requirements) && type.implementation_requirements.length) {
+                            return type.implementation_requirements.every(
+                                req => environment.connections.some(conn => conn.type == req) 
+                            )
+                        }
+                        return true
                     })
+                }
+                // old algorithm
+                else {
+                    // TODO query for this information
+                    const CLOUD_MAPPINGS = {
+                        [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
+                        [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
+                        [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
+                        //[lookupCloudProviderAlias('k8s')]: unknown
+                    }
+
+                    if(deploymentTemplate?.cloud) {
+                        const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
+                        result = result.filter(type => {
+                            return !type.extends.includes('unfurl.nodes.CloudObject') ||
+                                type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+                        })
+                    }
                 }
 
                 return result
+
             } catch(e) {
                 console.error(e)
                 return []

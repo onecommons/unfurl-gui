@@ -88,6 +88,7 @@ export default {
       'cardIsValid',
       'getUsername',
       'getHomeProjectPath',
+      'getCurrentEnvironment',
       'getValidResourceTypes',
       'getValidConnections',
       'getHomeProjectPath',
@@ -635,7 +636,7 @@ export default {
             >
 
             <!--oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate)"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)"/>
             <!--oc-list-resource  @input="e => selected = e" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">

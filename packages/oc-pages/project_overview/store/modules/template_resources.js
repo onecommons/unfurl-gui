@@ -402,6 +402,9 @@ const getters = {
         return function(card) {
             return getters.cardInputsAreValid(card) && getters.cardDependenciesAreValid(card);
         };
+    },
+    getCurrentEnvironment(state, _getters, _, rootGetters) {
+        return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
     }
 };
 
