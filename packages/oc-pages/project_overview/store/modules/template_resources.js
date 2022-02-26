@@ -20,10 +20,11 @@ const mutations = {
 
     setInputValidStatus(state, {card, input, status}) {
         const byCard = state.inputValidationStatus[card.name] || {};
+        const inputName = input.name || input.title
         if(status)
-            byCard[input.name] = true;
+            byCard[inputName] = true;
         else
-            delete byCard[input.name];
+            delete byCard[inputName];
 
         state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
     },
