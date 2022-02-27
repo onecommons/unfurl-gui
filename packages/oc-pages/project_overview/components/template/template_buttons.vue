@@ -49,8 +49,8 @@ export default {
 }
 </script>
 <template>
-    <div class="row gl-mt-6 gl-mb-6">
-        <div class="col-md-12 col-lg-6 d-flex">
+    <div class="gl-mt-6 gl-mb-6 d-flex justify-content-between">
+        <div>
             <gl-button
                 v-show="mergeStatus != 'hidden'"
                 title="Merge Request"
@@ -95,7 +95,7 @@ export default {
                 >{{ __('Cancel Deployment') }}
             </gl-button>
         </div>
-        <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end">
+        <div>
             <gl-button
                 v-show="deployStatus != 'hidden'"
                 title="Deploy"

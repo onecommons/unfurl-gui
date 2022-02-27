@@ -4,7 +4,9 @@ export default {
     name: 'Dashboard',
     methods: {
         ...mapActions([
-            'loadDashboard'
+            'loadDashboard',
+            'handleResize'
+
         ])
     },
     computed: {
@@ -14,6 +16,8 @@ export default {
     },
     async mounted() {
         await this.loadDashboard()
+        this.handleResize()
+
     }
 }
 </script>

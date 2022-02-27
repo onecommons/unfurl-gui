@@ -102,7 +102,8 @@ export default {
             'cardDependenciesAreValid',
             'getDisplayableDependencies',
             'getCardProperties',
-            'cardStatus'
+            'cardStatus',
+            'isMobileLayout'
         ]),
         displayableDependencies() {
             const result = this.getDisplayableDependencies(this.card.name)
@@ -212,16 +213,39 @@ export default {
                         :key="requirement.name + '-template'"
                         class="gl-responsive-table-row oc_table_row">
                         <div
-                            class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
-                            <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
-                            <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ requirement.name }}</span>
-                            <div class="oc_requirement_description gl-mb-2">
-                            {{ requirement.description}}
+                            class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
+                            <div>
+                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
+                                <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ requirement.name }}</span>
+                                <div class="oc_requirement_description gl-mb-2">
+                                    {{ requirement.description}}
+                                </div>
+                            </div>
+                            <div v-if="isMobileLayout" class="ml-2 mr-2">
+                                <gl-icon
+                                    v-if="displayValidation"
+                                    :size="14"
+                                    :class="{
+                                            'icon-green': requirementSatisfied(requirement),
+                                            'icon-red': !requirementSatisfied(requirement),
+                                            }"
+                                    :name="requirementSatisfied(requirement) ? 'check-circle-filled' : 'warning-solid'"
+                                    />
+                                <span v-if="requirementMatchIsValid(requirement)" class="text-break-word oc_resource-details">
+
+                                    <a href="#" @click.prevent=" findElementToScroll({requirement}) ">
+                                        <span v-if="displayStatus">
+                                            <status-icon :status="cardStatus(requirement.target)" />
+                                        </span>
+
+                                        {{ resolveRequirementMatchTitle(requirement) }}
+                                    </a>
+                                </span>
                             </div>
                         </div>
-                        <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
-                        <div
-                            class="table-section oc-table-section section-wrap text-truncate section-20 align_left">
+                        <!-- TODO fix this -->
+                        <div v-if="!isMobileLayout"
+                            class="table-section oc-table-section section-wrap text-truncate section-30 align_left">
                             <gl-icon
                                 v-if="displayValidation"
                                 :size="14"
@@ -245,7 +269,7 @@ export default {
 
                         <div
                             v-if="!readonly && requirementMatchIsValid(requirement)"
-                            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
+                            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-end">
                             <gl-button
                             v-if="getCurrentActionLabel(requirement) !== 'Disconnect'"
                                 title="edit"
@@ -266,7 +290,7 @@ export default {
                         </div>
                         <div
                             v-else-if="!readonly"
-                            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
+                            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-end">
                             <gl-button
                                 v-if="canConnectServices"
                                 title="connect"
@@ -292,6 +316,17 @@ export default {
     </gl-tabs>
 </template>
 <style scoped>
+/* this is currently also defined elsewhere */
+
+@media only screen and (max-width: 768px) {
+    .oc_table_row {
+        display: flex;
+        flex-direction: column;
+    }
+}
+/**/
+
+
 .oc_requirements_actions {
     overflow: hidden;
     text-overflow: ellipsis;

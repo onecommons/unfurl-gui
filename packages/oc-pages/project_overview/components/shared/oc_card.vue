@@ -127,29 +127,36 @@ export default {
 <template>
     <gl-card :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <slot name="header">
-                <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex flex-one gl-pt-1">
-                    <gl-icon :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeaderText)" />
-                    <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
-                    <gl-icon
-                        v-if="displayValidation"
-                        :size="14"
-                        :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
-                        :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
-                        />
-                    <gl-badge
-                    size="sm"
-                    class="gl-tab-counter-badge gl-ml-3 badge-oc-card"
-                    >{{ badgeHeaderText }}</gl-badge
-                    >
+            <div class="position-relative w-100">
+                <div class="mr-4 d-flex">
+                    <slot name="header">
+                        <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
+                            <gl-icon :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeaderText)" />
+                            <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
+                            <gl-icon
+                                v-if="displayValidation"
+                                :size="14"
+                                :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
+                                :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
+                                />
+                            <gl-badge
+                            size="sm"
+                            class="gl-tab-counter-badge gl-ml-3 badge-oc-card"
+                            >{{ badgeHeaderText }}</gl-badge
+                            >
+                        </div>
+                        <div class="m-1" v-if="displayStatus">
+                            <status-icon :size="16" :state="card.state" :status="card.status" />
+                        </div>
+                    </slot>
                 </div>
-                <div v-if="displayStatus">
-                    <status-icon :size="16" :state="card.state" :status="card.status" />
+
+                <div style="position: absolute; right: 0; top: 0;">
+                    <slot name="controls"></slot>
+                    <div @click="toggleCard" class="ml-2" v-if="card.dependentName">
+                        <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
+                    </div>
                 </div>
-            </slot>
-            <slot name="controls"></slot>
-            <div @click="toggleCard" class="ml-2" v-if="card.dependentName">
-                <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
             </div>
         </template>
         <div ref="containerOuter" class="card-content-outer" :class="{active: setHeight}">
@@ -193,13 +200,22 @@ export default {
     margin: -0.5rem 0;
 }
 .card-content-outer {
-    overflow: hidden;
+    overflow-y: hidden;
+    max-width: 100%;
 }
 
 .card-content-container {
-    padding: 2em;
-    padding-bottom: 1em;
+    padding-top: 2em !important;
+    padding: 1em;
+    max-width: 100%;
 }
+
+@media only screen and (max-width: 768px) {
+    .card-content-container {
+        padding: 1em 0;
+    }    
+}
+
 .card-content-container.active {
     transition: margin-top 0.5s;
 }
@@ -211,6 +227,6 @@ export default {
 */
 
 .card-content-container >>> .gl-card-body {
-    padding: 0;
+    padding: 0 1em;
 }
 </style>

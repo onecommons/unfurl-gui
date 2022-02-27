@@ -55,6 +55,9 @@ export default {
             }
         },
 
+        ...mapGetters([
+            'isMobileLayout'
+        ])
 
     },
 };
@@ -78,37 +81,24 @@ export default {
             <div
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2"
             >
-            <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
-            <oc-list-resource-icon :badge="resource.badge" :alt="resource.name"/>
-            <div>
-                <span class="text-break-word title">{{ resource.name }}</span>
-                <!--div class="oc_resource_description gl-mb-2">
-                {{ resource.description }}
-                </div-->
+                <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
+                <oc-list-resource-icon :badge="resource.badge" :alt="resource.name"/>
+                <div>
+                    <span class="text-break-word title">{{ resource.name }}</span>
+                </div>
             </div>
+            <div v-if="!isMobileLayout || resource.description" class="table-section oc-table-section section-wrap text-truncate section-40">
+                <span class="text-break-word oc_resource-type">{{ resource.description }}</span>
             </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-40">
-            <span class="text-break-word oc_resource-type">{{ resource.description }}</span>
-            </div>
-
-            <!--
-            <div class="table-section oc-table-section section-wrap text-truncate section-20">
-            <span class="text-break-word oc_resource-type">{{ resource.platform }}</span>
-            </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-20">
-            <span class="text-break-word oc_resource-type">{{ resource.name }}</span>
-            </div>
-            -->
-
             <div
             class="table-section oc-table-section section-wrap text-truncate section-20 text-center"
             >
-            <span class="text-break-word oc_resource-details">
-                <a href="javascript:void();"
-                >{{ __('Details') }}
-                <gl-icon :size="12" name="external-link" />
-                </a>
-            </span>
+                <span class="text-break-word oc_resource-details">
+                    <a href="javascript:void();"
+                    >{{ __('Details') }}
+                    <gl-icon :size="12" name="external-link" />
+                    </a>
+                </span>
             </div>
         </div>
         </div>

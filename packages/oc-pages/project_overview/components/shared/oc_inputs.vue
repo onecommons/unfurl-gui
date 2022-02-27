@@ -198,7 +198,7 @@ export default {
 }
 </script>
 <template>
-  <div data-testid="oc_inputs">
+  <div style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
     
           <!--gl-icon
               :size="14"
