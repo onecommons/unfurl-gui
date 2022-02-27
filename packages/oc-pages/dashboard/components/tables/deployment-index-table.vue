@@ -38,6 +38,7 @@ export default {
             {
                 key: 'environment',
                 label: 'Environments',
+                s: 'Environment',
                 groupBy: (item) => item.environment?.name
             },
           /*
@@ -65,7 +66,7 @@ export default {
             {
                 key: 'open',
                 label: 'Open',
-                groupBy: (item) => item.deployment?.name,
+                groupBy: (item) => item.context.deployment?.name,
                 textValue: () => '',
                 shallow: true
             },
@@ -110,9 +111,11 @@ export default {
         </template>
 
         <template #open$head> <div></div> </template>
-        <template #open$empty="scope">
-            <div class="external-link-container" v-if="scope.item.context.application && scope.item._depth + scope.item._span < scope.field.index">
-                <gl-button target="_blank" rel="noopener noreferrer" :href="scope.item.context.application.livePreview" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Open')}} </gl-button>
+        <template #open$all="scope">
+            <div>
+                <div class="external-link-container" v-if="scope.item._depth == 0">
+                    <gl-button target="_blank" rel="noopener noreferrer" :href="scope.item.context.application.livePreview" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Open')}} </gl-button>
+                </div>
             </div>
         </template>
 

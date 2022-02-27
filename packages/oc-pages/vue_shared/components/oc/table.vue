@@ -361,28 +361,30 @@ export default {
 
           <template #cell()=scope>
             <div class="table-body" :style="scope.field.tableBodyStyles" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
-              <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
-                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
-                <span v-if="scope.field.index != 0">
-                  <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
-                  <gl-icon v-else name="chevron-right" class="accordion-cell" />
-                </span>
-                <span v-else style="margin-left: 0.5em;" />
-                <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
-                <!--span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span-->
-                <span v-else>{{pluralize(scope)}}</span>
-              </span>
-              <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}"> 
-                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
-                <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
-              </span>
-              <span v-else>
-                <slot :name="scope.field.key + '$empty'" v-bind="scope">
-                  <span v-if="scope.item._depth + scope.item._span < scope.field.index">
-                    {{pluralize(scope)}}
+              <slot :name="scope.field.key + '$all'" v-bind="scope">
+                <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
+                  <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
+                  <span v-if="scope.field.index != 0">
+                    <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
+                    <gl-icon v-else name="chevron-right" class="accordion-cell" />
                   </span>
-                </slot>
-              </span>
+                  <span v-else style="margin-left: 0.5em;" />
+                  <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
+                  <!--span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span-->
+                  <span v-else>{{pluralize(scope)}}</span>
+                </span>
+                <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}"> 
+                  <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
+                  <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
+                </span>
+                <span v-else>
+                  <slot :name="scope.field.key + '$empty'" v-bind="scope">
+                    <span v-if="scope.item._depth + scope.item._span < scope.field.index">
+                      {{pluralize(scope)}}
+                    </span>
+                  </slot>
+                </span>
+              </slot>
             </div>
           </template>
           </gl-table>

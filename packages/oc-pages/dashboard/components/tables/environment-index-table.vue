@@ -74,7 +74,7 @@ export default {
             </div>
         </template>
         <template #status="scope">
-            <div v-if="item.context.deployment" class="d-flex justify-content-center" style="left: 7px; 2px;">
+            <div v-if="scope.item.context.deployment" class="d-flex justify-content-center" style="left: 7px; 2px;">
                 <StatusIcon :size="18" :key="status.name" v-for="status in scope.item.context.deployment.statuses" :status="status.status" />
             </div>
         </template>
