@@ -4,6 +4,7 @@ import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from '../../bus.js';
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
+import {DetectIcon} from '../../../vue_shared/oc-components'
 
 import { __ } from '~/locale';
 
@@ -13,7 +14,8 @@ export default {
         GlCard,
         GlIcon,
         GlBadge,
-        StatusIcon
+        StatusIcon,
+        DetectIcon
     },
     mixins: [commonMethods],
     props: {
@@ -82,7 +84,7 @@ export default {
         id() {
             return btoa(this.card.name).replace(/=/g, '')
         },
-        ...mapGetters(['cardIsValid', 'getCardType']),
+        ...mapGetters(['cardIsValid', 'getCardType', 'resolveResourceType']),
 
         badgeHeaderText() {
             const result = this.$props.badgeHeader.text || this.getCardType(this.card)
@@ -131,7 +133,7 @@ export default {
                 <div class="mr-4 d-flex">
                     <slot name="header">
                         <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
-                            <gl-icon :size="16" class="gl-mr-3 gl-mt-1 icon-gray" :name="detectIcon(badgeHeaderText)" />
+                            <detect-icon :size="18" class="gl-mr-3 gl-mt-1 icon-gray" :type="resolveResourceType(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
                             <gl-icon
                                 v-if="displayValidation"

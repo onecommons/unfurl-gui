@@ -1,5 +1,6 @@
 <script>
 import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
+import {DetectIcon, OcPropertiesList} from '../../../vue_shared/oc-components'
 import OcTab from '../../../vue_shared/components/oc/oc-tab.vue'
 import OcInputs from './oc_inputs.vue'
 import { bus } from '../../bus';
@@ -7,7 +8,6 @@ import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
-import OcPropertiesList from '../../../vue_shared/components/oc/oc-properties-list.vue'
 
 export default {
     name: 'OcList',
@@ -18,7 +18,8 @@ export default {
         GlButton,
         StatusIcon,
         OcPropertiesList,
-        OcInputs
+        OcInputs,
+        DetectIcon
     },
 
     mixins: [commonMethods],
@@ -103,7 +104,8 @@ export default {
             'getDisplayableDependencies',
             'getCardProperties',
             'cardStatus',
-            'isMobileLayout'
+            'isMobileLayout',
+            'resolveResourceType'
         ]),
         displayableDependencies() {
             const result = this.getDisplayableDependencies(this.card.name)
@@ -215,7 +217,7 @@ export default {
                         <div
                             class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
                             <div>
-                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.name)" />
+                                <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="resolveResourceType(requirement.constraint.resourceType)" />
                                 <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ requirement.name }}</span>
                                 <div class="oc_requirement_description gl-mb-2">
                                     {{ requirement.description}}

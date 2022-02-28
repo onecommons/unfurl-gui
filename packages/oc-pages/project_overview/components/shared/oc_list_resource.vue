@@ -82,7 +82,7 @@ export default {
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2"
             >
                 <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
-                <oc-list-resource-icon :badge="resource.badge" :alt="resource.name"/>
+                <oc-list-resource-icon :type="resource" :badge="resource.badge" :alt="resource.name"/>
                 <div>
                     <span class="text-break-word title">{{ resource.name }}</span>
                 </div>
