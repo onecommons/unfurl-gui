@@ -5,6 +5,7 @@ import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon} from '@gitlab/ui'
 import {CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
 import { __ } from '~/locale'
+import {lookupCloudProviderAlias} from '../../vue_shared/util.mjs'
 
 
 const PROP_MAP = {
@@ -54,6 +55,19 @@ export default {
         },
         propviderProps() {
             return mapCloudProviderProps(this.$store.state.ci_variables)
+        },
+        cloudProviderDisplayName() {
+            switch(this.environment.primary_provider.type) {
+                case lookupCloudProviderAlias('gcp'):
+                    return __('Google Cloud Platform')
+                case lookupCloudProviderAlias('aws'):
+                    return __('Amazon Web Services')
+                case lookupCloudProviderAlias('azure'):
+                    return __('Azure')
+                case lookupCloudProviderAlias('k8s'):
+                    return __('Kubernetes')
+                default: return __('Unknown cloud provider')
+            }
         }
     },
     methods: {
@@ -77,7 +91,7 @@ export default {
         <h2>{{__('Environment Name')}}</h2>
         <gl-form-input :style="width" :value="environment.name" disabled/>
         <h2>{{__('Cloud Provider')}}</h2>
-        <oc-properties-list header="Google Cloud Platform" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps" />
+        <oc-properties-list :header="cloudProviderDisplayName" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps" />
         <h2>{{__('Variables')}}</h2>
         <ci-variable-settings v-if="!unfurl_gui"/>
         <deployment-resources  :render-inputs="false" :external-status-indicator="true">
