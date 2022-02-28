@@ -39,7 +39,7 @@ const fields = [
     {key: 'application', textValue: textValueFromKeys('application.title', 'application.name'), label: 'Applications', s: 'Application'},
     {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
     {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
-    {key: 'type', label: 'Resource Types', s: 'Resource Type'},
+    {key: 'type', groupBy(item) {return item.context.deployment.name + ':' + item.context.type}, label: 'Resource Types', s: 'Resource Type'},
     {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource'},
 ];
 

@@ -5,6 +5,25 @@ import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon} from '@gitlab/ui'
 import {CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
 import { __ } from '~/locale'
+
+
+const PROP_MAP = {
+    primaryProviderGcpZone(value) { return {name: 'Zone', value} },
+}
+
+function mapCloudProviderProps(ci_variables) {
+    const result = []
+    for(const variable in ci_variables) {
+        const mapping = PROP_MAP[variable]
+        if(typeof mapping == 'function') {
+            const value = ci_variables[variable]
+            const newProp = mapping(value)
+            if(newProp) result.push(newProp)
+        }
+    }
+    return result
+}
+
 export default {
     name: 'Environment',
     components: {CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources},
@@ -33,11 +52,14 @@ export default {
                 {text: this.environment?.name, href: '#'}
             ]
         },
+        propviderProps() {
+            return mapCloudProviderProps(this.$store.state.ci_variables)
+        }
     },
     methods: {
         ...mapActions([
             'populateTemplateResources2'
-        ])
+        ]),
     },
 
     beforeMount() {
@@ -55,7 +77,7 @@ export default {
         <h2>{{__('Environment Name')}}</h2>
         <gl-form-input :style="width" :value="environment.name" disabled/>
         <h2>{{__('Cloud Provider')}}</h2>
-        <oc-properties-list header="Google Cloud Platform" :containerStyle="{'font-size': '0.8em', ...width}" :properties="gcpProps" />
+        <oc-properties-list header="Google Cloud Platform" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps" />
         <h2>{{__('Variables')}}</h2>
         <ci-variable-settings v-if="!unfurl_gui"/>
         <deployment-resources  :render-inputs="false" :external-status-indicator="true">

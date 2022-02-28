@@ -68,7 +68,6 @@ export default {
                 label: 'Open',
                 groupBy: (item) => item.context.deployment?.name,
                 textValue: () => '',
-                shallow: true
             },
         ]
 

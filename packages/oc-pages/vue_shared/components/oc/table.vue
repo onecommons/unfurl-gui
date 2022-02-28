@@ -18,6 +18,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
   const columnName = field.key, remainingColumns = _.tail(fields);
   const grouped = _.groupBy(children, field.groupBy || field.textValue || columnName);
   for (const key in grouped) {
+
     const group = grouped[key];
     const columnTarget = field.textValue?
       field.textValue(group[0]) :
@@ -27,6 +28,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       [columnName]: columnTarget,
       tooltips: group[0].tooltips,
       context: group[0].context,
+      _shallow: field.shallow,
       _children: [],
       _childrenByGroup: {},
       _totalChildren: 0,
@@ -49,8 +51,10 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       remainingColumns.shift()
     }
     for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
-      parentRow._totalChildren++;
-      parentRow._children.push(row);
+      if(! row._parent) {
+        parentRow._totalChildren++;
+        parentRow._children.push(row);
+      }
     }
 
     const childGroups = _.groupBy(parentRow._children, (child) => child._key);
@@ -58,10 +62,12 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
       const childGroup = childGroups[key];
       if(childGroup.length == 1) {
         const child = childGroup[0];
-        parentRow  = {...child, ...parentRow};
+        Object.assign(parentRow, {...child, ...parentRow});
         if(parentRow._children.length == 1) {
-          parentRow._controlNodes = [child._key];
           parentRow._children = child._children;
+          if(parentRow._children.length && ! parentRow._children[0]._shallow) {
+            parentRow._controlNodes = [parentRow._children[0]._key];
+          }
           delete child._children;
         } else {
           span += 1;
@@ -74,27 +80,17 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
     }
 
     parentRow.childrenOfGroup = function(group) {
-      if (parentRow[group]) return 1;
       let result = 0;
-      /*
-       * caching
-      if(!(result = parentRow._childrenByGroup[group])) {
-        parentRow._childrenByGroup[group] = result = parentRow._children
-          .map(child => child.childrenOfGroup(group))
-          .reduce((a,b) => a + b, 0)
-      }
-       */
-      // not caching
-      result = parentRow._children
+      result = this._children
         .map(child => child.childrenOfGroup(group))
         .reduce((a,b) => a + b, 0);
-      //
+      if (this[group]) result ++;
 
       return result;
     };
 
     parentRow.childrenToDepth = function*(n) {
-      for(const child of parentRow._children) {
+      for(const child of this._children) {
         if(!child) break;
         if(n == -1 || child._depth <= n + span) {
           yield child;
@@ -109,12 +105,12 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
     };
 
     parentRow.expose = function() {
-      parentRow._expanded = true;
-      if(parentRow._parent) parentRow._parent.expose();
+      this._expanded = true;
+      if(this._parent) this._parent.expose();
     };
 
     parentRow.setChildrenToDepth = function(n, state) {
-      for(const child of parentRow.childrenToDepth(n)) {
+      for(const child of this.childrenToDepth(n)) {
         child._expanded = state;
       }
     };
@@ -137,15 +133,13 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
 
     
 
-    yield parentRow;
-    for(const child of parentRow._children) {
-      yield child;
-    }
-    parentRow._children = parentRow._children.filter(row => row._depth - parentRow._depth <= span);
     parentRow._span = span;
     for(const child of parentRow._children){
       child._parent = parentRow;
     }
+
+    yield parentRow
+    for(const child of parentRow.childrenToDepth(-1)) yield child
   }
 }
 
