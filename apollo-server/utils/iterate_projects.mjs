@@ -34,8 +34,8 @@ export function getBlueprintJson(reposDir, project, runExport) {
   const ensemblePath = path.join(reposDir, project, 'ensemble-template.yaml');
   if (runExport && fs.existsSync(ensemblePath)) {
     const ensembleStat = fs.statSync(ensemblePath);
-    const jsonStat = fs.statSync(fullPath);
-    if (ensembleStat.mtimeMs > jsonStat.mtimeMs) {
+    const jsonMtime = fs.existsSync(fullPath) ? fs.statSync(fullPath).mtimeMs : 0;
+    if (ensembleStat.mtimeMs > jsonMtime) {
       exportBlueprint(path.join(reposDir, project), fullPath)
     }
   }
