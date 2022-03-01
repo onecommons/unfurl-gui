@@ -83,19 +83,20 @@ export default {
       const namespace = root.fullPath || fullPath
       try {
         // get the environments associated with this project
-        const environments = db.get('environments').value()[namespace]['DeploymentEnvironment']
+        const environments = db.get('environments').value()[namespace]
         if (!environments) {
           return [];
         }
         // XXX defaults = db.get('environments').value()[namespace]['defaults']
-        // env_hash['connections'] = defaults.merge(env_hash['connections'] || Hash.new)
-        const result = Object.entries(environments).map(([key, value]) => ({
+        // env_hash['connections'] = defaults.merge(env_hash || Hash.new)
+        const resourceTypes = environments["ResourceType"];
+        const result = Object.entries(environments['DeploymentEnvironment']).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
             name: key,
             state: 'available',
-            clientPayload: value,
-            _project: namespace
+            _project: namespace,
+            clientPayload: { "DeploymentEnvironment": value, "ResourceType": resourceTypes}
         }));
         return result
       } catch (e) {

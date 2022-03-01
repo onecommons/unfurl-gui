@@ -414,6 +414,7 @@ type DeploymentEnvironment {
   name: String!
 
   connections: [ResourceTemplate!]
+  instances: [ResourceTemplate!]
 
   primary_provider: ResourceTemplate
   deployments: [Deployment!]

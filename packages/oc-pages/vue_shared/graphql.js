@@ -155,7 +155,8 @@ function makeClientResolver(typename, field=null, selector, o) {
     return (root, variables, context, info) => {
         // query must retrieve the json field
         let target = root
-        if(!context.jsondb && setContext) context.jsondb = root
+        if (!context.jsondb && setContext)
+              context.jsondb = root
         if(variables?.dehydrated) {context.dehydrated = true}
         if(field !== null) {
             target = target = target[field]
@@ -168,12 +169,12 @@ function makeClientResolver(typename, field=null, selector, o) {
                 throw new Error('Cannot use constructed client resolver')
             }
         }
-        //context.jsondb = json;
         if(!target) return null
         target = (typeof(selector) == 'function'? selector(target, root, variables, context, info): target)
 
-        if(Array.isArray(target)) target.forEach(t => {if(typeof t == 'object') {t.__typename = typename}})
-        else if(targetIsDictionary && typeof target == 'object') {
+      if (Array.isArray(target)) {
+        target.forEach(t => { if (typeof t == 'object') { t.__typename = typename } })
+      } else if(targetIsDictionary && typeof target == 'object') {
             Object.values(target).forEach(child => child.__typename = typename)
             target.__typename = 'JSON'
         } else { target.__typename = typename }
@@ -238,7 +239,7 @@ export const resolvers = {
     },
   
     Environment: {
-        deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, {indexTypename: false, setContext: false})
+        deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, {indexTypename: true, setContext: true})
     },
 
     DeploymentEnvironment: {
@@ -293,43 +294,7 @@ export const resolvers = {
         //overview: makeClientResolver('Overview'),
 
     },
-    /*
-    Overview: {
 
-        title: (obj, args, { }) => (obj && obj.title) ?? null,
-        name: (obj, args, { }) => (obj && obj.name) ?? null,
-        id: (obj, args, { }) => (obj && obj.id) ?? null,
-        description: (obj, args, { }) => (obj && obj.description) ?? null,
-
-        inputs: _.partial(patchTypenameInArr, "Input"),
-
-        outputs: _.partial(patchTypenameInArr, "Output"),
-
-        requirements: _.partial(patchTypenameInArr, "OldRequirement"),
-
-        resources: _.partial(patchTypenameInArr, "OldResource"),
-
-        servicesToConnect: _.partial(patchTypenameInArr, "ServiceToConnect"),
-
-        templates: (overview, args, { }) => {
-            if (args) {
-                for (const key in Object.keys(args)) {
-                    // one of searchByType, searchBySlug, searchByTitle, strip "searchBy"
-                    const lookup = args[0].substring("searchBy".length).toLowerCase();
-                    const match = _.find(overview.templates, { [lookup]: args[key] });
-                    if (match) {
-                        match.__typename = 'Template';
-                        return [match];
-                    } else {
-                        return [];
-                    }
-                }
-            }
-            overview.templates.forEach((elem) => { elem.__typename = 'Template'; });
-            return overview.templates
-        }
-    },
-    */
     DeploymentTemplate: {
         cloud: (obj, args, { }) => (obj && obj.cloud) ?? null,
         blueprint: makeObjectLookupResolver('ApplicationBlueprint'),
