@@ -332,6 +332,7 @@ const actions = {
                 applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client
             }
         `
+        if(!rootState.project?.project?.globalVars?.projectPath) return
         const {data, errors} = await graphqlClient.clients.defaultClient.query({
             query,
             variables: {fullPath: rootState.project.globalVars.projectPath}

@@ -49,7 +49,7 @@ export default {
         <div :style="containerStyle" class="properties-list-container">
             <div @click="toggleExpanded" v-if="header" class="header">
                 <div>{{header}}</div>
-                <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
+                <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
             </div>
             <div ref="transitionTarget" class="properties-list-inner">
                 <div class="properties-list-item" v-for="property in _properties" :key="property.name">

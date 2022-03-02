@@ -9,6 +9,7 @@ import {lookupCloudProviderAlias} from '../../vue_shared/util.mjs'
 
 
 const PROP_MAP = {
+    primaryProviderGcpProjectId(value) {return {name: 'Project ID', value}},
     primaryProviderGcpZone(value) { return {name: 'Zone', value} },
 }
 
@@ -57,7 +58,7 @@ export default {
             return mapCloudProviderProps(this.$store.state.ci_variables)
         },
         cloudProviderDisplayName() {
-            switch(this.environment.primary_provider.type) {
+            switch(this.environment?.primary_provider?.type) {
                 case lookupCloudProviderAlias('gcp'):
                     return __('Google Cloud Platform')
                 case lookupCloudProviderAlias('aws'):
@@ -66,7 +67,7 @@ export default {
                     return __('Azure')
                 case lookupCloudProviderAlias('k8s'):
                     return __('Kubernetes')
-                default: return __('Unknown cloud provider')
+                default: return __('Self hosted')
             }
         }
     },
