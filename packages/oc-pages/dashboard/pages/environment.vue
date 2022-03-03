@@ -11,6 +11,8 @@ import {lookupCloudProviderAlias} from '../../vue_shared/util.mjs'
 const PROP_MAP = {
     primaryProviderGcpProjectId(value) {return {name: 'Project ID', value}},
     primaryProviderGcpZone(value) { return {name: 'Zone', value} },
+    primaryProviderAwsRoleArn(value) { return {name: 'Role ARN', value}},
+    primaryProviderAwsDefaultRegion(value) { return {name: 'Default region', value}},
 }
 
 function mapCloudProviderProps(ci_variables) {
