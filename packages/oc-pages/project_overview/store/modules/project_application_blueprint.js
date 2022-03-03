@@ -161,17 +161,29 @@ const actions = {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
                 }
+                deploymentTemplate.__typename = 'DeploymentTemplate'
             },
             ApplicationBlueprint(applicationBlueprint) {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
                 applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
+                applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             ResourceType(resourceType) {
                 if(!resourceType.title) {
                     resourceType.title = resourceType.name
                 }
+                resourceType.__typename = 'ResourceType'
+            },
+            Resource(resource) {
+                if(!resource.dependencies) {
+                    resource.dependencies = []
+                }
+                if(!resource.attributes) {
+                    resource.attributes = []
+                }
+                resource.__typename = 'Resource'
             }
         }
 
@@ -265,10 +277,10 @@ const getters = {
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
     getValidResourceTypes(state, getters) {
-        return function(dependency, _deploymentTemplate) {
+        return function(dependency, _deploymentTemplate, environment) {
             // having trouble getting fetches finished before the ui starts rendering
             try {
-                if(!dependency) return []
+                if(!dependency || !state.ResourceType) return []
                 const dependencyName = typeof(dependency) == 'string'? dependency:
                     dependency.name
                 //dependency.resourceType || dependency.constraint && dependency.constraint.resourceType.name
@@ -288,30 +300,48 @@ const getters = {
                     new DeploymentTemplate(_deploymentTemplate, state)
 
                 if(result.length == 0 && deploymentTemplate) {
-                    const dependency = deploymentTemplate._primary.dependencies
-                        .find(dependency => dependency.name == dependencyName)
-                    if(dependency) {
-                        result = filteredByType(dependency.constraint.resourceType)
+                    const dependencies = deploymentTemplate._primary.dependencies
+                    if(dependencies) {
+                        const dependency = dependencies.find(dependency => dependency.name == dependencyName)
+                        if(dependency) {
+                            result = filteredByType(dependency.constraint.resourceType)
+                        }
                     }
                 }
 
-                // TODO query for this information
-                const CLOUD_MAPPINGS = {
-                    [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
-                    [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
-                    [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
-                    //[lookupCloudProviderAlias('k8s')]: unknown
-                }
-
-                if(deploymentTemplate?.cloud) {
-                    const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
+                // providing an environment if this is a deployment
+                if(environment) {
+                    // TODO resolve the connection type to check extends
                     result = result.filter(type => {
-                        return !type.extends.includes('unfurl.nodes.CloudObject') ||
-                            type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+                        if(Array.isArray(type.implementation_requirements) && type.implementation_requirements.length) {
+                            return type.implementation_requirements.every(
+                                req => environment.connections.some(conn => conn.type == req) 
+                            )
+                        }
+                        return true
                     })
+                }
+                // old algorithm
+                else {
+                    // TODO query for this information
+                    const CLOUD_MAPPINGS = {
+                        [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
+                        [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
+                        [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
+                        //[lookupCloudProviderAlias('k8s')]: unknown
+                    }
+
+                    if(deploymentTemplate?.cloud) {
+                        const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
+                        result = result.filter(type => {
+                            return !type.extends.includes('unfurl.nodes.CloudObject') ||
+                                type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
+                        })
+                    }
                 }
 
                 return result
+
             } catch(e) {
                 console.error(e)
                 return []

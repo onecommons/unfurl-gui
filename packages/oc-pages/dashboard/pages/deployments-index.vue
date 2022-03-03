@@ -39,10 +39,13 @@ export default {
             return this.runningDeploymentsCount + this.stoppedDeploymentsCount
         },
         runningDeployments() {
-            return this.getDashboardItems.filter(item => !item.deployment.isStopped)
+            return this.getDashboardItems.filter(item => item.deployment && !item.deployment.isStopped)
         },
         stoppedDeployments() {
-            return this.getDashboardItems.filter(item => item.deployment.isStopped)
+            return this.getDashboardItems.filter(item => item.deployment && item.deployment.isStopped)
+        },
+        deployments() {
+            return this.getDashboardItems.filter(item => item.deployment)
         }
     },
     watch: {
@@ -66,7 +69,7 @@ export default {
       <dashboard-breadcrumbs :items="breadcrumbItems" />
       <gl-tabs v-model="currentTab">
         <oc-tab title="All" :titleCount="deploymentsCount">
-            <deployments-index-table :items="getDashboardItems"/>
+            <deployments-index-table :items="deployments"/>
         </oc-tab>
         <oc-tab title="Running" :titleCount="runningDeploymentsCount">
             <deployments-index-table :items="runningDeployments"/>

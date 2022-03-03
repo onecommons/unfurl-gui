@@ -1,13 +1,14 @@
 <script>
 import commonMethods from '../../mixins/commonMethods.js'
-import { GlIcon } from '@gitlab/ui'
+import {DetectIcon} from '../../../../vue_shared/oc-components'
 export default {
     name: 'OcListResourceIcon',
     mixins: [commonMethods],
-    components: { GlIcon },
+    components: { DetectIcon },
     props: {
         badge: { type: String },
-        alt: { type: String }
+        alt: { type: String },
+        type: { type: [Object, String] },
     },
 
     computed: {
@@ -38,7 +39,8 @@ export default {
     <div class="oc_resource_icon gl-mr-3">
         <img v-if="remoteSvgIcon" :src="remoteSvgIcon" :alt="alt" />
         <img v-else-if="svgIcon" :src="svgIcon" :alt="alt "/>
-        <gl-icon :size="24" class="icon-gray" v-else-if="detectIcon(badge)" :name="detectIcon(badge)" :alt="alt"/>
+        <detect-icon :size="24" class="icon-gray" :type="type" />
+        <!--gl-icon :size="24" class="icon-gray" v-else-if="detectIcon(badge)" :name="detectIcon(badge)" :alt="alt"/-->
     </div>
 
 </template>

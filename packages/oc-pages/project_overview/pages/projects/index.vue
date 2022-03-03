@@ -234,9 +234,10 @@ export default {
             this.projectSlugName = '';
         },
 
-        async onSubmitModal() {
+        async onSubmitModal(e) {
             // not implemented
             if(this.creatingEnvironment) {
+                e.preventDefault()
                 this.redirectToNewEnvironment()
                 return
             }
@@ -292,12 +293,15 @@ export default {
         },
 
         redirectToNewEnvironment() {
+            this.$refs.environmentDialog.beginEnvironmentCreation()
+            /*
             const redirectTarget = `${window.location.pathname}${window.location.search}`
             const pathComponents = window.location.pathname.split("/").slice(0, -2)
             pathComponents[1] = this.getUsername
             pathComponents[2] = USER_HOME_PROJECT
             const url = `${window.origin}${pathComponents.join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
             window.location = url;
+            */
         },
 
         handleClose() {
@@ -394,6 +398,7 @@ export default {
             >
                 <environment-creation-dialog 
                     v-if="creatingEnvironment"
+                    ref="environmentDialog"
                     @environmentNameChange="env => createEnvironmentName = env"
                     @cloudProviderChange="provider => createEnvironmentProvider = provider"
                     />

@@ -1,29 +1,21 @@
 import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
-import {readFileSync, readdirSync} from 'fs'
-import {resolve, dirname} from 'path'
+import {join, resolve} from 'path'
+import {writeLiveRepoFile, readLiveRepoFile} from './utils/db'
+import {getBlueprintJson} from './utils/iterate_projects'
+
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 
-const apolloServerDir = resolve(dirname(import.meta.url.replace('file://', '')))
-const REPOS_DIR = resolve(apolloServerDir, 'repos')
-
-function findDeployment(deploymentAbsolute, db) {
-  let ensembleJSONRaw 
-  const files = db.get('files').value()
-  const lowdbPath = deploymentAbsolute.slice(REPOS_DIR.length + 1) + '/deployment.json'
-  const lowdbFile = files[lowdbPath]
-  if(lowdbFile) return lowdbFile
-  try {
-      ensembleJSONRaw = readFileSync(resolve(deploymentAbsolute, 'ensemble.json'), 'utf-8')
-  } catch(e) {}
-  if(!ensembleJSONRaw) {
-      try {
-          ensembleJSONRaw = readFileSync(resolve(deploymentAbsolute, 'deployment.json'), 'utf-8')
-      } catch (e) {
-        return null;
-      }
-  }
-  return JSON.parse(ensembleJSONRaw)
+function findDeployment(repo, path) {
+  const target = join(repo, path)
+  let ensembleJSONRaw = readLiveRepoFile(
+    target,
+    'deployment.json'
+  ) || readLiveRepoFile(
+    target,
+    'ensemble.json'
+  )
+  return ensembleJSONRaw
 }
 
 export default {
@@ -33,9 +25,11 @@ export default {
   Query: {
   
     applicationBlueprint: (root, args, { db }) => {
-        //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.'
-        // demo/apostrophe-demo
-        return db.get('projects').value()[args.fullPath]
+        //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`'
+        // or demo/apostrophe-demo
+        const REPOS_DIR = resolve(__dirname, 'repos')
+        return getBlueprintJson(REPOS_DIR, args.fullPath, true)
+        // return db.get('projects').value()[args.fullPath]
     },
 
     project(root, args, context) {
@@ -64,8 +58,7 @@ export default {
         Object.entries(deployment_paths).forEach(([key, value]) => {
           const path = key;
           if (value['environment'] == environment.name) {
-            const deploymentAbsolute = resolve(REPOS_DIR, projectPath, path)
-            const deployment = findDeployment(deploymentAbsolute, db)
+            const deployment = findDeployment(projectPath, path)
             if (deployment)
               deployments.push(deployment)
           }
@@ -90,19 +83,20 @@ export default {
       const namespace = root.fullPath || fullPath
       try {
         // get the environments associated with this project
-        const environments = db.get('environments').value()[namespace]['DeploymentEnvironment']
+        const environments = db.get('environments').value()[namespace]
         if (!environments) {
           return [];
         }
         // XXX defaults = db.get('environments').value()[namespace]['defaults']
-        // env_hash['connections'] = defaults.merge(env_hash['connections'] || Hash.new)
-        const result = Object.entries(environments).map(([key, value]) => ({
+        // env_hash['connections'] = defaults.merge(env_hash || Hash.new)
+        const resourceTypes = environments["ResourceType"];
+        const result = Object.entries(environments['DeploymentEnvironment']).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
             name: key,
             state: 'available',
-            clientPayload: value,
-            _project: namespace
+            _project: namespace,
+            clientPayload: { "DeploymentEnvironment": value, "ResourceType": resourceTypes}
         }));
         return result
       } catch (e) {
@@ -129,27 +123,11 @@ export default {
 
   Mutation: {
 
-    /*
-    deleteResourceTemplate: (root, {fullPath, name}, {db}) => {
-      const projectRoot = db.get('projects').value()[fullPath]
-      const {ResourceTemplate} = projectRoot
-      const isOk  = delete ResourceTemplate[name]
-
-      projectRoot.ResourceTemplate = ResourceTemplate
-      db.write()
-      return isOk? name: ''
-    },
-    */
-
-
     updateDeploymentObj(root, {input}, {db}) {
       const {projectPath, patch, path} = input
       const _path = path || 'unfurl.json'
       const _patch = typeof(patch) == 'string'? JSON.parse(patch): patch
-      const identifier = `${projectPath}/${_path}`
-      const files = db.get('files').value()
-      if(!files[identifier]) files[identifier] = {}
-      const patchTarget = files[identifier]
+      const patchTarget = readLiveRepoFile(projectPath, path) || {}
       for(const patchInner of _patch) {
         const typename = patchInner.__typename
         const deleted = patchInner.__deleted
@@ -174,43 +152,8 @@ export default {
         }
         patchTargetInner[patchInner.name] = patchInner
       } 
-      db.write()
+      writeLiveRepoFile(projectPath, path, patchTarget)
       return {isOk: true, errors: []}
-    },
-
-    updateTemplateResource: (root, { input }, { pubsub, db }) => {
-      const { projectPath, title, resourceObject } = input; 
-      const overview = db.get('projects').value()[projectPath];      
-      const index = _.findIndex(overview['templates'], { title });
-      overview['templates'][index]['resource_templates'] = resourceObject;
-      db.write();
-      return {
-          isOk: true,
-          resourceObject,
-          errors: []
-      }
-     },
-  
-    createTemplate: (root, { input }, { pubsub, db }) => { 
-      const { projectPath, template } = input;
-      const overview = db.get('projects').value()[projectPath];
-      const newTemplate = { ...template };
-      newTemplate.resource_templates = template.resourceTemplates;
-      delete newTemplate.resourceTemplates;
-      overview.templates.push(newTemplate);
-      db.write();
-      return overview.templates;
-    },
-
-    removeTemplate: (root, { input }, { pubsub, db }) => {
-      const { projectPath, title } = input;
-      const overview = db.get('projects').value()[projectPath];
-      _.remove(overview['templates'], { title });          
-      db.write();
-      return  {
-        isOk: true,
-        templates: overview["templates"]
-      }
     },
   },
 

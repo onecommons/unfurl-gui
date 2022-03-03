@@ -1,7 +1,17 @@
 <script>
+import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
+import {USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import LogosCloud from './shared/logos_cloud.vue'
+import {token} from '../../vue_shared/compat.js'
+
+const SHORT_NAMES = {
+    'Google Cloud Platform': 'gcp',
+    'Amazon Web Services': 'aws',
+    'None': ''
+}
+
 export default {
     components: {
         GlFormGroup,
@@ -16,8 +26,16 @@ export default {
             cloudProvider: __('Select'),
             environmentsList: [
                 'Google Cloud Platform',
-                'Amazon Web Services'
-            ]
+                'Amazon Web Services',
+                'None',
+            ],
+            SHORT_NAMES,
+            token,
+        }
+    },
+    computed: {
+        action() {
+            return `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments`
         }
     },
     watch: {
@@ -26,6 +44,16 @@ export default {
         },
         cloudProvider() {
             this.$emit('cloudProviderChange', this.cloudProvider)
+        }
+    },
+    methods: {
+        async beginEnvironmentCreation(_redirectTarget) {
+            let redirectTarget = _redirectTarget || window.location.pathname + window.location.search
+            // rails is settings params weird
+            if(!redirectTarget.includes('?')) redirectTarget += '?'
+            const url = `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+            await axios.get(url)
+            this.$refs.form.submit()
         }
     }
 }
@@ -57,5 +85,10 @@ export default {
                 </gl-dropdown-item>
             </gl-dropdown>
         </gl-form-group>
+        <form class="d-none" ref="form" method="POST" :action="action">
+            <input name="authenticity_token" :value="token">
+            <input name="environment[name]" :value="environmentName">
+            <input name="provider" :value="SHORT_NAMES[cloudProvider]">
+        </form>
     </div>
 </template>

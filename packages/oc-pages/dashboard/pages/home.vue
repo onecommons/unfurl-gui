@@ -39,7 +39,7 @@ const fields = [
     {key: 'application', textValue: textValueFromKeys('application.title', 'application.name'), label: 'Applications', s: 'Application'},
     {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
     {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
-    {key: 'type', label: 'Resource Types', s: 'Resource Type'},
+    {key: 'type', groupBy(item) {return item.context.deployment.name + ':' + item.context.type}, label: 'Resource Types', s: 'Resource Type'},
     {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource'},
 ];
 
@@ -63,6 +63,7 @@ export default {
             'environmentsCount',
             'applicationsCount',
         ]),
+        tableItems() { return this.getDashboardItems.filter(item => item.application) }
     },
 };
 
@@ -101,7 +102,7 @@ export default {
                 color="#fff4f4"/>
         </div>
     </div>
-    <TableComponent :items="getDashboardItems" :fields="fields">
+    <TableComponent :items="tableItems" :fields="fields">
     <template #application="scope">
         <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}">
             <div class="status-item">

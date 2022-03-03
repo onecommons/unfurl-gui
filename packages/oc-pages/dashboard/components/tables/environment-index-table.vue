@@ -8,7 +8,7 @@ import * as routes from '../../router/constants'
 import {textValueFromKeys} from '../../dashboard-utils'
 
 function deploymentGroupBy(item) {
-    const result = `${item.deployment.name}:${item.application.name}`
+    const result = `${item.deployment?.name}:${item.application?.name}`
     return result
 }
 
@@ -54,7 +54,7 @@ export default {
             {
                 key: 'status',
                 groupBy: deploymentGroupBy,
-                textValue: (item) => item.deployment.statuses.map(resource => resource.name).join(' '),
+                textValue: (item) => (item.deployment?.statuses || []).map(resource => resource.name).join(' '),
                 label: 'Status'
             },
         ]
@@ -74,7 +74,7 @@ export default {
             </div>
         </template>
         <template #status="scope">
-            <div class="d-flex justify-content-center" style="left: 7px; 2px;">
+            <div v-if="scope.item.context.deployment" class="d-flex justify-content-center" style="left: 7px; 2px;">
                 <StatusIcon :size="18" :key="status.name" v-for="status in scope.item.context.deployment.statuses" :status="status.status" />
             </div>
         </template>

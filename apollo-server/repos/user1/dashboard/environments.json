@@ -10,47 +10,17 @@
           "description": "",
           "properties": [],
           "dependencies": []
-        },
-        "sendgrid": {
+        }
+      },
+      "instances": {
+        "SendGrid": {
           "type": "SendGrid",
-          "name": "sendgrid",
-          "title": "sendgrid",
-          "description": "SendGrid Mail Delivery Service",
-          "properties": [],
-          "dependencies": []
+          "name": "SendGrid",
+          "title": "SendGrid"
         }
       },
       "primary_provider": {
         "type": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
-        "name": "primary_provider",
-        "title": "primary_provider",
-        "description": "",
-        "properties": [],
-        "dependencies": []
-      }
-    },
-    "staging-aws": {
-      "name": "staging-aws",
-      "connections": {
-        "primary_provider": {
-          "type": "unfurl.relationships.ConnectsTo.AWSAccount",
-          "name": "primary_provider",
-          "title": "primary_provider",
-          "description": "",
-          "properties": [],
-          "dependencies": []
-        },
-        "sendgrid": {
-          "type": "SendGrid",
-          "name": "sendgrid",
-          "title": "sendgrid",
-          "description": "SendGrid Mail Delivery Service",
-          "properties": [],
-          "dependencies": []
-        }
-      },
-      "primary_provider": {
-        "type": "unfurl.relationships.ConnectsTo.AWSAccount",
         "name": "primary_provider",
         "title": "primary_provider",
         "description": "",
@@ -112,6 +82,7 @@
       ]
     },
     "SendGrid": {
+      "type": "SendGrid",
       "name": "SendGrid",
       "title": "SendGrid",
       "description": "",
@@ -149,6 +120,11 @@
   },
   "DeploymentPath": {
     "environments/production-gcp/apostrophe-demo-gcp": {
+      "environment": "production-gcp"
+    },
+    "environments/production-gcp/apostrophe-demo/google-cloud-platform-1": {
+      "name": "environments/production-gcp/apostrophe-demo/google-cloud-platform-1",
+      "__typename": "DeploymentPath",
       "environment": "production-gcp"
     }
   }

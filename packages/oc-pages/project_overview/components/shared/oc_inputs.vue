@@ -1,11 +1,10 @@
 <script>
-import {GlTabs, GlTab, GlIcon, GlFormGroup, GlFormInput} from '@gitlab/ui';
-import {debounce} from 'lodash';
+import _ from 'lodash';
 import {bus} from '../../bus';
 import {__} from '~/locale';
 import {mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormItem, Input} from "@formily/element";
+import {FormItem, Input, InputNumber, Checkbox, Select, Password, Editable} from "@formily/element";
 import {createForm, onFieldValueChange} from "@formily/core";
 import {updatePropertyInResourceTemplate} from '../../store/modules/deployment_template_updates.js'
 
@@ -26,7 +25,6 @@ const ValidationFunctions = {
     if(typeof value == 'string' && value.length == 0) return false
     return !input.required || !isNaN(value)
   }
-
 }
 
 function validateInput(input, value) {
@@ -37,10 +35,27 @@ function validateInput(input, value) {
   return false
 }
 
+const SerializationFunctions = {
+  number(input, value) {
+    return parseInt(value)
+  }
+}
+function serializeInput(input, value) {
+  if(input?.type) {
+    const serializer = SerializationFunctions[input.type]
+    if(typeof serializer == 'function') {
+      return serializer(input, value)
+    }
+  }
+
+  return value
+}
+
 const fields = createSchemaField({
   components: {
     FormItem,
-    Input
+    Input,
+    InputNumber, Checkbox, Select, Password, Editable
   }
 })
 
@@ -48,9 +63,6 @@ const fields = createSchemaField({
 export default {
   name: 'OcInputs',
   components: {
-    GlTabs,
-    GlTab,
-    GlIcon,
     // GlFormGroup,
     // GlFormInput,
     FormProvider,
@@ -71,11 +83,11 @@ export default {
       type: Array,
       required: true
     },
-    */
     componentKey: {
       type: Number,
       required: true
     }
+    */
   },
 
   computed: {
@@ -89,6 +101,7 @@ export default {
         templateProperties = this.card.properties
       }
       catch(e) { return result }
+      if(! templateProperties) return []
       for (const property of templateProperties) {
         try{
           const next = {...property, ...fromSchema[property.name]}
@@ -109,26 +122,10 @@ export default {
     },
 
     schema() {
-      const result =  {
+      return {
         type: this.card?.type?.inputsSchema?.type,
-        properties: this.mainInputs?.reduce((previousValue, currentValue, currentIndex, array) => {
-          //const title = `${currentValue.title}${currentIndex}${this.componentKey}${this.getRandomKey(7)}-template`;
-          const title = currentValue.name
-          previousValue[title] = {
-            type: 'string',//currentValue.type,
-            title: currentValue.title,
-            'x-decorator': 'FormItem',
-            'x-component': 'Input',//ComponentMap[currentValue.type],
-            'description': currentValue.instructions,
-            'x-data': currentValue,
-            'x-component-props': {
-              placeholder: currentValue.title,
-            },
-          }
-          return previousValue;
-        }, {}),
+        properties: this.convertProperties(this.resolveResourceType(this.card.type).inputsSchema?.properties || {}),
       }
-      return result
     },
 
     form() {
@@ -147,65 +144,50 @@ export default {
     ...mapMutations([
       'pushPreparedMutation', 'setInputValidStatus'
     ]),
+
     convertProperties(properties) {
-      const temp = {};
-      Object.keys(properties).forEach(i => {
-        //default string
-        let componentType = properties[i].type || 'string';
-        // Special Handle Enum
-        if (componentType === 'object') {
-          temp[i] = {
-            type: componentType,
-            title: i,
-            'x-decorator': 'FormItem',
-            'x-component': ComponentMap[i],
-            'x-component-props': {
-              title: i,
-            },
-            properties: this.convertProperties(properties[i].properties),
-          };
+      return _.mapValues(properties, (value, name) => {
+        const currentValue = {...value};
+        // console.log('prop', name, currentValue);
+        if (!currentValue.type) {
+          currentValue.type = 'string'
+        }
+        currentValue.title = currentValue.title ?? name;
+        currentValue['x-decorator'] = 'FormItem'
+        currentValue['x-data'] = value
+        currentValue['x-component-props'] = {
+            placeholder: currentValue.title,
+        }
+        let componentType = currentValue.type;
+        if (componentType === 'object' && currentValue.properties) {
+          currentValue.properties = this.convertProperties(currentValue.properties)
         } else {
-          // json type is no enum filed,so containing enum fields is render Select;
-          if (properties[i].enum) {
+          if (currentValue.enum) {
             componentType = 'enum';
-          } else if (properties[i].sensitive) {
+          } else if (currentValue.sensitive) {
             componentType = 'password';
           }
-          temp[i] = {
-            type: properties[i].type || 'string',
-            title: i,
-            'x-decorator': 'FormItem',
-            'x-component': ComponentMap[componentType],
-          };
-
-          if (componentType === 'enum') {
-            temp[i].enum = properties[i].enum;
-          }
-
-          if (properties[i].default) {
-            temp[i].default = properties[i].default;
-          }
-
-          if (properties[i].const === null) {
-            temp[i]['x-hidden'] = true;
-          }
-
-          if (properties[i].const === 'readonly') {
-            temp[i]['x-read-only'] = true;
+          if (currentValue.const === null) {
+            currentValue['x-hidden'] = true;
+          } else if (currentValue.const === 'readonly') {
+            currentValue['x-read-only'] = true;
           }
         }
+        currentValue['x-component'] = ComponentMap[componentType]
+        return currentValue;
       });
-      return temp;
     },
 
     updateFieldValidation(field, value) {
       this.setInputValidStatus({card: this.card, input: field, status: validateInput(field, value)})
     },
 
-    triggerSave: debounce(function preview(field, value) {
+    triggerSave: _.debounce(function preview(field, value) {
       this.updateFieldValidation(field, value)
+      const propertyValue = serializeInput(field, value)
+
       this.pushPreparedMutation(
-        updatePropertyInResourceTemplate({templateName: this.card.name, propertyName: field.title, propertyValue: value})
+        updatePropertyInResourceTemplate({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.title, propertyValue, isSensitive: field.sensitive})
       )
     }, 200),
 
@@ -216,13 +198,9 @@ export default {
 }
 </script>
 <template>
-  <div data-testid="oc_inputs">
-    <gl-tabs v-if="mainInputs.length > 0">
-      <gl-tab>
-        <template slot="title">
-
-          <span>{{ tabsTitle }}</span>
-          <gl-icon
+  <div style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+    
+          <!--gl-icon
               :size="14"
               :class="{
                             'icon-green':
@@ -235,9 +213,7 @@ export default {
                             cardInputsAreValid(card)
                                 ? 'check-circle-filled'
                                 : 'warning-solid'
-                        "/>
-        </template>
-
+                        "/-->
         <FormProvider :form="form">
           <SchemaField :schema="schema"/>
         </FormProvider>
@@ -256,7 +232,5 @@ export default {
         <!--              @keyup="checkInputsInline(); triggerSave()"-->
         <!--          />-->
         <!--        </gl-form-group>-->
-      </gl-tab>
-    </gl-tabs>
   </div>
 </template>

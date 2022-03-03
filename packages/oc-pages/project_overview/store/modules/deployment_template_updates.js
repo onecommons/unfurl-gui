@@ -2,9 +2,12 @@ import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
+import axios from '~/lib/utils/axios_utils'
 import {slugify} from '../../../vue_shared/util.mjs'
 import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
 import {userDefaultPath} from '../../../vue_shared/util.mjs'
+import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import {patchEnv} from '../../../vue_shared/client_utils/envvars'
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(!args.length) return
@@ -25,12 +28,19 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(data?.data?.errors?.length) throw new Error(data.data.errors)
 }
 
-export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue}) {
+export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, isSensitive, deploymentName}) {
     return function(accumulator) {
+        let _propertyValue = propertyValue
+        let env
+        if(isSensitive) {
+            _propertyValue = `$${deploymentName}__${templateName}__${propertyName}`
+            env = {[_propertyValue]: propertyValue}
+            env = {[_propertyValue+'2']: propertyValue}
+        }
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
-        property.value = propertyValue
-        return [ {typename: 'ResourceTemplate', target: templateName, patch} ]
+        property.value = _propertyValue
+        return [ {typename: 'ResourceTemplate', target: templateName, patch, env} ]
     }
 }
 
@@ -232,7 +242,8 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
 const state = {
     preparedMutations: [],
     accumulator: {},
-    patches: {}
+    patches: {},
+    env: {}
 }
 
 const getters = {
@@ -255,6 +266,9 @@ const mutations = {
         }
         state.projectPath = projectPath
     },
+    setEnvironmentScope(state, environmentScope) {
+        state.environmentScope = environmentScope
+    },
     pushPreparedMutation(state, preparedMutation) {
         state.preparedMutations.push(preparedMutation)
     },
@@ -267,9 +281,12 @@ const mutations = {
                 }
                 return
             }
-            const {typename, target, patch} = patchDefinition
+            const {typename, target, patch, env} = patchDefinition
             if(!state.accumulator[typename]) state.accumulator[typename] = {}
             if(!state.patches[typename]) state.patches[typename] = {}
+            if(env) {
+                Object.assign(state.env, env)
+            }
 
             state.patches[typename][target] = patch
             state.accumulator[typename][target] = patch
@@ -284,9 +301,11 @@ const mutations = {
     resetStagedChanges(state, o) {
         state.accumulator = {}
         state.patches = {}
+        state.env = {}
         if(!o?.dryRun) {
             state.path = undefined
             state.projectPath = undefined
+            state.environmentScope = undefined
         }
     },
     setBaseState(state, baseState) {
@@ -313,6 +332,7 @@ const actions = {
                 applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client
             }
         `
+        if(!rootState.project?.project?.globalVars?.projectPath) return
         const {data, errors} = await graphqlClient.clients.defaultClient.query({
             query,
             variables: {fullPath: rootState.project.globalVars.projectPath}
@@ -343,12 +363,16 @@ const actions = {
 
         if(o?.dryRun) {
             console.log(variables)
+            if(Object.keys(state.env)) console.log(state.env)
+            return
         }
         await graphqlClient.clients.defaultClient.mutate({
             mutation: UpdateDeploymentObject,
             variables
         })
 
+        
+        await patchEnv(state.env, state.environmentScope)
     },
 
     async commitPreparedMutations({state, dispatch, commit}, o) {

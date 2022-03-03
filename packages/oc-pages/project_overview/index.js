@@ -30,7 +30,10 @@ export default (elemId='js-oc-project-overview') => {
     linkDeployment,
   } = element.dataset;
 
-  const router = createRouter(projectPath);
+  const base = window.location.pathname.includes('/-/overview') ?
+    `${projectPath}/-/overview` : projectPath
+
+  const router = createRouter(base);
 
   Vue.prototype.$projectGlobal = {
     projectPath,

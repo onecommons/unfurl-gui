@@ -83,11 +83,12 @@ export default {
       'getDeploymentTemplate',
       'getDependencies',
       'hasPreparedMutations',
-      'matchIsValid',
-      'resolveMatchTitle',
+      'requirementMatchIsValid',
+      'resolveRequirementMatchTitle',
       'cardIsValid',
       'getUsername',
       'getHomeProjectPath',
+      'getCurrentEnvironment',
       'getValidResourceTypes',
       'getValidConnections',
       'getHomeProjectPath',
@@ -215,7 +216,7 @@ export default {
     },
 
     resourceName: function(val) {
-      this.alertNameExists = this.matchIsValid(slugify(val));
+      this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     }
   },
 
@@ -251,7 +252,7 @@ export default {
       this.deleteNodeData = obj;
       this.nodeAction = obj.action? obj.action : __('Delete');
         
-      this.nodeTitle = this.resolveMatchTitle(obj.name);
+      this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
       this.launchModal('oc-delete-node', 500);
     });
   },
@@ -284,6 +285,7 @@ export default {
       'onApplicationBlueprintLoaded',
       'setUpdateObjectPath',
       'setUpdateObjectProjectPath',
+      'setEnvironmentScope',
       'pushPreparedMutation'
     ]),
     ...mapActions([
@@ -355,10 +357,11 @@ export default {
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
+        const environment = this.$route.params.environment
         if(this.$route.name != 'templatePage') {
           this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
-
+          this.setEnvironmentScope(environment)
         }
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
@@ -564,10 +567,11 @@ export default {
               :template-dependencies="getDependencies(getPrimaryCard.name)"
               :level="1"
               :show-type-first="true"
+              :render-inputs="false"
               :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">
-              <div class="gl-pl-6 gl-pr-6">
+              <div>
                 <oc-card
                   v-for="(card, idx) in getCardsStacked"
                   :key="__('levelOne-') + card.title"
@@ -575,8 +579,8 @@ export default {
                   :card="card"
                   :badge-header="{ isActive: true, text: card.type }"
                   :icon-title="true"
-                  :icon-color="card.status ? 'icon-green' : 'icon-red'"
-                  :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
+                  :icon-color="card.valid ? 'icon-green' : 'icon-red'"
+                  :icon-name="card.valid ? 'check-circle-filled' : 'warning-solid'"
                   :actions="true"
                   :level="idx"
                   class="gl-mt-6">
@@ -590,6 +594,7 @@ export default {
                       :level="idx"
                       :title-key="card.title"
                       :show-type-first="true" 
+                      :render-inputs="false"
                       :card="card"
                       />
 
@@ -630,9 +635,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-            <!--oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate)"/>
-            <!--oc-list-resource  @input="e => selected = e" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="filteredResourceByType" :cloud="getTemplate.cloud" /-->
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
@@ -664,9 +667,6 @@ export default {
         :action-cancel="cancelProps"
         @primary="onSubmitModalConnect"
       >
-        <!-- <p v-if="getServicesToConnect.length > 0">{{ `Select a ${getNameResourceModal} instance to connect.`}}</p>
-        <p v-else class="gl-mb-4">{{ `Not resources availabe for  ${getNameResourceModal} .`}}</p> -->
-        <!--oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="getServicesToConnect" :cloud="getTemplate.cloud" /-->
         <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidConnections($route.params.environment, getRequirementSelected.requirement)"/>
       </gl-modal>
 

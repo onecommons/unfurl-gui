@@ -42,7 +42,19 @@ module.exports = {
         ignorePath: true,
         protocolRewrite: process.env.SSL_PROXY,
       })
+
+      const postProxy = httpProxyMiddleware(
+        function(_, req) {
+          return req.method == 'POST'
+        },
+        {
+          target: 'http://localhost:4000',
+          changeOrigin: true,
+          protocolRewrite: process.env.SSL_PROXY
+        }
+      )
       app.use(proxy)
+      app.use(postProxy)
     }
     
   },
@@ -59,18 +71,14 @@ module.exports = {
       symlinks: false
     },    
     module: {
-      /*
-      * I'm not sure if these rules are necessary to fix the compiler errors we were having,
-      * but I'm paranoid, so I added them anyway.
-      */
       rules: [
         {
           test: /\.js$/,
           exclude: /node_modules/,
-          loader: 'eslint-loader',
-          options: {
-            // eslint options (if necessary)
-          },
+          use: [
+            'eslint-loader',
+            'webpack-preprocessor-loader',
+          ]
         },
         {
           test: /\.ts$/,

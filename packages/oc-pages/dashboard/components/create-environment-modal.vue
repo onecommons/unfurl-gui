@@ -25,17 +25,15 @@ export default {
         }
     },
     methods: {
-        redirectToNewEnvironment() {
-            const redirectTarget = `${window.location.pathname}${window.location.search}`
-            const url = `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
-            window.location.href = url
+        async redirectToNewEnvironment(e) {
+            e.preventDefault()
+            await this.$refs.environmentDialog.beginEnvironmentCreation(`/dashboard/environments/${this.$refs.environmentDialog.environmentName}`)
         },
-        onModalChange(e) { this.$emit('change', e) }
     }
 }
 </script>
 <template>
-    <gl-modal modalId="create-env-modal" :visible="visible" @change="onModalChange" :title="s__('OcDeployments|Create New Environment')" :action-cancel="{text: __('Cancel')}" :action-primary="{text: __('Next'), attributes: {disabled: disablePrimary, variant: 'confirm'}}" @primary="redirectToNewEnvironment">
-        <environment-creation-dialog @cloudProviderChange="cp => this.cp = cp" @environmentNameChange="env => this.env = env"/>
+    <gl-modal modalId="create-env-modal" :visible="visible" @hidden="$emit('change', false)" :title="s__('OcDeployments|Create New Environment')" :action-cancel="{text: __('Cancel')}" :action-primary="{text: __('Next'), attributes: {disabled: disablePrimary, variant: 'confirm'}}" @primary="redirectToNewEnvironment">
+        <environment-creation-dialog ref="environmentDialog" @cloudProviderChange="cp => this.cp = cp" @environmentNameChange="env => this.env = env"/>
     </gl-modal>
 </template>
