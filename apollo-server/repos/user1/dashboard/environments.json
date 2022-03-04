@@ -165,7 +165,7 @@
       },
       "requirements": [],
       "implementations": [
-        "configure"
+        "discover"
       ],
       "implementation_requirements": []
     },
