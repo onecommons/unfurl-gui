@@ -12,13 +12,6 @@
           "dependencies": []
         }
       },
-      "instances": {
-        "SendGrid": {
-          "type": "SendGrid",
-          "name": "SendGrid",
-          "title": "SendGrid"
-        }
-      },
       "primary_provider": {
         "type": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
         "name": "primary_provider",
@@ -26,7 +19,77 @@
         "description": "",
         "properties": [],
         "dependencies": []
+      },
+      "instances": {
+        "sendgrid": {
+        "type": "SendGrid",
+        "name": "sendgrid",
+        "title": "sendgrid",
+        "description": "SendGrid Mail Delivery Service",
+        "properties": [],
+        "dependencies": []
+        }
       }
+    },
+    "staging-aws": {
+      "name": "staging-aws",
+      "connections": {
+        "primary_provider": {
+          "type": "unfurl.relationships.ConnectsTo.AWSAccount",
+          "name": "primary_provider",
+          "title": "primary_provider",
+          "description": "",
+          "properties": [],
+          "dependencies": []
+        },
+        "sendgrid": {
+          "type": "SendGrid",
+          "name": "sendgrid",
+          "title": "sendgrid",
+          "description": "SendGrid Mail Delivery Service",
+          "properties": [],
+          "dependencies": []
+        }
+      },
+      "primary_provider": {
+        "type": "unfurl.relationships.ConnectsTo.AWSAccount",
+        "name": "primary_provider",
+        "title": "primary_provider",
+        "description": "",
+        "properties": [],
+        "dependencies": []
+      },
+      "instances": {}
+    },
+    "home": {
+      "name": "home",
+      "connections": {
+        "sendgrid": {
+          "type": "SendGrid",
+          "name": "sendgrid",
+          "title": "sendgrid",
+          "description": "SendGrid Mail Delivery Service",
+          "properties": [],
+          "dependencies": []
+        }
+      },
+      "primary_provider": null,
+      "instances": {}
+    },
+    "testing": {
+      "name": "testing",
+      "connections": {
+        "sendgrid": {
+          "type": "SendGrid",
+          "name": "sendgrid",
+          "title": "sendgrid",
+          "description": "SendGrid Mail Delivery Service",
+          "properties": [],
+          "dependencies": []
+        }
+      },
+      "primary_provider": null,
+      "instances": {}
     }
   },
   "ResourceType": {
@@ -82,7 +145,6 @@
       ]
     },
     "SendGrid": {
-      "type": "SendGrid",
       "name": "SendGrid",
       "title": "SendGrid",
       "description": "",
@@ -93,8 +155,19 @@
       "extends": [
         "SendGrid",
         "Mail",
-        "tosca.relationships.Root"
-      ]
+        "tosca.nodes.Root",
+        "tosca.capabilities.Node",
+        "tosca.capabilities.Root"
+      ],
+      "outputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "requirements": [],
+      "implementations": [
+        "configure"
+      ],
+      "implementation_requirements": []
     },
     "unfurl.relationships.ConnectsTo.AWSAccount": {
       "name": "unfurl.relationships.ConnectsTo.AWSAccount",
@@ -118,14 +191,14 @@
       ]
     }
   },
-  "DeploymentPath": {
-    "environments/production-gcp/apostrophe-demo-gcp": {
-      "environment": "production-gcp"
-    },
-    "environments/production-gcp/apostrophe-demo/google-cloud-platform-1": {
-      "name": "environments/production-gcp/apostrophe-demo/google-cloud-platform-1",
-      "__typename": "DeploymentPath",
-      "environment": "production-gcp"
-    }
-  }
+   "DeploymentPath": {
+      "environments/production-gcp/apostrophe-demo-gcp": {
+       "environment": "production-gcp"
+      },
+       "environments/production-gcp/apostrophe-demo/google-cloud-platform-1": {
+         "name": "environments/production-gcp/apostrophe-demo/google-cloud-platform-1",
+         "__typename": "DeploymentPath",
+         "environment": "production-gcp"
+     } 
+  } 
 }

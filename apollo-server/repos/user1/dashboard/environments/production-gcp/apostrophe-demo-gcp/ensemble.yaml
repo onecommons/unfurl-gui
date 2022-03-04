@@ -1,6 +1,6 @@
 apiVersion: unfurl/v1alpha1
 kind: Ensemble
-+include: ../../../../../blueprints/apostrophe-demo/ensemble-template.yaml
++include: ../../../../../testing/apostrophe-demo/ensemble-template.yaml
 spec:
   service_template:
     topology_template:
