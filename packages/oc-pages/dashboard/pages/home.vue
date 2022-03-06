@@ -3,7 +3,7 @@ import TableComponent from '../../vue_shared/components/oc/table.vue';
 
 //TODO use components/cells wherever possible
 import StatusIcon from '../../vue_shared/components/oc/Status.vue';
-import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
+//import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
 import QuantityCard from '../components/quantity-card.vue'
 import ProjectIcon from '../../vue_shared/components/oc/project-icon.vue'
 //
@@ -45,7 +45,7 @@ const fields = [
 
 export default {
     name: 'TableComponentContainer',
-    components: {TableComponent, StatusIcon, LogosCloud, QuantityCard, ProjectIcon, DashboardBreadcrumbs},
+    components: {TableComponent, StatusIcon, QuantityCard, ProjectIcon, DashboardBreadcrumbs},
     data() {
         return { 
             routes,
@@ -111,10 +111,11 @@ export default {
             </div>
         </router-link>
     </template>
+    <!-- TODO use environment cell -->
     <template #environment="scope">
         <router-link :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: scope.item.context.environment.name}}">
             <div class="status-item">
-                <logos-cloud :small=true :cloud="scope.item.context.environment.primary_provider.type"/> 
+                <!--logos-cloud :small=true :cloud="scope.item.context.environment.primary_provider.type"/--> 
                 {{scope.item.context.environment.name}}
             </div>
         </router-link>

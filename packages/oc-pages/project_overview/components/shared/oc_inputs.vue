@@ -2,11 +2,10 @@
 import _ from 'lodash';
 import {bus} from '../../bus';
 import {__} from '~/locale';
-import {mapMutations, mapGetters} from 'vuex'
+import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormItem, Input, InputNumber, Checkbox, Select, Password, Editable} from "@formily/element";
 import {createForm, onFieldValueChange} from "@formily/core";
-import {updatePropertyInResourceTemplate} from '../../store/modules/deployment_template_updates.js'
 
 const ComponentMap = {
   string: 'Input',
@@ -29,6 +28,7 @@ const ValidationFunctions = {
 
 function validateInput(input, value) {
   if(input?.type) {
+    if(typeof ValidationFunctions[input.type] != 'function') return true
     const result = ValidationFunctions[input.type](input, value)
     return result
   }
@@ -91,13 +91,13 @@ export default {
   },
 
   computed: {
-    ...mapGetters(['resolveResourceType', 'cardInputsAreValid']),
+    ...mapGetters(['resolveResourceTypeFromAvailable', 'cardInputsAreValid']),
 
     mainInputs() {
       const result = []
       let fromSchema, templateProperties
       try {
-        fromSchema = this.resolveResourceType(this.card.type).inputsSchema.properties
+        fromSchema = this.resolveResourceTypeFromAvailable(this.card.type).inputsSchema.properties
         templateProperties = this.card.properties
       }
       catch(e) { return result }
@@ -121,10 +121,14 @@ export default {
       return result
     },
 
+    cardType() {
+      return this.resolveResourceTypeFromAvailable(this.card?.type)
+    },
+
     schema() {
       return {
-        type: this.card?.type?.inputsSchema?.type,
-        properties: this.convertProperties(this.resolveResourceType(this.card.type).inputsSchema?.properties || {}),
+        type: this.cardType?.inputsSchema?.type,
+        properties: this.convertProperties(this.cardType?.inputsSchema?.properties || {}),
       }
     },
 
@@ -132,7 +136,8 @@ export default {
       return createForm({
         initialValues: this.initialFormValues,
         effects: () => {
-          onFieldValueChange('*', async (field) => {
+          onFieldValueChange('*', async (field, ...args) => {
+            if(!field.modified) return
             this.triggerSave(field.data, field.value);
           })
         }
@@ -144,11 +149,12 @@ export default {
     ...mapMutations([
       'pushPreparedMutation', 'setInputValidStatus'
     ]),
-
+    ...mapActions([
+      'updateProperty'
+    ]),
     convertProperties(properties) {
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value};
-        // console.log('prop', name, currentValue);
         if (!currentValue.type) {
           currentValue.type = 'string'
         }
@@ -185,10 +191,7 @@ export default {
     triggerSave: _.debounce(function preview(field, value) {
       this.updateFieldValidation(field, value)
       const propertyValue = serializeInput(field, value)
-
-      this.pushPreparedMutation(
-        updatePropertyInResourceTemplate({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.title, propertyValue, isSensitive: field.sensitive})
-      )
+      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.title, propertyValue, isSensitive: field.sensitive})
     }, 200),
 
     getRandomKey(length) {

@@ -12,37 +12,19 @@ export default {
     },
 
     data() {
-      return {
-        value: {}
-      };
+        return {}
     },
 
     props: {
-      /*
-        filteredResourceByType: {
-            type: Array,
-            required: true,
-        },
-        */
         validResourceTypes: {
           type: Array,
           required: true
         },
-        /*
         value: {
             type: [Object, String],
-            required: true,
-        },
-        */
-        nameOfResource: {
-            type: String,
-            required: true,
-        },
-        cloud: {
-            type: String,
             required: false,
+            default: () => ''
         },
-
     },
 
     computed: {
@@ -64,14 +46,6 @@ export default {
 </script>
 <template>
     <div>
-        <!--p>
-        {{
-            filteredResourceByType.length > 0
-            ? __('Choose one of these options')
-            : __('Does not exist template for')
-        }}
-        {{ nameOfResource }}
-        </p-->
         <div class="ci-table" role="grid">
         <div
             v-for="(resource, idx) in validResourceTypes"

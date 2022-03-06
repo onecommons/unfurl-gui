@@ -13,9 +13,11 @@ const httpProxyMiddleware = require('http-proxy-middleware');
 const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || "https://unfurl.cloud"
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 const fullname = process.env.UNFURL_CLOUD_FULLNAME || "Unfurl Cloud Craftsman"
+// TODO fix this
+const projectPath = `${username}/dashboard`
 
 const projectPages = {}
-const unfurlGUIBase = {unfurlCloudBaseUrl, username, fullname}
+const unfurlGUIBase = {unfurlCloudBaseUrl, username, fullname, projectPath}
 const projectPageBase = {
   entry: "src/pages/project_overview/index.js",
   template: 'public/demo.html',

@@ -42,7 +42,7 @@ export default {
     deployments: (root, args, { db, fullPath }) => {
       const projectPath = fullPath
       const environment = root;
-      const environments = db.get('environments').value()[environment._project]
+      const environments = readLiveRepoFile(projectPath, 'environments.json')
       if (!environments) {
         return [];
       }
@@ -83,7 +83,8 @@ export default {
       const namespace = root.fullPath || fullPath
       try {
         // get the environments associated with this project
-        const environments = db.get('environments').value()[namespace]
+        const environments = readLiveRepoFile(fullPath, 'environments.json')
+
         if (!environments) {
           return [];
         }
@@ -146,12 +147,13 @@ export default {
               delete patchTarget[typename]
             }
           } else {
-            delete patchTarget[deleted]
+            delete patchTarget[typename][deleted]
           }
           continue
         }
         patchTargetInner[patchInner.name] = patchInner
       } 
+      
       writeLiveRepoFile(projectPath, path, patchTarget)
       return {isOk: true, errors: []}
     },

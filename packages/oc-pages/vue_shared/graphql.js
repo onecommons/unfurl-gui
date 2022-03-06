@@ -239,7 +239,8 @@ export const resolvers = {
     },
   
     Environment: {
-        deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, {indexTypename: true, setContext: true})
+        deploymentEnvironment: makeClientResolver('DeploymentEnvironment', 'clientPayload', null, {indexTypename: true, setContext: true}),
+        ResourceType: makeClientResolver('ResourceType', 'clientPayload', null, {targetIsDictionary: true})
     },
 
     DeploymentEnvironment: {

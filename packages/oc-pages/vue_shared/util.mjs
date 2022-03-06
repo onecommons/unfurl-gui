@@ -4,11 +4,8 @@ export function slugify(text) {
         .toLowerCase()
         .normalize('NFD')
         .trim()
-        .replace(/\s+/g, '-')
-    // eslint-disable-next-line no-useless-escape
+        .replace(/(\-\-+|_|\s+)/g, '-')
         .replace(/[^\w\-]+/g, '')
-    // eslint-disable-next-line no-useless-escape
-        .replace(/\-\-+/g, '-');
 }
 
 export const USER_HOME_PROJECT = 'dashboard';

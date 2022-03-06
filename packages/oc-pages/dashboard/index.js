@@ -11,6 +11,7 @@ const router = createRouter()
 
 export default (elemId='js-table-component') => {
     const element = document.getElementById(elemId);
+    window.gon = {...window.gon, ...element.dataset}
 
     const result = new Vue({
         el: element,

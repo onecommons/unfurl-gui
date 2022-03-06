@@ -22,6 +22,7 @@ export default {
         mergeStatus: {type: String, default: () => 'disabled'},
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
+        target: {type: String, default: () => 'template'}
 
     },
 
@@ -49,7 +50,7 @@ export default {
 }
 </script>
 <template>
-    <div class="gl-mt-6 gl-mb-6 d-flex justify-content-between">
+    <div class="gl-mt-6 gl-mb-6 d-flex justify-content-end">
         <div>
             <gl-button
                 v-show="mergeStatus != 'hidden'"
@@ -62,18 +63,6 @@ export default {
                 >{{ __('Merge Request') }}</gl-button
             >
             <gl-button
-                v-show="saveStatus != 'hidden'"
-                data-testid="save-template-btn"
-                title="Save Template"
-                :aria-label="__(`Save Template`)"
-                type="button"
-                icon="doc-new"
-                :disabled="saveStatus == 'disabled'"
-                class="gl-mr-3"
-                @click.prevent="saveTemplate"
-                >{{ __('Save Template') }}</gl-button
-            >
-            <gl-button
                 v-show="deleteStatus != 'hidden'"
                 title="Delete Template"
                 :aria-label="__(`Delete Template`)"
@@ -82,7 +71,7 @@ export default {
                 :disabled="deleteStatus == 'disabled'"
                 class="gl-mr-3"
                 @click.prevent="launchModalDeleteTemplate"
-                >{{ __('Delete Template') }}</gl-button
+                >{{ __(`Delete ${target}`) }}</gl-button
             >
             <gl-button
                 v-show="cancelStatus != 'hidden'"
@@ -94,6 +83,19 @@ export default {
                 @click.prevent="cancelDeployment"
                 >{{ __('Cancel Deployment') }}
             </gl-button>
+            <gl-button
+                v-show="saveStatus != 'hidden'"
+                data-testid="save-template-btn"
+                title="Save Changes"
+                :aria-label="__(`Save Changes`)"
+                type="button"
+                variant="confirm"
+                icon="doc-new"
+                :disabled="saveStatus == 'disabled'"
+                class="gl-mr-3"
+                @click.prevent="saveTemplate"
+                >{{ __('Save Changes') }}</gl-button
+            >
         </div>
         <div>
             <gl-button
