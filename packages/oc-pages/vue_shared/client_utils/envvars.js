@@ -24,14 +24,19 @@ export async function patchEnv(env, environmentScope) {
 
     const variablesEndpoint = `/${window.gon.current_username}/${USER_HOME_PROJECT}/-/variables`
 
-    if(envPatch.length) {
-        const currentVars = (await axios.get(variablesEndpoint)).data.variables
-        for(const currentVar of currentVars) {
-            const existingVar = envPatch.find(newVar => newVar.key == currentVar.key)
-            if(existingVar) {
-                existingVar.id = currentVar.id
+    if(window.gon.unfurl_gui) {
+        console.log({envPatch})
+    } else {
+        if(envPatch.length) {
+            const currentVars = (await axios.get(variablesEndpoint)).data.variables
+            for(const currentVar of currentVars) {
+                const existingVar = envPatch.find(newVar => newVar.key == currentVar.key)
+                if(existingVar) {
+                    existingVar.id = currentVar.id
+                }
             }
+            await axios.patch(variablesEndpoint, {variables_attributes: envPatch})
         }
-        await axios.patch(variablesEndpoint, {variables_attributes: envPatch})
     }
+
 }

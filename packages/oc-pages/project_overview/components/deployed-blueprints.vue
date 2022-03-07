@@ -41,15 +41,22 @@ export default {
             <div class="row m-2">
                 <div class="col-md-4">
                     <router-link to="#"><div> {{blueprint.title}} </div></router-link>
-                    <div> {{blueprint.description}}</div>
+                    <!-- TODO put this back -->
+                    <!--div> {{blueprint.description}}</div-->
                 </div>
                 <div class="col-md-4">
                     {{displayCloudProvider(blueprint.cloud)}}
                 </div>
-                <div class="col-md-4">
-                    <router-link to="#"> <gl-icon name="upload" /> 0 Deployments </router-link>
 
+                <!-- TODO remove this -->
+                <div class="col-md-4">
+                    {{blueprint.description}}
                 </div>
+
+                <!-- TODO put this back -->
+                <!--div class="col-md-4">
+                    <router-link to="#"> <gl-icon name="upload" /> 0 Deployments </router-link>
+                </div-->
 
             </div>
         </div>

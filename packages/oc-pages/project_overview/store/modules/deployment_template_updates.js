@@ -40,6 +40,15 @@ function allowFields(node, ...fields) {
     }
 }
 
+function normalizeEnvName(_name) {
+    let name = _name.startsWith('$')? _name.slice(1) : _name
+    name = name.replace(/-/g, '_')
+    if(! /^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(name)) {
+        name = `_` + key.split('').map(c => c.charCodeAt(0).toString(16)).join('')
+    }
+    return name
+}
+
 const Serializers = {
     DeploymentEnvironment(env) {
         allowFields(env, 'connections', 'instances')
@@ -71,12 +80,14 @@ export function updatePropertyInInstance({environmentName, templateName, propert
         let _propertyValue = propertyValue
         let env
         if(isSensitive) {
-            const getenv = `${templateName}__${propertyName}`
+            const getenv = normalizeEnvName(`${templateName}__${propertyName}`)
             env = {[getenv]: propertyValue}
             _propertyValue = {getenv}
         }
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        const instance = patch.instances.find(i => i.name == templateName)
+        const instance = Array.isArray(patch.instances) ?
+            patch.instances.find(i => i.name == templateName) :
+            patch.instances[templateName]
         
         const property = instance.properties.find(p => p.name == propertyName)
         property.value = _propertyValue
@@ -140,7 +151,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         let _propertyValue = propertyValue
         let env
         if(isSensitive) {
-            const getenv = `${deploymentName}__${templateName}__${propertyName}`
+            const getenv = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
             env = {[getenv]: propertyValue}
             _propertyValue = {getenv}
         }

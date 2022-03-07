@@ -422,7 +422,6 @@ export default {
                 style="font-size: 1.25em; font-weight: bold; padding: 0.5em 0.75em"
                 category="primary"
                 variant="confirm"
-                class="btn-uf-teal"
                 type="button"
                 @click="selectingEnvironment = true"
                 >
