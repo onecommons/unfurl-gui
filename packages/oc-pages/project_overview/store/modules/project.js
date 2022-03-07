@@ -194,7 +194,7 @@ const mutations = {
 
 const actions = {
 
-    async fetchProjectInfo({ commit }, { projectPath, defaultBranch }) {
+    async fetchProjectInfo({ commit, dispatch }, { projectPath, defaultBranch }) {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getProjectInfo,
             errorPolicy: 'all',
@@ -234,6 +234,17 @@ const actions = {
             throw new Error(errors[0].message);
         }
         return false;
+        dispatch('countDeployments', {projectPath})
+    },
+
+    countDeployments({rootGetters, commit}, {projectPath}) {
+        /*
+         * TODO figure out how to count deployments (also if it should be global or not)
+        for(const deployment of rootGetters.getDeploymentDictionaries) {
+            if(deployment.ApplicationBlueprint[projectPath]) {
+            }
+        }
+        */
     },
 
     async fetchServicesToConnect({ commit }, { projectPath }) {

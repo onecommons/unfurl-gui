@@ -1,8 +1,8 @@
 <script>
 import * as routes from '../../router/constants'
-import LogosCloud from '../../../project_overview/components/shared/logos_cloud.vue'
+import {DetectIcon} from '../../../vue_shared/oc-components'
 export default {
-    components: { LogosCloud },
+    components: { DetectIcon },
     props: {
         environment: Object
     },
@@ -20,14 +20,14 @@ export default {
 <template>
     <a v-if="environment" :href="destination.href">
         <div class="status-item">
-            <logos-cloud v-if="environment.primary_provider" :small=true :cloud="environment.primary_provider.type"/> 
-            {{environment.name}}
+            <detect-icon v-if="environment.primary_provider" :type="environment.primary_provider.type"/> 
+            <span class="ml-1">{{environment.name}}</span>
         </div>
     </a>
 </template>
 <style scoped>
 .status-item {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
 }
 </style>

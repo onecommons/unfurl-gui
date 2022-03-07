@@ -1,11 +1,12 @@
 <script>
-import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
+import { GlButton, GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
 
 export default {
     name: 'ProjectDescriptionBox',
     components: {
+        GlButton,
         GlIcon,
         GlTabs,
         GlTab,
@@ -103,12 +104,13 @@ export default {
                             {{ projectName }} <!-- TODO project name vs project title? -->
                         </h4>
                         <div class="gl-display-flex">
-                            <a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
+                            <!--a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
                                         <gl-icon
                                                 name="link"
                                                 class="options-expanded-icon gl-ml-1"/>
-                            </a>
-                            <a class="gl-ml-4" :href="liveUrl ? liveUrl : 'javascript:void(0);'" target="_blank">{{ __("Live preview") }} <gl-icon :size="12" name="external-link" /></a>
+                            </a-->
+                            <!--a class="gl-ml-4" :href="liveUrl ? liveUrl : 'javascript:void(0);'" target="_blank">{{ __("Live preview") }} <gl-icon :size="12" name="external-link" /></a-->
+                            <gl-button variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
                         </div>
                     </div> 
                     <div class="subtitle-description gl-mb-4">

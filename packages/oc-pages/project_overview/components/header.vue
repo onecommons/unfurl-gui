@@ -105,7 +105,7 @@ export default {
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
 
-                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
+                <!--div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
                         @click="redirectTo($projectGlobal.buttonFork.link)">
@@ -116,7 +116,7 @@ export default {
                         <span>{{ __("Fork") }}</span>
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonFork.link" class="gl-button btn btn-default btn-sm star-count count">{{ this.$projectGlobal.buttonFork.count }}</a>
-                </div>
+                </div-->
             </div>
         </div>
     </div>

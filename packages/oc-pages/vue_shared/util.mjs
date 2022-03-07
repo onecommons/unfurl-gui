@@ -35,6 +35,7 @@ const CLOUD_PROVIDER_ALIASES = {
     Azure,
     azure: Azure,
     K8s,
+    [K8s]: K8s,
     k8s: K8s,
     kubernetes: K8s,
     'Google Cloud Platform': GCP,
