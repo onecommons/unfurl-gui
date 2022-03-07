@@ -19,9 +19,9 @@ export default {
 </script>
 <template>
     <a v-if="environment" :href="destination.href">
-        <div class="status-item">
-            <detect-icon v-if="environment.primary_provider" :type="environment.primary_provider.type"/> 
-            <span class="ml-1">{{environment.name}}</span>
+        <div class="status-item font-weight-bold">
+            <detect-icon :size="24" v-if="environment.primary_provider" :type="environment.primary_provider.type"/> 
+            <div class="ml-1">{{environment.name}}</div>
         </div>
     </a>
 </template>

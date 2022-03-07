@@ -15,12 +15,14 @@ export default {
 }
 </script>
 <template>
-    <router-link v-if="application && application.name" :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: application.name}}">
-        <div class="status-item">
+    <!--router-link v-if="application && application.name" :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: application.name}}"-->
+    <a :href="`/${application.name}`">
+        <div class="status-item font-weight-bold">
             <project-icon :projectIcon="application.projectIcon" />
             {{application.title}}
         </div>
-    </router-link>
+    </a>
+    <!--/router-link-->
 
 </template>
 <style scoped>

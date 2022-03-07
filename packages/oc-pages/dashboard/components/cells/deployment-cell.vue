@@ -26,7 +26,7 @@ export default {
     <router-link v-if="deployment && deployment.name" :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: deployment.name, environment: environment.name}}">
         <div v-if="displayStatus" class="status-item">
                 <status-icon v-for="resource in deployment.statuses" :key="resource.name" :status="resource.status"/>
-                    {{deployment.title}}
+                <div style="margin-bottom: -2px;">{{deployment.title}}</div>
         </div>
         <div v-else>
             {{deployment.title}}

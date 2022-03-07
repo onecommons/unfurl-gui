@@ -15,12 +15,12 @@ export default {
 <template>
     <div class="status-item">
         <status-icon :status="resource.status"/>
-        {{resource.title}}
+        <div style="margin-bottom: -2px;">{{resource.title}}</div>
     </div>
 </template>
 <style scoped>
 .status-item {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
 }
 </style>

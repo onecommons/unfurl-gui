@@ -1,12 +1,11 @@
 <script>
 import TableComponent from '../../vue_shared/components/oc/table.vue';
 
-//TODO use components/cells wherever possible
-import StatusIcon from '../../vue_shared/components/oc/Status.vue';
-//import LogosCloud from '../../project_overview/components/shared/logos_cloud.vue'
 import QuantityCard from '../components/quantity-card.vue'
-import ProjectIcon from '../../vue_shared/components/oc/project-icon.vue'
-//
+import ApplicationCell from '../components/cells/application-cell.vue'
+import EnvironmentCell from '../components/cells/environment-cell.vue'
+import DeploymentCell from '../components/cells/deployment-cell.vue'
+import ResourceCell from '../components/cells/resource-cell.vue'
 
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {textValueFromKeys} from '../dashboard-utils'
@@ -39,18 +38,27 @@ const fields = [
     {key: 'application', textValue: textValueFromKeys('application.title', 'application.name'), label: 'Applications', s: 'Application'},
     {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
     {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
-    {key: 'type', groupBy(item) {return item.context.deployment.name + ':' + item.context.type}, label: 'Resource Types', s: 'Resource Type'},
+    {key: 'type', groupBy(item) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type'},
     {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource'},
 ];
 
 export default {
     name: 'TableComponentContainer',
-    components: {TableComponent, StatusIcon, QuantityCard, ProjectIcon, DashboardBreadcrumbs},
+    components: {
+        TableComponent,
+        QuantityCard,
+        //ProjectIcon,
+        DashboardBreadcrumbs,
+        ApplicationCell,
+        EnvironmentCell,
+        DeploymentCell,
+        ResourceCell
+    },
     data() {
         return { 
             routes,
-            fields,
-            items: [],
+            //fields,
+            //items: [],
             loaded: false,
         };
     },
@@ -63,7 +71,16 @@ export default {
             'environmentsCount',
             'applicationsCount',
         ]),
-        tableItems() { return this.getDashboardItems.filter(item => item.application) }
+        tableFields() {
+            if(this.environmentsCount > 0 && this.applicationsCount == 0) {
+                return fields.slice(1)
+            } else {
+                return fields
+            }
+        },
+        tableItems() {
+            return this.getDashboardItems//.filter(item => item.application)
+        }
     },
 };
 
@@ -102,37 +119,18 @@ export default {
                 color="#fff4f4"/>
         </div>
     </div>
-    <TableComponent :items="tableItems" :fields="fields">
+    <TableComponent :items="tableItems" :fields="tableFields">
     <template #application="scope">
-        <router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}">
-            <div class="status-item">
-                <project-icon :projectIcon="scope.item.application.projectIcon" />
-                {{scope.item.context.application.title}}
-            </div>
-        </router-link>
+        <application-cell :application="scope.item.context.application" />
     </template>
-    <!-- TODO use environment cell -->
     <template #environment="scope">
-        <router-link :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: scope.item.context.environment.name}}">
-            <div class="status-item">
-                <!--logos-cloud :small=true :cloud="scope.item.context.environment.primary_provider.type"/--> 
-                {{scope.item.context.environment.name}}
-            </div>
-        </router-link>
+        <environment-cell :environment="scope.item.context.environment" />
     </template>
     <template #deployment="scope">
-        <router-link :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: scope.item.context.deployment.name, environment: scope.item.context.environment.name}}">
-            <div class="status-item">
-                <status-icon v-for="resource in scope.item.context.deployment.statuses" :key="resource.name" :status="resource.status"/>
-                    {{scope.item.context.deployment.title}}
-            </div>
-        </router-link>
+        <deployment-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" />
     </template>
     <template #resource="scope">
-        <div class="status-item">
-            <status-icon :status="scope.item.context.resource.status" />
-            {{scope.item.context.resource.title}}
-        </div>
+        <resource-cell :resource="scope.item.context.resource" />
     </template>
     </TableComponent> 
 </div>
