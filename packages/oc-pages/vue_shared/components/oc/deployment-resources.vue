@@ -37,6 +37,10 @@ export default {
 
     props: {
         bus: Object,
+        target: {
+            type: String,
+            default: () => 'Environment'
+        },
         saveStatus: statusPropDefinition,
         deleteStatus: statusPropDefinition,
         mergeStatus: statusPropDefinition,
@@ -95,6 +99,8 @@ export default {
             durationOfAlerts: 5000,
             checkedNode: true,
             selectedServiceToConnect: '',
+            selectingTopLevel: false,
+            topLevelSelection: ''
         };
     },
 
@@ -116,7 +122,9 @@ export default {
             'getValidResourceTypes',
             'getValidConnections',
             'getHomeProjectPath',
-            'getApplicationBlueprint'
+            'getApplicationBlueprint',
+            'currentAvailableResourceTypes',
+            'getCurrentEnvironment'
         ]),
 
         pipelinesPath(){
@@ -154,6 +162,13 @@ export default {
             };
         },
 
+        ocTopLevelPrimary() {
+            return {
+                text: __("Next"),
+                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: !this.topLevelSelection }]
+            };
+        },
+
         ocResourceToConnectPrimary() {
             return {
                 text: __("Next"),
@@ -166,6 +181,14 @@ export default {
                 text: __('Cancel'),
             };
         },
+        targetName() {
+            if(this.target == 'Environment') {
+                return this.getCurrentEnvironment.name
+            } else {
+                return this.getDeploymentTemplate.title
+            }
+
+        }
     },
 
     watch: {
@@ -204,13 +227,7 @@ export default {
                 this.launchModal('oc-connect-resource', 250);
             });
 
-            bus.$on('deleteNode', (obj) => {
-                this.deleteNodeData = obj;
-                this.nodeAction = obj.action? obj.action : __('Delete');
-
-                this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
-                this.launchModal('oc-delete-node', 500);
-            });
+            bus.$on('deleteNode', (obj) => { onDeleteNode(obj) });
         }
     },
 
@@ -259,6 +276,10 @@ export default {
             'populateTemplateResources',
         ]),
 
+        promptAddExternalResource() {
+            this.selectingTopLevel = true
+        },
+
         unloadHandler(e) {
             if(this.hasPreparedMutations) {
                 // NOTE most users will not see this message because browsers can override it
@@ -302,6 +323,7 @@ export default {
         async triggerSave() {
             try {
                 await this.commitPreparedMutations();
+                this.$emit('saveTemplate')
                 createFlash({
                     message: __('Template was saved successfully!'),
                     type: FLASH_TYPES.SUCCESS,
@@ -343,9 +365,13 @@ export default {
             try {
                 this.clearPreparedMutations();
                 this.resetStagedChanges();
-                this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug}))
-
-                await this.commitPreparedMutations()
+                // TODO this is ugly
+                if(this.target != 'Environment') {
+                    this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug}))
+                    await this.commitPreparedMutations()
+                }
+                this.$emit('deleteResource');
+                if (this.target == 'Environment') return
                 //if (isOk) { deleteDeploymentTemplate should throw errors
                 this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
                 //}
@@ -392,10 +418,7 @@ export default {
 
         async handleDeleteNode() {
             try {
-                //this.clearPreparedMutations()
                 const deleted = await this.deleteNode(this.deleteNodeData);
-
-                if(deleted) this.dataUnsaved = true;
             } catch (e) {
                 console.error(e);
                 createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
@@ -420,11 +443,18 @@ export default {
         },
 
         legendDeleteTemplate() {
-            return `Are you sure you want to delete <b>${this.getDeploymentTemplate.title}</b> template ?`;
+            return `Are you sure you want to delete <b>${this.targetName}</b>?`;
         },
 
         replaceSpaceWithDash(str){
             return str.replace(/ /g, '-');
+        },
+        onDeleteNode(obj) {
+            this.deleteNodeData = obj;
+            this.nodeAction = obj.action? obj.action : __('Delete');
+            this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
+            this.launchModal('oc-delete-node', 500);
+
         }
     },
 };
@@ -432,7 +462,7 @@ export default {
 <template>
     <div>
         <!-- Header of templates -->
-        <oc-template-header :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: $route.params.environment}"/>
+        <oc-template-header v-if="target != 'Environment'" :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: $route.params.environment}"/>
             <!-- Content -->
         <div class="row-fluid gl-mt-6 gl-mb-6">
             <oc-card
@@ -445,6 +475,8 @@ export default {
                 :icon-title="true"
                 :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
                 :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"
+                :is-primary="true"
+                @deleteNode="onDeleteNode"
                 >
                 <template v-if="this.$slots.header" #header>
                     <slot name="header"></slot>
@@ -484,7 +516,9 @@ export default {
                             :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
                             :actions="true"
                             :level="idx"
-                            class="gl-mt-6">
+                            class="gl-mt-6"
+                            @deleteNode="onDeleteNode"
+                            >
                             <template #controls>
                                 <slot name="controls"></slot>
                             </template>
@@ -523,11 +557,35 @@ export default {
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
+            :target="target"
             @saveTemplate="triggerSave()"
             @triggerDeploy="triggerDeployment()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"
             />
 
+
+        <gl-modal
+            modal-id="oc-template-resource-2"
+            size="lg"
+            title="Add an external resource"
+            :action-primary="ocTopLevelPrimary"
+            :action-cancel="cancelProps"
+            @primary="$emit('addTopLevelResource', {selection: topLevelSelection, title: resourceName})"
+            @cancel="cleanModalResource"
+            v-model="selectingTopLevel"
+            >
+
+            <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="currentAvailableResourceTypes"/>
+
+            <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
+                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+            </gl-form-group>
+
+
+            <!--gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
+                <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+            </gl-form-group-->
+        </gl-modal>
 
             <!-- Modal Resource Template -->
         <gl-modal
@@ -541,7 +599,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-            <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)"/>
+            <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
                 <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
@@ -580,7 +638,7 @@ export default {
             :modal-id="__('oc-delete-template')"
             size="md"
 
-            :title="`Delete Template ${selectedTemplate.title}`"
+            :title="`Delete ${target}: ${targetName}`"
             :action-primary="primaryPropsDelete"
             :action-cancel="cancelProps"
             @primary="onSubmitDeleteTemplateModal"

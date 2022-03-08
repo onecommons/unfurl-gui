@@ -19,16 +19,6 @@
         "description": "",
         "properties": [],
         "dependencies": []
-      },
-      "instances": {
-        "sendgrid": {
-        "type": "SendGrid",
-        "name": "sendgrid",
-        "title": "sendgrid",
-        "description": "SendGrid Mail Delivery Service",
-        "properties": [],
-        "dependencies": []
-        }
       }
     },
     "staging-aws": {
@@ -150,7 +140,53 @@
       "description": "",
       "inputsSchema": {
         "type": "object",
-        "properties": {}
+        "properties": {
+          "domain": {
+            "title": "Domain",
+            "type": "string",
+            "default": "smtp.sendgrid.net"
+          },
+          "address": {
+            "title": "Address",
+            "type": "string",
+            "default": "smtp.sendgrid.net"
+          },
+          "user_name": {
+            "title": "Username",
+            "type": "string"
+          },
+          "authentication": {
+            "title": "Authentication",
+            "type": "string",
+            "enum": ["plain"],
+            "default": "plain"
+          },
+          "port": {
+            "title": "Port",
+            "type": "number",
+            "default": 587,
+            "minimum": 1,
+            "maximum": 65535
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean",
+            "default": true
+          },
+          "starttls_auto": {
+            "title": "Automatically Start TLS",
+            "type": "boolean",
+            "default": true
+          },
+          "password": {
+            "title": "Password",
+            "type": "object",
+            "properties": {
+              "key": { "sensitive": true, "title": "Key", "type": "string" },
+              "secret": { "sensitive": true, "title": "Secret", "type": "string" }
+            }
+          }
+        }
       },
       "extends": [
         "SendGrid",

@@ -1,4 +1,3 @@
-import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
@@ -8,6 +7,54 @@ import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment
 import {userDefaultPath} from '../../../vue_shared/util.mjs'
 import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 import {patchEnv} from '../../../vue_shared/client_utils/envvars'
+
+
+function convertFieldToDictionaryIfNeeded(node, field) {
+    if(Array.isArray(node[field])) {
+        const result = {}
+        for(const el of node[field]) {
+            if(el.name) {
+                result[el.name] = el
+            }
+        }
+        node[field] = result
+    } else if(typeof node[field] == 'object') {
+        // pass
+    } else {
+        node[field] = {}
+    }
+}
+
+function fieldsToDictionary(node, ...fields) {
+    for(const field of fields) {
+        convertFieldToDictionaryIfNeeded(node, field)
+    }
+}
+
+function allowFields(node, ...fields) {
+    for(const field in node) {
+        if(field == 'name' || field == '__typename') continue
+        if(!fields.includes(field)) {
+            delete node[field]
+        }
+    }
+}
+
+function normalizeEnvName(_name) {
+    let name = _name.startsWith('$')? _name.slice(1) : _name
+    name = name.replace(/-/g, '_')
+    if(! /^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(name)) {
+        name = `_` + key.split('').map(c => c.charCodeAt(0).toString(16)).join('')
+    }
+    return name
+}
+
+const Serializers = {
+    DeploymentEnvironment(env) {
+        allowFields(env, 'connections', 'instances')
+        fieldsToDictionary(env, 'connections', 'instances')
+    },
+}
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(!args.length) return
@@ -28,14 +75,85 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(data?.data?.errors?.length) throw new Error(data.data.errors)
 }
 
+export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, isSensitive}) {
+    return function(accumulator) {
+        let _propertyValue = propertyValue
+        let env
+        if(isSensitive) {
+            const getenv = normalizeEnvName(`${templateName}__${propertyName}`)
+            env = {[getenv]: propertyValue}
+            _propertyValue = {getenv}
+        }
+        const patch = accumulator['DeploymentEnvironment'][environmentName]
+        const instance = Array.isArray(patch.instances) ?
+            patch.instances.find(i => i.name == templateName) :
+            patch.instances[templateName]
+        
+        const property = instance.properties.find(p => p.name == propertyName)
+        property.value = _propertyValue
+        return [ {typename: 'DeploymentEnvironment', target: templateName, patch, env} ]
+    }
+}
+
+export function createEnvironmentInstance({type, name, title, description, environmentName}) {
+    return function(accumulator) {
+        const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
+        let properties 
+        try {
+            properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
+        } catch(e) { properties = [] }
+
+        const dependencies = resourceType?.requirements?.map(req => ({
+            constraint: req,
+            match: null,
+            target: null,
+            name: req.name,
+            __typename: 'Dependency'
+        })) || []
+
+        const template = {
+            type: typeof(type) == 'string'? type: type.name,
+            name,
+            title,
+            description,
+            __typename: "ResourceTemplate",
+            properties,
+            dependencies
+        }
+
+        const patch = accumulator['DeploymentEnvironment'][environmentName]
+        if(! Array.isArray(patch.instances)) {
+            patch.instances = []
+        }
+
+        patch.instances.push(template)
+
+
+        return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
+    }
+}
+
+export function deleteEnvironmentInstance({templateName, environmentName}) {
+    return function(accumulator) {
+        const patch = accumulator['DeploymentEnvironment'][environmentName]
+
+        const index = patch.instances.findIndex(instance => instance.name == templateName)
+        if(index != -1) {
+            patch.instances.splice(index, 1)
+        }
+
+        return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
+    }
+}
+
 export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, isSensitive, deploymentName}) {
     return function(accumulator) {
         let _propertyValue = propertyValue
         let env
         if(isSensitive) {
-            _propertyValue = `$${deploymentName}__${templateName}__${propertyName}`
-            env = {[_propertyValue]: propertyValue}
-            env = {[_propertyValue+'2']: propertyValue}
+            const getenv = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
+            env = {[getenv]: propertyValue}
+            _propertyValue = {getenv}
         }
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
@@ -147,8 +265,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) {
-    return function(accumulator) {
+export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) { return function(accumulator) {
         const result = []
 
         if(deploymentTemplateName) {
@@ -243,7 +360,8 @@ const state = {
     preparedMutations: [],
     accumulator: {},
     patches: {},
-    env: {}
+    env: {},
+    useBaseState: true
 }
 
 const getters = {
@@ -302,6 +420,7 @@ const mutations = {
         state.accumulator = {}
         state.patches = {}
         state.env = {}
+        state.useBaseState = false
         if(!o?.dryRun) {
             state.path = undefined
             state.projectPath = undefined
@@ -311,8 +430,20 @@ const mutations = {
     setBaseState(state, baseState) {
         state.accumulator = baseState
     },
+    useBaseState(state, baseState) {
+        state.accumulator = baseState
+        state.useBaseState = true
+    },
     clearPreparedMutations(state) {
         state.preparedMutations = []
+    },
+    normalizePatches(state) {
+        for(const typename of Object.keys(state.patches)){
+            if(!Serializers[typename]) continue
+            for(const record of Object.values(state.patches[typename])) {
+                if(record && typeof record == 'object') Serializers[typename](record)
+            }
+        }
     }
 }
 
@@ -356,7 +487,7 @@ const actions = {
             })
         }
         const variables = {
-            fullPath: state.projectPath || rootState.project.globalVars.projectPath, 
+            fullPath: state.projectPath || rootState.project?.globalVars?.projectPath, 
             patch, 
             path: state.path || userDefaultPath()
         }
@@ -377,8 +508,11 @@ const actions = {
 
     async commitPreparedMutations({state, dispatch, commit}, o) {
         let dryRun = o?.dryRun
-        await dispatch('fetchRoot')
+        if(!state.useBaseState) {
+            await dispatch('fetchRoot')
+        }
         commit('applyMutations', {dryRun})
+        commit('normalizePatches')
         await dispatch('sendUpdateSubrequests', {dryRun})
         commit('resetStagedChanges', {dryRun})
     }

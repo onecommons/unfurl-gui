@@ -1,11 +1,12 @@
 <script>
 import * as routes from '../router/constants'
-import {mapActions, mapGetters} from 'vuex'
+import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon} from '@gitlab/ui'
 import {CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
 import { __ } from '~/locale'
-import {lookupCloudProviderAlias} from '../../vue_shared/util.mjs'
+import {lookupCloudProviderAlias, slugify} from '../../vue_shared/util.mjs'
+import {deleteEnvironment} from '../../vue_shared/client_utils/environments'
 
 
 const PROP_MAP = {
@@ -49,7 +50,13 @@ export default {
         return {environment: {}, gcpProps, sendGridProps, width, unfurl_gui: window.gon.unfurl_gui}
     },
     computed: {
-        ...mapGetters(['lookupEnvironment']),
+        ...mapGetters([
+            'lookupEnvironment',
+            'environmentLookupDiscoverable',
+            'environmentResourceTypeDict',
+            'getHomeProjectPath',
+            'hasPreparedMutations'
+        ]),
         breadcrumbItems() {
             return [
                 {to: {name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}, text: 'Environments'},
@@ -71,19 +78,84 @@ export default {
                     return __('Kubernetes')
                 default: return __('Self hosted')
             }
+        },
+        saveStatus() {
+            if(!this.hasPreparedMutations) {
+                return 'disabled'
+            }
+            return 'display'
         }
     },
     methods: {
         ...mapActions([
-            'populateTemplateResources2'
+            'populateTemplateResources2',
+            'createNodeResource',
+            'commitPreparedMutations',
         ]),
+
+
+        ...mapMutations([
+            'setAvailableResourceTypes',
+            'setUpdateObjectPath',
+            'setUpdateObjectProjectPath',
+            'useBaseState',
+            'pushPreparedMutation',
+            'setUpdateObjectPath',
+            'setUpdateObjectProjectPath'
+        ]),
+        onExternalAdded({selection, title}) {
+            this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+        },
+        onSaveTemplate() {
+            const environment = this.environment
+            this.setUpdateObjectPath('environments.json')
+            this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+            const ResourceType = this.environmentResourceTypeDict(environment)
+            this.useBaseState({
+                DeploymentEnvironment: {
+                    [environment.name]: environment
+                },
+                ResourceType 
+            })
+        },
+        async onDelete() {
+            const environment = this.environment
+            
+            await deleteEnvironment(window.gon.projectPath, window.gon.projectId, environment.name, window.gon.environmentId)
+
+            this.setUpdateObjectProjectPath(window.gon.projectPath)
+            this.setUpdateObjectPath('environments.json')
+
+            this.pushPreparedMutation(function(accumulator) {
+                return [ {typename: 'DeploymentEnvironment', target: environment.name, patch: null} ]
+            })
+
+            await this.commitPreparedMutations()
+        }
     },
 
     beforeMount() {
         const environmentName = this.$route.params.name
         const environment = this.lookupEnvironment(environmentName)
         this.environment = environment
-        this.populateTemplateResources2({resourceTemplates: environment.instances, environmentName, isDeployment: false})
+        this.setAvailableResourceTypes(
+            this.environmentLookupDiscoverable(environment)
+        )
+        this.populateTemplateResources2({resourceTemplates: environment.instances, environmentName, context: 'environment'})
+
+        this.onSaveTemplate()
+        /*
+        this.setUpdateObjectPath('environments.json')
+        this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+        const ResourceType = this.environmentResourceTypeDict(environment)
+        this.useBaseState({
+            DeploymentEnvironment: {
+                [environment.name]: environment
+            },
+            ResourceType 
+        })
+        */
+
     }
 }
 </script>
@@ -97,7 +169,7 @@ export default {
         <oc-properties-list :header="cloudProviderDisplayName" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps" />
         <h2>{{__('Variables')}}</h2>
         <ci-variable-settings v-if="!unfurl_gui"/>
-        <deployment-resources  :render-inputs="false" :external-status-indicator="true">
+        <deployment-resources @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" :external-status-indicator="true">
             <template #header>
                 <!-- potentially tricky to translate -->
                 <div class="d-flex align-items-center">
@@ -106,7 +178,7 @@ export default {
             </template>
             <template #primary-controls>
                 <div class="confirm-container">
-                    <gl-button variant="confirm">
+                    <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                         <div>
                             <gl-icon name="plus"/>
                             {{__('Add External Resource')}}
@@ -115,7 +187,7 @@ export default {
                 </div>
 
             </template>
-            <template #controls>
+            <!--template #controls>
                 <div class="external-resource-controls">
                     <gl-button>
                         <div class="d-flex align-items-center">
@@ -125,17 +197,8 @@ export default {
                             <div> {{__('Remove')}} </div>
                         </div>
                     </gl-button>
-                    <gl-button>
-                        <div class="d-flex align-items-center">
-                            <gl-icon name="pencil" :size="16"/>
-                            <div>{{__('Edit')}}</div>
-                        </div>
-                    </gl-button>
                 </div>
-            </template>
-            <template #card-content-pre>
-                <oc-properties-list :properties="sendGridProps"  :containerStyle="{'font-size': '0.8em', ...width}"/>
-            </template>
+            </template-->
 
         </deployment-resources>
     </div>

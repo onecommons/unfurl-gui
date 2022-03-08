@@ -1,5 +1,5 @@
 <script>
-import { GlCard, GlIcon, GlBadge} from "@gitlab/ui";
+import { GlButton, GlCard, GlIcon, GlBadge} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from '../../bus.js';
@@ -11,6 +11,7 @@ import { __ } from '~/locale';
 export default {
     name: "OcCard",
     components: {
+        GlButton,
         GlCard,
         GlIcon,
         GlBadge,
@@ -19,6 +20,10 @@ export default {
     },
     mixins: [commonMethods],
     props: {
+        isPrimary: {
+            type: Boolean,
+            default: false
+        },
         customTitle: {
             type: String,
             required: false,
@@ -96,7 +101,11 @@ export default {
 
         openDeletemodal(title, action=__("Delete")) {
             // eslint-disable-next-line no-unused-expressions
-            bus.$emit('deleteNode', {...this.card, level: this.level, action});
+            const payload = {...this.card, level: this.level, action}
+            // TODO get rid of bus
+            bus.$emit('deleteNode', payload);
+
+            this.$emit('deleteNode', payload)
         },
 
         getLegend(title) {
@@ -153,9 +162,19 @@ export default {
                     </slot>
                 </div>
 
-                <div style="position: absolute; right: 0; top: 0;">
-                    <slot name="controls"></slot>
-                    <div @click="toggleCard" class="ml-2" v-if="card.dependentName">
+                <div class="position-absolute d-flex" style="right: 0; top: 0;">
+                    <slot name="controls">
+                        <gl-button v-if="!isPrimary" @click="openDeletemodal" class="controls">
+                            <div class="d-flex align-items-center">
+                                <svg width="16" height="16" viewBox="0 0 15 17" stroke="#DBDBDB;" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.26558 2.04999C4.26558 0.917811 5.20857 0 6.37181 0H8.47805C9.64129 0 10.5843 0.917811 10.5843 2.04999V3.07498H13.7436C14.3252 3.07498 14.7967 3.53389 14.7967 4.09998C14.7967 4.66606 14.3252 5.12497 13.7436 5.12497H13.5816L12.8401 14.5071C12.7557 15.5752 11.8407 16.3999 10.7401 16.3999H4.10979C3.0092 16.3999 2.09417 15.5752 2.00976 14.5071L1.26825 5.12497H1.10623C0.524613 5.12497 0.0531158 4.66606 0.0531158 4.09998C0.0531158 3.53389 0.524612 3.07498 1.10623 3.07498H4.26558V2.04999ZM6.37181 3.07498H8.47805V2.04999H6.37181V3.07498ZM3.38071 5.12497L4.10979 14.3499L10.7401 14.3499L11.4692 5.12497H3.38071Z" fill="#4A5053"/>
+                                </svg>
+                                <div> {{__('Remove')}} </div>
+                            </div>
+                        </gl-button>
+
+                    </slot>
+                    <div @click="toggleCard" class="ml-2" v-if="!isPrimary">
                         <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
                     </div>
                 </div>
@@ -230,5 +249,10 @@ export default {
 
 .card-content-container >>> .gl-card-body {
     padding: 0 1em;
+}
+
+.controls {
+    padding: 0.4em;
+    margin: 0 0.25em;
 }
 </style>

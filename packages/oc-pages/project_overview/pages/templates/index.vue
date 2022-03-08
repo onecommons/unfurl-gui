@@ -553,6 +553,7 @@ export default {
           :icon-title="true"
           :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
           :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"
+          is-primary
           >
           <template #content>
             <!-- Inputs -->

@@ -3,11 +3,13 @@ import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
+import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
 
 const state = {
     environmentName: __("Oc Default"),
     environments: [],
-    projectEnvironments: []
+    projectEnvironments: [],
+    resourceTypeDictionaries: {}
 };
 
 function connectionsToArray(environment) {
@@ -57,6 +59,10 @@ const mutations = {
 
     setProjectEnvironments(state, environments) {
         state.projectEnvironments = environments
+    },
+
+    setResourceTypeDictionary(state, { environment, dict }) {
+        state.resourceTypeDictionaries[environment.name] = dict
     }
 
 };
@@ -67,7 +73,6 @@ const actions = {
         commit("SET_ENVIRONMENT_NAME", { envName });
     },
 
-    // effectively async
     async updateEnvironment({getters, commit, dispatch, rootGetters}, {env, envName, patch}) {
         const _envName =  envName || env?.name
         commit('patchEnvironment', {envName: _envName, patch})
@@ -100,6 +105,7 @@ const actions = {
                             instances
                             primary_provider
                         }
+                        ResourceType @client
                         deployments
                         clientPayload
                         name
@@ -122,6 +128,8 @@ const actions = {
             // alternatively we could check if it's cached
             environments = cloneDeep(data.project.environments).nodes.map(environment => {
                 Object.assign(environment, environment.deploymentEnvironment)
+                commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
+                delete environment.ResourceType
                 for(const deployment of environment.deployments) {
                     if(!deployment._environment) deployment._environment = environment.name
                     deployments.push(deployment)
@@ -191,6 +199,32 @@ const getters = {
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(! Array.isArray(environment?.instances) ) return null
         return cloneDeep(environment.instances.find(conn => conn.name == connectedResource))
+    },
+    environmentResourceTypeDict(state) {
+        return function(environment) {
+            const environmentName = typeof environment == 'string'? environment: environment?.name
+            return state.resourceTypeDictionaries[environmentName]
+        }
+    },
+    environmentResolveResourceType(state) {
+        return function(environment, typename) {
+            const environmentName = typeof environment == 'string'? environment: environment?.name
+            const dict = state.resourceTypeDictionaries[environmentName]
+            if (dict) return dict[typename]
+            return null
+        }
+    },
+    environmentLookupDiscoverable(state, getters) {
+        return function(_environment) {
+            const environmentName = typeof _environment == 'string'? _environment: _environment?.name
+            const dict = state.resourceTypeDictionaries[environmentName]
+            if(typeof dict == 'object') {
+                const environment = getters.lookupEnvironment(environmentName)
+                const resolver = getters.environmentResolveResourceType.bind(null, environment)
+                return Object.values(dict).filter(resourceType => isDiscoverable(resourceType, environment, resolver))
+            }
+            return null
+        }
     }
 };
 

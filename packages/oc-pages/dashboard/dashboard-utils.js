@@ -11,9 +11,13 @@ export function textValueFromKeys(..._keys) {
     const paths = _keys.map(key => key.split('.'))
     return function(item) {
         const components = []
+        let missing = 0
         for(const path of paths) {
-            components.push(indexWithPath(item, path) || '')
+            const indexed = indexWithPath(item, path)
+            if(!indexed) missing += 1
+            components.push(indexed)
         }
+        if(missing == paths.length) return
         const result = components.join(':')
         return result
     }

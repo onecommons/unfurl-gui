@@ -3,6 +3,7 @@
 import { GlIcon, GlButton } from '@gitlab/ui';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
+import {mapGetters} from 'vuex'
 import { __ } from '~/locale';
 
 export default {
@@ -54,8 +55,11 @@ export default {
     },
 
     computed: {
+        ...mapGetters([
+            'getProjectInfo'
+        ]),
         visitProject() {
-            return window.location.pathname.split('/').slice(0,3).join('/')
+            return `/${this.getProjectInfo.fullPath}/-/project`
         }
     },
 
@@ -67,7 +71,8 @@ export default {
         <div class="gl-display-flex gl-justify-content-space-between gl-flex-wrap gl-sm-flex-direction-column gl-mb-3">
             <div class="home-panel-title-row gl-display-flex">
                 <div class="avatar-container rect-avatar s48 gl-flex-shrink-0 gl-w-11 gl-h-11 gl-mr-3 float-none">
-                    <div class="project_icon_oc" v-html="this.$projectGlobal.projectIcon"></div>
+                    <!--div class="project_icon_oc" v-html="this.$projectGlobal.projectIcon"></div-->
+                    <img :src="this.$projectGlobal.projectIcon">
                 </div>
                 <div class="d-flex flex-column flex-wrap align-items-baseline">
                     <div class="d-inline-flex align-items-baseline">
@@ -92,6 +97,7 @@ export default {
                     <a :href="this.$projectGlobal.linkDeployment" class="gl-button btn btn-default btn-sm  count">{{ projectInfo.deployments }}</a>
                 </div-->
 
+
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
@@ -104,8 +110,9 @@ export default {
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
+                <gl-button v-if="getProjectInfo.livePreview" :href="getProjectInfo.livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm ml-3" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
 
-                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
+                <!--div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
                         @click="redirectTo($projectGlobal.buttonFork.link)">
@@ -116,7 +123,7 @@ export default {
                         <span>{{ __("Fork") }}</span>
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonFork.link" class="gl-button btn btn-default btn-sm star-count count">{{ this.$projectGlobal.buttonFork.count }}</a>
-                </div>
+                </div-->
             </div>
         </div>
     </div>
@@ -127,6 +134,5 @@ export default {
     width: 100%;
 }
 .uf-header-project {
-    height: 24px;
 }
 </style>

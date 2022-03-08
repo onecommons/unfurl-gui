@@ -4,11 +4,8 @@ export function slugify(text) {
         .toLowerCase()
         .normalize('NFD')
         .trim()
-        .replace(/\s+/g, '-')
-    // eslint-disable-next-line no-useless-escape
+        .replace(/(\-\-+|_|\s+)/g, '-')
         .replace(/[^\w\-]+/g, '')
-    // eslint-disable-next-line no-useless-escape
-        .replace(/\-\-+/g, '-');
 }
 
 export const USER_HOME_PROJECT = 'dashboard';
@@ -38,6 +35,7 @@ const CLOUD_PROVIDER_ALIASES = {
     Azure,
     azure: Azure,
     K8s,
+    [K8s]: K8s,
     k8s: K8s,
     kubernetes: K8s,
     'Google Cloud Platform': GCP,

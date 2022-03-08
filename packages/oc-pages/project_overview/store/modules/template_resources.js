@@ -1,12 +1,13 @@
 import { cloneDeep } from 'lodash';
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util.mjs';
-import {appendDeploymentTemplateInBlueprint, createResourceTemplate, deleteResourceTemplate, deleteResourceTemplateInDependent} from './deployment_template_updates.js';
+import {appendDeploymentTemplateInBlueprint, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 
 const baseState = () => ({
     deploymentTemplate: {},
     resourceTemplates: {},
     inputValidationStatus: {},
+    availableResourceTypes: [],
 });
 
 const state = baseState();
@@ -16,6 +17,7 @@ const mutations = {
         state.deploymentTemplate = {};
         state.resourceTemplates = {};
         state.inputValidationStatus = {};
+        state.context = ''
     },
 
     setInputValidStatus(state, {card, input, status}) {
@@ -27,6 +29,10 @@ const mutations = {
             delete byCard[inputName];
 
         state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
+    },
+
+    setAvailableResourceTypes(state, resourceTypes) {
+        state.availableResourceTypes = resourceTypes
     },
 
     setDeploymentTemplate(_state, deploymentTemplate) {
@@ -42,6 +48,7 @@ const mutations = {
     },
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
+        if(!dependentName) return
         const dependent = _state.resourceTemplates[dependentName];
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
         resourceTemplate.dependentName = dependentName;
@@ -72,18 +79,23 @@ const mutations = {
         }
     },
 
+    removeCard(state, {templateName}) {
+        delete state.resourceTemplates[templateName]
+        state.resourceTemplates = {...state.resourceTemplates}
+    },
+
     updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName, noPrimary}) {
         _state.lastFetchedFrom = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false};
     },
 
-    setIsDeployment(state, isDeployment) {
-        state.isDeployment = isDeployment
+    setContext(state, context) {
+        state.context = context
     }
 };
 
 const actions = {
     populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
-        commit('setIsDeployment', true)
+        commit('setContext', true)
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
         deploymentTemplate = {...deploymentTemplate, ...deployment}
         let resource = rootGetters.resolveResource(deploymentTemplate.primary)
@@ -102,7 +114,7 @@ const actions = {
     },
 
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
-        commit('setIsDeployment', false)
+        commit('setContext', false)
         if(!templateSlug) return false;
 
         const blueprint = rootGetters.getApplicationBlueprint;
@@ -180,13 +192,13 @@ const actions = {
     },
 
 
-    populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, isDeployment, environmentName}) {
+    populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
         for(const resource of resourceTemplates) {
             //dispatch('createMatchedResources', {resource})
-            commit('createTemplateResource', {...resource, dependentName: '_'})
+            commit('createTemplateResource', {...resource})
         }
         commit('updateLastFetchedFrom', {environmentName, noPrimary: true});
-        commit('setIsDeployment', isDeployment)
+        commit('setContext', context)
     },
 
     createMatchedResources({commit, dispatch, rootGetters}, {resource}) {
@@ -210,11 +222,11 @@ const actions = {
 
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
-    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action, isEnvironmentInstance}) {
         try {
             const target = cloneDeep(selection);
             target.type = {...target};
-            target.description = requirement.description;
+            target.description = requirement?.description;
             target.valid = true;
             target.name = name;
             target.title = title;
@@ -240,11 +252,20 @@ const actions = {
             target.dependentName = dependentName, target.dependentRequirement = dependentRequirement;
             target.id = btoa(target.name).replace(/=/g, '');
 
-            commit(
-                'pushPreparedMutation',
-                createResourceTemplate({...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
-                {root: true}
-            );
+            if(isEnvironmentInstance) {
+                commit(
+                    'pushPreparedMutation',
+                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName})
+                )
+            }
+            else {
+                commit(
+                    'pushPreparedMutation',
+                    createResourceTemplate({...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
+                    {root: true}
+                );
+            }
+
             const fieldsToReplace = {
                 completionStatus: "created",
                 valid: true
@@ -271,16 +292,27 @@ const actions = {
     },
 
     async deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
+        console.log('deleteNode')
         try {
             const actionLowerCase = action.toLowerCase();
-            commit('deleteReference', {
-                dependentName,
-                dependentRequirement,
-                deleteFromDeploymentTemplate: actionLowerCase == 'delete' || actionLowerCase == 'remove'
-            });
+            if(dependentName) {
+                commit('deleteReference', {
+                    dependentName,
+                    dependentRequirement,
+                    deleteFromDeploymentTemplate: actionLowerCase == 'delete' || actionLowerCase == 'remove'
+                });
+            } else {
+                commit('removeCard', {templateName: name})
+            }
 
             if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
-                commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name, dependentName, dependentRequirement}), {root: true});
+
+                if(state.context == 'environment') {
+                    commit('pushPreparedMutation', deleteEnvironmentInstance({templateName: name, environmentName: state.lastFetchedFrom.environmentName}), {root: true});
+                }
+                else {
+                    commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name, dependentName, dependentRequirement}), {root: true});
+                }
                 return true;
             }
 
@@ -295,6 +327,20 @@ const actions = {
             throw new Error(err.message);
         }
     },
+    updateProperty({state, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
+        console.log(state.context)
+        if(state.context == 'environment') {
+            commit(
+                'pushPreparedMutation',
+                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, propertyName, propertyValue, isSensitive})
+            )
+        } else {
+            commit(
+                'pushPreparedMutation',
+                updatePropertyInResourceTemplate({deploymentName, templateName, propertyName, propertyValue, isSensitive})
+            )
+        }
+    }
 };
 
 const getters = {
@@ -372,7 +418,7 @@ const getters = {
 
     resolveRequirementMatchTitle: (_state, getters, _, rootGetters) => function(requirement) { 
         const match = typeof requirement == 'string'? requirement:
-            state.isDeployment ? requirement.target : requirement.match
+            state.context == 'deployment' ? requirement.target : requirement.match
         const matchInResourceTemplates = _state.resourceTemplates[match]?.title; 
         if(matchInResourceTemplates) return matchInResourceTemplates;
         // TODO figure out how to handle resources of a service
@@ -405,6 +451,25 @@ const getters = {
     },
     getCurrentEnvironment(state, _getters, _, rootGetters) {
         return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
+    },
+    currentAvailableResourceTypes(state) {
+        return state.availableResourceTypes
+        //disabled="getValidResourceTypes(requirement, deploymentTemplate, getCurrentEnvironment)
+    },
+    availableResourceTypesForRequirement(_, getters) {
+        return function(requirement) {
+
+            return currentAvailableResourceTypes.filter(type => {
+                const isValidImplementation =  type.extends?.includes(requirement.constraint?.resourceType)
+                return isValidImplementation
+            })
+        }
+    },
+    resolveResourceTypeFromAvailable(_, getters) {
+        return function(typeName) {
+            return getters.currentAvailableResourceTypes.find(rt => rt.name == typeName)
+        }
+
     }
 };
 

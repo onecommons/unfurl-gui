@@ -31,9 +31,9 @@ export default {
         try {
             const {projectPath} = this.$projectGlobal
             const promises = [
-                this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch}),
                 this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath}),
                 this.$store.dispatch('fetchDeployments', {username: this.$store.getters.getUsername}),
+                this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch}),
                 this.$store.dispatch('handleResize')
             ]
             Promise.all(promises).then(_ => this.fetchingComplete = true )
