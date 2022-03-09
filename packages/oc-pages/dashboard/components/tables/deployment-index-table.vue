@@ -92,10 +92,12 @@ export default {
         </template>
         <template #deployment="scope">
             <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;">
-                <router-link 
-                 :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}">
+                <!--router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}"-->
+
+                <a :href="`/${scope.item.context.application.name}`">
                     <b> {{scope.item.context.application.title}}: </b>
-                </router-link>
+                </a>
+                <!--/router-link-->
                 <router-link 
                  :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {environment: scope.item.context.environment.name, name: scope.item.context.deployment.name}}">
                     {{scope.item.context.deployment.title}}
