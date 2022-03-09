@@ -7,7 +7,6 @@ import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../components/shared/oc_card.vue';
-import OcInputs from '../../components/shared/oc_inputs.vue';
 import OcList from '../../components/shared/oc_list.vue';
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
@@ -27,7 +26,6 @@ export default {
     GlFormInput,
     GlFormCheckbox,
     OcCard,
-    OcInputs,
     OcList,
     OcListResource,
     OcTemplateHeader,

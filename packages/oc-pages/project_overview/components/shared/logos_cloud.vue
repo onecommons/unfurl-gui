@@ -48,9 +48,8 @@ export default {
                 const url = new URL(window.location.origin + icon)
                 // still not checking relative url
                 return icon
-            } catch(e) {
-                return
-            }
+            } catch(e) {}
+            return ''
         }
         
     }
