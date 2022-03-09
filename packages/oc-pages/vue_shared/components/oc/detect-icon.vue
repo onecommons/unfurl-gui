@@ -7,6 +7,10 @@ import K8s from './icons/k8s.svg'
 import Azure from './icons/azure.svg'
 import AWS from './icons/aws.svg'
 import LocalDevIcon from './icons/local_dev.svg'
+import DnsIcon from './icons/DNS.svg'
+import MailIcon from './icons/Mail_server.svg'
+import GCPInstance from './icons/gcp_vm.svg'
+import MongoDbIcon from './icons/mongodb.svg'
 
 const DEFAULT = 'pod'
 
@@ -16,13 +20,15 @@ const GL_ICON_MAPPINGS = {
 }
 
 const CUSTOM_ICON_MAPPINGS = {
-    compute: 'ComputeIcon',
-    mongodb: 'DbIcon',
     'unfurl.relationships.connectsto.googlecloudproject': 'GCP',
     'unfurl.relationships.connectsto.k8scluster': 'K8s',
     'unfurl.relationships.connectsto.azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS',
-
+    gcpinstance: GCPInstance,
+    dns: 'DnsIcon',
+    mail: 'MailIcon',
+    mongodb: MongoDbIcon,
+    compute: 'ComputeIcon',
 
     'self-hosted': 'LocalDevIcon'
 }
@@ -62,7 +68,7 @@ export default {
         }
     },
     icons: {
-        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS
+        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon
     },
     computed: {
         detectedIcon() {
@@ -82,7 +88,8 @@ export default {
             }
         },
         customURL() {
-            const icon = this.customIcon && this.$options.icons[this.customIcon]
+            const icon = this.$options.icons[this.customIcon] || this.customIcon
+            if(!icon) return
             if(icon.startsWith('<svg')) {
                 return `data:image/svg+xml;charset=utf8,${encodeURIComponent(icon)}`
             } else return icon

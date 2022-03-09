@@ -348,6 +348,7 @@ type ResourceType {
   extends: [ResourceType!]
   description: String
   badge: String
+  details_url: String
 
   """
   json-schema for inputs, will have a "properties" object that enumerates inputs  

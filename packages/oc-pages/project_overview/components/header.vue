@@ -72,12 +72,12 @@ export default {
             <div class="home-panel-title-row gl-display-flex">
                 <div class="avatar-container rect-avatar s48 gl-flex-shrink-0 gl-w-11 gl-h-11 gl-mr-3 float-none">
                     <!--div class="project_icon_oc" v-html="this.$projectGlobal.projectIcon"></div-->
-                    <img :src="this.$projectGlobal.projectIcon">
+                    <img v-if="getProjectInfo.projectIcon" :src="getProjectInfo.projectIcon">
                 </div>
                 <div class="d-flex flex-column flex-wrap align-items-baseline">
                     <div class="d-inline-flex align-items-baseline">
                         <h1 class="oc-home-panel-title gl-mt-0 gl-mb-0">
-                            {{projectInfo.name || this.$projectGlobal.projectName}}
+                            {{projectInfo.title || projectInfo.name}}
                         </h1>
                     </div>
                     <div class="home-panel-metadata d-flex flex-wrap text-secondary gl-font-base gl-font-weight-normal gl-line-height-normal">

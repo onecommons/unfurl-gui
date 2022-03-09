@@ -3,7 +3,7 @@ function hasMatchingConnection(implementationRequirement, environment, resourceT
     return environment.connections.some(conn => {
         // NOTE this doesn't account for duplication
         const connResourceType = resourceTypeResolver(conn.type)
-        connResourceType.extends.includes(implementationRequirement)
+        return connResourceType?.extends?.includes(implementationRequirement)
     })
 }
 
@@ -23,6 +23,7 @@ export function isDiscoverable(resourceType, environment, resourceTypeResolver) 
 }
 
 export function isConfigurable(resourceType, environment, resourceTypeResolver) {
-    if(! meetsImplementationRequirements(resourceType, environment, resourceTypeResolver)) return false
+    // TODO integrate this
+    //if(! meetsImplementationRequirements(resourceType, environment, resourceTypeResolver)) return false
     return resourceType?.implementations?.includes('create') || resourceType?.implementations?.includes('configure')
 }

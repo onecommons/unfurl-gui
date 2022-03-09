@@ -48,8 +48,8 @@ export default {
     <div>
         <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in validResourceTypes"
-            :key="resource + idx"
+            v-for="resource in validResourceTypes"
+            :key="resource.name"
             class="gl-responsive-table-row oc_table_row"
         >
             <div
@@ -58,7 +58,7 @@ export default {
                 <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
                 <oc-list-resource-icon :type="resource" :badge="resource.badge" :alt="resource.name"/>
                 <div>
-                    <span class="text-break-word title">{{ resource.name }}</span>
+                    <span class="text-break-word title">{{ resource.title }}</span>
                 </div>
             </div>
             <div v-if="!isMobileLayout || resource.description" class="table-section oc-table-section section-wrap text-truncate section-40">

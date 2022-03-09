@@ -38,6 +38,9 @@ export default {
                 SMALL_MAPPINGS[lookupCloudProviderAlias(this.cloud)]:
                 MAPPINGS[lookupCloudProviderAlias(this.cloud)]
             if(!icon) return ''
+            if(icon.startsWith('<svg')) {
+                return `data:image/svg+xml;charset=utf8,${encodeURIComponent(icon)}`
+            }
             try {
                 try {
                     const url = new URL(icon)
@@ -45,10 +48,8 @@ export default {
                 const url = new URL(window.location.origin + icon)
                 // still not checking relative url
                 return icon
-            } catch(e) {
-                const blob = new Blob([icon], {type: 'image/svg+xml'})
-                return URL.createObjectURL(blob)
-            }
+            } catch(e) {}
+            return ''
         }
         
     }

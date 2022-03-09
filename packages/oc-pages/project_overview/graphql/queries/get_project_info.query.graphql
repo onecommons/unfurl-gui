@@ -12,7 +12,9 @@ query getProjectInfo($projectPath: ID!) {
       __typename
       name
       image
+      title
       description
+      projectIcon
       deploymentTemplates {
         title
         name

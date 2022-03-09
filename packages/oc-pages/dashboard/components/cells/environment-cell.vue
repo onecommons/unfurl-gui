@@ -29,5 +29,6 @@ export default {
 .status-item {
     display: flex;
     align-items: center;
+    margin-bottom: -9px;
 }
 </style>
