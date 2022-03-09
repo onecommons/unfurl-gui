@@ -130,8 +130,11 @@ export default {
         shouldRenderOutputs() {
             return this.renderOutputs && this.card.attributes
         },
+        shouldRenderInputs() {
+            return this.renderInputs && this.card.properties.length
+        },
         shouldRenderTabs() {
-            return this.shouldRenderDependencies || this.shouldRenderOutputs || this.renderInputs
+            return this.shouldRenderDependencies || this.shouldRenderOutputs || this.shouldRenderInputs
         }
 
     },
@@ -188,11 +191,6 @@ export default {
 </script>
 <template>
     <gl-tabs v-if="shouldRenderTabs" class="">
-        <oc-tab v-if="renderInputs" title="Specs" :titleCount="(card.template && card.template.properties || this.card.properties || []).length">
-            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
-            <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
-        </oc-tab>
-        <oc-tab v-if="shouldRenderOutputs" title="Attributes" :titleCount="card.attributes.length"></oc-tab>
         <oc-tab v-if="shouldRenderDependencies" title="Dependencies" :titleCount="displayableDependencies.length">
             <!--template slot="title">
                 <span>{{ tabsTitle }}</span>
@@ -315,6 +313,12 @@ export default {
                 </div>
             </div>
         </oc-tab>
+        <oc-tab v-if="shouldRenderInputs" title="Specs" :titleCount="(card.template && card.template.properties || this.card.properties || []).length">
+            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
+            <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
+        </oc-tab>
+        <oc-tab v-if="shouldRenderOutputs" title="Attributes" :titleCount="card.attributes.length"></oc-tab>
+
     </gl-tabs>
 </template>
 <style scoped>

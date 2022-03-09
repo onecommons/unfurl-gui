@@ -73,6 +73,7 @@ export default {
   },
 
   computed: {
+
     ...mapGetters([
       'getProjectInfo',
       'getRequirementSelected',
@@ -92,8 +93,9 @@ export default {
       'getValidResourceTypes',
       'getValidConnections',
       'getHomeProjectPath',
-      'getProjectInfo'
-
+      'getProjectInfo',
+      'lookupConfigurableTypes',
+      'lookupEnvironment'
     ]),
     
     pipelinesPath(){
@@ -278,6 +280,7 @@ export default {
 
   methods: {
     ...mapMutations([
+      'setAvailableResourceTypes',
       'resetTemplateResourceState',
       'setRouterHook',
       'clearPreparedMutations',
@@ -357,11 +360,11 @@ export default {
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
-        const environment = this.$route.params.environment
+        const environmentName = this.$route.params.environment
         if(this.$route.name != 'templatePage') {
           this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
-          this.setEnvironmentScope(environment)
+          this.setEnvironmentScope(environmentName)
         }
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
@@ -372,6 +375,10 @@ export default {
           environmentName: this.$route.params.environment,
           syncState: this.$route.name == 'deploymentDraftPage'
         })
+        const environment = this.lookupEnvironment(environmentName)
+        this.setAvailableResourceTypes(this.lookupConfigurableTypes(environment))
+
+
       } catch (e) {
         console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
@@ -397,7 +404,8 @@ export default {
         try {
             await this.commitPreparedMutations();
             createFlash({
-                message: __('Template was saved successfully!'),
+              // TODO this doesn't make sense if it's a template
+                message: __('Deployment was created successfully'),
                 type: FLASH_TYPES.SUCCESS,
                 duration: this.durationOfAlerts,
             });
@@ -557,7 +565,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1" />
+            <!--oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1" /-->
 
             <!-- Requirements List -->
             <oc-list
@@ -568,7 +576,7 @@ export default {
               :template-dependencies="getDependencies(getPrimaryCard.name)"
               :level="1"
               :show-type-first="true"
-              :render-inputs="false"
+              :render-inputs="true"
               :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">
@@ -586,7 +594,7 @@ export default {
                   :level="idx"
                   class="gl-mt-6">
                   <template #content>
-                    <oc-inputs :card="card" :main-inputs="card.properties" :component-key="2" />
+                    <!--oc-inputs :card="card" :main-inputs="card.properties" :component-key="2" /-->
 
                     <oc-list
                       tabs-title="Requirements"
@@ -595,7 +603,7 @@ export default {
                       :level="idx"
                       :title-key="card.title"
                       :show-type-first="true" 
-                      :render-inputs="false"
+                      :render-inputs="true"
                       :card="card"
                       />
 

@@ -164,7 +164,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
 
 export function appendResourceTemplateInDT({templateName, deploymentTemplateName}) {
     return function(accumulator) {
-        const patch = accumulator['DeploymentTemplate'][deploymentTemplateName]
+        const patch = accumulator['DeploymentTemplate'][deploymentTemplateName] || {}
         if(Array.isArray(patch.resourceTemplates)) patch.resourceTemplates.push(templateName)
         else patch.resourceTemplates = [templateName]
         return [ {typename: 'DeploymentTemplate', target: deploymentTemplateName, patch} ]
@@ -173,7 +173,7 @@ export function appendResourceTemplateInDT({templateName, deploymentTemplateName
 
 export function deleteResourceTemplateInDT({templateName, deploymentTemplateName}) {
     return function(accumulator) {
-        const patch = accumulator['DeploymentTemplate'][deploymentTemplateName]
+        const patch = accumulator['DeploymentTemplate'][deploymentTemplateName] || {}
         if(!patch.resourceTemplates)
             patch.resourceTemplates = []
         const index = patch.resourceTemplates.indexOf(templateName)
@@ -185,10 +185,15 @@ export function deleteResourceTemplateInDT({templateName, deploymentTemplateName
 export function appendDeploymentTemplateInBlueprint({templateName}) {
     return function(accumulator) {
         // TODO should we take this as an arg?
-        const blueprint = Object.keys(accumulator['ApplicationBlueprint'])[0]
-        const patch = accumulator['ApplicationBlueprint'][blueprint]
-        patch.deploymentTemplates.push(templateName)
-        return [ {typename: 'ApplicationBlueprint', target: blueprint, patch} ]
+        try {
+            const blueprint = Object.keys(accumulator['ApplicationBlueprint'])[0]
+            const patch = accumulator['ApplicationBlueprint'][blueprint]
+            patch.deploymentTemplates.push(templateName)
+            return [ {typename: 'ApplicationBlueprint', target: blueprint, patch} ]
+        } catch(e) {
+            console.error(e)
+            return []
+        }
     }
 }
 

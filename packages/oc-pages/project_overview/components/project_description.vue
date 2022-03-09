@@ -2,6 +2,7 @@
 import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
+import {mapGetters} from 'vuex'
 
 export default {
     name: 'ProjectDescriptionBox',
@@ -82,6 +83,10 @@ export default {
         capitalizeFirstLetter(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         },
+    },
+
+    computed: {
+        ...mapGetters(['getProjectInfo'])
     }
 }
 </script>
@@ -92,7 +97,7 @@ export default {
                 <div v-if="!projectImage || projectImage === ''" class="image-placeholder-default">
                     {{ __("Screenshot")}}
                 </div>
-                <img v-else :src="projectImage" :alt="projectName" class="image-project" />
+                <img v-else :src="projectImage" :alt="projectInfo.title" class="image-project" />
             </div>
         </div>
         <div class="col-lg-8 right-description">
@@ -100,7 +105,7 @@ export default {
                 <div class="col-lg-12">
                     <div class="gl-display-flex">
                         <h4 class="project-title gl-display-flex">
-                            {{ projectName }} <!-- TODO project name vs project title? -->
+                            {{ getProjectInfo.title || getProjectInfo.name }} <!-- TODO project name vs project title? -->
                         </h4>
                         <div class="gl-display-flex">
                             <!--a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}

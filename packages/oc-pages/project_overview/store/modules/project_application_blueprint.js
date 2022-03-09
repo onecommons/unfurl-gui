@@ -2,6 +2,7 @@ import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
 import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
+import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
 
 
 class ApplicationBlueprint {
@@ -276,6 +277,11 @@ const getters = {
     /* appease the devtools */
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
+    lookupConfigurableTypes(state, getters) {
+        return function(environment) {
+            return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, getters.resolveResourceType))
+        }
+    },
     getValidResourceTypes(state, getters) {
         return function(dependency, _deploymentTemplate, environment) {
             // having trouble getting fetches finished before the ui starts rendering
