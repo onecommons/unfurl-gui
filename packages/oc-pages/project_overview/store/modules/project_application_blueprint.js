@@ -168,7 +168,9 @@ const actions = {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
-                applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
+                if(!applicationBlueprint.projectIcon) {
+                    applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
+                }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             ResourceType(resourceType) {
