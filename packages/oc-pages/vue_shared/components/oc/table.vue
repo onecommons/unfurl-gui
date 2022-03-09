@@ -434,6 +434,8 @@ export default {
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #DBDBDB;
+  white-space: pre;
+  height: 2em;
 }
 
 .oc-table >>> td {
@@ -457,6 +459,7 @@ export default {
   height: 100%;
   line-height: 1.35;
 }
+
 
 .table-body >>> * {
   position: relative;
@@ -523,10 +526,6 @@ export default {
   height: 3em;
 }
 
-.oc-table >>> th {
-  white-space: pre;
-}
-
 
 .control-cell {
   border-color: inherit;
@@ -576,4 +575,10 @@ th .control-cell {
   margin-left: 1.25em;
 }
 
+</style>
+
+<style>
+thead * {
+    line-height: 0!important
+}
 </style>

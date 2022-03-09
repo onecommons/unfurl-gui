@@ -45,7 +45,7 @@ export default {
 </script>
 <template>
     <!-- forgive me -->
-    <div style="font-size: 0.95em;">
+    <div>
         <router-view v-if="isLoaded"/>
     </div>
 </template>
