@@ -103,9 +103,9 @@ export default {
       const environment = this.$route.params.environment
       const projectUrl = `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`
       return {
-        'variables[DEPLOY_ENVIRONMENT]': environment,
-        'variables[BLUEPRINT_PROJECT_URL]': projectUrl,
-        'variables[DEPLOY_PATH]': this.deploymentDir
+        DEPLOY_ENVIRONMENT: environment,
+        BLUEPRINT_PROJECT_URL: projectUrl,
+        DEPLOY_PATH: this.deploymentDir
       }
     },
     deploymentDir() {
@@ -431,7 +431,15 @@ export default {
           this.loadingDeployment = true;
           await this.triggerSave();
           await this.createDeploymentPathPointer()
-          const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName, ...this.triggerVariables });
+          const variables_attributes = []
+          Object.entries(this.triggerVariables).forEach(([key, secret_value]) => {
+              variables_attributes.push({
+                  key,
+                  secret_value,
+                  variable_type: 'env_var'
+              })
+          })
+          const { data } = await axios.post(this.pipelinesPath, {ref: this.refValue.fullName, variables_attributes});
           createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
           return redirectTo(`${this.pipelinesPath}/${data.id}`);
       } catch (err) {
