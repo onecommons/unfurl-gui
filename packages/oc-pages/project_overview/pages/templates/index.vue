@@ -113,7 +113,10 @@ export default {
     deploymentDir() {
         const environment = this.$route.params.environment
         // this.getDeploymentTemplate.name not loaded yet
-        return `environments/${environment}/${this.getProjectInfo.name}/${this.$route.params.slug}`
+
+        // params.slug is the blueprint unfortunately
+        const deploymentSlug = slugify(this.$route.query.fn)
+        return `environments/${environment}/${this.getProjectInfo.name}/${deploymentSlug}`
     },
     saveStatus() {
       switch(this.$route.name) {
