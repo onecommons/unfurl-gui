@@ -1,5 +1,5 @@
 <script>
-import { GlIcon, GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
+import { GlIcon, GlModal, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 //import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
@@ -9,6 +9,7 @@ import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
+import YourDeployments from '../../components/your-deployments.vue'
 import { bus } from '../../bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
@@ -29,10 +30,10 @@ export default {
         GlDropdownItem,
         GlDropdownDivider,
         ProjectDescriptionBox,
-        GlBanner,
         ErrorSmall,
         DetectIcon,
-        DeployedBlueprints
+        DeployedBlueprints,
+        YourDeployments
     },
     directives: {
         GlModal: GlModalDirective,
@@ -418,7 +419,10 @@ export default {
             <!-- Table -->
             <!--TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" /-->
 
-            <deployed-blueprints />
+            <!-- TODO this will probably get removed -->
+            <deployed-blueprints v-if="false"/>
+
+            <your-deployments />
 
             <!-- Modal -->
             <gl-modal

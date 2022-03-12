@@ -23,6 +23,14 @@ export default {
         items: {
             type: Array,
             required: true
+        },
+        hideFilter: {
+            type: Boolean,
+            default: false
+        },
+        noMargin: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -31,7 +39,7 @@ export default {
                 key: 'status',
                 tableBodyStyles: {'justify-content': 'center'},
                 groupBy: deploymentGroupBy,
-                textValue: (item) => (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
+                textValue: (item) => '@' + (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
                 label: 'Status'
             },
             {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
@@ -73,16 +81,22 @@ export default {
 
         return {fields, routes}
 
+    },
+    methods: {
+        statuses(scope) {
+            return scope.item.context.deployment?.statuses || []
+        }
     }
 
 
 }
 </script>
 <template>
-    <table-component :useCollapseAll="false" :items="items" :fields="fields">
+    <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields">
         <template #status="scope">
             <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                <StatusIcon :size="18" :key="status.name" v-for="status in scope.item.context.deployment.statuses" :status="status.status" />
+                <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
+                <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
             </div>
         </template>
         <template #status$head>

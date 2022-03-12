@@ -151,7 +151,9 @@ export default {
     useCollapseAll: {
       type: Boolean,
       default: true
-    }
+    },
+    hideFilter: { type: Boolean, default: false },
+    noMargin: { type: Boolean, default: false }
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -181,7 +183,8 @@ export default {
         const label = field.label.trim()
         result.push({index: i++, ...field, label});
       }
-      result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
+      // balance table gutters
+      if(this.useCollapseAll) result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
       return result;
     },
     keys() {
@@ -284,8 +287,8 @@ export default {
 };
 </script>
 <template>
-  <div class="container-fluid mt-4">
-    <div class="row fluid no-gutters filter-searchbox">
+  <div :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
+    <div v-if="!hideFilter" class="row fluid no-gutters filter-searchbox" >
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
@@ -383,20 +386,6 @@ export default {
           </template>
           </gl-table>
         </div>
-      </div>
-    </div>
-    <div class="row justify-content-end gl-mt-4">
-      <div class="col">
-        <!--gl-pagination
-          v-model="page"
-          :per-page="perPage"
-          :total-items="totalRows"
-          first-text="First"
-          prev-text="Prev"
-          next-text="Next"
-          last-text="Last"
-          aria-controls="accounts-table"
-        /-->
       </div>
     </div>
   </div>
@@ -574,6 +563,10 @@ th .control-cell {
 .indent-to-widget {
   margin-left: 1.25em;
 }
+
+.no-margin { margin: -1px; }
+.no-margin >>> table { border-bottom-width: 0; }
+.no-margin >>> .gl-table { margin-bottom: -1px; }
 
 </style>
 
