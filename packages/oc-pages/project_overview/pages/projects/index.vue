@@ -281,7 +281,6 @@ export default {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
             const push = { query, name: page, params: { environment: this.selectedEnvironment.name, slug: this.templateSelected.name}}
-            console.log(push)
             this.$router.push(push);
         },
 
@@ -317,7 +316,6 @@ export default {
                 this.submitting = true
                 //this.prepareTemplateNew();
 
-                console.log(this.instantiateAs)
                 if(this.instantiateAs == 'deployment-draft') {
                 } else {
                     const args = {...this.templateSelected, blueprintName: this.getProjectInfo.name}
@@ -381,20 +379,6 @@ export default {
 </script>
 <template>
     <div>
-        <!-- Banner Intro -->
-        <gl-banner
-            v-if="showBannerIntro"
-            :title="bannerInfo.title"
-            button-text="Learn More"
-            button-link="https://www.onecommons.org/unfurl-cloud"
-            variant="introduction"
-            @close="handleClose">
-            <p>
-                You can view this project’s requirements, deployment templates, source or view a live preview of the app.
-                <br>
-                You can also create a new deployment template and edit or deploy this project using any of its templates.
-            </p>
-        </gl-banner>
 
         <!-- Header of project view -->
         <HeaderProjectView :project-info="getProjectInfo" />

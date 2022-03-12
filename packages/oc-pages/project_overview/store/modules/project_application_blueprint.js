@@ -149,13 +149,11 @@ const actions = {
     useProjectState({commit, getters}, root) {
         const transforms = {
             ResourceTemplate(resourceTemplate) {
-                const generated = getters.getMissingDependencies(resourceTemplate)
-                if(generated.length) {
-                    for(const generatedDep of generated) {
-                        if(!resourceTemplate.dependencies.some(dep => dep.name == generatedDep.name)) {
-                            resourceTemplate.dependencies.push(generatedDep)
-                        }
-                    }
+                for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
+                    resourceTemplate.dependencies.push(generatedDep)
+                }
+                for(const generatedProp of getters.getMissingProperties(resourceTemplate)) {
+                    resourceTemplate.properties.push(generatedProp)
                 }
             },
             DeploymentTemplate(deploymentTemplate) {
@@ -254,6 +252,22 @@ const getters = {
             }))
         }
     },
+    // TODO use names instead of titles
+    propertiesFromResourceType(_, getters) {
+        return function(resourceTypeName) {
+            let resourceType
+            if(typeof resourceTypeName == 'string') {
+                resourceType = getters.resolveResourceType(resourceTypeName)
+            } else { resourceType = resourceTypeName }
+
+            console.log(resourceType)
+            if(!resourceType?.inputsSchema?.properties) return []
+            return Object.values(resourceType.inputsSchema.properties).map(schemaEntry => ({
+                name: schemaEntry.title,
+                value: null
+            }))
+        }
+    },
     getMissingDependencies(_, getters) {
         return function(resourceTemplate) {
             const generatedDependencies = getters.dependenciesFromResourceType(resourceTemplate.type)
@@ -263,6 +277,22 @@ const getters = {
             const result = []
             for(const generated of generatedDependencies) {
                 if(!resourceTemplate.dependencies.some(dep => dep.name == generated.name)) {
+                    result.push(generated)
+                }
+            }
+            return result
+        }
+    },
+    getMissingProperties(_, getters) {
+        return function(resourceTemplate) {
+            const generatedProperties = getters.propertiesFromResourceType(resourceTemplate.type)
+            console.log(resourceTemplate, generatedProperties)
+            if(generatedProperties.length == resourceTemplate.properties?.length) {
+                return [] // assuming they're correct
+            }
+            const result = []
+            for(const generated of generatedProperties) {
+                if(!resourceTemplate.properties.some(prop => prop.name == generated.name)) {
                     result.push(generated)
                 }
             }

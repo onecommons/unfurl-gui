@@ -8,6 +8,7 @@ import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../components/shared/oc_card.vue';
 import OcList from '../../components/shared/oc_list.vue';
+import OcInputs from '../../components/shared/oc_inputs.vue'
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
@@ -27,6 +28,7 @@ export default {
     GlFormCheckbox,
     OcCard,
     OcList,
+    OcInputs,
     OcListResource,
     OcTemplateHeader,
     TemplateButtons
@@ -571,7 +573,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <!--oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1" /-->
+              <oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
 
             <!-- Requirements List -->
             <oc-list
@@ -582,7 +584,7 @@ export default {
               :template-dependencies="getDependencies(getPrimaryCard.name)"
               :level="1"
               :show-type-first="true"
-              :render-inputs="true"
+              :render-inputs="false"
               :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">

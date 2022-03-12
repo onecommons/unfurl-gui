@@ -201,7 +201,8 @@ const actions = {
             fetchPolicy: 'network-only',
             variables: { projectPath, defaultBranch },
         });
-        // NOTE we don't have title,image
+
+        if(!data?.applicationBlueprintProject?.applicationBlueprint) throw new Error('Could not load overview - please check whether the application unfurl.json is valid and up to date.')
 
         async function fetchProjectPermissions(projectPath) {
             const query = gql`
@@ -224,7 +225,6 @@ const actions = {
         }
 
         const hasEditPermissions = await fetchProjectPermissions(projectPath)
-
 
         const projectInfo = {...data.applicationBlueprintProject.applicationBlueprint, fullPath: projectPath, hasEditPermissions}
         commit('SET_PROJECT_INFO', projectInfo)
