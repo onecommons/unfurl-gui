@@ -423,8 +423,6 @@ export default {
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #DBDBDB;
-  white-space: pre;
-  height: 2em;
 }
 
 .oc-table >>> td {
