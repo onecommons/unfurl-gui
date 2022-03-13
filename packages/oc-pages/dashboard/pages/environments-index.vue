@@ -56,10 +56,16 @@ export default {
 <template>
     <div>
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <div class="row d-flex m-5 justify-content-end">
+        <div class="row d-flex flex-wrap m-5 justify-content-between">
+            <div class="mr-4">
+                <div v-show="getDashboardItems.length == 0">
+                    This page will show all of your environments once you've created some. <br>
+                    Click <a href="#">here</a> to learn more about how environments work on unfurl.cloud.
+                </div>
+            </div>
             <gl-button variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
         </div>
-        <environments-index-table :items="getDashboardItems"/>
+        <environments-index-table v-if="getDashboardItems.length > 0" :items="getDashboardItems"/>
             
         <create-environment-modal v-model="displayModal" />
     </div>

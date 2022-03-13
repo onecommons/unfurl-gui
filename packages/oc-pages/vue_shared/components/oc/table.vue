@@ -288,7 +288,7 @@ export default {
 </script>
 <template>
   <div :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
-    <div v-if="!hideFilter" class="row fluid no-gutters filter-searchbox" >
+    <div v-if="!hideFilter && _items.length > 1" class="row fluid no-gutters filter-searchbox" >
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
@@ -325,8 +325,13 @@ export default {
             :items="_items"
             :fields="_fields"
             primary-key="id"
+            :thead-class="{'no-collapse-all': !useCollapseAll}"
             show-empty
           >
+
+          <template #emptyfiltered>
+            <slot name="empty" />
+          </template>
           <template #head(selected)>
             <span @click="toggleAll" class="control-cell primary-toggle">
                 <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
@@ -344,7 +349,6 @@ export default {
             <slot :name="scope.field.key + '$head'" v-bind="scope">
               {{scope.field.label}}
             </slot>
-
           </template>
 
 
@@ -569,7 +573,6 @@ th .control-cell {
 </style>
 
 <style>
-thead * {
-    line-height: 0!important
-}
+thead * { line-height: 0!important }
+thead.no-collapse-all * { line-height: 2!important }
 </style>

@@ -120,6 +120,11 @@ export default {
         </div>
     </div>
     <TableComponent :items="tableItems" :fields="tableFields">
+    <template #empty>
+      <center class="mt-5" style="font-size: 1.3em;">
+        You haven't deployed any applications yet. Click <a href="/explore" target="_blank">here</a> to get started!
+      </center>
+    </template>
     <template #application="scope">
         <application-cell :application="scope.item.context.application" />
     </template>
