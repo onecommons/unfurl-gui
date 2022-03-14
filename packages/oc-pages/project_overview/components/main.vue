@@ -67,11 +67,7 @@ export default {
 </template>
 <style>
 #OcAppDeployments {
-    font-family: "Helvetica Neue";
     font-style: normal;
-}
-* {
-    font-family: "Helvetica Neue";
 }
 button.dropdown-item:disabled {
     color: #9b9b9b;
