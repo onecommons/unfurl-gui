@@ -26,6 +26,11 @@ export default {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
         const state = this.getDeploymentDictionary(deploymentName, environmentName)
+        if(!state) {
+            const e = new Error(`Could not lookup deployment '${deploymentName}'.  It may contain errors or creation may have failed.  Please contact support if you believe this is a bug or you would like to suggest a more helpful error message.`)
+            e.flash = true
+            throw e
+        }
         this.useProjectState(cloneDeep(state))
         const deployment = this.lookupDeployment(deploymentName, environmentName)
         this.deployment = deployment

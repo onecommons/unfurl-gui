@@ -147,6 +147,7 @@ const actions = {
         commit('loaded', true)
     },
     useProjectState({commit, getters}, root) {
+        console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         const transforms = {
             ResourceTemplate(resourceTemplate) {
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
@@ -260,7 +261,6 @@ const getters = {
                 resourceType = getters.resolveResourceType(resourceTypeName)
             } else { resourceType = resourceTypeName }
 
-            console.log(resourceType)
             if(!resourceType?.inputsSchema?.properties) return []
             return Object.values(resourceType.inputsSchema.properties).map(schemaEntry => ({
                 name: schemaEntry.title,
@@ -286,7 +286,6 @@ const getters = {
     getMissingProperties(_, getters) {
         return function(resourceTemplate) {
             const generatedProperties = getters.propertiesFromResourceType(resourceTemplate.type)
-            console.log(resourceTemplate, generatedProperties)
             if(generatedProperties.length == resourceTemplate.properties?.length) {
                 return [] // assuming they're correct
             }

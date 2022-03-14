@@ -135,7 +135,7 @@ export default {
         <deployment-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" />
     </template>
     <template #resource="scope">
-        <resource-cell :resource="scope.item.context.resource" />
+        <resource-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" :resource="scope.item.context.resource" />
     </template>
     </TableComponent> 
 </div>

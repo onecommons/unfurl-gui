@@ -5,6 +5,7 @@ import {mapGetters} from 'vuex'
 import { bus } from '../../bus.js';
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
 import {DetectIcon} from '../../../vue_shared/oc-components'
+import {generateCardId} from '../../../vue_shared/util.mjs'
 
 import { __ } from '~/locale';
 
@@ -91,7 +92,7 @@ export default {
             };
         },
         id() {
-            return btoa(this.card.name).replace(/=/g, '')
+            return generateCardId(this.card.name)
         },
         ...mapGetters(['cardIsValid', 'getCardType', 'resolveResourceTypeFromAvailable']),
 

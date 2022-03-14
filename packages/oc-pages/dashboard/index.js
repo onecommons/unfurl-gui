@@ -5,9 +5,16 @@ import apolloProvider from './graphql';
 import { GlToast } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router'
+import createFlash, { FLASH_TYPES } from '~/flash';
 
 Vue.use(GlToast);
 const router = createRouter()
+Vue.config.errorHandler = function(err, vm, info) {
+    if(err.flash) {
+        console.error(err.message)
+        return createFlash({ message: err.message, type: FLASH_TYPES.ALERT });
+    }
+}
 
 export default (elemId='js-table-component') => {
     const element = document.getElementById(elemId);

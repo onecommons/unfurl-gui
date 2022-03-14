@@ -80,7 +80,7 @@ export default {
                 </div>
 
             </template>
-            <deployment-index-table :items="items" hide-filter no-margin/>
+            <deployment-index-table no-router :items="items" hide-filter no-margin/>
 
         </gl-card>
     </div>
