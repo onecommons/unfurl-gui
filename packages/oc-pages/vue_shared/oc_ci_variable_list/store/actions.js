@@ -106,7 +106,9 @@ export const fetchVariables = ({ dispatch, state }) => {
   return axios
     .get(state.endpoint)
     .then(({ data }) => {
-      dispatch('receiveVariablesSuccess', prepareDataForDisplay(data.variables));
+      const ocVariables = data?.variables?.filter(envvar => envvar.environment_scope == state.environmentName)
+      dispatch('receiveVariablesSuccess', prepareDataForDisplay(ocVariables))
+      // dispatch('receiveVariablesSuccess', prepareDataForDisplay(data.variables)); oc change
     })
     .catch(() => {
       createFlash({

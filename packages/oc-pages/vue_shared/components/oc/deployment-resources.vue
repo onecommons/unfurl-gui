@@ -100,7 +100,7 @@ export default {
             checkedNode: true,
             selectedServiceToConnect: '',
             selectingTopLevel: false,
-            topLevelSelection: ''
+            topLevelSelection: {}
         };
     },
 
@@ -165,7 +165,7 @@ export default {
         ocTopLevelPrimary() {
             return {
                 text: __("Next"),
-                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: !this.topLevelSelection }]
+                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (!Object.keys(this.topLevelSelection).length || !this.resourceName.length || this.alertNameExists) }]
             };
         },
 
@@ -199,6 +199,14 @@ export default {
                 }
             }
         },
+        topLevelSelection: function(val) {
+            if(Object.keys(val).length > 0) {
+                if(!this.userEditedResourceName) {
+                    this.resourceName = val.name;
+                }
+            }
+        },
+
 
         resourceName: function(val) {
             this.alertNameExists = this.requirementMatchIsValid(slugify(val));

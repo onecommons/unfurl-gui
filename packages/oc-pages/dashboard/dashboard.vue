@@ -25,7 +25,7 @@ export default {
 
         // add environment to environments.json
         if(this.selectedEnvironment && this.newEnvironmentProvider) {
-            const primary_provider = {type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
+            const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
 
             const query = this.$route.query
             delete query.provider
