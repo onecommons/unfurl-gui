@@ -1,13 +1,11 @@
 <script>
-import { GlIcon } from "@gitlab/ui";
 import { __ } from '~/locale';
-import LogosCloud from '../../components/shared/logos_cloud.vue';
+import {DetectIcon} from '../../../vue_shared/oc-components'
 
 export default {
     name: 'OcTemplateHeader',
     components: {
-        GlIcon,
-        LogosCloud
+        DetectIcon
     },
     props: {
         headerInfo: {
@@ -23,15 +21,8 @@ export default {
             <h1 class="gl-mt-3 gl-mb-0 template-title">{{ headerInfo.title }}</h1>
         </div>
         <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end gl-pt-4" style="align-items: center">
-            <LogosCloud :cloud="headerInfo.cloud" :class="['gl-mr-1', 'logo-mt']" />
-            <!--span style="line-height: 0;" v-if="headerInfo.cloud">{{headerInfo.cloud.split(/(?=[A-Z])/).slice(0, -1).join(' ')}}</span-->
-            <span class="gl-pl-2 oc_environment_name">{{ headerInfo.environment }}</span> 
-            <gl-icon
-                :size="12"
-                :class="['icon-blue']"
-                style="margin: 0.25rem"
-                :name="'information-o'"
-                />
+            <span class="gl-pl-2 oc_environment_name mr-2">{{ headerInfo.environment }}</span> 
+            <detect-icon :size="18" :type="headerInfo.cloud" />
         </div>
     </div>
 </template>
