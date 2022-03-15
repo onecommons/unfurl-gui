@@ -1,6 +1,7 @@
 export {default as DetectIcon} from './components/oc/detect-icon.vue'
 export {default as OcPropertiesList} from './components/oc/oc-properties-list.vue'
 export {default as DeploymentResources} from './components/oc/deployment-resources.vue'
+export {default as OcTab} from './components/oc/oc-tab.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 

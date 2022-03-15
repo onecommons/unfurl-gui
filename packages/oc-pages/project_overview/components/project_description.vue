@@ -3,6 +3,7 @@ import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
 import {mapGetters} from 'vuex'
+import {OcTab} from '../../vue_shared/oc-components'
 
 export default {
     name: 'ProjectDescriptionBox',
@@ -10,6 +11,7 @@ export default {
         GlIcon,
         GlTabs,
         GlTab,
+        OcTab,
         GlBadge
     },
     mixins: [commonMethods],
@@ -158,41 +160,37 @@ export default {
                             </ul>
                             <div v-else>{{ notRecordsFound }}</div>
                         </gl-tab>
-                        <gl-tab class="gl-mt-3">
-                            <template slot="title">
-                                <span>{{ __('Inputs')}}</span>
-                                <gl-badge size="sm" class="gl-tab-counter-badge">
-                                    {{ inputs.length }}
-                                </gl-badge>
-                            </template>
-                            <ul v-if="inputs.length > 0" class="oc-list-ordered">
-                                <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-4">
-                                    {{input.title}}
-                                    <div class="light-gray gl-mt-2">
-                                        {{ input.description }}
-                                    </div>
-                                </li>
-                            </ul>
-                            <div v-else>{{ notRecordsFound }}</div>
-                        </gl-tab>
+                        <oc-tab title="Details" :titleCount="outputs.length + inputs.length">
 
-                        <gl-tab class="gl-mt-3">
-                            <template slot="title">
-                                <span>{{ __('Outputs')}}</span>
-                                <gl-badge size="sm" class="gl-tab-counter-badge">
-                                    {{ outputs.length }}
-                                </gl-badge>
-                            </template>
-                            <ul v-if="outputs.length > 0" class="oc-list-ordered">
-                                <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-4">
-                                    {{output.title}}
-                                    <div class="light-gray gl-mt-2">
-                                        {{ output.description }}
-                                    </div>
-                                </li>
-                            </ul>
-                            <div v-else>{{ notRecordsFound }}</div>
-                        </gl-tab>
+                            <div>
+                                <div class="detail-heading">Inputs</div>
+                                <ul class="pl-4" v-if="inputs.length > 0">
+                                    <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-3">
+                                        <div class="li-inner">
+                                            {{input.title}}
+                                            <div v-if="input.description" class="light-gray gl-mt-2">
+                                                {{ input.description }}
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div>
+                                <div class="detail-heading">Outputs</div>
+                                <ul class="pl-4" v-if="outputs.length > 0">
+                                    <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-3">
+                                        <div class="li-inner">
+                                            {{output.title}}
+                                            <div v-if="output.description" class="light-gray gl-mt-2">
+                                                {{ output.description }}
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+
+
+                        </oc-tab>
                     </gl-tabs>
                 </div>
             </div>
@@ -202,6 +200,17 @@ export default {
 
 
 <style scope>
+.li-inner {
+    margin-left: -0.25em;
+    color: #4A5053;
+}
+.detail-heading {
+    color: #404040;
+    font-weight: 600;
+    font-size: 1.14em;
+    line-height: 20px;
+    margin-bottom: 0.4em;
+}
 .oc-project-description-box {
     box-sizing: border-box;
     flex-grow: 0;

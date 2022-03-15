@@ -191,7 +191,7 @@ export default {
 </script>
 <template>
     <gl-tabs v-if="shouldRenderTabs" class="">
-        <oc-tab v-if="shouldRenderDependencies" title="Dependencies" :titleCount="displayableDependencies.length">
+        <oc-tab v-if="shouldRenderDependencies" title="Requirements" :titleCount="displayableDependencies.length">
             <!--template slot="title">
                 <span>{{ tabsTitle }}</span>
                 <gl-icon
