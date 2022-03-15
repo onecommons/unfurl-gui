@@ -8,6 +8,7 @@ import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../components/shared/oc_card.vue';
 import OcList from '../../components/shared/oc_list.vue';
+import OcInputs from '../../components/shared/oc_inputs.vue'
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
@@ -27,6 +28,7 @@ export default {
     GlFormCheckbox,
     OcCard,
     OcList,
+    OcInputs,
     OcListResource,
     OcTemplateHeader,
     TemplateButtons
@@ -99,19 +101,30 @@ export default {
     pipelinesPath(){
       return `/${this.getHomeProjectPath}/-/pipelines`
     },
+    UNFURL_MOCK_DEPLOY() {
+      if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
+      let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
+      if(key && sessionStorage[key]) return true
+      return false
+    },
     triggerVariables() {
       const environment = this.$route.params.environment
       const projectUrl = `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`
-      return {
-        'variables[DEPLOY_ENVIRONMENT]': environment,
-        'variables[BLUEPRINT_PROJECT_URL]': projectUrl,
-        'variables[DEPLOY_PATH]': this.deploymentDir
+      const result = {
+        DEPLOY_ENVIRONMENT: environment,
+        BLUEPRINT_PROJECT_URL: projectUrl,
+        DEPLOY_PATH: this.deploymentDir
       }
+      if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = 'true'
+      return result
     },
     deploymentDir() {
         const environment = this.$route.params.environment
         // this.getDeploymentTemplate.name not loaded yet
-        return `environments/${environment}/${this.getProjectInfo.name}/${this.$route.params.slug}`
+
+        // params.slug is the blueprint unfortunately
+        const deploymentSlug = slugify(this.$route.query.fn)
+        return `environments/${environment}/${this.getProjectInfo.name}/${deploymentSlug}`
     },
     saveStatus() {
       switch(this.$route.name) {
@@ -183,6 +196,11 @@ export default {
               ? this.getRequirementSelected.requirement.name 
               : __('Resource');
     },
+
+    getRequirementResourceType() {
+      return this.getRequirementSelected?.requirement?.constraint?.resourceType
+    },
+
 
     ocTemplateResourcePrimary() {
         return {
@@ -431,7 +449,15 @@ export default {
           this.loadingDeployment = true;
           await this.triggerSave();
           await this.createDeploymentPathPointer()
-          const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName, ...this.triggerVariables });
+          const variables_attributes = []
+          Object.entries(this.triggerVariables).forEach(([key, secret_value]) => {
+              variables_attributes.push({
+                  key,
+                  secret_value,
+                  variable_type: 'env_var'
+              })
+          })
+          const { data } = await axios.post(this.pipelinesPath, {ref: this.refValue.fullName, variables_attributes});
           createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
           return redirectTo(`${this.pipelinesPath}/${data.id}`);
       } catch (err) {
@@ -563,7 +589,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <!--oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1" /-->
+              <oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
 
             <!-- Requirements List -->
             <oc-list
@@ -574,7 +600,7 @@ export default {
               :template-dependencies="getDependencies(getPrimaryCard.name)"
               :level="1"
               :show-type-first="true"
-              :render-inputs="true"
+              :render-inputs="false"
               :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">
@@ -635,14 +661,14 @@ export default {
             :ref="__('oc-template-resource')"
             modal-id="oc-template-resource"
             size="lg"
-            :title="`Choose a ${getNameResourceModal} template`"
+            :title="`Choose a ${getRequirementResourceType} template for ${getNameResourceModal}`"
             :action-primary="ocTemplateResourcePrimary"
             :action-cancel="cancelProps"
             @primary="onSubmitTemplateResourceModal"
             @cancel="cleanModalResource"
             >
 
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>

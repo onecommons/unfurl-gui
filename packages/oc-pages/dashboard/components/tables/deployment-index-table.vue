@@ -23,6 +23,18 @@ export default {
         items: {
             type: Array,
             required: true
+        },
+        hideFilter: {
+            type: Boolean,
+            default: false
+        },
+        noMargin: {
+            type: Boolean,
+            default: false
+        },
+        noRouter: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -31,7 +43,7 @@ export default {
                 key: 'status',
                 tableBodyStyles: {'justify-content': 'center'},
                 groupBy: deploymentGroupBy,
-                textValue: (item) => (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
+                textValue: (item) => '@' + (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
                 label: 'Status'
             },
             {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
@@ -73,16 +85,29 @@ export default {
 
         return {fields, routes}
 
+    },
+    methods: {
+        statuses(scope) {
+            return scope.item.context.deployment?.statuses || []
+        },
+        deploymentAttrs(scope) {
+            const context = scope.item.context
+            const href = this.noRouter?
+                `/dashboard/deployments/${context.environment.name}/${context.deployment.name}`: // TODO use from routes.js
+                {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
+            return this.noRouter? {href}: {to: href}
+        },
     }
 
 
 }
 </script>
 <template>
-    <table-component :useCollapseAll="false" :items="items" :fields="fields">
+    <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields">
         <template #status="scope">
             <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                <StatusIcon :size="18" :key="status.name" v-for="status in scope.item.context.deployment.statuses" :status="status.status" />
+                <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
+                <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
             </div>
         </template>
         <template #status$head>
@@ -92,20 +117,16 @@ export default {
         </template>
         <template #deployment="scope">
             <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;">
-                <!--router-link :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: scope.item.context.application.name}}"-->
-
                 <a :href="`/${scope.item.context.application.name}`">
                     <b> {{scope.item.context.application.title}}: </b>
                 </a>
-                <!--/router-link-->
-                <router-link 
-                 :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {environment: scope.item.context.environment.name, name: scope.item.context.deployment.name}}">
+                <component :is="noRouter? 'a': 'router-link'" v-bind="deploymentAttrs(scope)">
                     {{scope.item.context.deployment.title}}
-                </router-link>
+                </component>
             </div>
         </template>
         <template #resource="scope">
-            <resource-cell :resource="scope.item.context.resource"/>
+            <resource-cell :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
         </template>
         <template #environment="scope">
             <environment-cell :environment="scope.item.context.environment"/>

@@ -248,8 +248,11 @@ export const resolvers = {
             if(!parent?.connections) return []
             if(dehydrated) return Object.keys(parent.connections)
             const resourceTemplates = Object.values(parent.connections);
-            resourceTemplates.forEach((elem) => {
-                if(typeof elem == 'object') elem.__typename = 'ResourceTemplate';
+            Object.entries(parent.connections).forEach(([key, elem]) => {
+                if(typeof elem == 'object') {
+                    elem.__typename = 'ResourceTemplate';
+                    elem.name = key
+                }
             });
 
             return resourceTemplates

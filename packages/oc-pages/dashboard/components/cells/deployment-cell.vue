@@ -15,15 +15,27 @@ export default {
         displayStatus: {
             type: Boolean,
             default: true
+        },
+        noRouter: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
         return {routes}
+    },
+    computed: {
+        to() {
+            const href = this.noRouter?
+                `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`: // TODO use from routes.js
+                {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}
+            return this.noRouter? {href}: {to: href}
+        }
     }
 }
 </script>
 <template>
-    <router-link v-if="deployment && deployment.name" :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: deployment.name, environment: environment.name}}">
+    <component :is="noRouter? 'a': 'router-link'" v-if="deployment && deployment.name" v-bind="to">
         <div v-if="displayStatus" class="status-item">
                 <status-icon v-for="resource in deployment.statuses" :key="resource.name" :status="resource.status"/>
                 <div class="font-weight-bold" style="margin-bottom: -2px;">{{deployment.title}}</div>
@@ -31,7 +43,7 @@ export default {
         <div v-else>
             {{deployment.title}}
         </div>
-    </router-link>
+    </component>
 </template>
 <style scoped>
 .status-item {

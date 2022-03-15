@@ -10,7 +10,7 @@ const alias = {
 }
 
 const httpProxyMiddleware = require('http-proxy-middleware');
-const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || "https://unfurl.cloud"
+const unfurlCloudBaseUrl = process.env.UNFURL_CLOUD_BASE_URL || ""
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 const fullname = process.env.UNFURL_CLOUD_FULLNAME || "Unfurl Cloud Craftsman"
 // TODO fix this

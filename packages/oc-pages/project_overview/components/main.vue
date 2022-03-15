@@ -36,10 +36,10 @@ export default {
                 this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch}),
                 this.$store.dispatch('handleResize')
             ]
-            Promise.all(promises).then(_ => this.fetchingComplete = true )
-            return true;
+            await Promise.all(promises).then(_ => this.fetchingComplete = true )
+            return true
         } catch(err) {
-            console.error(err)
+            console.error('@main.vue', err)
             return createFlash({ message: err.message, type: FLASH_TYPES.ALERT });
         }
     },
@@ -67,11 +67,7 @@ export default {
 </template>
 <style>
 #OcAppDeployments {
-    font-family: "Helvetica Neue";
     font-style: normal;
-}
-* {
-    font-family: "Helvetica Neue";
 }
 button.dropdown-item:disabled {
     color: #9b9b9b;

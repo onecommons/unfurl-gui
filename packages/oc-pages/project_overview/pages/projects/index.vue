@@ -1,5 +1,5 @@
 <script>
-import { GlIcon, GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
+import { GlIcon, GlModal, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 //import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
@@ -9,6 +9,7 @@ import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
+import YourDeployments from '../../components/your-deployments.vue'
 import { bus } from '../../bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
@@ -29,10 +30,10 @@ export default {
         GlDropdownItem,
         GlDropdownDivider,
         ProjectDescriptionBox,
-        GlBanner,
         ErrorSmall,
         DetectIcon,
-        DeployedBlueprints
+        DeployedBlueprints,
+        YourDeployments
     },
     directives: {
         GlModal: GlModalDirective,
@@ -251,7 +252,7 @@ export default {
         // add environment to environments.json
         // TODO break this off into a function
         if(envName && this.newEnvironmentProvider) {
-            const primary_provider = {type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
+            const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
 
             await this.updateEnvironment({
                 envName,
@@ -281,7 +282,6 @@ export default {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
             const push = { query, name: page, params: { environment: this.selectedEnvironment.name, slug: this.templateSelected.name}}
-            console.log(push)
             this.$router.push(push);
         },
 
@@ -317,7 +317,6 @@ export default {
                 this.submitting = true
                 //this.prepareTemplateNew();
 
-                console.log(this.instantiateAs)
                 if(this.instantiateAs == 'deployment-draft') {
                 } else {
                     const args = {...this.templateSelected, blueprintName: this.getProjectInfo.name}
@@ -381,20 +380,6 @@ export default {
 </script>
 <template>
     <div>
-        <!-- Banner Intro -->
-        <gl-banner
-            v-if="showBannerIntro"
-            :title="bannerInfo.title"
-            button-text="Learn More"
-            button-link="https://www.onecommons.org/unfurl-cloud"
-            variant="introduction"
-            @close="handleClose">
-            <p>
-                You can view this project’s requirements, deployment templates, source or view a live preview of the app.
-                <br>
-                You can also create a new deployment template and edit or deploy this project using any of its templates.
-            </p>
-        </gl-banner>
 
         <!-- Header of project view -->
         <HeaderProjectView :project-info="getProjectInfo" />
@@ -434,7 +419,10 @@ export default {
             <!-- Table -->
             <!--TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" /-->
 
-            <deployed-blueprints />
+            <!-- TODO this will probably get removed -->
+            <deployed-blueprints v-if="false"/>
+
+            <your-deployments />
 
             <!-- Modal -->
             <gl-modal

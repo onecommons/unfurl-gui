@@ -5,6 +5,7 @@ import {mapGetters} from 'vuex'
 import { bus } from '../../bus.js';
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
 import {DetectIcon} from '../../../vue_shared/oc-components'
+import {generateCardId} from '../../../vue_shared/util.mjs'
 
 import { __ } from '~/locale';
 
@@ -91,9 +92,9 @@ export default {
             };
         },
         id() {
-            return btoa(this.card.name).replace(/=/g, '')
+            return generateCardId(this.card.name)
         },
-        ...mapGetters(['cardIsValid', 'getCardType', 'resolveResourceType']),
+        ...mapGetters(['cardIsValid', 'getCardType', 'resolveResourceTypeFromAvailable']),
 
         badgeHeaderText() {
             const result = this.$props.badgeHeader.text || this.getCardType(this.card)
@@ -146,7 +147,7 @@ export default {
                 <div class="mr-4 d-flex">
                     <slot name="header">
                         <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
-                            <detect-icon v-if="card && card.type" :size="18" class="gl-mr-3 gl-mt-1 icon-gray" :type="resolveResourceType(card.type)"/>
+                            <detect-icon v-if="card && card.type" :size="18" class="gl-mr-3 gl-mt-1 icon-gray" :type="resolveResourceTypeFromAvailable(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
                             <gl-icon
                                 v-if="displayValidation"

@@ -366,7 +366,7 @@ const state = {
     accumulator: {},
     patches: {},
     env: {},
-    useBaseState: true
+    useBaseState: false
 }
 
 const getters = {

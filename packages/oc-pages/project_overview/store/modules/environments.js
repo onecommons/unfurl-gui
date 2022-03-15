@@ -4,6 +4,7 @@ import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
+import createFlash, { FLASH_TYPES } from '~/flash';
 
 const state = {
     environmentName: __("Oc Default"),
@@ -144,8 +145,8 @@ const actions = {
 
         }
         catch(e){
-            console.error('could not fetch project environments')
-            console.error(e)
+            return createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
+            console.error('Could not fetch project environments', e)
             environments = []
 
         }

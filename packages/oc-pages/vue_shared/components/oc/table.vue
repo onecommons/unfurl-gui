@@ -151,7 +151,9 @@ export default {
     useCollapseAll: {
       type: Boolean,
       default: true
-    }
+    },
+    hideFilter: { type: Boolean, default: false },
+    noMargin: { type: Boolean, default: false }
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -181,7 +183,8 @@ export default {
         const label = field.label.trim()
         result.push({index: i++, ...field, label});
       }
-      result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
+      // balance table gutters
+      if(this.useCollapseAll) result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
       return result;
     },
     keys() {
@@ -284,8 +287,8 @@ export default {
 };
 </script>
 <template>
-  <div class="container-fluid mt-4">
-    <div class="row fluid no-gutters filter-searchbox">
+  <div :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
+    <div v-if="!hideFilter && _items.length > 1" class="row fluid no-gutters filter-searchbox" >
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
@@ -322,8 +325,13 @@ export default {
             :items="_items"
             :fields="_fields"
             primary-key="id"
+            :thead-class="{'no-collapse-all': !useCollapseAll}"
             show-empty
           >
+
+          <template #emptyfiltered>
+            <slot name="empty" />
+          </template>
           <template #head(selected)>
             <span @click="toggleAll" class="control-cell primary-toggle">
                 <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
@@ -341,7 +349,6 @@ export default {
             <slot :name="scope.field.key + '$head'" v-bind="scope">
               {{scope.field.label}}
             </slot>
-
           </template>
 
 
@@ -385,20 +392,6 @@ export default {
         </div>
       </div>
     </div>
-    <div class="row justify-content-end gl-mt-4">
-      <div class="col">
-        <!--gl-pagination
-          v-model="page"
-          :per-page="perPage"
-          :total-items="totalRows"
-          first-text="First"
-          prev-text="Prev"
-          next-text="Next"
-          last-text="Last"
-          aria-controls="accounts-table"
-        /-->
-      </div>
-    </div>
   </div>
 </template>
 <style scoped>
@@ -434,8 +427,6 @@ export default {
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #DBDBDB;
-  white-space: pre;
-  height: 2em;
 }
 
 .oc-table >>> td {
@@ -575,10 +566,13 @@ th .control-cell {
   margin-left: 1.25em;
 }
 
+.no-margin { margin: -1px; }
+.no-margin >>> table { border-bottom-width: 0; }
+.no-margin >>> .gl-table { margin-bottom: -1px; }
+
 </style>
 
 <style>
-thead * {
-    line-height: 0!important
-}
+thead * { line-height: 0!important }
+thead.no-collapse-all * { line-height: 2!important }
 </style>

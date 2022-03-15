@@ -15,6 +15,9 @@ export function userDefaultPath() {
     return 'unfurl.json'
 }
 
+export function generateCardId(name) {
+    return btoa(name).replace(/=/g, '')
+}
 
 const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
 const AWS = 'unfurl.relationships.ConnectsTo.AWSAccount'
