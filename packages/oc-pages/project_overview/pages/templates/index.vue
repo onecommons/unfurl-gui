@@ -101,14 +101,21 @@ export default {
     pipelinesPath(){
       return `/${this.getHomeProjectPath}/-/pipelines`
     },
+    UNFURL_MOCK_DEPLOY() {
+      if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
+      let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
+      if(key && sessionStorage[key]) return true
+    },
     triggerVariables() {
       const environment = this.$route.params.environment
       const projectUrl = `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`
-      return {
+      const result = {
         DEPLOY_ENVIRONMENT: environment,
         BLUEPRINT_PROJECT_URL: projectUrl,
         DEPLOY_PATH: this.deploymentDir
       }
+      if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = true
+      return result
     },
     deploymentDir() {
         const environment = this.$route.params.environment
