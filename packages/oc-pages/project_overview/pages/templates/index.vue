@@ -105,6 +105,7 @@ export default {
       if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
       let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
       if(key && sessionStorage[key]) return true
+      return false
     },
     triggerVariables() {
       const environment = this.$route.params.environment
@@ -114,7 +115,7 @@ export default {
         BLUEPRINT_PROJECT_URL: projectUrl,
         DEPLOY_PATH: this.deploymentDir
       }
-      if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = true
+      if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = 'true'
       return result
     },
     deploymentDir() {
