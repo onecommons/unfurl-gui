@@ -4,6 +4,7 @@ const fs = require('fs')
 // this alias is used by code copied from gitlab
 const alias = {
   'oc': path.join(__dirname, 'src/assets/javascripts'),
+  'oc_dashboard': path.join(__dirname, 'src/gitlab-oc/dashboard'),
   '~': path.join(__dirname, 'src/assets/javascripts'),
   'oc_pages': path.join(__dirname, 'src/gitlab-oc')
   //'oc': path.join(__dirname, 'src/gitlab-oc')
