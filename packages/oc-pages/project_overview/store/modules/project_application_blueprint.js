@@ -308,9 +308,10 @@ const getters = {
     /* appease the devtools */
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
-    lookupConfigurableTypes(state, getters) {
+    lookupConfigurableTypes(state, _a, _b, rootGetters) {
         return function(environment) {
-            return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, getters.resolveResourceType))
+            const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
+            return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }
     },
     getValidResourceTypes(state, getters) {

@@ -25,11 +25,7 @@ export default {
   Query: {
   
     applicationBlueprint: (root, args, { db }) => {
-        //   'The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`'
-        // or demo/apostrophe-demo
-        const REPOS_DIR = resolve(__dirname, 'repos')
-        return getBlueprintJson(REPOS_DIR, args.fullPath, true)
-        // return db.get('projects').value()[args.fullPath]
+        return readLiveRepoFile(args.fullPath, 'unfurl.json')
     },
 
     project(root, args, context) {

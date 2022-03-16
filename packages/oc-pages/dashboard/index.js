@@ -10,8 +10,8 @@ import createFlash, { FLASH_TYPES } from '~/flash';
 Vue.use(GlToast);
 const router = createRouter()
 Vue.config.errorHandler = function(err, vm, info) {
+    console.error(err.message)
     if(err.flash) {
-        console.error(err.message)
         return createFlash({ message: err.message, type: FLASH_TYPES.ALERT });
     }
 }

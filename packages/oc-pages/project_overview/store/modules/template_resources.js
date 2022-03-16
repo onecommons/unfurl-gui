@@ -458,8 +458,8 @@ const getters = {
     },
     availableResourceTypesForRequirement(_, getters) {
         return function(requirement) {
-
-            return currentAvailableResourceTypes.filter(type => {
+            if(!requirement) return []
+            return getters.currentAvailableResourceTypes.filter(type => {
                 const isValidImplementation =  type.extends?.includes(requirement.constraint?.resourceType)
                 return isValidImplementation
             })

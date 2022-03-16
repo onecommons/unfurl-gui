@@ -122,7 +122,14 @@ export default {
     },
 
     cardType() {
-      return this.resolveResourceTypeFromAvailable(this.card?.type)
+      if(!this.card?.type) {
+        throw new Error(`Card "${this.card.name}" does not have a type`)
+      }
+      const result = this.resolveResourceTypeFromAvailable(this.card?.type)
+      if(!result) {
+        throw new Error(`Could not lookup card type ${this.card?.type} for ${this.card.name}`)
+      }
+      return result
     },
 
     schema() {

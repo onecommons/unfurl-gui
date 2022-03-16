@@ -80,6 +80,7 @@ export default {
       'getTemplate',
       'getServicesToConnect',
       'getPrimaryCard',
+      'getRequirementSelected',
       'getCardsStacked',
       'getDeploymentTemplate',
       'getDependencies',
@@ -90,7 +91,7 @@ export default {
       'getUsername',
       'getHomeProjectPath',
       'getCurrentEnvironment',
-      'getValidResourceTypes',
+      'availableResourceTypesForRequirement',
       'getValidConnections',
       'getHomeProjectPath',
       'getProjectInfo',
@@ -668,7 +669,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)" :resourceType="getRequirementResourceType"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(getRequirementSelected.requirement)" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
