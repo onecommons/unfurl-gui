@@ -469,7 +469,13 @@ const getters = {
         return function(typeName) {
             return getters.currentAvailableResourceTypes.find(rt => rt.name == typeName)
         }
-
+    },
+    resolveResourceTypeFromAny(state, _a, _b, rootGetters) {
+        return function(typeName) {
+            const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
+            if(dictionaryResourceType) return dictionaryResourceType
+            return rootGetters?.environmentResolveResourceType(state.lastFetchedFrom?.environmentName, typeName) || null
+        }
     }
 };
 

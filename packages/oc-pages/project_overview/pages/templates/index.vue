@@ -75,6 +75,7 @@ export default {
   computed: {
 
     ...mapGetters([
+      'resolveResourceTypeFromAny',
       'getProjectInfo',
       'getRequirementSelected',
       'getTemplate',
@@ -199,7 +200,10 @@ export default {
     },
 
     getRequirementResourceType() {
-      return this.getRequirementSelected?.requirement?.constraint?.resourceType
+      const resourceTypeName = this.getRequirementSelected?.requirement?.constraint?.resourceType
+      const resourceType =  this.resolveResourceTypeFromAny(resourceTypeName)
+      console.log({resourceType, resourceTypeName})
+      return resourceType?.title || resourceTypeName
     },
 
 
@@ -662,7 +666,7 @@ export default {
             :ref="__('oc-template-resource')"
             modal-id="oc-template-resource"
             size="lg"
-            :title="`Choose a ${getRequirementResourceType} template for ${getNameResourceModal}`"
+            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.title || getRequirementSelected.requirement.name)}`"
             :action-primary="ocTemplateResourcePrimary"
             :action-cancel="cancelProps"
             @primary="onSubmitTemplateResourceModal"
