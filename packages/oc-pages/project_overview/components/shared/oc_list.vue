@@ -106,7 +106,7 @@ export default {
             'cardStatus',
             'isMobileLayout',
             'availableResourceTypesForRequirement',
-            'resolveResourceTypeFromAvailable'
+            'resolveResourceTypeFromAny'
         ]),
         displayableDependencies() {
             const result = this.getDisplayableDependencies(this.card.name)
@@ -216,7 +216,7 @@ export default {
                         <div
                             class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
                             <div>
-                                <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="resolveResourceTypeFromAvailable(requirement.constraint.resourceType)" />
+                                <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(requirement.constraint.resourceType)" />
                                 <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ requirement.name }}</span>
                                 <div class="oc_requirement_description gl-mb-2">
                                     {{ requirement.description}}

@@ -24,12 +24,11 @@ const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.k8scluster': 'K8s',
     'unfurl.relationships.connectsto.azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS',
-    gcpinstance: GCPInstance,
-    dns: 'DnsIcon',
+    gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
+    dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
     mail: 'MailIcon',
     mongodb: MongoDbIcon,
-    compute: 'ComputeIcon',
-
+    compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
     'self-hosted': 'LocalDevIcon'
 }
 

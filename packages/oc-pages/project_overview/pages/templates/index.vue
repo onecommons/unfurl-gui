@@ -202,7 +202,6 @@ export default {
     getRequirementResourceType() {
       const resourceTypeName = this.getRequirementSelected?.requirement?.constraint?.resourceType
       const resourceType =  this.resolveResourceTypeFromAny(resourceTypeName)
-      console.log({resourceType, resourceTypeName})
       return resourceType?.title || resourceTypeName
     },
 
