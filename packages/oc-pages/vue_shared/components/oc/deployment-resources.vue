@@ -124,6 +124,7 @@ export default {
             'getHomeProjectPath',
             'getApplicationBlueprint',
             'currentAvailableResourceTypes',
+            'resolveResourceTypeFromAny',
             'getCurrentEnvironment'
         ]),
 
@@ -195,7 +196,7 @@ export default {
         selected: function(val) {
             if(Object.keys(val).length > 0) {
                 if(!this.userEditedResourceName) {
-                    this.resourceName = val.name;
+                    this.resourceName = this.resolveResourceTypeFromAny(val.name)?.title || val.name;
                 }
             }
         },
