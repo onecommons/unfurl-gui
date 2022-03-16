@@ -1,6 +1,7 @@
 <script>
 import { GlButton } from '@gitlab/ui';
 
+import _ from 'lodash'
 import {mapGetters} from 'vuex'
 
 export default {
@@ -31,9 +32,9 @@ export default {
             this.$emit('saveTemplate');
         },
 
-        triggerDeploy() {
+        triggerDeploy: _.debounce(function () {
             this.$emit('triggerDeploy');
-        },
+        }, 3000),
 
         launchModalDeleteTemplate() {
             this.$emit('launchModalDeleteTemplate');

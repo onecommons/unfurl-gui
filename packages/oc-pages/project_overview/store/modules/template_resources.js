@@ -292,7 +292,6 @@ const actions = {
     },
 
     async deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
-        console.log('deleteNode')
         try {
             const actionLowerCase = action.toLowerCase();
             if(dependentName) {
@@ -328,7 +327,6 @@ const actions = {
         }
     },
     updateProperty({state, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
-        console.log(state.context)
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
