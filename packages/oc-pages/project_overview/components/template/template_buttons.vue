@@ -32,7 +32,7 @@ export default {
             this.$emit('saveTemplate');
         },
 
-        triggerDeploy: _.debounce(function () {
+        triggerDeploy: _.throttle(function () {
             this.$emit('triggerDeploy');
         }, 3000),
 

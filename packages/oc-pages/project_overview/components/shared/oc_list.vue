@@ -139,6 +139,10 @@ export default {
                 </div>
             </div>
         </oc-tab>
+        <oc-tab v-if="shouldRenderInputs" title="Inputs" :titleCount="(card.template && card.template.properties || this.card.properties || []).length">
+            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
+            <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
+        </oc-tab>
         <oc-tab v-if="shouldRenderExtras" title="Extras" :titleCount="extras.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
@@ -146,11 +150,6 @@ export default {
                 </div>
             </div>
         </oc-tab>
-        <oc-tab v-if="shouldRenderInputs" title="Details" :titleCount="(card.template && card.template.properties || this.card.properties || []).length">
-            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
-            <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
-        </oc-tab>
-
     </gl-tabs>
 </template>
 <style scoped>
