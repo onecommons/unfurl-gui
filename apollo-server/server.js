@@ -37,11 +37,11 @@ export default app => {
     const cloned = fs.existsSync(resolveLiveRepoFile(userHome, path.join(DEPLOY_PATH, 'ensemble.yaml')))
 
     const cwd = resolveLiveRepoFile(userHome, '')
-    const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('/').pop()
-    const blueprintProjectURL = 'https://gitlab.com/onecommons/testing/' + repo
-    const clone = `${UNFURL_CMD} clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
-    const deploy = `${UNFURL_CMD} deploy --approve ${DEPLOY_PATH}`
-    const exportCmd = `${UNFURL_CMD} --home '' export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
+    const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('.')[0]; // strip .git
+    const blueprintProjectURL = path.resolve(__dirname, './repos/' + repo)
+    const clone = `${UNFURL_CMD} -vv clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
+    const deploy = `${UNFURL_CMD} -vv --home . deploy --approve ${DEPLOY_PATH}`
+    const exportCmd = `${UNFURL_CMD} -vv --home . export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
     function execHelper(cmd) {
       console.log(cmd)
