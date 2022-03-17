@@ -27,7 +27,6 @@ export default {
             currentTab,
             routes,
             breadcrumbItems,
-            displayModal: false,
         }
     },
     computed: {
@@ -36,6 +35,22 @@ export default {
             'runningDeploymentsCount',
             'stoppedDeploymentsCount'
         ]),
+        displayModal: {
+            get() {
+                return this.$route.query.hasOwnProperty('create')
+            },
+            set(value) {
+                const query = {...this.$route.query}
+                if(value) {
+                    query.create = null
+                } else {
+                    delete query.create
+                }
+
+                const path = this.$route.path
+                this.$router.replace({path, query})
+            }
+        }
     },
     watch: {
         currentTab(value) {
