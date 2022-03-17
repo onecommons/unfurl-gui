@@ -54,6 +54,11 @@ const Serializers = {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
     },
+    ResourceTemplate(rt) {
+        rt.dependencies = rt.dependencies?.filter(dep => {
+            return dep.match || dep.target
+        })
+    }
 }
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
