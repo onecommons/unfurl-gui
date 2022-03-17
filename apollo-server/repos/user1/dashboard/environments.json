@@ -31,14 +31,6 @@
           "description": "",
           "properties": [],
           "dependencies": []
-        },
-        "sendgrid": {
-          "type": "SendGrid",
-          "name": "sendgrid",
-          "title": "sendgrid",
-          "description": "SendGrid Mail Delivery Service",
-          "properties": [],
-          "dependencies": []
         }
       },
       "primary_provider": {
@@ -54,14 +46,6 @@
     "home": {
       "name": "home",
       "connections": {
-        "sendgrid": {
-          "type": "SendGrid",
-          "name": "sendgrid",
-          "title": "sendgrid",
-          "description": "SendGrid Mail Delivery Service",
-          "properties": [],
-          "dependencies": []
-        }
       },
       "primary_provider": null,
       "instances": {}
@@ -69,14 +53,6 @@
     "testing": {
       "name": "testing",
       "connections": {
-        "sendgrid": {
-          "type": "SendGrid",
-          "name": "sendgrid",
-          "title": "sendgrid",
-          "description": "SendGrid Mail Delivery Service",
-          "properties": [],
-          "dependencies": []
-        }
       },
       "primary_provider": null,
       "instances": {}
