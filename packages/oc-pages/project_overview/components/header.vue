@@ -86,18 +86,6 @@ export default {
                 </div>
             </div>
             <div class="project-repo-buttons gl-display-flex gl-justify-content-md-end gl-align-items-start gl-flex-wrap gl-mt-3">
-                <!--div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
-                    <gl-button @click="redirectTo($projectGlobal.linkDeployment)">
-                        <gl-icon
-                        name="upload"
-                        :size="16"
-                        />
-                        <span>{{ __("Deployments") }}</span>
-                    </gl-button>
-                    <a :href="this.$projectGlobal.linkDeployment" class="gl-button btn btn-default btn-sm  count">{{ projectInfo.deployments }}</a>
-                </div-->
-
-
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
@@ -111,19 +99,6 @@ export default {
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
                 <gl-button v-if="getProjectInfo.livePreview" :href="getProjectInfo.livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm ml-3" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
-
-                <!--div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
-                    <gl-button
-                        class="btn-sm star-btn toggle-star"
-                        @click="redirectTo($projectGlobal.buttonFork.link)">
-                        <gl-icon
-                        name="fork"
-                        :size="16"
-                        />
-                        <span>{{ __("Fork") }}</span>
-                    </gl-button>
-                    <a :href="this.$projectGlobal.buttonFork.link" class="gl-button btn btn-default btn-sm star-count count">{{ this.$projectGlobal.buttonFork.count }}</a>
-                </div-->
             </div>
         </div>
     </div>

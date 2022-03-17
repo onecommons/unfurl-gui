@@ -64,9 +64,9 @@ export default {
 
         connectToResource(requirement) {
             if(this.hasRequirementsSetter) {
-                this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: dependency.name, requirement, titleKey: this.titleKey}); // TODO trying to make this redundant
+                this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: requirement.name, requirement, titleKey: this.titleKey}); // TODO trying to make this redundant
             }
-            bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: dependency.name, requirement, action: 'connect'});
+            bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'connect'});
         },
 
         hasRequirementsSetter() {
