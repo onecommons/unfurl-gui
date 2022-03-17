@@ -81,16 +81,13 @@ for(const [key, value] of Object.entries(environments)) {
 */
 
 const unfurlYaml = fs.readFileSync(resolve(__dirname, '../repos/testing/dashboard/unfurl.yaml'), 'utf-8')
-for(const filePath in files) {
-  const fileContents = files[filePath]
-  const targetDir = resolve(REPOS_DIR, dirname(filePath))
-  mkdirp.sync(targetDir)
-  /*
-  if(filePath.endsWith('environments.json')) {
-    fs.writeFileSync(resolve(targetDir, 'unfurl.yaml'), unfurlYaml)
+if(!process.env.NO_FIXTURES) {
+  for(const filePath in files) {
+    const fileContents = files[filePath]
+    const targetDir = resolve(REPOS_DIR, dirname(filePath))
+    mkdirp.sync(targetDir)
+    fs.writeFileSync(resolve(REPOS_DIR, filePath), fileContents)
   }
-  */
-  fs.writeFileSync(resolve(REPOS_DIR, filePath), fileContents)
 }
 
 // Seed an empty DB

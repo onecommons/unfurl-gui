@@ -18,10 +18,20 @@ export default app => {
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
+    let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH
+    for(const variable of req.body.variables_attributes) {
+      const {key, secret_value} = variable
+      switch(key) {
+        case 'BLUEPRINT_PROJECT_URL':
+          BLUEPRINT_PROJECT_URL = secret_value; break
+        case 'DEPLOY_ENVIRONMENT':
+          DEPLOY_ENVIRONMENT = secret_value; break
+        case 'DEPLOY_PATH':
+          DEPLOY_PATH = secret_value; break
+      }
+    }
     const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
-    const BLUEPRINT_PROJECT_URL = req.body['variables[BLUEPRINT_PROJECT_URL]']
-    const DEPLOY_ENVIRONMENT = req.body['variables[DEPLOY_ENVIRONMENT]']
-    const DEPLOY_PATH = req.body['variables[DEPLOY_PATH]']
+
     const userHome = `${req.params.user}/${USER_HOME_PROJECT}`
 
     const cloned = fs.existsSync(resolveLiveRepoFile(userHome, path.join(DEPLOY_PATH, 'ensemble.yaml')))
