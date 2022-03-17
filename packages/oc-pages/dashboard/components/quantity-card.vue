@@ -30,7 +30,7 @@ export default {
                 <span class="count"> {{count}} </span>
                 <span class="text"> {{n__(s, p, count)}} </span>
                 <div style="height: 1em; margin-top: -0.5em; font-weight: 500;">
-                    <component :is="typeof createLink == 'string'? 'a': 'router-link'" v-if="createLink" v-bind="createLinkProps">
+                    <component :is="typeof createLink == 'string'? 'a': 'router-link'" v-if="createLink" @click="e => e.stopPropagation()" v-bind="createLinkProps">
                         + {{__('Create New')}}
                     </component>
                 </div>
