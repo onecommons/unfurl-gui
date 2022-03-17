@@ -1,4 +1,5 @@
 <script>
+import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import ComputeIcon from './icons/Compute.svg'
 import DbIcon from './icons/Database.svg'
@@ -62,7 +63,9 @@ export default {
     components: { GlIcon },
     props: {
         type: {
-            required: true,
+            type: [Object, String]
+        },
+        env: {
             type: [Object, String]
         }
     },
@@ -70,11 +73,23 @@ export default {
         GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon
     },
     computed: {
+        ...mapGetters(['lookupEnvironment']),
+        _env() {
+            if(!this.env) return
+            let env
+            if(typeof this.env == 'string') {
+                env = this.lookupEnvironment(this.env)
+            }
+            else env = this.env
+
+            return env?.primary_provider?.type || 'self-hosted'
+
+        },
         detectedIcon() {
-            return detectIcon(this.type)
+            return detectIcon(this.type || this._env)
         },
         customIcon() {
-            return detectIconCustomSVG(this.type)
+            return detectIconCustomSVG(this.type || this._env)
         },
         customStyle() {
             if (this.$attrs.size) {
