@@ -29,8 +29,8 @@ spec:
 # - MongoDB (self-hosted / amazon / atlas)
 # - dns (route53 / godaddy / googledns )
   service_template:
-    template_name: Apostrophe Demo
     metadata:
+      template_name: Apostrophe Demo
       livePreview: https://demo-apostrophe-demo.dev3.unfurl.cloud/
       image: https://unfurl.cloud/demo/apostrophe-demo/-/raw/dc4b22d93e34ef232573f5a4223d0e76b8a92433/.unfurl/Screen_Shot_2021-09-15_at_1.02.07_PM.png
       sourceCodeUrl: https://github.com/aszs/apostrophe-sandbox.git
