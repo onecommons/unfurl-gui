@@ -42,8 +42,12 @@ const actions = {
             context.environment = environment
             context.environmentName = environmentName
             for(const deploymentDict of environment.deployments) {
+                delete context.deployment
+                delete context.application
+                delete context.resource
+                delete context.type
                 if(!deploymentDict.Deployment ) continue
-                dispatch('useProjectState', _.cloneDeep(deploymentDict))
+                dispatch('useProjectState', {root: _.cloneDeep(deploymentDict)})
                 const deployment = rootGetters.getDeployment
                 if(!deployment) continue
                 const i = ++iterationCounter

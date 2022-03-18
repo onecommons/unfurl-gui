@@ -58,6 +58,9 @@ const Serializers = {
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target
         })
+    },
+    '*': function(any) {
+        delete any._state
     }
 }
 
@@ -449,9 +452,13 @@ const mutations = {
     },
     normalizePatches(state) {
         for(const typename of Object.keys(state.patches)){
-            if(!Serializers[typename]) continue
             for(const record of Object.values(state.patches[typename])) {
-                if(record && typeof record == 'object') Serializers[typename](record)
+                if(record && typeof record == 'object') {
+                    if(Serializers[typename]) {
+                        Serializers[typename](record)
+                    }
+                    Serializers['*'](record)
+                }
             }
         }
     }

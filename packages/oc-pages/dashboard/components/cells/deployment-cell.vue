@@ -36,11 +36,11 @@ export default {
 </script>
 <template>
     <component :is="noRouter? 'a': 'router-link'" v-if="deployment && deployment.name" v-bind="to">
-        <div v-if="displayStatus" class="status-item">
-                <status-icon v-for="resource in deployment.statuses" :key="resource.name" :status="resource.status"/>
+        <div v-if="displayStatus && deployment" class="status-item">
+                <status-icon v-for="resource in deployment.statuses || []" :key="resource.name" :status="resource.status"/>
                 <div class="font-weight-bold" style="margin-bottom: -2px;">{{deployment.title}}</div>
         </div>
-        <div v-else>
+        <div v-else-if="deployment">
             {{deployment.title}}
         </div>
     </component>

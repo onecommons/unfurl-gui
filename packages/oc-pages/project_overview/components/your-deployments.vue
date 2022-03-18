@@ -42,19 +42,26 @@ export default {
         items() {
             const result = []
             for(const dict of this.getDeploymentDictionaries) {
-                if(!dict?.ApplicationBlueprint?.hasOwnProperty(this.project.globalVars.projectPath))
+                const deploymentTemplate = Object.values(dict?.DeploymentTemplate)[0]
+                if(deploymentTemplate?.projectPath != this.project.globalVars.projectPath)
                     continue
 
                 const obj = {}
                 obj.environment = this.lookupEnvironment(dict._environment)
                 // TODO get status from deployment
 
-                obj.deployment = Object.values(dict.Deployment)[0]
+                let resources = []
                 obj.application = Object.values(dict.ApplicationBlueprint)[0]
+                if(dict.Deployment) {
+                    obj.deployment = Object.values(dict.Deployment)[0]
+                    resources = Object.values(dict.Resource)
+                    obj.deployment.statuses = []
+                    resources.forEach(resource => {if(resource.status != 1) obj.deployment.statuses.push(resource)})
+                } else {
+                    const context = {...obj, deployment: Object.values(dict.DeploymentTemplate)[0]}
+                    result.push({context, ...context})
+                }
 
-                const resources = Object.values(dict.Resource)
-                obj.deployment.statuses = []
-                resources.forEach(resource => {if(resource.status != 1) obj.deployment.statuses.push(resource)})
 
                 for(const resource of resources) {
                     const context = {...obj, resource}

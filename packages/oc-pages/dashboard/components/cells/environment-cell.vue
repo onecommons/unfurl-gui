@@ -4,14 +4,17 @@ import {DetectIcon} from '../../../vue_shared/oc-components'
 export default {
     components: { DetectIcon },
     props: {
-        environment: Object
+        environment: Object,
+        noRouter: {type: Boolean, default: false}
     },
     data() {
         return {routes}
     },
     computed: {
         destination() {
-            return this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
+            return this.noRouter ?
+                {href: `/dashboard/environments/${this.$props?.environment?.name}`} :
+                this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
         }
     }
 

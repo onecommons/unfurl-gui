@@ -31,7 +31,7 @@ export default {
             e.flash = true
             throw e
         }
-        this.useProjectState(cloneDeep(state))
+        this.useProjectState({root: cloneDeep(state)})
         const deployment = this.lookupDeployment(deploymentName, environmentName)
         this.deployment = deployment
         this.populateDeploymentResources({deployment})
