@@ -90,8 +90,27 @@ export default {
         statuses(scope) {
             return scope.item.context.deployment?.statuses || []
         },
+        resumeEditingLink(scope) {
+            const 
+                application = scope.item.context.application,
+                deployment = scope.item.context.deployment,
+                environment = scope.item.context.environment
+            const to =  {
+                name: 'deploymentDraftPage',
+                query: {
+                    fn: deployment.title,
+                },
+                params: {
+                    environment: environment.name,
+                    slug: deployment.name
+                }
+            }
+            console.log({to})
+            return {to}
+        },
         deploymentAttrs(scope) {
             const context = scope.item.context
+            if(context.deployment?.__typename == 'DeploymentTemplate') return this.resumeEditingLink(scope)
             const href = this.noRouter?
                 `/dashboard/deployments/${context.environment.name}/${context.deployment.name}`: // TODO use from routes.js
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
@@ -109,6 +128,9 @@ export default {
                 <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
                 <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
             </div>
+            <div v-else class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
+                <gl-icon name="pencil-square" :size="18" />
+            </div>
         </template>
         <template #status$head>
             <div style="text-align: center;">
@@ -120,23 +142,24 @@ export default {
                 <a :href="`/${scope.item.context.application.name}`">
                     <b> {{scope.item.context.application.title}}: </b>
                 </a>
-                <component :is="noRouter? 'a': 'router-link'" v-bind="deploymentAttrs(scope)">
+                <component v-if="scope.item.context.deployment" :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'" v-bind="deploymentAttrs(scope)">
                     {{scope.item.context.deployment.title}}
                 </component>
             </div>
         </template>
         <template #resource="scope">
-            <resource-cell :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
+            <resource-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
         </template>
         <template #environment="scope">
-            <environment-cell :environment="scope.item.context.environment"/>
+            <environment-cell :noRouter="noRouter" :environment="scope.item.context.environment"/>
         </template>
 
         <template #open$head> <div></div> </template>
         <template #open$all="scope">
             <div>
-                <div class="external-link-container" v-if="scope.item._depth == 0">
-                    <gl-button target="_blank" rel="noopener noreferrer" :href="scope.item.context.application.livePreview" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Open')}} </gl-button>
+                <div v-if="scope.item.context.deployment && scope.item.context.application && scope.item._depth == 0" class="external-link-container">
+                    <gl-button v-if="scope.item.context.deployment.__typename == 'DeploymentTemplate'" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink(scope).to).href" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Resume')}} </gl-button>
+                    <gl-button v-else target="_blank" rel="noopener noreferrer" :href="scope.item.context.application.livePreview" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Open')}} </gl-button>
                 </div>
             </div>
         </template>

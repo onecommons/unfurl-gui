@@ -136,7 +136,10 @@ export default {
           return this.hasPreparedMutations? 'enabled': 'disabled';
       }
     },
-
+    saveDraftStatus() {
+      return this.$route.name == 'deploymentDraftPage'?
+        (this.hasPreparedMutations? 'enabled': 'disabled') : 'hidden'
+    },
     deleteStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
@@ -420,9 +423,13 @@ export default {
         })
         await this.commitPreparedMutations()
     },
-    async triggerSave() {
+    async triggerSave(type) {
         try {
+            console.log(type)
             await this.commitPreparedMutations();
+            if(type == 'draft'){
+                await this.createDeploymentPathPointer()
+            }
             createFlash({
               // TODO this doesn't make sense if it's a template
                 message: __('Deployment was created successfully'),
@@ -650,10 +657,12 @@ export default {
             :loading-deployment="loadingDeployment"
             :deploy-button="deployButton"
             :save-status="saveStatus"
+            :save-draft-status="saveDraftStatus"
             :delete-status="deleteStatus"
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
+            @saveDraft="triggerSave('draft')"
             @saveTemplate="triggerSave()"
             @triggerDeploy="triggerDeployment()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"

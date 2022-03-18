@@ -17,7 +17,9 @@ class ApplicationBlueprint {
 
 
     getDeploymentTemplate(name) {
-        return new DeploymentTemplate(this._state['DeploymentTemplate'][name], this._state)
+        const dt = this._state['DeploymentTemplate'][name]
+        if(!dt) return null
+        return new DeploymentTemplate(dt, this._state)
     }
 
     toJSON() {
@@ -141,12 +143,12 @@ const actions = {
                 throw new Error('Could not fetch project blueprint')
             }
         }
-        dispatch('useProjectState', root)
+        dispatch('useProjectState', {root})
 
 
         commit('loaded', true)
     },
-    useProjectState({commit, getters}, root) {
+    useProjectState({commit, getters}, {root, shouldMerge}) {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         const transforms = {
             ResourceTemplate(resourceTemplate) {
@@ -300,12 +302,8 @@ const getters = {
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
 
-    /* appease the devtools 
-    *  devtools now break when errors occur in getters
-    */
-    getResources(state) {return Object.values(state.Resource || {})},
-    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
-    /* appease the devtools */
+    getResources(state) {return Object.values(state.Resource)},
+    getDeployment(state) {return Object.values(state.Deployment)[0]},
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
     lookupConfigurableTypes(state, _a, _b, rootGetters) {

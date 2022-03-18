@@ -94,6 +94,7 @@ const mutations = {
 };
 
 const actions = {
+    // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
     populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
         commit('setContext', true)
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
@@ -113,14 +114,41 @@ const actions = {
 
     },
 
+    // used by deploy and blueprint editing
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('setContext', false)
         if(!templateSlug) return false;
 
-        const blueprint = rootGetters.getApplicationBlueprint;
-        const deploymentTemplate = blueprint.getDeploymentTemplate(templateSlug);
-        const primary = deploymentTemplate._primary;
+        let _syncState = syncState
+        let blueprint = rootGetters.getApplicationBlueprint;
+        let deploymentTemplate
+        function setdt() { deploymentTemplate = blueprint.getDeploymentTemplate(templateSlug); }
+        setdt()
+        let primary
+        let deploymentDict
+        if(!deploymentTemplate) { // let's look up the deployment template from the deployment
+            for(const dict of rootGetters.getDeploymentDictionaries) {
+                if(dict._environment != environmentName) continue
+                let dt
+                try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
+                if(dt?.slug != templateSlug) continue
+
+                dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true})
+                _syncState = false // override sync state if we just loaded this
+                /*
+                deploymentTemplate = _.cloneDeep(dt)
+                primary = _.cloneDeep(dict.ResourceTemplate[deploymentTemplate.primary])
+                deploymentDict = dict
+                */
+                break
+            }
+            setdt()
+        }
+        primary = deploymentTemplate._primary
         if(!primary) return false;
+        primary = {...primary}
+        deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
+        blueprint = {...blueprint, projectPath} // maybe we want to do it here
 
         if(renameDeploymentTemplate) {
             deploymentTemplate.title = renameDeploymentTemplate;
@@ -139,7 +167,7 @@ const actions = {
             }
         }
 
-        if(syncState) {
+        if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
                 const patch = {...deploymentTemplate};
                 delete patch._state;
@@ -159,7 +187,7 @@ const actions = {
          
 
         function createMatchedTemplateResources(resourceTemplate) {
-            if(syncState) {
+            if(_syncState) {
                 commit('pushPreparedMutation', (accumulator) => {
                     return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
                 });
@@ -170,7 +198,9 @@ const actions = {
 
             for(const dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
-                const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match);
+                const resolvedDependencyMatch = deploymentDict ?
+                    deploymentDict.ResourceTemplate[dependency.match] :
+                    rootGetters.resolveResourceTemplate(dependency.match);
                 dependency.valid = !!resolvedDependencyMatch;
 
                 dependency.completionStatus = dependency.valid? 'created': null;
@@ -192,6 +222,7 @@ const actions = {
     },
 
 
+    // used by /dashboard/environment/<environment-name> TODO merge these actions
     populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
         for(const resource of resourceTemplates) {
             //dispatch('createMatchedResources', {resource})

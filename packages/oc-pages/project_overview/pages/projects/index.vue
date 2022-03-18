@@ -381,12 +381,18 @@ export default {
                 </div>
             </div-->
             <!-- Table -->
-            <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
-
             <!-- TODO this will probably get removed -->
             <deployed-blueprints v-if="false"/>
 
-            <your-deployments />
+            <div class="mb-5 mt-5">
+                <your-deployments />
+            </div>
+
+            <div class="mb-5 mt-5">
+                <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
+            </div>
+
+
 
             <!-- Modal -->
             <gl-modal
