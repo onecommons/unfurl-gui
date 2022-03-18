@@ -10,10 +10,10 @@ function findDeployment(repo, path) {
   const target = join(repo, path)
   let ensembleJSONRaw = readLiveRepoFile(
     target,
-    'deployment.json'
+    'ensemble.json'
   ) || readLiveRepoFile(
     target,
-    'ensemble.json'
+    'deployment.json'
   )
   return ensembleJSONRaw
 }
