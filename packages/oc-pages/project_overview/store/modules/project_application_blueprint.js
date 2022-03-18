@@ -3,6 +3,7 @@ import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
 import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
 import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
+import Vue from 'vue'
 
 
 class ApplicationBlueprint {
@@ -93,7 +94,7 @@ class ResourceTemplate {
 const state = {loaded: false, callbacks: []}
 const mutations = {
     setProjectState(state, {key, value}) {
-        state[key] = value
+        Vue.set(state, key, value)
     },
     
     loaded(state, status) {

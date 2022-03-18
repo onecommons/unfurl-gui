@@ -36,16 +36,14 @@ const actions = {
         let iterationCounter = 0
 
         for(const environment of rootGetters.getEnvironments) {
+            context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
             environments += 1
             const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
             for(const deploymentDict of environment.deployments) {
-                delete context.deployment
-                delete context.application
-                delete context.resource
-                delete context.type
+                context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 if(!deploymentDict.Deployment ) continue
                 dispatch('useProjectState', {root: _.cloneDeep(deploymentDict)})
                 const deployment = rootGetters.getDeployment
@@ -63,7 +61,7 @@ const actions = {
                     const i = ++iterationCounter
                     const resourceTemplate = rootGetters.resolveResourceTemplate(resource.template);
                     const resourceType = rootGetters.resolveResourceType(resourceTemplate.type);
-                    context.type = resourceType.title
+                    context.type = resourceType?.title
                     context.resource = resource
 
                     pushContext()

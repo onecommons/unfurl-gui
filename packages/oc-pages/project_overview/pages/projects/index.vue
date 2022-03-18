@@ -1,5 +1,5 @@
 <script>
-import { GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
+import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
@@ -10,7 +10,7 @@ import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
-import {DetectIcon} from '../../../vue_shared/oc-components'
+import {OcTab, DetectIcon} from '../../../vue_shared/oc-components'
 import { bus } from '../../bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
@@ -21,7 +21,9 @@ export default {
         buttonLabel: __('Create new template'),
     },
     components: {
+        OcTab,
         GlModal,
+        GlCard, GlIcon, GlTabs,
         GlFormGroup,
         GlFormInput,
         HeaderProjectView,
@@ -384,13 +386,30 @@ export default {
             <!-- TODO this will probably get removed -->
             <deployed-blueprints v-if="false"/>
 
-            <div class="mb-5 mt-5">
-                <your-deployments />
-            </div>
+            <gl-tabs>
+                <oc-tab title="Blueprints">
+                    <div class="">
+                        <gl-card>
+                            <template #header>
+                                <div class="d-flex align-items-center">
+                                    <gl-icon name="archive" class="mr-2"/>
+                                    <h5 class="mb-0 mt-0">
+                                        {{__('Your Deployments')}}
+                                    </h5>
+                                </div>
+                            </template>
+                            <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
+                        </gl-card>
+                    </div>
+                </oc-tab>
+                <oc-tab title="Your Deployments">
+                    <div class="">
+                        <your-deployments />
+                    </div>
 
-            <div class="mb-5 mt-5">
-                <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
-            </div>
+                </oc-tab>
+
+            </gl-tabs>
 
 
 

@@ -79,7 +79,11 @@ export default {
             }
         },
         tableItems() {
-            return this.getDashboardItems//.filter(item => item.application)
+            let result = this.getDashboardItems
+            if(this.runningDeploymentsCount + this.stoppedDeploymentsCount > 0) {
+                result = this.getDashboardItems.filter(item => item.deployment)
+            }
+            return result
         }
     },
 };
