@@ -46,13 +46,17 @@ const actions = {
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 if(!deploymentDict.Deployment ) continue
                 dispatch('useProjectState', {root: _.cloneDeep(deploymentDict)})
-                const deployment = rootGetters.getDeployment
+                const deployment = {...rootGetters.getDeployment}
+                const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(deploymentDict.DeploymentTemplate)[0]
+                deployment.projectPath = dt?.projectPath
+                rootGetters.resolveDeploy
                 if(!deployment) continue
                 const i = ++iterationCounter
                 deployment.statuses = deployment.resources.filter(resource => resource.status != 1)
                 deployment.isStopped = deployment.resources.some(resource => resource.state == 8)
                 if(deployment.isStopped) {stoppedDeployments++} else {deployments++}
-                const application = rootGetters.getApplicationBlueprint;
+                const application = {...rootGetters.getApplicationBlueprint};
+                application.projectPath = deployment.projectPath
                 applicationNames[application.name] = true
                 context.application = application
                 context.deployment = deployment

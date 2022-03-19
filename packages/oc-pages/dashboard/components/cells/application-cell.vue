@@ -16,7 +16,7 @@ export default {
 </script>
 <template>
     <!--router-link v-if="application && application.name" :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: application.name}}"-->
-    <a :href="`/${application.name}`">
+    <a :href="`/${application.projectPath}`">
         <div v-if="application" class="status-item font-weight-bold">
             <project-icon :projectIcon="application.projectIcon" />
             {{application.title}}

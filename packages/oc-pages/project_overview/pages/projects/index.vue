@@ -387,14 +387,14 @@ export default {
             <deployed-blueprints v-if="false"/>
 
             <gl-tabs>
-                <oc-tab title="Blueprints">
+                <oc-tab title="Available Blueprints">
                     <div class="">
                         <gl-card>
                             <template #header>
                                 <div class="d-flex align-items-center">
                                     <gl-icon name="archive" class="mr-2"/>
                                     <h5 class="mb-0 mt-0">
-                                        {{__('Your Deployments')}}
+                                        {{__('Available Blueprints')}}
                                     </h5>
                                 </div>
                             </template>

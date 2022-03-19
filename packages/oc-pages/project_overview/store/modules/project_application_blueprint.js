@@ -189,11 +189,15 @@ const actions = {
                     resource.attributes = []
                 }
                 resource.__typename = 'Resource'
+            },
+            Deployment(deployment) {
+                const dt = getters.resolveDeploymentTemplate(deployment.deploymentTemplate)
+                deployment.projectPath = dt?.projectPath
             }
         }
 
         // guarunteed ordering
-        const ordering = uniq(['ResourceType', 'ResourceTemplate', 'DeploymentTemplate'].concat(Object.keys(root)))
+        const ordering = uniq(['ResourceType', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
         for(const key of ordering) {
             const value = root[key]
@@ -209,8 +213,6 @@ const actions = {
     
 }
 
-/*
- * TODO try this out
 function storeResolver(typename, options) {
     const defaults = {}
     const {instantiateAs} = Object.assign(defaults, options)
@@ -229,13 +231,13 @@ function storeResolver(typename, options) {
         }
     }
 }
-*/
 
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
     resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
-    resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
+    //resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
+    resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
     resolveResource(state) { return name =>  state['Resource'][name] },
     //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
