@@ -66,8 +66,8 @@ export default {
       checkedNode: true,
       selectedServiceToConnect: '',
       refValue: {
-        shortName: this.$projectGlobal.ref,
-        fullName: `refs/heads/${this.$projectGlobal.ref}`,
+        shortName: 'main',
+        fullName: 'refs/heads/main',
       },
     };
   },

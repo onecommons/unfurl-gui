@@ -282,7 +282,6 @@ export default {
             'connectNodeResource',
             'deleteDeploymentTemplate',
             'commitPreparedMutations',
-            'populateTemplateResources',
         ]),
 
         promptAddExternalResource() {

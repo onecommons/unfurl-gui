@@ -20,7 +20,7 @@ export default {
         },
         deployStatus: {type: String, default: () => 'disabled'},
         saveStatus: {type: String, default: () => 'disabled'},
-        saveDraftStatus: {type: String, default: () => 'disabled'},
+        saveDraftStatus: {type: String, default: () => 'hidden'},
         mergeStatus: {type: String, default: () => 'disabled'},
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},

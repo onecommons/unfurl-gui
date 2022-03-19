@@ -143,16 +143,16 @@ export default {
 <template>
     <gl-card :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <div class="position-relative w-100">
+            <div class="d-flex position-relative w-100 justify-content-between">
                 <div class="mr-4 d-flex">
                     <slot name="header">
-                        <div :id="id" :data-testid="'card-' + card.name" class="align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
-                            <detect-icon v-if="card && card.type" :size="18" class="gl-mr-3 gl-mt-1 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
+                        <div :id="id" :data-testid="'card-' + card.name"  class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
+                            <detect-icon v-if="card && card.type" :size="18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
                             <gl-icon
                                 v-if="displayValidation"
                                 :size="14"
-                                :class="['gl-ml-3', 'gl-mt-1', cardIsValid(card)? 'icon-green': 'icon-red']"
+                                :class="['gl-ml-3', cardIsValid(card)? 'icon-green': 'icon-red']"
                                 :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
                                 />
                             <gl-badge
@@ -161,27 +161,27 @@ export default {
                             >{{ badgeHeaderText }}</gl-badge
                             >
                         </div>
-                        <div class="m-1" v-if="displayStatus">
+                        <div class="d-flex m-1" v-if="displayStatus">
                             <status-icon :size="16" :state="card.state" :status="card.status" />
                         </div>
                     </slot>
                 </div>
 
-                <div class="position-absolute d-flex" style="right: 0; top: 0;">
+                <div class="d-flex align-items-center">
                     <slot name="controls">
                         <gl-button v-if="!isPrimary && !readonly" @click="openDeletemodal" class="controls">
                             <div class="d-flex align-items-center">
                                 <svg width="16" height="16" viewBox="0 0 15 17" stroke="#DBDBDB;" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.26558 2.04999C4.26558 0.917811 5.20857 0 6.37181 0H8.47805C9.64129 0 10.5843 0.917811 10.5843 2.04999V3.07498H13.7436C14.3252 3.07498 14.7967 3.53389 14.7967 4.09998C14.7967 4.66606 14.3252 5.12497 13.7436 5.12497H13.5816L12.8401 14.5071C12.7557 15.5752 11.8407 16.3999 10.7401 16.3999H4.10979C3.0092 16.3999 2.09417 15.5752 2.00976 14.5071L1.26825 5.12497H1.10623C0.524613 5.12497 0.0531158 4.66606 0.0531158 4.09998C0.0531158 3.53389 0.524612 3.07498 1.10623 3.07498H4.26558V2.04999ZM6.37181 3.07498H8.47805V2.04999H6.37181V3.07498ZM3.38071 5.12497L4.10979 14.3499L10.7401 14.3499L11.4692 5.12497H3.38071Z" fill="#4A5053"/>
+                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.26558 2.04999C4.26558 0.917811 5.20857 0 6.37181 0H8.47805C9.64129 0 10.5843 0.917811 10.5843 2.04999V3.07498H13.7436C14.3252 3.07498 14.7967 3.53389 14.7967 4.09998C14.7967 4.66606 14.3252 5.12497 13.7436 5.12497H13.5816L12.8401 14.5071C12.7557 15.5752 11.8407 16.3999 10.7401 6.3999H4.10979C3.0092 16.3999 2.09417 15.5752 2.00976 14.5071L1.26825 5.12497H1.10623C0.524613 5.12497 0.0531158 4.66606 0.0531158 4.09998C0.0531158 3.53389 0.524612 3.07498 1.10623 3.07498H4.26558V2.04999ZM6.37181 3.07498H8.47805V2.04999H6.37181V3.07498ZM3.38071 5.12497L4.10979 14.3499L10.7401 14.3499L11.4692 5.12497H3.38071Z" fill="#4A5053"/>
                                 </svg>
                                 <div> {{__('Remove')}} </div>
                             </div>
                         </gl-button>
 
                     </slot>
-                    <div @click="toggleCard" class="ml-2" v-if="!isPrimary">
+                    <span class="ml-2" @click="toggleCard" v-if="!isPrimary">
                         <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
-                    </div>
+                    </span>
                 </div>
             </div>
         </template>
@@ -197,7 +197,6 @@ export default {
     font-style: normal;
     font-weight: 700;
     font-size: 14px;
-    line-height: 20px;
 }
 .card_advance_view {
     font-size: 14px;
@@ -210,6 +209,8 @@ export default {
 .primary-card ~ .gl-card-body {
 	background-color: #EEEEEE38 !important;
 }
+.header-inner > * { height: 18px; }
+.header-inner {height: 24px;}
 .primary-card .oc_card_title {
 	font-size: 18px !important;
 }

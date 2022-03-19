@@ -97,8 +97,13 @@ const mutations = {
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
     populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
-        commit('setContext', true)
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
+        if(!deploymentTemplate) {
+            const message = `Could not lookup deployment blueprint '${deployment.deploymentTemplate}'`
+            const e = new Error(message)
+            e.flash = true
+            throw e
+        }
         deploymentTemplate = {...deploymentTemplate, ...deployment}
         let resource = rootGetters.resolveResource(deploymentTemplate.primary)
         resource = {...resource, template: rootGetters.resolveResourceTemplate(resource.template)}

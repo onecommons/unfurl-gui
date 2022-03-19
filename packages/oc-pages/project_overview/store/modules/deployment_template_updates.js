@@ -282,7 +282,8 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) { return function(accumulator) {
+export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) {
+    return function(accumulator) {
         const result = []
 
         if(deploymentTemplateName) {
