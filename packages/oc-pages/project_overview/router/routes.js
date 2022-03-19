@@ -22,9 +22,5 @@ export default [
     name: OC_PROJECT_VIEW_DRAFT_DEPLOYMENT,
     path: '/deployment-drafts/:environment/:slug',
     component: TemplatesPage,
-  },
-  {
-    path: "*",
-    redirect: "/"
   }
 ];

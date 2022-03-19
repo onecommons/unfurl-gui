@@ -47,7 +47,7 @@ module.exports = {
       })
 
       const postProxy = httpProxyMiddleware(
-        function(_, req) {
+        function (_, req) {
           return req.method == 'POST'
         },
         {
@@ -58,8 +58,10 @@ module.exports = {
       )
       app.use(proxy)
       app.use(postProxy)
-    }
-    
+      app.get(`/:user/dashboard/-/pipelines/:deployment`, (req, res) => {
+        res.redirect(`/dashboard/deployments/${req.params.deployment}`)
+      })
+    },
   },
   pluginOptions: {
     apollo: {
