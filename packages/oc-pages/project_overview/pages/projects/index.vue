@@ -93,6 +93,7 @@ export default {
             return null
         },
         ...mapGetters([
+            'yourDeployments',
             'getEnvironments',
             'getProjectInfo',
             'getTemplatesList',
@@ -402,7 +403,7 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab title="Your Deployments">
+                <oc-tab v-if="yourDeployments.length > 0" title="Your Deployments">
                     <div class="">
                         <your-deployments />
                     </div>
