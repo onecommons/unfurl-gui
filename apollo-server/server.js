@@ -18,7 +18,7 @@ export default app => {
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
-    let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH
+    let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, DEPLOYMENT
     for(const variable of req.body.variables_attributes) {
       const {key, secret_value} = variable
       switch(key) {
@@ -28,6 +28,8 @@ export default app => {
           DEPLOY_ENVIRONMENT = secret_value; break
         case 'DEPLOY_PATH':
           DEPLOY_PATH = secret_value; break
+        case 'DEPLOYMENT':
+          DEPLOYMENT = secret_value; break  
       }
     }
     const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
@@ -56,9 +58,9 @@ export default app => {
       execHelper(exportCmd)
     } catch(e) {
       console.error(`exit code ${e.status}`)
-      res.status(500).send({currentCommand, status: e.status, output})
+      res.status(500).send({currentCommand, status: e.status, id: null, output})
       return
     }
-    res.send({status: 0})
+    res.send({ status: 0, id: `${DEPLOY_ENVIRONMENT}/${DEPLOYMENT}` })
   })
 }

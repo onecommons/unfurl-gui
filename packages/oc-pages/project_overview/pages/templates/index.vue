@@ -115,7 +115,9 @@ export default {
       const result = {
         DEPLOY_ENVIRONMENT: environment,
         BLUEPRINT_PROJECT_URL: projectUrl,
-        DEPLOY_PATH: this.deploymentDir
+        DEPLOY_PATH: this.deploymentDir,
+        DEPLOYMENT: slugify(this.$route.query.fn),
+        DEPLOYMENT_BLUEPRINT: this.$route.query.ts
       }
       if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = 'true'
       return result
