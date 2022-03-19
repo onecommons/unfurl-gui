@@ -2,8 +2,10 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
+import { PageNotFound } from '../../vue_shared/oc-components'
 
 Vue.use(VueRouter);
+routes.push({ path: "*", component: PageNotFound })
 
 export default function createRouter(base) {
     if(!base)
