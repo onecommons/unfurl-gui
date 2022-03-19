@@ -35,7 +35,7 @@ function allowFields(node, ...fields) {
     for(const field in node) {
         if(field == 'name' || field == '__typename') continue
         if(!fields.includes(field)) {
-            delete node[field]
+            node[field] = undefined
         }
     }
 }
@@ -60,7 +60,11 @@ const Serializers = {
         })
     },
     '*': function(any) {
-        delete any._state
+        for(const key in any) {
+            if(key.startsWith('_')) {
+                any[key] = undefined
+            }
+        }
     }
 }
 
@@ -518,7 +522,6 @@ const actions = {
             mutation: UpdateDeploymentObject,
             variables
         })
-
         
         await patchEnv(state.env, state.environmentScope)
     },

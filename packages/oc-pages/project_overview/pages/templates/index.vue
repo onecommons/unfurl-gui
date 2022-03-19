@@ -425,7 +425,6 @@ export default {
     },
     async triggerSave(type) {
         try {
-            console.log(type)
             await this.commitPreparedMutations();
             if(type == 'draft'){
                 await this.createDeploymentPathPointer()

@@ -1,4 +1,5 @@
 import { cloneDeep } from 'lodash';
+import _ from 'lodash'
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
@@ -169,9 +170,8 @@ const actions = {
 
         if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
+                console.log(deploymentTemplate)
                 const patch = {...deploymentTemplate};
-                delete patch._state;
-                delete patch._primary;
                 return [{target: deploymentTemplate.name, patch, typename: 'DeploymentTemplate'}];
             }, {root: true});
             if(renameDeploymentTemplate) {
@@ -183,7 +183,7 @@ const actions = {
             }
         }
 
-        commit('updateLastFetchedFrom', {projectPath, templateSlug, environmentName});
+        commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName});
          
 
         function createMatchedTemplateResources(resourceTemplate) {
