@@ -3,7 +3,8 @@ import TableComponent from '../../../vue_shared/components/oc/table.vue'
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
-import {GlButton, GlIcon} from '@gitlab/ui'
+import DeploymentControls from '../cells/deployment-controls.vue'
+import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
 import * as routes from '../../router/constants'
 
 function deploymentGroupBy(item) {
@@ -17,7 +18,7 @@ function deploymentGroupBy(item) {
 
 export default {
     components: {
-        TableComponent, StatusIcon, EnvironmentCell, ResourceCell, GlButton, GlIcon
+        TableComponent, StatusIcon, EnvironmentCell, ResourceCell, GlButton, GlIcon, DeploymentControls, GlModal
     },
     props: {
         items: {
@@ -83,7 +84,8 @@ export default {
             },
         ]
 
-        return {fields, routes}
+        const intent = '', target = null
+        return {fields, routes, intent, target}
 
     },
     methods: {
@@ -105,7 +107,6 @@ export default {
                     slug: deployment.name
                 }
             }
-            console.log({to})
             return {to}
         },
         deploymentAttrs(scope) {
@@ -116,57 +117,93 @@ export default {
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
             return this.noRouter? {href}: {to: href}
         },
+        onIntentToDelete(deployment, environment) {
+            this.intent = 'delete'
+            this.target = {deployment, environment}
+        },
+        onIntentToStop(deployment, environment) {
+            this.intent = 'stop'
+            this.target = {deployment, environment}
+        },
+    },
+    computed: {
+        modal: {
+            set(val) {
+                if(!val) this.intent = ''
+            },
+            get() {
+                return !!this.intent
+            }
+        },
+        modalTitle() {
+            const targetTitle = this.target?.deployment?.title || this.target?.deployment?.name
+            switch(this.intent){
+                case 'delete':
+                    return `Are you sure you want to delete ${targetTitle}?`
+                case 'stop':
+                    return `Are you sure you want to stop ${targetTitle}?`
+                default: return ''
+            }
+        }
     }
-
-
 }
 </script>
 <template>
-    <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields">
-        <template #status="scope">
-            <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
-                <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
-            </div>
-            <div v-else class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                <gl-icon name="pencil-square" :size="18" />
-            </div>
-        </template>
-        <template #status$head>
-            <div style="text-align: center;">
-                {{__('Status')}}
-            </div>
-        </template>
-        <template #deployment="scope">
-            <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;">
-                <a :href="`/${scope.item.context.application.name}`">
-                    <b> {{scope.item.context.application.title}}: </b>
-                </a>
-                <component v-if="scope.item.context.deployment" :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'" v-bind="deploymentAttrs(scope)">
-                    {{scope.item.context.deployment.title}}
-                </component>
-            </div>
-        </template>
-        <template #resource="scope">
-            <resource-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
-        </template>
-        <template #environment="scope">
-            <environment-cell :noRouter="noRouter" :environment="scope.item.context.environment"/>
-        </template>
-
-        <template #open$head> <div></div> </template>
-        <template #open$all="scope">
-            <div>
-                <div v-if="scope.item.context.deployment && scope.item.context.application && scope.item._depth == 0" class="external-link-container">
-                    <gl-button v-if="scope.item.context.deployment.__typename == 'DeploymentTemplate'" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink(scope).to).href" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Resume')}} </gl-button>
-                    <gl-button v-else target="_blank" rel="noopener noreferrer" :href="scope.item.context.application.livePreview" style="background-color: #eee"><gl-icon name="external-link"/> {{__('Open')}} </gl-button>
+    <div class="deployment-index-table">
+        <gl-modal
+            modalId="deployment-index-table"
+            :title="modalTitle"
+            v-model="modal"
+            size="sm"
+            :actionPrimary="{text: 'Confirm'}"
+            :actionCancel="{text: 'Cancel'}"
+            />
+        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields">
+            <template #status="scope">
+                <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
+                    <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
+                    <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
                 </div>
-            </div>
-        </template>
+                <div v-else class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
+                    <gl-icon name="pencil-square" :size="18" />
+                </div>
+            </template>
+            <template #status$head>
+                <div style="text-align: center;">
+                    {{__('Status')}}
+                </div>
+            </template>
+            <template #deployment="scope">
+                <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;">
+                    <a :href="`/${scope.item.context.application.projectPath}`">
+                        <b> {{scope.item.context.application.title}}: </b>
+                    </a>
+                    <component v-if="scope.item.context.deployment" :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'" v-bind="deploymentAttrs(scope)">
+                        {{scope.item.context.deployment.title}}
+                    </component>
+                </div>
+            </template>
+            <template #resource="scope">
+                <resource-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
+            </template>
+            <template #environment="scope">
+                <environment-cell :noRouter="noRouter" :environment="scope.item.context.environment"/>
+            </template>
 
-    </table-component>
+            <template #open$head> <div></div> </template>
+            <template #open$all="scope">
+                <deployment-controls @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
+            </template>
+
+        </table-component>
+    </div>
+
 </template>
+<style>
+[id^="deployment-index-table"].modal-body { min-height: 0; padding: 0; }
+</style>
 <style scoped>
+
 .external-link-container >>> button {
     font-size: 1em;
     padding: 6px 9px;

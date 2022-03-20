@@ -2,7 +2,7 @@
 import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
-import {mapGetters} from 'vuex'
+import {mapGetters, mapState} from 'vuex'
 import {OcTab} from '../../vue_shared/oc-components'
 
 export default {
@@ -81,6 +81,7 @@ export default {
 
     computed: {
         ...mapGetters(['getProjectInfo']),
+        ...mapState(['project']),
 
         requirements() {
             const requirements = this.getProjectInfo.primary.requirements.filter(dependency => (dependency?.min || 0) > 0)
@@ -89,6 +90,9 @@ export default {
         extras() {
             const extras = this.getProjectInfo.primary.requirements.filter(dependency => (dependency?.min || 0) == 0)
             return extras || []
+        },
+        previewImage() {
+            return this.project.globalVars.projectIcon || this.projectImage
         },
 
 
@@ -101,10 +105,10 @@ export default {
     <div class="row oc-project-description-box gl-pt-5 gl-pb-5 gl-pl-5 gl-pr-5 gl-mb-6">
         <div class="col-lg-4">
             <div class="row">
-                <div v-if="!projectImage || projectImage === ''" class="image-placeholder-default">
+                <div v-if="!previewImage" class="image-placeholder-default">
                     {{ __("Screenshot")}}
                 </div>
-                <img v-else :src="projectImage" :alt="projectInfo.title" class="image-project" />
+                <img v-else :src="previewImage" :alt="projectInfo.title" class="image-project" />
             </div>
         </div>
         <div class="col-lg-8 right-description">
@@ -112,7 +116,7 @@ export default {
                 <div class="col-lg-12">
                     <div class="gl-display-flex">
                         <h4 class="project-title gl-display-flex">
-                            {{ getProjectInfo.title || getProjectInfo.name }} <!-- TODO project name vs project title? -->
+                            {{ getProjectInfo.title || getProjectInfo.name }}
                         </h4>
                         <div class="gl-display-flex">
                             <!--a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
