@@ -32,71 +32,90 @@ function selectEnvironmentButton(text) {
   return cy.get('.modal-dialog button').contains('button', text || 'Select')
 }
 
-const OVERVIEW = `${BASE_URL}/${NAMESPACE.replace('demo', 'blueprints')}/apostrophe-demo/-/overview`
+const OVERVIEW = `${BASE_URL}/testing/simple-blueprint`
 describe('project overview deploy', () => {
   before(() => {
-    cy.resetDataFromFixture(`${NAMESPACE}/apostrophe-demo`, 'blueprints/blueprint.json')
+    cy.resetDataFromFixture(`testing/simple-blueprint`, 'blueprints/blueprint.json')
   })
   beforeEach (() => {
     cy.visit(OVERVIEW)
     //cy.window().then(window => window.gon.current_username = 'user1')
   })
 
-  it('can open deploy dialog', () => {
-    openDeployDialog('Google Cloud Platform')
-    modalHeader().should('be.visible')
+  it('Blueprint Page', () => {
+    cy.contains('Your application blueprint')
+    cy.contains('Extras')
+    cy.contains('Details')
   })
 
-  it('serializes state', () => {
+  it('Services', () => {
+    cy.contains('Google Cloud Platform')
+    cy.contains('Amazon Web Services EC2')
+    cy.contains('Kubernetes')
+    cy.contains('Self-Hosted')
 
-    cy.on('uncaught:exception', (e) => false) // problems with duplicate navigation
-    const myAwesomeDeployment = 'My awesome deployment'
-    cy.location('search').should('equal', '')
-    openDeployDialog('Google Cloud Platform')
-    deploymentNameInput().clear().type(myAwesomeDeployment)
-    modalHeader().click()
-    cy.location('search').should('not.equal', '')
-    cy.reload()
-    cy.waitForGraphql()
-    cy.wait(400) // not sure why this takes so long
-    modalHeader().should('be.visible')
-
-    deploymentNameInput().should('have.value', myAwesomeDeployment)
+    // let base = '//*[@id="OcAppDeployments"]/div/div[2]/div[2]/div/div/div/div['
+    // let end = ']/div[4]/span/button'
+    // for (let i = 1; i <= 4; i++) {
+    //   cy.get(base + i + end).click()
+    //   cy.contains('Create New Deployment')
+    //   cy.contains('Select an environment to deploy this template to:')
+    //   cy.contains('Cancel').click()
+    // }
   })
+
+
+
+  // it('serializes state', () => {
+
+  //   cy.on('uncaught:exception', (e) => false) // problems with duplicate navigation
+  //   const myAwesomeDeployment = 'My awesome deployment'
+  //   cy.location('search').should('equal', '')
+  //   openDeployDialog('Google Cloud Platform')
+  //   deploymentNameInput().clear().type(myAwesomeDeployment)
+  //   modalHeader().click()
+  //   cy.location('search').should('not.equal', '')
+  //   cy.reload()
+  //   cy.waitForGraphql()
+  //   cy.wait(400) // not sure why this takes so long
+  //   modalHeader().should('be.visible')
+
+  //   deploymentNameInput().should('have.value', myAwesomeDeployment)
+  // })
   
 
-  it('can click away to clear search params', () => {
-    const myAwesomeDeployment = 'My awesome deployment'
-    cy.location('search').should('equal', '')
-    openDeployDialog('Google Cloud Platform')
-    deploymentNameInput().clear().type(myAwesomeDeployment)
-    modalHeader().click()
-    cy.location('search').should('not.equal', '')
+  // it('can click away to clear search params', () => {
+  //   const myAwesomeDeployment = 'My awesome deployment'
+  //   cy.location('search').should('equal', '')
+  //   openDeployDialog('Google Cloud Platform')
+  //   deploymentNameInput().clear().type(myAwesomeDeployment)
+  //   modalHeader().click()
+  //   cy.location('search').should('not.equal', '')
 
-    //cy.get('.modal-backdrop').click({force: true})
-    cy.get('body').click(10,10)
+  //   //cy.get('.modal-backdrop').click({force: true})
+  //   cy.get('body').click(10,10)
 
-    cy.wait(300)
+  //   cy.wait(300)
 
-    cy.location('search').should('equal', '')
+  //   cy.location('search').should('equal', '')
 
-  })
+  // })
 
-  it('can enter deployment creation view', () => {
-    cy.on('uncaught:exception', (e) => false) // problems with duplicate navigation
-    openDeployDialog('Self-Hosted')
-    deploymentNameInput().clear().type('My awesome deployment')
+  // it('can enter deployment creation view', () => {
+  //   cy.on('uncaught:exception', (e) => false) // problems with duplicate navigation
+  //   openDeployDialog('Self-Hosted')
+  //   deploymentNameInput().clear().type('My awesome deployment')
 
-    nextButton().should('be.disabled')
+  //   nextButton().should('be.disabled')
 
-    selectEnvironmentButton().click()
-    cy.wait(100)
-    selectEnvironmentButton('production-gcp').click()
-    cy.wait(100)
-    nextButton().should('not.be.disabled')
+  //   selectEnvironmentButton().click()
+  //   cy.wait(100)
+  //   selectEnvironmentButton('production-gcp').click()
+  //   cy.wait(100)
+  //   nextButton().should('not.be.disabled')
 
-    nextButton().click()
-  })
+  //   nextButton().click()
+  // })
 
   /*
   it('can deploy', () => {

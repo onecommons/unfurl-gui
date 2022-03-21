@@ -20,7 +20,7 @@ jobs:
       - name: Add Cypress
         run: yarn add cypress
       - name: Run Cypress
-        run: yarn cypress run
+        run: xargs yarn run cypress run -s  < cypress/ci-tests.txt
       - name: Archive test screenshots
         if: always()
         uses: actions/upload-artifact@v2
