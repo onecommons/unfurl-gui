@@ -5,8 +5,8 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
-import {deploy, undeploy} from '../../../vue_shared/client_utils/pipelines'
-import {mapGetters} from 'vuex'
+import {undeploy} from '../../../vue_shared/client_utils/pipelines'
+import {mapGetters, mapActions} from 'vuex'
 import * as routes from '../../router/constants'
 
 function deploymentGroupBy(item) {
@@ -91,7 +91,7 @@ export default {
 
     },
     methods: {
-        deploy() { return deploy( this.pipelinesPath, this.deploymentParameters) },
+        deploy() { return this.deployInto(this.deploymentParameters) },
         undeploy() { return undeploy( this.pipelinesPath, this.deploymentParameters) },
         statuses(scope) { return scope.item.context.deployment?.statuses || [] },
         resumeEditingLink(scope) {

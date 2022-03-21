@@ -75,6 +75,7 @@ export default {
   computed: {
     ...mapState(['project']),
     ...mapGetters([
+      'pipelinesPath',
       'resolveResourceTypeFromAny',
       'getProjectInfo',
       'getRequirementSelected',
@@ -100,28 +101,6 @@ export default {
       'lookupEnvironment'
     ]),
     
-    pipelinesPath(){
-      return `/${this.getHomeProjectPath}/-/pipelines`
-    },
-    UNFURL_MOCK_DEPLOY() {
-      if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
-      let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
-      if(key && sessionStorage[key]) return true
-      return false
-    },
-    triggerVariables() {
-      const environment = this.$route.params.environment
-      const projectUrl = `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`
-      const result = {
-        DEPLOY_ENVIRONMENT: environment,
-        BLUEPRINT_PROJECT_URL: projectUrl,
-        DEPLOY_PATH: this.deploymentDir,
-        DEPLOYMENT: slugify(this.$route.query.fn),
-        DEPLOYMENT_BLUEPRINT: this.$route.query.ts
-      }
-      if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = 'true'
-      return result
-    },
     deploymentDir() {
         const environment = this.$route.params.environment
         // this.getDeploymentTemplate.name not loaded yet
@@ -150,7 +129,6 @@ export default {
           return 'enabled';
       }
     },
-
     mergeStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
@@ -159,7 +137,6 @@ export default {
           return 'enabled';
       }
     },
-
     deployStatus() {
       if(this.$route.name != 'deploymentDraftPage') return 'hidden'
       return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
@@ -172,8 +149,6 @@ export default {
       }
       */
     },
-
-
     cancelStatus() {
       return this.$route.name == 'deploymentDraftPage'? 'enabled': 'hidden';
     },
@@ -203,34 +178,28 @@ export default {
               ? this.getRequirementSelected.requirement.name 
               : __('Resource');
     },
-
     getRequirementResourceType() {
       const resourceTypeName = this.getRequirementSelected?.requirement?.constraint?.resourceType
       const resourceType =  this.resolveResourceTypeFromAny(resourceTypeName)
       return resourceType?.title || resourceTypeName
     },
-
-
     ocTemplateResourcePrimary() {
         return {
             text: __("Next"),
             attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0) }]
         };
     },
-
     ocResourceToConnectPrimary() {
       return {
             text: __("Next"),
             attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: Object.keys(this.selectedServiceToConnect).length === 0 }]
         };
     },
-
     cancelProps() {
         return {
             text: __('Cancel'),
         };
     },
-
   },
 
   watch: {
@@ -329,6 +298,7 @@ export default {
       'commitPreparedMutations',
       'populateTemplateResources',
       'fetchProject',
+      'deployInto'
     ]),
 
     unloadHandler(e) {
@@ -459,28 +429,26 @@ export default {
 
     async triggerDeployment() {
       try {
-          this.deployButton = false;
-          this.loadingDeployment = true;
-          await this.triggerSave();
-          await this.createDeploymentPathPointer()
-          const variables_attributes = []
-          Object.entries(this.triggerVariables).forEach(([key, secret_value]) => {
-              variables_attributes.push({
-                  key,
-                  secret_value,
-                  variable_type: 'env_var'
-              })
-          })
-          const { data } = await axios.post(this.pipelinesPath, {ref: this.refValue.fullName, variables_attributes});
-          createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
-          return redirectTo(`${this.pipelinesPath}/${data.id}`);
+        this.deployButton = false;
+        this.loadingDeployment = true;
+        await this.triggerSave();
+        const {pipelineData} = await this.deployInto({
+          environmentName: this.$route.params.environment,
+          projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
+          deployPath: this.deploymentDir,
+          deploymentName: slugify(this.$route.query.fn),
+          deploymentBlueprint: this.$route.query.ts
+        })
+
+        createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+        return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
       } catch (err) {
-          console.error(err)
-          const errors = err?.response?.data?.errors || [];
-          const [error] = errors;
-          this.deployButton = true;
-          this.loadingDeployment = false;
-          return createFlash({ message: error, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts });
+        console.error(err)
+        const errors = err?.response?.data?.errors || [];
+        const [error] = errors;
+        this.deployButton = true;
+        this.loadingDeployment = false;
+        return createFlash({ message: error, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts });
       }
     },
 

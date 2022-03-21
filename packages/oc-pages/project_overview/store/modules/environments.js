@@ -5,6 +5,8 @@ import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from '~/flash';
+import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
+
 
 const state = {
     environmentName: __("Oc Default"),
@@ -69,6 +71,38 @@ const mutations = {
 };
 
 const actions = {
+
+    async deployInto({rootGetters, getters, commit, dispatch}, parameters) {
+        const deployVariables = prepareVariables({
+            ...parameters,
+            mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
+            workflow: 'deploy'
+        })
+        const data = await triggerPipeline(
+            rootGetters.pipelinesPath,
+            deployVariables,
+        )
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+        commit('pushPreparedMutation', () => {
+            return [{
+                typename: 'DeploymentPath',
+                patch: {
+                    __typename: 'DeploymentPath',
+                    environment: parameters.environmentName,
+                    pipeline: {
+                        id: data.id,
+                        flags: data.flags,
+                        commit: data.commit,
+                        variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
+                    }
+                },
+                target: parameters.deployPath
+            }]
+        })
+        await dispatch('commitPreparedMutations', {}, {root: true})
+        return {pipelineData: data}
+    },
 
     setEnvironmentName({ commit }, envName) {
         commit("SET_ENVIRONMENT_NAME", { envName });
