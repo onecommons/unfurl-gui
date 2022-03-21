@@ -1,4 +1,5 @@
 <script>
+import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import ComputeIcon from './icons/Compute.svg'
 import DbIcon from './icons/Database.svg'
@@ -24,12 +25,11 @@ const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.k8scluster': 'K8s',
     'unfurl.relationships.connectsto.azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS',
-    gcpinstance: GCPInstance,
-    dns: 'DnsIcon',
+    gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
+    dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
     mail: 'MailIcon',
     mongodb: MongoDbIcon,
-    compute: 'ComputeIcon',
-
+    compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
     'self-hosted': 'LocalDevIcon'
 }
 
@@ -63,7 +63,9 @@ export default {
     components: { GlIcon },
     props: {
         type: {
-            required: true,
+            type: [Object, String]
+        },
+        env: {
             type: [Object, String]
         }
     },
@@ -71,11 +73,23 @@ export default {
         GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon
     },
     computed: {
+        ...mapGetters(['lookupEnvironment']),
+        _env() {
+            if(!this.env) return
+            let env
+            if(typeof this.env == 'string') {
+                env = this.lookupEnvironment(this.env)
+            }
+            else env = this.env
+
+            return env?.primary_provider?.type || 'self-hosted'
+
+        },
         detectedIcon() {
-            return detectIcon(this.type)
+            return detectIcon(this.type || this._env)
         },
         customIcon() {
-            return detectIconCustomSVG(this.type)
+            return detectIconCustomSVG(this.type || this._env)
         },
         customStyle() {
             if (this.$attrs.size) {

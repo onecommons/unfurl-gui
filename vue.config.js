@@ -4,6 +4,7 @@ const fs = require('fs')
 // this alias is used by code copied from gitlab
 const alias = {
   'oc': path.join(__dirname, 'src/assets/javascripts'),
+  'oc_dashboard': path.join(__dirname, 'src/gitlab-oc/dashboard'),
   '~': path.join(__dirname, 'src/assets/javascripts'),
   'oc_pages': path.join(__dirname, 'src/gitlab-oc')
   //'oc': path.join(__dirname, 'src/gitlab-oc')
@@ -46,7 +47,7 @@ module.exports = {
       })
 
       const postProxy = httpProxyMiddleware(
-        function(_, req) {
+        function (_, req) {
           return req.method == 'POST'
         },
         {
@@ -57,8 +58,10 @@ module.exports = {
       )
       app.use(proxy)
       app.use(postProxy)
-    }
-    
+      app.get(`/:user/dashboard/-/pipelines/:deployment`, (req, res) => {
+        res.redirect(`/dashboard/deployments/${req.params.deployment}`)
+      })
+    },
   },
   pluginOptions: {
     apollo: {

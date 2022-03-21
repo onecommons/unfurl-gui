@@ -1,7 +1,7 @@
 <script>
 import { GlCard, GlIcon } from '@gitlab/ui'
 import {mapState, mapGetters} from 'vuex'
-import {DeploymentIndexTable} from '../../dashboard/components'
+import {DeploymentIndexTable} from 'oc_dashboard/components'
 /*
         const fields = [
             {
@@ -38,38 +38,12 @@ export default {
     components: {GlCard, GlIcon, DeploymentIndexTable},
     computed: {
         ...mapState(['project']),
-        ...mapGetters(['getDeploymentDictionaries', 'lookupEnvironment']),
-        items() {
-            const result = []
-            for(const dict of this.getDeploymentDictionaries) {
-                if(!dict?.ApplicationBlueprint?.hasOwnProperty(this.project.globalVars.projectPath))
-                    continue
-
-                const obj = {}
-                obj.environment = this.lookupEnvironment(dict._environment)
-                // TODO get status from deployment
-
-                obj.deployment = Object.values(dict.Deployment)[0]
-                obj.application = Object.values(dict.ApplicationBlueprint)[0]
-
-                const resources = Object.values(dict.Resource)
-                obj.deployment.statuses = []
-                resources.forEach(resource => {if(resource.status != 1) obj.deployment.statuses.push(resource)})
-
-                for(const resource of resources) {
-                    const context = {...obj, resource}
-                    result.push({context, ...context})
-                }
-
-            }
-            return result
-
-        }
+        ...mapGetters(['yourDeployments']),
     }
 }
 </script>
 <template>
-    <div v-if="items.length">
+    <div v-if="yourDeployments.length">
         <gl-card bodyClass="p-0">
             <template #header>
                 <div class="d-flex align-items-center">
@@ -80,7 +54,7 @@ export default {
                 </div>
 
             </template>
-            <deployment-index-table no-router :items="items" hide-filter no-margin/>
+            <deployment-index-table no-router :items="yourDeployments" hide-filter no-margin/>
 
         </gl-card>
     </div>

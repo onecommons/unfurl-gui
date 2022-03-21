@@ -66,8 +66,8 @@ export default {
       checkedNode: true,
       selectedServiceToConnect: '',
       refValue: {
-        shortName: this.$projectGlobal.ref,
-        fullName: `refs/heads/${this.$projectGlobal.ref}`,
+        shortName: 'main',
+        fullName: 'refs/heads/main',
       },
     };
   },
@@ -75,11 +75,13 @@ export default {
   computed: {
 
     ...mapGetters([
+      'resolveResourceTypeFromAny',
       'getProjectInfo',
       'getRequirementSelected',
       'getTemplate',
       'getServicesToConnect',
       'getPrimaryCard',
+      'getRequirementSelected',
       'getCardsStacked',
       'getDeploymentTemplate',
       'getDependencies',
@@ -90,7 +92,7 @@ export default {
       'getUsername',
       'getHomeProjectPath',
       'getCurrentEnvironment',
-      'getValidResourceTypes',
+      'availableResourceTypesForRequirement',
       'getValidConnections',
       'getHomeProjectPath',
       'getProjectInfo',
@@ -113,7 +115,9 @@ export default {
       const result = {
         DEPLOY_ENVIRONMENT: environment,
         BLUEPRINT_PROJECT_URL: projectUrl,
-        DEPLOY_PATH: this.deploymentDir
+        DEPLOY_PATH: this.deploymentDir,
+        DEPLOYMENT: slugify(this.$route.query.fn),
+        DEPLOYMENT_BLUEPRINT: this.$route.query.ts
       }
       if(this.UNFURL_MOCK_DEPLOY) result.UNFURL_MOCK_DEPLOY = 'true'
       return result
@@ -134,7 +138,10 @@ export default {
           return this.hasPreparedMutations? 'enabled': 'disabled';
       }
     },
-
+    saveDraftStatus() {
+      return this.$route.name == 'deploymentDraftPage'?
+        (this.hasPreparedMutations? 'enabled': 'disabled') : 'hidden'
+    },
     deleteStatus() {
       switch(this.$route.name) {
         case 'deploymentDraftPage':
@@ -198,7 +205,9 @@ export default {
     },
 
     getRequirementResourceType() {
-      return this.getRequirementSelected?.requirement?.constraint?.resourceType
+      const resourceTypeName = this.getRequirementSelected?.requirement?.constraint?.resourceType
+      const resourceType =  this.resolveResourceTypeFromAny(resourceTypeName)
+      return resourceType?.title || resourceTypeName
     },
 
 
@@ -228,7 +237,7 @@ export default {
     selected: function(val) {
       if(Object.keys(val).length > 0) {
         if(!this.userEditedResourceName) {
-          this.resourceName = val.name;
+          this.resourceName = this.resolveResourceTypeFromAny(val.name)?.title || val.name;
         }
       }
     },
@@ -416,9 +425,12 @@ export default {
         })
         await this.commitPreparedMutations()
     },
-    async triggerSave() {
+    async triggerSave(type) {
         try {
             await this.commitPreparedMutations();
+            if(type == 'draft'){
+                await this.createDeploymentPathPointer()
+            }
             createFlash({
               // TODO this doesn't make sense if it's a template
                 message: __('Deployment was created successfully'),
@@ -646,10 +658,12 @@ export default {
             :loading-deployment="loadingDeployment"
             :deploy-button="deployButton"
             :save-status="saveStatus"
+            :save-draft-status="saveDraftStatus"
             :delete-status="deleteStatus"
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
+            @saveDraft="triggerSave('draft')"
             @saveTemplate="triggerSave()"
             @triggerDeploy="triggerDeployment()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"
@@ -661,14 +675,14 @@ export default {
             :ref="__('oc-template-resource')"
             modal-id="oc-template-resource"
             size="lg"
-            :title="`Choose a ${getRequirementResourceType} template for ${getNameResourceModal}`"
+            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.title || getRequirementSelected.requirement.name)}`"
             :action-primary="ocTemplateResourcePrimary"
             :action-cancel="cancelProps"
             @primary="onSubmitTemplateResourceModal"
             @cancel="cleanModalResource"
             >
 
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidResourceTypes(getNameResourceModal, getDeploymentTemplate, getCurrentEnvironment)" :resourceType="getRequirementResourceType"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(getRequirementSelected.requirement)" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>

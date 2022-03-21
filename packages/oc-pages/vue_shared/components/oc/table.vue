@@ -423,7 +423,6 @@ export default {
   font-size: 0.95em;
   font-weight: bold;
   color: #4A5053;
-  background-color: #F4F4F4;
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #DBDBDB;

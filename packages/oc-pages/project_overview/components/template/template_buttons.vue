@@ -1,6 +1,7 @@
 <script>
 import { GlButton } from '@gitlab/ui';
 
+import _ from 'lodash'
 import {mapGetters} from 'vuex'
 
 export default {
@@ -19,6 +20,7 @@ export default {
         },
         deployStatus: {type: String, default: () => 'disabled'},
         saveStatus: {type: String, default: () => 'disabled'},
+        saveDraftStatus: {type: String, default: () => 'hidden'},
         mergeStatus: {type: String, default: () => 'disabled'},
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
@@ -30,10 +32,12 @@ export default {
         saveTemplate() {
             this.$emit('saveTemplate');
         },
-
-        triggerDeploy() {
-            this.$emit('triggerDeploy');
+        saveDraft() {
+            this.$emit('saveDraft');
         },
+        triggerDeploy: _.throttle(function () {
+            this.$emit('triggerDeploy');
+        }, 3000),
 
         launchModalDeleteTemplate() {
             this.$emit('launchModalDeleteTemplate');
@@ -96,6 +100,19 @@ export default {
                 @click.prevent="saveTemplate"
                 >{{ __('Save Changes') }}</gl-button
             >
+            <gl-button
+                v-show="saveDraftStatus != 'hidden'"
+                data-testid="save-draft-btn"
+                title="Save Changes"
+                :aria-label="__(`Save Changes`)"
+                type="button"
+                icon="doc-new"
+                :disabled="saveDraftStatus == 'disabled'"
+                class="gl-mr-3"
+                @click.prevent="saveDraft"
+                >{{ __('Save Draft') }}</gl-button
+            >
+
         </div>
         <div>
             <gl-button

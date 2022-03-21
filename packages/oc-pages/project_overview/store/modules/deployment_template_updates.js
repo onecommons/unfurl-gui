@@ -35,7 +35,7 @@ function allowFields(node, ...fields) {
     for(const field in node) {
         if(field == 'name' || field == '__typename') continue
         if(!fields.includes(field)) {
-            delete node[field]
+            node[field] = undefined
         }
     }
 }
@@ -54,6 +54,18 @@ const Serializers = {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
     },
+    ResourceTemplate(rt) {
+        rt.dependencies = rt.dependencies?.filter(dep => {
+            return dep.match || dep.target
+        })
+    },
+    '*': function(any) {
+        for(const key in any) {
+            if(key.startsWith('_')) {
+                any[key] = undefined
+            }
+        }
+    }
 }
 
 function throwErrorsFromDeploymentUpdateResponse(...args) {
@@ -100,7 +112,7 @@ export function createEnvironmentInstance({type, name, title, description, envir
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
         try {
-            properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
+            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
         const dependencies = resourceType?.requirements?.map(req => ({
@@ -270,7 +282,8 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) { return function(accumulator) {
+export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) {
+    return function(accumulator) {
         const result = []
 
         if(deploymentTemplateName) {
@@ -288,7 +301,7 @@ export function createResourceTemplate({type, name, title, description, deployme
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
         try {
-            properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
+            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
         const dependencies = resourceType?.requirements?.map(req => ({
@@ -444,9 +457,13 @@ const mutations = {
     },
     normalizePatches(state) {
         for(const typename of Object.keys(state.patches)){
-            if(!Serializers[typename]) continue
             for(const record of Object.values(state.patches[typename])) {
-                if(record && typeof record == 'object') Serializers[typename](record)
+                if(record && typeof record == 'object') {
+                    if(Serializers[typename]) {
+                        Serializers[typename](record)
+                    }
+                    Serializers['*'](record)
+                }
             }
         }
     }
@@ -506,7 +523,6 @@ const actions = {
             mutation: UpdateDeploymentObject,
             variables
         })
-
         
         await patchEnv(state.env, state.environmentScope)
     },

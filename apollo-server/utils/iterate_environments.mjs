@@ -5,6 +5,8 @@ import {USER_HOME_PROJECT} from '../../src/gitlab-oc/vue_shared/util.mjs';
 export default function iterateEnvironments(reposDir) {
   const environments = {}
   for (const repo of fs.readdirSync(reposDir)) {
+    if (!fs.statSync(path.join(reposDir, repo)).isDirectory())
+        continue
     try {
       const environmentsJSON = fs.readFileSync(path.join(reposDir, `${repo}/${USER_HOME_PROJECT}/environments.json`), 'utf-8')
       const parsed = JSON.parse(environmentsJSON)

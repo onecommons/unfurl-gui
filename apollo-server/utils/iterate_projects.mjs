@@ -32,7 +32,7 @@ export function getBlueprintJson(reposDir, project, runExport) {
     fullPath = path.join(reposDir, project, jsonFile);
   }
   const ensemblePath = path.join(reposDir, project, 'ensemble-template.yaml');
-  if (runExport && fs.existsSync(ensemblePath)) {
+  if (fs.existsSync(ensemblePath)) {
     const ensembleStat = fs.statSync(ensemblePath);
     const jsonMtime = fs.existsSync(fullPath) ? fs.statSync(fullPath).mtimeMs : 0;
     if (ensembleStat.mtimeMs > jsonMtime) {
@@ -62,9 +62,11 @@ export function iterateProjects(reposDir) {
       if (project == USER_HOME_PROJECT)
         continue
       const projectPath = `${repo}/${project}`
-      const blueprint = getBlueprintJson(reposDir, projectPath, false)
-      if (blueprint)
-        projects.push({projectPath, blueprint})
+      const blueprint = getBlueprintJson(reposDir, projectPath, true)
+      if (blueprint) {
+        console.log( 'adding repo', projectPath)
+        projects.push({ projectPath, blueprint })
+      }
     }
   }
   return projects

@@ -11,6 +11,7 @@ const mutations = {
 const actions = {
     // NOTE this is done in the environments store
     async fetchDeployments({commit}, params) {
+        console.warn('fetch deployments has no effect and will be removed')
         /*
         const {username, projectPath, fullPath, fetchPolicy, applicationBlueprint} = params;
         const query = gql`
@@ -48,6 +49,7 @@ const getters = {
     getDeploymentDictionary(state) {
         return function(deploymentName, environmentName) {
             for(const dict of state.deployments) {
+                if(!dict.Deployment) continue
                 const deployment = dict.Deployment[deploymentName]
                 if(deployment && dict._environment == environmentName) // _environment assigned on fetch in environments store
                     return dict

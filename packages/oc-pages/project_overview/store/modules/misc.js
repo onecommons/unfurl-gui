@@ -29,7 +29,15 @@ const getters = {
     getHomeProjectPath(_, getters)  {return `${getters.getUsername}/${USER_HOME_PROJECT}`},
     getUsername() {return window.gon.current_username},
     getFullname() {return window.gon.current_user_fullname},
-    isMobileLayout() {return state.isMobileLayout}
+    isMobileLayout() {return state.isMobileLayout},
+    pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },
+    UNFURL_MOCK_DEPLOY() {
+      if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
+      let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
+      if(key && sessionStorage[key]) return true
+      return false
+    },
+
 }
 
 const actions = {

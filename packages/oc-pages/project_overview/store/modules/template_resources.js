@@ -1,4 +1,5 @@
 import { cloneDeep } from 'lodash';
+import _ from 'lodash'
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
@@ -94,12 +95,34 @@ const mutations = {
 };
 
 const actions = {
+    // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
     populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
-        commit('setContext', true)
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
+        if(!deploymentTemplate) {
+            const message = `Could not lookup deployment blueprint '${deployment.deploymentTemplate}'`
+            const e = new Error(message)
+            e.flash = true
+            throw e
+        }
         deploymentTemplate = {...deploymentTemplate, ...deployment}
         let resource = rootGetters.resolveResource(deploymentTemplate.primary)
+        if(!resource) {
+            const message = `Could not lookup resource '${deploymentTemplate.primary}'`
+            const e = new Error(message)
+            e.flash = true
+            throw e
+        }
         resource = {...resource, template: rootGetters.resolveResourceTemplate(resource.template)}
+        if(resource.dependencies.length == 0 && resource.template.dependencies.length > 0) { // TODO remove this workaround
+            resource.dependencies = resource.template.dependencies
+            window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
+        }
+        if(resource.attributes.length == 0 && resource.template.properties.length > 0) { // TODO remove this workaround
+            resource.attributes = resource.template.properties
+            window.alert(`Your resource is missing attributes, this is likely an export bug.  ResourceTemplate's properties will be used for rendering.`)
+        }
+
+        deploymentTemplate.primary = resource.name
         if(!deploymentTemplate.cloud) {
             const environment = rootGetters.lookupEnvironment(deploymentTemplate._environment)
             if(environment?.primary_provider?.type) {
@@ -113,14 +136,41 @@ const actions = {
 
     },
 
+    // used by deploy and blueprint editing
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('setContext', false)
         if(!templateSlug) return false;
 
-        const blueprint = rootGetters.getApplicationBlueprint;
-        const deploymentTemplate = blueprint.getDeploymentTemplate(templateSlug);
-        const primary = deploymentTemplate._primary;
+        let _syncState = syncState
+        let blueprint = rootGetters.getApplicationBlueprint;
+        let deploymentTemplate
+        function setdt() { deploymentTemplate = blueprint.getDeploymentTemplate(templateSlug); }
+        setdt()
+        let primary
+        let deploymentDict
+        if(!deploymentTemplate) { // let's look up the deployment template from the deployment
+            for(const dict of rootGetters.getDeploymentDictionaries) {
+                if(dict._environment != environmentName) continue
+                let dt
+                try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
+                if(dt?.slug != templateSlug) continue
+
+                dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true})
+                _syncState = false // override sync state if we just loaded this
+                /*
+                deploymentTemplate = _.cloneDeep(dt)
+                primary = _.cloneDeep(dict.ResourceTemplate[deploymentTemplate.primary])
+                deploymentDict = dict
+                */
+                break
+            }
+            setdt()
+        }
+        primary = deploymentTemplate._primary
         if(!primary) return false;
+        primary = {...primary}
+        deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
+        blueprint = {...blueprint, projectPath} // maybe we want to do it here
 
         if(renameDeploymentTemplate) {
             deploymentTemplate.title = renameDeploymentTemplate;
@@ -139,11 +189,9 @@ const actions = {
             }
         }
 
-        if(syncState) {
+        if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
                 const patch = {...deploymentTemplate};
-                delete patch._state;
-                delete patch._primary;
                 return [{target: deploymentTemplate.name, patch, typename: 'DeploymentTemplate'}];
             }, {root: true});
             if(renameDeploymentTemplate) {
@@ -155,11 +203,11 @@ const actions = {
             }
         }
 
-        commit('updateLastFetchedFrom', {projectPath, templateSlug, environmentName});
+        commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName});
          
 
         function createMatchedTemplateResources(resourceTemplate) {
-            if(syncState) {
+            if(_syncState) {
                 commit('pushPreparedMutation', (accumulator) => {
                     return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
                 });
@@ -170,7 +218,9 @@ const actions = {
 
             for(const dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
-                const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match);
+                const resolvedDependencyMatch = deploymentDict ?
+                    deploymentDict.ResourceTemplate[dependency.match] :
+                    rootGetters.resolveResourceTemplate(dependency.match);
                 dependency.valid = !!resolvedDependencyMatch;
 
                 dependency.completionStatus = dependency.valid? 'created': null;
@@ -192,6 +242,7 @@ const actions = {
     },
 
 
+    // used by /dashboard/environment/<environment-name> TODO merge these actions
     populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
         for(const resource of resourceTemplates) {
             //dispatch('createMatchedResources', {resource})
@@ -232,7 +283,7 @@ const actions = {
             target.title = title;
 
             target.__typename = 'ResourceTemplate'
-            try { target.properties = Object.values(target.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}));}
+            try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
             catch { target.properties = []; }
 
             if(target?.requirements?.length > 0) {
@@ -292,7 +343,6 @@ const actions = {
     },
 
     async deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
-        console.log('deleteNode')
         try {
             const actionLowerCase = action.toLowerCase();
             if(dependentName) {
@@ -328,7 +378,6 @@ const actions = {
         }
     },
     updateProperty({state, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
-        console.log(state.context)
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
@@ -458,8 +507,8 @@ const getters = {
     },
     availableResourceTypesForRequirement(_, getters) {
         return function(requirement) {
-
-            return currentAvailableResourceTypes.filter(type => {
+            if(!requirement) return []
+            return getters.currentAvailableResourceTypes.filter(type => {
                 const isValidImplementation =  type.extends?.includes(requirement.constraint?.resourceType)
                 return isValidImplementation
             })
@@ -469,7 +518,13 @@ const getters = {
         return function(typeName) {
             return getters.currentAvailableResourceTypes.find(rt => rt.name == typeName)
         }
-
+    },
+    resolveResourceTypeFromAny(state, _a, _b, rootGetters) {
+        return function(typeName) {
+            const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
+            if(dictionaryResourceType) return dictionaryResourceType
+            return rootGetters?.environmentResolveResourceType(state.lastFetchedFrom?.environmentName, typeName) || null
+        }
     }
 };
 

@@ -3,6 +3,7 @@ import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
 import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
 import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
+import Vue from 'vue'
 
 
 class ApplicationBlueprint {
@@ -17,7 +18,9 @@ class ApplicationBlueprint {
 
 
     getDeploymentTemplate(name) {
-        return new DeploymentTemplate(this._state['DeploymentTemplate'][name], this._state)
+        const dt = this._state['DeploymentTemplate'][name]
+        if(!dt) return null
+        return new DeploymentTemplate(dt, this._state)
     }
 
     toJSON() {
@@ -88,10 +91,26 @@ class ResourceTemplate {
 }
 
 
-const state = {loaded: false, callbacks: []}
+const state = {loaded: false, callbacks: [], clean: true}
 const mutations = {
     setProjectState(state, {key, value}) {
-        state[key] = value
+        Vue.set(state, key, value)
+        state.clean = false
+    },
+
+    resetProjectState(state) {
+        for(const key in state) {
+            let value = null
+            switch(key) {
+                case 'loaded':
+                    value = false; break
+                case 'callbacks':
+                    value = []; break
+                case 'clean':
+                    value = true; break
+            }
+            Vue.set(state, key, value)
+        }
     },
     
     loaded(state, status) {
@@ -141,13 +160,16 @@ const actions = {
                 throw new Error('Could not fetch project blueprint')
             }
         }
-        dispatch('useProjectState', root)
+        dispatch('useProjectState', {root})
 
 
         commit('loaded', true)
     },
-    useProjectState({commit, getters}, root) {
+    useProjectState({state, commit, getters}, {root, shouldMerge}) {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
+        if(!(state.clean || shouldMerge)) {
+            commit('resetProjectState')
+        }
         const transforms = {
             ResourceTemplate(resourceTemplate) {
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
@@ -186,11 +208,15 @@ const actions = {
                     resource.attributes = []
                 }
                 resource.__typename = 'Resource'
+            },
+            Deployment(deployment) {
+                const dt = getters.resolveDeploymentTemplate(deployment.deploymentTemplate)
+                deployment.projectPath = dt?.projectPath
             }
         }
 
         // guarunteed ordering
-        const ordering = uniq(['ResourceType', 'ResourceTemplate', 'DeploymentTemplate'].concat(Object.keys(root)))
+        const ordering = uniq(['ResourceType', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
         for(const key of ordering) {
             const value = root[key]
@@ -206,13 +232,12 @@ const actions = {
     
 }
 
-/*
- * TODO try this out
 function storeResolver(typename, options) {
     const defaults = {}
     const {instantiateAs} = Object.assign(defaults, options)
     return function(state) {
         const dictionary = state[typename]
+        if(!dictionary) return null
         return function(name) {
             let entry
             if(entry = dictionary[name]) {
@@ -226,14 +251,24 @@ function storeResolver(typename, options) {
         }
     }
 }
-*/
 
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
-    resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
-    resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
-    resolveResource(state) { return name =>  state['Resource'][name] },
+    //resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
+    resolveResourceTemplate: storeResolver('ResourceTemplate', {instantiateAs: ResourceTemplate}),
+    //resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
+    resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
+    resolveResource(state) {
+        return name => {
+            if(!name) return
+            let rt = state['Resource'][name]
+            if(!rt && !name?.startsWith('::')) {
+                rt = state['Resource'][`::${name}`]
+            }
+            return rt
+        }
+    },
     //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
     dependenciesFromResourceType(_, getters) {
@@ -262,10 +297,11 @@ const getters = {
             } else { resourceType = resourceTypeName }
 
             if(!resourceType?.inputsSchema?.properties) return []
-            return Object.values(resourceType.inputsSchema.properties).map(schemaEntry => ({
-                name: schemaEntry.title,
+            const result = Object.entries(resourceType.inputsSchema.properties).map(([key, schemaEntry]) => ({
+                name: key,
                 value: null
             }))
+            return result
         }
     },
     getMissingDependencies(_, getters) {
@@ -300,17 +336,14 @@ const getters = {
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
 
-    /* appease the devtools 
-    *  devtools now break when errors occur in getters
-    */
-    getResources(state) {return Object.values(state.Resource || {})},
-    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
-    /* appease the devtools */
+    getResources(state) {return Object.values(state.Resource)},
+    getDeployment(state) {return Object.values(state.Deployment)[0]},
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
-    lookupConfigurableTypes(state, getters) {
+    lookupConfigurableTypes(state, _a, _b, rootGetters) {
         return function(environment) {
-            return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, getters.resolveResourceType))
+            const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
+            return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }
     },
     getValidResourceTypes(state, getters) {

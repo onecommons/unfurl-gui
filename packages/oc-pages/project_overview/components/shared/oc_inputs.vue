@@ -91,13 +91,13 @@ export default {
   },
 
   computed: {
-    ...mapGetters(['resolveResourceTypeFromAvailable', 'cardInputsAreValid']),
+    ...mapGetters(['resolveResourceType', 'cardInputsAreValid']),
 
     mainInputs() {
       const result = []
       let fromSchema, templateProperties
       try {
-        fromSchema = this.resolveResourceTypeFromAvailable(this.card.type).inputsSchema.properties
+        fromSchema = this.resolveResourceType(this.card.type).inputsSchema.properties
         templateProperties = this.card.properties
       }
       catch(e) { return result }
@@ -122,7 +122,14 @@ export default {
     },
 
     cardType() {
-      return this.resolveResourceTypeFromAvailable(this.card?.type)
+      if(!this.card?.type) {
+        throw new Error(`Card "${this.card.name}" does not have a type`)
+      }
+      const result = this.resolveResourceType(this.card?.type)
+      if(!result) {
+        throw new Error(`Could not lookup card type ${this.card?.type} for ${this.card.name}`)
+      }
+      return result
     },
 
     schema() {
@@ -138,7 +145,7 @@ export default {
         effects: () => {
           onFieldValueChange('*', async (field, ...args) => {
             if(!field.modified) return
-            this.triggerSave(field.data, field.value);
+            this.triggerSave({...field.data, name: field.path.entire}, field.value);
           })
         }
       })
@@ -154,7 +161,7 @@ export default {
     ]),
     convertProperties(properties) {
       return _.mapValues(properties, (value, name) => {
-        const currentValue = {...value};
+        const currentValue = {...value, name};
         if (!currentValue.type) {
           currentValue.type = 'string'
         }
@@ -191,7 +198,7 @@ export default {
     triggerSave: _.debounce(function preview(field, value) {
       this.updateFieldValidation(field, value)
       const propertyValue = serializeInput(field, value)
-      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.title, propertyValue, isSensitive: field.sensitive})
+      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
     }, 200),
 
     getRandomKey(length) {

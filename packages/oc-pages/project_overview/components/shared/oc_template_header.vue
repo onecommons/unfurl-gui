@@ -21,8 +21,10 @@ export default {
             <h1 class="gl-mt-3 gl-mb-0 template-title">{{ headerInfo.title }}</h1>
         </div>
         <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end gl-pt-4" style="align-items: center">
+          <a :href="`/dashboard/environments/${headerInfo.environment}`" target="_blank">
             <span class="gl-pl-2 oc_environment_name mr-2">{{ headerInfo.environment }}</span> 
             <detect-icon :size="18" :type="headerInfo.cloud" />
+          </a>
         </div>
     </div>
 </template>

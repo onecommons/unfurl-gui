@@ -85,7 +85,9 @@ export default {
   },
   data() {
     const hackyBadgeClass = {}
-    hackyBadgeClass[`badge-${StatusIndicators[this.$props.status][0]}`] = true
+    try {
+      hackyBadgeClass[`badge-${StatusIndicators[this.status][0]}`] = true
+    } catch(e) {}
     return { StatusIndicators, hackyBadgeClass, StateNames};
   },
   directives: {

@@ -36,21 +36,27 @@ const actions = {
         let iterationCounter = 0
 
         for(const environment of rootGetters.getEnvironments) {
+            context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
             environments += 1
             const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
             for(const deploymentDict of environment.deployments) {
+                context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 if(!deploymentDict.Deployment ) continue
-                dispatch('useProjectState', _.cloneDeep(deploymentDict))
-                const deployment = rootGetters.getDeployment
+                dispatch('useProjectState', {root: _.cloneDeep(deploymentDict)})
+                const deployment = {...rootGetters.getDeployment}
+                const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(deploymentDict.DeploymentTemplate)[0]
+                deployment.projectPath = dt?.projectPath
+                rootGetters.resolveDeploy
                 if(!deployment) continue
                 const i = ++iterationCounter
                 deployment.statuses = deployment.resources.filter(resource => resource.status != 1)
                 deployment.isStopped = deployment.resources.some(resource => resource.state == 8)
                 if(deployment.isStopped) {stoppedDeployments++} else {deployments++}
-                const application = rootGetters.getApplicationBlueprint;
+                const application = {...rootGetters.getApplicationBlueprint};
+                application.projectPath = deployment.projectPath
                 applicationNames[application.name] = true
                 context.application = application
                 context.deployment = deployment
@@ -59,7 +65,7 @@ const actions = {
                     const i = ++iterationCounter
                     const resourceTemplate = rootGetters.resolveResourceTemplate(resource.template);
                     const resourceType = rootGetters.resolveResourceType(resourceTemplate.type);
-                    context.type = resourceType.title
+                    context.type = resourceType?.title
                     context.resource = resource
 
                     pushContext()

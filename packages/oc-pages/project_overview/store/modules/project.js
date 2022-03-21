@@ -194,7 +194,7 @@ const mutations = {
 
 const actions = {
 
-    async fetchProjectInfo({ commit, dispatch }, { projectPath, defaultBranch }) {
+    async fetchProjectInfo({ commit }, { projectPath, defaultBranch }) {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getProjectInfo,
             errorPolicy: 'all',
@@ -234,17 +234,6 @@ const actions = {
             throw new Error(errors[0].message);
         }
         return false;
-        dispatch('countDeployments', {projectPath})
-    },
-
-    countDeployments({rootGetters, commit}, {projectPath}) {
-        /*
-         * TODO figure out how to count deployments (also if it should be global or not)
-        for(const deployment of rootGetters.getDeploymentDictionaries) {
-            if(deployment.ApplicationBlueprint[projectPath]) {
-            }
-        }
-        */
     },
 
     async fetchServicesToConnect({ commit }, { projectPath }) {
@@ -355,6 +344,39 @@ const getters = {
     getRequirementSelected: _state => _state.requirementSelected,
     getServicesToConnect: _state => _state.servicesToConnect,
     hasEditPermissions: _state => _state.projectInfo.hasEditPermissions,
+    yourDeployments(state, getters, _, rootGetters) {
+        const result = []
+        for(const dict of rootGetters.getDeploymentDictionaries) {
+            const deploymentTemplate = Object.values(dict?.DeploymentTemplate)[0]
+            if(deploymentTemplate?.projectPath != state.globalVars.projectPath)
+                continue
+
+            const obj = {}
+            obj.environment = rootGetters.lookupEnvironment(dict._environment)
+            // TODO get status from deployment
+
+            let resources = []
+            obj.application = Object.values(dict.ApplicationBlueprint)[0]
+            if(dict.Deployment) {
+                obj.deployment = Object.values(dict.Deployment)[0]
+                resources = Object.values(dict.Resource)
+                obj.deployment.statuses = []
+                resources.forEach(resource => {if(resource.status != 1) obj.deployment.statuses.push(resource)})
+            } else {
+                const context = {...obj, deployment: Object.values(dict.DeploymentTemplate)[0]}
+                result.push({context, ...context})
+            }
+
+
+            for(const resource of resources) {
+                const context = {...obj, resource}
+                result.push({context, ...context})
+            }
+
+        }
+        return result
+
+    }
 };
 
 export default {

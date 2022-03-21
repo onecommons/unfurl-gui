@@ -79,7 +79,11 @@ export default {
             }
         },
         tableItems() {
-            return this.getDashboardItems//.filter(item => item.application)
+            let result = this.getDashboardItems
+            if(this.runningDeploymentsCount + this.stoppedDeploymentsCount > 0) {
+                result = this.getDashboardItems.filter(item => item.deployment)
+            }
+            return result
         }
     },
 };
@@ -95,13 +99,15 @@ export default {
                 :count="applicationsCount" 
                 s="Application" 
                 p="Applications" 
-                color="#f4f4f4"/>
+                color="#f4f4f4"
+                create-link="/explore" />
             <quantity-card 
                 :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                 :count="environmentsCount"
                 s="Environment"
                 p="Environments"
-                color="#f4f4f4"/>
+                color="#f4f4f4"
+                :create-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
         </div>
         <div class="d-flex">
             <quantity-card
@@ -109,7 +115,8 @@ export default {
                 :count="runningDeploymentsCount"
                 s="Running Deployment"
                 p="Running Deployments"
-                color="#e2fbeb"/>
+                color="#e2fbeb"
+                create-link="/explore" />
             <!-- TODO figure out a better way to show stopped deployments -->
             <quantity-card
                 :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'stopped'}}"
@@ -122,7 +129,7 @@ export default {
     <TableComponent :items="tableItems" :fields="tableFields">
     <template #empty>
       <center class="mt-5" style="font-size: 1.3em;">
-        You haven't deployed any applications yet. Click <a href="/explore" target="_blank">here</a> to get started!
+        You haven't deployed anything yet. Browse our <a href="/explore" target="_blank">Starter Application Blueprints</a> to get started!
       </center>
     </template>
     <template #application="scope">

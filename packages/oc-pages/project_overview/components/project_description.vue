@@ -2,7 +2,7 @@
 import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
-import {mapGetters} from 'vuex'
+import {mapGetters, mapState} from 'vuex'
 import {OcTab} from '../../vue_shared/oc-components'
 
 export default {
@@ -10,7 +10,6 @@ export default {
     components: {
         GlIcon,
         GlTabs,
-        GlTab,
         OcTab,
         GlBadge
     },
@@ -19,13 +18,6 @@ export default {
         projectInfo: {
             type: Object,
             required: false
-        },
-        requirements: {
-            type: Array,
-            required: false,
-            default: () => {
-                return [];
-            }
         },
         inputs: {
             type: Array,
@@ -88,7 +80,24 @@ export default {
     },
 
     computed: {
-        ...mapGetters(['getProjectInfo'])
+        ...mapGetters(['getProjectInfo']),
+        ...mapState(['project']),
+
+        requirements() {
+            const requirements = this.getProjectInfo.primary.requirements.filter(dependency => (dependency?.min || 0) > 0)
+            return requirements || []
+        },
+        extras() {
+            const extras = this.getProjectInfo.primary.requirements.filter(dependency => (dependency?.min || 0) == 0)
+            return extras || []
+        },
+        previewImage() {
+            return this.project.globalVars.projectIcon || this.projectImage
+        },
+
+
+        shouldRenderRequirements() { return this.requirements?.length },
+        shouldRenderExtras() {return this.extras?.length},
     }
 }
 </script>
@@ -96,10 +105,10 @@ export default {
     <div class="row oc-project-description-box gl-pt-5 gl-pb-5 gl-pl-5 gl-pr-5 gl-mb-6">
         <div class="col-lg-4">
             <div class="row">
-                <div v-if="!projectImage || projectImage === ''" class="image-placeholder-default">
+                <div v-if="!previewImage" class="image-placeholder-default">
                     {{ __("Screenshot")}}
                 </div>
-                <img v-else :src="projectImage" :alt="projectInfo.title" class="image-project" />
+                <img v-else :src="previewImage" :alt="projectInfo.title" class="image-project" />
             </div>
         </div>
         <div class="col-lg-8 right-description">
@@ -107,7 +116,7 @@ export default {
                 <div class="col-lg-12">
                     <div class="gl-display-flex">
                         <h4 class="project-title gl-display-flex">
-                            {{ getProjectInfo.title || getProjectInfo.name }} <!-- TODO project name vs project title? -->
+                            {{ getProjectInfo.title || getProjectInfo.name }}
                         </h4>
                         <div class="gl-display-flex">
                             <!--a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
@@ -130,14 +139,8 @@ export default {
             <div class="row">
                 <div class="col-lg-12">
                     <gl-tabs>
-                        <gl-tab class="gl-mt-3">
-                            <template slot="title">
-                                <span>{{__("Requirements")}}</span>
-                                <gl-badge size="sm" class="gl-tab-counter-badge">
-                                    {{ requirements.length }}
-                                </gl-badge>
-                            </template>
-                            <ul v-if="requirements.length > 0" class="oc-list-ordered" >
+                        <oc-tab title="Requirements" :titleCount="requirements.length" v-if="shouldRenderRequirements">
+                            <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
@@ -150,7 +153,6 @@ export default {
                                         </div>
                                         <div class="gl-display-flex">
                                             <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.resourceType.badge? capitalizeFirstLetter(requirement.resourceType.badge) : 'Lorem Ipsum'  }}</gl-badge> 
-                                            <!-- <div class="live-preview gl-ml-2"><a href="javascript:void(0);">{{ __("More info") }}</a></div> -->
                                         </div>
                                     </div>
                                     <div class="gl-mt-4 light-gray">
@@ -158,8 +160,31 @@ export default {
                                     </div>
                                 </li>
                             </ul>
-                            <div v-else>{{ notRecordsFound }}</div>
-                        </gl-tab>
+
+                        </oc-tab>
+                        <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderExtras">
+                            <ul class="oc-list-ordered" >
+                                <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
+                                    <div class="gl-display-flex gl-justify-content-space-between">
+                                        <div class="gl-display-flex">
+                                            <div class="gl-display-flex">
+                                                <gl-icon :size="12" :name="detectIcon(requirement.resourceType.title)" class="gl-mt-1" />
+                                            </div>
+                                            <div class="gl-display-flex">
+                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
+                                            </div>
+                                        </div>
+                                        <div class="gl-display-flex">
+                                            <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.resourceType.badge? capitalizeFirstLetter(requirement.resourceType.badge) : 'Lorem Ipsum'  }}</gl-badge> 
+                                        </div>
+                                    </div>
+                                    <div class="gl-mt-4 light-gray">
+                                        {{ requirement.description }}
+                                    </div>
+                                </li>
+                            </ul>
+
+                        </oc-tab>
                         <oc-tab title="Details" :titleCount="outputs.length + inputs.length">
 
                             <div>

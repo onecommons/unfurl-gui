@@ -18,20 +18,32 @@ export default app => {
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
+    let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, DEPLOYMENT
+    for(const variable of req.body.variables_attributes) {
+      const {key, secret_value} = variable
+      switch(key) {
+        case 'BLUEPRINT_PROJECT_URL':
+          BLUEPRINT_PROJECT_URL = secret_value; break
+        case 'DEPLOY_ENVIRONMENT':
+          DEPLOY_ENVIRONMENT = secret_value; break
+        case 'DEPLOY_PATH':
+          DEPLOY_PATH = secret_value; break
+        case 'DEPLOYMENT':
+          DEPLOYMENT = secret_value; break  
+      }
+    }
     const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
-    const BLUEPRINT_PROJECT_URL = req.body['variables[BLUEPRINT_PROJECT_URL]']
-    const DEPLOY_ENVIRONMENT = req.body['variables[DEPLOY_ENVIRONMENT]']
-    const DEPLOY_PATH = req.body['variables[DEPLOY_PATH]']
+
     const userHome = `${req.params.user}/${USER_HOME_PROJECT}`
 
     const cloned = fs.existsSync(resolveLiveRepoFile(userHome, path.join(DEPLOY_PATH, 'ensemble.yaml')))
 
     const cwd = resolveLiveRepoFile(userHome, '')
-    const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('/').pop()
-    const blueprintProjectURL = 'https://gitlab.com/onecommons/testing/' + repo
-    const clone = `${UNFURL_CMD} clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
-    const deploy = `${UNFURL_CMD} deploy --approve ${DEPLOY_PATH}`
-    const exportCmd = `${UNFURL_CMD} --home '' export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
+    const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('.')[0]; // strip .git
+    const blueprintProjectURL = path.resolve(__dirname, './repos/' + repo)
+    const clone = `${UNFURL_CMD} -vv clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
+    const deploy = `${UNFURL_CMD} -vv --home . deploy --approve ${DEPLOY_PATH}`
+    const exportCmd = `${UNFURL_CMD} -vv --home . export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
     function execHelper(cmd) {
       console.log(cmd)
@@ -46,9 +58,9 @@ export default app => {
       execHelper(exportCmd)
     } catch(e) {
       console.error(`exit code ${e.status}`)
-      res.status(500).send({currentCommand, status: e.status, output})
+      res.status(500).send({currentCommand, status: e.status, id: null, output})
       return
     }
-    res.send({status: 0})
+    res.send({ status: 0, id: `${DEPLOY_ENVIRONMENT}/${DEPLOYMENT}` })
   })
 }
