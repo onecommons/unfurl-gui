@@ -269,7 +269,8 @@ const actions = {
     },
 
     syncGlobalVars({commit}, globalVars) {
-        commit("SET_GLOBAL_VARS", globalVars);
+        const projectIcon = document.querySelector('#oc-project-overview-icon img')?.src
+        commit("SET_GLOBAL_VARS", {...globalVars, projectIcon});
     },
 
     async updateMainInput({commit}, mainInputs){

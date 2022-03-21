@@ -1,7 +1,7 @@
 <script>
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
-import { mapGetters, mapActions, mapMutations } from 'vuex';
+import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
@@ -73,7 +73,7 @@ export default {
   },
 
   computed: {
-
+    ...mapState(['project']),
     ...mapGetters([
       'resolveResourceTypeFromAny',
       'getProjectInfo',
@@ -381,7 +381,9 @@ export default {
 
     async fetchItems(n=1) {
       try {
-        const projectPath = this.$projectGlobal.projectPath;
+        const projectGlobal = this.project.globalVars
+          console.log(projectGlobal)
+        const projectPath = projectGlobal?.projectPath
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
@@ -391,7 +393,7 @@ export default {
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
           this.setEnvironmentScope(environmentName)
         }
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 
