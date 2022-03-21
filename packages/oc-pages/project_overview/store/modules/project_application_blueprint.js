@@ -238,7 +238,16 @@ const getters = {
     resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
     //resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
-    resolveResource(state) { return name =>  state['Resource'][name] },
+    resolveResource(state) {
+        return name => {
+            if(!name) return
+            let rt = state['Resource'][name]
+            if(!rt && !name?.startsWith('::')) {
+                rt = state['Resource'][`::${name}`]
+            }
+            return rt
+        }
+    },
     //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
     dependenciesFromResourceType(_, getters) {

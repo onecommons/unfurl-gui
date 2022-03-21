@@ -14,11 +14,14 @@ export default {
         environment() {return this.scope.item.context?.environment},
         isDraft() {
             return this.deployment?.__typename == 'DeploymentTemplate'
-        }
+        },
+        isDeployed() {
+            return this.deployment?.__typename == 'Deployment'
+        },
+
     },
     methods: {
         deleteDeployment() { this.$emit('deleteDeployment', this.deployment, this.environment) },
-
         stopDeployment() { this.$emit('stopDeployment', this.deployment, this.environment) }
     }
 }
@@ -35,8 +38,8 @@ export default {
             {{__('Open')}}
         </gl-button>
     </div>
-    <gl-button v-if="!isDraft" @click="stopDeployment" variant="danger"><gl-icon name="stop" /> {{__('Stop')}} </gl-button>
-    <gl-button @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}} </gl-button>
+    <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="stop" /> {{__('Undeploy')}} </gl-button>
+    <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}} </gl-button>
 </div>
 
 </template>

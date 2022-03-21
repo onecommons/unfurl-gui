@@ -106,7 +106,23 @@ const actions = {
         }
         deploymentTemplate = {...deploymentTemplate, ...deployment}
         let resource = rootGetters.resolveResource(deploymentTemplate.primary)
+        if(!resource) {
+            const message = `Could not lookup resource '${deploymentTemplate.primary}'`
+            const e = new Error(message)
+            e.flash = true
+            throw e
+        }
         resource = {...resource, template: rootGetters.resolveResourceTemplate(resource.template)}
+        if(resource.dependencies.length == 0 && resource.template.dependencies.length > 0) { // TODO remove this workaround
+            resource.dependencies = resource.template.dependencies
+            window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
+        }
+        if(resource.attributes.length == 0 && resource.template.properties.length > 0) { // TODO remove this workaround
+            resource.attributes = resource.template.properties
+            window.alert(`Your resource is missing attributes, this is likely an export bug.  ResourceTemplate's properties will be used for rendering.`)
+        }
+
+        deploymentTemplate.primary = resource.name
         if(!deploymentTemplate.cloud) {
             const environment = rootGetters.lookupEnvironment(deploymentTemplate._environment)
             if(environment?.primary_provider?.type) {
@@ -175,7 +191,6 @@ const actions = {
 
         if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
-                console.log(deploymentTemplate)
                 const patch = {...deploymentTemplate};
                 return [{target: deploymentTemplate.name, patch, typename: 'DeploymentTemplate'}];
             }, {root: true});

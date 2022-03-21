@@ -5,6 +5,8 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
+import {deploy, undeploy} from '../../../vue_shared/client_utils/pipelines'
+import {mapGetters} from 'vuex'
 import * as routes from '../../router/constants'
 
 function deploymentGroupBy(item) {
@@ -89,9 +91,9 @@ export default {
 
     },
     methods: {
-        statuses(scope) {
-            return scope.item.context.deployment?.statuses || []
-        },
+        deploy() { return deploy( this.pipelinesPath, this.deploymentParameters) },
+        undeploy() { return undeploy( this.pipelinesPath, this.deploymentParameters) },
+        statuses(scope) { return scope.item.context.deployment?.statuses || [] },
         resumeEditingLink(scope) {
             const 
                 application = scope.item.context.application,
@@ -117,16 +119,51 @@ export default {
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
             return this.noRouter? {href}: {to: href}
         },
+        onModalConfirmed() {
+            switch(this.intent) {
+                case 'undeploy':
+                    this.undeploy()
+                    return
+                case 'deploy':
+                    this.deploy()
+                    return
+                default:
+                    return
+
+            }
+        },
         onIntentToDelete(deployment, environment) {
             this.intent = 'delete'
             this.target = {deployment, environment}
         },
         onIntentToStop(deployment, environment) {
-            this.intent = 'stop'
+            this.intent = 'undeploy'
             this.target = {deployment, environment}
         },
     },
     computed: {
+        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY']),
+        deploymentParameters() {
+            const {deployment, environment} = this.target
+            const projectUrl = `${window.gon.gitlab_url}/${deployment.projectPath}.git`
+            const deploymentBlueprint = deployment.__typename == 'DeploymentTemplate'?
+                deployment.name : deployment.deploymentTemplate
+            const mockDeploy = this.UNFURL_MOCK_DEPLOY
+            return {
+                projectUrl,
+                deploymentBlueprint,
+                deployPath: this.targetDeploymentDir,
+                environmentName: environment.name,
+                deploymentName: deployment.name,
+                mockDeploy
+            }
+        },
+        targetDeploymentDir() {
+            if(!this.target) return ''
+            const {environment, deployment} = this.target
+            return `environments/${environment.name}/${deployment.projectPath}/${deployment.name}`
+        },
+
         modal: {
             set(val) {
                 if(!val) this.intent = ''
@@ -140,8 +177,8 @@ export default {
             switch(this.intent){
                 case 'delete':
                     return `Are you sure you want to delete ${targetTitle}?`
-                case 'stop':
-                    return `Are you sure you want to stop ${targetTitle}?`
+                case 'undeploy':
+                    return `Are you sure you want to undeploy ${targetTitle}? It will not be deleted and you will be able to redeploy at any time.`
                 default: return ''
             }
         }
@@ -157,6 +194,7 @@ export default {
             size="sm"
             :actionPrimary="{text: 'Confirm'}"
             :actionCancel="{text: 'Cancel'}"
+            @primary="onModalConfirmed"
             />
         <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields">
             <template #status="scope">
