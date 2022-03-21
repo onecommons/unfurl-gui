@@ -91,10 +91,26 @@ class ResourceTemplate {
 }
 
 
-const state = {loaded: false, callbacks: []}
+const state = {loaded: false, callbacks: [], clean: true}
 const mutations = {
     setProjectState(state, {key, value}) {
         Vue.set(state, key, value)
+        state.clean = false
+    },
+
+    resetProjectState(state) {
+        for(const key in state) {
+            let value = null
+            switch(key) {
+                case 'loaded':
+                    value = false; break
+                case 'callbacks':
+                    value = []; break
+                case 'clean':
+                    value = true; break
+            }
+            Vue.set(state, key, value)
+        }
     },
     
     loaded(state, status) {
@@ -149,8 +165,11 @@ const actions = {
 
         commit('loaded', true)
     },
-    useProjectState({commit, getters}, {root, shouldMerge}) {
+    useProjectState({state, commit, getters}, {root, shouldMerge}) {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
+        if(!(state.clean || shouldMerge)) {
+            commit('resetProjectState')
+        }
         const transforms = {
             ResourceTemplate(resourceTemplate) {
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
@@ -218,6 +237,7 @@ function storeResolver(typename, options) {
     const {instantiateAs} = Object.assign(defaults, options)
     return function(state) {
         const dictionary = state[typename]
+        if(!dictionary) return null
         return function(name) {
             let entry
             if(entry = dictionary[name]) {
@@ -235,7 +255,8 @@ function storeResolver(typename, options) {
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType(state) { return name =>  state['ResourceType'][name] },
-    resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
+    //resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
+    resolveResourceTemplate: storeResolver('ResourceTemplate', {instantiateAs: ResourceTemplate}),
     //resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
     resolveResource(state) {
@@ -276,10 +297,11 @@ const getters = {
             } else { resourceType = resourceTypeName }
 
             if(!resourceType?.inputsSchema?.properties) return []
-            return Object.values(resourceType.inputsSchema.properties).map(schemaEntry => ({
-                name: schemaEntry.title,
+            const result = Object.entries(resourceType.inputsSchema.properties).map(([key, schemaEntry]) => ({
+                name: key,
                 value: null
             }))
+            return result
         }
     },
     getMissingDependencies(_, getters) {

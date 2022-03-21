@@ -283,7 +283,7 @@ const actions = {
             target.title = title;
 
             target.__typename = 'ResourceTemplate'
-            try { target.properties = Object.values(target.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}));}
+            try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
             catch { target.properties = []; }
 
             if(target?.requirements?.length > 0) {

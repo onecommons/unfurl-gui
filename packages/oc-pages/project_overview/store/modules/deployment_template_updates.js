@@ -112,7 +112,7 @@ export function createEnvironmentInstance({type, name, title, description, envir
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
         try {
-            properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
+            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
         const dependencies = resourceType?.requirements?.map(req => ({
@@ -301,7 +301,7 @@ export function createResourceTemplate({type, name, title, description, deployme
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
         try {
-            properties = Object.values(resourceType.inputsSchema.properties || {}).map(inProp => ({name: inProp.title, value: inProp.default ?? null}))
+            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
         const dependencies = resourceType?.requirements?.map(req => ({

@@ -88,6 +88,7 @@ export default {
     },
     methods: {
         ...mapActions([
+            'useProjectState',
             'populateTemplateResources2',
             'createNodeResource',
             'commitPreparedMutations',
@@ -111,12 +112,14 @@ export default {
             this.setUpdateObjectPath('environments.json')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             const ResourceType = this.environmentResourceTypeDict(environment)
-            this.useBaseState({
+            const root = {
                 DeploymentEnvironment: {
                     [environment.name]: environment
                 },
                 ResourceType 
-            })
+            }
+            this.useProjectState({root})
+            this.useBaseState(root)
         },
         async onDelete() {
             const environment = this.environment
@@ -141,20 +144,10 @@ export default {
         this.setAvailableResourceTypes(
             this.environmentLookupDiscoverable(environment)
         )
-        this.populateTemplateResources2({resourceTemplates: environment.instances, environmentName, context: 'environment'})
 
         this.onSaveTemplate()
-        /*
-        this.setUpdateObjectPath('environments.json')
-        this.setUpdateObjectProjectPath(this.getHomeProjectPath)
-        const ResourceType = this.environmentResourceTypeDict(environment)
-        this.useBaseState({
-            DeploymentEnvironment: {
-                [environment.name]: environment
-            },
-            ResourceType 
-        })
-        */
+        this.populateTemplateResources2({resourceTemplates: environment.instances, environmentName, context: 'environment'})
+
 
     }
 }
