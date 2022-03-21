@@ -19,7 +19,7 @@ function meetsImplementationRequirements(resourceType, environment, resourceType
 
 export function isDiscoverable(resourceType, environment, resourceTypeResolver) {
     if(! meetsImplementationRequirements(resourceType, environment, resourceTypeResolver)) return false
-    return resourceType?.implementations?.includes('discover')
+    return resourceType?.implementations?.includes('discover') || resourceType?.implementations?.includes('connect')
 }
 
 export function isConfigurable(resourceType, environment, resourceTypeResolver) {
