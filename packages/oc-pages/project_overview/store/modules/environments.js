@@ -260,6 +260,14 @@ const getters = {
             }
             return null
         }
+    },
+    environmentHasActiveDeployments(state, getters, _, rootGetters) {
+        return function(_environment) {
+            const environmentName = typeof _environment == 'string'? _environment: _environment?.name
+            const deployments = rootGetters.getDeploymentsByEnvironment(environmentName)
+            console.log(deployments)
+            return deployments.length > 0
+        }
     }
 };
 

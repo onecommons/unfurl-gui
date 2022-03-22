@@ -1,6 +1,6 @@
 <script>
 import { GlButton } from '@gitlab/ui';
-
+import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
 
@@ -25,7 +25,6 @@ export default {
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
         target: {type: String, default: () => 'template'}
-
     },
 
     methods: {
@@ -48,8 +47,25 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['hasPreparedMutations'])
+        ...mapGetters([
+            'hasPreparedMutations',
+            'environmentHasActiveDeployments',
+            'getCurrentEnvironment'
+        ]),
+        disableDelete() {
+            if(this.deleteStatus == 'disabled') return true
+            if(this.target == 'Environment') { // TODO refactor this
+                return this.environmentHasActiveDeployments(this.getCurrentEnvironment)
+            }
+            return false
+        },
+        deleteTitle() {
+            if(this.target == 'Environment' && this.environmentHasActiveDeployments(this.getCurrentEnvironment)) { // TODO refactor this
+                return __(`Environment cannot be deleted - you have active deployments.`)
+            }
+            return __(`Delete ${this.target}`)
 
+        }
     }
 }
 </script>
@@ -68,11 +84,11 @@ export default {
             >
             <gl-button
                 v-show="deleteStatus != 'hidden'"
-                title="Delete Template"
-                :aria-label="__(`Delete Template`)"
+                :title="deleteTitle"
+                :aria-label="deleteTitle"
                 type="button"
                 icon="remove"
-                :disabled="deleteStatus == 'disabled'"
+                :disabled="disableDelete"
                 class="gl-mr-3"
                 @click.prevent="launchModalDeleteTemplate"
                 >{{ __(`Delete ${target}`) }}</gl-button
