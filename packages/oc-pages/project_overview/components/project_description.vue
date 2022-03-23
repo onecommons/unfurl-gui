@@ -185,8 +185,7 @@ export default {
                             </ul>
 
                         </oc-tab>
-                        <oc-tab title="Details" :titleCount="outputs.length + inputs.length">
-
+                        <oc-tab v-if="outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
                             <div>
                                 <div class="detail-heading">Inputs</div>
                                 <ul class="pl-4" v-if="inputs.length > 0">

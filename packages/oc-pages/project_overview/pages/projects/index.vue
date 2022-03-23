@@ -244,6 +244,7 @@ export default {
             this.templateForkedName = null;
             this.templateSelected = null
             this.selectedEnvironment = null
+            this.creatingEnvironment = false
         },
 
         instantiatePrimaryDeploymentTemplate() {
