@@ -181,7 +181,7 @@ const actions = {
             // alternatively we could check if it's cached
             environments = cloneDeep(data.project.environments).nodes.map(environment => {
                 Object.assign(environment, environment.deploymentEnvironment)
-                const deploymentPaths = Object.values(environment.clientPayload.DeploymentPath)
+                const deploymentPaths = Object.values(environment.clientPayload.DeploymentPath || {})
                 commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
                 commit('setDeploymentPaths', deploymentPaths)
                 delete environment.ResourceType

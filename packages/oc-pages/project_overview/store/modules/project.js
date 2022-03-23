@@ -347,7 +347,7 @@ const getters = {
     hasEditPermissions: _state => _state.projectInfo.hasEditPermissions,
     yourDeployments(state, getters, _, rootGetters) {
         const result = []
-        for(const dict of rootGetters.getDeploymentDictionaries) {
+        for(const dict of rootGetters.getDeploymentDictionaries || {}) {
             const deploymentTemplate = Object.values(dict?.DeploymentTemplate)[0]
             if(deploymentTemplate?.projectPath != state.globalVars.projectPath)
                 continue
