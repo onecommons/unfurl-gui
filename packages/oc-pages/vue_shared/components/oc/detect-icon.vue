@@ -21,16 +21,16 @@ const GL_ICON_MAPPINGS = {
 }
 
 const CUSTOM_ICON_MAPPINGS = {
-    'unfurl.relationships.connectsto.googlecloudproject': 'GCP',
+    'unfurl.relationships.connectsto.googlecloudproject': 'GCP', 'google cloud platform': 'GCP',
     'unfurl.relationships.connectsto.k8scluster': 'K8s',
-    'unfurl.relationships.connectsto.azure': 'Azure',
-    'unfurl.relationships.connectsto.awsaccount': 'AWS',
+    'unfurl.relationships.connectsto.azure': 'Azure', 'azure': 'Azure',
+    'unfurl.relationships.connectsto.awsaccount': 'AWS', 'amazon web services': 'AWS',
     gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
     dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
     mail: 'MailIcon',
     mongodb: MongoDbIcon,
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
-    'self-hosted': 'LocalDevIcon'
+    'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon'
 }
 
 function applyTypeToMaping(type, mapping) {
@@ -51,7 +51,11 @@ function applyTypeToMaping(type, mapping) {
 }
 
 function detectIcon(type) {
-    return applyTypeToMaping(type, GL_ICON_MAPPINGS) || DEFAULT
+    const result = applyTypeToMaping(type, GL_ICON_MAPPINGS)
+    if(this.noDefault) {
+        return result
+    }
+    return result || DEFAULT
 }
 
 function detectIconCustomSVG(type) {
@@ -67,7 +71,8 @@ export default {
         },
         env: {
             type: [Object, String]
-        }
+        },
+        noDefault: Boolean
     },
     icons: {
         GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon
@@ -81,7 +86,6 @@ export default {
                 env = this.lookupEnvironment(this.env)
             }
             else env = this.env
-
             return env?.primary_provider?.type || 'self-hosted'
 
         },

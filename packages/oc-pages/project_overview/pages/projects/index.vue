@@ -108,7 +108,7 @@ export default {
         primaryProps() {
             return {
                 text: __('Next'),
-                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled:  this.shouldDisableSubmitTemplate}],
+                attributes: [{ category: 'primary' }, { variant: 'confirm' }, { disabled:  this.shouldDisableSubmitTemplate}],
             };
         },
         cancelProps() {
@@ -448,18 +448,21 @@ export default {
                         />
 
                     </gl-form-group>
-                    <div class="col-md-6" v-if="instantiateAs!='template'">
+                    <div class="col-md-6 dropdown-parent" v-if="instantiateAs!='template'">
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
                         <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
-                        <gl-dropdown ref="dropdown" :text="defaultEnvironmentName">
+                        <gl-dropdown ref="dropdown">
+                            <template #button-text>
+                                <span><detect-icon class="mr-2" no-default :env="defaultEnvironmentName != __('Select') && defaultEnvironmentName"/>{{defaultEnvironmentName}}</span>
+                            </template>
+
                             <div v-if="getEnvironments.length > 0">
                                 <gl-dropdown-item v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
-                                    <detect-icon :env="env" />
-                                    {{ env.name }}
+                                    <span><detect-icon class="mr-2" :env="env" />{{ env.name }}</span>
                                 </gl-dropdown-item>
                                 <gl-dropdown-divider />
                             </div>
-                            <gl-dropdown-item class="disabled" @click="createNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
+                            <gl-dropdown-item class="disabled" @click="createNewEnvironment"><span>{{ __("Create new environment") }}</span></gl-dropdown-item>
                         </gl-dropdown>
                         <error-small :message="deployDialogError"/>
                     </div>
@@ -474,4 +477,7 @@ h2.oc-title-section {
     font-size: 19px;
     line-height: 24px;
 }
+
+.dropdown-parent >>> ul { width: unset; }
+.dropdown-parent span {white-space: pre;}
 </style>
