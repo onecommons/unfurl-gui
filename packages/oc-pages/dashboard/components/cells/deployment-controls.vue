@@ -47,7 +47,7 @@ export default {
             <gl-icon name="upload"/>
             {{__('Deploy')}}
         </gl-button>
-        <gl-button v-else-if="application.livePreview" target="_blank" rel="noopener noreferrer" :href="application.livePreview" style="background-color: #eee">
+        <gl-button v-else-if="deployment.url" target="_blank" rel="noopener noreferrer" :href="deployment.url" style="background-color: #eee">
             <gl-icon name="external-link"/> 
             {{__('Open')}}
         </gl-button>
