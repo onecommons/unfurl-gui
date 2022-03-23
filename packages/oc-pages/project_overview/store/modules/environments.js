@@ -5,6 +5,8 @@ import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from '~/flash';
+import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
+
 
 const state = {
     environmentName: __("Oc Default"),
@@ -46,6 +48,10 @@ const mutations = {
         state.environments = environments
     },
 
+    setDeploymentPaths(state, deploymentPaths) {
+        state.deploymentPaths = deploymentPaths
+    },
+
     patchEnvironment(state, { envName, patch }) {
         const env = state.projectEnvironments.find(env => env.name == envName)
         Object.assign(env, patch)
@@ -69,6 +75,52 @@ const mutations = {
 };
 
 const actions = {
+
+    async deployInto({rootGetters, getters, commit, dispatch}, parameters) {
+        const deployVariables = prepareVariables({
+            ...parameters,
+            mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
+            workflow: 'deploy'
+        })
+        const data = await triggerPipeline(
+            rootGetters.pipelinesPath,
+            deployVariables,
+        )
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+        commit('pushPreparedMutation', () => {
+            return [{
+                typename: 'DeploymentPath',
+                patch: {
+                    __typename: 'DeploymentPath',
+                    environment: parameters.environmentName,
+                    pipeline: {
+                        id: data.id,
+                        flags: data.flags,
+                        commit: data.commit,
+                        variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
+                    }
+                },
+                target: parameters.deployPath
+            }]
+        })
+        await dispatch('commitPreparedMutations', {}, {root: true})
+        return {pipelineData: data}
+    },
+
+    async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
+        const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+        commit('pushPreparedMutation', () => {
+            return [{
+                typename: 'DeploymentPath',
+                patch: null,
+                target: deployPath.name
+            }]
+        })
+        await dispatch('commitPreparedMutations', {}, {root: true})
+    },
 
     setEnvironmentName({ commit }, envName) {
         commit("SET_ENVIRONMENT_NAME", { envName });
@@ -129,10 +181,15 @@ const actions = {
             // alternatively we could check if it's cached
             environments = cloneDeep(data.project.environments).nodes.map(environment => {
                 Object.assign(environment, environment.deploymentEnvironment)
+                const deploymentPaths = Object.values(environment.clientPayload.DeploymentPath || {})
                 commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
+                commit('setDeploymentPaths', deploymentPaths)
                 delete environment.ResourceType
                 for(const deployment of environment.deployments) {
                     if(!deployment._environment) deployment._environment = environment.name
+                    for(const dep of Object.values(deployment.Deployment || {})) {
+                        dep.__typename = 'Deployment'
+                    }
                     deployments.push(deployment)
                 }
                 delete environment.deploymentEnvironment
@@ -145,8 +202,8 @@ const actions = {
 
         }
         catch(e){
-            return createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
             console.error('Could not fetch project environments', e)
+            return createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
             environments = []
 
         }
@@ -225,6 +282,19 @@ const getters = {
                 return Object.values(dict).filter(resourceType => isDiscoverable(resourceType, environment, resolver))
             }
             return null
+        }
+    },
+    environmentHasActiveDeployments(state, getters, _, rootGetters) {
+        return function(_environment) {
+            const environmentName = typeof _environment == 'string'? _environment: _environment?.name
+            const deployments = rootGetters.getDeploymentsByEnvironment(environmentName)
+            return deployments.length > 0
+        }
+    },
+    lookupDeployPath(state) {
+        return function(deploymentName, environmentName) {
+            const result = state.deploymentPaths.find(dp => dp.name.startsWith(`environments/${environmentName}`) && dp.name.endsWith(`/${deploymentName}`))
+            return result
         }
     }
 };

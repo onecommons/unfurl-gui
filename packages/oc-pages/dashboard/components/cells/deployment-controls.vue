@@ -1,5 +1,6 @@
 <script>
 import {GlIcon, GlButton} from '@gitlab/ui'
+import {mapGetters} from 'vuex'
 export default {
     props: {
         resumeEditingLink: Object,
@@ -9,15 +10,24 @@ export default {
         GlIcon, GlButton
     },
     computed: {
+        ...mapGetters([
+            'lookupDeployPath'
+        ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
         environment() {return this.scope.item.context?.environment},
         isDraft() {
-            return this.deployment?.__typename == 'DeploymentTemplate'
+            return !this.isDeployed && !this.isUndeployed
         },
         isDeployed() {
             return this.deployment?.__typename == 'Deployment'
         },
+        isUndeployed() {
+            return (
+                this.deployment?.__typename == 'DeploymentTemplate' && 
+                !!this.lookupDeployPath(this.deployment.name, this.environment.name)?.pipeline?.id
+            )
+        }
 
     },
     methods: {
@@ -33,7 +43,11 @@ export default {
             <gl-icon name="external-link"/>
             {{__('Resume')}}
         </gl-button>
-        <gl-button v-else target="_blank" rel="noopener noreferrer" :href="application.livePreview" style="background-color: #eee">
+        <gl-button v-else-if="isUndeployed" variant="confirm" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href">
+            <gl-icon name="upload"/>
+            {{__('Deploy')}}
+        </gl-button>
+        <gl-button v-else-if="deployment.url" target="_blank" rel="noopener noreferrer" :href="deployment.url" style="background-color: #eee">
             <gl-icon name="external-link"/> 
             {{__('Open')}}
         </gl-button>
@@ -45,6 +59,9 @@ export default {
 </template>
 <style scoped>
     
-.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: center;}
-.deployment-controls > * { display: flex; margin: 0 0.3em; }
+.deployment-controls >>> .gl-button {
+    width: 8em;
+}
+.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; width: 21.5em;}
+.deployment-controls > * { display: flex;}
 </style>
