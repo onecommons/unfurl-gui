@@ -79,14 +79,10 @@ export default {
             <div class="dropdown-parent">
                 <gl-dropdown>
                     <template #button-text>
-                        <span style="display: flex; align-items: center;">
-                            <detect-icon class="mr-2" :type="cloudProvider" no-default/>{{cloudProvider}}
-                        </span>
+                        <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="cloudProvider" no-default/>{{cloudProvider || __('Select')}} </div>
                     </template>
                     <gl-dropdown-item :key="env" v-for="env in environmentsList" @click="() => cloudProvider = env">
-                        <span style="display: flex; align-items: center;">
-                            <detect-icon class="mr-2" :type="env"/>{{env}}
-                        </span>
+                        <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
                     </gl-dropdown-item>
                 </gl-dropdown>
             </div>
@@ -101,5 +97,4 @@ export default {
 <style scoped>
 
 .dropdown-parent >>> ul { width: unset; }
-.dropdown-parent span {white-space: pre;}
 </style>

@@ -458,11 +458,11 @@ export default {
 
                             <div v-if="getEnvironments.length > 0">
                                 <gl-dropdown-item v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
-                                    <span><detect-icon class="mr-2" :env="env" />{{ env.name }}</span>
+                                    <div><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
                                 </gl-dropdown-item>
                                 <gl-dropdown-divider />
                             </div>
-                            <gl-dropdown-item class="disabled" @click="createNewEnvironment"><span>{{ __("Create new environment") }}</span></gl-dropdown-item>
+                            <gl-dropdown-item class="disabled" @click="createNewEnvironment"><div style="white-space: pre">{{ __("Create new environment") }}</div></gl-dropdown-item>
                         </gl-dropdown>
                         <error-small :message="deployDialogError"/>
                     </div>
@@ -479,5 +479,4 @@ h2.oc-title-section {
 }
 
 .dropdown-parent >>> ul { width: unset; }
-.dropdown-parent span {white-space: pre;}
 </style>
