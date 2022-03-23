@@ -64,7 +64,7 @@ export default {
     <div>
         <gl-form-group
             label="Environment Name"
-            class="col-md-4 align_left gl-pl-0"
+            class="col-md-4 align_left"
             >
             <gl-form-input
                 v-model="environmentName"
@@ -74,7 +74,7 @@ export default {
 
         <gl-form-group
             label="Cloud Provider"
-            class="col-md-4 align_left gl-pl-0"
+            class="col-md-4 align_left"
             >
             <div class="dropdown-parent">
                 <gl-dropdown>

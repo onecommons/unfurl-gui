@@ -438,7 +438,7 @@ export default {
                 <div v-else>
                     <gl-form-group
                         label="Name"
-                        class="col-md-4 align_left gl-pl-0"
+                        class="col-md-4 align_left"
                     >
                         <gl-form-input
                         id="input1"
