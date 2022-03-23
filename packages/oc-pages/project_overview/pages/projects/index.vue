@@ -362,30 +362,6 @@ export default {
                     :code-source-url="getProjectInfo.sourceCodeUrl"
                     />
 
-            <!-- Create new template part -->
-            <!--div class="row gl-mt-6 gl-mb-6">
-                <div class="col-md-12 col-lg-6 d-flex">
-                    <h2 class="oc-title-section">{{ s__('OcDeployments|Deployment Templates') }}</h2>
-                </div>
-                <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end">
-                    <div class="d-inline-flex">
-                        <div class="form-group inline gl-mt-4">
-                            <gl-button
-                                v-gl-modal.oc-templates-deploy
-                                :title="$options.i18n.buttonLabel"
-                                :aria-label="$options.i18n.buttonLabel"
-                                category="primary"
-                                variant="confirm"
-                                class="btn-uf-teal"
-                                type="button"
-                                @click="instantiatePrimaryDeploymentTemplate"
-                                >
-                                {{ $options.i18n.buttonLabel}}
-                            </gl-button>
-                        </div>
-                    </div>
-                </div>
-            </div-->
             <!-- Table -->
             <!-- TODO this will probably get removed -->
             <deployed-blueprints v-if="false"/>
@@ -398,7 +374,7 @@ export default {
                                 <div class="d-flex align-items-center">
                                     <gl-icon name="archive" class="mr-2"/>
                                     <h5 class="mb-0 mt-0">
-                                        {{__('Available Blueprints')}}
+                                        {{__('Available Deployment Blueprints')}}
                                     </h5>
                                 </div>
                             </template>
