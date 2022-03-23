@@ -50,12 +50,12 @@ function applyTypeToMaping(type, mapping) {
     }
 }
 
-function detectIcon(type) {
+function detectIcon(type, defaultIcon) {
     const result = applyTypeToMaping(type, GL_ICON_MAPPINGS)
-    if(this.noDefault) {
-        return result
+    if(defaultIcon) {
+        return result || defaultIcon
     }
-    return result || DEFAULT
+    return result
 }
 
 function detectIconCustomSVG(type) {
@@ -90,7 +90,7 @@ export default {
 
         },
         detectedIcon() {
-            return detectIcon(this.type || this._env)
+            return detectIcon(this.type || this._env, !this.noDefault && DEFAULT)
         },
         customIcon() {
             return detectIconCustomSVG(this.type || this._env)
@@ -119,7 +119,7 @@ export default {
     <span class="custom-icon" :style="customStyle" v-if="customIcon">
         <img :src="customURL">
     </span>
-    <gl-icon v-else :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />
+    <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />
 </template>
 <style scoped>
 .custom-icon > img{

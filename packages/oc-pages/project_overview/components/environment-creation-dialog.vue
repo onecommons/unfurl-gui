@@ -80,7 +80,7 @@ export default {
                 <gl-dropdown>
                     <template #button-text>
                         <span style="display: flex; align-items: center;">
-                            <detect-icon class="mr-2" :type="cloudProvider"/>{{cloudProvider}}
+                            <detect-icon class="mr-2" :type="cloudProvider" no-default/>{{cloudProvider}}
                         </span>
                     </template>
                     <gl-dropdown-item :key="env" v-for="env in environmentsList" @click="() => cloudProvider = env">
