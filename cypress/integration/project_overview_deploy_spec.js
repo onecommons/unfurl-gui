@@ -44,15 +44,22 @@ describe('project overview deploy', () => {
 
   it('Blueprint Page', () => {
     cy.contains('Your application blueprint')
+    cy.log('checks: Your application blueprint column')
     cy.contains('Extras')
+    cy.log('checks: Extras column')
     cy.contains('Details')
+    cy.log('checks: Details column')
   })
 
   it('Services', () => {
     cy.contains('Google Cloud Platform')
+    cy.log('checks: Google Cloud Platform exists')
     cy.contains('Amazon Web Services EC2')
+    cy.log('checks: Amazon Web Services EC2 exists')
     cy.contains('Kubernetes')
+    cy.log('checks: Kubernetes exists')
     cy.contains('Self-Hosted')
+    cy.log('checks: Self-Hosted exists')
 
     // let base = '//*[@id="OcAppDeployments"]/div/div[2]/div[2]/div/div/div/div['
     // let end = ']/div[4]/span/button'
