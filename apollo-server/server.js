@@ -19,6 +19,7 @@ export default app => {
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
     let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, DEPLOYMENT
+    let WORKFLOW = 'deploy'
     for(const variable of req.body.variables_attributes) {
       const {key, secret_value} = variable
       switch(key) {
@@ -29,7 +30,9 @@ export default app => {
         case 'DEPLOY_PATH':
           DEPLOY_PATH = secret_value; break
         case 'DEPLOYMENT':
-          DEPLOYMENT = secret_value; break  
+          DEPLOYMENT = secret_value; break
+        case 'WORKFLOW':
+          WORKFLOW = secret_value; break
       }
     }
     const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
@@ -42,7 +45,7 @@ export default app => {
     const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('.')[0]; // strip .git
     const blueprintProjectURL = path.resolve(__dirname, './repos/' + repo)
     const clone = `${UNFURL_CMD} -vv clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
-    const deploy = `${UNFURL_CMD} -vv --home . deploy --approve ${DEPLOY_PATH}`
+    const deploy = `${UNFURL_CMD} -vvv --home . ${WORKFLOW} --approve ${DEPLOY_PATH}`
     const exportCmd = `${UNFURL_CMD} -vv --home . export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
     function execHelper(cmd) {
