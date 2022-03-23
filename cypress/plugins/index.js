@@ -31,6 +31,13 @@ module.exports = (on, config) => {
 
   config.env.OC_NAMESPACE = config.env.OC_NAMESPACE || 'demo'
 
+  on('task', {
+    log (message) {
+      console.log(message)
+      return null
+    }
+  })
+
   return config
 
 }
