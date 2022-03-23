@@ -43,25 +43,22 @@ describe('project overview deploy', () => {
   })
 
   it('Blueprint Page', () => {
-    cy.contains('Your application blueprint')
-    console.log('checks: Your application blueprint column')
-    cy.contains('Extras')
+    cy.contains('Your application blueprint').screenshot()
+    cy.task('log', 'Your application blueprint column exists')
+    cy.contains('Extras').screenshot()
     cy.task('log', ' Extras column')
-    cy.contains('Details')
+    cy.contains('Details').screenshot()
     cy.task('log', ' Details column')
-
-    cy.task('log', 'This will be output to the terminal')
-
   })
 
   it('Services', () => {
-    cy.contains('Google Cloud Platform')
+    cy.contains('Google Cloud Platform').screenshot()
     cy.task('log', ' Google Cloud Platform exists')
-    cy.contains('Amazon Web Services EC2')
+    cy.contains('Amazon Web Services EC2').screenshot()
     cy.task('log', ' Amazon Web Services EC2 exists')
-    cy.contains('Kubernetes')
+    cy.contains('Kubernetes').screenshot()
     cy.task('log', ' Kubernetes exists')
-    cy.contains('Self-Hosted')
+    cy.contains('Self-Hosted').screenshot()
     cy.task('log', ' Self-Hosted exists')
 
     // let base = '//*[@id="OcAppDeployments"]/div/div[2]/div[2]/div/div/div/div['
