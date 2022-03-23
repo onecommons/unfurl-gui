@@ -9,7 +9,7 @@ import {token} from '../../vue_shared/compat.js'
 const SHORT_NAMES = {
     'Google Cloud Platform': 'gcp',
     'Amazon Web Services': 'aws',
-    'None': ''
+    'Local Dev': ''
 }
 
 export default {
@@ -27,7 +27,7 @@ export default {
             environmentsList: [
                 'Google Cloud Platform',
                 'Amazon Web Services',
-                'None',
+                'Local Dev',
             ],
             SHORT_NAMES,
             token,

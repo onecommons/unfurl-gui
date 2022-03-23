@@ -20,8 +20,10 @@ export default {
         await this.loadDashboard()
         this.handleResize()
 
-        this.selectedEnvironment = this.$route.query?.env
-        this.newEnvironmentProvider = this.$route.query?.provider
+        this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
+        this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
+        delete sessionStorage['instantiate_env']
+        delete sessionStorage['instantiate_provider']
 
         // add environment to environments.json
         if(this.selectedEnvironment && this.newEnvironmentProvider) {

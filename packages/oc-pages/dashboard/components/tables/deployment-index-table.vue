@@ -5,8 +5,9 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
-import {deploy, undeploy} from '../../../vue_shared/client_utils/pipelines'
-import {mapGetters} from 'vuex'
+import {undeploy} from '../../../vue_shared/client_utils/pipelines'
+import {mapGetters, mapActions} from 'vuex'
+import _ from 'lodash'
 import * as routes from '../../router/constants'
 
 function deploymentGroupBy(item) {
@@ -91,9 +92,12 @@ export default {
 
     },
     methods: {
-        deploy() { return deploy( this.pipelinesPath, this.deploymentParameters) },
+        ...mapActions([
+            'deleteDeployment'
+        ]),
+        deploy() { return this.deployInto(this.deploymentParameters) },
         undeploy() { return undeploy( this.pipelinesPath, this.deploymentParameters) },
-        statuses(scope) { return scope.item.context.deployment?.statuses || [] },
+        statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource.status) },
         resumeEditingLink(scope) {
             const 
                 application = scope.item.context.application,
@@ -120,6 +124,7 @@ export default {
             return this.noRouter? {href}: {to: href}
         },
         onModalConfirmed() {
+            const {deployment, environment} = this.target
             switch(this.intent) {
                 case 'undeploy':
                     this.undeploy()
@@ -127,6 +132,8 @@ export default {
                 case 'deploy':
                     this.deploy()
                     return
+                case 'delete':
+                    this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
                 default:
                     return
 
@@ -140,9 +147,12 @@ export default {
             this.intent = 'undeploy'
             this.target = {deployment, environment}
         },
+        hasDeployPath(scope) {
+            return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
+        }
     },
     computed: {
-        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY']),
+        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY', 'lookupDeployPath']),
         deploymentParameters() {
             const {deployment, environment} = this.target
             const projectUrl = `${window.gon.gitlab_url}/${deployment.projectPath}.git`
@@ -202,8 +212,11 @@ export default {
                     <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
                     <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
                 </div>
-                <div v-else class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
+                <div v-else-if="hasDeployPath(scope)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
                     <gl-icon name="pencil-square" :size="18" />
+                </div>
+                <div v-else  class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
+                    <gl-icon name="stop" :size="18" />
                 </div>
             </template>
             <template #status$head>

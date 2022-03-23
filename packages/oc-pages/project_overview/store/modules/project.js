@@ -269,7 +269,8 @@ const actions = {
     },
 
     syncGlobalVars({commit}, globalVars) {
-        commit("SET_GLOBAL_VARS", globalVars);
+        const projectIcon = document.querySelector('#oc-project-overview-icon img')?.src
+        commit("SET_GLOBAL_VARS", {...globalVars, projectIcon});
     },
 
     async updateMainInput({commit}, mainInputs){
@@ -346,7 +347,7 @@ const getters = {
     hasEditPermissions: _state => _state.projectInfo.hasEditPermissions,
     yourDeployments(state, getters, _, rootGetters) {
         const result = []
-        for(const dict of rootGetters.getDeploymentDictionaries) {
+        for(const dict of rootGetters.getDeploymentDictionaries || {}) {
             const deploymentTemplate = Object.values(dict?.DeploymentTemplate)[0]
             if(deploymentTemplate?.projectPath != state.globalVars.projectPath)
                 continue

@@ -25,15 +25,15 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
     const defaults = {followRedirect: false, ref: 'main'}
     const {ref, followRedirect} = {...options, ...defaults}
 
-    const {data} = axios.post(pipelinesPath, {ref, variables_attributes})
+    const {data} = await axios.post(pipelinesPath, {ref, variables_attributes})
     return data
 }
 
-function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy}) {
+export function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy}) {
     return toGlVariablesAttributes({
         WORKFLOW: workflow,
         DEPLOY_ENVIRONMENT: environmentName,
-        BlUEPRINT_PROJECT_URL: projectUrl,
+        BLUEPRINT_PROJECT_URL: projectUrl,
         DEPLOY_PATH: deployPath,
         DEPLOYMENT: deploymentName,
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,

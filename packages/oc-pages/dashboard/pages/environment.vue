@@ -7,6 +7,7 @@ import {CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../v
 import { __ } from '~/locale'
 import {lookupCloudProviderAlias, slugify} from '../../vue_shared/util.mjs'
 import {deleteEnvironment} from '../../vue_shared/client_utils/environments'
+import { redirectTo } from '~/lib/utils/url_utility';
 
 
 const PROP_MAP = {
@@ -134,6 +135,7 @@ export default {
             })
 
             await this.commitPreparedMutations()
+            return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         }
     },
 

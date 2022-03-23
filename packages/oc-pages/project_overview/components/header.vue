@@ -3,7 +3,7 @@
 import { GlIcon, GlButton } from '@gitlab/ui';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
-import {mapGetters} from 'vuex'
+import {mapGetters, mapState} from 'vuex'
 import { __ } from '~/locale';
 
 export default {
@@ -58,6 +58,9 @@ export default {
         ...mapGetters([
             'getProjectInfo'
         ]),
+        ...mapState([
+            'project'
+        ]),
         visitProject() {
             return `/${this.getProjectInfo.fullPath}/-/project`
         }
@@ -72,7 +75,7 @@ export default {
             <div class="home-panel-title-row gl-display-flex">
                 <div class="avatar-container rect-avatar s48 gl-flex-shrink-0 gl-w-11 gl-h-11 gl-mr-3 float-none">
                     <!--div class="project_icon_oc" v-html="this.$projectGlobal.projectIcon"></div-->
-                    <img v-if="getProjectInfo.projectIcon" :src="getProjectInfo.projectIcon">
+                    <img v-if="project.globalVars && project.globalVars.projectIcon" :src="project.globalVars.projectIcon">
                 </div>
                 <div class="d-flex flex-column flex-wrap align-items-baseline">
                     <div class="d-inline-flex align-items-baseline">

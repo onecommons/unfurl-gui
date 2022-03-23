@@ -202,7 +202,7 @@ const actions = {
             },
             Resource(resource) {
                 if(!resource.dependencies) {
-                    resource.dependencies = []
+                    resource.dependencies = resource.connections || []
                 }
                 if(!resource.attributes) {
                     resource.attributes = []
