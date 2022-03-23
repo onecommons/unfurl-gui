@@ -92,9 +92,9 @@ export function updatePropertyInInstance({environmentName, templateName, propert
         let _propertyValue = propertyValue
         let env
         if(isSensitive) {
-            const getenv = normalizeEnvName(`${templateName}__${propertyName}`)
-            env = {[getenv]: propertyValue}
-            _propertyValue = {getenv}
+            const envname = normalizeEnvName(`${templateName}__${propertyName}`)
+            env = {[envname]: propertyValue}
+            _propertyValue = {"get_env": envname}
         }
         const patch = accumulator['DeploymentEnvironment'][environmentName]
         const instance = Array.isArray(patch.instances) ?
@@ -163,9 +163,9 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         let _propertyValue = propertyValue
         let env
         if(isSensitive) {
-            const getenv = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
-            env = {[getenv]: propertyValue}
-            _propertyValue = {getenv}
+            const envname = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
+            env = {[envname]: propertyValue}
+            _propertyValue = {"get_env": envname}
         }
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
