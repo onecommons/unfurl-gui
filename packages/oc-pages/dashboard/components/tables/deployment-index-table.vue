@@ -124,7 +124,7 @@ export default {
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
             return this.noRouter? {href}: {to: href}
         },
-        onModalConfirmed() {
+        async onModalConfirmed() {
             const {deployment, environment} = this.target
             switch(this.intent) {
                 case 'undeploy':
@@ -134,7 +134,9 @@ export default {
                     this.deploy()
                     return
                 case 'delete':
-                    this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
+                    await this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
+                    this.$router.replace({hash: '#_'})
+                    window.location.reload()
                 default:
                     return
 
@@ -161,10 +163,21 @@ export default {
 
     },
     computed: {
-        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY', 'lookupDeployPath']),
+        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY', 'lookupDeployPath', 'getDeploymentDictionary']),
+        projectPath() {
+            const {deployment, environment} = this.target
+            if(deployment.__typename == 'DeploymentTemplate') {
+                return deployment.projectPath
+            } else {
+                const templateName = deployment.deploymentTemplate
+                const template = this.getDeploymentDictionary(deployment.name, environment.name).DeploymentTemplate[templateName]
+                console.log({template, templateName})
+                return template?.projectPath
+            }
+        },
         deploymentParameters() {
             const {deployment, environment} = this.target
-            const projectUrl = `${window.gon.gitlab_url}/${deployment.projectPath}.git`
+            const projectUrl = `${window.gon.gitlab_url}/${this.projectPath}.git`
             const deploymentBlueprint = deployment.__typename == 'DeploymentTemplate'?
                 deployment.name : deployment.deploymentTemplate
             const mockDeploy = this.UNFURL_MOCK_DEPLOY
@@ -180,9 +193,8 @@ export default {
         targetDeploymentDir() {
             if(!this.target) return ''
             const {environment, deployment} = this.target
-            return `environments/${environment.name}/${deployment.projectPath}/${deployment.name}`
+            return `environments/${environment.name}/${this.projectPath}/${deployment.name}`
         },
-
         modal: {
             set(val) {
                 if(!val) this.intent = ''
@@ -267,6 +279,9 @@ export default {
                         {{scope.item.context.deployment.title}}
                     </component>
                 </div>
+            </template>
+            <template #resource$empty="scope">
+                <div v-if="hasDeployPath(scope)">{{__('Not yet deployed')}}</div>
             </template>
             <template #resource="scope">
                 <resource-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>

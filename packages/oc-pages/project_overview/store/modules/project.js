@@ -361,8 +361,8 @@ const getters = {
             if(dict.Deployment) {
                 obj.deployment = Object.values(dict.Deployment)[0]
                 resources = Object.values(dict.Resource)
-                obj.deployment.statuses = []
-                resources.forEach(resource => {if(resource.status != 1) obj.deployment.statuses.push(resource)})
+                obj.deployment.statuses = [resources.find(resource => resource.name == obj.deployment.primary)]
+                //resources.forEach(resource => {if(resource.status != 1) obj.deployment.statuses.push(resource)})
             } else {
                 const context = {...obj, deployment: Object.values(dict.DeploymentTemplate)[0]}
                 result.push({context, ...context})

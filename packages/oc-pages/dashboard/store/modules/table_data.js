@@ -52,7 +52,7 @@ const actions = {
                 rootGetters.resolveDeploy
                 if(!deployment) continue
                 const i = ++iterationCounter
-                deployment.statuses = deployment.resources.filter(resource => resource.status != 1)
+                deployment.statuses = [deployment.resources.find(resource => resource.name == deployment.primary)]
                 deployment.isStopped = deployment.resources.some(resource => resource.state == 8)
                 if(deployment.isStopped) {stoppedDeployments++} else {deployments++}
                 const application = {...rootGetters.getApplicationBlueprint};

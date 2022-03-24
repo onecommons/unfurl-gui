@@ -107,7 +107,7 @@ export default {
 
         // params.slug is the blueprint unfortunately
         const deploymentSlug = slugify(this.$route.query.fn)
-        return `environments/${environment}/${this.getProjectInfo.name}/${deploymentSlug}`
+        return `environments/${environment}/${this.getProjectInfo.fullPath}/${deploymentSlug}`
     },
     saveStatus() {
       switch(this.$route.name) {
@@ -352,7 +352,6 @@ export default {
     async fetchItems(n=1) {
       try {
         const projectGlobal = this.project.globalVars
-          console.log(projectGlobal)
         const projectPath = projectGlobal?.projectPath
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;

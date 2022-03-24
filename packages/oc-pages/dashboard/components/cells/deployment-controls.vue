@@ -17,16 +17,15 @@ export default {
         application() {return this.scope.item.context?.application},
         environment() {return this.scope.item.context?.environment},
         isDraft() {
-            return !this.isDeployed && !this.isUndeployed
-        },
-        isDeployed() {
-            return this.deployment?.__typename == 'Deployment'
+            return this.deployment.__typename == 'DeploymentTemplate'
         },
         isUndeployed() {
-            return (
-                this.deployment?.__typename == 'DeploymentTemplate' && 
-                !!this.lookupDeployPath(this.deployment.name, this.environment.name)?.pipeline?.id
-            )
+            return this.deployment.__typename == 'Deployment' && !this.isDeployed
+        },
+        isDeployed() {
+            return this.deployment.__typename == 'Deployment' && this.deployment.statuses?.every(rt => {
+                return rt.status != 5 && rt.status != 3
+            })
         }
 
     },
