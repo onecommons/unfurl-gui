@@ -385,46 +385,46 @@ export default {
       }
     },
     async createDeploymentPathPointer() {
-        this.setUpdateObjectPath('environments.json')
-        this.setUpdateObjectProjectPath(this.getHomeProjectPath)
-        const environment = this.$route.params.environment
-        this.pushPreparedMutation(() => {
-            return [{
-                typename: 'DeploymentPath',
-                patch: {__typename: 'DeploymentPath', environment},
-                target: this.deploymentDir
-            }]
-        })
-        await this.commitPreparedMutations()
+      this.setUpdateObjectPath('environments.json')
+      this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+      const environment = this.$route.params.environment
+      this.pushPreparedMutation(() => {
+        return [{
+          typename: 'DeploymentPath',
+          patch: {__typename: 'DeploymentPath', environment},
+          target: this.deploymentDir
+        }]
+      })
+      await this.commitPreparedMutations()
     },
     async triggerSave(type) {
-        try {
-            await this.commitPreparedMutations();
-            if(type == 'draft'){
-                await this.createDeploymentPathPointer()
-            }
-            createFlash({
-              // TODO this doesn't make sense if it's a template
-                message: __('Deployment was created successfully'),
-                type: FLASH_TYPES.SUCCESS,
-                duration: this.durationOfAlerts,
-            });
-            /*
-            createFlash({
-              message: updateTemplateResource.isOk
-                ? __('Template was saved successfully!')
-                : updateTemplateResource.errors.map((e) => e).join(', '),
-              type: updateTemplateResource.isOk ? FLASH_TYPES.SUCCESS : FLASH_TYPES.ALERT,
-              duration: this.durationOfAlerts,
-            });
-
-            */
-            return true;
-        } catch (e) {
-          console.error(e);
-          createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
-          return false;
+      try {
+        await this.commitPreparedMutations();
+        if(type == 'draft'){
+          await this.createDeploymentPathPointer()
+          createFlash({
+            message: __('Draft saved!'),
+            type: FLASH_TYPES.SUCCESS,
+            duration: this.durationOfAlerts,
+          });
+          const query = {...this.$route.query}
+          delete query.ts
+          this.$router.replace({query})
+          window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
+        } else {
+          createFlash({
+            // TODO this doesn't make sense if it's a template
+            message: __('Starting deployment...'),
+            type: FLASH_TYPES.SUCCESS,
+            duration: this.durationOfAlerts,
+          });
+          return true;
         }
+      } catch (e) {
+        console.error(e);
+        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        return false;
+      }
     },
 
     async triggerDeployment() {

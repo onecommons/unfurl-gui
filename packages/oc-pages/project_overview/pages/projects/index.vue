@@ -42,6 +42,7 @@ export default {
         GlModal: GlModalDirective,
     },
     data() {
+
         return {
             instantiateAs: null,
             projectSlugName: null,
@@ -58,7 +59,8 @@ export default {
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
-            }
+            },
+            currentTab: 0
         }
     },
     computed: {
@@ -193,7 +195,11 @@ export default {
             bus.$off('editTemplate')
         })()
     },
-
+    beforeMount () {
+        if(this.$route.hash) {
+            this.currentTab = 1
+        }
+    },
     async mounted() {
 
         await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
@@ -361,7 +367,7 @@ export default {
             <!-- TODO this will probably get removed -->
             <deployed-blueprints v-if="false"/>
 
-            <gl-tabs>
+            <gl-tabs v-model="currentTab">
                 <oc-tab title="Available Blueprints">
                     <div class="">
                         <gl-card>
