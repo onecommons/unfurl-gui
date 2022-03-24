@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 import graphqlClient from '../../graphql';
-import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import {slugify, USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 
 const state = {loaded: false, callbacks: []};
 const mutations = {
@@ -99,7 +99,7 @@ const getters = {
             const deployments = environment?
                 getters.getDeploymentsByEnvironment(environment) :
                 getters.getDeployments
-            const result = deployments.find(dep => dep.name == deploymentName)
+            const result = deployments.find(dep => dep.title == deploymentName || dep.name == slugify(deploymentName))
             return result
         }
     }
