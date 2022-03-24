@@ -304,6 +304,7 @@ export const resolvers = {
         blueprint: makeObjectLookupResolver('ApplicationBlueprint'),
         primary: makeObjectLookupResolver('ResourceTemplate'),
         name: (obj) => obj.name || obj.slug || null,
+        description: (obj) => obj.description ?? null,
         resourceTemplates: listMakeObjectLookupResolver('ResourceTemplate', 'json')
     },
 

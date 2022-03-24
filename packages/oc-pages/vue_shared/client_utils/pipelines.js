@@ -37,7 +37,8 @@ export function prepareVariables({workflow, projectUrl, environmentName, deployP
         DEPLOY_PATH: deployPath,
         DEPLOYMENT: deploymentName,
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,
-        UNFURL_MOCK_DEPLOY: mockDeploy && 'true'
+        UNFURL_MOCK_DEPLOY: mockDeploy && 'true',
+        UNFURL_LOGGING: mockDeploy && 'trace'
     })
 }
 

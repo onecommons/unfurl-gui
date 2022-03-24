@@ -52,7 +52,7 @@ export default {
             {{__('Open')}}
         </gl-button>
     </div>
-    <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="stop" /> {{__('Undeploy')}} </gl-button>
+    <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Undeploy')}} </gl-button>
     <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}} </gl-button>
 </div>
 
@@ -62,6 +62,6 @@ export default {
 .deployment-controls >>> .gl-button {
     width: 8em;
 }
-.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; width: 21.5em;}
+.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; width: 21.5em; margin: 0 1em;}
 .deployment-controls > * { display: flex;}
 </style>

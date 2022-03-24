@@ -153,7 +153,8 @@ export default {
       default: true
     },
     hideFilter: { type: Boolean, default: false },
-    noMargin: { type: Boolean, default: false }
+    noMargin: { type: Boolean, default: false },
+    rowClass: [Object, Function]
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -320,7 +321,7 @@ export default {
             filter="{}"
             id="accounts-table"
             ref="selectableTable"
-            tbody-tr-class="oc-table-row"
+            :tbody-tr-class="rowClass"
             responsive="lg"
             :items="_items"
             :fields="_fields"
@@ -406,7 +407,7 @@ export default {
 }
 
 
-.oc-table >>> .oc-table-row {
+.oc-table >>> tbody tr {
   height: 4.25em;
 }
 
@@ -439,7 +440,7 @@ export default {
 
 .table-body {
   display: flex;
-  align-items: end;
+  align-items: center;
   padding: 0.4rem 0;
   border-style: none;
   border-bottom-style: solid;
@@ -447,7 +448,6 @@ export default {
   border-color: #EEEEEE;
   width: 100%;
   height: 100%;
-  line-height: 1.35;
 }
 
 

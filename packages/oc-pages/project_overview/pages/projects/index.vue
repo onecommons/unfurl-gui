@@ -42,6 +42,7 @@ export default {
         GlModal: GlModalDirective,
     },
     data() {
+
         return {
             instantiateAs: null,
             projectSlugName: null,
@@ -58,7 +59,8 @@ export default {
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
-            }
+            },
+            currentTab: 0
         }
     },
     computed: {
@@ -108,7 +110,7 @@ export default {
         primaryProps() {
             return {
                 text: __('Next'),
-                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled:  this.shouldDisableSubmitTemplate}],
+                attributes: [{ category: 'primary' }, { variant: 'confirm' }, { disabled:  this.shouldDisableSubmitTemplate}],
             };
         },
         cancelProps() {
@@ -193,7 +195,11 @@ export default {
             bus.$off('editTemplate')
         })()
     },
-
+    beforeMount () {
+        if(this.$route.hash) {
+            this.currentTab = 1
+        }
+    },
     async mounted() {
 
         await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
@@ -206,14 +212,9 @@ export default {
 
         // add environment to environments.json
         // TODO break this off into a function
-//<<<<<<< HEAD
         const envName = this.selectedEnvironment
         if(envName && this.newEnvironmentProvider) {
             const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
-//=======
-//        if(this.selectedEnvironment && this.newEnvironmentProvider) {
-            //const primary_provider = {type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
-//>>>>>>> parent of 650ee3f... Add new icons, deploy flow
 
             await this.updateEnvironment({
                 envName: this.selectedEnvironment,
@@ -244,6 +245,7 @@ export default {
             this.templateForkedName = null;
             this.templateSelected = null
             this.selectedEnvironment = null
+            this.creatingEnvironment = false
         },
 
         instantiatePrimaryDeploymentTemplate() {
@@ -302,7 +304,7 @@ export default {
             this.templateSelected.title = this.templateForkedName;
             this.templateSelected.name = slugify(this.templateForkedName);
             this.templateSelected.totalDeployments = 0;
-            this.templateSelected.environment = this.$refs?.dropdown?.text;
+            this.templateSelected.environment = this.selectedEnvironment || this.defaultEnvironmentName
             this.templateSelected.primaryType = this.getProjectInfo.primary
         },
 
@@ -361,35 +363,11 @@ export default {
                     :code-source-url="getProjectInfo.sourceCodeUrl"
                     />
 
-            <!-- Create new template part -->
-            <!--div class="row gl-mt-6 gl-mb-6">
-                <div class="col-md-12 col-lg-6 d-flex">
-                    <h2 class="oc-title-section">{{ s__('OcDeployments|Deployment Templates') }}</h2>
-                </div>
-                <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end">
-                    <div class="d-inline-flex">
-                        <div class="form-group inline gl-mt-4">
-                            <gl-button
-                                v-gl-modal.oc-templates-deploy
-                                :title="$options.i18n.buttonLabel"
-                                :aria-label="$options.i18n.buttonLabel"
-                                category="primary"
-                                variant="confirm"
-                                class="btn-uf-teal"
-                                type="button"
-                                @click="instantiatePrimaryDeploymentTemplate"
-                                >
-                                {{ $options.i18n.buttonLabel}}
-                            </gl-button>
-                        </div>
-                    </div>
-                </div>
-            </div-->
             <!-- Table -->
             <!-- TODO this will probably get removed -->
             <deployed-blueprints v-if="false"/>
 
-            <gl-tabs>
+            <gl-tabs v-model="currentTab">
                 <oc-tab title="Available Blueprints">
                     <div class="">
                         <gl-card>
@@ -397,7 +375,7 @@ export default {
                                 <div class="d-flex align-items-center">
                                     <gl-icon name="archive" class="mr-2"/>
                                     <h5 class="mb-0 mt-0">
-                                        {{__('Available Blueprints')}}
+                                        {{__('Available Deployment Blueprints')}}
                                     </h5>
                                 </div>
                             </template>
@@ -437,7 +415,7 @@ export default {
                 <div v-else>
                     <gl-form-group
                         label="Name"
-                        class="col-md-4 align_left gl-pl-0"
+                        class="col-md-4 align_left"
                     >
                         <gl-form-input
                         id="input1"
@@ -447,18 +425,21 @@ export default {
                         />
 
                     </gl-form-group>
-                    <div class="col-md-6" v-if="instantiateAs!='template'">
+                    <div class="col-md-6 dropdown-parent" v-if="instantiateAs!='template'">
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
                         <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
-                        <gl-dropdown ref="dropdown" :text="defaultEnvironmentName">
+                        <gl-dropdown ref="dropdown">
+                            <template #button-text>
+                                <span><detect-icon class="mr-2" no-default :env="defaultEnvironmentName != __('Select') && defaultEnvironmentName"/>{{defaultEnvironmentName}}</span>
+                            </template>
+
                             <div v-if="getEnvironments.length > 0">
                                 <gl-dropdown-item v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
-                                    <detect-icon :env="env" />
-                                    {{ env.name }}
+                                    <div><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
                                 </gl-dropdown-item>
                                 <gl-dropdown-divider />
                             </div>
-                            <gl-dropdown-item class="disabled" @click="createNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
+                            <gl-dropdown-item class="disabled" @click="createNewEnvironment"><div style="white-space: pre">{{ __("Create new environment") }}</div></gl-dropdown-item>
                         </gl-dropdown>
                         <error-small :message="deployDialogError"/>
                     </div>
@@ -473,4 +454,6 @@ h2.oc-title-section {
     font-size: 19px;
     line-height: 24px;
 }
+
+.dropdown-parent >>> ul { width: unset; }
 </style>

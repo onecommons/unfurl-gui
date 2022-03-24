@@ -1,17 +1,17 @@
 <script>
-import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
+import { GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
 import {mapGetters, mapState} from 'vuex'
-import {OcTab} from '../../vue_shared/oc-components'
+import {OcTab, DetectIcon} from '../../vue_shared/oc-components'
 
 export default {
     name: 'ProjectDescriptionBox',
     components: {
-        GlIcon,
         GlTabs,
         OcTab,
-        GlBadge
+        GlBadge,
+        DetectIcon
     },
     mixins: [commonMethods],
     props: {
@@ -145,7 +145,7 @@ export default {
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
                                             <div class="gl-display-flex">
-                                                <gl-icon :size="12" :name="detectIcon(requirement.resourceType.title)" class="gl-mt-1" />
+                                                <detect-icon :size="12" :type="requirement.resourceType" class="gl-mt-1"/>
                                             </div>
                                             <div class="gl-display-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
@@ -168,7 +168,7 @@ export default {
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
                                             <div class="gl-display-flex">
-                                                <gl-icon :size="12" :name="detectIcon(requirement.resourceType.title)" class="gl-mt-1" />
+                                                <detect-icon :size="12" :type="requirement.resourceType" class="gl-mt-1" />
                                             </div>
                                             <div class="gl-display-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
@@ -185,8 +185,7 @@ export default {
                             </ul>
 
                         </oc-tab>
-                        <oc-tab title="Details" :titleCount="outputs.length + inputs.length">
-
+                        <oc-tab v-if="outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
                             <div>
                                 <div class="detail-heading">Inputs</div>
                                 <ul class="pl-4" v-if="inputs.length > 0">

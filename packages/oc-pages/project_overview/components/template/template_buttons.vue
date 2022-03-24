@@ -126,7 +126,7 @@ export default {
                 :disabled="saveDraftStatus == 'disabled'"
                 class="gl-mr-3"
                 @click.prevent="saveDraft"
-                >{{ __('Save Draft') }}</gl-button
+                >{{ __('Save as Draft') }}</gl-button
             >
 
         </div>

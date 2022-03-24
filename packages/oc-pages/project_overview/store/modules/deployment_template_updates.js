@@ -409,7 +409,6 @@ const mutations = {
         state.preparedMutations.push(preparedMutation)
     },
     applyMutations(state, o) {
-
         function applyPatchDefinition(patchDefinition) {
             if(typeof patchDefinition == 'function') {
                 for(const _patchDefinition of patchDefinition(state.accumulator)) {

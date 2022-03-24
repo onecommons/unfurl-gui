@@ -82,13 +82,14 @@ export default {
             {
                 key: 'open',
                 label: 'Open',
+                tableBodyStyles: {'justify-content': 'flex-end'},
                 groupBy: (item) => item.context.deployment?.name,
                 textValue: () => '',
             },
         ]
 
         const intent = '', target = null
-        return {fields, routes, intent, target}
+        return {fields, routes, intent, target, transition: false}
 
     },
     methods: {
@@ -149,7 +150,15 @@ export default {
         },
         hasDeployPath(scope) {
             return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
+        },
+        rowClass(item, type) {
+            if (type !== 'row') return
+            if(`#${item?.context?.deployment?.name}` == this.$route.hash) return 'highlight'
+        },
+        deploymentNameId(n) {
+            return `deployment-${n}`
         }
+
     },
     computed: {
         ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY', 'lookupDeployPath']),
@@ -192,11 +201,31 @@ export default {
                 default: return ''
             }
         }
+    },
+    mounted() {
+        console.log('mounted')
+        const vm = this
+        this.$refs.container.style.transition = 'none'
+        this.transition = false
+        this.$refs.container.style.transition = ''
+        if(this.$route.hash) {
+            setTimeout(
+                () => {
+                    vm.transition = true
+                    let el = document.querySelector(`#${vm.deploymentNameId(vm.$route.hash.slice(1))}`)
+                    if(el) {
+                        console.log(el)
+                        el.scrollIntoView()
+                    }
+                },
+                500
+            )
+        }
     }
 }
 </script>
 <template>
-    <div class="deployment-index-table">
+    <div ref="container" class="deployment-index-table" :class="{transition}">
         <gl-modal
             modalId="deployment-index-table"
             :title="modalTitle"
@@ -206,7 +235,7 @@ export default {
             :actionCancel="{text: 'Cancel'}"
             @primary="onModalConfirmed"
             />
-        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields">
+        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields" :row-class="rowClass">
             <template #status="scope">
                 <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
                     <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
@@ -225,11 +254,16 @@ export default {
                 </div>
             </template>
             <template #deployment="scope">
-                <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;">
+                <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
                     <a :href="`/${scope.item.context.application.projectPath}`">
                         <b> {{scope.item.context.application.title}}: </b>
                     </a>
-                    <component v-if="scope.item.context.deployment" :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'" v-bind="deploymentAttrs(scope)">
+                    <component 
+                        v-if="scope.item.context.deployment"
+                        :id="deploymentNameId(scope.item.context.deployment.name)"
+                        :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'"
+                        v-bind="deploymentAttrs(scope)"
+                        >
                         {{scope.item.context.deployment.title}}
                     </component>
                 </div>
@@ -254,6 +288,15 @@ export default {
 [id^="deployment-index-table"].modal-body { min-height: 0; padding: 0; }
 </style>
 <style scoped>
+
+.deployment-index-table >>> .highlight {
+    background-color: white;
+    transition: background-color 0.5s;
+}
+.deployment-index-table.transition >>> .highlight {
+    background-color: #FDFFE3;
+
+}
 
 .external-link-container >>> button {
     font-size: 1em;

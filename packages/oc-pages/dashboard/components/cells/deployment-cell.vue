@@ -1,6 +1,7 @@
 <script>
 import * as routes from '../../router/constants'
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
+import _ from 'lodash'
 export default {
     components: { StatusIcon },
     props: {
@@ -30,6 +31,9 @@ export default {
                 `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`: // TODO use from routes.js
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}
             return this.noRouter? {href}: {to: href}
+        },
+        statuses() {
+            return _.uniqBy(this.deployment.statuses || [], 'type')
         }
     }
 }
@@ -37,8 +41,8 @@ export default {
 <template>
     <component :is="noRouter? 'a': 'router-link'" v-if="deployment && deployment.name" v-bind="to">
         <div v-if="displayStatus && deployment" class="status-item">
-                <status-icon v-for="resource in deployment.statuses || []" :key="resource.name" :status="resource.status"/>
-                <div class="font-weight-bold" style="margin-bottom: -2px;">{{deployment.title}}</div>
+                <status-icon v-for="resource in statuses" :key="resource.name" :status="resource.status"/>
+                <div class="font-weight-bold" style="line-height: 0">{{deployment.title}}</div>
         </div>
         <div v-else-if="deployment">
             {{deployment.title}}
@@ -48,6 +52,6 @@ export default {
 <style scoped>
 .status-item {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
 }
 </style>

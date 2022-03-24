@@ -4,6 +4,7 @@ import { __ } from '~/locale';
 import {USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import LogosCloud from './shared/logos_cloud.vue'
+import {DetectIcon} from '../../vue_shared/oc-components'
 import {token} from '../../vue_shared/compat.js'
 
 const SHORT_NAMES = {
@@ -18,7 +19,7 @@ export default {
         GlFormInput,
         GlDropdown,
         GlDropdownItem,
-        LogosCloud,
+        DetectIcon,
     },
     data() {
         return {
@@ -63,7 +64,7 @@ export default {
     <div>
         <gl-form-group
             label="Environment Name"
-            class="col-md-4 align_left gl-pl-0"
+            class="col-md-4 align_left"
             >
             <gl-form-input
                 v-model="environmentName"
@@ -73,17 +74,18 @@ export default {
 
         <gl-form-group
             label="Cloud Provider"
-            class="col-md-4 align_left gl-pl-0"
+            class="col-md-4 align_left"
             >
-            <gl-dropdown
-                :text="cloudProvider"
-                >
-                <gl-dropdown-item :key="env" v-for="env in environmentsList" @click="() => cloudProvider = env">
-                    <span style="display: flex; align-items: center; justify-content: space-between;">
-                        <logos-cloud :small="true" :cloud="env"/>{{env}}
-                    </span>
-                </gl-dropdown-item>
-            </gl-dropdown>
+            <div class="dropdown-parent">
+                <gl-dropdown>
+                    <template #button-text>
+                        <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="cloudProvider" no-default/>{{cloudProvider || __('Select')}} </div>
+                    </template>
+                    <gl-dropdown-item :key="env" v-for="env in environmentsList" @click="() => cloudProvider = env">
+                        <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
+                    </gl-dropdown-item>
+                </gl-dropdown>
+            </div>
         </gl-form-group>
         <form class="d-none" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
@@ -92,3 +94,7 @@ export default {
         </form>
     </div>
 </template>
+<style scoped>
+
+.dropdown-parent >>> ul { width: unset; }
+</style>
