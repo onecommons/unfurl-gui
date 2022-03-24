@@ -263,7 +263,6 @@ export default {
                         :id="deploymentNameId(scope.item.context.deployment.name)"
                         :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'"
                         v-bind="deploymentAttrs(scope)"
-                        id=""
                         >
                         {{scope.item.context.deployment.title}}
                     </component>
