@@ -206,14 +206,9 @@ export default {
 
         // add environment to environments.json
         // TODO break this off into a function
-//<<<<<<< HEAD
         const envName = this.selectedEnvironment
         if(envName && this.newEnvironmentProvider) {
             const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
-//=======
-//        if(this.selectedEnvironment && this.newEnvironmentProvider) {
-            //const primary_provider = {type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
-//>>>>>>> parent of 650ee3f... Add new icons, deploy flow
 
             await this.updateEnvironment({
                 envName: this.selectedEnvironment,
@@ -303,7 +298,7 @@ export default {
             this.templateSelected.title = this.templateForkedName;
             this.templateSelected.name = slugify(this.templateForkedName);
             this.templateSelected.totalDeployments = 0;
-            this.templateSelected.environment = this.$refs?.dropdown?.text;
+            this.templateSelected.environment = this.selectedEnvironment || this.defaultEnvironmentName
             this.templateSelected.primaryType = this.getProjectInfo.primary
         },
 

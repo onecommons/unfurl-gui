@@ -33,7 +33,7 @@ export default {
     <component :is="noRouter? 'a': 'router-link'" v-bind="to">
         <div v-if="resource" class="status-item">
             <status-icon :status="resource.status"/>
-            <div style="margin-bottom: -2px;">{{resource.title}}</div>
+            <div style="line-height: 0">{{resource.title}}</div>
         </div>
     </component>
 </template>

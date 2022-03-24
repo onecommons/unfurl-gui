@@ -82,6 +82,7 @@ export default {
             {
                 key: 'open',
                 label: 'Open',
+                tableBodyStyles: {'justify-content': 'flex-end'},
                 groupBy: (item) => item.context.deployment?.name,
                 textValue: () => '',
             },

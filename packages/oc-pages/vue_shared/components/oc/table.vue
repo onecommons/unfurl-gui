@@ -439,7 +439,7 @@ export default {
 
 .table-body {
   display: flex;
-  align-items: end;
+  align-items: center;
   padding: 0.4rem 0;
   border-style: none;
   border-bottom-style: solid;
@@ -447,7 +447,6 @@ export default {
   border-color: #EEEEEE;
   width: 100%;
   height: 100%;
-  line-height: 1.35;
 }
 
 
