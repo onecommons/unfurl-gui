@@ -3,7 +3,7 @@ import * as routes from '../router/constants'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon} from '@gitlab/ui'
-import {CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
+import {DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
 import { __ } from '~/locale'
 import {lookupCloudProviderAlias, slugify} from '../../vue_shared/util.mjs'
 import {deleteEnvironment} from '../../vue_shared/client_utils/environments'
@@ -32,7 +32,7 @@ function mapCloudProviderProps(ci_variables) {
 
 export default {
     name: 'Environment',
-    components: {CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources},
+    components: {CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources, DetectIcon},
     data() {
         const gcpProps = [
             {name: 'Status', value: 'Connected', valueStyle: {'font-weight': 'bold'}, icon: 'status_success_solid', outboundLink: 'https://youtube.com', outboundLinkText: 'Go to console'},
@@ -85,7 +85,11 @@ export default {
                 return 'disabled'
             }
             return 'display'
+        },
+        providerType() {
+            return this.environment?.primary_provider?.type
         }
+
     },
     methods: {
         ...mapActions([
@@ -161,7 +165,13 @@ export default {
         <h2>{{__('Environment Name')}}</h2>
         <gl-form-input :style="width" :value="environment.name" disabled/>
         <h2>{{__('Cloud Provider')}}</h2>
-        <oc-properties-list :header="cloudProviderDisplayName" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps" />
+        <oc-properties-list :header="cloudProviderDisplayName" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps">
+            <template #header-text>
+                <div class="d-flex align-items-center" style="line-height: 20px;">
+                    <detect-icon :size="20" :env="environment" class="mr-1"/> {{cloudProviderDisplayName}}
+                </div>
+            </template>
+        </oc-properties-list>
         <h2>{{__('Variables')}}</h2>
         <ci-variable-settings v-if="!unfurl_gui"/>
         <deployment-resources @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" :external-status-indicator="true">

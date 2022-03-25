@@ -48,7 +48,9 @@ export default {
     <div style="max-width: 100%; overflow-x: auto;">
         <div :style="containerStyle" class="properties-list-container">
             <div @click="toggleExpanded" v-if="header" class="header">
-                <div>{{header}}</div>
+                <slot name="header-text">
+                    <div>{{header}}</div>
+                </slot>
                 <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
             </div>
             <div ref="transitionTarget" class="properties-list-inner">
