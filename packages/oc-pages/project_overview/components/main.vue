@@ -56,7 +56,11 @@ export default {
         }
     },
     mounted() {
-        window.vm = this
+        const flash = sessionStorage['oc_flash']
+        if(flash) {
+            createFlash(JSON.parse(flash))
+            delete sessionStorage['oc_flash']
+        }
     }
 }
 </script>

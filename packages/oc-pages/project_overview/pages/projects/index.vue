@@ -1,4 +1,5 @@
 <script>
+import createFlash, { FLASH_TYPES } from '~/flash';
 import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
@@ -13,6 +14,7 @@ import YourDeployments from '../../components/your-deployments.vue'
 import {OcTab, DetectIcon} from '../../../vue_shared/oc-components'
 import { bus } from '../../bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
+import {deleteEnvironmentByName} from '../../../vue_shared/client_utils/environments'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
@@ -105,7 +107,8 @@ export default {
             'getMatchingEnvironments',
             'getDefaultEnvironmentName',
             'lookupDeployment',
-            'lookupEnvironment'
+            'lookupEnvironment',
+            'getHomeProjectPath'
         ]),
         primaryProps() {
             return {
@@ -205,10 +208,24 @@ export default {
         await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
+        const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
+
         delete sessionStorage['instantiate_env']
         delete sessionStorage['instantiate_provider']
 
+        if(expectsCloudProvider && !(this.selectedEnvironment && this.newEnvironmentProvider)) {
+            // TODO find a way to merge this implementation with dashboard
 
+            createFlash({
+                message: `Creation of environment "${expectsCloudProvider}" cancelled.`,
+                type: FLASH_TYPES.WARNING
+            })
+
+            await deleteEnvironmentByName(this.getHomeProjectPath, expectsCloudProvider)
+            this.discardEnvironment(expectsCloudProvider)
+        }
+
+        delete sessionStorage['expect_cloud_provider_for']
 
         // add environment to environments.json
         // TODO break this off into a function
@@ -337,7 +354,8 @@ export default {
         ...mapMutations([
             'pushPreparedMutation',
             'setUpdateObjectPath',
-            'setUpdateObjectProjectPath'
+            'setUpdateObjectProjectPath',
+            'discardEnvironment'
         ])
     }
 }

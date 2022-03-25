@@ -70,6 +70,11 @@ const mutations = {
 
     setResourceTypeDictionary(state, { environment, dict }) {
         state.resourceTypeDictionaries[environment.name] = dict
+    },
+
+    // TODO maybe add something that will delete the environment, that can also keep the state of the application consistent
+    discardEnvironment(state, environmentName) {
+        state.projectEnvironments = state.projectEnvironments.filter(env => env.name != environmentName)
     }
 
 };

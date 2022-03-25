@@ -53,6 +53,7 @@ export default {
             // rails is settings params weird
             if(!redirectTarget.includes('?')) redirectTarget += '?'
             const url = `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+            if(SHORT_NAMES[this.cloudProvider]) sessionStorage['expect_cloud_provider_for'] = this.environmentName
             await axios.get(url)
             this.$refs.form.submit()
         }
