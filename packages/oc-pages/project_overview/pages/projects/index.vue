@@ -429,6 +429,7 @@ export default {
                     ref="environmentDialog"
                     @environmentNameChange="env => createEnvironmentName = env"
                     @cloudProviderChange="provider => createEnvironmentProvider = provider"
+                    :cloud-provider="templateSelected && templateSelected.cloud"
                     />
                 <div v-else>
                     <gl-form-group

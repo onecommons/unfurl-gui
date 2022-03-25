@@ -247,11 +247,10 @@ const getters = {
         return result
     },
     getMatchingEnvironments: (_, getters) => function(type) {
-
         if(!type) { return getters.getEnvironments }
         const result = getters.getEnvironments.filter(env => {
             if(env?.primary_provider) return lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type)
-            else return true
+            else return false
         })
         return result
     },
