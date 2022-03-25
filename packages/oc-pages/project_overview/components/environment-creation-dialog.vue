@@ -1,12 +1,14 @@
 <script>
 import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
-import {USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
+import _ from 'lodash'
+import {slugify, USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import LogosCloud from './shared/logos_cloud.vue'
-import {DetectIcon} from '../../vue_shared/oc-components'
+import {DetectIcon, ErrorSmall} from '../../vue_shared/oc-components'
 import {lookupCloudProviderAlias} from '../../vue_shared/util.mjs'
 import {token} from '../../vue_shared/compat.js'
+import {mapGetters} from 'vuex'
 
 const SHORT_NAMES = {
     'Google Cloud Platform': 'gcp',
@@ -21,6 +23,7 @@ export default {
         GlDropdown,
         GlDropdownItem,
         DetectIcon,
+        ErrorSmall
     },
     props: {
         cloudProvider: {
@@ -34,9 +37,11 @@ export default {
             selectedCloudProvider: __('Select'),
             SHORT_NAMES,
             token,
+            duplicateName: false
         }
     },
     computed: {
+        ...mapGetters(['lookupEnvironment']),
         environmentsList() {
             const result = [
                 'Google Cloud Platform',
@@ -59,9 +64,15 @@ export default {
         }
     },
     watch: {
-        environmentName() {
-            this.$emit('environmentNameChange', this.environmentName)
-        },
+        environmentName:  _.debounce(function(val){
+            if(this.lookupEnvironment(slugify(this.environmentName))) {
+                this.$emit('environmentNameChange', '')
+                this.duplicateName = true
+            } else {
+                this.$emit('environmentNameChange', slugify(this.environmentName))
+                this.duplicateName = false
+            }
+        }, 100),
         selectedCloudProvider() {
             this.$emit('cloudProviderChange', this.selectedCloudProvider)
         }
@@ -72,10 +83,11 @@ export default {
             // rails is settings params weird
             if(!redirectTarget.includes('?')) redirectTarget += '?'
             const url = `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
-            if(SHORT_NAMES[this.selectedCloudProvider]) sessionStorage['expect_cloud_provider_for'] = this.environmentName
+            if(SHORT_NAMES[this.selectedCloudProvider]) sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
             await axios.get(url)
             this.$refs.form.submit()
-        }
+        },
+        slugify
     },
     mounted() {
         if(this.environmentsList.length == 1) {
@@ -95,6 +107,9 @@ export default {
                 v-model="environmentName"
                 type="text"
                 />
+            <error-small :condition="duplicateName">
+                {{__(`Environment name is taken`)}}
+            </error-small>
         </gl-form-group>
 
         <gl-form-group
@@ -114,7 +129,7 @@ export default {
         </gl-form-group>
         <form class="d-none" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
-            <input name="environment[name]" :value="environmentName">
+            <input name="environment[name]" :value="slugify(environmentName)">
             <input name="provider" :value="SHORT_NAMES[selectedCloudProvider]">
         </form>
     </div>

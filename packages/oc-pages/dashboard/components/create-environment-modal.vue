@@ -1,7 +1,7 @@
 <script>
 import EnvironmentCreationDialog from '../../project_overview/components/environment-creation-dialog.vue'
 import {GlModal} from '@gitlab/ui'
-import {USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
+import {slugify, USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
 import {__} from '~/locale'
 export default {
     name: 'CreateEnvironmentModal',
@@ -27,7 +27,7 @@ export default {
     methods: {
         async redirectToNewEnvironment(e) {
             e.preventDefault()
-            await this.$refs.environmentDialog.beginEnvironmentCreation(`/dashboard/environments/${this.$refs.environmentDialog.environmentName}`)
+            await this.$refs.environmentDialog.beginEnvironmentCreation(`/dashboard/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
         },
     }
 }
