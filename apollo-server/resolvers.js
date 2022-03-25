@@ -84,8 +84,10 @@ export default {
         if (!environments) {
           return [];
         }
-        // XXX defaults = db.get('environments').value()[namespace]['defaults']
+        // XXX merge in defaults
+        // const defaults = environments['DeploymentEnvironment']['defaults']
         // env_hash['connections'] = defaults.merge(env_hash || Hash.new)
+        // XXX merge value.?repository.?types.?url into resourceTypes
         const resourceTypes = environments["ResourceType"];
         const result = Object.entries(environments['DeploymentEnvironment']).map(([key, value]) => ({
             __typeName: 'Environment',
@@ -93,7 +95,12 @@ export default {
             name: key,
             state: 'available',
             _project: namespace,
-            clientPayload: { "DeploymentEnvironment": value, "ResourceType": resourceTypes}
+          clientPayload: {
+            // XXX for consistency should be: "DeploymentEnvironment": { [key]: value },
+            "DeploymentEnvironment": value,
+            "ResourceType": resourceTypes,
+            "DeploymentPath": environments["DeploymentPath"]
+          }
         }));
         return result
       } catch (e) {
