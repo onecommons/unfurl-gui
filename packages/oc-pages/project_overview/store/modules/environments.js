@@ -203,7 +203,9 @@ const actions = {
         }
         catch(e){
             console.error('Could not fetch project environments', e)
-            return createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
+            if(window.gon.current_username) {
+                createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
+            }
             environments = []
 
         }
