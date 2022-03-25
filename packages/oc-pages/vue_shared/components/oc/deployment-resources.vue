@@ -334,7 +334,7 @@ export default {
                 await this.commitPreparedMutations();
                 this.$emit('saveTemplate')
                 createFlash({
-                    message: __('Template was saved successfully!'),
+                    message: __(`${this.target || 'Template'} was saved successfully!`),
                     type: FLASH_TYPES.SUCCESS,
                     duration: this.durationOfAlerts,
                 });
