@@ -90,8 +90,8 @@ export default {
         deployDialogError() {
             if(this.instantiateAs == 'deployment-draft') {
                 const environment = this.defaultEnvironmentName == __("Select")? null : this.defaultEnvironmentName
-                if(environment && this.lookupDeployment(this.templateForkedName, environment)) {
-                    return `'${this.templateForkedName}' already exists in environment '${environment}'`
+                if(environment && this.lookupDeploymentOrDraft(slugify(this.templateForkedName), environment)) {
+                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment}'`
                 }
             }
             return null
@@ -106,7 +106,7 @@ export default {
             'getNextDefaultDeploymentName',
             'getMatchingEnvironments',
             'getDefaultEnvironmentName',
-            'lookupDeployment',
+            'lookupDeploymentOrDraft',
             'lookupEnvironment',
             'getHomeProjectPath'
         ]),

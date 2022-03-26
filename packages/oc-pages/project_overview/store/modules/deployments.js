@@ -1,6 +1,7 @@
 import gql from 'graphql-tag';
 import graphqlClient from '../../graphql';
 import {slugify, USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import _ from 'lodash'
 
 const state = {loaded: false, callbacks: []};
 const mutations = {
@@ -64,12 +65,25 @@ const getters = {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
-            if(typeof dict?.Deployment != 'object') continue
+            if(_.isObject(dict.Deployment)) continue
             Object.values(dict.Deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
             })
         }
         return result
+    },
+    getDeploymentsOrDrafts() {
+        if(!state.deployments) return []
+        const result = []
+        for(const dict of state.deployments) {
+            const deployment = _.isObject(dict.Deployment)? dict.Deployment: dict.DeploymentTemplate
+            if(!deployment) continue
+            Object.values(deployment).forEach(dep => {
+                result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
+            })
+        }
+        return result
+
     },
     getDeploymentsByEnvironment(_, getters) {
         return function(environment) {
@@ -84,7 +98,9 @@ const getters = {
         let max = 1
         // use below if we want to count from one for each environment
         // for(const deployment of getters.getDeploymentsByEnvironment(environment)) { 
-        for(const deployment of getters.getDeployments) {
+        //
+        // update - this used to use getDeployments but is now using getDeploymentsOrDrafts
+        for(const deployment of getters.getDeploymentsOrDrafts) {
             let match = deployment.title.match(re)
             if(match) {
                 match = parseInt(match[1])
@@ -93,6 +109,14 @@ const getters = {
         }
 
         return `${templateTitle} ${max}`
+    },
+    lookupDeploymentOrDraft(_, getters) {
+        return function(deploymentName, environment) {
+            const _environment = environment?.name || environment
+            const result = getters.getDeploymentsOrDrafts.find(dep => dep._environment == _environment && dep.name == deploymentName)
+            return result
+        }
+
     },
     lookupDeployment(_, getters) {
         return function(deploymentName, environment) {
