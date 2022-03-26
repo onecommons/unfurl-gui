@@ -440,7 +440,21 @@ export default {
         })
 
         createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
-        return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
+        let redirectTarget = `${this.pipelinesPath}/${pipelineData.id}`
+
+        // #!if false
+
+        const projectId = pipelineData.project.id
+        const pipelineId = pipelineData.id
+        const jobsPath = `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
+        const jobsData = (await axios.get(jobsPath))?.data
+        if(Array.isArray(jobsData)) {
+          redirectTarget = jobsData[0]?.web_url || redirectTarget
+        }
+
+        // #!endif
+
+        return redirectTo(redirectTarget);
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];
