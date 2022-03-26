@@ -2,10 +2,25 @@ import Vue from 'vue';
 import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
+import * as routeNames from './constants.js'
 import { PageNotFound } from '../../vue_shared/oc-components'
+import { filterFromRoutes, createDenyList } from './sign-in-filter'
 
 Vue.use(VueRouter);
-routes.push({ path: "*", component: PageNotFound })
+
+const isPrivateRoute = createDenyList(
+    filterFromRoutes(routes),
+
+    // Deploy flow
+    function(to) {
+        if(
+            to.name != routeNames.OC_PROJECT_VIEW_HOME ||
+            !(to.query.ts || to.query.fn)
+        ) return false 
+
+        return true
+    }
+)
 
 export default function createRouter(base) {
     if(!base)
@@ -22,6 +37,12 @@ export default function createRouter(base) {
 
 
     router.beforeEach((to, from, next) => {
+        if(!window.gon.current_username) {
+            if(isPrivateRoute(to)) {
+                setTimeout( () => window.location.href = '/users/sign_in', 1)
+                return false
+            }
+        }
         if(router.app.$store) {
             router.app.$store.getters.getRouterHook(to, from, next)
         }

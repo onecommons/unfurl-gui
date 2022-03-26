@@ -13,7 +13,7 @@ export const PageNotFound = Vue.component("page-not-found", {
       window.location.href = "/404.html";
   }
 })
-
+export const SignIn = Vue.component("sign-in", { template: "", })
 // #!if false
 import _CiVariableSettings from './oc_ci_variable_list/components/ci_variable_settings.vue'
 // #!if false
