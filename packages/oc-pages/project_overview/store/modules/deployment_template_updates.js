@@ -386,7 +386,7 @@ const getters = {
     getPreparedMutations(state) { return state.preparedMutations },
     getAccumulator(state) { return state.accumulator },
     getPatches(state) { return state.patches },
-    hasPreparedMutations(state) { return state.preparedMutations.length > 0 }
+    hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) }
 }
 
 const mutations = {
@@ -438,10 +438,12 @@ const mutations = {
         state.patches = {}
         state.env = {}
         state.useBaseState = false
+        state.effectiveFirstMutation = 0
         if(!o?.dryRun) {
             state.path = undefined
             state.projectPath = undefined
             state.environmentScope = undefined
+
         }
     },
     setBaseState(state, baseState) {
@@ -465,6 +467,9 @@ const mutations = {
                 }
             }
         }
+    },
+    clientDisregardUncommitted(state) {
+        state.effectiveFirstMutation = state.preparedMutations.length
     }
 }
 

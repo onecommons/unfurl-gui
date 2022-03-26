@@ -236,6 +236,7 @@ const actions = {
 
         createMatchedTemplateResources(primary);
         
+        commit('clientDisregardUncommitted')
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
         return true;
