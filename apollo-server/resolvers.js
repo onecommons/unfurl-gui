@@ -18,6 +18,20 @@ function findDeployment(repo, path) {
   return ensembleJSONRaw
 }
 
+function mergeTypes(json) {
+  const resourceTypes = json["ResourceType"]
+  const typesRepo = json.repositories && json.repositories.types && json.repositories.types.url
+  if (typesRepo) {
+    const types = readLiveRepoFile("unfurl-types", 'unfurl-types.json')
+    // types overrides resourceTypes
+    if (types) {
+        Object.assign(resourceTypes, types)
+        console.log("merged!")
+    }
+  }
+  return json;
+}
+
 export default {
   JSON: GraphQLJSON,
 
@@ -87,8 +101,7 @@ export default {
         // XXX merge in defaults
         // const defaults = environments['DeploymentEnvironment']['defaults']
         // env_hash['connections'] = defaults.merge(env_hash || Hash.new)
-        // XXX merge value.?repository.?types.?url into resourceTypes
-        const resourceTypes = environments["ResourceType"];
+        mergeTypes(environments);
         const result = Object.entries(environments['DeploymentEnvironment']).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
@@ -98,7 +111,7 @@ export default {
           clientPayload: {
             // XXX for consistency should be: "DeploymentEnvironment": { [key]: value },
             "DeploymentEnvironment": value,
-            "ResourceType": resourceTypes,
+            "ResourceType": environments["ResourceType"],
             "DeploymentPath": environments["DeploymentPath"]
           }
         }));
@@ -117,7 +130,7 @@ export default {
 
   // fields with JSON type need explicit resolvers
   ApplicationBlueprintProject: {
-    json: (obj, args, { }) => obj
+    json: (obj, args, { }) => mergeTypes(obj)
   }, 
  
 

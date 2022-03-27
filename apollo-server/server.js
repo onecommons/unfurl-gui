@@ -5,14 +5,6 @@ import {execSync} from 'child_process'
 import {USER_HOME_PROJECT} from '../packages/oc-pages/vue_shared/util.mjs'
 import {writeLiveRepoFile, readLiveRepoFile, resolveLiveRepoFile} from './utils/db'
 
-const skeletonPath = path.resolve(__dirname, './repos/testing/dashboard/unfurl-skeleton')
-
-/*
-if not exists (path/to/environment/deploymentname)
-  unfurl clone blah blah
-  unfurl deploy path/to/environment/deploymentname
-  unfurl export path/to/environment/deploymentname > path/to/environment/deploymentname/ensemble.json (edited)
-*/
 export default app => {
   app.use(express.json({ limit: '50mb' }))
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
@@ -44,7 +36,7 @@ export default app => {
     const cwd = resolveLiveRepoFile(userHome, '')
     const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('.')[0]; // strip .git
     const blueprintProjectURL = path.resolve(__dirname, './repos/' + repo)
-    const clone = `${UNFURL_CMD} -vv clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton ${skeletonPath} ${blueprintProjectURL} ${DEPLOY_PATH}`
+    const clone = `${UNFURL_CMD} -vv clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton dashboard ${blueprintProjectURL} ${DEPLOY_PATH}`
     const deploy = `${UNFURL_CMD} -vvv --home . ${WORKFLOW} --approve ${DEPLOY_PATH}`
     const exportCmd = `${UNFURL_CMD} -vv --home . export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
