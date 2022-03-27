@@ -57,3 +57,8 @@ export function undeploy(pipelinesPath, parameters, options) {
         options
     )
 }
+
+export async function lookupPipelineJobs({projectId, pipelineId}) {
+    const jobsPath = `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
+    return (await axios.get(jobsPath))?.data
+}

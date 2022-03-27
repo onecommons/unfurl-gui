@@ -30,9 +30,9 @@ export default {
         }
         try {
             const {projectPath} = this.$projectGlobal
+            // TODO do everything in one query?
+            await this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
             const promises = [
-                this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath}),
-                this.$store.dispatch('fetchDeployments', {username: this.$store.getters.getUsername}),
                 this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch}),
                 this.$store.dispatch('handleResize')
             ]

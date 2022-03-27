@@ -99,6 +99,7 @@ const actions = {
                 patch: {
                     __typename: 'DeploymentPath',
                     environment: parameters.environmentName,
+                    projectId: data.project.id,
                     pipeline: {
                         id: data.id,
                         flags: data.flags,
