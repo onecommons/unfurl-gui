@@ -300,7 +300,7 @@ const getters = {
     },
     lookupDeployPath(state) {
         return function(deploymentName, environmentName) {
-            const result = state.deploymentPaths.find(dp => dp.name.startsWith(`environments/${environmentName}`) && dp.name.endsWith(`/${deploymentName}`))
+            const result = state.deploymentPaths.find(dp => dp.name?.startsWith(`environments/${environmentName}`) && dp.name?.endsWith(`/${deploymentName}`))
             return result
         }
     }

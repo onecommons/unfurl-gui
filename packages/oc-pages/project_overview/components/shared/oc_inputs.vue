@@ -5,7 +5,7 @@ import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormItem, Input, InputNumber, Checkbox, Select, Password, Editable} from "@formily/element";
-import {createForm, onFieldValueChange} from "@formily/core";
+import {createForm, onFieldInputValueChange} from "@formily/core";
 
 const ComponentMap = {
   string: 'Input',
@@ -143,7 +143,7 @@ export default {
       return createForm({
         initialValues: this.initialFormValues,
         effects: () => {
-          onFieldValueChange('*', async (field, ...args) => {
+          onFieldInputValueChange('*', async (field, ...args) => {
             if(!field.modified) return
             this.triggerSave({...field.data, name: field.path.entire}, field.value);
           })
@@ -169,7 +169,7 @@ export default {
         currentValue['x-decorator'] = 'FormItem'
         currentValue['x-data'] = value
         currentValue['x-component-props'] = {
-            placeholder: currentValue.title,
+          placeholder: currentValue.title
         }
         let componentType = currentValue.type;
         if (componentType === 'object' && currentValue.properties) {
@@ -227,20 +227,5 @@ export default {
         <FormProvider :form="form">
           <SchemaField :schema="schema"/>
         </FormProvider>
-<!--        <gl-form-group-->
-        <!--            v-for="(input, idx) in mainInputs"-->
-        <!--            :key="input.title+idx+componentKey+ 'group'"-->
-        <!--            :label="input.title"-->
-        <!--            class="col-md-4 align_left"-->
-        <!--        >-->
-        <!--          <small>{{ input.instructions }}</small>-->
-        <!--          <gl-form-input-->
-        <!--              :id="input.title + idx + componentKey + getRandomKey(7)+'-template'"-->
-        <!--              v-model="input.value"-->
-        <!--              type="text"-->
-        <!--              :placeholder="input.title"-->
-        <!--              @keyup="checkInputsInline(); triggerSave()"-->
-        <!--          />-->
-        <!--        </gl-form-group>-->
   </div>
 </template>
