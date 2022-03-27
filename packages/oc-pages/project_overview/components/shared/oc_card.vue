@@ -94,7 +94,7 @@ export default {
         id() {
             return generateCardId(this.card.name)
         },
-        ...mapGetters(['cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
+        ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
 
         badgeHeaderText() {
             const result = this.$props.badgeHeader.text || this.getCardType(this.card)
@@ -141,7 +141,7 @@ export default {
 
 </script>
 <template>
-    <gl-card :header-class="['gl-display-flex',  'header-oc']">
+    <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
             <div class="d-flex position-relative w-100 justify-content-between">
                 <div class="mr-4 d-flex">
@@ -155,11 +155,7 @@ export default {
                                 :class="['gl-ml-3', cardIsValid(card)? 'icon-green': 'icon-red']"
                                 :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
                                 />
-                            <gl-badge
-                            size="sm"
-                            class="gl-tab-counter-badge gl-ml-3 badge-oc-card"
-                            >{{ badgeHeaderText }}</gl-badge
-                            >
+                            <gl-badge v-if="!isMobileLayout" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="displayStatus">
                             <status-icon :size="16" :state="card.state" :status="card.status" />
@@ -171,15 +167,13 @@ export default {
                     <slot name="controls">
                         <gl-button v-if="!isPrimary && !readonly" @click="openDeletemodal" class="controls">
                             <div class="d-flex align-items-center">
-                                <svg width="16" height="16" viewBox="0 0 15 17" stroke="#DBDBDB;" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path fill-rule="evenodd" clip-rule="evenodd" d="M4.26558 2.04999C4.26558 0.917811 5.20857 0 6.37181 0H8.47805C9.64129 0 10.5843 0.917811 10.5843 2.04999V3.07498H13.7436C14.3252 3.07498 14.7967 3.53389 14.7967 4.09998C14.7967 4.66606 14.3252 5.12497 13.7436 5.12497H13.5816L12.8401 14.5071C12.7557 15.5752 11.8407 16.3999 10.7401 6.3999H4.10979C3.0092 16.3999 2.09417 15.5752 2.00976 14.5071L1.26825 5.12497H1.10623C0.524613 5.12497 0.0531158 4.66606 0.0531158 4.09998C0.0531158 3.53389 0.524612 3.07498 1.10623 3.07498H4.26558V2.04999ZM6.37181 3.07498H8.47805V2.04999H6.37181V3.07498ZM3.38071 5.12497L4.10979 14.3499L10.7401 14.3499L11.4692 5.12497H3.38071Z" fill="#4A5053"/>
-                                </svg>
+                                <gl-icon name="remove" />
                                 <div> {{__('Remove')}} </div>
                             </div>
                         </gl-button>
 
                     </slot>
-                    <span class="ml-2" @click="toggleCard" v-if="!isPrimary">
+                    <span class="card-toggle" @click="toggleCard" v-if="!isPrimary">
                         <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
                     </span>
                 </div>
@@ -190,6 +184,11 @@ export default {
                 <slot name="content"></slot>
             </div>
         </div>
+        <template #footer>
+            <div v-if="$slots['footer-controls']" class="d-flex justify-content-end">
+                <slot class="float-right" name="footer-controls" />
+            </div>
+        </template>
     </gl-card>
 </template>
 <style >
@@ -232,15 +231,32 @@ export default {
 }
 
 .card-content-container {
-    padding-top: 2em !important;
+    /* I'm not sure why this was important */
+    /*padding-top: 2em !important;*/
+
     padding: 1em;
     max-width: 100%;
+}
+
+.card-toggle {
+    margin-left: 0.5em;
 }
 
 @media only screen and (max-width: 768px) {
     .card-content-container {
         padding: 1em 0;
     }    
+    .card-toggle {
+        margin-left: 0;
+    }
+
+    .oc-card >>> .gl-card-body {
+        padding-top: 0; padding-bottom: 0;
+    }
+    .oc-card.primary >>> .gl-card-footer {
+        /* TODO move this into global css */
+        background: rgb(227, 247, 255);
+    }
 }
 
 .card-content-container.active {

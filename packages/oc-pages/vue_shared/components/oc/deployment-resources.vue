@@ -493,6 +493,9 @@ export default {
                 <template #controls>
                     <slot name="primary-controls"></slot>
                 </template>
+                <template #footer-controls>
+                    <slot name="primary-controls-footer"></slot>
+                </template>
                 <template #content>
                     <!-- Inputs -->
                     <!--oc-inputs :card="getPrimaryCard" :main-inputs="primaryCardProperties" :component-key="1" /-->

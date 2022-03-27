@@ -56,7 +56,8 @@ export default {
             'environmentLookupDiscoverable',
             'environmentResourceTypeDict',
             'getHomeProjectPath',
-            'hasPreparedMutations'
+            'hasPreparedMutations',
+            'isMobileLayout'
         ]),
         breadcrumbItems() {
             return [
@@ -161,9 +162,12 @@ export default {
 <template>
     <div>
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <div class="mt-6"></div>
-        <h2>{{__('Environment Name')}}</h2>
-        <gl-form-input :style="width" :value="environment.name" disabled/>
+        <div class="mt-6 row">
+            <div class="col">
+                <h2>{{__('Environment Name')}}</h2>
+                <gl-form-input :value="environment.name" disabled/>
+            </div>
+        </div>
         <h2>{{__('Cloud Provider')}}</h2>
         <oc-properties-list :header="cloudProviderDisplayName" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps">
             <template #header-text>
@@ -182,7 +186,7 @@ export default {
                 </div>
             </template>
             <template #primary-controls>
-                <div class="confirm-container">
+                <div v-if="!isMobileLayout" class="confirm-container">
                     <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                         <div>
                             <gl-icon name="plus"/>
@@ -190,7 +194,16 @@ export default {
                         </div>
                     </gl-button>
                 </div>
-
+            </template>
+            <template #primary-controls-footer>
+                <div v-if="isMobileLayout" class="confirm-container">
+                    <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                        <div>
+                            <gl-icon name="plus"/>
+                            {{__('Add External Resource')}}
+                        </div>
+                    </gl-button>
+                </div>
             </template>
             <!--template #controls>
                 <div class="external-resource-controls">
