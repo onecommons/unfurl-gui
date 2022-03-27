@@ -65,7 +65,7 @@ const getters = {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
-            if(_.isObject(dict.Deployment)) continue
+            if(!_.isObject(dict.Deployment)) continue
             Object.values(dict.Deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
             })
