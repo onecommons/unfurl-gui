@@ -37,7 +37,8 @@ function validateInput(input, value) {
 
 const SerializationFunctions = {
   number(input, value) {
-    return parseInt(value)
+    const result = parseInt(value)
+    if(!isNaN(result)) return result
   }
 }
 function serializeInput(input, value) {
@@ -90,6 +91,11 @@ export default {
     */
   },
 
+  data() {
+    return {
+      cardProperties: _.cloneDeep(this.card.properties)
+    }
+  },
   computed: {
     ...mapGetters(['resolveResourceType', 'cardInputsAreValid']),
 
@@ -98,7 +104,7 @@ export default {
       let fromSchema, templateProperties
       try {
         fromSchema = this.resolveResourceType(this.card.type).inputsSchema.properties
-        templateProperties = this.card.properties
+        templateProperties = this.cardProperties
       }
       catch(e) { return result }
       if(! templateProperties) return []

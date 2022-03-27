@@ -260,8 +260,8 @@ export default {
       if(this.hasPreparedMutations) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
-        this.clearPreparedMutations();
       }
+      this.clearPreparedMutations();
       next();
     });
   },
@@ -454,6 +454,9 @@ export default {
 
         // #!endif
 
+        const query = {...this.$route.query}
+        delete query.ts
+        this.$router.replace({query})
         return redirectTo(redirectTarget);
       } catch (err) {
         console.error(err)

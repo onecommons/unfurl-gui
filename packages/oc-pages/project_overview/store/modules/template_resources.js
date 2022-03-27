@@ -3,6 +3,7 @@ import _ from 'lodash'
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
+import Vue from 'vue'
 
 const baseState = () => ({
     deploymentTemplate: {},
@@ -91,6 +92,12 @@ const mutations = {
 
     setContext(state, context) {
         state.context = context
+    },
+
+    templateUpdateProperty(state, {templateName, propertyName, propertyValue}) {
+        const template = state.resourceTemplates[templateName]
+        template.properties.find(prop => prop.name == propertyName).value = propertyValue
+        Vue.set(state.resourceTemplates, templateName, template)
     }
 };
 
@@ -378,7 +385,11 @@ const actions = {
             throw new Error(err.message);
         }
     },
-    updateProperty({state, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
+    updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
+
+        //if(state.resourceTemplates[templateName].value === propertyValue) return
+        if(getters.lookupCardPropertyValue(templateName, propertyName) === (propertyValue ?? null)) return
+        commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
@@ -498,6 +509,12 @@ const getters = {
         return function(card) {
             return getters.cardInputsAreValid(card) && getters.cardDependenciesAreValid(card);
         };
+    },
+    lookupCardPropertyValue(state) {
+        // TODO support attributes
+        return function(card, property) {
+            return state.resourceTemplates[card]?.properties?.find(prop => prop.name == property)?.value
+        }
     },
     getCurrentEnvironment(state, _getters, _, rootGetters) {
         return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
