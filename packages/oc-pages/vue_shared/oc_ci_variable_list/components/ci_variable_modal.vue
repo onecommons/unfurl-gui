@@ -221,7 +221,7 @@ export default {
         />
       </gl-form-group>
 
-      <div class="d-flex">
+      <!--div class="d-flex">
         <gl-form-group
           :label="__('Type')"
           label-for="ci-variable-type"
@@ -285,7 +285,7 @@ export default {
             }}</gl-link>
           </p>
         </gl-form-checkbox>
-      </gl-form-group>
+      </gl-form-group-->
     </form>
     <gl-collapse :visible="isTipVisible">
       <gl-alert
