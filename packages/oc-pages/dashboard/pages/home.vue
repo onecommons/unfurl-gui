@@ -35,7 +35,7 @@ const items = [
 */
 
 const fields = [
-    {key: 'application', textValue: textValueFromKeys('application.title', 'application.name'), label: 'Applications', s: 'Application'},
+    {key: 'application', textValue: textValueFromKeys('application.title', 'application.projectPath'), label: 'Applications', s: 'Application'},
     {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
     {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
     {key: 'type', groupBy(item) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type'},
@@ -119,10 +119,10 @@ export default {
                 create-link="/explore" />
             <!-- TODO figure out a better way to show stopped deployments -->
             <quantity-card
-                :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'stopped'}}"
-                :count="stoppedDeploymentsCount"
-                s="Stopped Deployment"
-                p="Stopped Deployments"
+                :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
+                :count="runningDeploymentsCount + stoppedDeploymentsCount"
+                s="Deployment"
+                p="Total Deployments"
                 color="#fff4f4"/>
         </div>
     </div>

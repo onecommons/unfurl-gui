@@ -58,6 +58,27 @@ export function undeploy(pipelinesPath, parameters, options) {
     )
 }
 
+export async function redirectToJobConsole({pipelineData}, options) {
+    // #!if false
+
+    const projectId = pipelineData.project.id
+    const pipelineId = pipelineData.id
+    const jobsPath = `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
+    const jobsData = (await axios.get(jobsPath))?.data
+    if(Array.isArray(jobsData)) {
+        const redirectTarget = jobsData[0]?.web_url || redirectTarget
+        if(options?.newTab) {
+            window.open(redirectTarget, '_blank')
+        } else {
+            return redirectTo(redirectTarget)
+        }
+    }
+    // TODO add a flash here?
+
+    // #!endif
+
+}
+
 export async function lookupPipelineJobs({projectId, pipelineId}) {
     const jobsPath = `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
     return (await axios.get(jobsPath))?.data

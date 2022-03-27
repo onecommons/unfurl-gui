@@ -81,11 +81,10 @@ const mutations = {
 
 const actions = {
 
-    async deployInto({rootGetters, getters, commit, dispatch}, parameters) {
+    async environmentTriggerPipeline({rootGetters, getters, commit, dispatch}, parameters) {
         const deployVariables = prepareVariables({
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
-            workflow: 'deploy'
         })
         const data = await triggerPipeline(
             rootGetters.pipelinesPath,
@@ -113,7 +112,12 @@ const actions = {
         await dispatch('commitPreparedMutations', {}, {root: true})
         return {pipelineData: data}
     },
-
+    deployInto({dispatch}, parameters) {
+        return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'deploy'})
+    },
+    undeployFrom({dispatch}, parameters) {
+        return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'undeploy'})
+    },
     async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
         commit('setUpdateObjectPath', 'environments.json', {root: true})

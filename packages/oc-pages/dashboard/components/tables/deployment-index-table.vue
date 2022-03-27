@@ -5,8 +5,8 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
-import {undeploy} from '../../../vue_shared/client_utils/pipelines'
 import {mapGetters, mapActions} from 'vuex'
+import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 
@@ -94,11 +94,19 @@ export default {
     },
     methods: {
         ...mapActions([
-            'deleteDeployment'
+            'deleteDeployment',
+            'deployInto',
+            'undeployFrom'
         ]),
-        deploy() { return this.deployInto(this.deploymentParameters) },
-        undeploy() { return undeploy( this.pipelinesPath, this.deploymentParameters) },
-        statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource.status) },
+        async deploy() {
+            //return await redirectToJobConsole(await this.deployInto(this.deploymentParameters), {newTab: true})
+            return await redirectToJobConsole(await this.deployInto(this.deploymentParameters))
+        },
+        async undeploy() {
+            //return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters), {newTab: true})
+            return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters))
+        },
+        statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
         resumeEditingLink(scope) {
             const 
                 application = scope.item.context.application,
@@ -171,7 +179,6 @@ export default {
             } else {
                 const templateName = deployment.deploymentTemplate
                 const template = this.getDeploymentDictionary(deployment.name, environment.name).DeploymentTemplate[templateName]
-                console.log({template, templateName})
                 return template?.projectPath
             }
         },
@@ -215,7 +222,6 @@ export default {
         }
     },
     mounted() {
-        console.log('mounted')
         const vm = this
         this.$refs.container.style.transition = 'none'
         this.transition = false
@@ -226,7 +232,6 @@ export default {
                     vm.transition = true
                     let el = document.querySelector(`#${vm.deploymentNameId(vm.$route.hash.slice(1))}`)
                     if(el) {
-                        console.log(el)
                         el.scrollIntoView()
                     }
                 },

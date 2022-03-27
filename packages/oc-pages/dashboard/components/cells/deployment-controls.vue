@@ -30,6 +30,9 @@ export default {
             const date = this.pipeline?.commit?.created_at
             return date && new Date(date)
         },
+        pipelineWorkflow() {
+            return this.pipeline?.variables?.WORKFLOW
+        },
         createdAtDate() { return this.createdAt?.toLocaleDateString() },
         createdAtTime() { return this.createdAt?.toLocaleTimeString() },
         createdAtText() {
@@ -47,14 +50,18 @@ export default {
         },
         isDeployed() {
             return this.deployment.__typename == 'Deployment' && this.deployment.statuses?.every(rt => {
-                return rt.status != 5 && rt.status != 3
+                return rt?.status != 5 && rt?.status != 3
             })
         }
 
     },
     methods: {
-        deleteDeployment() { this.$emit('deleteDeployment', this.deployment, this.environment) },
-        stopDeployment() { this.$emit('stopDeployment', this.deployment, this.environment) }
+        deleteDeployment() {
+          this.$emit('deleteDeployment', this.deployment, this.environment)
+        },
+        stopDeployment() {
+          this.$emit('stopDeployment', this.deployment, this.environment)
+        }
     },
     async mounted() {
         const projectId = this.deployPath?.projectId
@@ -92,7 +99,7 @@ export default {
     </div>
     <div style="height: 0;" v-if="createdAt">
         <div style="font-size: 0.95em; position: absolute; width: calc(100% - 1em); text-align: right; top: -2px;">
-            Started {{createdAtText}} <span v-if="job">(<a :href="job.web_url">Console</a>)</span>
+            {{__(pipelineWorkflow == 'undeploy'? 'Stopped': 'Created')}} {{createdAtText}} <span v-if="job">(<a :href="job.web_url">Console</a>)</span>
         </div>
     </div>
 </div>
