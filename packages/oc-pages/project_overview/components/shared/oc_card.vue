@@ -152,8 +152,8 @@ export default {
                             <gl-icon
                                 v-if="displayValidation"
                                 :size="14"
-                                :class="['gl-ml-3', cardIsValid(card)? 'icon-green': 'icon-red']"
-                                :name="cardIsValid(card)? 'check-circle-filled': 'warning-solid'"
+                                :class="['gl-ml-3', cardIsValid(card)? 'icon-green': '']"
+                                :name="cardIsValid(card)? 'check-circle-filled': 'status_preparing'"
                                 />
                             <gl-badge v-if="!isMobileLayout" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
@@ -249,9 +249,13 @@ export default {
     .card-toggle {
         margin-left: 0;
     }
+    .oc-card.primary {
+        margin-left: -1em;
+        margin-right: -1em;
+    }
 
     .oc-card >>> .gl-card-body {
-        padding-top: 0; padding-bottom: 0;
+        padding: 0
     }
     .oc-card.primary >>> .gl-card-footer {
         /* TODO move this into global css */

@@ -5,6 +5,8 @@ import {mapGetters, mapActions} from 'vuex'
 import {bus} from '../../bus'
 import { __ } from '~/locale';
 
+// TODO clean up dependency vs requirement in here!
+
 export default {
     name: 'Dependency',
     props: {
@@ -23,6 +25,7 @@ export default {
     computed: {
         ...mapGetters([
             'requirementMatchIsValid',
+            'cardIsValid',
             'resolveRequirementMatchTitle',
             'availableResourceTypesForRequirement',
             'getValidConnections',
@@ -74,8 +77,15 @@ export default {
         },
 
         requirementSatisfied(requirement) {
+            /*
             const result =  !!(requirement.constraint.min == 0 || requirement.status || this.requirementMatchIsValid(requirement))
             return result
+            */
+            return this.cardIsValid(requirement?.match)
+        },
+        requirementFilled(requirement) {
+            console.log(requirement)
+            return !!requirement?.match
         },
         canConnectServices() {
             return this.$route.name != 'templatePage'
@@ -96,15 +106,14 @@ export default {
                     {{ dependency.description}}
                 </div>
             </div>
-            <div v-if="isMobileLayout" class="ml-2 mr-2">
+            <div v-if="isMobileLayout" class="ml-2 mr-2 validation">
                 <gl-icon
-                    v-if="displayValidation"
+                    v-if="displayValidation && requirementFilled(dependency)"
                     :size="14"
                     :class="{
                             'icon-green': requirementSatisfied(dependency),
-                            'icon-red': !requirementSatisfied(dependency),
                             }"
-                    :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'warning-solid'"
+                    :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'status_preparing'"
                     />
                 <span v-if="requirementMatchIsValid(dependency)" class="text-break-word oc_resource-details">
 
@@ -120,15 +129,14 @@ export default {
         </div>
         <!-- TODO fix this -->
         <div v-if="!isMobileLayout"
-            class="table-section oc-table-section section-wrap text-truncate section-30 align_left">
+            class="table-section oc-table-section section-wrap text-truncate section-30 align_left validation">
             <gl-icon
-                v-if="displayValidation"
+                v-if="displayValidation && requirementFilled(dependency)"
                 :size="14"
                 :class="{
                     'icon-green': requirementSatisfied(dependency),
-                    'icon-red': !requirementSatisfied(dependency),
                 }"
-                :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'warning-solid'"
+                :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'status_preparing'"
             />
             <span v-if="requirementMatchIsValid(dependency)" class="text-break-word oc_resource-details">
 
@@ -186,3 +194,7 @@ export default {
         </div>
     </div>
 </template>
+<style scoped>
+.validation { display: flex; align-items: center; }
+.validation > * {margin: 0 0.1em;}
+</style>
