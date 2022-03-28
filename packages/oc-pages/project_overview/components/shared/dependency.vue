@@ -84,7 +84,6 @@ export default {
             return this.cardIsValid(requirement?.match)
         },
         requirementFilled(requirement) {
-            console.log(requirement)
             return !!requirement?.match
         },
         canConnectServices() {

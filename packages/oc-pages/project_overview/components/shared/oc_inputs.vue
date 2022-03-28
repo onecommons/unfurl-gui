@@ -16,6 +16,7 @@ const ComponentMap = {
   password: 'Password',
 };
 
+/*
 const ValidationFunctions = {
   string(input, value) {
     return !input.required || !!(value?.length)
@@ -34,6 +35,7 @@ function validateInput(input, value) {
   }
   return false
 }
+*/
 
 const SerializationFunctions = {
   number(input, value) {
@@ -146,21 +148,39 @@ export default {
     },
 
     form() {
-      return createForm({
+      const form = createForm({
         initialValues: this.initialFormValues,
         effects: () => {
           onFieldInputValueChange('*', async (field, ...args) => {
-            if(!field.modified) return
+            // I'm not sure this would work for autocomplete if we did on validate
+            // on the other hand if we check valid here, I'm not sure whether it's updated or not yet
+            // if(form.valid) this.triggerSave({...field.data, name: field.path.entire}, field.value);
             this.triggerSave({...field.data, name: field.path.entire}, field.value);
           })
         }
       })
+      form.subscribe(update => {
+
+        let status
+        if(form.errors?.length) {
+          status = 'error'
+        } else if (form.warnings?.length) {
+          status = 'warning'
+        } else if (form.valid) {
+          status = 'valid'
+        }
+        this.updateFieldValidation(
+          this.card, 
+          status
+        )
+      })
+      return form
     }
   },
 
   methods: {
     ...mapMutations([
-      'pushPreparedMutation', 'setInputValidStatus'
+      'pushPreparedMutation', 'setCardInputValidStatus'
     ]),
     ...mapActions([
       'updateProperty'
@@ -197,12 +217,11 @@ export default {
       });
     },
 
-    updateFieldValidation(field, value) {
-      this.setInputValidStatus({card: this.card, input: field, status: validateInput(field, value)})
+    updateFieldValidation(field, status) {
+      this.setCardInputValidStatus({card: this.card, status})
     },
 
     triggerSave: _.debounce(function preview(field, value) {
-      this.updateFieldValidation(field, value)
       const propertyValue = serializeInput(field, value)
       this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
     }, 200),
