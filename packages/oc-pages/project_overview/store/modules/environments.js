@@ -86,10 +86,24 @@ const actions = {
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
-        const data = await triggerPipeline(
-            rootGetters.pipelinesPath,
-            deployVariables,
-        )
+        let data
+        try {
+            data = await triggerPipeline(
+                rootGetters.pipelinesPath,
+                deployVariables,
+            )
+        } catch(e) {
+            console.error(e)
+        }
+        const pipeline = data?
+            {
+                id: data.id,
+                flags: data.flags,
+                commit: data.commit,
+                variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
+            } :
+            null
+
         commit('setUpdateObjectPath', 'environments.json', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit('pushPreparedMutation', () => {
@@ -98,13 +112,8 @@ const actions = {
                 patch: {
                     __typename: 'DeploymentPath',
                     environment: parameters.environmentName,
-                    projectId: data.project.id,
-                    pipeline: {
-                        id: data.id,
-                        flags: data.flags,
-                        commit: data.commit,
-                        variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
-                    }
+                    projectId: data?.project?.id,
+                    pipeline
                 },
                 target: parameters.deployPath
             }]

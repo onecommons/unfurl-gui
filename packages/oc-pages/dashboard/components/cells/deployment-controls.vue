@@ -43,7 +43,7 @@ export default {
             return 'at ' + this.createdAtTime
         },
         isDraft() {
-            return this.deployment.__typename == 'DeploymentTemplate'
+            return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
         },
         isUndeployed() {
             return this.deployment.__typename == 'Deployment' && !this.isDeployed
