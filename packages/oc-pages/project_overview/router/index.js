@@ -39,7 +39,7 @@ export default function createRouter(base) {
     router.beforeEach((to, from, next) => {
         if(!window.gon.current_username) {
             if(isPrivateRoute(to)) {
-                setTimeout( () => window.location.href = '/users/sign_in', 1)
+                setTimeout( () => window.location.href = '/users/sign_in?redirect_to_referer=yes', 1)
                 return false
             }
         }
