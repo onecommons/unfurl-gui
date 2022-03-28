@@ -53,12 +53,14 @@ export function getBlueprintJson(reposDir, project, runExport) {
 export function iterateProjects(reposDir) {
   const projects = []
   for (const repo of fs.readdirSync(reposDir)) {
+    if (repo == "unfurl-types")
+        continue
     const repoDir = path.join(reposDir, repo);
     if (!fs.statSync(repoDir).isDirectory())
         continue
     for (const project of fs.readdirSync(repoDir)) {
       if (!fs.statSync(path.join(repoDir, project)).isDirectory())
-          continue
+        continue
       if (project == USER_HOME_PROJECT)
         continue
       const projectPath = `${repo}/${project}`

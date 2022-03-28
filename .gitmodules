@@ -10,3 +10,6 @@
 [submodule "apollo-server/repos/testing/simple-blueprint"]
 	path = apollo-server/repos/testing/simple-blueprint
 	url = https://gitlab.com/onecommons/testing/simple-blueprint.git
+[submodule "apollo-server/repos/unfurl-types"]
+	path = apollo-server/repos/unfurl-types
+	url = https://gitlab.com/onecommons/unfurl-types
