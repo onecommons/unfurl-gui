@@ -10,14 +10,6 @@ export default {
         GlButton
     },
     props: {
-        loadingDeployment: {
-            type: Boolean,
-            required: true,
-        },
-        deployButton: {
-            type: Boolean,
-            required: true,
-        },
         deployStatus: {type: String, default: () => 'disabled'},
         saveStatus: {type: String, default: () => 'disabled'},
         saveDraftStatus: {type: String, default: () => 'hidden'},
