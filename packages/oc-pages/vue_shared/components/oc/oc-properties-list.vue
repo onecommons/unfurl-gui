@@ -25,7 +25,7 @@ export default {
         ...mapGetters([
         ]),
         _properties() {
-            const properties = this.card?.template?.properties || this.card?.properties || this.properties
+            const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
             return properties
         }
     },

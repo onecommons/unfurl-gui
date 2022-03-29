@@ -107,10 +107,17 @@ export default {
             return {}
         },
         shouldRenderOutputs() {
-            return this.renderOutputs && this.card.attributes
+            return this.renderOutputs && this.card.outputs?.length
         },
         shouldRenderInputs() {
             return this.renderInputs && this.card.properties?.length
+        },
+        shouldRenderAttributes() {
+            return (
+                !this.shouldRenderInputs &&
+                this.renderInputs && 
+                this.card.attributes?.length
+            )
         },
         requirements() {
             const requirements = this.getDisplayableDependencies(this.card.name).filter(dependency => (dependency?.constraint?.min || 0) > 0)
@@ -123,7 +130,7 @@ export default {
         shouldRenderRequirements() { return this.requirements?.length },
         shouldRenderExtras() {return this.extras?.length},
         shouldRenderTabs() {
-            return this.shouldRenderRequirements || this.shouldRenderInputs || this.shouldRenderExtras
+            return this.shouldRenderRequirements || this.shouldRenderInputs || this.shouldRenderExtras || this.shouldRenderAttributes || this.shouldRenderOutputs
         },
 
 
@@ -139,9 +146,15 @@ export default {
                 </div>
             </div>
         </oc-tab>
-        <oc-tab v-if="shouldRenderInputs" title="Inputs" :titleCount="(card.template && card.template.properties || this.card.properties || []).length">
+        <oc-tab v-if="shouldRenderInputs" title="Inputs" :titleCount="card.properties.length">
             <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
+        </oc-tab>
+        <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="card.attributes.length">
+            <oc-properties-list :container-style="propertiesStyle" :card="card" property="attributes" />
+        </oc-tab>
+        <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">
+            <oc-properties-list :container-style="propertiesStyle" :card="card" property="outputs" />
         </oc-tab>
         <oc-tab v-if="shouldRenderExtras" title="Extras" :titleCount="extras.length">
             <div class="row-fluid">
