@@ -32,6 +32,9 @@ const mutations = {
 
         state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
     },
+    setCardInputValidStatus(state, {card, status}) {
+        Vue.set(state.inputValidationStatus, card.name, status)
+    },
 
     setAvailableResourceTypes(state, resourceTypes) {
         state.availableResourceTypes = resourceTypes
@@ -386,7 +389,6 @@ const actions = {
         }
     },
     updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
-
         //if(state.resourceTemplates[templateName].value === propertyValue) return
         if(getters.lookupCardPropertyValue(templateName, propertyName) === (propertyValue ?? null)) return
         commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
@@ -488,12 +490,15 @@ const getters = {
     cardInputsAreValid(state) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
+            return state.inputValidationStatus[card.name] == 'valid'
+            /*
             if(!card?.properties?.length) return true;
             let validInputsCount;
             try {
                 validInputsCount = Object.keys(state.inputValidationStatus[card.name]).length;
             } catch { return false; }
             return card.properties.length == validInputsCount;
+            */
 
         };
     },

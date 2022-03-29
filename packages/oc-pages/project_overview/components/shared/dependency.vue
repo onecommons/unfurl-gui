@@ -1,6 +1,6 @@
 <script>
 import {GlIcon, GlButton} from '@gitlab/ui'
-import {DetectIcon} from '../../../vue_shared/oc-components'
+import {DetectIcon, StatusIcon} from '../../../vue_shared/oc-components'
 import {mapGetters, mapActions} from 'vuex'
 import {bus} from '../../bus'
 import { __ } from '~/locale';
@@ -21,6 +21,7 @@ export default {
     components: {
         GlIcon, GlButton,
         DetectIcon,
+        StatusIcon,
     },
     computed: {
         ...mapGetters([
@@ -30,7 +31,8 @@ export default {
             'availableResourceTypesForRequirement',
             'getValidConnections',
             'isMobileLayout',
-            'resolveResourceTypeFromAny'
+            'resolveResourceTypeFromAny',
+            'cardStatus'
         ])
 
     },
@@ -84,7 +86,6 @@ export default {
             return this.cardIsValid(requirement?.match)
         },
         requirementFilled(requirement) {
-            console.log(requirement)
             return !!requirement?.match
         },
         canConnectServices() {
