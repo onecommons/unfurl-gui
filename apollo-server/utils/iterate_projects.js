@@ -1,7 +1,7 @@
-import fs from 'fs'
-import path from 'path'
-import {execSync} from 'child_process'
-import {USER_HOME_PROJECT} from '../../src/gitlab-oc/vue_shared/util.mjs';
+const path = require('path');
+const fs = require('fs')
+const {execSync} = require('child_process')
+const USER_HOME_PROJECT = 'dashboard';
 
 function exportBlueprint(cwd, fullPath) {
   const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
@@ -24,7 +24,7 @@ function exportBlueprint(cwd, fullPath) {
   return true;
 }
 
-export function getBlueprintJson(reposDir, project, runExport) {
+function getBlueprintJson(reposDir, project, runExport) {
   let jsonFile = 'blueprint.json'
   let fullPath = path.join(reposDir, project, jsonFile);
   if (!fs.existsSync(fullPath)) {
@@ -50,7 +50,7 @@ export function getBlueprintJson(reposDir, project, runExport) {
   }
 }
 
-export function iterateProjects(reposDir) {
+function iterateProjects(reposDir) {
   const projects = []
   for (const repo of fs.readdirSync(reposDir)) {
     if (repo == "unfurl-types")
@@ -74,5 +74,4 @@ export function iterateProjects(reposDir) {
   return projects
 }
 
-//const REPOS_DIR = path.join(process.cwd(), '../repos')
-//console.log(iterateProjects(REPOS_DIR))
+module.exports = { iterateProjects, iterateProjects };

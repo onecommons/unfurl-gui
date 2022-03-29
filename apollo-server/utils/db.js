@@ -1,21 +1,30 @@
-import Lowdb from 'lowdb'
-import FileSync from 'lowdb/adapters/FileSync'
 import mkdirp from 'mkdirp'
 import fs from 'fs'
 import glob from 'glob'
 import { join, dirname, resolve, basename, extname } from 'path'
-import {iterateProjects} from './iterate_projects'
-import iterateEnvironments from './iterate_environments'
-
+export const db = {}; // XXX who is using this??
 const LIVE_DIR = resolve(__dirname, '../../live')
-const REPOS_DIR = resolve(LIVE_DIR, 'repos')
-mkdirp.sync(REPOS_DIR)
+const LIVE_REPOS_DIR = resolve(LIVE_DIR, 'repos')
+mkdirp.sync(LIVE_REPOS_DIR)
 
-export const db = new Lowdb(new FileSync(resolve(__dirname, '../../live/db.json')))
+const REPOS_DIR = resolve(__dirname, '../repos')
 
 export function resolveLiveRepoFile(repo, path) {
-  return resolve(REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
+  return resolve(LIVE_REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
 }
+export function readRepoFile(repo, path) {
+  const target = resolve(REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
+  console.log('read', target)
+  try {
+    return JSON.parse(
+      fs.readFileSync(target, 'utf-8')
+    )
+  } catch(e) {
+    if(!e.message.startsWith('ENOENT')) console.error(e.message)
+    return null
+  }
+}
+
 export function readLiveRepoFile(repo, path) {
   const target = resolveLiveRepoFile(repo, path)
   console.log('read', target)
@@ -39,26 +48,9 @@ export function writeLiveRepoFile(repo, path, _contents) {
   fs.writeFileSync(dest, contents)
 }
 
-const dataDir = resolve(__dirname, '../data')
-const projects = {}
-
-const JSON_EXT = '.json'
-for(const tld of fs.readdirSync(dataDir)) {
-  for(const f of fs.readdirSync(resolve(dataDir, tld))) {
-    if(extname(f) != JSON_EXT) continue
-    const payload = fs.readFileSync(resolve(dataDir, tld, f), 'utf-8')
-    projects[`${tld}/${basename(f, JSON_EXT)}`] = JSON.parse(payload)
-  }
-}
-
-for(const {projectPath, blueprint} of iterateProjects(resolve(__dirname, '../repos'))) {
-  projects[projectPath] = blueprint
-}
-
-const REPOS_SEED = resolve(__dirname, '../repos')
+const REPOS_SEED = resolve(__dirname, '../repos/demo')
 const RECREATE_EXTENSIONS = ['json', 'yaml']
 
-const environments = iterateEnvironments(REPOS_SEED);
 const files = {}
 
 // glob doesn't follow symlinked dirs by default to avoid cyclic links
@@ -71,37 +63,16 @@ for(const tld of fs.readdirSync(REPOS_SEED)) {
     }
   }
 }
-/*
-for(const [key, value] of Object.entries(projects)) {
-  files[key + '/unfurl.json'] = value
-}
-for(const [key, value] of Object.entries(environments)) {
-  files[key + '/environments.json'] = value
-}
-*/
 
-const unfurlYaml = fs.readFileSync(resolve(__dirname, '../repos/testing/dashboard/unfurl.yaml'), 'utf-8')
+const targetBase = join(LIVE_REPOS_DIR, "demo")
 if(!process.env.NO_FIXTURES) {
   for(const filePath in files) {
     const fileContents = files[filePath]
-    const targetDir = resolve(REPOS_DIR, dirname(filePath))
+    const targetDir = resolve(targetBase, dirname(filePath))
+    console.log(`possibly overwriting files in ${targetDir}, set NO_FIXTURES=1 to disable this.`)
     mkdirp.sync(targetDir)
-    fs.writeFileSync(resolve(REPOS_DIR, filePath), fileContents)
+    fs.writeFileSync(resolve(targetBase, filePath), fileContents)
   }
+} else {
+  console.log(`NO_FIXTURES is set, keeping files in ${REPOS_SEED}`)
 }
-
-// Seed an empty DB
-db.defaults({
-  messages: [],
-  accounts: [],
-  uploads: [],
-  projects,
-  environments,
-  users: {
-    "root": {
-      environments: [
-        { name: "production", cloud: "AWS" },
-        {name: "staging", cloud: "GCP"}
-      ]
-  }}
-}).write()

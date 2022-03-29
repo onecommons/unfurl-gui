@@ -11,10 +11,13 @@ see https://gitlab-org.gitlab.io/gitlab-ui/ and https://gitlab-org.gitlab.io/git
 gitlab-ui wraps https://bootstrap-vue.org/ which wraps bootstrap 4
 
 It also depends on https://portal-vue.linusb.org/ which we could use to build a vs-code like minimap of a view using http://asvd.github.io/syncscroll/ or similar.
-
 # Gotchas!
 
-* If the `apollo-server/unfurl.json` changed you will delete `live/db.json` so it is recreated with the new unfurl.json.
+* When the app is started it any blueprint projects found in "apollo-server/repos" will be made available to the app -- but you will have to type in the URL manually, e.g. http://localhost:8080/testing/simple-blueprint/.
+
+* If, during startup, the application blueprint's ensemble-template.yaml is newer than its unfurl.json it will automatically be re-exported and replaced.
+
+* The dashboard project that unfurl-gui uses as your dashboard (and when you deploy etc.) is in "live/repos/demo/dashboard/". Unless $NO_FIXTURES is set, starting yarn apollo:start will overwrite the contents of that directory with the contents of apollo-server/repos/$UNFURL_CLOUD_USERNAME/dashboard/ including its "environment.json" -- so you will lose any deployments you already created. (Where $UNFURL_CLOUD_USERNAME defaults to “demo”, which is symlinked to “user1")
 
 * If you change the graphql schema (`apollo-server/*.graphql`) you will need to regenerate the graphql and json files in `./graphql` with this command:
 
@@ -23,8 +26,6 @@ yarn apollo:schema:generate
 ```
 
 And then commit those changes. (The `graphql/template-strings` eslinter plugin requires those files.)
-
-
 
 ## Cypress tests
 Here is an example invocation for running Cypress tests interactively through gitlab_oc.  Most parameters are not required testing unfurl-gui on it's own.

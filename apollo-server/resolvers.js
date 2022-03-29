@@ -1,8 +1,7 @@
 import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
 import {join, resolve} from 'path'
-import {writeLiveRepoFile, readLiveRepoFile} from './utils/db'
-import {getBlueprintJson} from './utils/iterate_projects'
+import {writeLiveRepoFile, readLiveRepoFile, readRepoFile} from './utils/db'
 
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
 
@@ -22,7 +21,7 @@ function mergeTypes(json) {
   const resourceTypes = json["ResourceType"]
   const typesRepo = json.repositories && json.repositories.types && json.repositories.types.url
   if (typesRepo) {
-    const types = readLiveRepoFile("unfurl-types", 'unfurl-types.json')
+    const types = readRepoFile("unfurl-types", 'unfurl-types.json')
     // types overrides resourceTypes
     if (types) {
         Object.assign(resourceTypes, types)
@@ -39,7 +38,7 @@ export default {
   Query: {
   
     applicationBlueprint: (root, args, { db }) => {
-        return readLiveRepoFile(args.fullPath, 'unfurl.json')
+        return readRepoFile(args.fullPath, 'unfurl.json')
     },
 
     project(root, args, context) {

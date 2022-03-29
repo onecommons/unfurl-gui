@@ -1,5 +1,16 @@
 {
   "DeploymentEnvironment": {
+    "defaults": {
+      "connections": {},
+      "primary_provider": null,
+      "instances": {},
+      "repositories": {
+        "types": {
+          "url": "https://gitlab.com/onecommons/unfurl-types"
+        }
+      },
+      "name": "defaults"
+    },    
     "production-gcp": {
       "name": "production-gcp",
       "connections": {

@@ -1,3 +1,4 @@
+const { iterateProjects } = require('./apollo-server/utils/iterate_projects')
 const path = require('path');
 const fs = require('fs')
 
@@ -25,13 +26,8 @@ const projectPageBase = {
   ...unfurlGUIBase
 }
 
-try {
-  const liveDb = JSON.parse(fs.readFileSync('live/db.json', 'utf-8'))
-  for(const projectPath in liveDb.projects) {
-    projectPages[projectPath] = {...projectPageBase, projectPath}
-  }
-} catch(e) {
-  console.error('could not read live/db.json for html templates')
+for(const {projectPath, blueprint} of iterateProjects(path.resolve(__dirname, 'apollo-server/repos'))) {
+  projectPages[projectPath] = {...projectPageBase, projectPath}
 }
 
 module.exports = {
