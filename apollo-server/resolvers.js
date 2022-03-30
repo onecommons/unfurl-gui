@@ -30,7 +30,7 @@ function mergeTypes(json) {
     const types = getBlueprintJson("unfurl-types", files)
     // types overrides resourceTypes
     if (types) {
-        Object.assign(resourceTypes, types)
+        Object.assign(resourceTypes, types["ResourceType"])
         console.log("merged!")
     }
   }
