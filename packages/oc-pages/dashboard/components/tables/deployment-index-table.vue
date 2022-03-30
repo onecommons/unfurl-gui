@@ -278,7 +278,7 @@ export default {
                     context.deployment = item.context.deployment
                     context.application = item.context.application
                     context.deployPath = this.lookupDeployPath(context.deployment.name, context.environment.name)
-                    context.job = this.jobsByPipelineId[context.deployPath.pipeline.id]
+                    context.job = this.jobsByPipelineId[context.deployPath?.pipeline?.id]
                     context.projectPath = this.getHomeProjectPath
                     dict[itemKey] = new DeploymentItem(context)
                 }
@@ -346,14 +346,14 @@ export default {
             </template>
             <template #deployment="scope">
                 <div class="d-flex">
-                    <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex ml-2 mr-1 justify-content-center">
+                    <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex ml-2 mr-1 align-items-center">
                         <StatusIcon :size="16" v-if="!statuses(scope).length" :status="1" />
                         <StatusIcon :size="16" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
                     </div>
-                    <div v-else-if="hasDeployPath(scope)" class="d-flex justify-content-center">
+                    <div v-else-if="hasDeployPath(scope)" class="d-flex ml-2 mr-1 align-items-center">
                         <gl-icon name="pencil-square" :size="16" />
                     </div>
-                    <div v-else  class="d-flex justify-content-center">
+                    <div v-else  class="d-flex ml-2 mr-1 align-items-center">
                         <gl-icon name="stop" :size="16" />
                     </div>
 
