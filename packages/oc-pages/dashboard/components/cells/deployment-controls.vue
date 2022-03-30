@@ -63,18 +63,6 @@ export default {
           this.$emit('stopDeployment', this.deployment, this.environment)
         }
     },
-    async mounted() {
-        const projectId = this.deployPath?.projectId
-        const pipelineId = this.deployPath?.pipeline?.id
-        if(projectId && pipelineId) {
-            const jobs = await lookupPipelineJobs({projectId, pipelineId})
-            try {
-                this.job = jobs[0]
-            } catch(e) {}
-        }
-
-    },
-
 }
 </script>
 <template>
@@ -96,11 +84,6 @@ export default {
         </div>
         <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Undeploy')}} </gl-button>
         <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}} </gl-button>
-    </div>
-    <div style="height: 0;" v-if="createdAt">
-        <div style="font-size: 0.95em; position: absolute; width: calc(100% - 1em); text-align: right; top: -2px;">
-            {{__(pipelineWorkflow == 'undeploy'? 'Stopped': 'Created')}} {{createdAtText}} <span v-if="job">(<a :href="job.web_url">Console</a>)</span>
-        </div>
     </div>
 </div>
 </template>
