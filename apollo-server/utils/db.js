@@ -12,18 +12,6 @@ const REPOS_DIR = resolve(__dirname, '../repos')
 export function resolveLiveRepoFile(repo, path) {
   return resolve(LIVE_REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
 }
-export function readRepoFile(repo, path) {
-  const target = resolve(REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
-  console.log('read', target)
-  try {
-    return JSON.parse(
-      fs.readFileSync(target, 'utf-8')
-    )
-  } catch(e) {
-    if(!e.message.startsWith('ENOENT')) console.error(e.message)
-    return null
-  }
-}
 
 export function readLiveRepoFile(repo, path) {
   const target = resolveLiveRepoFile(repo, path)
