@@ -1,11 +1,12 @@
 const path = require('path');
 const fs = require('fs')
 const {execSync} = require('child_process')
-const USER_HOME_PROJECT = 'dashboard';
+const USER_HOME_PROJECT = 'dashboard'
+const REPOS_DIR = path.resolve(__dirname, '../repos')
 
-function exportBlueprint(cwd, fullPath) {
+function exportBlueprint(cwd, fullPath, ensemble) {
   const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
-  const cmd = `${UNFURL_CMD} --home '' export --format blueprint ensemble-template.yaml`
+  const cmd = `${UNFURL_CMD} --home '' export --format blueprint ${ensemble}`
   console.log(cmd)
   let out;
   try {
@@ -24,19 +25,30 @@ function exportBlueprint(cwd, fullPath) {
   return true;
 }
 
-function getBlueprintJson(reposDir, project, runExport) {
+function getBlueprintJson(project, options) {
+  const reposDir = REPOS_DIR
+  const files = {
+    src: 'ensemble-template.yaml',
+    dst: 'unfurl.json',
+    ensemble: 'ensemble-template.yaml'
+  }
+  if (options) {
+    Object.assign(files, options)
+  }
   let jsonFile = 'blueprint.json'
   let fullPath = path.join(reposDir, project, jsonFile);
   if (!fs.existsSync(fullPath)) {
-    jsonFile = 'unfurl.json'
+    jsonFile = files.dst
     fullPath = path.join(reposDir, project, jsonFile);
   }
-  const ensemblePath = path.join(reposDir, project, 'ensemble-template.yaml');
+  const ensemblePath = path.join(reposDir, project, files.src);
   if (fs.existsSync(ensemblePath)) {
     const ensembleStat = fs.statSync(ensemblePath);
     const jsonMtime = fs.existsSync(fullPath) ? fs.statSync(fullPath).mtimeMs : 0;
     if (ensembleStat.mtimeMs > jsonMtime) {
-      exportBlueprint(path.join(reposDir, project), fullPath)
+      exportBlueprint(path.join(reposDir, project), fullPath, files.ensemble)
+    } else {
+      console.log(`${ensemblePath} didn't change, keeping ${fullPath}`)
     }
   }
   try {
@@ -50,7 +62,8 @@ function getBlueprintJson(reposDir, project, runExport) {
   }
 }
 
-function iterateProjects(reposDir) {
+function iterateProjects() {
+  const reposDir = REPOS_DIR;
   const projects = []
   for (const repo of fs.readdirSync(reposDir)) {
     if (repo == "unfurl-types")
@@ -64,7 +77,7 @@ function iterateProjects(reposDir) {
       if (project == USER_HOME_PROJECT)
         continue
       const projectPath = `${repo}/${project}`
-      const blueprint = getBlueprintJson(reposDir, projectPath, true)
+      const blueprint = getBlueprintJson(projectPath)
       if (blueprint) {
         console.log( 'adding repo', projectPath)
         projects.push({ projectPath, blueprint })
@@ -74,4 +87,4 @@ function iterateProjects(reposDir) {
   return projects
 }
 
-module.exports = { iterateProjects, iterateProjects };
+module.exports = { iterateProjects, getBlueprintJson };

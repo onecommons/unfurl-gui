@@ -26,7 +26,7 @@ const projectPageBase = {
   ...unfurlGUIBase
 }
 
-for(const {projectPath, blueprint} of iterateProjects(path.resolve(__dirname, 'apollo-server/repos'))) {
+for(const {projectPath, blueprint} of iterateProjects()) {
   projectPages[projectPath] = {...projectPageBase, projectPath}
 }
 
