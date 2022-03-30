@@ -4,7 +4,7 @@ import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
 
 
@@ -86,13 +86,14 @@ const actions = {
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
-        let data
+        let data, error
         try {
             data = await triggerPipeline(
                 rootGetters.pipelinesPath,
                 deployVariables,
             )
         } catch(e) {
+            error = e
             console.error(e)
         }
         const pipeline = data?
@@ -119,7 +120,7 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
-        return {pipelineData: data}
+        return {pipelineData: data, error}
     },
     deployInto({dispatch}, parameters) {
         return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'deploy'})
@@ -223,7 +224,7 @@ const actions = {
         catch(e){
             console.error('Could not fetch project environments', e)
             if(window.gon.current_username) {
-                createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
+                createFlash({ projectPath: fullPath, message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment'});
             }
             environments = []
 

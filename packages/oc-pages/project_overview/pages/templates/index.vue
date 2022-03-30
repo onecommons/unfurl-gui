@@ -2,7 +2,7 @@
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
@@ -15,7 +15,7 @@ import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from '../../bus';
 import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
-
+import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
 
 
 export default {
@@ -45,8 +45,7 @@ export default {
       createNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
-      loadingDeployment: false,
-      deployButton: false,
+      triggeredDeployment: false,
       requirementTemp: {},
       resourceName: '',
       userEditedResourceName: false,
@@ -138,6 +137,7 @@ export default {
       }
     },
     deployStatus() {
+      if(this.triggeredDeployment) return 'disabled'
       if(this.$route.name != 'deploymentDraftPage') return 'hidden'
       return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
       /*
@@ -377,7 +377,7 @@ export default {
 
       } catch (e) {
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        createFlash({ message: e.message, type: FLASH_TYPES.ALERT});
         this.failedToLoad = true;
       } finally {
         this.activeSkeleton = false;
@@ -428,10 +428,9 @@ export default {
 
     async triggerDeployment() {
       try {
-        this.deployButton = false;
-        this.loadingDeployment = true;
+        this.triggeredDeployment = true;
         await this.triggerSave();
-        const {pipelineData} = await this.deployInto({
+        const {pipelineData, error} = await this.deployInto({
           environmentName: this.$route.params.environment,
           projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
           deployPath: this.deploymentDir,
@@ -439,32 +438,23 @@ export default {
           deploymentBlueprint: this.$route.query.ts
         })
 
-        createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
-        let redirectTarget = `${this.pipelinesPath}/${pipelineData.id}`
-
-        // #!if false
-
-        const projectId = pipelineData.project.id
-        const pipelineId = pipelineData.id
-        const jobsPath = `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
-        const jobsData = (await axios.get(jobsPath))?.data
-        if(Array.isArray(jobsData)) {
-          redirectTarget = jobsData[0]?.web_url || redirectTarget
+        if(error) {
+          throw new Error(error.message)
         }
 
-        // #!endif
+        if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
         const query = {...this.$route.query}
         delete query.ts
         this.$router.replace({query})
-        return redirectTo(redirectTarget);
+        if(! redirectToJobConsole() && pipelineData?.id) {
+          return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
+        }
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];
         const [error] = errors;
-        this.deployButton = true;
-        this.loadingDeployment = false;
-        return createFlash({ message: error, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts });
+        return createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
       }
     },
 
@@ -641,8 +631,7 @@ export default {
 
       <!-- Buttons -->
       <template-buttons 
-            :loading-deployment="loadingDeployment"
-            :deploy-button="deployButton"
+            :loading-deployment="triggeredDeployment"
             :save-status="saveStatus"
             :save-draft-status="saveDraftStatus"
             :delete-status="deleteStatus"

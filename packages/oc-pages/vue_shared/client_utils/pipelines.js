@@ -72,7 +72,9 @@ export async function redirectToJobConsole({pipelineData}, options) {
         } else {
             return redirectTo(redirectTarget)
         }
+
     }
+    return false
     // TODO add a flash here?
 
     // #!endif
