@@ -97,7 +97,7 @@ export default {
         ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
 
         badgeHeaderText() {
-            const result = this.$props.badgeHeader.text || this.getCardType(this.card)
+            const result = this.$props.badgeHeader.text || this.getCardType(this.card)?.title
             return result
         }
 

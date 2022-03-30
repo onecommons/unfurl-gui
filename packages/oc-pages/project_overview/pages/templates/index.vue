@@ -439,7 +439,7 @@ export default {
         })
 
         if(error) {
-          throw new Error(error.message)
+          throw new Error(error)
         }
 
         if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
@@ -447,7 +447,7 @@ export default {
         const query = {...this.$route.query}
         delete query.ts
         this.$router.replace({query})
-        if(! redirectToJobConsole() && pipelineData?.id) {
+        if(! redirectToJobConsole({pipelineData}) && pipelineData?.id) {
           return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
         }
       } catch (err) {

@@ -1,15 +1,6 @@
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
-        /*
-        this.deployment = context?.deployment
-        this.application = context?.application
-        this.environment = context?.environment
-        this.deployPath = context?.deployPath
-        this.job = context?.job
-        projectPath
-
-        */
     }
 
     get pipeline() {
@@ -40,6 +31,7 @@ export default class DeploymentItem {
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
     get createdAtText() {
+        if(!this.createdAt) return 
         const today = (new Date(Date.now())).getDate() 
         const workflow = this.pipelineWorkflow == 'undeploy'? 'Undeployed': 'Deployed'
         if(this.createdAt.getDate() != today) {

@@ -87,14 +87,13 @@ const actions = {
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
         let data, error
-        try {
-            data = await triggerPipeline(
-                rootGetters.pipelinesPath,
-                deployVariables,
-            )
-        } catch(e) {
-            error = e
-            console.error(e)
+        data = await triggerPipeline(
+            rootGetters.pipelinesPath,
+            deployVariables,
+        )
+        if(error = data?.errors) {
+            return {pipelineData: data, error}
+
         }
         const pipeline = data?
             {
@@ -120,7 +119,7 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
-        return {pipelineData: data, error}
+        return {pipelineData: data}
     },
     deployInto({dispatch}, parameters) {
         return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'deploy'})
