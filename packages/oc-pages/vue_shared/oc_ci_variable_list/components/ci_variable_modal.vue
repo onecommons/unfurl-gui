@@ -221,7 +221,7 @@ export default {
         />
       </gl-form-group>
 
-      <!--div class="d-flex">
+      <div class="d-none">
         <gl-form-group
           :label="__('Type')"
           label-for="ci-variable-type"
@@ -247,7 +247,7 @@ export default {
         </gl-form-group>
       </div>
 
-      <gl-form-group :label="__('Flags')" label-for="ci-variable-flags">
+      <gl-form-group class="d-none" :label="__('Flags')" label-for="ci-variable-flags">
         <gl-form-checkbox
           v-model="protected_variable"
           class="mb-0"
@@ -285,7 +285,7 @@ export default {
             }}</gl-link>
           </p>
         </gl-form-checkbox>
-      </gl-form-group-->
+      </gl-form-group>
     </form>
     <gl-collapse :visible="isTipVisible">
       <gl-alert
