@@ -28,6 +28,21 @@ export default class DeploymentItem {
         }
     }
 
+    get jobStatus() {
+        return this.job?.status?.toLowerCase()
+    }
+    
+    get jobStatusMessage() {
+        switch(this.jobStatus) {
+            case 'canceled':
+                return '(Canceledk)'
+            case 'failed':
+                return '(Failed)'
+            default:
+                return ''
+        }
+    }
+
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
     get createdAtText() {
@@ -46,8 +61,8 @@ export default class DeploymentItem {
         return this.deployment.__typename == 'Deployment' && !this.isDeployed
     }
     get isDeployed() {
-        return this.deployment.__typename == 'Deployment' && this.deployment.statuses?.every(rt => {
-            return rt?.status != 5 && rt?.status != 3
+        return this.deployment.__typename == 'Deployment' && (this.deployment.statuses?.length ?? 0) > 0 && this.deployment.statuses.every(rt => {
+            return rt?.status && rt.status != 5 && rt.status != 3 && rt.status != 4
         })
     }
 }

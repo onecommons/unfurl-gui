@@ -193,6 +193,10 @@ export default {
             this.intent = 'undeploy'
             this.target = {deployment, environment}
         },
+        onIntentToStart(deployment, environment) {
+            this.intent = 'deploy'
+            this.target = {deployment, environment}
+        },
         hasDeployPath(scope) {
             return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
         },
@@ -262,6 +266,8 @@ export default {
                     return `Are you sure you want to delete ${targetTitle}?`
                 case 'undeploy':
                     return `Are you sure you want to undeploy ${targetTitle}? It will not be deleted and you will be able to redeploy at any time.`
+                case 'deploy':
+                    return `Deploy ${targetTitle}?`
                 default: return ''
             }
         },
@@ -353,8 +359,8 @@ export default {
                     <div v-else-if="hasDeployPath(scope)" class="d-flex ml-2 mr-1 align-items-center">
                         <gl-icon name="pencil-square" :size="16" />
                     </div>
-                    <div v-else  class="d-flex ml-2 mr-1 align-items-center">
-                        <gl-icon name="stop" :size="16" />
+                    <div v-else class="d-flex ml-2 mr-1 align-items-center">
+                        <gl-icon :name="`status_${deploymentItem(scope, 'jobStatus')}`" :size="16" />
                     </div>
 
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
@@ -387,7 +393,7 @@ export default {
                     <div style="height: 0;" v-if="deploymentItem(scope, 'createdAt')">
                         <div style="font-size: 0.95em; position: absolute; top: -2px;">
                             <span v-if="deploymentItem(scope, 'consoleLink')">
-                                <a :href="deploymentItem(scope, 'consoleLink')">View Job</a> /
+                                <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
                                 <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
                             </span>
                         </div>
@@ -398,7 +404,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
             </template>
 
         </table-component>

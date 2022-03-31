@@ -49,8 +49,8 @@ export default {
             return this.deployment.__typename == 'Deployment' && !this.isDeployed
         },
         isDeployed() {
-            return this.deployment.__typename == 'Deployment' && this.deployment.statuses?.every(rt => {
-                return rt?.status != 5 && rt?.status != 3
+            return this.deployment.__typename == 'Deployment' && (this.deployment.statuses?.length ?? 0) > 0 && this.deployment.statuses.every(rt => {
+                return rt?.status && rt.status != 5 && rt.status != 3 && rt.status != 4
             })
         }
 
@@ -61,37 +61,40 @@ export default {
         },
         stopDeployment() {
           this.$emit('stopDeployment', this.deployment, this.environment)
+        },
+        startDeployment() {
+          this.$emit('startDeployment', this.deployment, this.environment)
         }
+
     },
 }
 </script>
 <template>
 <div class="deployment-controls-outer">
     <div v-if="environment && deployment && application" class="deployment-controls">
-        <div class="external-link-container">
-            <gl-button v-if="isDraft" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href" style="background-color: #eee">
-                <gl-icon name="external-link"/>
-                {{__('Resume')}}
-            </gl-button>
-            <gl-button v-else-if="isUndeployed" variant="confirm" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href">
-                <gl-icon name="upload"/>
-                {{__('Deploy')}}
-            </gl-button>
-            <gl-button v-else-if="deployment.url" target="_blank" rel="noopener noreferrer" :href="deployment.url" style="background-color: #eee">
-                <gl-icon name="external-link"/> 
-                {{__('Open')}}
-            </gl-button>
-        </div>
-        <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Undeploy')}} </gl-button>
-        <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}} </gl-button>
+        <gl-button v-if="isDeployed && deployment.url" target="_blank" rel="noopener noreferrer" :href="deployment.url" style="background-color: #eee">
+            <gl-icon name="external-link"/> 
+            {{__('Open')}}
+        </gl-button>
+        <gl-button v-if="isDraft" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href" style="background-color: #eee">
+            <gl-icon name="external-link"/>
+            {{__('Edit Draft')}}
+        </gl-button>
+        <gl-button v-else-if="!isDeployed" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href" style="background-color: #eee">
+            <gl-icon name="external-link"/>
+            {{__('Edit Deployment')}}
+        </gl-button>
+        <gl-button v-if="isUndeployed" @click="startDeployment" variant="confirm"> <gl-icon name="upload"/> {{__('Deploy')}} </gl-button>
+        <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Undeploy')}}</gl-button>
+        <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}}</gl-button>
     </div>
 </div>
 </template>
 <style scoped>
     
 .deployment-controls >>> .gl-button {
-    width: 8em;
+    min-width: 7em;
 }
-.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; width: 21.5em; margin: 0 1em;}
-.deployment-controls > * { display: flex;}
+.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
+.deployment-controls > * { display: flex; margin: 0 0.25em;}
 </style>
