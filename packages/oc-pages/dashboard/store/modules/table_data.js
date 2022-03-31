@@ -52,6 +52,13 @@ const actions = {
                 rootGetters.resolveDeploy
                 if(!deployment) continue
                 const i = ++iterationCounter
+                deployment.resources = deployment.resources.map(r => {
+                    if(typeof r == 'string') {
+                        return rootGetters.resolveResource(r)
+                    } else {
+                        return r
+                    }
+                })
                 deployment.statuses = [deployment.resources.find(resource => resource?.name == deployment.primary)]
                 if(!deployment.statuses[0]) deployment.statuses.pop()
                 deployment.isStopped = deployment.resources.some(resource => resource.state == 8)

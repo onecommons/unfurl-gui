@@ -1,6 +1,4 @@
 <script>
-import {GlTabs} from '@gitlab/ui'
-import OcTab from '../../vue_shared/components/oc/oc-tab.vue'
 import DeploymentsIndexTable from '../components/tables/deployment-index-table.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {mapGetters} from 'vuex'
@@ -9,7 +7,7 @@ import {__} from '~/locale'
 
 
 export default {
-    components: {GlTabs, DashboardBreadcrumbs, OcTab, DeploymentsIndexTable},
+    components: {DashboardBreadcrumbs, DeploymentsIndexTable},
     data() {
         const query = this.$route.query
         const show = query?.show
@@ -67,16 +65,6 @@ export default {
 <template>
     <div>
       <dashboard-breadcrumbs :items="breadcrumbItems" />
-      <gl-tabs v-model="currentTab">
-        <oc-tab title="All" :titleCount="deploymentsCount">
-            <deployments-index-table :items="deployments"/>
-        </oc-tab>
-        <oc-tab title="Running" :titleCount="runningDeploymentsCount">
-            <deployments-index-table :items="runningDeployments"/>
-        </oc-tab>
-        <oc-tab title="Stopped" :titleCount="stoppedDeploymentsCount">
-            <deployments-index-table :items="stoppedDeployments"/>
-        </oc-tab>
-    </gl-tabs>
+      <deployments-index-table tabs :items="deployments"/>
     </div>
 </template>
