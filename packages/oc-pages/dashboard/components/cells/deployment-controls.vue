@@ -1,7 +1,8 @@
 <script>
-import {GlIcon, GlButton} from '@gitlab/ui'
+import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
+import ControlButtons from './deployment-controls/control-buttons.vue'
 export default {
     props: {
         resumeEditingLink: Object,
@@ -13,7 +14,10 @@ export default {
         }
     },
     components: {
-        GlIcon, GlButton
+        GlIcon,
+        GlButton,
+        GlDropdown,
+        ControlButtons
     },
     computed: {
         ...mapGetters([
@@ -52,8 +56,24 @@ export default {
             return this.deployment.__typename == 'Deployment' && (this.deployment.statuses?.length ?? 0) > 0 && this.deployment.statuses.every(rt => {
                 return rt?.status && rt.status != 5 && rt.status != 3 && rt.status != 4
             })
+        },
+        controlButtons() {
+            const result = []
+            if(this.isDeployed && this.deployment?.url) result.push('open')
+            if(this.isDraft) result.push('edit-draft')
+            else if(!this.isDeployed) result.push('edit-deployment')
+            else result.push('view-deployment')
+            //if(this.isUndeployed) result.push('deploy')
+            if(this.isDeployed) result.push('teardown')
+            result.push('delete')
+            return result
+        },
+        primaryControlButtons() {
+            return this.controlButtons.slice(0,1)
+        },
+        contextMenuControlButtons() {
+            return this.controlButtons.slice(1)
         }
-
     },
     methods: {
         deleteDeployment() {
@@ -64,37 +84,43 @@ export default {
         },
         startDeployment() {
           this.$emit('startDeployment', this.deployment, this.environment)
-        }
+        },
 
     },
 }
 </script>
 <template>
 <div class="deployment-controls-outer">
-    <div v-if="environment && deployment && application" class="deployment-controls">
-        <gl-button v-if="isDeployed && deployment.url" target="_blank" rel="noopener noreferrer" :href="deployment.url" style="background-color: #eee">
-            <gl-icon name="external-link"/> 
-            {{__('Open')}}
-        </gl-button>
-        <gl-button v-if="isDraft" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href" style="background-color: #eee">
-            <gl-icon name="external-link"/>
-            {{__('Edit Draft')}}
-        </gl-button>
-        <gl-button v-else-if="!isDeployed" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href" style="background-color: #eee">
-            <gl-icon name="external-link"/>
-            {{__('Edit Deployment')}}
-        </gl-button>
-        <gl-button v-if="isUndeployed" @click="startDeployment" variant="confirm"> <gl-icon name="upload"/> {{__('Deploy')}} </gl-button>
-        <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Undeploy')}}</gl-button>
-        <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}}</gl-button>
+    <div class="deployment-controls">
+        <control-buttons 
+         :deployment="deployment"
+         :environment="environment"
+         :resume-editing-target="$router.resolve(resumeEditingLink.to).href"
+         :control-buttons="primaryControlButtons"
+         @deleteDeployment="deleteDeployment"
+         @stopDeployment="stopDeployment"
+         @startDeployment="startDeployment"
+        />
+        <gl-dropdown v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret>
+            <template #button-content>
+                <gl-icon style="color: black" name="ellipsis_v" :size="24" class="p-1"/>
+            </template>
+            <control-buttons
+             :deployment="deployment"
+             :environment="environment"
+             :resume-editing-target="$router.resolve(resumeEditingLink.to).href"
+             :control-buttons="contextMenuControlButtons"
+             component="gl-dropdown-item"
+             @deleteDeployment="deleteDeployment"
+             @stopDeployment="stopDeployment"
+             @startDeployment="startDeployment"
+            />
+        </gl-dropdown>
     </div>
 </div>
 </template>
 <style scoped>
     
-.deployment-controls >>> .gl-button {
-    min-width: 7em;
-}
 .deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
 .deployment-controls > * { display: flex; margin: 0 0.25em;}
 </style>

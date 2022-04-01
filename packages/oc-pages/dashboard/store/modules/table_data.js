@@ -30,12 +30,14 @@ const actions = {
         const context = {}
         function pushContext(iterationCounter, i) {
             if(i == iterationCounter) {
-                items.push(_.cloneDeep({...context, context}))
+                const item = {...context, context: {...context}} 
+                items.push(item)
             }
         }
         let iterationCounter = 0
 
         for(const environment of rootGetters.getEnvironments) {
+            Object.freeze(environment)
             context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
             environments += 1

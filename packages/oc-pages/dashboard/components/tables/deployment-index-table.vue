@@ -403,15 +403,17 @@ export default {
             variables: {fullPath: this.getHomeProjectPath}
         })
 
+        const newJobsByPipelineId = {}
         for(const pipeline of result.data.project.pipelines.nodes || []) {
             const pipelineId = pipeline.id.split('/').pop()
             for(const job of pipeline.jobs.nodes) {
                 const jobId = job.id.split('/').pop()
                 const status = job.status
 
-                Vue.set(this.jobsByPipelineId, pipelineId, {id: jobId, status})
+                newJobsByPipelineId[pipelineId] = Object.freeze({id: jobId, status})
             }
         }
+        this.jobsByPipelineId = newJobsByPipelineId
     },
     tabFilters
 }
