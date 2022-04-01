@@ -23,6 +23,7 @@ export default function createRouter() {
     });
 
 
+    router.name = 'dashboard'
 
     /*
     router.beforeEach((to, from, next) => {

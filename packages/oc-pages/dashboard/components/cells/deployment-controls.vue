@@ -5,7 +5,8 @@ import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 export default {
     props: {
-        resumeEditingLink: Object,
+        resumeEditingLink: [Object, String],
+        viewDeploymentLink: [Object, String],
         scope: Object,
     },
     data() {
@@ -73,6 +74,16 @@ export default {
         },
         contextMenuControlButtons() {
             return this.controlButtons.slice(1)
+        },
+        resumeEditingTarget() {
+            return typeof this.resumeEditingLink == 'string'?
+                this.resumeEditingLink:
+                this.$router.resolve(this.resumeEditingLink.to).href
+        },
+        viewDeploymentTarget() {
+            return typeof this.viewDeploymentLink == 'string'?
+                this.viewDeploymentLink:
+                this.$router.resolve(this.viewDeploymentLink.to).href
         }
     },
     methods: {
@@ -85,7 +96,6 @@ export default {
         startDeployment() {
           this.$emit('startDeployment', this.deployment, this.environment)
         },
-
     },
 }
 </script>
@@ -95,7 +105,8 @@ export default {
         <control-buttons 
          :deployment="deployment"
          :environment="environment"
-         :resume-editing-target="$router.resolve(resumeEditingLink.to).href"
+         :view-deployment-target="viewDeploymentTarget"
+         :resume-editing-target="resumeEditingTarget"
          :control-buttons="primaryControlButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
@@ -108,7 +119,8 @@ export default {
             <control-buttons
              :deployment="deployment"
              :environment="environment"
-             :resume-editing-target="$router.resolve(resumeEditingLink.to).href"
+             :resume-editing-target="resumeEditingTarget"
+             :view-deployment-target="viewDeploymentTarget"
              :control-buttons="contextMenuControlButtons"
              component="gl-dropdown-item"
              @deleteDeployment="deleteDeployment"

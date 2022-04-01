@@ -5,6 +5,7 @@ export default {
         deployment: Object,
         environment: Object,
         resumeEditingTarget: String,
+        viewDeploymentTarget: String,
         controlButtons: Array,
         component: {
             type: [String, Object],
@@ -23,7 +24,6 @@ export default {
         startDeployment() {
             this.$emit('startDeployment', this.deployment, this.environment)
         },
-
     }
 }
 </script>
@@ -37,7 +37,7 @@ export default {
         <gl-icon name="pencil-square"/>
         {{__('Edit Draft')}}
     </component>
-    <component :is='component' v-if="hasButton('view-deployment')">
+    <component :is='component' v-if="hasButton('view-deployment')" :href="viewDeploymentTarget" target="_blank" rel="noopener noreferer" style="background-color: #eee">
         <gl-icon name="external-link"/>
         {{__('View Deployment')}}
     </component>

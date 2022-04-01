@@ -121,7 +121,7 @@ export default {
             <quantity-card
                 :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
                 :count="totalDeploymentsCount"
-                s="Deployment"
+                s="Total Deployment"
                 p="Total Deployments"
                 color="#fff4f4"/>
         </div>
