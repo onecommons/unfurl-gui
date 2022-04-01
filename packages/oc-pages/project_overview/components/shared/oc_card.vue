@@ -114,7 +114,7 @@ export default {
         },
 
         getLegend(title) {
-            return `Are you sure you want to delete <b>${title}</b> ? Deleting <b>${title}</b> might affect other (nodes ?) which are linked to it.`;
+            return `Are you sure you want to delete <b>${title}</b>? Deleting <b>${title}</b> might affect other resources which are linked to it.`;
         },
 
         adaptWidth() {
