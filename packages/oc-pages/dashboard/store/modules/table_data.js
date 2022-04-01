@@ -2,7 +2,7 @@ import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 import _ from 'lodash'
 const state = {
     loaded: false,
-    counters: {deployments: 0, applications: 0, environments: 0, stoppedDeployments: 0},
+    counters: {deployments: 0, applications: 0, environments: 0, totalDeployments: 0},
     items: []
 }
 const mutations = {
@@ -24,18 +24,20 @@ const actions = {
         let deployments = 0
         let applications = 0 
         let environments = 0 
-        let stoppedDeployments = 0
+        let totalDeployments = 0
         let applicationNames = {}
 
         const context = {}
         function pushContext(iterationCounter, i) {
             if(i == iterationCounter) {
-                items.push(_.cloneDeep({...context, context}))
+                const item = {...context, context: {...context}} 
+                items.push(item)
             }
         }
         let iterationCounter = 0
 
         for(const environment of rootGetters.getEnvironments) {
+            Object.freeze(environment)
             context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
             environments += 1
@@ -44,18 +46,28 @@ const actions = {
             context.environmentName = environmentName
             for(const deploymentDict of environment.deployments) {
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
-                if(!deploymentDict.Deployment ) continue
+                let deployment
                 dispatch('useProjectState', {root: _.cloneDeep(deploymentDict)})
-                const deployment = {...rootGetters.getDeployment}
-                const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(deploymentDict.DeploymentTemplate)[0]
-                deployment.projectPath = dt?.projectPath
-                rootGetters.resolveDeploy
-                if(!deployment) continue
+                if(deploymentDict.Deployment) {
+                    deployment = {...rootGetters.getDeployment}
+                    const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(deploymentDict.DeploymentTemplate)[0]
+                    deployment.projectPath = dt?.projectPath
+                } else {
+                    deployment = Object.values(deploymentDict.DeploymentTemplate)[0]
+                }
                 const i = ++iterationCounter
+                deployment.resources = deployment.resources?.map(r => {
+                    if(typeof r == 'string') {
+                        return rootGetters.resolveResource(r)
+                    } else {
+                        return r
+                    }
+                }) || []
                 deployment.statuses = [deployment.resources.find(resource => resource?.name == deployment.primary)]
                 if(!deployment.statuses[0]) deployment.statuses.pop()
-                deployment.isStopped = deployment.resources.some(resource => resource.state == 8)
-                if(deployment.isStopped) {stoppedDeployments++} else {deployments++}
+                deployment.isStopped = deployment.resources.length == 0 || deployment.resources.some(resource => resource?.status != 1)
+                if(!deployment.isStopped) deployments++
+                totalDeployments++
                 const application = {...rootGetters.getApplicationBlueprint};
                 application.projectPath = deployment.projectPath
                 applicationNames[application.name] = true
@@ -79,7 +91,7 @@ const actions = {
         applications = Object.keys(applicationNames).length
 
         commit('setDashboardItems', items)
-        commit('setDashboardCounters', {deployments, applications, environments, stoppedDeployments})
+        commit('setDashboardCounters', {deployments, applications, environments, totalDeployments})
         commit('setDashboardLoaded', true)
     }
 }
@@ -88,7 +100,7 @@ const getters = {
     isDashboardLoaded(state) {return state.loaded},
     getDashboardItems(state) {return state.items},
     runningDeploymentsCount(state) {return state.counters.deployments},
-    stoppedDeploymentsCount(state) {return state.counters.stoppedDeployments},
+    totalDeploymentsCount(state) {return state.counters.totalDeployments},
     environmentsCount(state) {return state.counters.environments},
     applicationsCount(state) {return state.counters.applications}
 

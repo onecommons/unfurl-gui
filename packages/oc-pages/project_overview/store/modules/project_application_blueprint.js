@@ -237,14 +237,14 @@ function storeResolver(typename, options) {
     const {instantiateAs} = Object.assign(defaults, options)
     return function(state) {
         const dictionary = state[typename]
-        if(!dictionary) return null
+        if(!dictionary) return () => null
         return function(name) {
             let entry
             if(entry = dictionary[name]) {
                 if(instantiateAs) {
-                    return new instantiateAs(entry, state)
+                    return Object.freeze(new instantiateAs(entry, state))
                 }
-                else return entry
+                else return Object.freeze(entry)
             } else {
                 return null
             }
@@ -254,10 +254,8 @@ function storeResolver(typename, options) {
 
 const getters = {
     getApplicationRoot(state) {return state},
-    resolveResourceType(state) { return name =>  state['ResourceType'][name] },
-    //resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
+    resolveResourceType: storeResolver('ResourceType'),
     resolveResourceTemplate: storeResolver('ResourceTemplate', {instantiateAs: ResourceTemplate}),
-    //resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
     resolveResource(state) {
         return name => {
@@ -269,7 +267,6 @@ const getters = {
             return rt
         }
     },
-    //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
     dependenciesFromResourceType(_, getters) {
         return function(resourceTypeName) {
@@ -278,7 +275,7 @@ const getters = {
                 resourceType = getters.resolveResourceType(resourceTypeName)
             } else { resourceType = resourceTypeName }
 
-            if(!resourceType.requirements) return []
+            if(!resourceType?.requirements) return []
             return resourceType.requirements.map(req => ({
                 name: req.name,
                 constraint: req,
@@ -336,8 +333,8 @@ const getters = {
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
 
-    getResources(state) {return Object.values(state.Resource)},
-    getDeployment(state) {return Object.values(state.Deployment)[0]},
+    getResources(state) {return Object.values(state.Resource || {})},
+    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
     lookupConfigurableTypes(state, _a, _b, rootGetters) {

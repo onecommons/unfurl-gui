@@ -1,5 +1,7 @@
 <script>
 import TableComponent from '../../../vue_shared/components/oc/table.vue'
+import {GlTabs} from '@gitlab/ui'
+import {OcTab} from '../../../vue_shared/oc-components'
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
@@ -25,6 +27,28 @@ function deploymentGroupBy(item) {
     return result
 }
 
+const tabFilters =  [
+    {
+        title: 'All'
+    },
+    {
+        title: 'Running',
+        filter(item) { return item.isDeployed }
+    },
+    {
+        title: 'Drafts',
+        filter(item) { return item.isDraft }
+    },
+    {
+        title: 'Incomplete',
+        filter(item) { return !item.isDeployed && !item.isDraft && !item.isUndeployed}
+    },
+    {
+        title: 'Undeployed',
+        filter(item) { return item.isUndeployed }
+    }
+]
+
 const LOOKUP_JOBS = gql`
     query lookupJobs($fullPath: ID!){
         project(fullPath: $fullPath){
@@ -49,7 +73,16 @@ const LOOKUP_JOBS = gql`
 
 export default {
     components: {
-        TableComponent, StatusIcon, EnvironmentCell, ResourceCell, GlButton, GlIcon, DeploymentControls, GlModal
+        TableComponent,
+        StatusIcon,
+        EnvironmentCell,
+        ResourceCell,
+        GlButton,
+        GlIcon,
+        DeploymentControls,
+        GlModal,
+        GlTabs,
+        OcTab
     },
     props: {
         items: {
@@ -65,6 +98,10 @@ export default {
             default: false
         },
         noRouter: {
+            type: Boolean,
+            default: false
+        },
+        tabs: {
             type: Boolean,
             default: false
         }
@@ -123,8 +160,13 @@ export default {
             },
         ]
 
+        const query = this.$route.query
+        const show = query?.show
+        let currentTab = tabFilters.findIndex(tab => tab.title.toLowerCase() == show?.toLowerCase())
+        if(currentTab == -1) currentTab = 0
+
         const intent = '', target = null
-        return {fields, routes, intent, target, transition: false, jobsByPipelineId: {}}
+        return {fields, routes, intent, target, transition: false, jobsByPipelineId: {}, currentTab}
 
     },
     methods: {
@@ -191,6 +233,10 @@ export default {
         },
         onIntentToStop(deployment, environment) {
             this.intent = 'undeploy'
+            this.target = {deployment, environment}
+        },
+        onIntentToStart(deployment, environment) {
+            this.intent = 'deploy'
             this.target = {deployment, environment}
         },
         hasDeployPath(scope) {
@@ -262,6 +308,8 @@ export default {
                     return `Are you sure you want to delete ${targetTitle}?`
                 case 'undeploy':
                     return `Are you sure you want to undeploy ${targetTitle}? It will not be deleted and you will be able to redeploy at any time.`
+                case 'deploy':
+                    return `Deploy ${targetTitle}?`
                 default: return ''
             }
         },
@@ -284,6 +332,50 @@ export default {
                 }
             }
             return dict
+        },
+        useTabs() {
+            return this.tabs && !this.noRouter
+        },
+        itemsByTab() {
+            if(!this.useTabs) return
+            const result = []
+            for(const tab of tabFilters) {
+                const tabItems = []
+                for(const item of this.items) {
+                    const deploymentItem = this.deploymentItems[`${item.context.environment?.name}:${item.context.deployment?.name}`]
+                    if(!deploymentItem) {
+                        console.error('deployment item not found for', item)
+                        continue
+                    }
+                    if(!tab.filter || tab.filter(deploymentItem)) {
+                        tabItems.push(item)
+                    }
+                }
+                result.push(tabItems)
+            }
+            return result
+        },
+        countsByTab() {
+            if(!this.useTabs) return
+            let result = this.itemsByTab.map(list => {
+                const counts = _.countBy(list, (item) => item.context.environment?.name + ':' + item.context.deployment?.name)
+                return Object.keys(counts).length
+            })
+            return result
+        },
+        tableItems() {
+            if(this.useTabs) {
+                return this.itemsByTab[this.currentTab]
+            }
+            return this.items
+        }
+    },
+    watch: {
+        currentTab(value) {
+            const path = this.$route.path
+            const show = value == 0? undefined : tabFilters[value]?.title?.toLowerCase()
+            const query = {show}
+            this.$router.replace({path, query})
         }
     },
     async mounted() {
@@ -311,18 +403,19 @@ export default {
             variables: {fullPath: this.getHomeProjectPath}
         })
 
+        const newJobsByPipelineId = {}
         for(const pipeline of result.data.project.pipelines.nodes || []) {
             const pipelineId = pipeline.id.split('/').pop()
             for(const job of pipeline.jobs.nodes) {
                 const jobId = job.id.split('/').pop()
                 const status = job.status
 
-                Vue.set(this.jobsByPipelineId, pipelineId, {id: jobId, status})
+                newJobsByPipelineId[pipelineId] = Object.freeze({id: jobId, status})
             }
         }
-
-
-    }
+        this.jobsByPipelineId = newJobsByPipelineId
+    },
+    tabFilters
 }
 </script>
 <template>
@@ -336,9 +429,10 @@ export default {
             :actionCancel="{text: 'Cancel'}"
             @primary="onModalConfirmed"
             />
-        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields" :row-class="rowClass">
-            <template #status="scope">
-            </template>
+        <gl-tabs v-model="currentTab" v-if="useTabs">
+            <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
+        </gl-tabs>
+        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
                 <div class="ml-2">
                     {{__('Deployment')}}
@@ -346,15 +440,15 @@ export default {
             </template>
             <template #deployment="scope">
                 <div class="d-flex">
-                    <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex ml-2 mr-1 align-items-center">
+                    <div v-if="deploymentItem(scope, 'isDeployed') || deploymentItem(scope, 'isUndeployed')" class="d-flex ml-2 mr-1 align-items-center">
                         <StatusIcon :size="16" v-if="!statuses(scope).length" :status="1" />
                         <StatusIcon :size="16" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
                     </div>
                     <div v-else-if="hasDeployPath(scope)" class="d-flex ml-2 mr-1 align-items-center">
                         <gl-icon name="pencil-square" :size="16" />
                     </div>
-                    <div v-else  class="d-flex ml-2 mr-1 align-items-center">
-                        <gl-icon name="stop" :size="16" />
+                    <div v-else class="d-flex ml-2 mr-1 align-items-center">
+                        <gl-icon :name="`status_${deploymentItem(scope, 'jobStatus')}`" :size="16" />
                     </div>
 
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
@@ -387,7 +481,7 @@ export default {
                     <div style="height: 0;" v-if="deploymentItem(scope, 'createdAt')">
                         <div style="font-size: 0.95em; position: absolute; top: -2px;">
                             <span v-if="deploymentItem(scope, 'consoleLink')">
-                                <a :href="deploymentItem(scope, 'consoleLink')">View Job</a> /
+                                <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
                                 <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
                             </span>
                         </div>
@@ -398,7 +492,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
             </template>
 
         </table-component>

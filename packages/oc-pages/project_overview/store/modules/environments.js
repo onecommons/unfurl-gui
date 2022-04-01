@@ -243,7 +243,7 @@ function envFilter(name){
 
 const getters = {
     getEnvironmentName: _state => _state.environmentName,
-    getEnvironments: state => state.projectEnvironments,
+    getEnvironments: state => Object.freeze(state.projectEnvironments),
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
     getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         let constraintType

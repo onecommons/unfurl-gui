@@ -67,7 +67,7 @@ export default {
         ...mapGetters([
             'getDashboardItems',
             'runningDeploymentsCount',
-            'stoppedDeploymentsCount',
+            'totalDeploymentsCount',
             'environmentsCount',
             'applicationsCount',
         ]),
@@ -80,8 +80,8 @@ export default {
         },
         tableItems() {
             let result = this.getDashboardItems
-            if(this.runningDeploymentsCount + this.stoppedDeploymentsCount > 0) {
-                result = this.getDashboardItems.filter(item => item.deployment)
+            if(this.totalDeploymentsCount > 0) {
+                result = this.getDashboardItems.filter(item => item.context?.deployment?.__typename == 'Deployment')
             }
             return result
         }
@@ -120,7 +120,7 @@ export default {
             <!-- TODO figure out a better way to show stopped deployments -->
             <quantity-card
                 :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
-                :count="runningDeploymentsCount + stoppedDeploymentsCount"
+                :count="totalDeploymentsCount"
                 s="Deployment"
                 p="Total Deployments"
                 color="#fff4f4"/>
