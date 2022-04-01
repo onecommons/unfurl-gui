@@ -35,7 +35,7 @@ export default class DeploymentItem {
     get jobStatusMessage() {
         switch(this.jobStatus) {
             case 'canceled':
-                return '(Canceledk)'
+                return '(Canceled)'
             case 'failed':
                 return '(Failed)'
             default:

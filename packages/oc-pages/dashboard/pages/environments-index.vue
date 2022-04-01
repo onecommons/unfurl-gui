@@ -50,6 +50,9 @@ export default {
                 const path = this.$route.path
                 this.$router.replace({path, query})
             }
+        },
+        tableItems() {
+            return this.getDashboardItems.filter(item => item.context?.deployment?.__typename == 'Deployment')
         }
     },
     watch: {
@@ -80,7 +83,7 @@ export default {
             </div>
             <gl-button variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
         </div>
-        <environments-index-table v-if="getDashboardItems.length > 0" :items="getDashboardItems"/>
+        <environments-index-table v-if="getDashboardItems.length > 0" :items="tableItems"/>
             
         <create-environment-modal v-model="displayModal" />
     </div>

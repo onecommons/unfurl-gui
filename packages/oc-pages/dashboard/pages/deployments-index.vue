@@ -11,18 +11,11 @@ export default {
     data() {
         const query = this.$route.query
         const show = query?.show
-        const currentTab = (
-            show == 'running' ? 1:
-            show == 'stopped' ? 2:
-            0
-        )
-        
         const breadcrumbItems = [
             {text: __('Deployments'), href: '#'}
         ]
 
         return {
-            currentTab,
             routes,
             breadcrumbItems
         }
@@ -44,19 +37,6 @@ export default {
         },
         deployments() {
             return this.getDashboardItems.filter(item => item.deployment)
-        }
-    },
-    watch: {
-        currentTab(value) {
-            const path = this.$route.path
-            const show = (
-                value == 1 ? 'running':
-                value == 2 ? 'stopped':
-                undefined
-            )
-            const query = {show}
-            this.$router.replace({path, query})
-            
         }
     }
 }

@@ -45,10 +45,7 @@ const tabFilters =  [
     },
     {
         title: 'Undeployed',
-        filter(item) { 
-            console.log(item)
-            return item.isUndeployed 
-        }
+        filter(item) { return item.isUndeployed }
     }
 ]
 
@@ -358,6 +355,14 @@ export default {
             }
             return result
         },
+        countsByTab() {
+            if(!this.useTabs) return
+            let result = this.itemsByTab.map(list => {
+                const counts = _.countBy(list, (item) => item.context.environment?.name + ':' + item.context.deployment?.name)
+                return Object.keys(counts).length
+            })
+            return result
+        },
         tableItems() {
             if(this.useTabs) {
                 return this.itemsByTab[this.currentTab]
@@ -368,7 +373,6 @@ export default {
     watch: {
         currentTab(value) {
             const path = this.$route.path
-            console.log(value, tabFilters[value])
             const show = value == 0? undefined : tabFilters[value]?.title?.toLowerCase()
             const query = {show}
             this.$router.replace({path, query})
@@ -424,7 +428,7 @@ export default {
             @primary="onModalConfirmed"
             />
         <gl-tabs v-model="currentTab" v-if="useTabs">
-            <oc-tab :titleCount="itemsByTab[index].length" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
+            <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
         </gl-tabs>
         <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
@@ -434,7 +438,7 @@ export default {
             </template>
             <template #deployment="scope">
                 <div class="d-flex">
-                    <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex ml-2 mr-1 align-items-center">
+                    <div v-if="deploymentItem(scope, 'isDeployed') || deploymentItem(scope, 'isUndeployed')" class="d-flex ml-2 mr-1 align-items-center">
                         <StatusIcon :size="16" v-if="!statuses(scope).length" :status="1" />
                         <StatusIcon :size="16" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
                     </div>
