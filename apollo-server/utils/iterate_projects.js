@@ -50,6 +50,9 @@ function getBlueprintJson(project, options) {
     } else {
       console.log(`${ensemblePath} didn't change, keeping ${fullPath}`)
     }
+  } else {
+    console.error("no ensemble", ensemblePath)
+    return null;
   }
   try {
     const blueprint = JSON.parse(
