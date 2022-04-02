@@ -74,24 +74,26 @@ export default {
 <template>
     <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in validResourceTypes"
+            v-for="(resource) in validResourceTypes"
             :key="resource.name"
             class="gl-responsive-table-row oc_table_row"
         >
-            <div class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2">
+            <div class="table-section oc-table-section section-wrap text-truncate section-30 align_left gl-display-flex gl-pl-2">
                 <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
                 <div @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
                     <div class="d-flex">
                         <oc-list-resource-icon :type="resource" :badge="resource.badge" :alt="resource.name"/>
                         <span class="text-break-word title">{{ resource.title }}</span>
                     </div>
-                    <span class="text-break-word oc_resource-type">{{ resource.description }}</span>
                 </div>
             </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center">
-                <span v-if="resource.details_url" class="text-break-word oc_resource-details">
+            <!--div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
+            <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div-->
+            <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-display-flex gl-pl-2">
+              <span class="text-break-word oc_resource-type">{{ resource.description }}</span>
+            </div>
+            <div v-if="resource.details_url" class="table-section oc-table-section section-wrap text-truncate section-10 text-center">
+                <span  class="text-break-word oc_resource-details">
                     <a :href="resource.details_url" rel="noopener noreferrer" target="_blank">
                         {{ __('Details') }}
                         <gl-icon :size="12" name="external-link" />
