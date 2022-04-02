@@ -74,7 +74,7 @@ const actions = {
                 if(!application.projectIcon) {
                     try {
                         application.projectIcon = deploymentDict.Overview[application.name].projectIcon
-                    } catch(e) {console.error(e)}
+                    } catch(e) {}
                 }
                 applicationNames[application.name] = true
                 context.application = application

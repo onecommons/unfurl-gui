@@ -6,6 +6,7 @@ export default {
         environment: Object,
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
+        issuesLink: String,
         controlButtons: Array,
         component: {
             type: [String, Object],
@@ -47,6 +48,7 @@ export default {
     </component>
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Teardown')}}</component>
+    <component :is='component' v-if="issuesLink" :href="issuesLink"><gl-icon name="abuse" /> {{__('Report Issue')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>
