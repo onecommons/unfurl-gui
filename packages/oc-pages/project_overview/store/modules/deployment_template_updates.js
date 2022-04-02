@@ -55,6 +55,17 @@ const Serializers = {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
     },
+    DeploymentTemplate(dt, state) {
+        console.log(dt)
+        const localResourceTemplates = dt?.ResourceTemplate
+        if(localResourceTemplates) {
+            for(const rt of Object.keys(localResourceTemplates)) {
+                if(state.ResourceTemplate.hasOwnProperty(rt)) {
+                    delete localResourceTemplates[rt]
+                }
+            }
+        }
+    },
     ResourceTemplate(rt) {
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target
@@ -172,7 +183,12 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
         property.value = _propertyValue
-        return [ {typename: 'ResourceTemplate', target: templateName, patch, env} ]
+        return [
+            // reference this here so we delete local resource templates as necessary
+            {typename: 'DeploymentTemplate', target: deploymentName, patch: accumulator['DeploymentTemplate'][deploymentName]},
+
+            {typename: 'ResourceTemplate', target: templateName, patch, env}
+        ]
     }
 }
 
@@ -464,9 +480,9 @@ const mutations = {
             for(const record of Object.values(state.patches[typename])) {
                 if(record && typeof record == 'object') {
                     if(Serializers[typename]) {
-                        Serializers[typename](record)
+                        Serializers[typename](record, state.accumulator)
                     }
-                    Serializers['*'](record)
+                    Serializers['*'](record, state.accumulator)
                 }
             }
         }
