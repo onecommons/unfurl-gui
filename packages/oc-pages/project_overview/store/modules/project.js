@@ -6,6 +6,7 @@ import gql from 'graphql-tag'
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
 import {userDefaultPath} from '../../../vue_shared/util.mjs'
+import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash'
 
 
 const state = {
@@ -202,7 +203,17 @@ const actions = {
             variables: { projectPath, defaultBranch },
         });
 
-        if(!data?.applicationBlueprintProject?.applicationBlueprint) throw new Error('Could not load overview - please check whether the application unfurl.json is valid and up to date.')
+        if(!data?.applicationBlueprintProject?.applicationBlueprint) {
+            createFlash({
+                projectPath,
+                type: FLASH_TYPES.ALERT,
+                message: 'Could not load overview - please check whether the application unfurl.json is valid and up to date.' ,
+                issue: `Could not load overview for ${projectPath}`,
+                issueContext: {
+                    'Data received from graphql endpoint': JSON.stringify(data)
+                }
+            })
+        }
 
         async function fetchProjectPermissions(projectPath) {
             const query = gql`
