@@ -1,4 +1,5 @@
 import { __ } from "~/locale";
+import _ from 'lodash'
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import axios from '~/lib/utils/axios_utils'
@@ -65,6 +66,7 @@ const Serializers = {
                 any[key] = undefined
             }
         }
+        Object.freeze(any)
     }
 }
 
@@ -423,8 +425,9 @@ const mutations = {
                 Object.assign(state.env, env)
             }
 
-            state.patches[typename][target] = patch
-            state.accumulator[typename][target] = patch
+            const cloned = _.clone(patch)
+            state.patches[typename][target] = cloned
+            state.accumulator[typename][target] = cloned
         }
         for(const preparedMutation of state.preparedMutations) {
             for(const patchDefinition of preparedMutation(state.accumulator)){
@@ -479,7 +482,8 @@ const actions = {
         // use project_application_blueprint store if it's loaded
         const state = rootGetters.getApplicationRoot
         if(state?.loaded) {
-            commit('setBaseState', state)
+            // clone to get rid of observers and frozen objects
+            commit('setBaseState', JSON.parse(JSON.stringify(state)))
             return
         }
 

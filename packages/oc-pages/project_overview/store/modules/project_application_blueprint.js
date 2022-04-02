@@ -42,7 +42,16 @@ class DeploymentTemplate {
     }
 
     get _primary() {
-        return new ResourceTemplate(this._state['ResourceTemplate'][this.primary], this._state)
+        let primary
+        try {
+            primary = this._state['DeploymentTemplate'][this.name].ResourceTemplate[this.primary]
+        } catch(e) {}
+
+        if(!primary) primary = this._state['ResourceTemplate'][this.primary]
+
+        if(primary) return new ResourceTemplate(primary, this._state)
+
+        return null
     }
 
     toJSON() {
@@ -236,15 +245,23 @@ function storeResolver(typename, options) {
     const defaults = {}
     const {instantiateAs} = Object.assign(defaults, options)
     return function(state) {
-        const dictionary = state[typename]
+        const dictionary = typeof typename == 'string'? state[typename]: state
         if(!dictionary) return () => null
-        return function(name) {
+        return function(...args) {
+            let name = args[0]
             let entry
-            if(entry = dictionary[name]) {
+            if(typeof typename == 'function') {
+                entry = typename(state, ...args)
+            } else {
+                entry = dictionary[name]
+            }
+            if(entry) {
+                let result
                 if(instantiateAs) {
-                    return Object.freeze(new instantiateAs(entry, state))
+                    result = new instantiateAs(entry, state)
                 }
-                else return Object.freeze(entry)
+                else result = entry
+                return Object.freeze(result)
             } else {
                 return null
             }
@@ -257,6 +274,12 @@ const getters = {
     resolveResourceType: storeResolver('ResourceType'),
     resolveResourceTemplate: storeResolver('ResourceTemplate', {instantiateAs: ResourceTemplate}),
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
+    resolveLocalResourceTemplate: storeResolver(
+        function(state, deploymentTemplate, name) {
+            return state.DeploymentTemplate[deploymentTemplate].ResourceTemplate[name]
+        },
+        {instantiateAs: ResourceTemplate}
+    ),
     resolveResource(state) {
         return name => {
             if(!name) return

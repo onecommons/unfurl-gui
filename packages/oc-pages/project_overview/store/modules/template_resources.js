@@ -89,8 +89,8 @@ const mutations = {
         state.resourceTemplates = {...state.resourceTemplates}
     },
 
-    updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName, noPrimary}) {
-        _state.lastFetchedFrom = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false};
+    updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName, noPrimary, sourceDeploymentTemplate}) {
+        _state.lastFetchedFrom = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate};
     },
 
     setContext(state, context) {
@@ -106,7 +106,7 @@ const mutations = {
 
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
-    populateDeploymentResources({rootGetters, commit, dispatch}, {deployment}) {
+    populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment}) {
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
         if(!deploymentTemplate) {
             const message = `Could not lookup deployment blueprint '${deployment.deploymentTemplate}'`
@@ -122,7 +122,7 @@ const actions = {
             e.flash = true
             throw e
         }
-        resource = {...resource, template: rootGetters.resolveResourceTemplate(resource.template)}
+        resource = {...resource, template: getters.lookupResourceTemplate(resource.template)}
         if(resource.dependencies.length == 0 && resource.template.dependencies.length > 0) { // TODO remove this workaround
             resource.dependencies = resource.template.dependencies
             window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
@@ -182,6 +182,8 @@ const actions = {
         deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
         blueprint = {...blueprint, projectPath} // maybe we want to do it here
 
+        const sourceDeploymentTemplate = deploymentTemplate.name
+
         if(renameDeploymentTemplate) {
             deploymentTemplate.title = renameDeploymentTemplate;
             deploymentTemplate.name = slugify(renameDeploymentTemplate);
@@ -213,7 +215,7 @@ const actions = {
             }
         }
 
-        commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName});
+        commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName, sourceDeploymentTemplate});
          
 
         function createMatchedTemplateResources(resourceTemplate) {
@@ -230,7 +232,7 @@ const actions = {
                 if(typeof(dependency.match) != 'string') continue;
                 const resolvedDependencyMatch = deploymentDict ?
                     deploymentDict.ResourceTemplate[dependency.match] :
-                    rootGetters.resolveResourceTemplate(dependency.match);
+                    rootGetters.lookupResourceTemplate(dependency.match);
                 dependency.valid = !!resolvedDependencyMatch;
 
                 dependency.completionStatus = dependency.valid? 'created': null;
@@ -263,12 +265,12 @@ const actions = {
         commit('setContext', context)
     },
 
-    createMatchedResources({commit, dispatch, rootGetters}, {resource}) {
+    createMatchedResources({commit, getters, dispatch, rootGetters}, {resource}) {
         for(const attribute of resource.attributes) {
             commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
         }
         for(const dependency of resource.dependencies) {
-            const resolvedDependencyMatch = rootGetters.resolveResourceTemplate(dependency.match)
+            const resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
             const resolvedDependencyTarget = rootGetters.resolveResource(dependency.target)
             dependency.valid = !!(resolvedDependencyMatch && resolvedDependencyTarget)
             const id = dependency.valid && btoa(resolvedDependencyTarget.name).replace(/=/g, '')
@@ -547,6 +549,18 @@ const getters = {
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
             if(dictionaryResourceType) return dictionaryResourceType
             return rootGetters?.environmentResolveResourceType(state.lastFetchedFrom?.environmentName, typeName) || null
+        }
+    },
+    lookupResourceTemplate(state, _a, _b, rootGetters) {
+        return function(resourceTemplate) {
+            let result, sourceDt
+            if(sourceDt = state.lastFetchedFrom?.sourceDeploymentTemplate) {
+                result = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
+            }
+            if(!result){
+                result = rootGetters.resolveResourceTemplate(resourceTemplate)
+            }
+            return result
         }
     }
 };

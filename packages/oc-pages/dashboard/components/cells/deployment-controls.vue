@@ -1,5 +1,5 @@
 <script>
-import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
+import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
 import {generateIssueLink} from '../../../vue_shared/client_utils/issues'
@@ -17,7 +17,6 @@ export default {
     },
     components: {
         GlIcon,
-        GlButton,
         GlDropdown,
         ControlButtons
     },
