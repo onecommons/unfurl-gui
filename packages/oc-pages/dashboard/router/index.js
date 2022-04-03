@@ -3,9 +3,16 @@ import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
 import { PageNotFound } from '../../vue_shared/oc-components'
+import * as ROUTES from './constants'
 
 Vue.use(VueRouter);
 routes.push({ path: "*", component: PageNotFound })
+
+const navigationElements = {
+    dashboard:  document.querySelector('aside.nav-sidebar li a[href="/dashboard"]')?.parentElement,
+    environments: document.querySelector('aside.nav-sidebar li a[href="/dashboard/environments"]')?.parentElement,
+    deployments: document.querySelector('aside.nav-sidebar li a[href="/dashboard/deployments"]')?.parentElement
+}
 
 export default function createRouter() {
     /*
@@ -25,14 +32,34 @@ export default function createRouter() {
 
     router.name = 'dashboard'
 
-    /*
-    router.beforeEach((to, from, next) => {
-        if(router.app.$store) {
-            router.app.$store.getters.getRouterHook(to, from, next)
-        }
-        else next()
-    })
+    // #!if false
 
-*/
+    router.beforeEach((to, from, next) => {
+        let navigationElement
+        switch(to.name) {
+            case ROUTES.OC_DASHBOARD_DEPLOYMENTS_INDEX:
+            case ROUTES.OC_DASHBOARD_DEPLOYMENTS:
+                navigationElement = 'deployments'
+                break
+            case ROUTES.OC_DASHBOARD_ENVIRONMENTS_INDEX:
+            case ROUTES.OC_DASHBOARD_ENVIRONMENTS:
+                navigationElement = 'environments'
+                break
+            default:
+                navigationElement = 'dashboard'
+        }
+
+        Object.entries(navigationElements).forEach(([name, value]) => {
+            if(name == navigationElement) {
+                value.className = 'active'
+            } else {
+                value.className = ''
+            }
+        })
+        next()
+    })
+    
+    // #!endif
+
     return router;
 }
