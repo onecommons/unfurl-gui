@@ -1,9 +1,18 @@
 import path from 'path'
 import express from 'express'
 import fs from 'fs'
+import os from 'os'
 import {execSync} from 'child_process'
 import {USER_HOME_PROJECT} from '../packages/oc-pages/vue_shared/util.mjs'
 import {writeLiveRepoFile, readLiveRepoFile, resolveLiveRepoFile} from './utils/db'
+
+const tmpDir = path.join(os.tmpdir(), '.unfurl-gui')
+function setPid(program, pid) {
+  return fs.writeFileSync(path.join(tmpDir, `${program}.pid`), pid.toString())
+}
+setPid('apollo', process.pid)
+
+
 
 export default app => {
   app.use(express.json({ limit: '50mb' }))

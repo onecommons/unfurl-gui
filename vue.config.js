@@ -1,6 +1,8 @@
 const { iterateProjects } = require('./apollo-server/utils/iterate_projects')
 const path = require('path');
 const fs = require('fs')
+const os = require('os')
+
 
 // this alias is used by code copied from gitlab
 const alias = {
@@ -32,6 +34,13 @@ for(const {projectPath, blueprint} of iterateProjects()) {
 
 module.exports = {
   devServer: {
+    onListening(devServer) {
+      const tmpDir = path.join(os.tmpdir(), '.unfurl-gui')
+      function setPid(program, pid) {
+        return fs.writeFileSync(path.join(tmpDir, `${program}.pid`), pid.toString())
+      }
+      setPid('serve', process.pid)
+    },
     disableHostCheck: true,
     before(app) {
       const proxy = httpProxyMiddleware('/graphql', {
