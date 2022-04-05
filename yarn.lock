@@ -5253,6 +5253,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"axios-cookiejar-support@npm:^2.0.4":
+  version: 2.0.4
+  resolution: "axios-cookiejar-support@npm:2.0.4"
+  dependencies:
+    http-cookie-agent: ^1.0.2
+  peerDependencies:
+    axios: ">=0.20.0"
+    tough-cookie: ">=4.0.0"
+  checksum: e3942c7d907cbe1b629812d7359500e3a710f5341e4be311a964efbfda0777196e56d76c7be722166cecc2edfe7f9c072962e8a0b0c89a823392b19fa072704c
+  languageName: node
+  linkType: hard
+
 "axios@npm:^0.20.0":
   version: 0.20.0
   resolution: "axios@npm:0.20.0"
@@ -9604,6 +9616,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"form-data@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "form-data@npm:4.0.0"
+  dependencies:
+    asynckit: ^0.4.0
+    combined-stream: ^1.0.8
+    mime-types: ^2.1.12
+  checksum: 01135bf8675f9d5c61ff18e2e2932f719ca4de964e3be90ef4c36aacfc7b9cb2fceb5eca0b7e0190e3383fe51c5b37f4cb80b62ca06a99aaabfcfd6ac7c9328c
+  languageName: node
+  linkType: hard
+
 "form-data@npm:~2.3.2":
   version: 2.3.3
   resolution: "form-data@npm:2.3.3"
@@ -10754,6 +10777,17 @@ __metadata:
     parse-json: ^4.0.0
     tunnel-agent: ^0.6.0
   checksum: 06e9342e1fc9d805ab666c862cac58ece953e0a72007410f4fba9aef40075f4c8bf0fdebbcfa1648433db05003ce1e00496ddb92e8dcff319a976638b2be4057
+  languageName: node
+  linkType: hard
+
+"http-cookie-agent@npm:^1.0.2":
+  version: 1.0.5
+  resolution: "http-cookie-agent@npm:1.0.5"
+  dependencies:
+    agent-base: ^6.0.2
+  peerDependencies:
+    tough-cookie: ^4.0.0
+  checksum: 5a9d29ea6749393091ff79afde9b815f15e86fec14a5f2d429fcc2e675983940a831d4fc9af5256edb76e31e5fac9a252745ba5b450bbb87f2194a47f3f6bbcb
   languageName: node
   linkType: hard
 
@@ -15286,7 +15320,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"psl@npm:^1.1.28":
+"psl@npm:^1.1.28, psl@npm:^1.1.33":
   version: 1.8.0
   resolution: "psl@npm:1.8.0"
   checksum: 6150048ed2da3f919478bee8a82f3828303bc0fc730fb015a48f83c9977682c7b28c60ab01425a72d82a2891a1681627aa530a991d50c086b48a3be27744bde7
@@ -17696,6 +17730,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"tough-cookie@npm:^4.0.0":
+  version: 4.0.0
+  resolution: "tough-cookie@npm:4.0.0"
+  dependencies:
+    psl: ^1.1.33
+    punycode: ^2.1.1
+    universalify: ^0.1.2
+  checksum: 0891b37eb7d17faa3479d47f0dce2e3007f2583094ad272f2670d120fbcc3df3b0b0a631ba96ecad49f9e2297d93ff8995ce0d3292d08dd7eabe162f5b224d69
+  languageName: node
+  linkType: hard
+
 "tough-cookie@npm:~2.5.0":
   version: 2.5.0
   resolution: "tough-cookie@npm:2.5.0"
@@ -18068,6 +18113,7 @@ __metadata:
     "@vue/eslint-config-prettier": ^6.0.0
     "@vue/eslint-config-typescript": ^5.0.2
     axios: ^0.20.0
+    axios-cookiejar-support: ^2.0.4
     bootstrap: 4.5.3
     core-js: ^3.6.5
     cypress: ^9.2.1
@@ -18076,6 +18122,7 @@ __metadata:
     eslint-plugin-graphql: ^2.1.1
     eslint-plugin-prettier: ^3.1.3
     eslint-plugin-vue: ^6.2.2
+    form-data: ^4.0.0
     graphql-tag: ^2.9.0
     graphql-type-json: ^0.2.1
     jed: 1.1.1
@@ -18090,6 +18137,7 @@ __metadata:
     sass: 1.34.1
     sass-loader: ^8.0.2
     shortid: ^2.2.8
+    tough-cookie: ^4.0.0
     typescript: ~3.9.3
     vue: 2.6.12
     vue-apollo: ^3.0.3
@@ -18187,7 +18235,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"universalify@npm:^0.1.0":
+"universalify@npm:^0.1.0, universalify@npm:^0.1.2":
   version: 0.1.2
   resolution: "universalify@npm:0.1.2"
   checksum: 40cdc60f6e61070fe658ca36016a8f4ec216b29bf04a55dce14e3710cc84c7448538ef4dad3728d0bfe29975ccd7bfb5f414c45e7b78883567fb31b246f02dff
