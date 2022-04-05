@@ -185,6 +185,7 @@ const actions = {
         const sourceDeploymentTemplate = deploymentTemplate.name
 
         if(renameDeploymentTemplate) {
+            deploymentTemplate.source = sourceDeploymentTemplate
             deploymentTemplate.title = renameDeploymentTemplate;
             deploymentTemplate.name = slugify(renameDeploymentTemplate);
             deploymentTemplate.slug = deploymentTemplate.name

@@ -166,6 +166,7 @@ export default {
                 :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 type="button"
+                :data-testid="`delete-or-disconnect-${card.name}.${dependency.name}`"
                 class="gl-ml-3 oc_requirements_actions"
                 @click.prevent="openDeleteModal(idx, getCurrentActionLabel(dependency))">
                 {{
@@ -189,6 +190,7 @@ export default {
                 title="create"
                 :aria-label="__(`create`)"
                 type="button"
+                :data-testid="`create-dependency-${card.name}.${dependency.name}`"
                 class="gl-ml-3 oc_requirements_actions"
                 :disabled="availableResourceTypesForRequirement(dependency).length == 0"
                 @click="sendRequirement(dependency)">{{ __('Create') }}</gl-button>

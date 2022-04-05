@@ -73,6 +73,7 @@ export default {
                                 v-gl-modal.oc-templates-deploy
                                 :title="__('Deploy')"
                                 :aria-label="__('Deploy')"
+                                :data-testid="`deploy-template-${item.name}`"
                                 class="deploy-action"
                                 icon="upload"
                                 type="button"

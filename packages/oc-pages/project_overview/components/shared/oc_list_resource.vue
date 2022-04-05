@@ -80,7 +80,7 @@ export default {
         >
             <div class="table-section oc-table-section section-wrap text-truncate section-30 align_left gl-display-flex gl-pl-2">
                 <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
-                <div @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
+                <div :data-testid="`resource-selection-${resource.name}`" @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
                     <div class="d-flex">
                         <oc-list-resource-icon :type="resource" :badge="resource.badge" :alt="resource.name"/>
                         <span class="text-break-word title">{{ resource.title }}</span>

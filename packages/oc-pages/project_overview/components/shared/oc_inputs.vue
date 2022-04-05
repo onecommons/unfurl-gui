@@ -195,7 +195,8 @@ export default {
         currentValue['x-decorator'] = 'FormItem'
         currentValue['x-data'] = value
         currentValue['x-component-props'] = {
-          placeholder: currentValue.title
+          placeholder: currentValue.title,
+          'data-testid': `oc-input-${this.card.name}-${currentValue.name}`
         }
         let componentType = currentValue.type;
         if (componentType === 'object' && currentValue.properties) {

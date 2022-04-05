@@ -139,14 +139,14 @@ export default {
 </script>
 <template>
     <gl-tabs v-if="shouldRenderTabs" class="">
-        <oc-tab v-if="shouldRenderRequirements" title="Requirements" :titleCount="requirements.length">
+      <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${card.name}`" title="Requirements" :titleCount="requirements.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
                     <dependency :card="card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement" :idx="idx" v-for="(requirement, idx) in requirements" :key="requirement.name + '-template'"/>
                 </div>
             </div>
         </oc-tab>
-        <oc-tab v-if="shouldRenderInputs" title="Inputs" :titleCount="card.properties.length">
+        <oc-tab v-if="shouldRenderInputs" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="card.properties.length">
             <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
         </oc-tab>

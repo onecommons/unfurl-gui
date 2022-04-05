@@ -438,6 +438,7 @@ export default {
                     >
                         <gl-form-input
                         id="input1"
+                        data-testid="deployment-name-input"
                         v-model="templateForkedName"
                         name="input['template-name']"
                         type="text"
@@ -447,13 +448,13 @@ export default {
                     <div class="col-md-6 dropdown-parent" v-if="instantiateAs!='template'">
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
                         <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
-                        <gl-dropdown ref="dropdown">
+                        <gl-dropdown data-testid="deployment-environment-select" ref="dropdown">
                             <template #button-text>
                                 <span><detect-icon class="mr-2" no-default :env="defaultEnvironmentName != __('Select') && defaultEnvironmentName"/>{{defaultEnvironmentName}}</span>
                             </template>
 
                             <div v-if="getEnvironments.length > 0">
-                                <gl-dropdown-item v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
+                              <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
                                     <div><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
                                 </gl-dropdown-item>
                                 <gl-dropdown-divider />
