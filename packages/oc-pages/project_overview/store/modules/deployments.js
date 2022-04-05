@@ -3,7 +3,7 @@ import graphqlClient from '../../graphql';
 import {slugify, USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 import _ from 'lodash'
 
-const state = {loaded: false, callbacks: []};
+const state = {loaded: false, callbacks: [], deployments: {}};
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;
