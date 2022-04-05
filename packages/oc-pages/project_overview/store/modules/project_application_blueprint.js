@@ -276,7 +276,9 @@ const getters = {
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
     resolveLocalResourceTemplate: storeResolver(
         function(state, deploymentTemplate, name) {
-            return state.DeploymentTemplate[deploymentTemplate].ResourceTemplate[name]
+            try {
+                return state.DeploymentTemplate[deploymentTemplate].ResourceTemplate[name]
+            } catch(e) {return null}
         },
         {instantiateAs: ResourceTemplate}
     ),

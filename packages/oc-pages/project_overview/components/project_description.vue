@@ -186,7 +186,7 @@ export default {
 
                         </oc-tab>
                         <oc-tab v-if="outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
-                            <div>
+                            <div v-if="inputs.length">
                                 <div class="detail-heading">Inputs</div>
                                 <ul class="pl-4" v-if="inputs.length > 0">
                                     <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-3">
@@ -199,7 +199,7 @@ export default {
                                     </li>
                                 </ul>
                             </div>
-                            <div>
+                            <div v-if="outputs.length">
                                 <div class="detail-heading">Outputs</div>
                                 <ul class="pl-4" v-if="outputs.length > 0">
                                     <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-3">
