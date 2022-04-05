@@ -83,7 +83,7 @@ export default {
     background-color: white;
     border-color: #d8d8d8;
     border-style: solid;
-    border-width: 2px;
+    border-width: 1px;
     display: inline-block;
     overflow: hidden;
 }
@@ -98,7 +98,7 @@ export default {
 }
 .name-column, .value-column {
     padding: 0.75em;
-    border-width: 2px;
+    border-width: 1px;
     border-color: #d8d8d8;
     border-top-style: inherit;
 }
@@ -114,19 +114,19 @@ export default {
 .header {
     z-index: 1;
     position: relative;
-    background: #f4f4f4;
+    background: #fafafa;
     border-color: #d8d8d8;
     border-bottom-style: solid;
-    border-width: 2px;
+    border-width: 1px;
     padding: 0.5em;
-    margin: -2px;
+    margin: -1px;
     font-size: 1.25em;
     display: flex;
     justify-content: space-between;
 }
 .name-column {
     font-weight: bold;
-    background: #f4f4f4;
+    background: #fafafa;
     width: 10em;
     border-top-color: white;
     border-right-style: solid;
