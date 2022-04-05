@@ -49,5 +49,6 @@ export default function createRouter(base) {
         else next()
     })
 
+    router.name = 'overview'
     return router;
 }

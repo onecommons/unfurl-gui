@@ -163,10 +163,11 @@ const actions = {
         )
         await dispatch('commitPreparedMutations', null,  {root: true})
         commit('environmentsToArray')
+        await dispatch('fetchProjectEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy: 'network-only'})
     },
 
 
-    async fetchProjectEnvironments({commit}, {fullPath}) {
+    async fetchProjectEnvironments({commit}, {fullPath, fetchPolicy}) {
         const query = gql`
         query getProjectEnvironments($fullPath: ID!) {
             project(fullPath: $fullPath) {
@@ -190,6 +191,7 @@ const actions = {
         try {
             const {data, errors} = await graphqlClient.clients.defaultClient.query({
                 query,
+                fetchPolicy,
                 errorPolicy: 'all',
                 variables: {fullPath}
             })

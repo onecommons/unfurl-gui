@@ -188,26 +188,35 @@ export default {
             const 
                 application = scope.item.context.application,
                 deployment = scope.item.context.deployment,
-                environment = scope.item.context.environment
-            const to =  {
-                name: 'deploymentDraftPage',
-                query: {
-                    fn: deployment.title,
-                },
-                params: {
-                    environment: environment.name,
-                    slug: deployment.name
+                environment = scope.item.context.environment,
+                routerName = this.$router.name
+            let to
+            if(routerName == 'overview') {
+                to =  {
+                    name: 'deploymentDraftPage',
+                    query: {
+                        fn: deployment.title,
+                    },
+                    params: {
+                        environment: environment.name,
+                        slug: deployment.name
+                    }
                 }
+                return {to}
+            } else {
+                to = `/${deployment.projectPath}/deployment-drafts/${environment.name}/${deployment.name}?fn=${deployment.title}`
+                return to
             }
-            return {to}
         },
         deploymentAttrs(scope) {
             const context = scope.item.context
-            if(context.deployment?.__typename == 'DeploymentTemplate') return this.resumeEditingLink(scope)
-            const href = this.noRouter?
+            let href
+            if(context.deployment?.__typename == 'DeploymentTemplate') href = this.resumeEditingLink(scope)
+            else href = this.noRouter?
                 `/dashboard/deployments/${context.environment.name}/${context.deployment.name}`: // TODO use from routes.js
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
-            return this.noRouter? {href}: {to: href}
+            const result = typeof href == 'string'? {href}: {to: href}
+            return result
         },
         async onModalConfirmed() {
             const {deployment, environment} = this.target
@@ -245,6 +254,18 @@ export default {
         rowClass(item, type) {
             if (type !== 'row') return
             if(`#${item?.context?.deployment?.name}` == this.$route.hash) return 'highlight'
+        },
+        // TODO merge these
+        deploymentItemDirect({environment, deployment}, method, ...args) {
+            let result = this.deploymentItems[`${environment?.name}:${deployment?.name}`]
+            if(result && method) {
+                if(args.length) {
+                    result = result[method](...args)
+                } else {
+                    result = result[method]
+                }
+            }
+            return result
         },
         deploymentItem(scope, method, ...args) {
             let result = this.deploymentItems[`${scope.item.context.environment?.name}:${scope.item.context.deployment?.name}`]
@@ -368,6 +389,9 @@ export default {
                 return this.itemsByTab[this.currentTab]
             }
             return this.items
+        },
+        deleteWarning() {
+            return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isDeployed')
         }
     },
     watch: {
@@ -425,10 +449,22 @@ export default {
             :title="modalTitle"
             v-model="modal"
             size="sm"
-            :actionPrimary="{text: 'Confirm'}"
+            :actionPrimary="{text: deleteWarning? 'Delete Anyway': 'Confirm'}"
             :actionCancel="{text: 'Cancel'}"
             @primary="onModalConfirmed"
-            />
+            >
+            <div 
+                v-if="deleteWarning" 
+                class="m-3"
+                >
+                <div style="color: red">
+                    If you delete a deployment before <b>teardown</b>, you will not be able to stop the deployment via unfurl.cloud.
+                </div>
+                <div class="mt-2">
+                    Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
+                </div>
+            </div>
+        </gl-modal>
         <gl-tabs v-model="currentTab" v-if="useTabs">
             <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
         </gl-tabs>
@@ -458,7 +494,7 @@ export default {
                         <component 
                             v-if="scope.item.context.deployment"
                             :id="deploymentNameId(scope.item.context.deployment.name)"
-                            :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'"
+                            :is="deploymentAttrs(scope).href? 'a': 'router-link'"
                             v-bind="deploymentAttrs(scope)"
                             >
                             {{scope.item.context.deployment.title}}
@@ -492,7 +528,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" :viewDeploymentLink="deploymentAttrs(scope).href || deploymentAttrs(scope)"/>
             </template>
 
         </table-component>

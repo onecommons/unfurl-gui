@@ -1,4 +1,5 @@
 import { __ } from "~/locale";
+import _ from 'lodash'
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import axios from '~/lib/utils/axios_utils'
@@ -54,6 +55,17 @@ const Serializers = {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
     },
+    DeploymentTemplate(dt, state) {
+        console.log(dt)
+        const localResourceTemplates = dt?.ResourceTemplate
+        if(localResourceTemplates) {
+            for(const rt of Object.keys(localResourceTemplates)) {
+                if(state.ResourceTemplate.hasOwnProperty(rt)) {
+                    delete localResourceTemplates[rt]
+                }
+            }
+        }
+    },
     ResourceTemplate(rt) {
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target
@@ -65,6 +77,7 @@ const Serializers = {
                 any[key] = undefined
             }
         }
+        Object.freeze(any)
     }
 }
 
@@ -170,7 +183,12 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
         property.value = _propertyValue
-        return [ {typename: 'ResourceTemplate', target: templateName, patch, env} ]
+        return [
+            // reference this here so we delete local resource templates as necessary
+            {typename: 'DeploymentTemplate', target: deploymentName, patch: accumulator['DeploymentTemplate'][deploymentName]},
+
+            {typename: 'ResourceTemplate', target: templateName, patch, env}
+        ]
     }
 }
 
@@ -423,8 +441,9 @@ const mutations = {
                 Object.assign(state.env, env)
             }
 
-            state.patches[typename][target] = patch
-            state.accumulator[typename][target] = patch
+            const cloned = _.clone(patch)
+            state.patches[typename][target] = cloned
+            state.accumulator[typename][target] = cloned
         }
         for(const preparedMutation of state.preparedMutations) {
             for(const patchDefinition of preparedMutation(state.accumulator)){
@@ -461,9 +480,9 @@ const mutations = {
             for(const record of Object.values(state.patches[typename])) {
                 if(record && typeof record == 'object') {
                     if(Serializers[typename]) {
-                        Serializers[typename](record)
+                        Serializers[typename](record, state.accumulator)
                     }
-                    Serializers['*'](record)
+                    Serializers['*'](record, state.accumulator)
                 }
             }
         }
@@ -479,7 +498,8 @@ const actions = {
         // use project_application_blueprint store if it's loaded
         const state = rootGetters.getApplicationRoot
         if(state?.loaded) {
-            commit('setBaseState', state)
+            // clone to get rid of observers and frozen objects
+            commit('setBaseState', JSON.parse(JSON.stringify(state)))
             return
         }
 

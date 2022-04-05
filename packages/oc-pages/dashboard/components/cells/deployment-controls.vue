@@ -1,11 +1,13 @@
 <script>
-import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
+import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
+import {generateIssueLink} from '../../../vue_shared/client_utils/issues'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 export default {
     props: {
-        resumeEditingLink: Object,
+        resumeEditingLink: [Object, String],
+        viewDeploymentLink: [Object, String],
         scope: Object,
     },
     data() {
@@ -15,13 +17,13 @@ export default {
     },
     components: {
         GlIcon,
-        GlButton,
         GlDropdown,
         ControlButtons
     },
     computed: {
         ...mapGetters([
-            'lookupDeployPath'
+            'lookupDeployPath',
+            'getHomeProjectPath'
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
@@ -73,6 +75,25 @@ export default {
         },
         contextMenuControlButtons() {
             return this.controlButtons.slice(1)
+        },
+        resumeEditingTarget() {
+            return typeof this.resumeEditingLink == 'string'?
+                this.resumeEditingLink:
+                this.$router.resolve(this.resumeEditingLink.to).href
+        },
+        viewDeploymentTarget() {
+            return typeof this.viewDeploymentLink == 'string'?
+                this.viewDeploymentLink:
+                this.$router.resolve(this.viewDeploymentLink.to).href
+        },
+        issuesLink() {
+            return generateIssueLink(
+                this.getHomeProjectPath,
+                {
+                    title: `Issue with deployment "${this.deployment.title}"`,
+                    description: 'Please describe the issue you are experiencing:'
+                }
+            )
         }
     },
     methods: {
@@ -85,7 +106,6 @@ export default {
         startDeployment() {
           this.$emit('startDeployment', this.deployment, this.environment)
         },
-
     },
 }
 </script>
@@ -95,7 +115,8 @@ export default {
         <control-buttons 
          :deployment="deployment"
          :environment="environment"
-         :resume-editing-target="$router.resolve(resumeEditingLink.to).href"
+         :view-deployment-target="viewDeploymentTarget"
+         :resume-editing-target="resumeEditingTarget"
          :control-buttons="primaryControlButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
@@ -108,8 +129,10 @@ export default {
             <control-buttons
              :deployment="deployment"
              :environment="environment"
-             :resume-editing-target="$router.resolve(resumeEditingLink.to).href"
+             :resume-editing-target="resumeEditingTarget"
+             :view-deployment-target="viewDeploymentTarget"
              :control-buttons="contextMenuControlButtons"
+             :issues-link="issuesLink"
              component="gl-dropdown-item"
              @deleteDeployment="deleteDeployment"
              @stopDeployment="stopDeployment"

@@ -70,6 +70,12 @@ const actions = {
                 totalDeployments++
                 const application = {...rootGetters.getApplicationBlueprint};
                 application.projectPath = deployment.projectPath
+                // handle an export issue
+                if(!application.projectIcon) {
+                    try {
+                        application.projectIcon = deploymentDict.Overview[application.name].projectIcon
+                    } catch(e) {}
+                }
                 applicationNames[application.name] = true
                 context.application = application
                 context.deployment = deployment
