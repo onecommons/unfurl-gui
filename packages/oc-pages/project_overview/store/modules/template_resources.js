@@ -229,23 +229,26 @@ const actions = {
                 commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
             }
 
-            for(const dependency of resourceTemplate.dependencies) {
+            for(let dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
                 const resolvedDependencyMatch = deploymentDict ?
                     deploymentDict.ResourceTemplate[dependency.match] :
                     rootGetters.lookupResourceTemplate(dependency.match);
-                dependency.valid = !!resolvedDependencyMatch;
+                let valid, completionStatus
+                valid = !!resolvedDependencyMatch;
 
-                dependency.completionStatus = dependency.valid? 'created': null;
-                if(!dependency.completionStatus && environmentName) {
+                completionStatus = valid? 'created': null;
+                if(!completionStatus && environmentName) {
                     // TODO wrap this in a getter
                     let connected = rootGetters.lookupConnection(environmentName, dependency.match)
                     if(connected) {
-                        dependency.valid = true
-                        dependency.completionStatus = 'connected'
+                        valid = true
+                        completionStatus = 'connected'
                     }
-
                 }
+
+                dependency = {...dependency, valid, completionStatus}
+
                 const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '');
 
                 commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name});

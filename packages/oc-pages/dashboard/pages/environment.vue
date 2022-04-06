@@ -4,6 +4,7 @@ import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
 import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
+import _ from 'lodash'
 import { __ } from '~/locale'
 import {lookupCloudProviderAlias, slugify} from '../../vue_shared/util.mjs'
 import {deleteEnvironment} from '../../vue_shared/client_utils/environments'
@@ -118,12 +119,12 @@ export default {
             this.setUpdateObjectPath('environments.json')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             const ResourceType = this.environmentResourceTypeDict(environment)
-            const root = {
+            const root = _.cloneDeep({
                 DeploymentEnvironment: {
                     [environment.name]: environment
                 },
                 ResourceType 
-            }
+            })
             this.useProjectState({root})
             this.useBaseState(root)
         },
