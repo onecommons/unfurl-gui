@@ -2,7 +2,7 @@
 import { GlButton, GlCard, GlIcon, GlBadge} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
-import { bus } from '../../bus.js';
+import { bus } from 'oc_vue_shared/bus';
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
 import {DetectIcon} from '../../../vue_shared/oc-components'
 import {generateCardId} from '../../../vue_shared/util.mjs'

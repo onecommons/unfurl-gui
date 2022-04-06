@@ -1,6 +1,6 @@
 <script>
 import _ from 'lodash';
-import {bus} from '../../bus';
+import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";

@@ -3,7 +3,7 @@ import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
 import {DetectIcon, OcPropertiesList} from '../../../vue_shared/oc-components'
 import OcTab from '../../../vue_shared/components/oc/oc-tab.vue'
 import OcInputs from './oc_inputs.vue'
-import { bus } from '../../bus';
+import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'

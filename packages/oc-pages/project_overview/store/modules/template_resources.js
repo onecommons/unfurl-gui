@@ -287,7 +287,7 @@ const actions = {
 
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
-    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action, isEnvironmentInstance}) {
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
         try {
             const target = cloneDeep(selection);
             target.type = {...target};
@@ -317,10 +317,10 @@ const actions = {
             target.dependentName = dependentName, target.dependentRequirement = dependentRequirement;
             target.id = btoa(target.name).replace(/=/g, '');
 
-            if(isEnvironmentInstance) {
+            if(state.context == 'environment') {
                 commit(
                     'pushPreparedMutation',
-                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName})
+                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement})
                 )
             }
             else {
@@ -372,7 +372,7 @@ const actions = {
             if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
 
                 if(state.context == 'environment') {
-                    commit('pushPreparedMutation', deleteEnvironmentInstance({templateName: name, environmentName: state.lastFetchedFrom.environmentName}), {root: true});
+                    commit('pushPreparedMutation', deleteEnvironmentInstance({templateName: name, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement}), {root: true});
                 }
                 else {
                     commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name, dependentName, dependentRequirement}), {root: true});

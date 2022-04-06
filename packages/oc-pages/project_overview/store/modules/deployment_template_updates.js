@@ -120,7 +120,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
     }
 }
 
-export function createEnvironmentInstance({type, name, title, description, environmentName}) {
+export function createEnvironmentInstance({type, name, title, description, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
@@ -150,6 +150,13 @@ export function createEnvironmentInstance({type, name, title, description, envir
         if(! Array.isArray(patch.instances)) {
             patch.instances = []
         }
+        if(dependentName) {
+            const dependent = patch.instances.find(rt => rt.name == dependentName)
+            const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+            if(dependency) {
+                dependency.match = template.name
+            }
+        }
 
         patch.instances.push(template)
 
@@ -158,13 +165,21 @@ export function createEnvironmentInstance({type, name, title, description, envir
     }
 }
 
-export function deleteEnvironmentInstance({templateName, environmentName}) {
+export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentEnvironment'][environmentName]
 
         const index = patch.instances.findIndex(instance => instance.name == templateName)
         if(index != -1) {
             patch.instances.splice(index, 1)
+        }
+
+        if(dependentName) {
+            const dependent = patch.instances.find(rt => rt.name == dependentName)
+            const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+            if(dependency) {
+                dependency.match = null
+            }
         }
 
         return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
