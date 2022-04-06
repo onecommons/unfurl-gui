@@ -2,7 +2,7 @@
 import createFlash, { FLASH_TYPES } from '~/flash';
 import {mapActions, mapGetters} from 'vuex'
 import {lookupCloudProviderAlias} from '../vue_shared/util.mjs'
-import {deleteEnvironment, lookupEnvironmentId} from '../vue_shared/client_utils/environments'
+import {deleteEnvironmentByName} from '../vue_shared/client_utils/environments'
 import * as routes from './router/constants'
 export default {
     name: 'Dashboard',
@@ -37,16 +37,21 @@ export default {
         delete sessionStorage['instantiate_provider']
 
         if(expectsCloudProvider && !(this.selectedEnvironment && this.newEnvironmentProvider)) {
-            this.doNotRender = true
-            const route = this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {}})
+            let route
+            try {
+                this.doNotRender = true
+                route = this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {}})
 
-            sessionStorage['oc_flash'] = JSON.stringify({
-                message: `Creation of environment "${expectsCloudProvider}" cancelled.`,
-                type: FLASH_TYPES.WARNING
-            })
+                sessionStorage['oc_flash'] = JSON.stringify({
+                    message: `Creation of environment "${expectsCloudProvider}" cancelled.`,
+                    type: FLASH_TYPES.WARNING
+                })
 
-            const environmentId = await lookupEnvironmentId(window.gon.projectPath, expectsCloudProvider)
-            await deleteEnvironment(window.gon.projectPath, window.gon.projectId, expectsCloudProvider, environmentId)
+                await deleteEnvironmentByName(window.gon.projectPath, expectsCloudProvider)
+            } catch(e) {
+                delete sessionStorage['oc_flash']
+                console.error(e)
+            }
             window.location.href = route.href
         }
 
