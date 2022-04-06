@@ -16,27 +16,6 @@ const ComponentMap = {
   password: 'Password',
 };
 
-/*
-const ValidationFunctions = {
-  string(input, value) {
-    return !input.required || !!(value?.length)
-  },
-  number(input, value) {
-    if(typeof value == 'string' && value.length == 0) return false
-    return !input.required || !isNaN(value)
-  }
-}
-
-function validateInput(input, value) {
-  if(input?.type) {
-    if(typeof ValidationFunctions[input.type] != 'function') return true
-    const result = ValidationFunctions[input.type](input, value)
-    return result
-  }
-  return false
-}
-*/
-
 const SerializationFunctions = {
   number(input, value) {
     const result = parseInt(value)
@@ -66,8 +45,6 @@ const fields = createSchemaField({
 export default {
   name: 'OcInputs',
   components: {
-    // GlFormGroup,
-    // GlFormInput,
     FormProvider,
     ...fields
   },
@@ -81,42 +58,29 @@ export default {
     card: {
       type: Object
     },
-    /*
-    mainInputs: {
-      type: Array,
-      required: true
-    },
-    componentKey: {
-      type: Number,
-      required: true
-    }
-    */
   },
 
   data() {
     return {
-      cardProperties: _.cloneDeep(this.card.properties)
+      form: null
     }
   },
   computed: {
     ...mapGetters(['resolveResourceType', 'cardInputsAreValid']),
 
+    fromSchema() {
+      return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+    },
+
     mainInputs() {
       const result = []
-      let fromSchema, templateProperties
-      try {
-        fromSchema = this.resolveResourceType(this.card.type).inputsSchema.properties
-        templateProperties = this.cardProperties
-      }
-      catch(e) { return result }
-      if(! templateProperties) return []
-      for (const property of templateProperties) {
+      for (const property of this.card.properties) {
         try{
-          const next = {...property, ...fromSchema[property.name]}
+          const next = {...property, ...this.fromSchema[property.name]}
           next.initialValue = next.value || next.default
           result.push(next)
         } catch (e) {
-          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.card.type.name}'`)
+          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
         }
       }
 
@@ -147,35 +111,6 @@ export default {
       }
     },
 
-    form() {
-      const form = createForm({
-        initialValues: this.initialFormValues,
-        effects: () => {
-          onFieldInputValueChange('*', async (field, ...args) => {
-            // I'm not sure this would work for autocomplete if we did on validate
-            // on the other hand if we check valid here, I'm not sure whether it's updated or not yet
-            // if(form.valid) this.triggerSave({...field.data, name: field.path.entire}, field.value);
-            this.triggerSave({...field.data, name: field.path.entire}, field.value);
-          })
-        }
-      })
-      form.subscribe(update => {
-
-        let status
-        if(form.errors?.length) {
-          status = 'error'
-        } else if (form.warnings?.length) {
-          status = 'warning'
-        } else if (form.valid) {
-          status = 'valid'
-        }
-        this.updateFieldValidation(
-          this.card, 
-          status
-        )
-      })
-      return form
-    }
   },
 
   methods: {
@@ -185,6 +120,21 @@ export default {
     ...mapActions([
       'updateProperty'
     ]),
+    async validate() {
+      let status = 'valid'
+      try {
+        await this.form.validate()
+        for(const key of Object.keys(this.initialFormValues)) {
+          await this.form.fields[key].validate()
+        }
+      } catch(e) {
+        status = 'error'
+      }
+      this.updateFieldValidation(
+        this.card, 
+        status
+      )
+    },
     convertProperties(properties) {
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
@@ -229,6 +179,22 @@ export default {
     getRandomKey(length) {
       return Math.random().toString(36).replace(/[^a-z][0-9]+/g, '').substr(0, length);
     }
+  },
+  mounted() {
+    const form = createForm({
+      initialValues: this.initialFormValues,
+      effects: () => {
+        onFieldInputValueChange('*', async (field, ...args) => {
+          // I'm not sure this would work for autocomplete if we did on validate
+          // on the other hand if we check valid here, I'm not sure whether it's updated or not yet
+          // if(form.valid) this.triggerSave({...field.data, name: field.path.entire}, field.value);
+          this.validate()
+          this.triggerSave({...field.data, name: field.path.entire}, field.value);
+        })
+      }
+    })
+    this.form = form
+    this.validate()
   }
 }
 </script>
@@ -249,7 +215,7 @@ export default {
                                 ? 'check-circle-filled'
                                 : 'warning-solid'
                         "/-->
-        <FormProvider :form="form">
+        <FormProvider v-if="form" :form="form">
           <SchemaField :schema="schema"/>
         </FormProvider>
   </div>

@@ -33,6 +33,7 @@ const mutations = {
         state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
     },
     setCardInputValidStatus(state, {card, status}) {
+        console.log(card.name, status)
         Vue.set(state.inputValidationStatus, card.name, status)
     },
 
@@ -492,16 +493,8 @@ const getters = {
     cardInputsAreValid(state) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
+            if(!card.properties?.length) return true
             return state.inputValidationStatus[card.name] == 'valid'
-            /*
-            if(!card?.properties?.length) return true;
-            let validInputsCount;
-            try {
-                validInputsCount = Object.keys(state.inputValidationStatus[card.name]).length;
-            } catch { return false; }
-            return card.properties.length == validInputsCount;
-            */
-
         };
     },
     cardDependenciesAreValid(state, getters) {
