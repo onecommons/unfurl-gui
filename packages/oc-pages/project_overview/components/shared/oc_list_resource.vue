@@ -51,7 +51,8 @@ export default {
         },
 
         ...mapGetters([
-            'isMobileLayout'
+            'isMobileLayout',
+            'resolveResourceTypeFromAny'
         ]),
         cloudProviderMappings() {
             const result = []
@@ -67,8 +68,22 @@ export default {
             }
             return result
         }
-
     },
+    methods: {
+        description(resource) {
+            return resource.description || this.resolveResourceTypeFromAny(resource?.type)?.description
+        },
+        iconProps(resource) {
+            const type = resource?.type ? this.resolveResourceTypeFromAny(resource?.type) : resource
+            return {
+                type,
+                badge: type.badge,
+                alt: resource.name
+            }
+
+        }
+
+    }
 };
 </script>
 <template>
@@ -82,7 +97,7 @@ export default {
                 <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
                 <div @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
                     <div class="d-flex">
-                        <oc-list-resource-icon :type="resource" :badge="resource.badge" :alt="resource.name"/>
+                        <oc-list-resource-icon v-bind="iconProps(resource)"/>
                         <span class="text-break-word title">{{ resource.title }}</span>
                     </div>
                 </div>
@@ -90,7 +105,7 @@ export default {
             <!--div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
             <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div-->
             <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-display-flex gl-pl-2">
-              <span class="text-break-word oc_resource-type">{{ resource.description }}</span>
+              <span class="text-break-word oc_resource-type">{{ description(resource) }}</span>
             </div>
             <div v-if="resource.details_url" class="table-section oc-table-section section-wrap text-truncate section-10 text-center">
                 <span  class="text-break-word oc_resource-details">

@@ -290,7 +290,7 @@ const getters = {
         return function(environment, typename) {
             const environmentName = typeof environment == 'string'? environment: environment?.name
             const dict = state.resourceTypeDictionaries[environmentName]
-            if (dict) return dict[typename]
+            if (dict) return Object.freeze(dict[typename])
             return null
         }
     },

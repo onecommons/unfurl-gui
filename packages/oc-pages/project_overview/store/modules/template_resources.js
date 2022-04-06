@@ -2,7 +2,7 @@ import { cloneDeep } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util.mjs';
-import {appendDeploymentTemplateInBlueprint, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
+import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 
 const baseState = () => ({
@@ -237,6 +237,15 @@ const actions = {
                 dependency.valid = !!resolvedDependencyMatch;
 
                 dependency.completionStatus = dependency.valid? 'created': null;
+                if(!dependency.completionStatus && environmentName) {
+                    // TODO wrap this in a getter
+                    let connected = rootGetters.lookupConnection(environmentName, dependency.match)
+                    if(connected) {
+                        dependency.valid = true
+                        dependency.completionStatus = 'connected'
+                    }
+
+                }
                 const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '');
 
                 commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name});
@@ -350,6 +359,11 @@ const actions = {
         const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const resourceTemplate = rootGetters.lookupConnection(environmentName, nodeResource);
+        commit(
+            'pushPreparedMutation',
+            appendResourceTemplateInDependent({dependentName, dependentRequirement, templateName: nodeResource})
+
+        )
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace});
     },
 
@@ -493,7 +507,7 @@ const getters = {
     cardInputsAreValid(state) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
-            if(!card.properties?.length) return true
+            if(!card?.properties?.length) return true
             return state.inputValidationStatus[card.name] == 'valid'
         };
     },

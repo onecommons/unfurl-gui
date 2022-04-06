@@ -18,6 +18,11 @@ export default {
         readonly: { type: Boolean, default: false }
 
     },
+    data() {
+        return {
+            DEFAULT_ACTION_LABEL: 'Add a new provider'
+        }
+    },
     components: {
         GlIcon, GlButton,
         DetectIcon,

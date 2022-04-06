@@ -84,7 +84,6 @@ export default {
     data() {
         return {
             resourceName: '',
-            DEFAULT_ACTION_LABEL: 'Add a new provider'
         }
     },
 
