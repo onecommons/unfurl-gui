@@ -92,7 +92,7 @@ export default {
             'getCurrentEnvironment',
             'getValidConnections',
             'cardDependenciesAreValid',
-            'getDisplayableDependencies',
+            'getDisplayableDependenciesByCard',
             'getCardProperties',
             'cardStatus',
         ]),
@@ -119,11 +119,11 @@ export default {
             )
         },
         requirements() {
-            const requirements = this.getDisplayableDependencies(this.card.name).filter(dependency => (dependency?.constraint?.min || 0) > 0)
+            const requirements = this.getDisplayableDependenciesByCard(this.card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
             return requirements
         },
         extras() {
-            const extras = this.getDisplayableDependencies(this.card.name).filter(extra => (extra?.constraint?.min || 0) == 0)
+            const extras = this.getDisplayableDependenciesByCard(this.card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
             return extras
         },
         shouldRenderRequirements() { return this.requirements?.length },
@@ -141,7 +141,7 @@ export default {
         <oc-tab v-if="shouldRenderRequirements" title="Requirements" :titleCount="requirements.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
-                    <dependency :card="card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement" :idx="idx" v-for="(requirement, idx) in requirements" :key="requirement.name + '-template'"/>
+                    <dependency :card="requirement.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" :idx="idx" v-for="(requirement, idx) in requirements" :key="requirement.name + '-template'"/>
                 </div>
             </div>
         </oc-tab>
@@ -158,7 +158,7 @@ export default {
         <oc-tab v-if="shouldRenderExtras" title="Extras" :titleCount="extras.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
-                    <dependency :card="card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra" :idx="idx" v-for="(extra, idx) in extras" :key="extra.name + '-template'"/>
+                    <dependency :card="extra.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" :idx="idx" v-for="(extra, idx) in extras" :key="extra.name + '-template'"/>
                 </div>
             </div>
         </oc-tab>

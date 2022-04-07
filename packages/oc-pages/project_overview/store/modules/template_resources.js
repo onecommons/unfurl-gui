@@ -225,15 +225,17 @@ const actions = {
                     return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
                 });
             }
+            /*
             for(const property of resourceTemplate.properties) {
                 commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
             }
+            */
 
             for(let dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
                 const resolvedDependencyMatch = deploymentDict ?
                     deploymentDict.ResourceTemplate[dependency.match] :
-                    rootGetters.lookupResourceTemplate(dependency.match);
+                    getters.lookupResourceTemplate(dependency.match);
                 let valid, completionStatus
                 valid = !!resolvedDependencyMatch;
 
@@ -279,9 +281,11 @@ const actions = {
     },
 
     createMatchedResources({commit, getters, dispatch, rootGetters}, {resource}) {
+        /*
         for(const attribute of resource.attributes) {
             commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
         }
+        */
         for(const dependency of resource.dependencies) {
             const resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
             const resolvedDependencyTarget = rootGetters.resolveResource(dependency.target)
@@ -495,6 +499,7 @@ const getters = {
     getCardsStacked: _state => {
         if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
         return Object.values(_state.resourceTemplates).filter((rt) => {
+            if(rt.visibility == 'hidden') return false
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
 
@@ -516,12 +521,33 @@ const getters = {
             return state.resourceTemplates[resourceName].status
         }
     },
-    // TODO this is a hack and checking for name == cloud is not a permanent solution
-    getDisplayableDependencies(_, getters) {
+    // returns [{card, dependency}] which doesn't really make sense with the name, but I don't know what else to call it
+    getDisplayableDependenciesByCard(state, getters) {
         return function(resourceTemplateName) {
             const dependencies = getters.getDependencies(resourceTemplateName)
             if(!Array.isArray(dependencies)) return []
-            return dependencies.filter(dep => dep.name != 'cloud')
+            const ownDependencies = dependencies.filter(dep => {
+                if(dep?.constraint?.visibility == 'hidden') return false
+                return true
+            })
+            const result = []
+            // requirements
+            for(const dependency of ownDependencies) {
+                result.push({dependency, card: state.resourceTemplates[resourceTemplateName]})
+            }
+
+            // child cards
+            for(const child of getters.getDependencies(resourceTemplateName)) {
+                const match = state.resourceTemplates[child.match]
+                if(match?.visibility == 'hidden') {
+                    for(const {card, dependency} of getters.getDisplayableDependenciesByCard(child.match)) {
+                        if(! getters.requirementMatchIsValid(dependency)) {
+                            result.push({dependency, card})
+                        }
+                    }
+                }
+            }
+            return result
         }
     },
     requirementMatchIsValid: (_state, getters)=> function(requirement) {
@@ -540,7 +566,7 @@ const getters = {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
             if(!card?.properties?.length) return true
-            return state.inputValidationStatus[card.name] == 'valid'
+            return (state.inputValidationStatus[card.name] || 'valid') == 'valid'
         };
     },
     cardDependenciesAreValid(state, getters) {
