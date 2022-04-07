@@ -100,6 +100,7 @@ export default {
             'yourDeployments',
             'getEnvironments',
             'getProjectInfo',
+            'getProjectDescription',
             'getTemplatesList',
             'hasEditPermissions',
             'getUsername',
@@ -373,7 +374,7 @@ export default {
                     :requirements="getProjectInfo.primary.requirements" 
                     :inputs="inputProperties"
                     :outputs="outputProperties"
-                    :project-description="getProjectInfo.description"
+                    :project-description="getProjectDescription"
                     :project-image="getProjectInfo.image"
                     :live-url="getProjectInfo.livePreview"
                     :project-name="getProjectInfo.name"
