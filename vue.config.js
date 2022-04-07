@@ -6,6 +6,7 @@ const fs = require('fs')
 const alias = {
   'oc': path.join(__dirname, 'src/assets/javascripts'),
   'oc_dashboard': path.join(__dirname, 'src/gitlab-oc/dashboard'),
+  'oc_vue_shared': path.join(__dirname, 'src/gitlab-oc/vue_shared'),
   '~': path.join(__dirname, 'src/assets/javascripts'),
   'oc_pages': path.join(__dirname, 'src/gitlab-oc')
   //'oc': path.join(__dirname, 'src/gitlab-oc')

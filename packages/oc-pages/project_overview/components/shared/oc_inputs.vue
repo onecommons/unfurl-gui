@@ -1,10 +1,11 @@
 <script>
 import _ from 'lodash';
-import {bus} from '../../bus';
+import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormItem, Input, InputNumber, Checkbox, Select, Password, Editable} from "@formily/element";
+import {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space, FormButtonGroup} from "@formily/element";
+import { Button } from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
 
 const ComponentMap = {
@@ -13,50 +14,47 @@ const ComponentMap = {
   number: 'InputNumber',
   enum: 'Select',
   object: 'Editable.Popover',
+  array: 'ArrayItems',
   password: 'Password',
 };
-
-/*
-const ValidationFunctions = {
-  string(input, value) {
-    return !input.required || !!(value?.length)
-  },
-  number(input, value) {
-    if(typeof value == 'string' && value.length == 0) return false
-    return !input.required || !isNaN(value)
-  }
-}
-
-function validateInput(input, value) {
-  if(input?.type) {
-    if(typeof ValidationFunctions[input.type] != 'function') return true
-    const result = ValidationFunctions[input.type](input, value)
-    return result
-  }
-  return false
-}
-*/
 
 const SerializationFunctions = {
   number(input, value) {
     const result = parseInt(value)
     if(!isNaN(result)) return result
+  },
+  array(input, value) {
+    const result = []
+    for(const item of value) {
+      result.push(item['input'])
+    }
+    return result
   }
 }
 function serializeInput(input, value) {
-  if(input?.type) {
-    const serializer = SerializationFunctions[input.type]
+  let type = input?.type
+  let propertyName = input.name
+  if(input.name?.endsWith('.input')) {
+    type = 'arrayItem'
+    propertyName = propertyName.slice(0, -6)
+  }
+  let result
+  if(type) {
+    const serializer = SerializationFunctions[type]
     if(typeof serializer == 'function') {
-      return serializer(input, value)
+      result = [propertyName, serializer(input, value)]
     }
   }
 
-  return value
+  return (result || [propertyName, value])
+
 }
 
 const fields = createSchemaField({
   components: {
     FormItem,
+    ArrayItems,
+    Space,
     Input,
     InputNumber, Checkbox, Select, Password, Editable
   }
@@ -66,9 +64,9 @@ const fields = createSchemaField({
 export default {
   name: 'OcInputs',
   components: {
-    // GlFormGroup,
-    // GlFormInput,
     FormProvider,
+    FormButtonGroup,
+    Button,
     ...fields
   },
 
@@ -81,48 +79,38 @@ export default {
     card: {
       type: Object
     },
-    /*
-    mainInputs: {
-      type: Array,
-      required: true
-    },
-    componentKey: {
-      type: Number,
-      required: true
-    }
-    */
   },
 
   data() {
     return {
-      cardProperties: _.cloneDeep(this.card.properties)
+      form: null,
+      mainInputs: []
     }
   },
   computed: {
     ...mapGetters(['resolveResourceType', 'cardInputsAreValid']),
 
+    fromSchema() {
+      return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+    },
+
+    /*
     mainInputs() {
       const result = []
-      let fromSchema, templateProperties
-      try {
-        fromSchema = this.resolveResourceType(this.card.type).inputsSchema.properties
-        templateProperties = this.cardProperties
-      }
-      catch(e) { return result }
-      if(! templateProperties) return []
-      for (const property of templateProperties) {
+      for (const property of this.card.properties) {
         try{
-          const next = {...property, ...fromSchema[property.name]}
+          const next = {...property, ...this.fromSchema[property.name]}
           next.initialValue = next.value || next.default
           result.push(next)
         } catch (e) {
-          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.card.type.name}'`)
+          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
         }
       }
 
       return result
 
     },
+    */
 
     initialFormValues() {
       const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.initialValue}), {})
@@ -147,35 +135,6 @@ export default {
       }
     },
 
-    form() {
-      const form = createForm({
-        initialValues: this.initialFormValues,
-        effects: () => {
-          onFieldInputValueChange('*', async (field, ...args) => {
-            // I'm not sure this would work for autocomplete if we did on validate
-            // on the other hand if we check valid here, I'm not sure whether it's updated or not yet
-            // if(form.valid) this.triggerSave({...field.data, name: field.path.entire}, field.value);
-            this.triggerSave({...field.data, name: field.path.entire}, field.value);
-          })
-        }
-      })
-      form.subscribe(update => {
-
-        let status
-        if(form.errors?.length) {
-          status = 'error'
-        } else if (form.warnings?.length) {
-          status = 'warning'
-        } else if (form.valid) {
-          status = 'valid'
-        }
-        this.updateFieldValidation(
-          this.card, 
-          status
-        )
-      })
-      return form
-    }
   },
 
   methods: {
@@ -185,6 +144,21 @@ export default {
     ...mapActions([
       'updateProperty'
     ]),
+    async validate() {
+      let status = 'valid'
+      try {
+        await this.form.validate()
+        for(const key of Object.keys(this.initialFormValues)) {
+          await this.form.fields[key]?.validate()
+        }
+      } catch(e) {
+        status = 'error'
+      }
+      this.updateFieldValidation(
+        this.card, 
+        status
+      )
+    },
     convertProperties(properties) {
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
@@ -200,6 +174,39 @@ export default {
         let componentType = currentValue.type;
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
+        } else if (componentType === 'array') {
+          const items = currentValue.items
+          //items['x-decorator'] = 'ArrayItems.Item'
+          //items['x-component'] = ComponentMap[items.type]
+          currentValue.items = {
+            type: 'object',
+            'x-decorator': 'ArrayItems.Item',
+            properties: {
+              space: {
+                type: 'void',
+                'x-component': 'Space',
+                properties: {
+                  input: {
+                    ...items,
+                    'x-decorator': 'FormItem',
+                    'x-component': ComponentMap[items.type]
+                  },
+                  remove: {
+                    type: 'void',
+                    'x-decorator': 'FormItem',
+                    'x-component': 'ArrayItems.Remove'
+                  }
+                }
+              }
+            }
+          }
+          currentValue.properties = {
+            add: {
+              type: 'void',
+              title: 'Add',
+              'x-component': 'ArrayItems.Addition'
+            }
+          }
         } else {
           if (currentValue.enum) {
             componentType = 'enum';
@@ -222,13 +229,51 @@ export default {
     },
 
     triggerSave: _.debounce(function preview(field, value) {
-      const propertyValue = serializeInput(field, value)
-      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
+      const [propertyName, propertyValue] = serializeInput(field, value)
+      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName, propertyValue, isSensitive: field.sensitive})
     }, 200),
 
     getRandomKey(length) {
       return Math.random().toString(36).replace(/[^a-z][0-9]+/g, '').substr(0, length);
+    },
+    getMainInputs() {
+      const result = []
+      for (const property of this.card.properties) {
+        try{
+          const next = {...property, ...this.fromSchema[property.name]}
+          next.initialValue = _.cloneDeep(next.value || next.default)
+          _.forOwn(next.initialValue, function(value, key) {
+            if(Array.isArray(value)) {
+              for(const i in value){ 
+                value[i] = {input: value[i]}
+              }
+            }
+          })
+          result.push(next)
+        } catch (e) {
+          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
+        }
+      }
+
+      return result
     }
+  },
+  mounted() {
+    this.mainInputs = this.getMainInputs()
+    const form = createForm({
+      initialValues: this.initialFormValues,
+      effects: () => {
+        onFieldInputValueChange('*', async (field, ...args) => {
+          // I'm not sure this would work for autocomplete if we did on validate
+          // on the other hand if we check valid here, I'm not sure whether it's updated or not yet
+          // if(form.valid) this.triggerSave({...field.data, name: field.path.entire}, field.value);
+          this.validate()
+          this.triggerSave({...field.data, name: field.path.entire}, field.value);
+        })
+      }
+    })
+    this.form = form
+    this.validate()
   }
 }
 </script>
@@ -249,7 +294,7 @@ export default {
                                 ? 'check-circle-filled'
                                 : 'warning-solid'
                         "/-->
-        <FormProvider :form="form">
+        <FormProvider v-if="form" :form="form">
           <SchemaField :schema="schema"/>
         </FormProvider>
   </div>

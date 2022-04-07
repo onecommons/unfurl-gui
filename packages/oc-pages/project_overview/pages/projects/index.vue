@@ -12,7 +12,7 @@ import EnvironmentCreationDialog from '../../components/environment-creation-dia
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
 import {OcTab, DetectIcon} from '../../../vue_shared/oc-components'
-import { bus } from '../../bus';
+import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import {deleteEnvironmentByName} from '../../../vue_shared/client_utils/environments'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'

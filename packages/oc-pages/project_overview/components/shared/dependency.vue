@@ -2,7 +2,7 @@
 import {GlIcon, GlButton} from '@gitlab/ui'
 import {DetectIcon, StatusIcon} from '../../../vue_shared/oc-components'
 import {mapGetters, mapActions} from 'vuex'
-import {bus} from '../../bus'
+import {bus} from 'oc_vue_shared/bus'
 import { __ } from '~/locale';
 
 // TODO clean up dependency vs requirement in here!
@@ -17,6 +17,11 @@ export default {
         displayStatus: { type: Boolean, default: false, },
         readonly: { type: Boolean, default: false }
 
+    },
+    data() {
+        return {
+            DEFAULT_ACTION_LABEL: null
+        }
     },
     components: {
         GlIcon, GlButton,
@@ -33,8 +38,22 @@ export default {
             'isMobileLayout',
             'resolveResourceTypeFromAny',
             'cardStatus'
-        ])
+        ]),
+        dependencyType() {
+            return this.resolveResourceTypeFromAny(this.dependency.constraint.resourceType)
+        },
+        canConnectServices() {
+            return (
+                this.$route.name != 'templatePage' && (
+                    this.$router.name != 'dashboard' ||
+                    this.getValidConnections(this.$route.params.environment, this.dependency).length > 0
+                )
 
+            )
+        },
+        hasRequirementsSetter() {
+            return Array.isArray(this.$store._actions.setRequirementSelected)
+        }
     },
     methods: {
         ...mapActions([
@@ -46,7 +65,7 @@ export default {
             switch(requirement.completionStatus) {
               case 'connected': return __('Disconnect')
               case 'created': return __('Remove')
-              default: return __(this.DEFAULT_ACTION_LABEL)
+              default: return this.DEFAULT_ACTION_LABEL
             }
         },
 
@@ -74,10 +93,6 @@ export default {
             bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'connect'});
         },
 
-        hasRequirementsSetter() {
-            return Array.isArray(this.$store._actions.setRequirementSelected)
-        },
-
         requirementSatisfied(requirement) {
             /*
             const result =  !!(requirement.constraint.min == 0 || requirement.status || this.requirementMatchIsValid(requirement))
@@ -87,9 +102,6 @@ export default {
         },
         requirementFilled(requirement) {
             return !!requirement?.match
-        },
-        canConnectServices() {
-            return this.$route.name != 'templatePage'
         },
 
 
@@ -101,7 +113,7 @@ export default {
         <div
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
             <div>
-                <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(dependency.constraint.resourceType)" />
+                <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
                 <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ dependency.name }}</span>
                 <div class="oc_requirement_description gl-mb-2">
                     {{ dependency.description}}
@@ -163,6 +175,7 @@ export default {
                 @click.prevent="findElementToScroll({requirement: dependency})"
                 >{{ __('Edit') }}</gl-button>
             <gl-button
+                v-if="getCurrentActionLabel(dependency)"
                 :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 type="button"

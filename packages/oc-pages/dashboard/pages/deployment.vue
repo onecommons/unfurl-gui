@@ -2,7 +2,7 @@
 import {mapGetters, mapActions} from 'vuex'
 import DeploymentResources from '../../vue_shared/components/oc/deployment-resources.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
-import {bus} from '../bus'
+import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
 export default {
