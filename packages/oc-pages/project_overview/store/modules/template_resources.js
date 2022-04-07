@@ -102,8 +102,8 @@ const mutations = {
         const template = state.resourceTemplates[templateName]
         template.properties.find(prop => prop.name == propertyName).value = propertyValue
         Vue.set(state.resourceTemplates, templateName, template)
-    }
-};
+    },
+}
 
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
@@ -410,17 +410,46 @@ const actions = {
     },
     updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
         //if(state.resourceTemplates[templateName].value === propertyValue) return
-        if(getters.lookupCardPropertyValue(templateName, propertyName) === (propertyValue ?? null)) return
-        commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
+        const template = state.resourceTemplates[templateName]
+
+        function toPropertyUpdate(template, propertyName, propertyValue) {
+            const propertyPath = propertyName.split('.')
+            let rootProperty = template.properties.find(prop => prop.name == propertyPath[0]).value //= propertyValue
+            if(propertyPath.length == 1) {
+                if(rootProperty === (propertyValue ?? null)) return null
+                return {propertyName, propertyValue}
+            }
+            rootProperty = _.cloneDeep(rootProperty) // keep vuex from complaining?
+            if(Array.isArray(rootProperty)) rootProperty = rootProperty.slice(0)
+            let property = rootProperty
+
+            for(const pathComponent of propertyPath.slice(1, -1)) {
+                let newProperty = property[pathComponent]
+                if(!newProperty) {
+                    newProperty = {}
+                    property[pathComponent] = newProperty
+                }
+                property = newProperty
+            }
+            const finalIndex = propertyPath[propertyPath.length -1]
+            if(property[finalIndex] === (propertyValue ?? null)) return null
+            property[finalIndex] = propertyValue
+            return {propertyName: propertyPath[0], propertyValue: rootProperty}
+        }
+
+        const propertyUpdate = toPropertyUpdate(template, propertyName, propertyValue)
+        if(!propertyUpdate) return
+        
+        commit('templateUpdateProperty', {templateName, ...propertyUpdate})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, propertyName, propertyValue, isSensitive})
+                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, ...propertyUpdate, isSensitive})
             )
         } else {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInResourceTemplate({deploymentName, templateName, propertyName, propertyValue, isSensitive})
+                updatePropertyInResourceTemplate({deploymentName, templateName, ...propertyUpdate, isSensitive})
             )
         }
     }

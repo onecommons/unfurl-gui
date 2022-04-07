@@ -4,7 +4,8 @@ import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormItem, Input, InputNumber, Checkbox, Select, Password, Editable} from "@formily/element";
+import {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space, FormButtonGroup} from "@formily/element";
+import { Button } from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
 
 const ComponentMap = {
@@ -13,6 +14,7 @@ const ComponentMap = {
   number: 'InputNumber',
   enum: 'Select',
   object: 'Editable.Popover',
+  array: 'ArrayItems',
   password: 'Password',
 };
 
@@ -20,22 +22,39 @@ const SerializationFunctions = {
   number(input, value) {
     const result = parseInt(value)
     if(!isNaN(result)) return result
+  },
+  array(input, value) {
+    const result = []
+    for(const item of value) {
+      result.push(item['input'])
+    }
+    return result
   }
 }
 function serializeInput(input, value) {
-  if(input?.type) {
-    const serializer = SerializationFunctions[input.type]
+  let type = input?.type
+  let propertyName = input.name
+  if(input.name?.endsWith('.input')) {
+    type = 'arrayItem'
+    propertyName = propertyName.slice(0, -6)
+  }
+  let result
+  if(type) {
+    const serializer = SerializationFunctions[type]
     if(typeof serializer == 'function') {
-      return serializer(input, value)
+      result = [propertyName, serializer(input, value)]
     }
   }
 
-  return value
+  return (result || [propertyName, value])
+
 }
 
 const fields = createSchemaField({
   components: {
     FormItem,
+    ArrayItems,
+    Space,
     Input,
     InputNumber, Checkbox, Select, Password, Editable
   }
@@ -46,6 +65,8 @@ export default {
   name: 'OcInputs',
   components: {
     FormProvider,
+    FormButtonGroup,
+    Button,
     ...fields
   },
 
@@ -62,7 +83,8 @@ export default {
 
   data() {
     return {
-      form: null
+      form: null,
+      mainInputs: []
     }
   },
   computed: {
@@ -72,6 +94,7 @@ export default {
       return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
     },
 
+    /*
     mainInputs() {
       const result = []
       for (const property of this.card.properties) {
@@ -87,6 +110,7 @@ export default {
       return result
 
     },
+    */
 
     initialFormValues() {
       const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.initialValue}), {})
@@ -125,7 +149,7 @@ export default {
       try {
         await this.form.validate()
         for(const key of Object.keys(this.initialFormValues)) {
-          await this.form.fields[key].validate()
+          await this.form.fields[key]?.validate()
         }
       } catch(e) {
         status = 'error'
@@ -150,6 +174,39 @@ export default {
         let componentType = currentValue.type;
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
+        } else if (componentType === 'array') {
+          const items = currentValue.items
+          //items['x-decorator'] = 'ArrayItems.Item'
+          //items['x-component'] = ComponentMap[items.type]
+          currentValue.items = {
+            type: 'object',
+            'x-decorator': 'ArrayItems.Item',
+            properties: {
+              space: {
+                type: 'void',
+                'x-component': 'Space',
+                properties: {
+                  input: {
+                    ...items,
+                    'x-decorator': 'FormItem',
+                    'x-component': ComponentMap[items.type]
+                  },
+                  remove: {
+                    type: 'void',
+                    'x-decorator': 'FormItem',
+                    'x-component': 'ArrayItems.Remove'
+                  }
+                }
+              }
+            }
+          }
+          currentValue.properties = {
+            add: {
+              type: 'void',
+              title: 'Add',
+              'x-component': 'ArrayItems.Addition'
+            }
+          }
         } else {
           if (currentValue.enum) {
             componentType = 'enum';
@@ -172,15 +229,37 @@ export default {
     },
 
     triggerSave: _.debounce(function preview(field, value) {
-      const propertyValue = serializeInput(field, value)
-      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
+      const [propertyName, propertyValue] = serializeInput(field, value)
+      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName, propertyValue, isSensitive: field.sensitive})
     }, 200),
 
     getRandomKey(length) {
       return Math.random().toString(36).replace(/[^a-z][0-9]+/g, '').substr(0, length);
+    },
+    getMainInputs() {
+      const result = []
+      for (const property of this.card.properties) {
+        try{
+          const next = {...property, ...this.fromSchema[property.name]}
+          next.initialValue = _.cloneDeep(next.value || next.default)
+          _.forOwn(next.initialValue, function(value, key) {
+            if(Array.isArray(value)) {
+              for(const i in value){ 
+                value[i] = {input: value[i]}
+              }
+            }
+          })
+          result.push(next)
+        } catch (e) {
+          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
+        }
+      }
+
+      return result
     }
   },
   mounted() {
+    this.mainInputs = this.getMainInputs()
     const form = createForm({
       initialValues: this.initialFormValues,
       effects: () => {

@@ -20,7 +20,7 @@ export default {
     },
     data() {
         return {
-            DEFAULT_ACTION_LABEL: 'Add a new provider'
+            DEFAULT_ACTION_LABEL: null
         }
     },
     components: {
@@ -65,7 +65,7 @@ export default {
             switch(requirement.completionStatus) {
               case 'connected': return __('Disconnect')
               case 'created': return __('Remove')
-              default: return __(this.DEFAULT_ACTION_LABEL)
+              default: return this.DEFAULT_ACTION_LABEL
             }
         },
 
@@ -175,6 +175,7 @@ export default {
                 @click.prevent="findElementToScroll({requirement: dependency})"
                 >{{ __('Edit') }}</gl-button>
             <gl-button
+                v-if="getCurrentActionLabel(dependency)"
                 :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 type="button"
