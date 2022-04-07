@@ -4,8 +4,7 @@ import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space, FormButtonGroup} from "@formily/element";
-import { Button } from 'element-ui'
+import {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {createForm, onFieldInputValueChange} from "@formily/core";
 
 const ComponentMap = {
@@ -65,8 +64,6 @@ export default {
   name: 'OcInputs',
   components: {
     FormProvider,
-    FormButtonGroup,
-    Button,
     ...fields
   },
 

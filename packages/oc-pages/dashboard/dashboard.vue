@@ -11,16 +11,20 @@ export default {
         ...mapActions([
             'loadDashboard',
             'handleResize',
-            'updateEnvironment'
+            'updateEnvironment',
+            'populateJobsList',
+            'populateDeploymentItems',
         ])
     },
     computed: {
         ...mapGetters([
-            'isDashboardLoaded'
+            'isDashboardLoaded',
+            'getDashboardItems'
         ])
     },
     async mounted() {
-        await this.loadDashboard()
+        await Promise.all([this.loadDashboard(), this.populateJobsList()])
+        this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()
         
         const flash = sessionStorage['oc_flash']
