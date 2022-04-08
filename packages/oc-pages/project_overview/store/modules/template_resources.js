@@ -2,7 +2,7 @@ import { cloneDeep } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
 import { slugify } from '../../../vue_shared/util.mjs';
-import {appendDeploymentTemplateInBlueprint, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
+import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 
 const baseState = () => ({
@@ -33,6 +33,7 @@ const mutations = {
         state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
     },
     setCardInputValidStatus(state, {card, status}) {
+        console.log(card.name, status)
         Vue.set(state.inputValidationStatus, card.name, status)
     },
 
@@ -101,8 +102,8 @@ const mutations = {
         const template = state.resourceTemplates[templateName]
         template.properties.find(prop => prop.name == propertyName).value = propertyValue
         Vue.set(state.resourceTemplates, templateName, template)
-    }
-};
+    },
+}
 
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
@@ -225,18 +226,32 @@ const actions = {
                     return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
                 });
             }
+            /*
             for(const property of resourceTemplate.properties) {
                 commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
             }
+            */
 
-            for(const dependency of resourceTemplate.dependencies) {
+            for(let dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
                 const resolvedDependencyMatch = deploymentDict ?
                     deploymentDict.ResourceTemplate[dependency.match] :
-                    rootGetters.lookupResourceTemplate(dependency.match);
-                dependency.valid = !!resolvedDependencyMatch;
+                    getters.lookupResourceTemplate(dependency.match);
+                let valid, completionStatus
+                valid = !!resolvedDependencyMatch;
 
-                dependency.completionStatus = dependency.valid? 'created': null;
+                completionStatus = valid? 'created': null;
+                if(!completionStatus && environmentName) {
+                    // TODO wrap this in a getter
+                    let connected = rootGetters.lookupConnection(environmentName, dependency.match)
+                    if(connected) {
+                        valid = true
+                        completionStatus = 'connected'
+                    }
+                }
+
+                dependency = {...dependency, valid, completionStatus}
+
                 const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '');
 
                 commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name});
@@ -267,9 +282,11 @@ const actions = {
     },
 
     createMatchedResources({commit, getters, dispatch, rootGetters}, {resource}) {
+        /*
         for(const attribute of resource.attributes) {
             commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
         }
+        */
         for(const dependency of resource.dependencies) {
             const resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
             const resolvedDependencyTarget = rootGetters.resolveResource(dependency.target)
@@ -287,7 +304,7 @@ const actions = {
 
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
-    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action, isEnvironmentInstance}) {
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
         try {
             const target = cloneDeep(selection);
             target.type = {...target};
@@ -317,10 +334,10 @@ const actions = {
             target.dependentName = dependentName, target.dependentRequirement = dependentRequirement;
             target.id = btoa(target.name).replace(/=/g, '');
 
-            if(isEnvironmentInstance) {
+            if(state.context == 'environment') {
                 commit(
                     'pushPreparedMutation',
-                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName})
+                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement})
                 )
             }
             else {
@@ -350,6 +367,11 @@ const actions = {
         const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const resourceTemplate = rootGetters.lookupConnection(environmentName, nodeResource);
+        commit(
+            'pushPreparedMutation',
+            appendResourceTemplateInDependent({dependentName, dependentRequirement, templateName: nodeResource})
+
+        )
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace});
     },
 
@@ -372,7 +394,7 @@ const actions = {
             if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
 
                 if(state.context == 'environment') {
-                    commit('pushPreparedMutation', deleteEnvironmentInstance({templateName: name, environmentName: state.lastFetchedFrom.environmentName}), {root: true});
+                    commit('pushPreparedMutation', deleteEnvironmentInstance({templateName: name, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement}), {root: true});
                 }
                 else {
                     commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name, dependentName, dependentRequirement}), {root: true});
@@ -393,17 +415,46 @@ const actions = {
     },
     updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
         //if(state.resourceTemplates[templateName].value === propertyValue) return
-        if(getters.lookupCardPropertyValue(templateName, propertyName) === (propertyValue ?? null)) return
-        commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
+        const template = state.resourceTemplates[templateName]
+
+        function toPropertyUpdate(template, propertyName, propertyValue) {
+            const propertyPath = propertyName.split('.')
+            let rootProperty = template.properties.find(prop => prop.name == propertyPath[0]).value //= propertyValue
+            if(propertyPath.length == 1) {
+                if(rootProperty === (propertyValue ?? null)) return null
+                return {propertyName, propertyValue}
+            }
+            rootProperty = _.cloneDeep(rootProperty) // keep vuex from complaining?
+            if(Array.isArray(rootProperty)) rootProperty = rootProperty.slice(0)
+            let property = rootProperty
+
+            for(const pathComponent of propertyPath.slice(1, -1)) {
+                let newProperty = property[pathComponent]
+                if(!newProperty) {
+                    newProperty = {}
+                    property[pathComponent] = newProperty
+                }
+                property = newProperty
+            }
+            const finalIndex = propertyPath[propertyPath.length -1]
+            if(property[finalIndex] === (propertyValue ?? null)) return null
+            property[finalIndex] = propertyValue
+            return {propertyName: propertyPath[0], propertyValue: rootProperty}
+        }
+
+        const propertyUpdate = toPropertyUpdate(template, propertyName, propertyValue)
+        if(!propertyUpdate) return
+        
+        commit('templateUpdateProperty', {templateName, ...propertyUpdate})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, propertyName, propertyValue, isSensitive})
+                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, ...propertyUpdate, isSensitive})
             )
         } else {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInResourceTemplate({deploymentName, templateName, propertyName, propertyValue, isSensitive})
+                updatePropertyInResourceTemplate({deploymentName, templateName, ...propertyUpdate, isSensitive})
             )
         }
     }
@@ -449,6 +500,7 @@ const getters = {
     getCardsStacked: _state => {
         if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
         return Object.values(_state.resourceTemplates).filter((rt) => {
+            if(rt.visibility == 'hidden') return false
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
 
@@ -470,12 +522,33 @@ const getters = {
             return state.resourceTemplates[resourceName].status
         }
     },
-    // TODO this is a hack and checking for name == cloud is not a permanent solution
-    getDisplayableDependencies(_, getters) {
+    // returns [{card, dependency}] which doesn't really make sense with the name, but I don't know what else to call it
+    getDisplayableDependenciesByCard(state, getters) {
         return function(resourceTemplateName) {
             const dependencies = getters.getDependencies(resourceTemplateName)
             if(!Array.isArray(dependencies)) return []
-            return dependencies.filter(dep => dep.name != 'cloud')
+            const ownDependencies = dependencies.filter(dep => {
+                if(dep?.constraint?.visibility == 'hidden') return false
+                return true
+            })
+            const result = []
+            // requirements
+            for(const dependency of ownDependencies) {
+                result.push({dependency, card: state.resourceTemplates[resourceTemplateName]})
+            }
+
+            // child cards
+            for(const child of getters.getDependencies(resourceTemplateName)) {
+                const match = state.resourceTemplates[child.match]
+                if(match?.visibility == 'hidden') {
+                    for(const {card, dependency} of getters.getDisplayableDependenciesByCard(child.match)) {
+                        if(! getters.requirementMatchIsValid(dependency)) {
+                            result.push({dependency, card})
+                        }
+                    }
+                }
+            }
+            return result
         }
     },
     requirementMatchIsValid: (_state, getters)=> function(requirement) {
@@ -493,16 +566,8 @@ const getters = {
     cardInputsAreValid(state) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
-            return state.inputValidationStatus[card.name] == 'valid'
-            /*
-            if(!card?.properties?.length) return true;
-            let validInputsCount;
-            try {
-                validInputsCount = Object.keys(state.inputValidationStatus[card.name]).length;
-            } catch { return false; }
-            return card.properties.length == validInputsCount;
-            */
-
+            if(!card?.properties?.length) return true
+            return (state.inputValidationStatus[card.name] || 'valid') == 'valid'
         };
     },
     cardDependenciesAreValid(state, getters) {

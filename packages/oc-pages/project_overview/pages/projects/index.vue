@@ -12,7 +12,7 @@ import EnvironmentCreationDialog from '../../components/environment-creation-dia
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
 import {OcTab, DetectIcon} from '../../../vue_shared/oc-components'
-import { bus } from '../../bus';
+import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import {deleteEnvironmentByName} from '../../../vue_shared/client_utils/environments'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
@@ -100,6 +100,7 @@ export default {
             'yourDeployments',
             'getEnvironments',
             'getProjectInfo',
+            'getProjectDescription',
             'getTemplatesList',
             'hasEditPermissions',
             'getUsername',
@@ -205,7 +206,13 @@ export default {
     },
     async mounted() {
 
-        await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
+        await Promise.all([
+            this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath}),
+            this.populateJobsList()
+        ])
+        if(this.yourDeployments.length) {
+            this.populateDeploymentItems(this.yourDeployments)
+        }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
@@ -349,7 +356,9 @@ export default {
             'syncGlobalVars',
             'fetchProjectInfo',
             'commitPreparedMutations',
-            'updateEnvironment'
+            'updateEnvironment',
+            'populateDeploymentItems',
+            'populateJobsList'
         ]),
         ...mapMutations([
             'pushPreparedMutation',
@@ -373,7 +382,7 @@ export default {
                     :requirements="getProjectInfo.primary.requirements" 
                     :inputs="inputProperties"
                     :outputs="outputProperties"
-                    :project-description="getProjectInfo.description"
+                    :project-description="getProjectDescription"
                     :project-image="getProjectInfo.image"
                     :live-url="getProjectInfo.livePreview"
                     :project-name="getProjectInfo.name"

@@ -12,7 +12,7 @@ import OcInputs from '../../components/shared/oc_inputs.vue'
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
-import { bus } from '../../bus';
+import { bus } from 'oc_vue_shared/bus';
 import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'

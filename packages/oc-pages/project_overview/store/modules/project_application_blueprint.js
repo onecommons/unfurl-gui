@@ -179,7 +179,8 @@ const actions = {
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
         }
-        const transforms = {
+        let transforms
+        transforms = {
             ResourceTemplate(resourceTemplate) {
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
                     resourceTemplate.dependencies.push(generatedDep)
@@ -187,10 +188,14 @@ const actions = {
                 for(const generatedProp of getters.getMissingProperties(resourceTemplate)) {
                     resourceTemplate.properties.push(generatedProp)
                 }
+                resourceTemplate.__typename = 'ResourceTemplate'
             },
             DeploymentTemplate(deploymentTemplate) {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
+                }
+                if(deploymentTemplate.ResourceTemplate) {
+                    Object.values(deploymentTemplate.ResourceTemplate).forEach(transforms.ResourceTemplate)
                 }
                 deploymentTemplate.__typename = 'DeploymentTemplate'
             },

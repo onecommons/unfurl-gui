@@ -81,7 +81,7 @@ export default {
         tableItems() {
             let result = this.getDashboardItems
             if(this.totalDeploymentsCount > 0) {
-                result = this.getDashboardItems.filter(item => item.context?.deployment?.__typename == 'Deployment')
+                result = this.getDashboardItems.filter(item => !!item.context?.deployment)
             }
             return result
         }
@@ -139,7 +139,7 @@ export default {
         <environment-cell :environment="scope.item.context.environment" />
     </template>
     <template #deployment="scope">
-        <deployment-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" />
+        <deployment-cell :scope="scope" :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" />
     </template>
     <template #resource="scope">
         <resource-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" :resource="scope.item.context.resource" />

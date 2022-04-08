@@ -31,9 +31,7 @@ export default {
     },
     computed: {
         ...mapGetters([
-            'getDashboardItems',
-            'runningDeploymentsCount',
-            'stoppedDeploymentsCount'
+            'getDashboardItems'
         ]),
         displayModal: {
             get() {
@@ -51,9 +49,6 @@ export default {
                 this.$router.replace({path, query})
             }
         },
-        tableItems() {
-            return this.getDashboardItems.filter(item => item.context?.deployment?.__typename == 'Deployment')
-        }
     },
     watch: {
         currentTab(value) {
@@ -83,7 +78,7 @@ export default {
             </div>
             <gl-button variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
         </div>
-        <environments-index-table v-if="getDashboardItems.length > 0" :items="tableItems"/>
+        <environments-index-table v-if="getDashboardItems.length > 0" :items="getDashboardItems"/>
             
         <create-environment-modal v-model="displayModal" />
     </div>

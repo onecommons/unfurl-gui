@@ -84,6 +84,7 @@ export default {
       (state) => state['ci_variables']['variable'],
     ),
     isTipVisible() {
+      return false // oc change
       return !this.isTipDismissed && AWS_TOKEN_CONSTANTS.includes(this.variable.key);
     },
     canSubmit() {
