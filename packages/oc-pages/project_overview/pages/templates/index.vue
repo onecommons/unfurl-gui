@@ -448,8 +448,13 @@ export default {
 
         const query = {...this.$route.query}
         delete query.ts
-        this.$router.replace({query})
-        if(! redirectToJobConsole({pipelineData}) && pipelineData?.id) {
+        const router = this.$router
+        function beforeRedirect() {
+          const {href} = router.resolve({name: 'projectHome', query})
+          window.history.replaceState({}, null, href)
+        }
+        if(! await redirectToJobConsole({pipelineData}, {beforeRedirect}) && pipelineData?.id) {
+          beforeRedirect()
           return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
         }
       } catch (err) {

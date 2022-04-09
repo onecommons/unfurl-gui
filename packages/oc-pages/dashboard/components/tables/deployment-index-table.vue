@@ -1,7 +1,6 @@
 <script>
 import TableComponent from '../../../vue_shared/components/oc/table.vue'
 import {OcTab} from '../../../vue_shared/oc-components'
-import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
@@ -48,7 +47,6 @@ const tabFilters =  [
 export default {
     components: {
         TableComponent,
-        StatusIcon,
         EnvironmentCell,
         ResourceCell,
         DeploymentControls,
@@ -403,17 +401,12 @@ export default {
                 <div class="d-flex">
                     <deployment-status-icon :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <a :href="`/${scope.item.context.application.projectPath}`">
+                        <a :href="`/${scope.item.context.deployment.projectPath}`">
                             <b> {{scope.item.context.application.title}}: </b>
                         </a>
-                        <component 
-                            v-if="scope.item.context.deployment"
-                            :id="deploymentNameId(scope.item.context.deployment.name)"
-                            :is="deploymentAttrs(scope).href? 'a': 'router-link'"
-                            v-bind="deploymentAttrs(scope)"
-                            >
+                        <a :href="deploymentItem(scope, 'viewableLink')">
                             {{scope.item.context.deployment.title}}
-                        </component>
+                        </a>
                     </div>
                 </div>
             </template>
@@ -443,7 +436,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" :viewDeploymentLink="deploymentAttrs(scope).href || deploymentAttrs(scope)"/>
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>
