@@ -146,7 +146,7 @@ export default {
             </div>
         </oc-tab>
         <oc-tab v-if="shouldRenderInputs" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="card.properties.length">
-            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="inputs"/>
+            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="properties"/>
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
         </oc-tab>
         <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="card.attributes.length">

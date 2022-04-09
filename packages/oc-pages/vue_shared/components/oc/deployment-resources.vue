@@ -27,7 +27,7 @@ export default {
         GlModal,
         GlFormGroup,
         GlFormInput,
-        GlFormCheckbox,
+        //GlFormCheckbox,
         OcCard,
         OcList,
         OcListResource,
@@ -444,7 +444,7 @@ export default {
                 }
                 return nword + 'ing';
             };
-            return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b> ? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other (nodes ?) which are linked to it.`;
+            return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>? <span style="text-transform: capitalize;">${gerundize(this.nodeAction)}</span> <b>${this.nodeTitle}</b> might affect other resources that are linked to it.`;
         },
 
         legendDeleteTemplate() {
@@ -625,9 +625,9 @@ export default {
             @primary="handleDeleteNode"
             >
             <p v-html="getLegendOfModal()"></p>
-            <gl-form-checkbox v-model="checkedNode">
+            <!--gl-form-checkbox v-model="checkedNode">
                 <b>{{ nodeTitle }}</b>
-            </gl-form-checkbox>
+            </gl-form-checkbox-->
         </gl-modal>
 
         <!-- Modal Connect -->
