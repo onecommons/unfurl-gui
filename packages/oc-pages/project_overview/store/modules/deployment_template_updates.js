@@ -56,7 +56,7 @@ const Serializers = {
         fieldsToDictionary(env, 'connections', 'instances')
     },
     DeploymentTemplate(dt, state) {
-        console.log(dt)
+        // should we be serializing local templates?
         const localResourceTemplates = dt?.ResourceTemplate
         if(localResourceTemplates) {
             for(const rt of Object.keys(localResourceTemplates)) {
@@ -67,8 +67,14 @@ const Serializers = {
         }
     },
     ResourceTemplate(rt) {
+        delete rt.visibility // do not commit template visibility
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target
+        })
+        rt.dependencies.forEach(dep => {
+            if(! dep.constraint.visibility) {
+                dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
+            }
         })
     },
     '*': function(any) {
