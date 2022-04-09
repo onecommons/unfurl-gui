@@ -37,7 +37,7 @@ export default {
         <StatusIcon :size="16" v-if="!statuses.length" :status="1" />
         <StatusIcon :size="16" :key="status.name" v-for="status in statuses" :status="status.status" />
     </div>
-    <div v-else-if="deploymentItem.jobStatus" class="d-flex ml-2 mr-1 align-items-center">
+    <div v-else-if="deploymentItem && deploymentItem.jobStatus" class="d-flex ml-2 mr-1 align-items-center">
         <gl-icon :aria-label="`Pipeline: ${deploymentItem.jobStatus}`" :title="`Pipeline: ${deploymentItem.jobStatus}`" :name="`status_${deploymentItem.jobStatus}`" :size="16" />
     </div>
     <div v-else-if="hasDeployPath" class="d-flex ml-2 mr-1 align-items-center">

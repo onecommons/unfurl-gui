@@ -5,6 +5,7 @@ import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
+import _ from 'lodash'
 import { __ } from '~/locale';
 import OcCard from '../../components/shared/oc_card.vue';
 import OcList from '../../components/shared/oc_list.vue';
@@ -396,6 +397,7 @@ export default {
       })
       await this.commitPreparedMutations()
     },
+    debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
     async triggerSave(type) {
       try {
         await this.commitPreparedMutations();
@@ -426,7 +428,7 @@ export default {
       }
     },
 
-    async triggerDeployment() {
+    triggerDeployment: _.debounce(async function() {
       try {
         this.triggeredDeployment = true;
         await this.triggerSave();
@@ -456,7 +458,7 @@ export default {
         const [error] = errors;
         return createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
       }
-    },
+    }, 250),
 
     cleanModalResource() {
       this.resourceName = '';
@@ -638,8 +640,8 @@ export default {
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
-            @saveDraft="triggerSave('draft')"
-            @saveTemplate="triggerSave()"
+            @saveDraft="debouncedTriggerSave('draft')"
+            @saveTemplate="debouncedTriggerSave()"
             @triggerDeploy="triggerDeployment()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"
             />
