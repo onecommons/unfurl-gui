@@ -536,7 +536,6 @@ const getters = {
                 ?.dependencies?.find(dep => dep.name == dependentRequirement)
                 ?.constraint
 
-            console.log('constraint is hidden?', dependentName, dependentRequirement, constraint)
             switch(constraint?.visibility) {
                 case 'hidden':
                     return true
