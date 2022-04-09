@@ -26,7 +26,7 @@ export default {
     GlSkeletonLoader,
     GlFormGroup,
     GlFormInput,
-    GlFormCheckbox,
+    //GlFormCheckbox,
     OcCard,
     OcList,
     OcInputs,

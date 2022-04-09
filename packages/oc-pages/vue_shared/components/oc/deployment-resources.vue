@@ -27,7 +27,7 @@ export default {
         GlModal,
         GlFormGroup,
         GlFormInput,
-        GlFormCheckbox,
+        //GlFormCheckbox,
         OcCard,
         OcList,
         OcListResource,
@@ -625,9 +625,9 @@ export default {
             @primary="handleDeleteNode"
             >
             <p v-html="getLegendOfModal()"></p>
-            <gl-form-checkbox v-model="checkedNode">
+            <!--gl-form-checkbox v-model="checkedNode">
                 <b>{{ nodeTitle }}</b>
-            </gl-form-checkbox>
+            </gl-form-checkbox-->
         </gl-modal>
 
         <!-- Modal Connect -->
