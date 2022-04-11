@@ -100,6 +100,7 @@ export default {
             'yourDeployments',
             'getEnvironments',
             'getProjectInfo',
+            'getProjectDescription',
             'getTemplatesList',
             'hasEditPermissions',
             'getUsername',
@@ -205,7 +206,13 @@ export default {
     },
     async mounted() {
 
-        await this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath})
+        await Promise.all([
+            this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath}),
+            this.populateJobsList()
+        ])
+        if(this.yourDeployments.length) {
+            this.populateDeploymentItems(this.yourDeployments)
+        }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
@@ -349,7 +356,9 @@ export default {
             'syncGlobalVars',
             'fetchProjectInfo',
             'commitPreparedMutations',
-            'updateEnvironment'
+            'updateEnvironment',
+            'populateDeploymentItems',
+            'populateJobsList'
         ]),
         ...mapMutations([
             'pushPreparedMutation',
@@ -373,7 +382,7 @@ export default {
                     :requirements="getProjectInfo.primary.requirements" 
                     :inputs="inputProperties"
                     :outputs="outputProperties"
-                    :project-description="getProjectInfo.description"
+                    :project-description="getProjectDescription"
                     :project-image="getProjectInfo.image"
                     :live-url="getProjectInfo.livePreview"
                     :project-name="getProjectInfo.name"

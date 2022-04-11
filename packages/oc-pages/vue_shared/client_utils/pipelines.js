@@ -70,6 +70,7 @@ export async function redirectToJobConsole({pipelineData}, options) {
         if(options?.newTab) {
             window.open(redirectTarget, '_blank')
         } else {
+            if(typeof options?.beforeRedirect == 'function') options.beforeRedirect()
             return redirectTo(redirectTarget)
         }
 

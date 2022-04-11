@@ -17,11 +17,6 @@ export default (elemId='js-oc-project-overview') => {
 
   const {
     projectPath,
-    treePath,
-    ref,
-    projectIcon,
-    projectName,
-    buttonId,
     buttonStarText,
     buttonStarLink,
     buttonStarIcon,
@@ -30,7 +25,6 @@ export default (elemId='js-oc-project-overview') => {
     buttonForkPath,
     buttonForkLink,
     buttonForkCount,
-    linkDeployment,
   } = element.dataset;
 
   const base = window.location.pathname.includes('/-/overview') ?
@@ -40,11 +34,6 @@ export default (elemId='js-oc-project-overview') => {
 
   Vue.prototype.$projectGlobal = {
     projectPath,
-    projectIcon,
-    buttonId,
-    treePath,
-    projectName,
-    ref,
     buttonStar : {
       text: buttonStarText,
       link: buttonStarLink,
@@ -57,7 +46,7 @@ export default (elemId='js-oc-project-overview') => {
       link: buttonForkLink,
       count: buttonForkCount
     },
-    linkDeployment,
+    ...element.dataset
   };
 
   return new Vue({

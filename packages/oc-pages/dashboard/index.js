@@ -5,14 +5,14 @@ import apolloProvider from './graphql';
 import { GlToast } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router'
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash, { FLASH_TYPES } from '../vue_shared/client_utils/oc-flash';
 
 Vue.use(GlToast);
 const router = createRouter()
 Vue.config.errorHandler = function(err, vm, info) {
     console.error(err)
     if(err.flash) {
-        return createFlash({ message: err.message, type: FLASH_TYPES.ALERT });
+        return createFlash({ message: err.message, type: FLASH_TYPES.ALERT, projectPath: store.getters.getHomeProjectPath});
     }
 }
 

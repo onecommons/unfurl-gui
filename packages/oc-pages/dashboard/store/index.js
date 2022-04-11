@@ -12,6 +12,7 @@ import misc from '../../project_overview/store/modules/misc'
 import deployment_template_updates from '../../project_overview/store/modules/deployment_template_updates'
 import template_resources from '../../project_overview/store/modules/template_resources'
 import table_data from './modules/table_data'
+import deployment_info from './modules/deployment-info'
 //import misc from './modules/misc';
 import {createCiVariablesStore} from '../../vue_shared/oc-components'
 
@@ -26,7 +27,8 @@ const modules = {
     misc,
     deployment_template_updates,
     template_resources,
-    table_data
+    table_data,
+    deployment_info
 }
 const variableDataEl = document.querySelector('#js-oc-ci-variables')
 

@@ -113,10 +113,6 @@ export default {
             this.$emit('deleteNode', payload)
         },
 
-        getLegend(title) {
-            return `Are you sure you want to delete <b>${title}</b> ? Deleting <b>${title}</b> might affect other (nodes ?) which are linked to it.`;
-        },
-
         adaptWidth() {
             const container = this.$refs.container
             if(!this.expanded) {

@@ -23,18 +23,7 @@ export default {
     computed: {
         ...mapGetters([
             'getDashboardItems',
-            'runningDeploymentsCount',
-            'stoppedDeploymentsCount'
         ]),
-        deploymentsCount() {
-            return this.runningDeploymentsCount + this.stoppedDeploymentsCount
-        },
-        runningDeployments() {
-            return this.getDashboardItems.filter(item => item.deployment && !item.deployment.isStopped)
-        },
-        stoppedDeployments() {
-            return this.getDashboardItems.filter(item => item.deployment && item.deployment.isStopped)
-        },
         deployments() {
             return this.getDashboardItems.filter(item => item.deployment)
         }

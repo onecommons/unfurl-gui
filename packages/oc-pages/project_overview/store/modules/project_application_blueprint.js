@@ -6,6 +6,7 @@ import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
 import Vue from 'vue'
 
 
+// TODO these classes are barely used and probably shouldn't stay
 class ApplicationBlueprint {
 
     constructor(source, state) {
@@ -188,6 +189,11 @@ const actions = {
                 for(const generatedProp of getters.getMissingProperties(resourceTemplate)) {
                     resourceTemplate.properties.push(generatedProp)
                 }
+
+                if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
+                resourceTemplate.dependencies.forEach(dep => {
+                    if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
+                })
                 resourceTemplate.__typename = 'ResourceTemplate'
             },
             DeploymentTemplate(deploymentTemplate) {
@@ -209,18 +215,16 @@ const actions = {
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             ResourceType(resourceType) {
-                if(!resourceType.title) {
-                    resourceType.title = resourceType.name
-                }
+                if(!resourceType.title) resourceType.title = resourceType.name
                 resourceType.__typename = 'ResourceType'
             },
             Resource(resource) {
-                if(!resource.dependencies) {
-                    resource.dependencies = resource.connections || []
-                }
-                if(!resource.attributes) {
-                    resource.attributes = []
-                }
+                if(!resource.dependencies) resource.dependencies = resource.connections || []
+                if(!resource.attributes) resource.attributes = []
+                if(!resource.visibility) resource.visibility = 'inherit'
+                resource.dependencies.forEach(dep => {
+                    if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
+                })
                 resource.__typename = 'Resource'
             },
             Deployment(deployment) {

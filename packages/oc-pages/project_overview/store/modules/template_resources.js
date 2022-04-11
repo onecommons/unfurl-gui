@@ -107,41 +107,46 @@ const mutations = {
 
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
-    populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment}) {
-        let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate))
+    populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
+        const isDeploymentTemplate = deployment.__typename == 'DeploymentTemplate'
+        let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(
+            isDeploymentTemplate? deployment.name: deployment.deploymentTemplate
+        ))
         if(!deploymentTemplate) {
             const message = `Could not lookup deployment blueprint '${deployment.deploymentTemplate}'`
             const e = new Error(message)
             e.flash = true
             throw e
         }
-        deploymentTemplate = {...deploymentTemplate, ...deployment}
-        let resource = rootGetters.resolveResource(deploymentTemplate.primary)
+        if(!isDeploymentTemplate) deploymentTemplate = {...deploymentTemplate, ...deployment}
+        let resource = isDeploymentTemplate? rootGetters.resolveResourceTemplate(deploymentTemplate.primary) : rootGetters.resolveResource(deploymentTemplate.primary)
         if(!resource) {
             const message = `Could not lookup resource '${deploymentTemplate.primary}'`
             const e = new Error(message)
             e.flash = true
             throw e
         }
-        resource = {...resource, template: getters.lookupResourceTemplate(resource.template)}
-        if(resource.dependencies.length == 0 && resource.template.dependencies.length > 0) { // TODO remove this workaround
-            resource.dependencies = resource.template.dependencies
-            window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
-        }
-        if(resource.attributes.length == 0 && resource.template.properties.length > 0) { // TODO remove this workaround
-            resource.attributes = resource.template.properties
-            window.alert(`Your resource is missing attributes, this is likely an export bug.  ResourceTemplate's properties will be used for rendering.`)
+        if(!isDeploymentTemplate) resource = {...resource, template: getters.lookupResourceTemplate(resource.template)}
+        if(!isDeploymentTemplate) {
+            if(resource.dependencies.length == 0 && (resource?.template?.dependencies?.length ?? 0) > 0) { // TODO remove this workaround
+                resource.dependencies = resource.template.dependencies
+                window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
+            }
+            if(resource.attributes.length == 0 && (resource?.template?.properties?.length ?? 0) > 0) { // TODO remove this workaround
+                resource.attributes = resource.template.properties
+                window.alert(`Your resource is missing attributes, this is likely an export bug.  ResourceTemplate's properties will be used for rendering.`)
+            }
         }
 
         deploymentTemplate.primary = resource.name
         if(!deploymentTemplate.cloud) {
-            const environment = rootGetters.lookupEnvironment(deploymentTemplate._environment)
+            const environment = rootGetters.lookupEnvironment(environmentName)
             if(environment?.primary_provider?.type) {
                 deploymentTemplate.cloud = environment.primary_provider.type
             }
         }
-        commit('updateLastFetchedFrom', {environmentName: deploymentTemplate._environment})
-        dispatch('createMatchedResources', {resource})
+        commit('updateLastFetchedFrom', {environmentName})
+        dispatch('createMatchedResources', {resource, isDeploymentTemplate})
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', resource)
 
@@ -280,7 +285,8 @@ const actions = {
         commit('setContext', context)
     },
 
-    createMatchedResources({commit, getters, dispatch, rootGetters}, {resource}) {
+    // NOTE this doesn't work with instantiating from an unfurl.json blueprint because of local ResourceTemplate
+    createMatchedResources({commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
         /*
         for(const attribute of resource.attributes) {
             commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
@@ -288,14 +294,17 @@ const actions = {
         */
         for(const dependency of resource.dependencies) {
             const resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
-            const resolvedDependencyTarget = rootGetters.resolveResource(dependency.target)
-            dependency.valid = !!(resolvedDependencyMatch && resolvedDependencyTarget)
-            const id = dependency.valid && btoa(resolvedDependencyTarget.name).replace(/=/g, '')
+            let child = resolvedDependencyMatch
+            if(!isDeploymentTemplate && child) {
+                child = rootGetters.resolveResource(dependency.target)
+            }
+            const valid = !!(child)
+            const id = valid && btoa(child.name).replace(/=/g, '')
 
-            commit('createTemplateResource', {...resolvedDependencyTarget, template: resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name})
+            commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
 
-            if(dependency.valid) {
-                dispatch('createMatchedResources', {resource: resolvedDependencyTarget})
+            if(valid) {
+                dispatch('createMatchedResources', {resource: child, isDeploymentTemplate})
             }
         }
     },
@@ -303,6 +312,7 @@ const actions = {
 
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
+    // TODO use dependenciesFromResourceType here
     async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
         try {
             const target = cloneDeep(selection);
@@ -313,13 +323,14 @@ const actions = {
             target.title = title;
 
             target.__typename = 'ResourceTemplate'
+            target.visibility = target.visibility || 'inherit'
             try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
             catch { target.properties = []; }
 
             if(target?.requirements?.length > 0) {
                 target.dependencies = target.requirements.map(req => {
                     return {
-                        constraint: req,
+                        constraint: {...req, visibility: req.visibility || 'visible'},
                         name: req.name,
                         match: null,
                         target: null
@@ -496,10 +507,64 @@ const getters = {
             }
         }
     },
-    getCardsStacked: _state => {
+    cardIsHiddenByVisibilitySetting(state, getters) {
+        return function(_card) {
+            return false
+            const card = state.resourceTemplates[_card?.name || _card]
+            if(card?.visibility == 'hidden') return true
+            if(card?.dependentName) {
+                return getters.cardIsHiddenByVisibilitySetting(card.dependentName)
+            }
+            return false
+        }
+    },
+    cardIsHiddenByConstraint(state, getters) {
+        return function(_card) {
+            const card = state.resourceTemplates[_card?.name || _card]
+            const dependentConstraint = getters.getDependencies(card?.dependentName)
+                ?.find(req => req?.match == card.name)
+                ?.constraint
+
+            if(dependentConstraint?.visibility == 'hidden') return true
+
+            return false
+        }
+    },
+    constraintIsHidden(state, getters) {
+        return function(dependentName, dependentRequirement) {
+            const constraint = state.resourceTemplates[dependentName]
+                ?.dependencies?.find(dep => dep.name == dependentRequirement)
+                ?.constraint
+
+            switch(constraint?.visibility) {
+                case 'hidden':
+                    return true
+                case 'inherit':
+                    // inherit from dependent card
+                    return getters.cardIsHidden(dependentName)
+                default: // constraints are visible by default
+                    return false
+            }
+        }
+    },
+    cardIsHidden(state, getters) {
+        return function(cardName) {
+            const card = state.resourceTemplates[cardName?.name || cardName]
+            switch(card.visibility) {
+                case 'hidden':
+                    return true
+                case 'visible':
+                    return false
+                default: // templates inherit by default
+                    // inherit from constraint
+                    return getters.constraintIsHidden(card.dependentName, card.dependentRequirement)
+            }
+        }
+    },
+    getCardsStacked: (_state, getters) => {
         if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
         return Object.values(_state.resourceTemplates).filter((rt) => {
-            if(rt.visibility == 'hidden') return false
+            if(getters.cardIsHidden(rt.name)) return false
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
 
@@ -513,37 +578,46 @@ const getters = {
     },
     getDependencies: (_state) => {
         return function(resourceTemplateName) {
-            return _state.resourceTemplates[resourceTemplateName]?.dependencies;
+            return _state.resourceTemplates[resourceTemplateName]?.dependencies || [];
         };
     },
     cardStatus(state) {
         return function(resourceName) {
-            return state.resourceTemplates[resourceName].status
+            return state.resourceTemplates[resourceName]?.status
         }
     },
-    // returns [{card, dependency}] which doesn't really make sense with the name, but I don't know what else to call it
-    getDisplayableDependenciesByCard(state, getters) {
-        return function(resourceTemplateName) {
-            const dependencies = getters.getDependencies(resourceTemplateName)
-            if(!Array.isArray(dependencies)) return []
-            const ownDependencies = dependencies.filter(dep => {
-                if(dep?.constraint?.visibility == 'hidden') return false
-                return true
-            })
+    getBuriedDependencies(state, getters) {
+        return function(cardName) {
+            if(!getters.cardIsHidden(cardName?.name || cardName)) return []
+            const card = state.resourceTemplates[cardName?.name || cardName]
             const result = []
-            // requirements
-            for(const dependency of ownDependencies) {
-                result.push({dependency, card: state.resourceTemplates[resourceTemplateName]})
+            for(const dependency of getters.getDependencies(card.name)) {
+                if(!getters.constraintIsHidden(card.name, dependency.name)) {
+                    result.push({card, dependency, buried: true})
+                }
+                let match
+                if(match = dependency.target || dependency.match) { // try to support resources
+                    for(const buriedDescendent of getters.getBuriedDependencies(match)) {
+                        result.push(buriedDescendent)
+                    }
+                }
             }
+            return result
+        }
+    },
+    getDisplayableDependenciesByCard(state, getters) {
+        return function(cardName) {
+            const card = state.resourceTemplates[cardName?.name || cardName]
+            const result = []
+            for(const dependency of getters.getDependencies(card.name)) {
+                if(!getters.constraintIsHidden(card.name, dependency.name)) {
+                    result.push({dependency, card})
+                }
 
-            // child cards
-            for(const child of getters.getDependencies(resourceTemplateName)) {
-                const match = state.resourceTemplates[child.match]
-                if(match?.visibility == 'hidden') {
-                    for(const {card, dependency} of getters.getDisplayableDependenciesByCard(child.match)) {
-                        if(! getters.requirementMatchIsValid(dependency)) {
-                            result.push({dependency, card})
-                        }
+                let match
+                if (match = dependency.target || dependency.match) {
+                    for(const buriedDescendent of getters.getBuriedDependencies(match)) {
+                        result.push(buriedDescendent)
                     }
                 }
             }

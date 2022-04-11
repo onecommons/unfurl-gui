@@ -1,25 +1,20 @@
 <script>
 import TableComponent from '../../../vue_shared/components/oc/table.vue'
-import {GlTabs} from '@gitlab/ui'
 import {OcTab} from '../../../vue_shared/oc-components'
-import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
-import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
+import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
+import {GlTabs, GlModal} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
-import DeploymentItem from './deployment-index-table/deployment-item'
-import gql from 'graphql-tag'
-import graphqlClient from '../../graphql'
 import Vue from 'vue'
 
 
 
 function deploymentGroupBy(item) {
-
     let result 
     try{
         result = `${item.deployment.name}:${item.application.name}`
@@ -49,40 +44,16 @@ const tabFilters =  [
     }
 ]
 
-const LOOKUP_JOBS = gql`
-    query lookupJobs($fullPath: ID!){
-        project(fullPath: $fullPath){
-            name
-            pipelines {
-                count
-                nodes {
-                    id
-                    jobs {
-                        count
-                        nodes {
-                            id
-                            status
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-`
-
 export default {
     components: {
         TableComponent,
-        StatusIcon,
         EnvironmentCell,
         ResourceCell,
-        GlButton,
-        GlIcon,
         DeploymentControls,
         GlModal,
         GlTabs,
-        OcTab
+        OcTab,
+        DeploymentStatusIcon
     },
     props: {
         items: {
@@ -166,7 +137,7 @@ export default {
         if(currentTab == -1) currentTab = 0
 
         const intent = '', target = null
-        return {fields, routes, intent, target, transition: false, jobsByPipelineId: {}, currentTab}
+        return {fields, routes, intent, target, transition: false, currentTab}
 
     },
     methods: {
@@ -256,34 +227,24 @@ export default {
             if(`#${item?.context?.deployment?.name}` == this.$route.hash) return 'highlight'
         },
         // TODO merge these
-        deploymentItemDirect({environment, deployment}, method, ...args) {
-            let result = this.deploymentItems[`${environment?.name}:${deployment?.name}`]
-            if(result && method) {
-                if(args.length) {
-                    result = result[method](...args)
-                } else {
-                    result = result[method]
-                }
-            }
-            return result
-        },
         deploymentItem(scope, method, ...args) {
-            let result = this.deploymentItems[`${scope.item.context.environment?.name}:${scope.item.context.deployment?.name}`]
-            if(result && method) {
-                if(args.length) {
-                    result = result[method](...args)
-                } else {
-                    result = result[method]
-                }
-            }
-            return result
+            const environment = scope.item.context.environment
+            const deployment = scope.item.context.deployment
+            return this.deploymentItemDirect({deployment, environment}, method, ...args)
         },
         deploymentNameId(n) {
             return `deployment-${n}`
         }
     },
     computed: {
-        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY', 'lookupDeployPath', 'getDeploymentDictionary', 'getHomeProjectPath']),
+        ...mapGetters([
+            'pipelinesPath',
+            'UNFURL_MOCK_DEPLOY',
+            'lookupDeployPath',
+            'getDeploymentDictionary',
+            'getHomeProjectPath',
+            'deploymentItemDirect'
+        ]),
         projectPath() {
             const {deployment, environment} = this.target
             if(deployment.__typename == 'DeploymentTemplate') {
@@ -334,26 +295,6 @@ export default {
                 default: return ''
             }
         },
-        deploymentItems() {
-            const dict = {}
-            for(const item of this.items) {
-                let itemKey
-                try {
-                    itemKey = `${item.context.environment.name}:${item.context.deployment.name}`
-                } catch(e) {continue}
-                if(!dict[itemKey]) {
-                    const context = {}
-                    context.environment = item.context.environment
-                    context.deployment = item.context.deployment
-                    context.application = item.context.application
-                    context.deployPath = this.lookupDeployPath(context.deployment.name, context.environment.name)
-                    context.job = this.jobsByPipelineId[context.deployPath?.pipeline?.id]
-                    context.projectPath = this.getHomeProjectPath
-                    dict[itemKey] = new DeploymentItem(context)
-                }
-            }
-            return dict
-        },
         useTabs() {
             return this.tabs && !this.noRouter
         },
@@ -363,7 +304,7 @@ export default {
             for(const tab of tabFilters) {
                 const tabItems = []
                 for(const item of this.items) {
-                    const deploymentItem = this.deploymentItems[`${item.context.environment?.name}:${item.context.deployment?.name}`]
+                    const deploymentItem = this.deploymentItem({item})
                     if(!deploymentItem) {
                         console.error('deployment item not found for', item)
                         continue
@@ -408,7 +349,6 @@ export default {
         this.transition = false
         this.$refs.container.style.transition = ''
 
-
         if(this.$route.hash) {
             setTimeout(
                 () => {
@@ -421,23 +361,6 @@ export default {
                 500
             )
         }
-
-        const result = await graphqlClient.defaultClient.query({
-            query: LOOKUP_JOBS,
-            variables: {fullPath: this.getHomeProjectPath}
-        })
-
-        const newJobsByPipelineId = {}
-        for(const pipeline of result.data.project.pipelines.nodes || []) {
-            const pipelineId = pipeline.id.split('/').pop()
-            for(const job of pipeline.jobs.nodes) {
-                const jobId = job.id.split('/').pop()
-                const status = job.status
-
-                newJobsByPipelineId[pipelineId] = Object.freeze({id: jobId, status})
-            }
-        }
-        this.jobsByPipelineId = newJobsByPipelineId
     },
     tabFilters
 }
@@ -476,29 +399,14 @@ export default {
             </template>
             <template #deployment="scope">
                 <div class="d-flex">
-                    <div v-if="deploymentItem(scope, 'isDeployed') || deploymentItem(scope, 'isUndeployed')" class="d-flex ml-2 mr-1 align-items-center">
-                        <StatusIcon :size="16" v-if="!statuses(scope).length" :status="1" />
-                        <StatusIcon :size="16" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
-                    </div>
-                    <div v-else-if="hasDeployPath(scope)" class="d-flex ml-2 mr-1 align-items-center">
-                        <gl-icon name="pencil-square" :size="16" />
-                    </div>
-                    <div v-else class="d-flex ml-2 mr-1 align-items-center">
-                        <gl-icon :name="`status_${deploymentItem(scope, 'jobStatus')}`" :size="16" />
-                    </div>
-
+                    <deployment-status-icon :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <a :href="`/${scope.item.context.application.projectPath}`">
+                        <a :href="`/${scope.item.context.deployment.projectPath}`">
                             <b> {{scope.item.context.application.title}}: </b>
                         </a>
-                        <component 
-                            v-if="scope.item.context.deployment"
-                            :id="deploymentNameId(scope.item.context.deployment.name)"
-                            :is="deploymentAttrs(scope).href? 'a': 'router-link'"
-                            v-bind="deploymentAttrs(scope)"
-                            >
+                        <a :href="deploymentItem(scope, 'viewableLink')">
                             {{scope.item.context.deployment.title}}
-                        </component>
+                        </a>
                     </div>
                 </div>
             </template>
@@ -528,7 +436,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" :viewDeploymentLink="deploymentAttrs(scope).href || deploymentAttrs(scope)"/>
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>

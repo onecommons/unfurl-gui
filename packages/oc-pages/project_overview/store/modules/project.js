@@ -356,6 +356,7 @@ const getters = {
     getRequirementSelected: _state => _state.requirementSelected,
     getServicesToConnect: _state => _state.servicesToConnect,
     hasEditPermissions: _state => _state.projectInfo.hasEditPermissions,
+    getProjectDescription: state => state.globalVars.projectDescription || state.projectInfo.description,
     yourDeployments(state, getters, _, rootGetters) {
         const result = []
         for(const dict of rootGetters.getDeploymentDictionaries || {}) {

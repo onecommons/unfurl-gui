@@ -11,7 +11,7 @@ export default {
         return {bus, deployment: {}}
     },
     computed: {
-        ...mapGetters(['getDeploymentDictionary', 'lookupDeployment']),
+        ...mapGetters(['getDeploymentDictionary', 'lookupDeploymentOrDraft']),
         breadcrumbItems() {
             return  [
                 {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}, text: 'Deployments'},
@@ -27,14 +27,14 @@ export default {
         const deploymentName = this.$route.params.name
         const state = this.getDeploymentDictionary(deploymentName, environmentName)
         if(!state) {
-            const e = new Error(`Could not lookup deployment '${deploymentName}'.  It may contain errors or creation may have failed.  Please contact support if you believe this is a bug or you would like to suggest a more helpful error message.`)
+            const e = new Error(`Could not lookup deployment '${deploymentName}'.  It may contain errors or creation may have failed.`)
             e.flash = true
             throw e
         }
         this.useProjectState({root: cloneDeep(state)})
-        const deployment = this.lookupDeployment(deploymentName, environmentName)
+        const deployment = this.lookupDeploymentOrDraft(deploymentName, environmentName)
         this.deployment = deployment
-        this.populateDeploymentResources({deployment})
+        this.populateDeploymentResources({deployment, environmentName})
     }
 }
 </script>
