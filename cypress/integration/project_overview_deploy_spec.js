@@ -88,7 +88,7 @@ describe('project overview deploy', () => {
       cy.get('div.formily-element-form-item-error:nth-child(' + i + ') > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > input:nth-child(1)').type('1')
     }
     cy.contains('Size of boot disk (in GB)').click()
-
+    cy.screenshot()
   })
 
   it('Amazon Web Services EC2', () => {
@@ -117,7 +117,41 @@ describe('project overview deploy', () => {
       cy.get('div.formily-element-form-item-error:nth-child(' + i + ') > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > input:nth-child(1)').type('1')
     }
     cy.contains('Size of boot disk (in GB)').click()
+    cy.screenshot()
+  })
 
+  it('Kubernetes Service', () => {
+    // create new deployment
+    cy.get('div.gl-responsive-table-row:nth-child(3) > div:nth-child(4) > span:nth-child(1) > button:nth-child(1)').click()
+    cy.get('input').clear().type('Kubernetes test')
+    cy.get('#__BVID__63').click()
+    cy.get('.gl-new-dropdown-contents > div:nth-child(1) > li:nth-child(2) > button:nth-child(1) > div:nth-child(1)').click()
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // domain_name
+    cy.get('div.formily-element-form-item:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test domain name')
+    // admin_email
+    cy.get('div.formily-element-form-item:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test admin email')
+    
+    cy.contains('host')
+    cy.screenshot()
+  })
+
+  it('Self-Hosted Service', () => {
+    // create new deployment
+    cy.get('div.gl-responsive-table-row:nth-child(4) > div:nth-child(4) > span:nth-child(1) > button:nth-child(1)').click()
+    cy.get('input').clear().type('Self-Hosted test')
+    cy.get('#__BVID__63').click()
+    cy.get('.gl-new-dropdown-contents > div:nth-child(1) > li:nth-child(2) > button:nth-child(1) > div:nth-child(1)').click()
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // domain_name
+    cy.get('div.formily-element-form-item:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test domain name')
+    // admin_email
+    cy.get('div.formily-element-form-item:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test admin email')
+    
+    cy.contains('host')
+    cy.screenshot()
   })
 
 
