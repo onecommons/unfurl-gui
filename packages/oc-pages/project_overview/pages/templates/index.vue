@@ -87,6 +87,7 @@ export default {
       'getDeploymentTemplate',
       'getDependencies',
       'hasPreparedMutations',
+      'safeToNavigateAway',
       'requirementMatchIsValid',
       'resolveRequirementMatchTitle',
       'cardIsValid',
@@ -258,7 +259,7 @@ export default {
     // NOTE this doesn't work without https
     window.addEventListener('beforeunload', this.unloadHandler);
     this.setRouterHook((to, from, next) => {
-      if(this.hasPreparedMutations) {
+      if(this.safeToNavigateAway) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
       }

@@ -418,6 +418,7 @@ const state = {
     accumulator: {},
     patches: {},
     env: {},
+    isCommitting: false,
     useBaseState: false
 }
 
@@ -425,7 +426,10 @@ const getters = {
     getPreparedMutations(state) { return state.preparedMutations },
     getAccumulator(state) { return state.accumulator },
     getPatches(state) { return state.patches },
-    hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) }
+    hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) },
+    safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting}
+
+
 }
 
 const mutations = {
@@ -510,6 +514,9 @@ const mutations = {
     },
     clientDisregardUncommitted(state) {
         state.effectiveFirstMutation = state.preparedMutations.length
+    },
+    setIsCommitting(state, isCommitting) {
+        state.isCommitting = isCommitting
     }
 }
 
@@ -572,7 +579,8 @@ const actions = {
         await patchEnv(state.env, state.environmentScope)
     },
 
-    async commitPreparedMutations({state, dispatch, commit}, o) {
+    async commitPreparedMutations({state, dispatch, commit, getters}, o) {
+        commit('setIsCommitting', true)
         let dryRun = o?.dryRun
         if(!state.useBaseState) {
             await dispatch('fetchRoot')
@@ -581,6 +589,7 @@ const actions = {
         commit('normalizePatches')
         await dispatch('sendUpdateSubrequests', {dryRun})
         commit('resetStagedChanges', {dryRun})
+        commit('setIsCommitting', false)
     }
 }
 
