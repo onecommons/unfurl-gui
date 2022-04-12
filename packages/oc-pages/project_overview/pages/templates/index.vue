@@ -447,11 +447,9 @@ export default {
 
         if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
-        const query = {...this.$route.query}
-        delete query.ts
         const router = this.$router
         function beforeRedirect() {
-          const {href} = router.resolve({name: 'projectHome', query})
+          const {href} = router.resolve({name: 'projectHome', query: {}})
           window.history.replaceState({}, null, href)
         }
         if(! await redirectToJobConsole({pipelineData}, {beforeRedirect}) && pipelineData?.id) {

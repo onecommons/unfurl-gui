@@ -13,7 +13,7 @@ function toGlVariablesAttributes(variables) {
         result.push({
             key,
             secret_value,
-            variable_type: 'env_var'
+            variable_type: 'unencrypted_var'
         })
     })
 
