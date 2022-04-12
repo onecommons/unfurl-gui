@@ -3,7 +3,7 @@ import graphqlClient from '../../graphql';
 import {slugify, USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 import _ from 'lodash'
 
-const state = {loaded: false, callbacks: []};
+const state = {loaded: false, callbacks: [], deployments: {}};
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;
@@ -50,8 +50,10 @@ const getters = {
     getDeploymentDictionary(state) {
         return function(deploymentName, environmentName) {
             for(const dict of state.deployments) {
-                if(!dict.Deployment) continue
-                const deployment = dict.Deployment[deploymentName]
+                const deployment = (
+                    (dict.Deployment && dict.Deployment[deploymentName]) || 
+                    (dict.DeploymentTemplate && dict.DeploymentTemplate[deploymentName])
+                )
                 if(deployment && dict._environment == environmentName) // _environment assigned on fetch in environments store
                     return dict
             }

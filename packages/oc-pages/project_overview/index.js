@@ -4,9 +4,12 @@ import MainComponent from './components/main.vue';
 import createRouter from './router';
 import store from './store';
 import __ from '~/locale';
+import ElementUI from 'element-ui'
 
 import './assets/global.css';
-
+import 'element-ui/lib/theme-chalk/index.css'
+ 
+Vue.use(ElementUI)
 //export {bus} from 'oc/bus-shim';
 
 export default (elemId='js-oc-project-overview') => {
@@ -14,11 +17,6 @@ export default (elemId='js-oc-project-overview') => {
 
   const {
     projectPath,
-    treePath,
-    ref,
-    projectIcon,
-    projectName,
-    buttonId,
     buttonStarText,
     buttonStarLink,
     buttonStarIcon,
@@ -27,7 +25,6 @@ export default (elemId='js-oc-project-overview') => {
     buttonForkPath,
     buttonForkLink,
     buttonForkCount,
-    linkDeployment,
   } = element.dataset;
 
   const base = window.location.pathname.includes('/-/overview') ?
@@ -37,11 +34,6 @@ export default (elemId='js-oc-project-overview') => {
 
   Vue.prototype.$projectGlobal = {
     projectPath,
-    projectIcon,
-    buttonId,
-    treePath,
-    projectName,
-    ref,
     buttonStar : {
       text: buttonStarText,
       link: buttonStarLink,
@@ -54,7 +46,7 @@ export default (elemId='js-oc-project-overview') => {
       link: buttonForkLink,
       count: buttonForkCount
     },
-    linkDeployment,
+    ...element.dataset
   };
 
   return new Vue({

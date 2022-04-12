@@ -31,9 +31,7 @@ export default {
     },
     computed: {
         ...mapGetters([
-            'getDashboardItems',
-            'runningDeploymentsCount',
-            'stoppedDeploymentsCount'
+            'getDashboardItems'
         ]),
         displayModal: {
             get() {
@@ -50,7 +48,7 @@ export default {
                 const path = this.$route.path
                 this.$router.replace({path, query})
             }
-        }
+        },
     },
     watch: {
         currentTab(value) {

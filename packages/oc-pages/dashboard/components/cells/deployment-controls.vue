@@ -1,10 +1,13 @@
 <script>
-import {GlIcon, GlButton} from '@gitlab/ui'
+import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
+import {generateIssueLink} from '../../../vue_shared/client_utils/issues'
+import ControlButtons from './deployment-controls/control-buttons.vue'
 export default {
     props: {
-        resumeEditingLink: Object,
+        resumeEditingLink: [Object, String],
+        viewDeploymentLink: [Object, String],
         scope: Object,
     },
     data() {
@@ -13,15 +16,22 @@ export default {
         }
     },
     components: {
-        GlIcon, GlButton
+        GlIcon,
+        GlDropdown,
+        ControlButtons
     },
     computed: {
         ...mapGetters([
-            'lookupDeployPath'
+            'lookupDeployPath',
+            'getHomeProjectPath',
+            'deploymentItemDirect',
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
         environment() {return this.scope.item.context?.environment},
+        deploymentItem() {
+            return this.deploymentItemDirect({environment: this.environment, deployment: this.deployment})
+        },
         deployPath() { return this.lookupDeployPath(this.deployment?.name, this.environment?.name) },
         pipeline() {
             return this.deployPath?.pipeline
@@ -42,18 +52,38 @@ export default {
             }
             return 'at ' + this.createdAtTime
         },
-        isDraft() {
-            return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
+        controlButtons() {
+            const result = []
+            if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
+            if(this.deploymentItem?.isDraft) result.push('edit-draft')
+            else if(this.deploymentItem?.isEditable) result.push('edit-deployment')
+            else result.push('view-deployment')
+            //if(this.isUndeployed) result.push('deploy')
+            if(this.deploymentItem?.isDeployed) result.push('teardown')
+            result.push('delete')
+            return result
         },
-        isUndeployed() {
-            return this.deployment.__typename == 'Deployment' && !this.isDeployed
+        primaryControlButtons() {
+            return this.controlButtons.slice(0,1)
         },
-        isDeployed() {
-            return this.deployment.__typename == 'Deployment' && this.deployment.statuses?.every(rt => {
-                return rt?.status != 5 && rt?.status != 3
-            })
+        contextMenuControlButtons() {
+            return this.controlButtons.slice(1)
+        },
+        resumeEditingTarget() {
+            return this.deploymentItem?.viewableLink
+        },
+        viewDeploymentTarget() {
+            return this.deploymentItem?.viewableLink
+        },
+        issuesLink() {
+            return generateIssueLink(
+                this.getHomeProjectPath,
+                {
+                    title: `Issue with deployment "${this.deployment.title}"`,
+                    description: 'Please describe the issue you are experiencing:'
+                }
+            )
         }
-
     },
     methods: {
         deleteDeployment() {
@@ -61,54 +91,48 @@ export default {
         },
         stopDeployment() {
           this.$emit('stopDeployment', this.deployment, this.environment)
-        }
+        },
+        startDeployment() {
+          this.$emit('startDeployment', this.deployment, this.environment)
+        },
     },
-    async mounted() {
-        const projectId = this.deployPath?.projectId
-        const pipelineId = this.deployPath?.pipeline?.id
-        if(projectId && pipelineId) {
-            const jobs = await lookupPipelineJobs({projectId, pipelineId})
-            try {
-                this.job = jobs[0]
-            } catch(e) {}
-        }
-
-    },
-
 }
 </script>
 <template>
 <div class="deployment-controls-outer">
-    <div v-if="environment && deployment && application" class="deployment-controls">
-        <div class="external-link-container">
-            <gl-button v-if="isDraft" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href" style="background-color: #eee">
-                <gl-icon name="external-link"/>
-                {{__('Resume')}}
-            </gl-button>
-            <gl-button v-else-if="isUndeployed" variant="confirm" target="_blank" rel="noopener noreferrer" :href="$router.resolve(resumeEditingLink.to).href">
-                <gl-icon name="upload"/>
-                {{__('Deploy')}}
-            </gl-button>
-            <gl-button v-else-if="deployment.url" target="_blank" rel="noopener noreferrer" :href="deployment.url" style="background-color: #eee">
-                <gl-icon name="external-link"/> 
-                {{__('Open')}}
-            </gl-button>
-        </div>
-        <gl-button v-if="isDeployed" @click="stopDeployment" variant="danger"><gl-icon name="clear-all" /> {{__('Undeploy')}} </gl-button>
-        <gl-button v-if="!isDeployed" @click="deleteDeployment"><gl-icon name="remove" /> {{__('Delete')}} </gl-button>
-    </div>
-    <div style="height: 0;" v-if="createdAt">
-        <div style="font-size: 0.95em; position: absolute; width: calc(100% - 1em); text-align: right; top: -2px;">
-            {{__(pipelineWorkflow == 'undeploy'? 'Stopped': 'Created')}} {{createdAtText}} <span v-if="job">(<a :href="job.web_url">Console</a>)</span>
-        </div>
+    <div class="deployment-controls">
+        <control-buttons 
+         :deployment="deployment"
+         :environment="environment"
+         :view-deployment-target="viewDeploymentTarget"
+         :resume-editing-target="resumeEditingTarget"
+         :control-buttons="primaryControlButtons"
+         @deleteDeployment="deleteDeployment"
+         @stopDeployment="stopDeployment"
+         @startDeployment="startDeployment"
+        />
+        <gl-dropdown v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret>
+            <template #button-content>
+                <gl-icon style="color: black" name="ellipsis_v" :size="24" class="p-1"/>
+            </template>
+            <control-buttons
+             :deployment="deployment"
+             :environment="environment"
+             :resume-editing-target="resumeEditingTarget"
+             :view-deployment-target="viewDeploymentTarget"
+             :control-buttons="contextMenuControlButtons"
+             :issues-link="issuesLink"
+             component="gl-dropdown-item"
+             @deleteDeployment="deleteDeployment"
+             @stopDeployment="stopDeployment"
+             @startDeployment="startDeployment"
+            />
+        </gl-dropdown>
     </div>
 </div>
 </template>
 <style scoped>
     
-.deployment-controls >>> .gl-button {
-    width: 8em;
-}
-.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; width: 21.5em; margin: 0 1em;}
-.deployment-controls > * { display: flex;}
+.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
+.deployment-controls > * { display: flex; margin: 0 0.25em;}
 </style>

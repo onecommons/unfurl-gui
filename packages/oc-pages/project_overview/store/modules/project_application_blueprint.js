@@ -6,6 +6,7 @@ import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
 import Vue from 'vue'
 
 
+// TODO these classes are barely used and probably shouldn't stay
 class ApplicationBlueprint {
 
     constructor(source, state) {
@@ -42,7 +43,16 @@ class DeploymentTemplate {
     }
 
     get _primary() {
-        return new ResourceTemplate(this._state['ResourceTemplate'][this.primary], this._state)
+        let primary
+        try {
+            primary = this._state['DeploymentTemplate'][this.name].ResourceTemplate[this.primary]
+        } catch(e) {}
+
+        if(!primary) primary = this._state['ResourceTemplate'][this.primary]
+
+        if(primary) return new ResourceTemplate(primary, this._state)
+
+        return null
     }
 
     toJSON() {
@@ -170,7 +180,8 @@ const actions = {
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
         }
-        const transforms = {
+        let transforms
+        transforms = {
             ResourceTemplate(resourceTemplate) {
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
                     resourceTemplate.dependencies.push(generatedDep)
@@ -178,10 +189,19 @@ const actions = {
                 for(const generatedProp of getters.getMissingProperties(resourceTemplate)) {
                     resourceTemplate.properties.push(generatedProp)
                 }
+
+                if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
+                resourceTemplate.dependencies.forEach(dep => {
+                    if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
+                })
+                resourceTemplate.__typename = 'ResourceTemplate'
             },
             DeploymentTemplate(deploymentTemplate) {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
+                }
+                if(deploymentTemplate.ResourceTemplate) {
+                    Object.values(deploymentTemplate.ResourceTemplate).forEach(transforms.ResourceTemplate)
                 }
                 deploymentTemplate.__typename = 'DeploymentTemplate'
             },
@@ -195,18 +215,16 @@ const actions = {
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             ResourceType(resourceType) {
-                if(!resourceType.title) {
-                    resourceType.title = resourceType.name
-                }
+                if(!resourceType.title) resourceType.title = resourceType.name
                 resourceType.__typename = 'ResourceType'
             },
             Resource(resource) {
-                if(!resource.dependencies) {
-                    resource.dependencies = resource.connections || []
-                }
-                if(!resource.attributes) {
-                    resource.attributes = []
-                }
+                if(!resource.dependencies) resource.dependencies = resource.connections || []
+                if(!resource.attributes) resource.attributes = []
+                if(!resource.visibility) resource.visibility = 'inherit'
+                resource.dependencies.forEach(dep => {
+                    if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
+                })
                 resource.__typename = 'Resource'
             },
             Deployment(deployment) {
@@ -236,15 +254,23 @@ function storeResolver(typename, options) {
     const defaults = {}
     const {instantiateAs} = Object.assign(defaults, options)
     return function(state) {
-        const dictionary = state[typename]
-        if(!dictionary) return null
-        return function(name) {
+        const dictionary = typeof typename == 'string'? state[typename]: state
+        if(!dictionary) return () => null
+        return function(...args) {
+            let name = args[0]
             let entry
-            if(entry = dictionary[name]) {
+            if(typeof typename == 'function') {
+                entry = typename(state, ...args)
+            } else {
+                entry = dictionary[name]
+            }
+            if(entry) {
+                let result
                 if(instantiateAs) {
-                    return new instantiateAs(entry, state)
+                    result = new instantiateAs(entry, state)
                 }
-                else return entry
+                else result = entry
+                return Object.freeze(result)
             } else {
                 return null
             }
@@ -254,11 +280,17 @@ function storeResolver(typename, options) {
 
 const getters = {
     getApplicationRoot(state) {return state},
-    resolveResourceType(state) { return name =>  state['ResourceType'][name] },
-    //resolveResourceTemplate(state) { return name =>  new ResourceTemplate(state['ResourceTemplate'][name], state) },
+    resolveResourceType: storeResolver('ResourceType'),
     resolveResourceTemplate: storeResolver('ResourceTemplate', {instantiateAs: ResourceTemplate}),
-    //resolveDeploymentTemplate(state) { return name =>  new DeploymentTemplate(state['DeploymentTemplate'][name], state) },
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
+    resolveLocalResourceTemplate: storeResolver(
+        function(state, deploymentTemplate, name) {
+            try {
+                return state.DeploymentTemplate[deploymentTemplate].ResourceTemplate[name]
+            } catch(e) {return null}
+        },
+        {instantiateAs: ResourceTemplate}
+    ),
     resolveResource(state) {
         return name => {
             if(!name) return
@@ -269,7 +301,6 @@ const getters = {
             return rt
         }
     },
-    //resolveResource: storeResolver('Resource'),
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
     dependenciesFromResourceType(_, getters) {
         return function(resourceTypeName) {
@@ -278,7 +309,7 @@ const getters = {
                 resourceType = getters.resolveResourceType(resourceTypeName)
             } else { resourceType = resourceTypeName }
 
-            if(!resourceType.requirements) return []
+            if(!resourceType?.requirements) return []
             return resourceType.requirements.map(req => ({
                 name: req.name,
                 constraint: req,
@@ -336,8 +367,8 @@ const getters = {
     },
     getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
 
-    getResources(state) {return Object.values(state.Resource)},
-    getDeployment(state) {return Object.values(state.Deployment)[0]},
+    getResources(state) {return Object.values(state.Resource || {})},
+    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
     lookupConfigurableTypes(state, _a, _b, rootGetters) {

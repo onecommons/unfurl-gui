@@ -1,17 +1,20 @@
 <script>
 import TableComponent from '../../../vue_shared/components/oc/table.vue'
-import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
+import {OcTab} from '../../../vue_shared/oc-components'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
-import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
+import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
+import {GlTabs, GlModal} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
+import Vue from 'vue'
+
+
 
 function deploymentGroupBy(item) {
-
     let result 
     try{
         result = `${item.deployment.name}:${item.application.name}`
@@ -19,9 +22,38 @@ function deploymentGroupBy(item) {
     return result
 }
 
+const tabFilters =  [
+    {
+        title: 'All'
+    },
+    {
+        title: 'Running',
+        filter(item) { return item.isDeployed }
+    },
+    {
+        title: 'Drafts',
+        filter(item) { return item.isDraft }
+    },
+    {
+        title: 'Incomplete',
+        filter(item) { return !item.isDeployed && !item.isDraft && !item.isUndeployed}
+    },
+    {
+        title: 'Undeployed',
+        filter(item) { return item.isUndeployed }
+    }
+]
+
 export default {
     components: {
-        TableComponent, StatusIcon, EnvironmentCell, ResourceCell, GlButton, GlIcon, DeploymentControls, GlModal
+        TableComponent,
+        EnvironmentCell,
+        ResourceCell,
+        DeploymentControls,
+        GlModal,
+        GlTabs,
+        OcTab,
+        DeploymentStatusIcon
     },
     props: {
         items: {
@@ -39,10 +71,15 @@ export default {
         noRouter: {
             type: Boolean,
             default: false
+        },
+        tabs: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
         const fields = [
+            /*
             {
                 key: 'status',
                 tableBodyStyles: {'justify-content': 'center'},
@@ -50,6 +87,7 @@ export default {
                 textValue: (item) => '@' + (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
                 label: 'Status'
             },
+            */
             {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
             {
                 key: 'environment',
@@ -80,7 +118,12 @@ export default {
                 s: 'Resource'
             },
             {
-                key: 'open',
+                key: 'last-deploy',
+                label: 'Last Deploy',
+                textValue: () => '',
+            },
+            {
+                key: 'controls',
                 label: 'Open',
                 tableBodyStyles: {'justify-content': 'flex-end'},
                 groupBy: (item) => item.context.deployment?.name,
@@ -88,8 +131,13 @@ export default {
             },
         ]
 
+        const query = this.$route.query
+        const show = query?.show
+        let currentTab = tabFilters.findIndex(tab => tab.title.toLowerCase() == show?.toLowerCase())
+        if(currentTab == -1) currentTab = 0
+
         const intent = '', target = null
-        return {fields, routes, intent, target, transition: false}
+        return {fields, routes, intent, target, transition: false, currentTab}
 
     },
     methods: {
@@ -111,26 +159,35 @@ export default {
             const 
                 application = scope.item.context.application,
                 deployment = scope.item.context.deployment,
-                environment = scope.item.context.environment
-            const to =  {
-                name: 'deploymentDraftPage',
-                query: {
-                    fn: deployment.title,
-                },
-                params: {
-                    environment: environment.name,
-                    slug: deployment.name
+                environment = scope.item.context.environment,
+                routerName = this.$router.name
+            let to
+            if(routerName == 'overview') {
+                to =  {
+                    name: 'deploymentDraftPage',
+                    query: {
+                        fn: deployment.title,
+                    },
+                    params: {
+                        environment: environment.name,
+                        slug: deployment.name
+                    }
                 }
+                return {to}
+            } else {
+                to = `/${deployment.projectPath}/deployment-drafts/${environment.name}/${deployment.name}?fn=${deployment.title}`
+                return to
             }
-            return {to}
         },
         deploymentAttrs(scope) {
             const context = scope.item.context
-            if(context.deployment?.__typename == 'DeploymentTemplate') return this.resumeEditingLink(scope)
-            const href = this.noRouter?
+            let href
+            if(context.deployment?.__typename == 'DeploymentTemplate') href = this.resumeEditingLink(scope)
+            else href = this.noRouter?
                 `/dashboard/deployments/${context.environment.name}/${context.deployment.name}`: // TODO use from routes.js
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: context.deployment.name, environment: context.environment.name}}
-            return this.noRouter? {href}: {to: href}
+            const result = typeof href == 'string'? {href}: {to: href}
+            return result
         },
         async onModalConfirmed() {
             const {deployment, environment} = this.target
@@ -158,6 +215,10 @@ export default {
             this.intent = 'undeploy'
             this.target = {deployment, environment}
         },
+        onIntentToStart(deployment, environment) {
+            this.intent = 'deploy'
+            this.target = {deployment, environment}
+        },
         hasDeployPath(scope) {
             return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
         },
@@ -165,13 +226,25 @@ export default {
             if (type !== 'row') return
             if(`#${item?.context?.deployment?.name}` == this.$route.hash) return 'highlight'
         },
+        // TODO merge these
+        deploymentItem(scope, method, ...args) {
+            const environment = scope.item.context.environment
+            const deployment = scope.item.context.deployment
+            return this.deploymentItemDirect({deployment, environment}, method, ...args)
+        },
         deploymentNameId(n) {
             return `deployment-${n}`
         }
-
     },
     computed: {
-        ...mapGetters(['pipelinesPath', 'UNFURL_MOCK_DEPLOY', 'lookupDeployPath', 'getDeploymentDictionary']),
+        ...mapGetters([
+            'pipelinesPath',
+            'UNFURL_MOCK_DEPLOY',
+            'lookupDeployPath',
+            'getDeploymentDictionary',
+            'getHomeProjectPath',
+            'deploymentItemDirect'
+        ]),
         projectPath() {
             const {deployment, environment} = this.target
             if(deployment.__typename == 'DeploymentTemplate') {
@@ -217,15 +290,65 @@ export default {
                     return `Are you sure you want to delete ${targetTitle}?`
                 case 'undeploy':
                     return `Are you sure you want to undeploy ${targetTitle}? It will not be deleted and you will be able to redeploy at any time.`
+                case 'deploy':
+                    return `Deploy ${targetTitle}?`
                 default: return ''
             }
+        },
+        useTabs() {
+            return this.tabs && !this.noRouter
+        },
+        itemsByTab() {
+            if(!this.useTabs) return
+            const result = []
+            for(const tab of tabFilters) {
+                const tabItems = []
+                for(const item of this.items) {
+                    const deploymentItem = this.deploymentItem({item})
+                    if(!deploymentItem) {
+                        console.error('deployment item not found for', item)
+                        continue
+                    }
+                    if(!tab.filter || tab.filter(deploymentItem)) {
+                        tabItems.push(item)
+                    }
+                }
+                result.push(tabItems)
+            }
+            return result
+        },
+        countsByTab() {
+            if(!this.useTabs) return
+            let result = this.itemsByTab.map(list => {
+                const counts = _.countBy(list, (item) => item.context.environment?.name + ':' + item.context.deployment?.name)
+                return Object.keys(counts).length
+            })
+            return result
+        },
+        tableItems() {
+            if(this.useTabs) {
+                return this.itemsByTab[this.currentTab]
+            }
+            return this.items
+        },
+        deleteWarning() {
+            return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isDeployed')
         }
     },
-    mounted() {
+    watch: {
+        currentTab(value) {
+            const path = this.$route.path
+            const show = value == 0? undefined : tabFilters[value]?.title?.toLowerCase()
+            const query = {show}
+            this.$router.replace({path, query})
+        }
+    },
+    async mounted() {
         const vm = this
         this.$refs.container.style.transition = 'none'
         this.transition = false
         this.$refs.container.style.transition = ''
+
         if(this.$route.hash) {
             setTimeout(
                 () => {
@@ -238,7 +361,8 @@ export default {
                 500
             )
         }
-    }
+    },
+    tabFilters
 }
 </script>
 <template>
@@ -248,41 +372,42 @@ export default {
             :title="modalTitle"
             v-model="modal"
             size="sm"
-            :actionPrimary="{text: 'Confirm'}"
+            :actionPrimary="{text: deleteWarning? 'Delete Anyway': 'Confirm'}"
             :actionCancel="{text: 'Cancel'}"
             @primary="onModalConfirmed"
-            />
-        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="items" :fields="fields" :row-class="rowClass">
-            <template #status="scope">
-                <div v-if="scope.item.context.deployment && Array.isArray(scope.item.context.deployment.statuses)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                    <StatusIcon :size="18" v-if="!statuses(scope).length" :status="1" />
-                    <StatusIcon :size="18" :key="status.name" v-for="status in statuses(scope)" :status="status.status" />
+            >
+            <div 
+                v-if="deleteWarning" 
+                class="m-3"
+                >
+                <div style="color: red">
+                    If you delete a deployment before <b>teardown</b>, you will not be able to stop the deployment via unfurl.cloud.
                 </div>
-                <div v-else-if="hasDeployPath(scope)" class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                    <gl-icon name="pencil-square" :size="18" />
+                <div class="mt-2">
+                    Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
                 </div>
-                <div v-else  class="d-flex justify-content-center" style="left: 7px; bottom: 2px;">
-                    <gl-icon name="stop" :size="18" />
-                </div>
-            </template>
-            <template #status$head>
-                <div style="text-align: center;">
-                    {{__('Status')}}
+            </div>
+        </gl-modal>
+        <gl-tabs v-model="currentTab" v-if="useTabs">
+            <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
+        </gl-tabs>
+        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
+            <template #deployment$head>
+                <div class="ml-2">
+                    {{__('Deployment')}}
                 </div>
             </template>
             <template #deployment="scope">
-                <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                    <a :href="`/${scope.item.context.application.projectPath}`">
-                        <b> {{scope.item.context.application.title}}: </b>
-                    </a>
-                    <component 
-                        v-if="scope.item.context.deployment"
-                        :id="deploymentNameId(scope.item.context.deployment.name)"
-                        :is="scope.item.context.deployment.__typename != 'DeploymentTemplate' && noRouter? 'a': 'router-link'"
-                        v-bind="deploymentAttrs(scope)"
-                        >
-                        {{scope.item.context.deployment.title}}
-                    </component>
+                <div class="d-flex">
+                    <deployment-status-icon :scope="scope" />
+                    <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
+                        <a :href="`/${scope.item.context.deployment.projectPath}`">
+                            <b> {{scope.item.context.application.title}}: </b>
+                        </a>
+                        <a :href="deploymentItem(scope, 'viewableLink')">
+                            {{scope.item.context.deployment.title}}
+                        </a>
+                    </div>
                 </div>
             </template>
             <template #resource$empty="scope">
@@ -294,10 +419,24 @@ export default {
             <template #environment="scope">
                 <environment-cell :noRouter="noRouter" :environment="scope.item.context.environment"/>
             </template>
+            <template #last-deploy$all="scope">
+                <div v-if="scope.item._depth == 0">
+                    {{deploymentItem(scope, 'createdAtText')}}
+                    <div style="height: 0;" v-if="deploymentItem(scope, 'createdAt')">
+                        <div style="font-size: 0.95em; position: absolute; top: -2px;">
+                            <span v-if="deploymentItem(scope, 'consoleLink')">
+                                <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
+                                <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
+                            </span>
+                        </div>
+                    </div>
+                </div>
 
-            <template #open$head> <div></div> </template>
-            <template #open$all="scope">
-                <deployment-controls @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" :resumeEditingLink="resumeEditingLink(scope)" />
+            </template>
+
+            <template #controls$head> <div></div> </template>
+            <template #controls$all="scope">
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>

@@ -2,7 +2,7 @@
 import { GlButton, GlCard, GlIcon, GlBadge} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
-import { bus } from '../../bus.js';
+import { bus } from 'oc_vue_shared/bus';
 import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
 import {DetectIcon} from '../../../vue_shared/oc-components'
 import {generateCardId} from '../../../vue_shared/util.mjs'
@@ -97,7 +97,7 @@ export default {
         ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
 
         badgeHeaderText() {
-            const result = this.$props.badgeHeader.text || this.getCardType(this.card)
+            const result = this.$props.badgeHeader.text || this.getCardType(this.card)?.title
             return result
         }
 
@@ -111,10 +111,6 @@ export default {
             bus.$emit('deleteNode', payload);
 
             this.$emit('deleteNode', payload)
-        },
-
-        getLegend(title) {
-            return `Are you sure you want to delete <b>${title}</b>? Deleting <b>${title}</b> might affect other resources which are linked to it.`;
         },
 
         adaptWidth() {
@@ -155,7 +151,7 @@ export default {
                                 :class="['gl-ml-3', cardIsValid(card)? 'icon-green': '']"
                                 :name="cardIsValid(card)? 'check-circle-filled': 'status_preparing'"
                                 />
-                            <gl-badge v-if="!isMobileLayout" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
+                            <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="displayStatus">
                             <status-icon :size="16" :state="card.state" :status="card.status" />

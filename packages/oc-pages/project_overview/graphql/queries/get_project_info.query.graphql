@@ -20,14 +20,6 @@ query getProjectInfo($projectPath: ID!) {
         name
         description
         cloud
-        resourceTemplates {
-          name
-          title
-          description
-          type
-          outputs
-          dependencies
-        }
       }
       primary {
         ...ResourceTypes        

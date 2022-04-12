@@ -80,6 +80,7 @@ export default {
         </template>
         <template #deployment="scope">
             <deployment-cell
+                :scope="scope"
                 :deployment="scope.item.context.deployment"
                 :environment="scope.item.context.environment"
                 :displayStatus="false"

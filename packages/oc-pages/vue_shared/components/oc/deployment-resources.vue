@@ -13,7 +13,7 @@ import OcTemplateHeader from '../../../project_overview/components/shared/oc_tem
 import TemplateButtons from '../../../project_overview/components/template/template_buttons.vue';
 import { slugify } from '../../util.mjs'
 import { deleteDeploymentTemplate } from '../../../project_overview/store/modules/deployment_template_updates'
-
+import {bus} from 'oc_vue_shared/bus'
 
 
 const statusPropDefinition = {
@@ -27,7 +27,7 @@ export default {
         GlModal,
         GlFormGroup,
         GlFormInput,
-        GlFormCheckbox,
+        //GlFormCheckbox,
         OcCard,
         OcList,
         OcListResource,
@@ -36,7 +36,6 @@ export default {
     },
 
     props: {
-        bus: Object,
         target: {
             type: String,
             default: () => 'Environment'
@@ -86,7 +85,6 @@ export default {
             alertNameExists: null,
             titleKey: '',
             dataUnsaved: false,
-            selectedRequirement: {},
             selectedTemplate: {},
             completedRequirements: false,
             completedMainInputs: false,
@@ -190,6 +188,9 @@ export default {
                 return this.getDeploymentTemplate.title
             }
 
+        },
+        selectedRequirement() {
+            return this.createNodeResourceData?.requirement
         }
     },
 
@@ -215,30 +216,26 @@ export default {
         }
     },
     created() {
-        //this.syncGlobalVars(this.$projectGlobal);
-        if (this.$props.bus) {
 
-            const {bus} = this.$props
-            bus.$on('moveToElement', (obj) => {
-                const { elId } = obj;
-                this.scrollDown(elId, 500);
-            });
+        bus.$on('moveToElement', (obj) => {
+            const { elId } = obj;
+            this.scrollDown(elId, 500);
+        });
 
-            bus.$on('placeTempRequirement', (obj) => {
-                const ref = this.$refs['oc-template-resource'];
-                setTimeout(() => {
-                    this.createNodeResourceData = obj;
-                    ref.show();
-                }, 100);
-            });
+        bus.$on('placeTempRequirement', (obj) => {
+            const ref = this.$refs['oc-template-resource'];
+            setTimeout(() => {
+                this.createNodeResourceData = obj;
+                ref.show();
+            }, 100);
+        });
 
-            bus.$on('launchModalToConnect', (obj) => {
-                this.connectNodeResourceData = obj;
-                this.launchModal('oc-connect-resource', 250);
-            });
+        bus.$on('launchModalToConnect', (obj) => {
+            this.connectNodeResourceData = obj;
+            this.launchModal('oc-connect-resource', 250);
+        });
 
-            bus.$on('deleteNode', (obj) => { onDeleteNode(obj) });
-        }
+        bus.$on('deleteNode', (obj) => { this.onDeleteNode(obj) });
     },
 
     beforeMount() {
@@ -252,7 +249,6 @@ export default {
             }
             next();
         });
-        this.selectedRequirement = cloneDeep(this.getApplicationBlueprint?.primary)
     },
 
     beforeDestroy() {
@@ -448,7 +444,7 @@ export default {
                 }
                 return nword + 'ing';
             };
-            return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>? ${gerundize(this.nodeAction)} <b>${this.nodeTitle}</b> might affect other resources which are linked to it.`;
+            return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>? <span style="text-transform: capitalize;">${gerundize(this.nodeAction)}</span> <b>${this.nodeTitle}</b> might affect other resources that are linked to it.`;
         },
 
         legendDeleteTemplate() {
@@ -629,9 +625,9 @@ export default {
             @primary="handleDeleteNode"
             >
             <p v-html="getLegendOfModal()"></p>
-            <gl-form-checkbox v-model="checkedNode">
+            <!--gl-form-checkbox v-model="checkedNode">
                 <b>{{ nodeTitle }}</b>
-            </gl-form-checkbox>
+            </gl-form-checkbox-->
         </gl-modal>
 
         <!-- Modal Connect -->

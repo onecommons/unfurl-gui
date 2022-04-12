@@ -4,7 +4,7 @@ import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
 import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
 
 
@@ -86,14 +86,14 @@ const actions = {
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
-        let data
-        try {
-            data = await triggerPipeline(
-                rootGetters.pipelinesPath,
-                deployVariables,
-            )
-        } catch(e) {
-            console.error(e)
+        let data, error
+        data = await triggerPipeline(
+            rootGetters.pipelinesPath,
+            deployVariables,
+        )
+        if(error = data?.errors) {
+            return {pipelineData: data, error}
+
         }
         const pipeline = data?
             {
@@ -163,10 +163,11 @@ const actions = {
         )
         await dispatch('commitPreparedMutations', null,  {root: true})
         commit('environmentsToArray')
+        await dispatch('fetchProjectEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy: 'network-only'})
     },
 
 
-    async fetchProjectEnvironments({commit}, {fullPath}) {
+    async fetchProjectEnvironments({commit}, {fullPath, fetchPolicy}) {
         const query = gql`
         query getProjectEnvironments($fullPath: ID!) {
             project(fullPath: $fullPath) {
@@ -190,6 +191,7 @@ const actions = {
         try {
             const {data, errors} = await graphqlClient.clients.defaultClient.query({
                 query,
+                fetchPolicy,
                 errorPolicy: 'all',
                 variables: {fullPath}
             })
@@ -223,7 +225,7 @@ const actions = {
         catch(e){
             console.error('Could not fetch project environments', e)
             if(window.gon.current_username) {
-                createFlash({ message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT });
+                createFlash({ projectPath: fullPath, message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment'});
             }
             environments = []
 
@@ -243,7 +245,7 @@ function envFilter(name){
 
 const getters = {
     getEnvironmentName: _state => _state.environmentName,
-    getEnvironments: state => state.projectEnvironments,
+    getEnvironments: state => Object.freeze(state.projectEnvironments),
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
     getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         let constraintType
@@ -288,7 +290,7 @@ const getters = {
         return function(environment, typename) {
             const environmentName = typeof environment == 'string'? environment: environment?.name
             const dict = state.resourceTypeDictionaries[environmentName]
-            if (dict) return dict[typename]
+            if (dict) return Object.freeze(dict[typename])
             return null
         }
     },
