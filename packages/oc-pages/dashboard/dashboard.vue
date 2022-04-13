@@ -19,7 +19,8 @@ export default {
     computed: {
         ...mapGetters([
             'isDashboardLoaded',
-            'getDashboardItems'
+            'getDashboardItems',
+            'getHomeProjectPath'
         ])
     },
     async mounted() {
@@ -51,7 +52,7 @@ export default {
                     type: FLASH_TYPES.WARNING
                 })
 
-                await deleteEnvironmentByName(window.gon.projectPath, expectsCloudProvider)
+                await deleteEnvironmentByName(this.getHomeProjectPath, expectsCloudProvider)
             } catch(e) {
                 delete sessionStorage['oc_flash']
                 console.error(e)
