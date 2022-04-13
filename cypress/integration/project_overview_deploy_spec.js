@@ -62,15 +62,96 @@ describe('project overview deploy', () => {
     cy.contains('Self-Hosted')
     cy.task('log', ' Self-Hosted exists')
     cy.screenshot()
+  })
 
-    // let base = '//*[@id="OcAppDeployments"]/div/div[2]/div[2]/div/div/div/div['
-    // let end = ']/div[4]/span/button'
-    // for (let i = 1; i <= 4; i++) {
-    //   cy.get(base + i + end).click()
-    //   cy.contains('Create New Deployment')
-    //   cy.contains('Select an environment to deploy this template to:')
-    //   cy.contains('Cancel').click()
-    // }
+  it('Google Cloud Platform Service', () => {
+    // create new deployment
+    cy.get('div.gl-responsive-table-row:nth-child(1) > div:nth-child(4) > span:nth-child(1) > button:nth-child(1)').click()
+    cy.get('input').clear().type('GCP test')
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // domain_name
+    cy.get('div.formily-element-form-item:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test domain name')
+    // admin_email
+    cy.get('div.formily-element-form-item:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test admin email')
+    
+    // host
+    cy.get('#__BVID__123 > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > button:nth-child(2) > span:nth-child(1)').click()
+
+    // instance
+    cy.get('.modal-label > div:nth-child(1) > span:nth-child(2)').click()
+    cy.get('#input1').clear().type('test GCP compute instance')
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // num_cpus, mem_size, disk_size
+    for (let i = 1; i <= 3; i++) {
+      cy.get('div.formily-element-form-item-error:nth-child(' + i + ') > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > input:nth-child(1)').type('1')
+    }
+    cy.contains('Size of boot disk (in GB)').click()
+    cy.screenshot()
+  })
+
+  it('Amazon Web Services EC2', () => {
+    // create new deployment
+    cy.get('div.gl-responsive-table-row:nth-child(2) > div:nth-child(4) > span:nth-child(1) > button:nth-child(1)').click()
+    cy.get('input').clear().type('AWS EC2 test')
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // domain_name
+    cy.get('div.formily-element-form-item:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test domain name')
+    // admin_email
+    cy.get('div.formily-element-form-item:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test admin email')
+    
+    // host
+    cy.get('#__BVID__123 > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > button:nth-child(2) > span:nth-child(1)').click()
+
+    // instance
+    cy.get('.modal-label > div:nth-child(1) > span:nth-child(2)').click()
+    cy.get('#input1').clear().type('test EC2 instance')
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // cy.get('html body.ui-indigo.tab-width-8.gl-browser-chrome.gl-platform-mac div.layout-page.hide-when-top-nav-responsive-open.page-with-contextual-sidebar div.content-wrapper.content-wrapper-margin div.container-fluid.container-limited.limit-container-width main#content-body.content div.project-show-custom_oc div#OcAppDeployments div div div.row-fluid.gl-mt-6.gl-mb-6 div.gl-card div.gl-card-body div.card-content-outer div.card-content-container div div div.gl-card.gl-mt-6 div.gl-card-body div.card-content-outer div.card-content-container div#__BVID__365.tabs.gl-tabs div#__BVID__365__BV_tab_container_.tab-content.gl-tab-content div#__BVID__368.tab-pane.gl-mt-3.active div.pt-2.mb-2 div div.formily-element-form-item.formily-element-form-item-layout-horizontal.formily-element-form-item-feedback-layout-loose.formily-element-form-item-label-align-right.formily-element-form-item-control-align-left div.formily-element-form-item-control div.formily-element-form-item-control-content div.formily-element-form-item-control-content-component div.el-input input.el-input__inner').type('AWS EC2 key_name')
+
+    // num_cpus, mem_size, disk_size
+    for (let i = 2; i <= 4; i++) {
+      cy.get('div.formily-element-form-item-error:nth-child(' + i + ') > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > div:nth-child(3) > input:nth-child(1)').type('1')
+    }
+    cy.contains('Size of boot disk (in GB)').click()
+    cy.screenshot()
+  })
+
+  it('Kubernetes Service', () => {
+    // create new deployment
+    cy.get('div.gl-responsive-table-row:nth-child(3) > div:nth-child(4) > span:nth-child(1) > button:nth-child(1)').click()
+    cy.get('input').clear().type('Kubernetes test')
+    cy.get('#__BVID__63').click()
+    cy.get('.gl-new-dropdown-contents > div:nth-child(1) > li:nth-child(2) > button:nth-child(1) > div:nth-child(1)').click()
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // domain_name
+    cy.get('div.formily-element-form-item:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test domain name')
+    // admin_email
+    cy.get('div.formily-element-form-item:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test admin email')
+    
+    cy.contains('host')
+    cy.screenshot()
+  })
+
+  it('Self-Hosted Service', () => {
+    // create new deployment
+    cy.get('div.gl-responsive-table-row:nth-child(4) > div:nth-child(4) > span:nth-child(1) > button:nth-child(1)').click()
+    cy.get('input').clear().type('Self-Hosted test')
+    cy.get('#__BVID__63').click()
+    cy.get('.gl-new-dropdown-contents > div:nth-child(1) > li:nth-child(2) > button:nth-child(1) > div:nth-child(1)').click()
+    cy.get('.js-modal-action-primary > span:nth-child(1)').click()
+
+    // domain_name
+    cy.get('div.formily-element-form-item:nth-child(1) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test domain name')
+    // admin_email
+    cy.get('div.formily-element-form-item:nth-child(2) > div:nth-child(2) > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > input:nth-child(1)').clear().type('test admin email')
+    
+    cy.contains('host')
+    cy.screenshot()
   })
 
 
