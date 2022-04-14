@@ -31,6 +31,16 @@ export default class DeploymentItem {
     get jobStatus() {
         return this.job?.status?.toLowerCase()
     }
+
+    get jobStatusIsEditable() {
+        switch(this.jobStatus) {
+            case 'canceled':
+            case 'failed':
+                return true
+            default:
+                return false
+        }
+    }
     
     get jobStatusMessage() {
         switch(this.jobStatus) {
@@ -42,6 +52,10 @@ export default class DeploymentItem {
                 return ''
         }
     }
+    
+    get readonlyLink() { return `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`}
+    get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
+    get viewableLink() { return this.isEditable? this.editableLink: this.readonlyLink }
 
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
@@ -53,6 +67,9 @@ export default class DeploymentItem {
             return workflow + ' on ' + this.createdAtDate
         }
         return workflow + ' at ' + this.createdAtTime
+    }
+    get isEditable() {
+        return this.isDraft || this.jobStatusIsEditable
     }
     get isDraft() {
         return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined

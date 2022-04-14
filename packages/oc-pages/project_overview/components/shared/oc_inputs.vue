@@ -4,7 +4,7 @@ import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
+import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {createForm, onFieldInputValueChange} from "@formily/core";
 
 const ComponentMap = {
@@ -64,6 +64,7 @@ export default {
   name: 'OcInputs',
   components: {
     FormProvider,
+    FormLayout,
     ...fields
   },
 
@@ -276,24 +277,18 @@ export default {
 }
 </script>
 <template>
-  <div style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
-    
-          <!--gl-icon
-              :size="14"
-              :class="{
-                            'icon-green':
-                                cardInputsAreValid(card),
-                            'icon-red':
-                                !cardInputsAreValid(card),
-                            'gl-ml-4 gl-mt-1': true,
-                        }"
-              :name="
-                            cardInputsAreValid(card)
-                                ? 'check-circle-filled'
-                                : 'warning-solid'
-                        "/-->
-        <FormProvider v-if="form" :form="form">
-          <SchemaField :schema="schema"/>
-        </FormProvider>
-  </div>
+<div style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+  <FormProvider v-if="form" :form="form">
+    <FormLayout
+        :breakpoints="[680]"
+        :layout="['vertical', 'horizontal']"
+        :label-align="['left', 'left']"
+        :label-wrap="true"
+        :label-col="[24, 4]"
+        :wrapper-col="[24, 10]"
+    >
+      <SchemaField :schema="schema"/>
+    </FormLayout>
+  </FormProvider>
+</div>
 </template>

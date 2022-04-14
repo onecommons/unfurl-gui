@@ -127,16 +127,6 @@ const actions = {
             throw e
         }
         if(!isDeploymentTemplate) resource = {...resource, template: getters.lookupResourceTemplate(resource.template)}
-        if(!isDeploymentTemplate) {
-            if(resource.dependencies.length == 0 && (resource?.template?.dependencies?.length ?? 0) > 0) { // TODO remove this workaround
-                resource.dependencies = resource.template.dependencies
-                window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
-            }
-            if(resource.attributes.length == 0 && (resource?.template?.properties?.length ?? 0) > 0) { // TODO remove this workaround
-                resource.attributes = resource.template.properties
-                window.alert(`Your resource is missing attributes, this is likely an export bug.  ResourceTemplate's properties will be used for rendering.`)
-            }
-        }
 
         deploymentTemplate.primary = resource.name
         if(!deploymentTemplate.cloud) {
@@ -302,9 +292,9 @@ const actions = {
             const valid = !!(child)
             const id = valid && btoa(child.name).replace(/=/g, '')
 
-            commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
 
             if(valid) {
+                commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
                 dispatch('createMatchedResources', {resource: child, isDeploymentTemplate})
             }
         }
@@ -324,13 +314,14 @@ const actions = {
             target.title = title;
 
             target.__typename = 'ResourceTemplate'
+            target.visibility = target.visibility || 'inherit'
             try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
             catch { target.properties = []; }
 
             if(target?.requirements?.length > 0) {
                 target.dependencies = target.requirements.map(req => {
                     return {
-                        constraint: req,
+                        constraint: {...req, visibility: req.visibility || 'visible'},
                         name: req.name,
                         match: null,
                         target: null
@@ -507,32 +498,36 @@ const getters = {
             }
         }
     },
-    cardIsHiddenByVisibilitySetting(state, getters) {
-        return function(_card) {
-            return false
-            const card = state.resourceTemplates[_card?.name || _card]
-            if(card?.visibility == 'hidden') return true
-            if(card?.dependentName) {
-                return getters.cardIsHiddenByVisibilitySetting(card.dependentName)
-            }
-            return false
-        }
-    },
-    cardIsHiddenByConstraint(state, getters) {
-        return function(_card) {
-            const card = state.resourceTemplates[_card?.name || _card]
-            const dependentConstraint = getters.getDependencies(card?.dependentName)
-                ?.find(req => req?.match == card.name)
+    constraintIsHidden(state, getters) {
+        return function(dependentName, dependentRequirement) {
+            const constraint = state.resourceTemplates[dependentName]
+                ?.dependencies?.find(dep => dep.name == dependentRequirement)
                 ?.constraint
 
-            if(dependentConstraint?.visibility == 'hidden') return true
-
-            return false
+            switch(constraint?.visibility) {
+                case 'hidden':
+                    return true
+                case 'inherit':
+                    // inherit from dependent card
+                    return getters.cardIsHidden(dependentName)
+                default: // constraints are visible by default
+                    return false
+            }
         }
     },
-    cardIsHidden(_, getters) {
-        return function(card) {
-            return getters.cardIsHiddenByVisibilitySetting(card) || getters.cardIsHiddenByConstraint(card)
+    cardIsHidden(state, getters) {
+        return function(cardName) {
+            const card = state.resourceTemplates[cardName?.name || cardName]
+            if(!card) return false
+            switch(card.visibility) {
+                case 'hidden':
+                    return true
+                case 'visible':
+                    return false
+                default: // templates inherit by default
+                    // inherit from constraint
+                    return getters.constraintIsHidden(card.dependentName, card.dependentRequirement)
+            }
         }
     },
     getCardsStacked: (_state, getters) => {
@@ -552,7 +547,7 @@ const getters = {
     },
     getDependencies: (_state) => {
         return function(resourceTemplateName) {
-            return _state.resourceTemplates[resourceTemplateName]?.dependencies;
+            return _state.resourceTemplates[resourceTemplateName]?.dependencies || [];
         };
     },
     cardStatus(state) {
@@ -560,27 +555,38 @@ const getters = {
             return state.resourceTemplates[resourceName]?.status
         }
     },
-    // returns [{card, dependency}] which doesn't really make sense with the name, but I don't know what else to call it
-    getDisplayableDependenciesByCard(state, getters) {
-        return function(resourceTemplateName) {
-            const dependencies = getters.getDependencies(resourceTemplateName)
-            if(!Array.isArray(dependencies)) return []
-            const ownDependencies = dependencies.filter(dep => {
-                if(dep?.constraint?.visibility == 'hidden') return false
-                return true
-            })
+    getBuriedDependencies(state, getters) {
+        return function(cardName) {
+            if(!getters.cardIsHidden(cardName?.name || cardName)) return []
+            const card = state.resourceTemplates[cardName?.name || cardName]
             const result = []
-            // requirements
-            for(const dependency of ownDependencies) {
-                result.push({dependency, card: state.resourceTemplates[resourceTemplateName]})
+            for(const dependency of getters.getDependencies(card.name)) {
+                if(!getters.constraintIsHidden(card.name, dependency.name)) {
+                    result.push({card, dependency, buried: true})
+                }
+                let match
+                if(match = dependency.target || dependency.match) { // try to support resources
+                    for(const buriedDescendent of getters.getBuriedDependencies(match)) {
+                        result.push(buriedDescendent)
+                    }
+                }
             }
+            return result
+        }
+    },
+    getDisplayableDependenciesByCard(state, getters) {
+        return function(cardName) {
+            const card = state.resourceTemplates[cardName?.name || cardName]
+            const result = []
+            for(const dependency of getters.getDependencies(card.name)) {
+                if(!getters.constraintIsHidden(card.name, dependency.name)) {
+                    result.push({dependency, card})
+                }
 
-            // child cards
-            for(const child of getters.getDependencies(resourceTemplateName)) {
-                //const match = state.resourceTemplates[child.match]
-                if(getters.cardIsHiddenByConstraint(child.match)) {
-                    for(const {card, dependency} of getters.getDisplayableDependenciesByCard(child.match)) {
-                        if(! getters.cardIsHidden(dependency.match)) result.push({dependency, card})
+                let match
+                if (match = dependency.target || dependency.match) {
+                    for(const buriedDescendent of getters.getBuriedDependencies(match)) {
+                        result.push(buriedDescendent)
                     }
                 }
             }

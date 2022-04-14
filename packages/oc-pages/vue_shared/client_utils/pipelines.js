@@ -13,7 +13,7 @@ function toGlVariablesAttributes(variables) {
         result.push({
             key,
             secret_value,
-            variable_type: 'env_var'
+            variable_type: 'unencrypted_var'
         })
     })
 
@@ -70,9 +70,10 @@ export async function redirectToJobConsole({pipelineData}, options) {
         if(options?.newTab) {
             window.open(redirectTarget, '_blank')
         } else {
-            return redirectTo(redirectTarget)
+            if(typeof options?.beforeRedirect == 'function') options.beforeRedirect()
+            redirectTo(redirectTarget)
         }
-
+        return true
     }
     return false
     // TODO add a flash here?

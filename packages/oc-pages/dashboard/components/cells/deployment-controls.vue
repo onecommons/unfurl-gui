@@ -23,11 +23,15 @@ export default {
     computed: {
         ...mapGetters([
             'lookupDeployPath',
-            'getHomeProjectPath'
+            'getHomeProjectPath',
+            'deploymentItemDirect',
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
         environment() {return this.scope.item.context?.environment},
+        deploymentItem() {
+            return this.deploymentItemDirect({environment: this.environment, deployment: this.deployment})
+        },
         deployPath() { return this.lookupDeployPath(this.deployment?.name, this.environment?.name) },
         pipeline() {
             return this.deployPath?.pipeline
@@ -48,25 +52,14 @@ export default {
             }
             return 'at ' + this.createdAtTime
         },
-        isDraft() {
-            return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
-        },
-        isUndeployed() {
-            return this.deployment.__typename == 'Deployment' && !this.isDeployed
-        },
-        isDeployed() {
-            return this.deployment.__typename == 'Deployment' && (this.deployment.statuses?.length ?? 0) > 0 && this.deployment.statuses.every(rt => {
-                return rt?.status && rt.status != 5 && rt.status != 3 && rt.status != 4
-            })
-        },
         controlButtons() {
             const result = []
-            if(this.isDeployed && this.deployment?.url) result.push('open')
-            if(this.isDraft) result.push('edit-draft')
-            else if(!this.isDeployed) result.push('edit-deployment')
+            if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
+            if(this.deploymentItem?.isDraft) result.push('edit-draft')
+            else if(this.deploymentItem?.isEditable) result.push('edit-deployment')
             else result.push('view-deployment')
             //if(this.isUndeployed) result.push('deploy')
-            if(this.isDeployed) result.push('teardown')
+            if(this.deploymentItem?.isDeployed) result.push('teardown')
             result.push('delete')
             return result
         },
@@ -77,14 +70,10 @@ export default {
             return this.controlButtons.slice(1)
         },
         resumeEditingTarget() {
-            return typeof this.resumeEditingLink == 'string'?
-                this.resumeEditingLink:
-                this.$router.resolve(this.resumeEditingLink.to).href
+            return this.deploymentItem?.viewableLink
         },
         viewDeploymentTarget() {
-            return typeof this.viewDeploymentLink == 'string'?
-                this.viewDeploymentLink:
-                this.$router.resolve(this.viewDeploymentLink.to).href
+            return this.deploymentItem?.viewableLink
         },
         issuesLink() {
             return generateIssueLink(

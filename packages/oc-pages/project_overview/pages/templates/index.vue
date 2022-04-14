@@ -87,6 +87,7 @@ export default {
       'getDeploymentTemplate',
       'getDependencies',
       'hasPreparedMutations',
+      'safeToNavigateAway',
       'requirementMatchIsValid',
       'resolveRequirementMatchTitle',
       'cardIsValid',
@@ -258,7 +259,7 @@ export default {
     // NOTE this doesn't work without https
     window.addEventListener('beforeunload', this.unloadHandler);
     this.setRouterHook((to, from, next) => {
-      if(this.hasPreparedMutations) {
+      if(this.safeToNavigateAway) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
       }
@@ -446,10 +447,13 @@ export default {
 
         if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
-        const query = {...this.$route.query}
-        delete query.ts
-        this.$router.replace({query})
-        if(! redirectToJobConsole({pipelineData}) && pipelineData?.id) {
+        const router = this.$router
+        function beforeRedirect() {
+          const {href} = router.resolve({name: 'projectHome', query: {}})
+          window.history.replaceState({}, null, href)
+        }
+        if(! await redirectToJobConsole({pipelineData}, {beforeRedirect}) && pipelineData?.id) {
+          beforeRedirect()
           return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
         }
       } catch (err) {
