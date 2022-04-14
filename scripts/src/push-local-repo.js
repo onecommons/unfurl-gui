@@ -35,8 +35,13 @@ if(require.main === module) {
 async function main() {
   const args = require('minimist')(process.argv.slice(2))
   const projectPath = args.projectPath || args['project-path']
+  const path = args.path || args._[0]
   if (!projectPath) {
     throw new Error('expected --project-path to be set')
+  }
+
+  if(!path) {
+    throw new Error('expected path to be set')
   }
 
   let success = pushLocalRepo(args.path, projectPath)

@@ -1,3 +1,4 @@
+const path = require('path')
 const authenticityTokenRegex = /name="csrf-token"\s+content="(([A-Za-z0-9+/=])+)"/i
 function extractCsrf(document){
   try {
@@ -13,4 +14,6 @@ function sleep(ms) {
   })
 }
 
-module.exports = {extractCsrf, sleep}
+const unfurlGuiRoot = path.join(__dirname, '../../../')
+
+module.exports = {extractCsrf, sleep, unfurlGuiRoot}

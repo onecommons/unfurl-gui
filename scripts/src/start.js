@@ -6,8 +6,7 @@ const {fork, spawn} = require('child_process')
 const mkdirp = require('mkdirp')
 
 const {isProgramRunning, getLogWriter} = require('./shared/daemon.js')
-
-const unfurlGuiRoot = path.join(__dirname, '../')
+const {unfurlGuiRoot} = require('./shared/util.js')
 
 async function startApollo() {
   if(isProgramRunning('apollo')) {
@@ -95,9 +94,15 @@ async function startServe() {
 
 const CHILD_JOBS = 2
 async function main() {
+  const args = process.argv.slice(2)
   if(!isChild) {
-    let exitCount = 0
-    const child = fork(path.join(__dirname, 'start.js'), [], {detached: true, silent: true})
+
+    let exitCount = args.length || CHILD_JOBS
+    const child = fork(
+      path.join(__dirname, 'start.js'),
+      args,
+      {detached: true, silent: true}
+    )
     child.on('message', ({stdout, stderr, exit}) => {
       if(stdout) {
         console.log(stdout)
@@ -105,15 +110,20 @@ async function main() {
       if(stderr) {
         console.error(stderr)
       }
-      if(exit && ++exitCount == CHILD_JOBS) {
+      if(exit && --exitCount == 0) {
         process.exit()
       }
     })
   } else {
-    process.send({stdout: 'Starting apollo...'})
-    await startApollo()
-    process.send({stdout: 'Starting dev server...'})
-    await startServe()
+    process.send({stdout: JSON.stringify(process.argv)})
+    if(!args.length || args.includes('apollo')) {
+      process.send({stdout: 'Starting apollo...'})
+      await startApollo()
+    }
+    if(!args.length || args.includes('serve')) {
+      process.send({stdout: 'Starting dev server...'})
+      await startServe()
+    }
   }
 }
 
