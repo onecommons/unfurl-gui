@@ -44,7 +44,7 @@ async function main() {
     throw new Error('expected path to be set')
   }
 
-  let success = pushLocalRepo(args.path, projectPath)
+  let success = pushLocalRepo(path, projectPath)
 
   if(!success) throw new Error('Failed to push repo')
 

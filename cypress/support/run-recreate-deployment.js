@@ -13,7 +13,9 @@ Cypress.Commands.add('recreateDeployment', fixture => {
 
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
-      cy.get('[data-testid="deployment-name-input"]').clear().type(`Cypress ${dt.title}`)
+      cy.get('[data-testid="deployment-name-input"]').invoke('val', '')
+      cy.wait(500)
+      cy.get('[data-testid="deployment-name-input"]').type(`Cypress ${dt.title}`)
       cy.get('[data-testid="deployment-environment-select"]').click()
       cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click()
 
@@ -45,7 +47,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
 
           cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`).click()
           cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
-          cy.get('[data-testid="create-resource-template-title"]').clear().type(match.title)
+          cy.get('[data-testid="create-resource-template-title"]').invoke('val', '').type(match.title)
           cy.contains('button', 'Next').click()
           if(!$document.querySelector(`[data-testid="card-${match.name}"]`)) {
             recreateTemplate(match)
