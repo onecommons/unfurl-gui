@@ -29,7 +29,16 @@ function isProgramRunning(program) {
 
 function getLogWriter(program) {
   const log = fs.createWriteStream(path.join(logDir, `${program}.log`), {flags: 'a'})
-  return function (line) {log.write(line + '\n')}
+  return function (output, label='') {
+    const labelText = label? ':' + label: ''
+    let lines = []
+    try {
+      lines = output.toString().split('\n')
+    } catch(e) {}
+    for(const line of lines) {
+      log.write(`[${(new Date()).toISOString()}${labelText}] ${line}\n`)
+    }
+  }
 }
 
 module.exports = {getLogWriter, isProgramRunning, isPidRunning, getPid, logDir, tmpDir}

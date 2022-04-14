@@ -6,14 +6,16 @@ const {fork, spawn} = require('child_process')
 const mkdirp = require('mkdirp')
 
 const {isProgramRunning, getLogWriter} = require('./shared/daemon.js')
-const {unfurlGuiRoot} = require('./shared/util.js')
+const {unfurlGuiRoot, sleep} = require('./shared/util.js')
+
+let exitCodes = {}
 
 async function startApollo() {
   if(isProgramRunning('apollo')) {
     process.send({stdout: 'Apollo is already running', exit: true})
     return
   }
-  const writeLine = getLogWriter('apollo')
+  const log = getLogWriter('apollo')
   return new Promise((resolve, reject) => {
     let resolved = false
     const apollo = spawn(
@@ -25,7 +27,7 @@ async function startApollo() {
     )
     apollo.stdout.on('data', data => {
       data.toString().split('\n').forEach(line => {
-        writeLine(`[${(new Date()).toISOString()}] ${line}`)
+        log(line)
         if(!resolved && line.startsWith('✔️  GraphQL Server is running on')) {
           resolve(true)
           resolved = true
@@ -34,16 +36,12 @@ async function startApollo() {
       })
     })
     apollo.stderr.on('data', data => {
-      data.toString().split('\n').forEach(line => {
-        const stderr = `[${(new Date()).toISOString()}:stderr] ${line}`
-        try {
-          process.send({stderr})
-        } catch(e) {}
-        writeLine(stderr)
-      })
+      log(data)
     })
     apollo.on('exit', code => {
-      process.send({stdout: `Apollo exited with ${code}`, exit: true})
+      exitCodes['apollo'] = code
+      const message = `Apollo exited with ${code}`
+      log(message)
     })
   })
 }
@@ -53,7 +51,7 @@ async function startServe() {
     process.send({stdout: 'Vue cli server is already running', exit: true})
     return 
   }
-  const writeLine = getLogWriter('serve')
+  const log = getLogWriter('serve')
   return new Promise((resolve, reject) => {
     let resolved = false
     const serve = spawn(
@@ -65,7 +63,7 @@ async function startServe() {
     )
     serve.stdout.on('data', data => {
       data.toString().split('\n').forEach(line => {
-        writeLine(`[${(new Date()).toISOString()}] ${line}`)
+        log(line)
         if(!resolved && line.startsWith('  App running at:')) {
           resolved = true
           process.send({stdout: 'Vue cli server started', exit: true})
@@ -74,19 +72,12 @@ async function startServe() {
       })
     })
     serve.stderr.on('data', data => {
-      data.toString().split('\n').forEach(line => {
-        const stderr = `[${(new Date()).toISOString()}:stderr] ${line}`
-        /*
-         * webpack has a rediculous amount of output to stderr
-        try {
-          process.send({stderr})
-        } catch(e) {}
-        */
-        writeLine(stderr)
-      })
+      log(data, 'stderr')
     })
     serve.on('exit', code => {
-      process.send({stdout: `Vue cli server exited with ${code}`, exit: true})
+      exitCodes['serve'] = code
+      const message = `Vue cli server exited with ${code}`
+      log(message)
     })
 
   })
@@ -115,14 +106,45 @@ async function main() {
       }
     })
   } else {
-    process.send({stdout: JSON.stringify(process.argv)})
-    if(!args.length || args.includes('apollo')) {
+    const log = getLogWriter('control')
+
+    process.on('uncaughtException', function (err) {
+      log(err.message)
+      log(err.stack)
+    })
+
+    log(`my pid is ${process.pid}`)
+    const shouldStartApollo = !args.length || args.includes('apollo')
+    const shouldStartServe = !args.length || args.includes('serve')
+    if(shouldStartApollo) {
       process.send({stdout: 'Starting apollo...'})
+      log('Starting apollo...')
       await startApollo()
     }
-    if(!args.length || args.includes('serve')) {
+    if(shouldStartServe) {
       process.send({stdout: 'Starting dev server...'})
+      log('Starting dev server...')
       await startServe()
+    }
+
+    while(true) {
+      let logMessage = []
+      if(shouldStartApollo) {
+        logMessage.push(`Apollo exited ${exitCodes['apollo'] || 'no'}`)
+      }
+      if(shouldStartServe) {
+        logMessage.push(`Dev server exited ${exitCodes['serve'] || 'no'}`)
+      }
+      log(logMessage.join(';\t'))
+      if(
+        (shouldStartApollo && isProgramRunning('apollo')) ||
+        (shouldStartServe && isProgramRunning('serve'))
+      ) {
+        await sleep(5000)
+      } else {
+        log('Exiting')
+        break
+      }
     }
   }
 }
