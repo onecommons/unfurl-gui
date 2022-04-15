@@ -191,7 +191,7 @@ const actions = {
                 }
 
                 if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
-                resourceTemplate.dependencies.forEach(dep => {
+                resourceTemplate.dependencies?.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
                 resourceTemplate.__typename = 'ResourceTemplate'

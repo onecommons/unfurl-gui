@@ -82,13 +82,17 @@ const actions = {
         commit('setDeploymentItems', dict)
     },
     async populateJobsList({rootGetters, commit}) {
-        const result = await graphqlClient.defaultClient.query({
+        let result
+
+        // #!if
+        result = await graphqlClient.defaultClient.query({
             query: LOOKUP_JOBS,
             variables: {fullPath: rootGetters.getHomeProjectPath}
         })
+        // #!endif
 
         const newJobsByPipelineId = {}
-        for(const pipeline of result.data.project.pipelines.nodes || []) {
+        for(const pipeline of result?.data?.project?.pipelines?.nodes || []) {
             const pipelineId = pipeline.id.split('/').pop()
             for(const job of pipeline.jobs.nodes) {
                 const jobId = job.id.split('/').pop()
