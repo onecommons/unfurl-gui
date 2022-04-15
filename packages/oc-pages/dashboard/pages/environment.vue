@@ -79,7 +79,7 @@ export default {
                     return __('Azure')
                 case lookupCloudProviderAlias('k8s'):
                     return __('Kubernetes')
-                default: return __('Self hosted')
+                default: return __('Local development')
             }
         },
         saveStatus() {

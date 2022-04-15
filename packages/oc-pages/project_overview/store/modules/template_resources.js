@@ -127,16 +127,6 @@ const actions = {
             throw e
         }
         if(!isDeploymentTemplate) resource = {...resource, template: getters.lookupResourceTemplate(resource.template)}
-        if(!isDeploymentTemplate) {
-            if(resource.dependencies.length == 0 && (resource?.template?.dependencies?.length ?? 0) > 0) { // TODO remove this workaround
-                resource.dependencies = resource.template.dependencies
-                window.alert(`Your resource is missing dependencies, this is likely an export bug.  ResourceTemplate's dependencies will be used for rendering.`)
-            }
-            if(resource.attributes.length == 0 && (resource?.template?.properties?.length ?? 0) > 0) { // TODO remove this workaround
-                resource.attributes = resource.template.properties
-                window.alert(`Your resource is missing attributes, this is likely an export bug.  ResourceTemplate's properties will be used for rendering.`)
-            }
-        }
 
         deploymentTemplate.primary = resource.name
         if(!deploymentTemplate.cloud) {
@@ -301,9 +291,9 @@ const actions = {
             const valid = !!(child)
             const id = valid && btoa(child.name).replace(/=/g, '')
 
-            commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
 
             if(valid) {
+                commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
                 dispatch('createMatchedResources', {resource: child, isDeploymentTemplate})
             }
         }
@@ -507,29 +497,6 @@ const getters = {
             }
         }
     },
-    cardIsHiddenByVisibilitySetting(state, getters) {
-        return function(_card) {
-            return false
-            const card = state.resourceTemplates[_card?.name || _card]
-            if(card?.visibility == 'hidden') return true
-            if(card?.dependentName) {
-                return getters.cardIsHiddenByVisibilitySetting(card.dependentName)
-            }
-            return false
-        }
-    },
-    cardIsHiddenByConstraint(state, getters) {
-        return function(_card) {
-            const card = state.resourceTemplates[_card?.name || _card]
-            const dependentConstraint = getters.getDependencies(card?.dependentName)
-                ?.find(req => req?.match == card.name)
-                ?.constraint
-
-            if(dependentConstraint?.visibility == 'hidden') return true
-
-            return false
-        }
-    },
     constraintIsHidden(state, getters) {
         return function(dependentName, dependentRequirement) {
             const constraint = state.resourceTemplates[dependentName]
@@ -550,6 +517,7 @@ const getters = {
     cardIsHidden(state, getters) {
         return function(cardName) {
             const card = state.resourceTemplates[cardName?.name || cardName]
+            if(!card) return false
             switch(card.visibility) {
                 case 'hidden':
                     return true
