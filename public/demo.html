@@ -5,10 +5,16 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width,initial-scale=1.0">
     <title><%= htmlWebpackPlugin.options.title %></title>
-  
+
     <link rel="stylesheet preload" href="<%= htmlWebpackPlugin.options.unfurlCloudBaseUrl %>/assets/application_utilities.css" as="style" type="text/css">
-<link rel="stylesheet preload" href="<%= htmlWebpackPlugin.options.unfurlCloudBaseUrl %>/assets/application.css" as="style" type="text/css">
-<link rel="stylesheet preload" href="<%= htmlWebpackPlugin.options.unfurlCloudBaseUrl %>/assets/highlight/themes/white.css" as="style" type="text/css">
+    <link rel="stylesheet preload" href="<%= htmlWebpackPlugin.options.unfurlCloudBaseUrl %>/assets/application.css" as="style" type="text/css">
+    <link rel="stylesheet preload" href="<%= htmlWebpackPlugin.options.unfurlCloudBaseUrl %>/assets/highlight/themes/white.css" as="style" type="text/css">
+
+    <% if(htmlWebpackPlugin.options.inject) { %>
+    <%= '<link href="/js/chunk-common.js" rel="preload" as="script">' %>
+    <%= '<link href="/js/chunk-vendors.js" rel="preload" as="script">' %>
+    <%= '<link href="/js/demo.js" rel="preload" as="script">' %>
+    <% } %>
 
 <style>
 .gl-display-flex {
@@ -65,5 +71,11 @@ body.ui-indigo .gl-tab-nav-item-active-indigo {
     </noscript>
     <div id="app"></div>
     <!-- built files will be auto injected -->
+
+    <% if(htmlWebpackPlugin.options.inject) { %>
+    <%= '<script type="text/javascript" src="/js/chunk-vendors.js"></script>' %>
+    <%= '<script type="text/javascript" src="/js/chunk-common.js"></script>' %>
+    <%= '<script type="text/javascript" src="/js/demo.js"></script>' %>
+    <% } %>
   </body>
 </html>

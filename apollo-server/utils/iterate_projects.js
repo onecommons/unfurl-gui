@@ -1,8 +1,10 @@
 const path = require('path');
 const fs = require('fs')
+const glob = require('glob')
 const {execSync} = require('child_process')
 const USER_HOME_PROJECT = 'dashboard'
 const REPOS_DIR = path.resolve(__dirname, '../repos')
+const LIVE_REPOS_DIR = path.resolve(__dirname, '../../live/repos')
 
 function exportBlueprint(cwd, fullPath, ensemble) {
   const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
@@ -65,6 +67,33 @@ function getBlueprintJson(project, options) {
   }
 }
 
+function* iterateRepoPaths() {
+  for(const unfurlJSON of glob.sync(path.join(REPOS_DIR, '**/unfurl.json'))) {
+    yield path.dirname(unfurlJSON)
+  }
+}
+
+function* iterateLiveRepoPaths() {
+  for(const unfurlJSON of glob.sync(path.join(LIVE_REPOS_DIR, '**/unfurl.json'))) {
+    yield path.dirname(unfurlJSON)
+  }
+}
+
+function getProjectPaths() {
+  const paths = []
+  for(const repo of iterateRepoPaths()) {
+    const projectPath = repo.slice(REPOS_DIR.length + 1)
+    paths.push(projectPath)
+  }
+
+  for(const repo of iterateLiveRepoPaths()) {
+    const projectPath = repo.slice(LIVE_REPOS_DIR.length + 1)
+    if(!paths.includes(projectPath)) paths.push(projectPath)
+  }
+
+  return paths
+}
+
 function iterateProjects() {
   const reposDir = REPOS_DIR;
   const projects = []
@@ -90,4 +119,4 @@ function iterateProjects() {
   return projects
 }
 
-module.exports = { iterateProjects, getBlueprintJson };
+module.exports = { iterateProjects, getBlueprintJson, getProjectPaths };
