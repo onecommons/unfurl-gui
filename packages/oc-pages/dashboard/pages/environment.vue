@@ -58,7 +58,8 @@ export default {
             'environmentResourceTypeDict',
             'getHomeProjectPath',
             'hasPreparedMutations',
-            'isMobileLayout'
+            'isMobileLayout',
+            'getCardsStacked'
         ]),
         breadcrumbItems() {
             return [
@@ -90,8 +91,10 @@ export default {
         },
         providerType() {
             return this.environment?.primary_provider?.type
+        },
+        showDeploymentResources() {
+            return this.getCardsStacked.length > 0
         }
-
     },
     methods: {
         ...mapActions([
@@ -179,7 +182,25 @@ export default {
         </oc-properties-list>
         <gl-tabs class="mt-4">
             <oc-tab title="Resources">
-                <deployment-resources style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" :external-status-indicator="true">
+                <div class="d-flex" v-if="!showDeploymentResources">
+                    <div class="mr-4">
+                        <p>
+                            External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
+                        </p>
+                        <p>
+                            External resources are a convenient way to reuse configurations across many deployments.
+                        </p>
+                    </div>
+                    <div>
+                        <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                            <div>
+                                <gl-icon name="plus"/>
+                                {{__('Add External Resource')}}
+                            </div>
+                        </gl-button>
+                    </div>
+                </div>
+                <deployment-resources v-show="showDeploymentResources" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" :external-status-indicator="true">
                     <template #header>
                         <!-- potentially tricky to translate -->
                         <div class="d-flex align-items-center">

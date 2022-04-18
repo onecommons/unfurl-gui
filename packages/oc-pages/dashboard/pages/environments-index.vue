@@ -73,7 +73,7 @@ export default {
             <div class="mr-4">
                 <div v-show="getDashboardItems.length == 0">
                     This page will show all of your environments once you've created some. <br>
-                    Click <a href="#">here</a> to learn more about how environments work on unfurl.cloud.
+                    Click <a href="https://unfurl.cloud/help/glossary" target="_blank">here</a> to learn more about how environments work on unfurl.cloud.
                 </div>
             </div>
             <gl-button variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
