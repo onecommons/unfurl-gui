@@ -573,7 +573,7 @@ export default {
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
-          :custom-title="getPrimaryCard.title"
+          :custom-title="getDeploymentTemplate.title"
           :main-card-class="'primary-card'"
           :card="getPrimaryCard"
           :icon-title="true"

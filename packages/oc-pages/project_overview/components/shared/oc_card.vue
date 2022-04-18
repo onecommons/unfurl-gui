@@ -32,7 +32,7 @@ export default {
         customTitle: {
             type: String,
             required: false,
-            default: __("OC Card"),
+            default: null,
         },
         card: {
             type: Object,
@@ -144,7 +144,7 @@ export default {
                     <slot name="header">
                         <div :id="id" :data-testid="'card-' + card.name"  class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
-                            <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
+                            <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
                             <gl-icon
                                 v-if="displayValidation"
                                 :size="14"
