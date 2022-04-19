@@ -1,5 +1,6 @@
 <script>
 import * as routes from '../router/constants'
+import { FLASH_TYPES } from '../../vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
@@ -144,6 +145,7 @@ export default {
             })
 
             await this.commitPreparedMutations()
+            sessionStorage['oc_flash'] = JSON.stringify({type: FLASH_TYPES.SUCCESS, message: `${environment.name} was deleted successfully.`})
             return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         }
     },
@@ -233,6 +235,12 @@ export default {
                 <ci-variable-settings v-if="!unfurl_gui"/>
             </oc-tab>
         </gl-tabs>
+        <div v-if="!showDeploymentResources" class="form-actions d-flex justify-content-end">
+            <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
+                <gl-icon name="remove"/>
+                Delete Environment
+            </gl-button>
+        </div>
     </div>
 </template>
 <style scoped>
