@@ -7,6 +7,8 @@ import store from './store';
 import createRouter from './router'
 import createFlash, { FLASH_TYPES } from '../vue_shared/client_utils/oc-flash';
 
+import 'element-ui/lib/theme-chalk/index.css'
+
 Vue.use(GlToast);
 const router = createRouter()
 Vue.config.errorHandler = function(err, vm, info) {
