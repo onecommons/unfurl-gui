@@ -51,11 +51,12 @@ export default {
 
             const cloudProviderName = lookupCloudProviderAlias(this.cloudProvider)
 
-            if(cloudProviderName) {
+            //local dev not currently supported on other platforms
+            //if(cloudProviderName) {
                 return result.filter(envName => {
                     return lookupCloudProviderAlias(this.SHORT_NAMES[envName]) == cloudProviderName
                 })
-            }
+            //}
 
             return result
         },

@@ -459,7 +459,7 @@ export default {
                         <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
                         <gl-dropdown data-testid="deployment-environment-select" ref="dropdown">
                             <template #button-text>
-                                <span><detect-icon class="mr-2" no-default :env="defaultEnvironmentName != __('Select') && defaultEnvironmentName"/>{{defaultEnvironmentName}}</span>
+                                <span><detect-icon class="mr-2" no-default :env="(defaultEnvironmentName != __('Select') && defaultEnvironmentName) || null"/>{{defaultEnvironmentName}}</span>
                             </template>
 
                             <div v-if="getEnvironments.length > 0">
