@@ -342,7 +342,8 @@ export const resolvers = {
 
 
     RequirementConstraint: {
-        resourceType: makeObjectLookupResolver('ResourceType')
+        resourceType: makeObjectLookupResolver('ResourceType'),
+        visibility: o => o?.visibility ?? null
     },
 
     Input: {

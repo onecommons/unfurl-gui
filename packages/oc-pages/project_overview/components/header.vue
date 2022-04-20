@@ -90,12 +90,22 @@ export default {
             </div>
             <div class="project-repo-buttons gl-display-flex gl-justify-content-md-end gl-align-items-start gl-flex-wrap gl-mt-3">
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
+                    <gl-button>
+                        <gl-icon
+                            name="upload"
+                            :size="16"
+                        />
+                        <span>{{ __("Deploys") }}</span>
+                    </gl-button>
+                    <a href="#" class="gl-button btn btn-default btn-sm  count">{{ this.$projectGlobal.deploymentCount }}</a>
+                </div>
+                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
                         @click="toggleStar">
                         <gl-icon
-                        :name="star.icon? star.icon: this.$projectGlobal.buttonStar.icon"
-                        :size="16"
+                            :name="star.icon? star.icon: this.$projectGlobal.buttonStar.icon"
+                            :size="16"
                         />
                         <span>{{ star.text }}</span>
                     </gl-button>

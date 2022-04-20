@@ -29,6 +29,10 @@ export default {
         cloudProvider: {
             type: String,
             required: false
+        },
+        allowAny: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -49,13 +53,16 @@ export default {
                 'Local Dev',
             ]
 
+            if(this.allowAny) return result
+
             const cloudProviderName = lookupCloudProviderAlias(this.cloudProvider)
 
-            if(cloudProviderName) {
+            //local dev not currently supported on other platforms
+            //if(cloudProviderName) {
                 return result.filter(envName => {
                     return lookupCloudProviderAlias(this.SHORT_NAMES[envName]) == cloudProviderName
                 })
-            }
+            //}
 
             return result
         },

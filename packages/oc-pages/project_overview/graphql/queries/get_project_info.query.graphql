@@ -28,6 +28,7 @@ query getProjectInfo($projectPath: ID!) {
           title
           description
           resourceType {...ResourceTypes}
+          visibility
           min
           max
 

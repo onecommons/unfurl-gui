@@ -380,6 +380,15 @@ const getters = {
                 result.push({context, ...context})
             }
 
+            resources = resources.filter(r => {
+                return r.visibility != 'hidden' && (
+                    r.visibility == 'visible' ||
+                    r.attributes?.find(a => a.name == 'id') ||
+                    r.attributes?.find(a => a.name == 'console_url')
+                )
+            })
+
+
 
             for(const resource of resources) {
                 const context = {...obj, resource}
