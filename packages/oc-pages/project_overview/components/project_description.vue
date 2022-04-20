@@ -144,18 +144,18 @@ export default {
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
-                                            <div class="gl-display-flex">
-                                                <detect-icon :size="12" :type="requirement.resourceType" class="gl-mt-1"/>
+                                            <div class="gl-display-flex align-items-center">
+                                                <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-display-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
-                                            <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.resourceType.badge? capitalizeFirstLetter(requirement.resourceType.badge) : 'Lorem Ipsum'  }}</gl-badge> 
+                                            <gl-badge v-if="requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge> 
                                         </div>
                                     </div>
-                                    <div class="gl-mt-4 light-gray">
+                                    <div style="margin-left: calc(0.25rem + 12px)" class="gl-mt-2 light-gray">
                                         {{ requirement.description }}
                                     </div>
                                 </li>
@@ -167,18 +167,18 @@ export default {
                                 <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
-                                            <div class="gl-display-flex">
-                                                <detect-icon :size="12" :type="requirement.resourceType" class="gl-mt-1" />
+                                            <div class="gl-display-flex align-items-center">
+                                                <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-display-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
-                                            <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.resourceType.badge? capitalizeFirstLetter(requirement.resourceType.badge) : 'Lorem Ipsum'  }}</gl-badge> 
+                                            <gl-badge v-if="requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge> 
                                         </div>
                                     </div>
-                                    <div class="gl-mt-4 light-gray">
+                                    <div style="margin-left: calc(0.25rem + 12px)" class="gl-mt-2 light-gray">
                                         {{ requirement.description }}
                                     </div>
                                 </li>
