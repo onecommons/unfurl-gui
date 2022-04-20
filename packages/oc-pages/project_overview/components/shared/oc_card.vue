@@ -1,5 +1,5 @@
 <script>
-import { GlButton, GlCard, GlIcon, GlBadge} from "@gitlab/ui";
+import { GlButton, GlCard, GlIcon, GlBadge, GlTooltipDirective} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from 'oc_vue_shared/bus';
@@ -11,6 +11,9 @@ import { __ } from '~/locale';
 
 export default {
     name: "OcCard",
+    directives: {
+        GlTooltip: GlTooltipDirective, 
+    },
     components: {
         GlButton,
         GlCard,
@@ -148,8 +151,10 @@ export default {
                             <gl-icon
                                 v-if="displayValidation"
                                 :size="14"
+                                v-gl-tooltip.hover
                                 :class="['gl-ml-3', cardIsValid(card)? 'icon-green': '']"
                                 :name="cardIsValid(card)? 'check-circle-filled': 'status_preparing'"
+                                :title="cardIsValid(card)? 'Complete': `${customTitle || card.title} is Incomplete`"
                                 />
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
