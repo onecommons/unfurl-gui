@@ -21,6 +21,10 @@ export default {
             return generateCardId(this.resource.name)
         },
         to() {
+            let consoleUrl
+            if(consoleUrl = this.resource.attributes?.find(a => a.name == 'console_url')?.value) {
+                return {href: consoleUrl}
+            }
             const href = this.noRouter?
                 `/dashboard/deployments/${this.environment.name}/${this.deployment.name}#${this.id}`: // TODO use from routes.js
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}, hash: `#${this.id}`}
