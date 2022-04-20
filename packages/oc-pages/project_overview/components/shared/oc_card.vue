@@ -264,6 +264,18 @@ export default {
     }
 }
 
+.oc-card:not(.primary) >>> .gl-card-body {
+    background-color: white;
+    /* sorry Mathew */
+}
+
+.oc-card >>> .gl-card-body {
+    background-color: #FBFBFB;
+}
+.oc-card {
+    border-color: #DBDBDB !important;
+}
+
 .card-content-container.active {
     transition: margin-top 0.5s;
 }
