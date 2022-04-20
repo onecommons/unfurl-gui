@@ -84,7 +84,7 @@ export default {
         ...mapState(['project']),
 
         requirements() {
-            const requirements = this.getProjectInfo.primary.requirements.filter(dependency => (dependency?.min || 0) > 0)
+            const requirements = this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
             return requirements || []
         },
         extras() {
@@ -148,7 +148,7 @@ export default {
                                                 <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-display-flex">
-                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
+                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
@@ -171,7 +171,7 @@ export default {
                                                 <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-display-flex">
-                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.resourceType.title }}</h6>
+                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">

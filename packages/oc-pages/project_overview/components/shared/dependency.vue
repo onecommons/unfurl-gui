@@ -114,7 +114,7 @@ export default {
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
             <div>
                 <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
-                <span class="text-break-word title" style="font-weight: bold; color: #353545">{{ dependency.name }}</span>
+                <span class=" title" style="font-weight: bold; color: #353545">{{ dependency.name }}</span>
                 <div class="oc_requirement_description gl-mb-2">
                     {{ dependency.description}}
                 </div>
@@ -128,7 +128,7 @@ export default {
                             }"
                     :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'status_preparing'"
                     />
-                <span v-if="requirementMatchIsValid(dependency)" class="text-break-word oc_resource-details">
+                <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
 
                     <a href="#" @click.prevent=" findElementToScroll({requirement: dependency}) ">
                         <span v-if="displayStatus">
@@ -151,7 +151,7 @@ export default {
                 }"
                 :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'status_preparing'"
             />
-            <span v-if="requirementMatchIsValid(dependency)" class="text-break-word oc_resource-details">
+            <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
 
                 <a href="#" @click.prevent=" findElementToScroll({requirement: dependency}) ">
                     <span v-if="displayStatus">
