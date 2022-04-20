@@ -277,18 +277,54 @@ export default {
 }
 </script>
 <template>
-<div style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+<div class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
   <FormProvider v-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"
         :label-align="['left', 'left']"
+        :wrapper-width="300"
         :label-wrap="true"
-        :label-col="[24, 4]"
-        :wrapper-col="[24, 10]"
+        feedback-layout="popover"
+        tooltip-layout="icon"
     >
       <SchemaField :schema="schema"/>
     </FormLayout>
   </FormProvider>
 </div>
 </template>
+<style scoped>
+.oc-inputs {
+  max-width: 100%;
+  overflow: hidden;
+}
+.formily-element-form-default {
+  display: inline-flex;
+  flex-direction: column;
+}
+.formily-element-form-default > :global(*) {
+  display: inline-flex !important;
+  justify-content: flex-end;
+  margin-bottom: 2.2em;
+  flex-wrap: wrap;
+}
+.oc-inputs >>> .formily-element-form-item-control {
+  position: relative;
+}
+
+.oc-inputs >>> .formily-element-form-item-control-content { justify-content: flex-end; }
+.oc-inputs >>> .formily-element-form-item-extra {
+  left: calc(100% - 300px);
+  position: absolute;
+  font-size: 0.9em;
+  line-height: 1.1;
+  max-height: 2.2em;
+  overflow: hidden;
+  margin-top: 0.1em;
+}
+/*
+.oc-inputs >>> .formily-element-form-item-extra { position: relative; left: calc(100% - 300px); }
+.oc-inputs >>> .formily-element-form-item-error-help { position: relative; left: calc(100% - 300px); }
+ */
+
+</style>
