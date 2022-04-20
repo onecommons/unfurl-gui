@@ -80,6 +80,6 @@ export default {
         </div>
         <environments-index-table v-if="getDashboardItems.length > 0" :items="getDashboardItems"/>
             
-        <create-environment-modal v-model="displayModal" />
+        <create-environment-modal v-model="displayModal" allow-any />
     </div>
 </template>
