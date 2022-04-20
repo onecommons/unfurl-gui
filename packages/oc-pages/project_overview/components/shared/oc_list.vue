@@ -141,7 +141,7 @@ export default {
         <oc-tab v-if="shouldRenderRequirements" title="Requirements" :titleCount="requirements.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
-                    <dependency :card="requirement.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" :idx="idx" v-for="(requirement, idx) in requirements" :key="requirement.dependency.name + '-template'"/>
+                    <dependency :card="requirement.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name + '-template'"/>
                 </div>
             </div>
         </oc-tab>
@@ -158,7 +158,7 @@ export default {
         <oc-tab v-if="shouldRenderExtras" title="Extras" :titleCount="extras.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
-                    <dependency :card="extra.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" :idx="idx" v-for="(extra, idx) in extras" :key="extra.dependency.name + '-template'"/>
+                    <dependency :card="extra.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name + '-template'"/>
                 </div>
             </div>
         </oc-tab>

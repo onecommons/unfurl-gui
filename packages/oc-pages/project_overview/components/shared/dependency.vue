@@ -12,7 +12,6 @@ export default {
     props: {
         card: Object,
         dependency: Object,
-        idx: Number,
         displayValidation: { type: Boolean, default: true, },
         displayStatus: { type: Boolean, default: false, },
         readonly: { type: Boolean, default: false }
@@ -80,10 +79,8 @@ export default {
             
             bus.$emit('placeTempRequirement', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'create'});
         },
-        openDeleteModal(index, action=__("Remove")) {
-            const dependency = this.card.dependencies[index]
-            //const card = this.resolveResourceTemplate(dependency.match)
-            bus.$emit('deleteNode', {name: dependency.match, level: this.level, action, dependentRequirement: dependency.name, dependentName: this.card.name});
+        openDeleteModal(action=__("Remove")) {
+            bus.$emit('deleteNode', {name: this.dependency.match, level: this.level, action, dependentRequirement: this.dependency.name, dependentName: this.card.name});
         },
 
         connectToResource(requirement) {
@@ -180,7 +177,7 @@ export default {
                 :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                 type="button"
                 class="gl-ml-3 oc_requirements_actions"
-                @click.prevent="openDeleteModal(idx, getCurrentActionLabel(dependency))">
+                @click.prevent="openDeleteModal(getCurrentActionLabel(dependency))">
                 {{
                     getCurrentActionLabel(dependency) 
                 }}</gl-button>
