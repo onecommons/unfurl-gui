@@ -29,6 +29,10 @@ export default {
         cloudProvider: {
             type: String,
             required: false
+        },
+        allowAny: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -48,6 +52,8 @@ export default {
                 'Amazon Web Services',
                 'Local Dev',
             ]
+
+            if(this.allowAny) return result
 
             const cloudProviderName = lookupCloudProviderAlias(this.cloudProvider)
 
