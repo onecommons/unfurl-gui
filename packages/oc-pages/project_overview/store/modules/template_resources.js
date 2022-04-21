@@ -417,44 +417,16 @@ const actions = {
         //if(state.resourceTemplates[templateName].value === propertyValue) return
         const template = state.resourceTemplates[templateName]
 
-        function toPropertyUpdate(template, propertyName, propertyValue) {
-            const propertyPath = propertyName.split('.')
-            let rootProperty = template.properties.find(prop => prop.name == propertyPath[0]).value //= propertyValue
-            if(propertyPath.length == 1) {
-                if(rootProperty === (propertyValue ?? null)) return null
-                return {propertyName, propertyValue}
-            }
-            rootProperty = _.cloneDeep(rootProperty) // keep vuex from complaining?
-            if(Array.isArray(rootProperty)) rootProperty = rootProperty.slice(0)
-            let property = rootProperty
-
-            for(const pathComponent of propertyPath.slice(1, -1)) {
-                let newProperty = property[pathComponent]
-                if(!newProperty) {
-                    newProperty = {}
-                    property[pathComponent] = newProperty
-                }
-                property = newProperty
-            }
-            const finalIndex = propertyPath[propertyPath.length -1]
-            if(property[finalIndex] === (propertyValue ?? null)) return null
-            property[finalIndex] = propertyValue
-            return {propertyName: propertyPath[0], propertyValue: rootProperty}
-        }
-
-        const propertyUpdate = toPropertyUpdate(template, propertyName, propertyValue)
-        if(!propertyUpdate) return
-        
-        commit('templateUpdateProperty', {templateName, ...propertyUpdate})
+        commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, ...propertyUpdate, isSensitive})
+                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, propertyName, propertyValue, isSensitive})
             )
         } else {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInResourceTemplate({deploymentName, templateName, ...propertyUpdate, isSensitive})
+                updatePropertyInResourceTemplate({deploymentName, templateName, propertyName, propertyValue, isSensitive})
             )
         }
     }
@@ -529,10 +501,10 @@ const getters = {
             }
         }
     },
-    getCardsStacked: (_state, getters) => {
+    getCardsStacked: (_state, getters, _, rootGetters) => {
         if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
         return Object.values(_state.resourceTemplates).filter((rt) => {
-            if(getters.cardIsHidden(rt.name)) return false
+            if(!rootGetters.REVEAL_HIDDEN_TEMPLATES && getters.cardIsHidden(rt.name)) return false
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
 

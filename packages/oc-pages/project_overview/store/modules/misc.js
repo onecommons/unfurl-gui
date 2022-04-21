@@ -32,11 +32,14 @@ const getters = {
     isMobileLayout() {return state.isMobileLayout},
     pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },
     UNFURL_MOCK_DEPLOY() {
-      if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
-      let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
-      if(key && sessionStorage[key]) return true
-      return false
+        if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
+        let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))
+        if(key && sessionStorage[key]) return true
+        return false
     },
+    REVEAL_HIDDEN_TEMPLATES() {
+        return !!Object.keys(sessionStorage).find(key => key == 'reveal-hidden-templates')
+    }
 
 }
 
