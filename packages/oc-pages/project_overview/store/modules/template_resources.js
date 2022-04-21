@@ -259,7 +259,7 @@ const actions = {
 
         createMatchedTemplateResources(primary);
         
-        commit('clientDisregardUncommitted')
+        commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
         return true;
@@ -415,8 +415,10 @@ const actions = {
         }
     },
     updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
-        //if(state.resourceTemplates[templateName].value === propertyValue) return
-        //const template = state.resourceTemplates[templateName]
+        const template = state.resourceTemplates[templateName]
+        const templatePropertyValue = template.properties.find(prop => prop.name == propertyName)?.value
+
+        if(_.isEqual(templatePropertyValue ?? null, propertyValue ?? null)) return
 
         commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
         if(state.context == 'environment') {
@@ -641,6 +643,11 @@ const getters = {
                 result = rootGetters.resolveResourceTemplate(resourceTemplate)
             }
             return result
+        }
+    },
+    lookupEnvironmentVariable(state, _a, _b, rootGetters) {
+        return function(variableName) {
+            return rootGetters.lookupVariableByEnvironment(variableName, state.lastFetchedFrom.environmentName)
         }
     }
 };
