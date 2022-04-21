@@ -67,7 +67,7 @@ const actions = {
                 if(!deployment.statuses[0]) deployment.statuses.pop()
                 deployment.isStopped = deployment.resources.length == 0 || deployment.resources.some(resource => resource?.status != 1)
                 deployment.resources = deployment.resources.filter(r => {
-                    return (
+                    return r.visibility != 'hidden' && (
                         r.visibility == 'visible' ||
                         r.attributes?.find(a => a.name == 'id') ||
                         r.attributes?.find(a => a.name == 'console_url')

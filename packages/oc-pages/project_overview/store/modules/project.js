@@ -381,7 +381,7 @@ const getters = {
             }
 
             resources = resources.filter(r => {
-                return (
+                return r.visibility != 'hidden' && (
                     r.visibility == 'visible' ||
                     r.attributes?.find(a => a.name == 'id') ||
                     r.attributes?.find(a => a.name == 'console_url')
