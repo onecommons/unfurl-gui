@@ -232,7 +232,7 @@ export default {
       // debounce each property of a form separately in for autocomplete
       let triggerFn
       if(!(triggerFn = this.saveTriggers[propertyName])) {
-        this.saveTriggers[propertyName] = triggerFn = _.debounce((function() {
+        this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value) {
           // TODO move cloneDeep/serializer into another function
           const propertyValue = _.cloneDeepWith(value, (function(value) {
             if(Array.isArray(value) && value.length > 0) {
@@ -243,7 +243,7 @@ export default {
         }).bind(this), 200)
       }
 
-      triggerFn()
+      triggerFn(field, value)
     },
 
     getRandomKey(length) {
