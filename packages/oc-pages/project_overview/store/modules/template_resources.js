@@ -416,7 +416,7 @@ const actions = {
     },
     updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
         //if(state.resourceTemplates[templateName].value === propertyValue) return
-        const template = state.resourceTemplates[templateName]
+        //const template = state.resourceTemplates[templateName]
 
         commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
         if(state.context == 'environment') {
