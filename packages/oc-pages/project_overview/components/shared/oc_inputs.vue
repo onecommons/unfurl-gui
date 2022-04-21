@@ -82,7 +82,8 @@ export default {
   data() {
     return {
       form: null,
-      mainInputs: []
+      mainInputs: [],
+      saveTriggers: {}
     }
   },
   computed: {
@@ -227,10 +228,24 @@ export default {
       this.setCardInputValidStatus({card: this.card, status})
     },
 
-    triggerSave: _.debounce(function preview(field, value) {
-      const [propertyName, propertyValue] = serializeInput(field, value)
-      this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName, propertyValue, isSensitive: field.sensitive})
-    }, 200),
+    triggerSave(field, value) {
+      const propertyName = field.name
+      // debounce each property of a form separately in for autocomplete
+      let triggerFn
+      if(!(triggerFn = this.saveTriggers[propertyName])) {
+        this.saveTriggers[propertyName] = triggerFn = _.debounce((function() {
+          // TODO move cloneDeep/serializer into another function
+          const propertyValue = _.cloneDeepWith(value, (function(value) {
+            if(Array.isArray(value) && value.length > 0) {
+              return value.map(o => o?.input? o?.input: o)
+            }
+          }))
+          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
+        }).bind(this), 200)
+      }
+
+      triggerFn()
+    },
 
     getRandomKey(length) {
       return Math.random().toString(36).replace(/[^a-z][0-9]+/g, '').substr(0, length);
@@ -267,7 +282,9 @@ export default {
           // on the other hand if we check valid here, I'm not sure whether it's updated or not yet
           // if(form.valid) this.triggerSave({...field.data, name: field.path.entire}, field.value);
           this.validate()
-          this.triggerSave({...field.data, name: field.path.entire}, field.value);
+          const name = field.path.segments[0]
+          const value = form.values[name]
+          this.triggerSave({...field.data, name}, value);
         })
       }
     })

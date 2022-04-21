@@ -223,6 +223,8 @@ export default {
   },
 
   mounted() {
+    const banner = document.querySelector('.js-uf-welcome-banner')
+    if(banner) {banner.style.display = 'none'}
     this.fetchItems();
   },
 
@@ -263,6 +265,8 @@ export default {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
       }
+      const banner = document.querySelector('.js-uf-welcome-banner')
+      if(banner) {banner.style.display = ''}
       this.clearPreparedMutations();
       next();
     });
