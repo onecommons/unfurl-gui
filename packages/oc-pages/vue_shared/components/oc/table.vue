@@ -215,8 +215,14 @@ export default {
   },
   methods: {
     pluralize(scope) {
-      if(!scope.field.s) return ''
       const count = scope.item.childrenOfGroup(scope.field.key) || 0
+      if(scope.field.pluralize) {
+        const result = scope.field.pluralize(count, scope.item)
+        if(typeof result == 'string') {
+          return result
+        }
+      }
+      if(!scope.field.s) return ''
       const result = `${count} ${n__(scope.field.s, scope.field.label, count)}`;
       return result;
     },
