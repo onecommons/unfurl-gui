@@ -111,9 +111,9 @@ export default {
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
         />
-        <gl-dropdown v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right>
+        <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right>
             <template #button-content>
-                <gl-icon style="color: black" name="ellipsis_v" :size="24" class="p-1"/>
+                <gl-icon style="padding-left: 0!important; padding-right: 0 !important; color: black" name="ellipsis_v" :size="24" class="p-1"/>
             </template>
             <control-buttons
              :deployment="deployment"

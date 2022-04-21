@@ -34,12 +34,19 @@ const items = [
 
 */
 
+function pluralizeResourceType(count) {
+  if(count == 0) return ''
+}
+
+function pluralizeResources(count) {
+  if(count == 0) return 'No resources'
+}
 const fields = [
     {key: 'application', textValue: textValueFromKeys('application.title', 'application.projectPath'), label: 'Applications', s: 'Application'},
     {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
     {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
-    {key: 'type', groupBy(item) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type'},
-    {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource'},
+    {key: 'type', groupBy(item) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type', pluralize: pluralizeResourceType},
+    {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource', pluralize: pluralizeResources},
 ];
 
 export default {

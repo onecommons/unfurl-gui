@@ -78,6 +78,7 @@ export default {
         }
     },
     data() {
+        const self = this
         const fields = [
             /*
             {
@@ -115,6 +116,7 @@ export default {
                 label: 'Resources',
                 textValue: (item) => item.resource?.title,
                 groupBy: (item) => item.resource?.name,
+                pluralize: (...args) => self.pluralizeResources(...args),
                 s: 'Resource'
             },
             {
@@ -234,6 +236,14 @@ export default {
         },
         deploymentNameId(n) {
             return `deployment-${n}`
+        },
+        pluralizeResources(count, item) {
+          if(count != 0) return
+          const deploymentItem = this.deploymentItem({item})
+          if(deploymentItem?.isDraft) return 'Not yet deployed' 
+          //if(deploymentItem?.jobStatusIsUnsuccessful) return  ''
+          return 'No resources'
+
         }
     },
     computed: {
@@ -410,9 +420,9 @@ export default {
                     </div>
                 </div>
             </template>
-            <template #resource$empty="scope">
+            <!--template #resource$empty="scope">
                 <div v-if="hasDeployPath(scope)">{{__('Not yet deployed')}}</div>
-            </template>
+            </template-->
             <template #resource="scope">
                 <resource-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :resource="scope.item.context.resource" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
             </template>
@@ -420,15 +430,13 @@ export default {
                 <environment-cell :noRouter="noRouter" :environment="scope.item.context.environment"/>
             </template>
             <template #last-deploy$all="scope">
-                <div v-if="scope.item._depth == 0">
+                <div v-if="scope.item._depth == 0" style="letter-spacing: -0.06em">
                     {{deploymentItem(scope, 'createdAtText')}}
-                    <div style="height: 0;" v-if="deploymentItem(scope, 'createdAt')">
-                        <div style="font-size: 0.95em; position: absolute; top: -2px;">
-                            <span v-if="deploymentItem(scope, 'consoleLink')">
-                                <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
-                                <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
-                            </span>
-                        </div>
+                    <div v-if="deploymentItem(scope, 'createdAt')">
+                        <span v-if="deploymentItem(scope, 'consoleLink')">
+                            <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
+                            <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
+                        </span>
                     </div>
                 </div>
 

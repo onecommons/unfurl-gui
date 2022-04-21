@@ -33,6 +33,10 @@ export default class DeploymentItem {
     }
 
     get jobStatusIsEditable() {
+        return this.jobStatusIsUnsuccessful
+    }
+
+    get jobStatusIsUnsuccessful() {
         switch(this.jobStatus) {
             case 'canceled':
             case 'failed':
