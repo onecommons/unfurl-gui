@@ -608,7 +608,6 @@ export default {
                   :key="__('levelOne-') + card.title"
                   :custom-title="card.title"
                   :card="card"
-                  :badge-header="{ isActive: true, text: card.type }"
                   :icon-title="true"
                   :icon-color="card.valid ? 'icon-green' : 'icon-red'"
                   :icon-name="card.valid ? 'check-circle-filled' : 'warning-solid'"
