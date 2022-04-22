@@ -38,6 +38,12 @@ export default {
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
 
+        const query = {...this.$route.query}
+        let deletedQuery = delete query.env
+        deletedQuery = delete query.provider || deletedQuery
+
+        if(deletedQuery) {this.$router.replace({query})}
+
         delete sessionStorage['instantiate_env']
         delete sessionStorage['instantiate_provider']
 
