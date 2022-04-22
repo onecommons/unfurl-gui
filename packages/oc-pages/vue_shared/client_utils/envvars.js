@@ -47,7 +47,12 @@ export async function patchEnv(env, environmentScope, fullPath) {
 }
 
 export async function fetchEnvironmentVariables(fullPath) {
+    // #!if false
+    
     if(!fullPath) { console.warn('TODO use fullPath for fetchEnvironmentVariables') }
     const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint
     return (await axios.get(endpoint)).data.variables
+
+    // #!endif
+    return []
 }
