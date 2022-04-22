@@ -41,6 +41,10 @@ export default {
         dependencyType() {
             return this.resolveResourceTypeFromAny(this.dependency.constraint.resourceType)
         },
+        dependencyConstraint() {
+            return this.dependency?.constraint || {}
+
+        },
         canConnectServices() {
             return (
                 this.$route.name != 'templatePage' && (
@@ -111,9 +115,9 @@ export default {
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
             <div>
                 <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
-                <span class=" title" style="font-weight: bold; color: #353545">{{ dependency.name }}</span>
+                <span class=" title" style="font-weight: bold; color: #353545">{{ dependencyConstraint.title }}</span>
                 <div class="oc_requirement_description gl-mb-2">
-                    {{ dependency.description}}
+                    {{ dependencyConstraint.description}}
                 </div>
             </div>
             <div v-if="isMobileLayout" class="ml-2 mr-2 validation">
