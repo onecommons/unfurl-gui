@@ -79,13 +79,13 @@ spec:
       GCPInstance:
         derived_from: [Compute, unfurl.nodes.GoogleCloudObject]
 
-      MongoDb:
+      MongoDB:
         derived_from: Base
         metadata:
           badge: Database
 
       Atlas:
-        derived_from: MongoDb
+        derived_from: MongoDB
         metadata:
           title: Atlas MongoDB Service
         properties:
@@ -96,8 +96,8 @@ spec:
               sensitive: true
             type: string
 
-      SelfHosted_MongoDb:
-        derived_from: MongoDb
+      SelfHosted_MongoDB:
+        derived_from: MongoDB
         metadata:
           title: Self-hosted MongoDB
         requirements:
@@ -132,8 +132,8 @@ spec:
             node: Compute
         - resolver:
             node: DNS
-        - db:
-            node: MongoDb
+        - DB:
+            node: MongoDB
             description: MongoDB database service
         - mail:
             node: Mail
@@ -165,7 +165,7 @@ spec:
           # requirements:
           # - host: app_container
           # - resolver: foo.com-zone
-          # - db: atlas_service
+          # - DB: atlas_service
             
 
         app_container:
