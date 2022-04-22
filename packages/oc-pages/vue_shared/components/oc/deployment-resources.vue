@@ -292,13 +292,13 @@ export default {
             }
         },
 
-        scrollDown(elId, timeOut=0) {
+        scrollDown(elId, timeOut=500) {
             clearTimeout(this.uiTimeout);  
             const anchorId = btoa(elId).replace(/=/g, '');
-            const anchor = document.querySelector(`#${anchorId}`);
             this.uiTimeout = setTimeout(
                 () => {
-                    anchor.scrollIntoView({behavior: "smooth", block: "center", inline: "start"});
+                    const anchor = document.querySelector(`#${anchorId}`);
+                    anchor?.scrollIntoView({behavior: "smooth", block: "center", inline: "start"});
                 },
                 timeOut,
             );
@@ -364,6 +364,7 @@ export default {
             this.resourceName = '';
             this.selected = {};
             this.userEditedResourceName = false;
+            this.topLevelSelection = {}
         },
 
         async onSubmitDeleteTemplateModal() {

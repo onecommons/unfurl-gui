@@ -576,7 +576,7 @@ const getters = {
         const matchInResourceTemplates = _state.resourceTemplates[match]?.title; 
         if(matchInResourceTemplates) return matchInResourceTemplates;
         // TODO figure out how to handle resources of a service
-        return rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
+        return state.context != 'environment' && rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
     },
     cardInputsAreValid(state) {
         return function(_card) {
