@@ -166,6 +166,11 @@ export default {
         }
         currentValue.title = currentValue.title ?? name;
         currentValue['x-decorator'] = 'FormItem'
+        if(currentValue.type == 'number') {
+          currentValue['x-decorator-props'] = {
+            className: 'oc-input-number'
+          }
+        }
         currentValue['x-data'] = value
         currentValue['x-component-props'] = {
           placeholder: currentValue.title,
@@ -302,7 +307,6 @@ export default {
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"
         :label-align="['left', 'left']"
-        :wrapper-width="300"
         :label-wrap="true"
         feedback-layout="popover"
         tooltip-layout="icon"
@@ -341,9 +345,15 @@ export default {
   overflow: hidden;
   margin-top: 0.1em;
 }
-/*
-.oc-inputs >>> .formily-element-form-item-extra { position: relative; left: calc(100% - 300px); }
-.oc-inputs >>> .formily-element-form-item-error-help { position: relative; left: calc(100% - 300px); }
- */
+
+.oc-inputs >>> .formily-element-form-item-control-content-component { 
+  width: 300px;
+  max-width: 300px;
+}
+.oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component { 
+  width: 150px;
+  max-width: 150px;
+  margin-right: 150px;
+}
 
 </style>
