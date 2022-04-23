@@ -14,13 +14,14 @@ export default {
       ...mapGetters([
           'getPrimaryCard',
           'getApplicationBlueprint',
-          'getCurrentEnvironment'
+          'getCurrentEnvironmentType',
+          'getCurrentEnvironmentName'
       ]),
       cloud() {
-          return this.getCurrentEnvironment?.primary_provider?.type
-      },
-      environmentName() {
-          return this.getCurrentEnvironment?.name
+        if(!this.getCurrentEnvironmentType && this.getCurrentEnvironmentName) {
+          return 'local dev'
+        }
+        return this.getCurrentEnvironmentType
       }
 
     }
@@ -29,8 +30,8 @@ export default {
 <template>
     <div class="m-2 d-flex justify-content-between align-items-center">
         <h1 class="template-title m-0"> <project-icon style="font-size: 0.83em; margin-right: 0.5em;" :project-icon="getApplicationBlueprint.projectIcon" /> {{ getApplicationBlueprint.title }}</h1>
-        <a :href="`/dashboard/environments/${environmentName}`" target="_blank">
-            <span class="gl-pl-2 oc_environment_name mr-2">{{ environmentName }}</span> 
+        <a :href="`/dashboard/environments/${getCurrentEnvironmentName}`" target="_blank">
+            <span class="gl-pl-2 oc_environment_name mr-2">{{ getCurrentEnvironmentName }}</span> 
             <detect-icon :size="18" :type="cloud" />
         </a>
     </div>

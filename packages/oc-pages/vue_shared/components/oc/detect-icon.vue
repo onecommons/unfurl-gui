@@ -11,6 +11,7 @@ import LocalDevIcon from './icons/local_dev.svg'
 import DnsIcon from './icons/DNS.svg'
 import MailIcon from './icons/Mail_server.svg'
 import GCPInstance from './icons/gcp_vm.svg'
+import EC2Instance from './icons/ec2.svg'
 import MongoDbIcon from './icons/mongodb.svg'
 
 const DEFAULT = 'pod'
@@ -26,6 +27,7 @@ const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.azure': 'Azure', 'azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS', 'amazon web services': 'AWS',
     gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
+    ec2compute: EC2Instance, 'unfurl.nodes.ec2compute': EC2Instance,
     dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
     mail: 'MailIcon',
     mongodb: MongoDbIcon,

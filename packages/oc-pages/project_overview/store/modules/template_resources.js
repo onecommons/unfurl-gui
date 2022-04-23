@@ -90,8 +90,8 @@ const mutations = {
         state.resourceTemplates = {...state.resourceTemplates}
     },
 
-    updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName, noPrimary, sourceDeploymentTemplate}) {
-        _state.lastFetchedFrom = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate};
+    updateLastFetchedFrom(state, {projectPath, templateSlug, environmentName, noPrimary, sourceDeploymentTemplate}) {
+        Vue.set(state, 'lastFetchedFrom', {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate});
     },
 
     setContext(state, context) {
@@ -606,6 +606,12 @@ const getters = {
     },
     getCurrentEnvironment(state, _getters, _, rootGetters) {
         return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
+    },
+    getCurrentEnvironmentName(state) {
+        return state.lastFetchedFrom.environmentName
+    },
+    getCurrentEnvironmentType(_, getters) {
+        return getters.getCurrentEnvironment?.primary_provider?.type
     },
     currentAvailableResourceTypes(state) {
         return state.availableResourceTypes

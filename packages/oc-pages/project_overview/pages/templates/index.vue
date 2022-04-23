@@ -82,7 +82,6 @@ export default {
       'getTemplate',
       'getServicesToConnect',
       'getPrimaryCard',
-      'getRequirementSelected',
       'getCardsStacked',
       'getDeploymentTemplate',
       'getDependencies',
@@ -659,7 +658,7 @@ export default {
             :ref="__('oc-template-resource')"
             modal-id="oc-template-resource"
             size="lg"
-            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.title || getRequirementSelected.requirement.name)}`"
+            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.constraint.title)}`"
             :action-primary="ocTemplateResourcePrimary"
             :action-cancel="cancelProps"
             @primary="onSubmitTemplateResourceModal"
