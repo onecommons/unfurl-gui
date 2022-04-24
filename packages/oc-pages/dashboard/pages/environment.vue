@@ -60,7 +60,8 @@ export default {
             'getHomeProjectPath',
             'hasPreparedMutations',
             'isMobileLayout',
-            'getCardsStacked'
+            'getCardsStacked',
+            'cardIsValid'
         ]),
         breadcrumbItems() {
             return [
@@ -85,6 +86,9 @@ export default {
             }
         },
         saveStatus() {
+            for(const card of this.getCardsStacked) {
+                if(!this.cardIsValid(card)) return 'disabled'
+            }
             if(!this.hasPreparedMutations) {
                 return 'disabled'
             }
@@ -94,7 +98,7 @@ export default {
             return this.environment?.primary_provider?.type
         },
         showDeploymentResources() {
-            return this.getCardsStacked.length > 0
+            return this.getCardsStacked.length > 0 || this.hasPreparedMutations
         }
     },
     methods: {
@@ -107,6 +111,7 @@ export default {
 
 
         ...mapMutations([
+            'setEnvironmentScope',
             'setAvailableResourceTypes',
             'setUpdateObjectPath',
             'setUpdateObjectProjectPath',
@@ -117,11 +122,14 @@ export default {
         ]),
         onExternalAdded({selection, title}) {
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+            this.$refs.deploymentResources.cleanModalResource()
+            this.$refs.deploymentResources.scrollDown(slugify(title))
         },
         onSaveTemplate() {
             const environment = this.environment
             this.setUpdateObjectPath('environments.json')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+            this.setEnvironmentScope(environment.name)
             const ResourceType = this.environmentResourceTypeDict(environment)
             const root = _.cloneDeep({
                 DeploymentEnvironment: {
@@ -202,7 +210,7 @@ export default {
                         </gl-button>
                     </div>
                 </div>
-                <deployment-resources v-show="showDeploymentResources" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" :external-status-indicator="true">
+                <deployment-resources v-show="showDeploymentResources" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
                     <template #header>
                         <!-- potentially tricky to translate -->
                         <div class="d-flex align-items-center">

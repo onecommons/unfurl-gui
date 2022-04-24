@@ -2,7 +2,7 @@ import path from 'path'
 import express from 'express'
 import fs from 'fs'
 import {execSync} from 'child_process'
-import {USER_HOME_PROJECT} from '../packages/oc-pages/vue_shared/util.mjs'
+const USER_HOME_PROJECT = 'dashboard'
 import {writeLiveRepoFile, readLiveRepoFile, resolveLiveRepoFile} from './utils/db'
 
 export default app => {

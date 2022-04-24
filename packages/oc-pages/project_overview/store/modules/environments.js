@@ -6,13 +6,14 @@ import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
+import {fetchEnvironmentVariables} from '../../../vue_shared/client_utils/envvars'
 
 
 const state = {
-    environmentName: __("Oc Default"),
     environments: [],
     projectEnvironments: [],
-    resourceTypeDictionaries: {}
+    resourceTypeDictionaries: {},
+    variablesByEnvironment: {}
 };
 
 function connectionsToArray(environment) {
@@ -38,11 +39,6 @@ function connectionsToArray(environment) {
 }
 
 const mutations = {
-
-    SET_ENVIRONMENT_NAME(_state, { envName }) {
-        // eslint-disable-next-line no-param-reassign
-        _state.environmentName = envName;
-    },
 
     setEnvironments(state, environments) {
         state.environments = environments
@@ -75,6 +71,10 @@ const mutations = {
     // TODO maybe add something that will delete the environment, that can also keep the state of the application consistent
     discardEnvironment(state, environmentName) {
         state.projectEnvironments = state.projectEnvironments.filter(env => env.name != environmentName)
+    },
+
+    setVariablesByEnvironment(state, variablesByEnvironment) {
+        state.variablesByEnvironment = variablesByEnvironment
     }
 
 };
@@ -234,17 +234,30 @@ const actions = {
         commit('setProjectEnvironments', environments)
 
     },
+    async fetchEnvironmentVariables({commit}, {fullPath}) {
+        const envvars = await fetchEnvironmentVariables(fullPath)
+        const variablesByEnvironment = {}
+        for(const variable of envvars) {
+            if(!variable.environment_scope) continue
+            const varsForEnv = variablesByEnvironment[variable.environment_scope] || {}
+            varsForEnv[variable.key] = variable.value
+            variablesByEnvironment[variable.environment_scope] = varsForEnv
+        }
+        commit('setVariablesByEnvironment', variablesByEnvironment)
+    },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
-        // TODO get rid of this alias
-        return await dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath})
+        return Promise.all([
+            dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath}),
+            dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
+        ])
     }
+
 };
 function envFilter(name){
     return env => env.name == name
 } 
 
 const getters = {
-    getEnvironmentName: _state => _state.environmentName,
     getEnvironments: state => Object.freeze(state.projectEnvironments),
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
     getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
@@ -315,10 +328,19 @@ const getters = {
             return deployments.length > 0
         }
     },
+    // TODO rename to lookupDeployPathByEnvironment?
     lookupDeployPath(state) {
         return function(deploymentName, environmentName) {
             const result = state.deploymentPaths.find(dp => dp.name?.startsWith(`environments/${environmentName}`) && dp.name?.endsWith(`/${deploymentName}`))
             return result
+        }
+    },
+    lookupVariableByEnvironment(state) {
+        return function(variable, environmentName) {
+            try {
+                return state.variablesByEnvironment[environmentName][variable]
+            } catch(e) {}
+            return null
         }
     }
 };
