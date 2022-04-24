@@ -3,7 +3,7 @@ import express from 'express'
 import fs from 'fs'
 import os from 'os'
 import {execSync} from 'child_process'
-import {USER_HOME_PROJECT} from '../packages/oc-pages/vue_shared/util.mjs'
+const USER_HOME_PROJECT = 'dashboard'
 import {writeLiveRepoFile, readLiveRepoFile, resolveLiveRepoFile} from './utils/db'
 import proxiedRoutes from './server/proxied-routes'
 
