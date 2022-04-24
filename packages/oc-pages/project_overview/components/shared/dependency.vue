@@ -1,5 +1,5 @@
 <script>
-import {GlIcon, GlButton} from '@gitlab/ui'
+import {GlIcon, GlButton, GlTooltipDirective} from '@gitlab/ui'
 import {DetectIcon, StatusIcon} from '../../../vue_shared/oc-components'
 import {mapGetters, mapActions} from 'vuex'
 import {bus} from 'oc_vue_shared/bus'
@@ -16,6 +16,9 @@ export default {
         displayStatus: { type: Boolean, default: false, },
         readonly: { type: Boolean, default: false }
 
+    },
+    directives: {
+        GlTooltip: GlTooltipDirective, 
     },
     data() {
         return {
@@ -41,6 +44,10 @@ export default {
         dependencyType() {
             return this.resolveResourceTypeFromAny(this.dependency.constraint.resourceType)
         },
+        dependencyConstraint() {
+            return this.dependency?.constraint || {}
+
+        },
         canConnectServices() {
             return (
                 this.$route.name != 'templatePage' && (
@@ -52,7 +59,17 @@ export default {
         },
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
+        },
+        requirementSatisfied() {
+            return this.cardIsValid(this.dependency?.match)
+        },
+        requirementFilled() {
+            return !!this.dependency?.match
+        },
+        iconTitle() {
+            return this.requirementSatisfied? 'Complete': 'Incomplete'
         }
+
     },
     methods: {
         ...mapActions([
@@ -90,16 +107,6 @@ export default {
             bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'connect'});
         },
 
-        requirementSatisfied(requirement) {
-            /*
-            const result =  !!(requirement.constraint.min == 0 || requirement.status || this.requirementMatchIsValid(requirement))
-            return result
-            */
-            return this.cardIsValid(requirement?.match)
-        },
-        requirementFilled(requirement) {
-            return !!requirement?.match
-        },
 
 
     }
@@ -111,23 +118,25 @@ export default {
             class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
             <div>
                 <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
-                <span class=" title" style="font-weight: bold; color: #353545">{{ dependency.name }}</span>
+                <span class=" title" style="font-weight: bold; color: #353545">{{ dependencyConstraint.title }}</span>
                 <div class="oc_requirement_description gl-mb-2">
-                    {{ dependency.description}}
+                    {{ dependencyConstraint.description}}
                 </div>
             </div>
             <div v-if="isMobileLayout" class="ml-2 mr-2 validation">
                 <gl-icon
-                    v-if="displayValidation && requirementFilled(dependency)"
+                    v-if="displayValidation && requirementFilled"
+                    v-gl-tooltip.hover
+                    :title="iconTitle"
                     :size="14"
                     :class="{
-                            'icon-green': requirementSatisfied(dependency),
+                            'icon-green': requirementSatisfied,
                             }"
-                    :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'status_preparing'"
+                    :name="requirementSatisfied ? 'check-circle-filled' : 'status_preparing'"
                     />
                 <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
 
-                    <a href="#" @click.prevent=" findElementToScroll({requirement: dependency}) ">
+                    <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
                         <span v-if="displayStatus">
                             <status-icon :status="cardStatus(dependency.target)" />
                         </span>
@@ -141,16 +150,18 @@ export default {
         <div v-if="!isMobileLayout"
             class="table-section oc-table-section section-wrap text-truncate section-30 align_left validation">
             <gl-icon
-                v-if="displayValidation && requirementFilled(dependency)"
+                v-if="displayValidation && requirementFilled"
+                v-gl-tooltip.hover
+                :title="iconTitle"
                 :size="14"
                 :class="{
-                    'icon-green': requirementSatisfied(dependency),
+                    'icon-green': requirementSatisfied,
                 }"
-                :name="requirementSatisfied(dependency) ? 'check-circle-filled' : 'status_preparing'"
+                :name="requirementSatisfied ? 'check-circle-filled' : 'status_preparing'"
             />
             <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
 
-                <a href="#" @click.prevent=" findElementToScroll({requirement: dependency}) ">
+                <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
                     <span v-if="displayStatus">
                         <status-icon :status="cardStatus(dependency.target)" />
                     </span>

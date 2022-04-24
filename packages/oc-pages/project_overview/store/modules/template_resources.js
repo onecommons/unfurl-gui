@@ -90,8 +90,8 @@ const mutations = {
         state.resourceTemplates = {...state.resourceTemplates}
     },
 
-    updateLastFetchedFrom(_state, {projectPath, templateSlug, environmentName, noPrimary, sourceDeploymentTemplate}) {
-        _state.lastFetchedFrom = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate};
+    updateLastFetchedFrom(state, {projectPath, templateSlug, environmentName, noPrimary, sourceDeploymentTemplate}) {
+        Vue.set(state, 'lastFetchedFrom', {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate});
     },
 
     setContext(state, context) {
@@ -258,7 +258,7 @@ const actions = {
 
         createMatchedTemplateResources(primary);
         
-        commit('clientDisregardUncommitted')
+        commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
         return true;
@@ -414,8 +414,10 @@ const actions = {
         }
     },
     updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
-        //if(state.resourceTemplates[templateName].value === propertyValue) return
-        //const template = state.resourceTemplates[templateName]
+        const template = state.resourceTemplates[templateName]
+        const templatePropertyValue = template.properties.find(prop => prop.name == propertyName)?.value
+
+        if(_.isEqual(templatePropertyValue ?? null, propertyValue ?? null)) return
 
         commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
         if(state.context == 'environment') {
@@ -574,7 +576,7 @@ const getters = {
         const matchInResourceTemplates = _state.resourceTemplates[match]?.title; 
         if(matchInResourceTemplates) return matchInResourceTemplates;
         // TODO figure out how to handle resources of a service
-        return rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
+        return state.context != 'environment' && rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
     },
     cardInputsAreValid(state) {
         return function(_card) {
@@ -604,6 +606,12 @@ const getters = {
     },
     getCurrentEnvironment(state, _getters, _, rootGetters) {
         return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
+    },
+    getCurrentEnvironmentName(state) {
+        return state.lastFetchedFrom.environmentName
+    },
+    getCurrentEnvironmentType(_, getters) {
+        return getters.getCurrentEnvironment?.primary_provider?.type
     },
     currentAvailableResourceTypes(state) {
         return state.availableResourceTypes
@@ -640,6 +648,11 @@ const getters = {
                 result = rootGetters.resolveResourceTemplate(resourceTemplate)
             }
             return result
+        }
+    },
+    lookupEnvironmentVariable(state, _a, _b, rootGetters) {
+        return function(variableName) {
+            return rootGetters.lookupVariableByEnvironment(variableName, state.lastFetchedFrom.environmentName)
         }
     }
 };

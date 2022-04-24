@@ -100,7 +100,8 @@ export default {
         ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
 
         badgeHeaderText() {
-            const result = this.$props.badgeHeader.text || this.getCardType(this.card)?.title
+            const type = this.getCardType(this.card)
+            const result = this.$props.badgeHeader.text || this.resolveResourceTypeFromAny(type)?.title
             return result
         }
 
@@ -142,10 +143,10 @@ export default {
 <template>
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <div class="d-flex position-relative w-100 justify-content-between">
+            <div :id="id" :data-testid="'card-' + card.name" class="d-flex position-relative w-100 justify-content-between">
                 <div class="mr-4 d-flex">
                     <slot name="header">
-                        <div :id="id" :data-testid="'card-' + card.name"  class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
+                        <div class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
                             <gl-icon

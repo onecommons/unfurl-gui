@@ -82,7 +82,6 @@ export default {
       'getTemplate',
       'getServicesToConnect',
       'getPrimaryCard',
-      'getRequirementSelected',
       'getCardsStacked',
       'getDeploymentTemplate',
       'getDependencies',
@@ -608,7 +607,6 @@ export default {
                   :key="__('levelOne-') + card.title"
                   :custom-title="card.title"
                   :card="card"
-                  :badge-header="{ isActive: true, text: card.type }"
                   :icon-title="true"
                   :icon-color="card.valid ? 'icon-green' : 'icon-red'"
                   :icon-name="card.valid ? 'check-circle-filled' : 'warning-solid'"
@@ -660,7 +658,7 @@ export default {
             :ref="__('oc-template-resource')"
             modal-id="oc-template-resource"
             size="lg"
-            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.title || getRequirementSelected.requirement.name)}`"
+            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.constraint.title)}`"
             :action-primary="ocTemplateResourcePrimary"
             :action-cancel="cancelProps"
             @primary="onSubmitTemplateResourceModal"

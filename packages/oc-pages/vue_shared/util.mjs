@@ -1,12 +1,4 @@
-export function slugify(text) {
-    return text && text
-        .toString() 
-        .toLowerCase()
-        .normalize('NFD')
-        .trim()
-        .replace(/(\-\-+|_|\s+)/g, '-')
-        .replace(/[^\w\-]+/g, '')
-}
+export {default as slugify} from './slugify'
 
 export const USER_HOME_PROJECT = 'dashboard';
 
