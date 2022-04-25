@@ -71,6 +71,20 @@ const Serializers = {
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target
         })
+
+        rt.properties = rt.properties?.filter(prop => {
+            return (prop.value ?? null) !== null
+        })
+
+        // check deep
+        _.forOwn(rt.properties, (value, key) => {
+            if(typeof value == 'object') {
+                Object.entries(value).forEach(([childKey, childValue]) => {
+                    if((childValue ?? null) === null)
+                        delete value[childKey]
+                })
+            }
+        })
         rt.dependencies.forEach(dep => {
             if(! dep.constraint.visibility) {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
