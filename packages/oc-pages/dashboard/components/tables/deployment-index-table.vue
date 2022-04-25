@@ -308,12 +308,27 @@ export default {
         useTabs() {
             return this.tabs && !this.noRouter
         },
+        itemsSorted() {
+            const self = this
+            const result = [...this.items]
+            result.sort((a,b) => {
+                const diA = self.deploymentItem({item: a})
+                const diB = self.deploymentItem({item: b})
+
+                const createdAtA = diA.createdAt || 0
+                const createdAtB = diB.createdAt || 0
+
+                return createdAtB - createdAtA
+                
+            })
+            return result
+        },
         itemsByTab() {
             if(!this.useTabs) return
             const result = []
             for(const tab of tabFilters) {
                 const tabItems = []
-                for(const item of this.items) {
+                for(const item of this.itemsSorted) {
                     const deploymentItem = this.deploymentItem({item})
                     if(!deploymentItem) {
                         console.error('deployment item not found for', item)
@@ -339,7 +354,7 @@ export default {
             if(this.useTabs) {
                 return this.itemsByTab[this.currentTab]
             }
-            return this.items
+            return this.itemsSorted
         },
         deleteWarning() {
             return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isDeployed')
