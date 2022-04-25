@@ -51,7 +51,7 @@ export default {
             const result = [
                 'Google Cloud Platform',
                 'Amazon Web Services',
-                //'Local Dev',
+                'Local Dev',
             ]
 
             if(this.allowAny) return result
