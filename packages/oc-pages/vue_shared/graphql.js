@@ -305,6 +305,7 @@ export const resolvers = {
         primary: makeObjectLookupResolver('ResourceTemplate'),
         name: (obj) => obj.name || obj.slug || null,
         description: (obj) => obj.description ?? null,
+        visibility: (obj) => obj.visibility || 'visible',
         resourceTemplates: listMakeObjectLookupResolver('ResourceTemplate', 'json')
     },
 

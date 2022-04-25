@@ -66,10 +66,28 @@ const Serializers = {
             }
         }
     },
+    // TODO unit test
     ResourceTemplate(rt) {
         delete rt.visibility // do not commit template visibility
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target
+        })
+
+        // This won't filter out any required properties because the user shouldn't be allowed 
+        // to deploy with null required values
+        rt.properties = rt.properties?.filter(prop => {
+            return (prop.value ?? null) !== null
+        })
+
+        // check deep
+        // TODO unit test this function
+        _.forOwn(rt.properties, (value, key) => {
+            if(typeof value == 'object') {
+                Object.entries(value).forEach(([childKey, childValue]) => {
+                    if((childValue ?? null) === null)
+                        delete value[childKey]
+                })
+            }
         })
         rt.dependencies.forEach(dep => {
             if(! dep.constraint.visibility) {
