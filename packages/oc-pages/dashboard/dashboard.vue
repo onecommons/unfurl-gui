@@ -70,8 +70,8 @@ export default {
 
 
         // add environment to environments.json
-        if(this.selectedEnvironment && this.newEnvironmentProvider) {
-            const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
+        if(this.selectedEnvironment) {
+            const primary_provider = this.newEnvironmentProvider? {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}: null
 
             const query = this.$route.query
             delete query.provider
@@ -79,7 +79,7 @@ export default {
 
             await this.updateEnvironment({
                 envName: this.selectedEnvironment,
-                patch: {primary_provider, connections: {primary_provider}}
+                patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
             })
         }
 

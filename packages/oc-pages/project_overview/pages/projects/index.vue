@@ -237,12 +237,12 @@ export default {
         // add environment to environments.json
         // TODO break this off into a function
         const envName = this.selectedEnvironment
-        if(envName && this.newEnvironmentProvider) {
-            const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
+        if(envName) {
+            const primary_provider = this.newEnvironmentProvider? {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}: null
 
             await this.updateEnvironment({
                 envName: this.selectedEnvironment,
-                patch: {primary_provider, connections: {primary_provider}}
+                patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
             })
         }
         //
