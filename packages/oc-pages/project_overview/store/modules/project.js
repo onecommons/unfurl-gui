@@ -142,7 +142,7 @@ const mutations = {
 
     SET_TEMPLATES_LIST(_state, templates) {
         // eslint-disable-next-line no-param-reassign
-        _state.templateList = [...templates ];
+        _state.templateList = templates.filter(template => template.visibility != 'hidden');
     },
 
     SET_RESOURCES_LIST(_state, resourceTemplates) {
