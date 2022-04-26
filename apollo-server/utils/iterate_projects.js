@@ -81,14 +81,21 @@ function* iterateLiveRepoPaths() {
 
 function getProjectPaths() {
   const paths = []
+
+  function pushIfNotSubdir(projectPath) {
+    if(! paths.find(p => `${projectPath}/`.startsWith(`${p}/`))) {
+      paths.push(projectPath)
+    }
+  }
+
   for(const repo of iterateRepoPaths()) {
     const projectPath = repo.slice(REPOS_DIR.length + 1)
-    paths.push(projectPath)
+    pushIfNotSubdir(projectPath)
   }
 
   for(const repo of iterateLiveRepoPaths()) {
     const projectPath = repo.slice(LIVE_REPOS_DIR.length + 1)
-    if(!paths.includes(projectPath)) paths.push(projectPath)
+    pushIfNotSubdir(projectPath)
   }
 
   return paths

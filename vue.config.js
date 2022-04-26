@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs')
 const os = require('os')
 const _ = require('lodash')
+const mkdirp = require('mkdirp')
 
 
 // this alias is used by code copied from gitlab
@@ -42,6 +43,7 @@ module.exports = {
     onListening(devServer) {
       const tmpDir = path.join(os.tmpdir(), '.unfurl-gui')
       function setPid(program, pid) {
+        mkdirp.sync(tmpDir)
         return fs.writeFileSync(path.join(tmpDir, `${program}.pid`), pid.toString())
       }
       setPid('serve', process.pid)
