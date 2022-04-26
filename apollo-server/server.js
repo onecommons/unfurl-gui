@@ -6,9 +6,11 @@ import {execSync} from 'child_process'
 const USER_HOME_PROJECT = 'dashboard'
 import {writeLiveRepoFile, readLiveRepoFile, resolveLiveRepoFile} from './utils/db'
 import proxiedRoutes from './server/proxied-routes'
+import mkdirp from 'mkdirp'
 
 const tmpDir = path.join(os.tmpdir(), '.unfurl-gui')
 function setPid(program, pid) {
+  mkdirp.sync(tmpDir)
   return fs.writeFileSync(path.join(tmpDir, `${program}.pid`), pid.toString())
 }
 setPid('apollo', process.pid)
