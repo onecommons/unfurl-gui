@@ -1,3 +1,27 @@
+## Project setup & commands
+```
+yarn install
+```
+
+### Compiles and hot-reloads for development
+```
+yarn start
+```
+This will run both the vue dev server and apollo by default.
+To run only apollo or vue run with `yarn start <serve|apollo>`.
+
+### View the log of apollo or vue dev server
+```
+yarn tail <serve|apollo>
+```
+Run with `yarn tail <serve|apollo> &` to run as a background job.
+
+### To shut down the development environment
+```
+yarn stop
+```
+
+
 # Notes
 
 `src/gitlab-oc` is a symlink to `packages/oc-pages`.   The oc-pages package is also used in the gitlab-oc repo, so take care when making changes and make sure the code stays portable between gitlab-oc and unfurl-gui.  When importing modules from inside oc-pages/ to other locations inside the src/ directory, use the appropriate aliases to prevent resolver errors on gitlab-oc.  Check `vue.config.js` to see what the current aliases resolve to.
@@ -46,26 +70,6 @@ For consistant results
 
 https://github.com/lifeomic/json-schema-to-graphql-types
 
-
-## Project setup
-```
-yarn install
-```
-
-### Compiles and hot-reloads for development
-```
-yarn serve
-```
-
-### Compiles and minifies for production
-```
-yarn build
-```
-
-### Lints and fixes files
-```
-yarn lint
-```
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
