@@ -9,9 +9,6 @@ export default {
         GlIcon,
         GlButton
     },
-    directive: {
-        GlTooltip: GlTooltipDirective
-    },
     props: {
         scope: Object
     },
@@ -60,8 +57,8 @@ export default {
 }
 </script>
 <template>
-<div class="d-flex justify-content-center align-items-center" style="width:40px;" v-gl-tooltip.hover v-bind="tooltipProps" >
-    <StatusIcon v-if="deployment.status" :size="16" :status="deployment.status" />
+<div class="d-flex justify-content-center align-items-center" style="width:40px;" v-gl-tooltip.hover="title"  >
+    <StatusIcon v-if="deployment.status" :size="16" :status="deployment.status" no-tooltip/>
     <gl-button v-else-if="jobStatus" style="padding: 0" pill size="small" :href="consoleLink" category="tertiary" :icon="`status_${jobStatus}`" />
     <gl-icon v-else-if="hasDeployPath" name="pencil-square" :size="16" />
 </div>
