@@ -1,5 +1,5 @@
 <template>
-  <div class="d-inline-flex align-items-center">
+  <div class="d-inline-flex align-items-center justify-content-center">
     <div class="gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
       <!-- 
         standard gl-icon doesn't support variants
@@ -18,9 +18,8 @@
         </gl-icon>
     </div>
     <div v-if="text">{{__(StatusIndicators[status])}}</div>
-
-    <!-- starting -->
-    <div v-if="state == 5">
+    <!-- ignoring state for now -->
+    <!--div v-if="state == 5">
       {{__(StateNames[state])}}
       <div style="position: relative; display: inline-block; height: 100%;">
         <svg class="spinner" viewBox="0 0 50 50">
@@ -28,7 +27,7 @@
         </svg>
       </div>
     </div>
-    <div v-else-if="StateNames[state]">{{__(StateNames[state])}}</div>
+    <div v-else-if="StateNames[state]">{{__(StateNames[state])}}</div-->
   </div>
 </template>
 <script>
@@ -106,7 +105,6 @@ export default {
   padding: 0px !important;
 }
 .gl-badge {
-  margin-right: 4px;
   border-radius: 100%;
   padding: 0;
 }

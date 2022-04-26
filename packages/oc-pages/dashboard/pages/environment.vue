@@ -1,5 +1,6 @@
 <script>
 import * as routes from '../router/constants'
+import { FLASH_TYPES } from '../../vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
@@ -58,7 +59,9 @@ export default {
             'environmentResourceTypeDict',
             'getHomeProjectPath',
             'hasPreparedMutations',
-            'isMobileLayout'
+            'isMobileLayout',
+            'getCardsStacked',
+            'cardIsValid'
         ]),
         breadcrumbItems() {
             return [
@@ -79,10 +82,13 @@ export default {
                     return __('Azure')
                 case lookupCloudProviderAlias('k8s'):
                     return __('Kubernetes')
-                default: return __('Self hosted')
+                default: return __('Local development')
             }
         },
         saveStatus() {
+            for(const card of this.getCardsStacked) {
+                if(!this.cardIsValid(card)) return 'disabled'
+            }
             if(!this.hasPreparedMutations) {
                 return 'disabled'
             }
@@ -90,8 +96,10 @@ export default {
         },
         providerType() {
             return this.environment?.primary_provider?.type
+        },
+        showDeploymentResources() {
+            return this.getCardsStacked.length > 0 || this.hasPreparedMutations
         }
-
     },
     methods: {
         ...mapActions([
@@ -103,6 +111,7 @@ export default {
 
 
         ...mapMutations([
+            'setEnvironmentScope',
             'setAvailableResourceTypes',
             'setUpdateObjectPath',
             'setUpdateObjectProjectPath',
@@ -113,11 +122,14 @@ export default {
         ]),
         onExternalAdded({selection, title}) {
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+            this.$refs.deploymentResources.cleanModalResource()
+            this.$refs.deploymentResources.scrollDown(slugify(title))
         },
         onSaveTemplate() {
             const environment = this.environment
             this.setUpdateObjectPath('environments.json')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
+            this.setEnvironmentScope(environment.name)
             const ResourceType = this.environmentResourceTypeDict(environment)
             const root = _.cloneDeep({
                 DeploymentEnvironment: {
@@ -141,6 +153,7 @@ export default {
             })
 
             await this.commitPreparedMutations()
+            sessionStorage['oc_flash'] = JSON.stringify({type: FLASH_TYPES.SUCCESS, message: `${environment.name} was deleted successfully.`})
             return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         }
     },
@@ -179,7 +192,25 @@ export default {
         </oc-properties-list>
         <gl-tabs class="mt-4">
             <oc-tab title="Resources">
-                <deployment-resources style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" :external-status-indicator="true">
+                <div class="d-flex" v-if="!showDeploymentResources">
+                    <div class="mr-4">
+                        <p>
+                            External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
+                        </p>
+                        <p>
+                            External resources are a convenient way to reuse configurations across many deployments.
+                        </p>
+                    </div>
+                    <div>
+                        <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                            <div>
+                                <gl-icon name="plus"/>
+                                {{__('Add External Resource')}}
+                            </div>
+                        </gl-button>
+                    </div>
+                </div>
+                <deployment-resources v-show="showDeploymentResources" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
                     <template #header>
                         <!-- potentially tricky to translate -->
                         <div class="d-flex align-items-center">
@@ -212,6 +243,12 @@ export default {
                 <ci-variable-settings v-if="!unfurl_gui"/>
             </oc-tab>
         </gl-tabs>
+        <div v-if="!showDeploymentResources" class="form-actions d-flex justify-content-end">
+            <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
+                <gl-icon name="remove"/>
+                Delete Environment
+            </gl-button>
+        </div>
     </div>
 </template>
 <style scoped>

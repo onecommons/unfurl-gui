@@ -6,6 +6,9 @@ import { GlToast } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router'
 import createFlash, { FLASH_TYPES } from '../vue_shared/client_utils/oc-flash';
+import '../project_overview/assets/global.css' // TODO move this somewhere better
+
+import 'element-ui/lib/theme-chalk/index.css'
 
 Vue.use(GlToast);
 const router = createRouter()

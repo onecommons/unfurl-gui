@@ -2,6 +2,7 @@ import Vue from 'vue';
 
 export { default as DetectIcon } from './components/oc/detect-icon.vue'
 export { default as StatusIcon } from './components/oc/Status.vue'
+export { default as ProjectIcon } from './components/oc/project-icon.vue'
 export { default as Status } from './components/oc/Status.vue'
 export {default as OcPropertiesList} from './components/oc/oc-properties-list.vue'
 export {default as DeploymentResources} from './components/oc/deployment-resources.vue'

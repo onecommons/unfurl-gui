@@ -29,6 +29,10 @@ export default {
         cloudProvider: {
             type: String,
             required: false
+        },
+        allowAny: {
+            type: Boolean,
+            default: false
         }
     },
     data() {
@@ -37,6 +41,7 @@ export default {
             selectedCloudProvider: __('Select'),
             SHORT_NAMES,
             token,
+            nameStartsWithNumber: false,
             duplicateName: false
         }
     },
@@ -49,13 +54,16 @@ export default {
                 'Local Dev',
             ]
 
+            if(this.allowAny) return result
+
             const cloudProviderName = lookupCloudProviderAlias(this.cloudProvider)
 
-            if(cloudProviderName) {
+            //local dev not currently supported on other platforms
+            //if(cloudProviderName) {
                 return result.filter(envName => {
                     return lookupCloudProviderAlias(this.SHORT_NAMES[envName]) == cloudProviderName
                 })
-            }
+            //}
 
             return result
         },
@@ -65,12 +73,12 @@ export default {
     },
     watch: {
         environmentName:  _.debounce(function(val){
-            if(this.lookupEnvironment(slugify(this.environmentName))) {
+            if(this.nameStartsWithNumber = (/^\d/).test(this.environmentName)) {
                 this.$emit('environmentNameChange', '')
-                this.duplicateName = true
+            } else if(this.duplicateName = !!this.lookupEnvironment(slugify(this.environmentName))) {
+                this.$emit('environmentNameChange', '')
             } else {
                 this.$emit('environmentNameChange', slugify(this.environmentName))
-                this.duplicateName = false
             }
         }, 100),
         selectedCloudProvider() {
@@ -109,6 +117,9 @@ export default {
                 />
             <error-small :condition="duplicateName">
                 {{__(`Environment name is taken`)}}
+            </error-small>
+            <error-small :condition="nameStartsWithNumber">
+                {{__('Environment names cannot begin with a number')}}
             </error-small>
         </gl-form-group>
 

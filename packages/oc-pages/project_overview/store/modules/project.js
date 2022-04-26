@@ -142,7 +142,7 @@ const mutations = {
 
     SET_TEMPLATES_LIST(_state, templates) {
         // eslint-disable-next-line no-param-reassign
-        _state.templateList = [...templates ];
+        _state.templateList = templates.filter(template => template.visibility != 'hidden');
     },
 
     SET_RESOURCES_LIST(_state, resourceTemplates) {
@@ -379,6 +379,15 @@ const getters = {
                 const context = {...obj, deployment: Object.values(dict.DeploymentTemplate)[0]}
                 result.push({context, ...context})
             }
+
+            resources = resources.filter(r => {
+                return r.visibility != 'hidden' && (
+                    r.visibility == 'visible' ||
+                    r.attributes?.find(a => a.name == 'id') ||
+                    r.attributes?.find(a => a.name == 'console_url')
+                )
+            })
+
 
 
             for(const resource of resources) {

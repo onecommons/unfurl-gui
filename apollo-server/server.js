@@ -1,13 +1,24 @@
 import path from 'path'
 import express from 'express'
 import fs from 'fs'
+import os from 'os'
 import {execSync} from 'child_process'
-import {USER_HOME_PROJECT} from '../packages/oc-pages/vue_shared/util.mjs'
+const USER_HOME_PROJECT = 'dashboard'
 import {writeLiveRepoFile, readLiveRepoFile, resolveLiveRepoFile} from './utils/db'
+import proxiedRoutes from './server/proxied-routes'
+
+const tmpDir = path.join(os.tmpdir(), '.unfurl-gui')
+function setPid(program, pid) {
+  return fs.writeFileSync(path.join(tmpDir, `${program}.pid`), pid.toString())
+}
+setPid('apollo', process.pid)
+
+
 
 export default app => {
   app.use(express.json({ limit: '50mb' }))
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
+  app.use('/proxied', proxiedRoutes)
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
     let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, DEPLOYMENT

@@ -379,6 +379,8 @@ type RequirementConstraint {
     maximum number of this requirements allowed (default: 1)
     """
     max: Int
+
+    visibility: String
 }
 
 type ResourceTemplate {

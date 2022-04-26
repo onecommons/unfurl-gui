@@ -191,7 +191,7 @@ const actions = {
                 }
 
                 if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
-                resourceTemplate.dependencies.forEach(dep => {
+                resourceTemplate.dependencies?.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
                 resourceTemplate.__typename = 'ResourceTemplate'
@@ -373,6 +373,7 @@ const getters = {
     applicationBlueprintIsLoaded(state) {return state.loaded},
     lookupConfigurableTypes(state, _a, _b, rootGetters) {
         return function(environment) {
+            //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
             const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }

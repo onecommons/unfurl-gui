@@ -15,6 +15,7 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
+import './run-recreate-deployment'
 
 // Alternatively you can use CommonJS syntax:
 // require('./commands')
@@ -30,12 +31,18 @@ before(() => {
 
   const USERNAME = Cypress.env('OC_USERNAME')
   const PASSWORD = Cypress.env('OC_PASSWORD')
+  const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
   cy.visit(`${BASE_URL}/users/sign_in`).wait(100)
   cy.url().then(url => {
     if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
       cy.get(`input[data-qa-selector="login_field"]`).type(USERNAME)
       cy.get(`input[data-qa-selector="password_field"]`).type(PASSWORD)
       cy.get(`input[data-qa-selector="sign_in_button"]`).click()
+
+      if(IMPERSONATE) {
+        cy.visit(`${BASE_URL}/admin/users/${IMPERSONATE}`)
+        cy.get('[data-qa-selector="impersonate_user_link"]').click()
+      }
     }
   })
 })
