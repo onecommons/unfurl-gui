@@ -26,36 +26,43 @@ export default {
         deployment() {
             return this.scope.item.context.deployment
         },
-        statuses() { 
-            return _.uniqBy(
-                this.scope.item.context.deployment?.statuses || [],
-                resource => resource?.status
-            ) 
-        },
         hasDeployPath() {
             return !!this.deploymentItem?.deployPath
         },
         consoleLink() {
             return this.deploymentItem?.consoleLink
+        },
+        jobStatus() {
+            return this.deploymentItem?.jobStatus
+        },
+        isDraft() {
+            return this.deploymentItem?.isDraft
+        },
+        title() {
+            if(this.deployment.status) {
+                return this.deployment.summary
+            }
+            else if(this.jobStatus) {
+                return `Pipeline: ${this.jobStatus}`
+            }
+            else if(this.isDraft){
+                return 'Draft'
+            }
+            return null
+        },
+        tooltipProps() {
+            const result = { }
+            if(this.title) result.title = this.title
+            return result
+
         }
     },
 }
 </script>
 <template>
-<div class="d-flex ml-2 mr-2">
-    <div v-if="deploymentItem && (deploymentItem.isDeployed || deploymentItem.isUndeployed)" class="d-flex align-items-center justify-content-center">
-        <StatusIcon v-if="deployment.status" :size="16" v-gl-tooltip.hover :status="deployment.status" :title="deployment.summary"/>
-        <div v-else>
-            <!-- maybe I should just get rid of this -->
-            <StatusIcon :size="16" :key="status.name" v-for="status in statuses" :status="status.status" />
-        </div>
-    </div>
-    <div v-else-if="deploymentItem && deploymentItem.jobStatus" class="d-flex align-items-center">
-        <gl-button style="padding: 0" pill size="small" :href="consoleLink" category="tertiary" :icon="`status_${deploymentItem.jobStatus}`" :title="`Pipeline: ${deploymentItem.jobStatus}`" />
-
-    </div>
-    <div v-else-if="hasDeployPath" class="d-flex align-items-center justify-content-center">
-        <gl-icon name="pencil-square" :size="16" />
-    </div>
+<div class="d-flex justify-content-center align-items-center" style="width:40px;" v-gl-tooltip.hover v-bind="tooltipProps" >
+    <StatusIcon v-if="deployment.status" :size="16" :status="deployment.status" />
+    <gl-button v-else-if="jobStatus" style="padding: 0" pill size="small" :href="consoleLink" category="tertiary" :icon="`status_${jobStatus}`" />
+    <gl-icon v-else-if="hasDeployPath" name="pencil-square" :size="16" />
 </div>
 </template>
