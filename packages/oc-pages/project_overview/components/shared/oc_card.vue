@@ -1,5 +1,5 @@
 <script>
-import { GlButton, GlCard, GlIcon, GlBadge} from "@gitlab/ui";
+import { GlButton, GlCard, GlIcon, GlBadge, GlTooltipDirective} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from 'oc_vue_shared/bus';
@@ -11,6 +11,9 @@ import { __ } from '~/locale';
 
 export default {
     name: "OcCard",
+    directives: {
+        GlTooltip: GlTooltipDirective, 
+    },
     components: {
         GlButton,
         GlCard,
@@ -32,7 +35,7 @@ export default {
         customTitle: {
             type: String,
             required: false,
-            default: __("OC Card"),
+            default: null,
         },
         card: {
             type: Object,
@@ -97,7 +100,8 @@ export default {
         ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
 
         badgeHeaderText() {
-            const result = this.$props.badgeHeader.text || this.getCardType(this.card)?.title
+            const type = this.getCardType(this.card)
+            const result = this.$props.badgeHeader.text || this.resolveResourceTypeFromAny(type)?.title
             return result
         }
 
@@ -139,17 +143,19 @@ export default {
 <template>
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <div class="d-flex position-relative w-100 justify-content-between">
+            <div :id="id" :data-testid="'card-' + card.name" class="d-flex position-relative w-100 justify-content-between">
                 <div class="mr-4 d-flex">
                     <slot name="header">
-                        <div :id="id" :data-testid="'card-' + card.name"  class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
+                        <div class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
-                            <h4 class="gl-my-0 oc_card_title">{{ card.title || customTitle}}</h4>
+                            <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
                             <gl-icon
                                 v-if="displayValidation"
                                 :size="14"
+                                v-gl-tooltip.hover
                                 :class="['gl-ml-3', cardIsValid(card)? 'icon-green': '']"
                                 :name="cardIsValid(card)? 'check-circle-filled': 'status_preparing'"
+                                :title="cardIsValid(card)? 'Complete': `${customTitle || card.title} is Incomplete`"
                                 />
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
@@ -257,6 +263,18 @@ export default {
         /* TODO move this into global css */
         background: rgb(227, 247, 255);
     }
+}
+
+.oc-card:not(.primary) >>> .gl-card-body {
+    background-color: white;
+    /* sorry Mathew */
+}
+
+.oc-card >>> .gl-card-body {
+    background-color: #FBFBFB;
+}
+.oc-card {
+    border-color: #DBDBDB !important;
 }
 
 .card-content-container.active {

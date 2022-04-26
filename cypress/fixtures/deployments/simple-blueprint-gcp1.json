@@ -1,0 +1,214 @@
+{
+  "DeploymentTemplate": {
+    "google-cloud-platform-1": {
+      "name": "google-cloud-platform-1",
+      "title": "Google Cloud Platform 1",
+      "cloud": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
+      "description": "Deploy compute instances on Google Cloud Platform",
+      "__typename": "DeploymentTemplate",
+      "slug": "google-cloud-platform-1",
+      "blueprint": "testingsimple-blueprint",
+      "primary": "the_app",
+      "resourceTemplates": [
+        "the_app",
+        "docker-cloudinit",
+        "container_service",
+        "dockerhost",
+        "gcpcomputeinstance"
+      ],
+      "ResourceTemplate": {},
+      "projectPath": "testing/simple-blueprint",
+      "source": "gcp"
+    }
+  },
+  "ApplicationBlueprint": {
+    "testingsimple-blueprint": {
+      "name": "testingsimple-blueprint",
+      "__typename": "ApplicationBlueprint",
+      "title": "Simple blueprint",
+      "primary": "SimpleApp",
+      "deploymentTemplates": [
+        "gcp",
+        "aws",
+        "selfhosted",
+        "gcp-example",
+        "google-cloud-platform-1"
+      ],
+      "description": null,
+      "livePreview": null,
+      "sourceCodeUrl": null,
+      "image": null
+    }
+  },
+  "ResourceTemplate": {
+    "the_app": {
+      "name": "the_app",
+      "type": "SimpleApp",
+      "title": "the_app",
+      "description": "",
+      "properties": [
+        {
+          "name": "foo",
+          "value": "asdff"
+        }
+      ],
+      "dependencies": [
+        {
+          "constraint": {
+            "name": "container",
+            "title": "container",
+            "description": "",
+            "min": 1,
+            "max": 1,
+            "resourceType": "unfurl.nodes.ContainerService",
+            "visibility": "hidden"
+          },
+          "name": "container",
+          "__typename": "Requirement",
+          "match": "container_service"
+        }
+      ],
+      "__typename": "ResourceTemplate"
+    },
+    "container_service": {
+      "name": "container_service",
+      "type": "unfurl.nodes.ContainerService",
+      "title": "container_service",
+      "description": "",
+      "properties": [
+        {
+          "name": "container",
+          "value": {
+            "image": "nginxdemos/hello",
+            "ports": [
+              "80:80"
+            ],
+            "environment": {}
+          }
+        }
+      ],
+      "dependencies": [
+        {
+          "constraint": {
+            "name": "host",
+            "title": "host",
+            "description": "",
+            "min": 1,
+            "max": 1,
+            "resourceType": "unfurl.nodes.DockerHost",
+            "visibility": "hidden"
+          },
+          "name": "host",
+          "__typename": "Requirement",
+          "match": "dockerhost"
+        }
+      ],
+      "__typename": "ResourceTemplate"
+    },
+    "localcontainerhost": {
+      "name": "localcontainerhost",
+      "type": "unfurl.nodes.LocalContainerHost",
+      "title": "LocalContainerHost",
+      "__typename": "ResourceTemplate",
+      "properties": [],
+      "dependencies": []
+    },
+    "dockerhost": {
+      "name": "dockerhost",
+      "type": "unfurl.nodes.DockerComputeHost",
+      "title": "dockerhost",
+      "description": "",
+      "properties": [],
+      "dependencies": [
+        {
+          "constraint": {
+            "name": "configuredBy",
+            "title": "configuredBy",
+            "description": "",
+            "min": 1,
+            "max": 1,
+            "resourceType": "unfurl.nodes.DockerCloudInit",
+            "visibility": "hidden"
+          },
+          "name": "configuredBy",
+          "__typename": "Requirement",
+          "match": "docker-cloudinit"
+        },
+        {
+          "name": "host",
+          "constraint": {
+            "name": "host",
+            "title": "host",
+            "description": "A compute instance with at least 512MB RAM",
+            "min": 1,
+            "max": 1,
+            "resourceType": "unfurl.nodes.Compute",
+            "node_filter": {
+              "properties": [
+                {
+                  "user_data": {
+                    "eval": "$SOURCE::.targets::configuredBy::user_data"
+                  }
+                },
+                {
+                  "portspec": {
+                    "eval": "$SOURCE::.sources::host::portspec"
+                  }
+                },
+                {
+                  "name": {
+                    "eval": "$SOURCE::.sources::host::name"
+                  }
+                }
+              ]
+            },
+            "visibility": "visible"
+          },
+          "match": "gcpcomputeinstance",
+          "target": null,
+          "__typename": "Dependency",
+          "completionStatus": "created",
+          "valid": true
+        }
+      ],
+      "__typename": "ResourceTemplate"
+    },
+    "docker-cloudinit": {
+      "name": "docker-cloudinit",
+      "type": "unfurl.nodes.DockerCloudInit",
+      "title": "docker-cloudinit",
+      "description": "",
+      "properties": [],
+      "dependencies": [],
+      "__typename": "ResourceTemplate"
+    },
+    "gcpcomputeinstance": {
+      "name": "gcpcomputeinstance",
+      "type": "unfurl.nodes.GCPComputeInstance",
+      "title": "GCPComputeInstance",
+      "__typename": "ResourceTemplate",
+      "properties": [
+        {
+          "name": "num_cpus",
+          "value": 12
+        },
+        {
+          "name": "mem_size",
+          "value": 12
+        },
+        {
+          "name": "disk_size",
+          "value": 12
+        }
+      ],
+      "dependencies": []
+    }
+  },
+  "DeploymentPath": {
+    "environments/production-gcp/testing/simple-blueprint/google-cloud-platform-1": {
+      "name": "environments/production-gcp/testing/simple-blueprint/google-cloud-platform-1",
+      "__typename": "DeploymentPath",
+      "environment": "production-gcp"
+    }
+  }
+}

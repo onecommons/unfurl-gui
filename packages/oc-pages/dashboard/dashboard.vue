@@ -38,6 +38,12 @@ export default {
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
 
+        const query = {...this.$route.query}
+        let deletedQuery = delete query.env
+        deletedQuery = delete query.provider || deletedQuery
+
+        if(deletedQuery) {this.$router.replace({query})}
+
         delete sessionStorage['instantiate_env']
         delete sessionStorage['instantiate_provider']
 
@@ -64,8 +70,8 @@ export default {
 
 
         // add environment to environments.json
-        if(this.selectedEnvironment && this.newEnvironmentProvider) {
-            const primary_provider = {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}
+        if(this.selectedEnvironment) {
+            const primary_provider = this.newEnvironmentProvider? {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}: null
 
             const query = this.$route.query
             delete query.provider
@@ -73,7 +79,7 @@ export default {
 
             await this.updateEnvironment({
                 envName: this.selectedEnvironment,
-                patch: {primary_provider, connections: {primary_provider}}
+                patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
             })
         }
 

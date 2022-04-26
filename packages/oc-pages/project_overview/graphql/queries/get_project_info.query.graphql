@@ -18,6 +18,7 @@ query getProjectInfo($projectPath: ID!) {
       deploymentTemplates {
         title
         name
+        visibility
         description
         cloud
       }
@@ -28,6 +29,7 @@ query getProjectInfo($projectPath: ID!) {
           title
           description
           resourceType {...ResourceTypes}
+          visibility
           min
           max
 

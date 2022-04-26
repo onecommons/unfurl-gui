@@ -7,7 +7,8 @@ export default {
     name: 'CreateEnvironmentModal',
     components: {EnvironmentCreationDialog, GlModal},
     props: {
-        visible: Boolean
+        visible: Boolean,
+        allowAny: Boolean
     },
     model: {
         prop: 'visible',
@@ -34,6 +35,6 @@ export default {
 </script>
 <template>
     <gl-modal modalId="create-env-modal" :visible="visible" @hidden="$emit('change', false)" :title="s__('OcDeployments|Create New Environment')" :action-cancel="{text: __('Cancel')}" :action-primary="{text: __('Next'), attributes: {disabled: disablePrimary, variant: 'confirm'}}" @primary="redirectToNewEnvironment">
-        <environment-creation-dialog ref="environmentDialog" @cloudProviderChange="cp => this.cp = cp" @environmentNameChange="env => this.env = env"/>
+        <environment-creation-dialog :allow-any="allowAny" ref="environmentDialog" @cloudProviderChange="cp => this.cp = cp" @environmentNameChange="env => this.env = env"/>
     </gl-modal>
 </template>

@@ -9,13 +9,17 @@ export default {
             type: String,
         },
         titleCount: [Number, String],
+        titleTestid: {
+            type: String,
+            default: () => null
+        }
     }
 }
 </script>
 <template>
-    <gl-tab class="gl-mt-3">
+    <gl-tab class="gl-mt-3" >
         <template slot="title">
-            <span>{{ __(title)}}</span>
+            <span :data-testid="titleTestid">{{ __(title)}}</span>
             <gl-badge v-if="!(isNaN(parseInt(titleCount)))" size="sm" class="gl-tab-counter-badge">
                 {{ titleCount }}
             </gl-badge>

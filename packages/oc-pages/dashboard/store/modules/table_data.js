@@ -66,6 +66,13 @@ const actions = {
                 deployment.statuses = [deployment.resources.find(resource => resource?.name == deployment.primary)]
                 if(!deployment.statuses[0]) deployment.statuses.pop()
                 deployment.isStopped = deployment.resources.length == 0 || deployment.resources.some(resource => resource?.status != 1)
+                deployment.resources = deployment.resources.filter(r => {
+                    return r.visibility != 'hidden' && (
+                        r.visibility == 'visible' ||
+                        r.attributes?.find(a => a.name == 'id') ||
+                        r.attributes?.find(a => a.name == 'console_url')
+                    )
+                })
                 if(!deployment.isStopped) deployments++
                 totalDeployments++
                 const application = {...rootGetters.getApplicationBlueprint};
@@ -80,7 +87,8 @@ const actions = {
                 context.application = application
                 context.deployment = deployment
 
-                for(const resource of rootGetters.getResources) {
+                //for(const resource of rootGetters.getResources) {
+                for(const resource of deployment.resources) {
                     const i = ++iterationCounter
                     const resourceTemplate = rootGetters.resolveResourceTemplate(resource.template);
                     const resourceType = rootGetters.resolveResourceType(resourceTemplate.type);

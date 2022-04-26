@@ -1,6 +1,9 @@
-const { iterateProjects } = require('./apollo-server/utils/iterate_projects')
+const { iterateProjects, getProjectPaths } = require('./apollo-server/utils/iterate_projects')
 const path = require('path');
 const fs = require('fs')
+const os = require('os')
+const _ = require('lodash')
+
 
 // this alias is used by code copied from gitlab
 const alias = {
@@ -27,21 +30,39 @@ const projectPageBase = {
   ...unfurlGUIBase
 }
 
+const demoTemplate = _.template(fs.readFileSync(path.join(__dirname, 'public', 'demo.html'), 'utf-8'))
+
 for(const {projectPath, blueprint} of iterateProjects()) {
+  if(projectPath != 'testing/simple-blueprint') continue
   projectPages[projectPath] = {...projectPageBase, projectPath}
 }
 
 module.exports = {
   devServer: {
+    onListening(devServer) {
+      const tmpDir = path.join(os.tmpdir(), '.unfurl-gui')
+      function setPid(program, pid) {
+        return fs.writeFileSync(path.join(tmpDir, `${program}.pid`), pid.toString())
+      }
+      setPid('serve', process.pid)
+    },
     disableHostCheck: true,
     before(app) {
-      const proxy = httpProxyMiddleware('/graphql', {
+      const graphqlProxy = httpProxyMiddleware('/graphql', {
         target: 'http://localhost:4000/graphql',
         changeOrigin: true,
         ws: true,
         ignorePath: true,
         protocolRewrite: process.env.SSL_PROXY,
       })
+
+      const expressProxy =  httpProxyMiddleware('/proxied', {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        ws: true,
+        protocolRewrite: process.env.SSL_PROXY,
+      })
+
 
       const postProxy = httpProxyMiddleware(
         function (_, req) {
@@ -53,7 +74,28 @@ module.exports = {
           protocolRewrite: process.env.SSL_PROXY
         }
       )
-      app.use(proxy)
+
+      // try to send the blueprint pages even if they're not in webpack entries yet
+      app.use((req, res, next) => {
+        if(req.method != 'GET') {
+          next(); return
+        }
+        const projectPaths = getProjectPaths()
+        const normalizedPath = req.url.split('/').filter(s => s).join('/')
+        if(!projectPaths.includes(normalizedPath)) {
+          next(); return
+        }
+
+        const templateParameters = {
+          htmlWebpackPlugin: {
+            options: {...projectPageBase, projectPath: normalizedPath, inject: true}
+          }
+        }
+        res.send( demoTemplate(templateParameters) )
+      })
+
+      app.use(graphqlProxy)
+      app.use(expressProxy)
       app.use(postProxy)
       app.get(`/:user/dashboard/-/pipelines/:deployment`, (req, res) => {
         res.redirect(`/dashboard/deployments/${req.params.deployment}`)
@@ -94,7 +136,7 @@ module.exports = {
           ]
         }
       ],
-  }
+    }
   },
 
   pages: {
@@ -110,6 +152,7 @@ module.exports = {
       template: 'public/demo.html',
       unfurlCloudBaseUrl
     },
+
     ...projectPages,
 
     dashboard: {

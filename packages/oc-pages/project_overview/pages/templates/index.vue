@@ -82,7 +82,6 @@ export default {
       'getTemplate',
       'getServicesToConnect',
       'getPrimaryCard',
-      'getRequirementSelected',
       'getCardsStacked',
       'getDeploymentTemplate',
       'getDependencies',
@@ -223,6 +222,8 @@ export default {
   },
 
   mounted() {
+    const banner = document.querySelector('.js-uf-welcome-banner')
+    if(banner) {banner.style.display = 'none'}
     this.fetchItems();
   },
 
@@ -259,10 +260,12 @@ export default {
     // NOTE this doesn't work without https
     window.addEventListener('beforeunload', this.unloadHandler);
     this.setRouterHook((to, from, next) => {
-      if(this.safeToNavigateAway) {
+      if(!this.safeToNavigateAway) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
       }
+      const banner = document.querySelector('.js-uf-welcome-banner')
+      if(banner) {banner.style.display = ''}
       this.clearPreparedMutations();
       next();
     });
@@ -573,7 +576,7 @@ export default {
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
-          :custom-title="getPrimaryCard.title"
+          :custom-title="getDeploymentTemplate.title"
           :main-card-class="'primary-card'"
           :card="getPrimaryCard"
           :icon-title="true"
@@ -583,7 +586,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-              <oc-inputs :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
+            <oc-inputs :data-testid="`oc-inputs-${getPrimaryCard.name}`" :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
 
             <!-- Requirements List -->
             <oc-list
@@ -604,7 +607,6 @@ export default {
                   :key="__('levelOne-') + card.title"
                   :custom-title="card.title"
                   :card="card"
-                  :badge-header="{ isActive: true, text: card.type }"
                   :icon-title="true"
                   :icon-color="card.valid ? 'icon-green' : 'icon-red'"
                   :icon-name="card.valid ? 'check-circle-filled' : 'warning-solid'"
@@ -656,7 +658,7 @@ export default {
             :ref="__('oc-template-resource')"
             modal-id="oc-template-resource"
             size="lg"
-            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.title || getRequirementSelected.requirement.name)}`"
+            :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.constraint.title)}`"
             :action-primary="ocTemplateResourcePrimary"
             :action-cancel="cancelProps"
             @primary="onSubmitTemplateResourceModal"
@@ -666,7 +668,7 @@ export default {
           <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(getRequirementSelected.requirement)" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-              <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+              <gl-form-input id="input1" data-testid="create-resource-template-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
             </gl-form-group>
       </gl-modal>
 
