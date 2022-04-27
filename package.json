@@ -3,12 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-
     "start": "./scripts/start",
     "stop": "./scripts/stop",
     "restart": "./scripts/restart",
     "tail": "./scripts/tail",
-
     "test": "jest",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",

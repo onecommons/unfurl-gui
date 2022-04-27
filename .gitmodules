@@ -16,6 +16,6 @@
 [submodule "apollo-server/repos/testing/magento"]
 	path = apollo-server/repos/testing/magento
 	url = https://gitlab.com/onecommons/testing/magento.git
-[submodule "apollo-server/repos/blueprints/wordpress"]
-	path = apollo-server/repos/blueprints/wordpress
-	url = git@gitlab.com:onecommons/testing/my-wordpress-blueprint-issue-436.git
+[submodule "apollo-server/repos/testing/drupal"]
+	path = apollo-server/repos/testing/drupal
+	url = https://gitlab.com/onecommons/testing/drupal.git
