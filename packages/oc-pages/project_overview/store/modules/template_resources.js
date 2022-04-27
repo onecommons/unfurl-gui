@@ -175,6 +175,7 @@ const actions = {
         primary = deploymentTemplate._primary
         if(!primary) return false;
         primary = {...primary}
+        // NOTE sometimes this is failing and as a bandaid I'm also doing it in project_application_blueprint
         deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
         blueprint = {...blueprint, projectPath} // maybe we want to do it here
 

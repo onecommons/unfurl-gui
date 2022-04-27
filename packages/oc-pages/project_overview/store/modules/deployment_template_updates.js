@@ -169,7 +169,7 @@ export function createEnvironmentInstance({type, name, title, description, depen
             description,
             __typename: "ResourceTemplate",
             properties,
-            dependencies
+            dependencies: dependencies || []
         }
 
         const patch = accumulator['DeploymentEnvironment'][environmentName]
@@ -379,7 +379,7 @@ export function createResourceTemplate({type, name, title, description, dependen
             description,
             __typename: "ResourceTemplate",
             properties,
-            dependencies
+            dependencies: dependencies || []
         }
 
         result.push({patch, target: name, typename: "ResourceTemplate"})

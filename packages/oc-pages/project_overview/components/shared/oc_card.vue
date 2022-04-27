@@ -67,6 +67,10 @@ export default {
         displayStatus: {
             type: Boolean,
             default: false,
+        },
+        useStatus: {
+            type: Number,
+            default: null
         }
 
     },
@@ -103,6 +107,9 @@ export default {
             const type = this.getCardType(this.card)
             const result = this.$props.badgeHeader.text || this.resolveResourceTypeFromAny(type)?.title
             return result
+        },
+        status() {
+            return this.useStatus ?? this.card.status
         }
 
     },
@@ -160,7 +167,7 @@ export default {
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="displayStatus">
-                            <status-icon :size="16" :state="card.state" :status="card.status" />
+                            <status-icon :size="16" :state="card.state" :status="status" />
                         </div>
                     </slot>
                 </div>
