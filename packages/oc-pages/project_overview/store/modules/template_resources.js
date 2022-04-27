@@ -210,6 +210,21 @@ const actions = {
                     {root: true}
                 );
             }
+
+            // Push all resource templates into deployment.json, etc. so they can be referenced later
+            for(const resourceTemplateName of deploymentTemplate.resourceTemplates) {
+                let templateToCommit
+                if(
+                    !state.resourceTemplates[resourceTemplateName] &&
+                    (templateToCommit = rootGetters.resolveResourceTemplate(resourceTemplateName))
+                ) {
+                    commit(
+                        'pushPreparedMutation',
+                        createResourceTemplate(templateToCommit),
+                        {root: true}
+                    )
+                }
+            }
         }
 
         commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName, sourceDeploymentTemplate});
@@ -323,11 +338,14 @@ const actions = {
                     return {
                         constraint: {...req, visibility: req.visibility || 'visible'},
                         name: req.name,
-                        match: null,
+                        match: req.match || null,
                         target: null
                     };
 
                 });
+
+                dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
+
 
                 delete target.requirements;
             }
