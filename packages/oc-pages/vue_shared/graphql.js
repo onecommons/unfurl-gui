@@ -294,7 +294,8 @@ export const resolvers = {
         // TODO implement filtering
         deploymentTemplates: listMakeObjectLookupResolver('DeploymentTemplate'),
         image: (obj) => obj.image ?? null,
-        description: (obj) => obj.description ?? null
+        description: (obj) => obj.description ?? null,
+        primaryDeploymentBlueprint: (obj) => obj.primaryDeploymentBlueprint || null
         //overview: makeClientResolver('Overview'),
 
     },
