@@ -6,6 +6,7 @@ import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {createForm, onFieldInputValueChange} from "@formily/core";
+import {tryResolveDirective} from 'oc_vue_shared/lib'
 
 const ComponentMap = {
   string: 'Input',
@@ -16,38 +17,6 @@ const ComponentMap = {
   array: 'ArrayItems',
   password: 'Password',
 };
-
-const SerializationFunctions = {
-  number(input, value) {
-    const result = parseInt(value)
-    if(!isNaN(result)) return result
-  },
-  array(input, value) {
-    const result = []
-    for(const item of value) {
-      result.push(item['input'])
-    }
-    return result
-  }
-}
-function serializeInput(input, value) {
-  let type = input?.type
-  let propertyName = input.name
-  if(input.name?.endsWith('.input')) {
-    type = 'arrayItem'
-    propertyName = propertyName.slice(0, -6)
-  }
-  let result
-  if(type) {
-    const serializer = SerializationFunctions[type]
-    if(typeof serializer == 'function') {
-      result = [propertyName, serializer(input, value)]
-    }
-  }
-
-  return (result || [propertyName, value])
-
-}
 
 const fields = createSchemaField({
   components: {
@@ -93,26 +62,13 @@ export default {
       return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
     },
 
-    /*
-    mainInputs() {
-      const result = []
-      for (const property of this.card.properties) {
-        try{
-          const next = {...property, ...this.fromSchema[property.name]}
-          next.initialValue = next.value || next.default
-          result.push(next)
-        } catch (e) {
-          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
-        }
-      }
-
-      return result
-
-    },
-    */
-
     initialFormValues() {
       const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.initialValue}), {})
+      return result
+    },
+
+    formValues() {
+      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value}), {})
       return result
     },
 
@@ -138,7 +94,7 @@ export default {
 
   methods: {
     ...mapMutations([
-      'pushPreparedMutation', 'setCardInputValidStatus'
+      'pushPreparedMutation', 'setCardInputValidStatus', 'clientDisregardUncommitted'
     ]),
     ...mapActions([
       'updateProperty'
@@ -233,12 +189,12 @@ export default {
       this.setCardInputValidStatus({card: this.card, status})
     },
 
-    triggerSave(field, value) {
+    triggerSave(field, value, disregardUncommitted) {
       const propertyName = field.name
       // debounce each property of a form separately in for autocomplete
       let triggerFn
       if(!(triggerFn = this.saveTriggers[propertyName])) {
-        this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value) {
+        this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value, disregardUncommitted=false) {
           // TODO move cloneDeep/serializer into another function
           const propertyValue = _.cloneDeepWith(value, function(value) {
             if(Array.isArray(value) && value.length > 0) {
@@ -246,19 +202,19 @@ export default {
             }
           })
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
+          if(disregardUncommitted) this.clientDisregardUncommitted()
+
         }).bind(this), 200)
       }
 
-      triggerFn(field, value)
+      triggerFn(field, value, disregardUncommitted)
     },
 
-    getRandomKey(length) {
-      return Math.random().toString(36).replace(/[^a-z][0-9]+/g, '').substr(0, length);
-    },
     getMainInputs() {
       const self = this
       const result = []
       for (const property of this.card.properties) {
+        let overrideValue = false
         try{
           const next = {...property, ...this.fromSchema[property.name]}
           next.initialValue = _.cloneDeepWith(next.value || next.default, function(value) {
@@ -266,16 +222,24 @@ export default {
               return value.map(input => ({input}))
             }
             if(value?.get_env) {
+              overrideValue = true
               return self.lookupEnvironmentVariable(value.get_env) || ''
             }
+            let resolvedDirective
+            if(resolvedDirective = tryResolveDirective(value)) {
+                next.dirty = true
+                return resolvedDirective
+            }
           })
+          if(overrideValue) {
+            next.value = next.initialValue
+          }
           result.push(next)
         } catch (e) {
           console.error(e)
           throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
         }
       }
-
       return result
     }
   },
@@ -283,6 +247,7 @@ export default {
     this.mainInputs = this.getMainInputs()
     const form = createForm({
       initialValues: this.initialFormValues,
+      values: this.formValues,
       effects: () => {
         onFieldInputValueChange('*', async (field, ...args) => {
           // I'm not sure this would work for autocomplete if we did on validate
@@ -296,6 +261,12 @@ export default {
       }
     })
     this.form = form
+    for(const input of this.mainInputs) {
+      if(input.dirty) {
+        this.triggerSave(input, input.value || input.initialValue, true)
+      }
+    }
+    
     this.validate()
   }
 }
