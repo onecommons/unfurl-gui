@@ -80,16 +80,45 @@ export default {
     },
 
     computed: {
-        ...mapGetters(['getProjectInfo']),
+        ...mapGetters(['getProjectInfo', 'getDisplayableDependenciesByCard', 'getPrimaryCard', 'resolveResourceTypeFromAny']),
         ...mapState(['project']),
 
+
+
+        // requirements and extras here use the same method for following buried constraints as in the deployment editor
+        // (see oc_list)
+        // if there is no primaryDeploymentBlueprint here, primaryCard will not be loaded
+        // as a result the old, fallback method will be used
+
         requirements() {
-            const requirements = this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
-            return requirements || []
+            const self = this
+            const primaryCard = this.getPrimaryCard
+            if(!primaryCard?.name) {
+                return this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
+            }
+
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+            
+            return requirements.map(r => {
+                const constraint = r.dependency.constraint
+                const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
+                return {...constraint, resourceType}
+            })
         },
         extras() {
-            const extras = this.getProjectInfo.primary.requirements.filter(dependency => (dependency?.min || 0) == 0)
-            return extras || []
+            const self = this
+            const primaryCard = this.getPrimaryCard
+            if(!primaryCard?.name) {
+                return this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
+            }
+
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+            
+            return requirements.map(r => {
+                const constraint = r.dependency.constraint
+                const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
+                return {...constraint, resourceType}
+            })
         },
         previewImage() {
             return this.project.globalVars.projectIcon || this.projectImage

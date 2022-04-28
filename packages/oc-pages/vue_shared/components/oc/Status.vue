@@ -1,21 +1,27 @@
 <template>
   <div class="d-inline-flex align-items-center justify-content-center">
-    <div class="gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
+    <div v-if="status < StatusIndicators.length" class="gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
       <!-- 
         standard gl-icon doesn't support variants
         standard gl-badge doesn't have good adequate control
         normally just gl-icon would be enough with proper variants
       -->
-        <gl-icon
-          v-if="status < StatusIndicators.length"
-          :variant="StatusIndicators[status][0]"
-          :name="StatusIndicators[status][1]"
-          class="status-icon"
-          :size="size"
-          :title="__(StatusIndicators[status][2])"
-          v-gl-tooltip.hover
-          >
-        </gl-icon>
+      <gl-icon
+        v-if="!noTooltip"
+        :variant="StatusIndicators[status][0]"
+        :name="StatusIndicators[status][1]"
+        class="status-icon"
+        :size="size"
+        :title="__(StatusIndicators[status][2])"
+        v-gl-tooltip.hover
+      />
+      <gl-icon v-else
+        :variant="StatusIndicators[status][0]"
+        :name="StatusIndicators[status][1]"
+        class="status-icon"
+        :size="size"
+        :title="__(StatusIndicators[status][2])"
+      />
     </div>
     <div v-if="text">{{__(StatusIndicators[status])}}</div>
     <!-- ignoring state for now -->
@@ -31,8 +37,7 @@
   </div>
 </template>
 <script>
-//import { BBadge } from 'bootstrap-vue'
-import { GlIcon, GlTooltipDirective } from '@gitlab/ui';
+import { GlIcon } from '@gitlab/ui';
 
 const StatusIndicators = [
   // Unknown
@@ -79,7 +84,8 @@ export default {
     state: {
       type: Number,
       default: -1
-    }
+    },
+    noTooltip: Boolean
 
   },
   data() {
@@ -88,9 +94,6 @@ export default {
       hackyBadgeClass[`badge-${StatusIndicators[this.status][0]}`] = true
     } catch(e) {}
     return { StatusIndicators, hackyBadgeClass, StateNames};
-  },
-  directives: {
-    GlTooltip: GlTooltipDirective,
   },
   components: {
     GlIcon//, BBadge

@@ -208,7 +208,8 @@ export default {
 
         await Promise.all([
             this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath}),
-            this.populateJobsList()
+            this.populateJobsList(),
+            this.loadPrimaryDeploymentBlueprint()
         ])
         if(this.yourDeployments.length) {
             this.populateDeploymentItems(this.yourDeployments)
@@ -315,6 +316,16 @@ export default {
             }
 
         },
+        async loadPrimaryDeploymentBlueprint() {
+            const projectPath = this.$projectGlobal.projectPath
+            const templateSlug = this.getProjectInfo.primaryDeploymentBlueprint
+            if(!templateSlug) return
+            await this.fetchProject({projectPath});
+            return await this.populateTemplateResources({
+                projectPath, 
+                templateSlug, 
+            })
+        },
         onCancelModal(e) {
             if(this.creatingEnvironment) {
                 this.creatingEnvironment = false
@@ -358,7 +369,9 @@ export default {
             'commitPreparedMutations',
             'updateEnvironment',
             'populateDeploymentItems',
-            'populateJobsList'
+            'populateJobsList',
+            'populateTemplateResources',
+            'fetchProject'
         ]),
         ...mapMutations([
             'pushPreparedMutation',

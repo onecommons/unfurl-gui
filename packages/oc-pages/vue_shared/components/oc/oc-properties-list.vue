@@ -18,7 +18,7 @@ export default {
             default() {return []}
         },
         header: String,
-        property: String, // TODO validate to only except inputs and outputs
+        property: String,
         containerStyle: Object
     },
     computed: {
