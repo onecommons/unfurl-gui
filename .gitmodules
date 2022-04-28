@@ -25,3 +25,6 @@
 [submodule "apollo-server/repos/testing/wireguard"]
 	path = apollo-server/repos/testing/wireguard
 	url = https://gitlab.com/onecommons/testing/wireguard-real.git
+[submodule "apollo-server/repos/testing/minecraft"]
+	path = apollo-server/repos/testing/minecraft
+	url = https://gitlab.com/onecommons/testing/minecraft-real.git
