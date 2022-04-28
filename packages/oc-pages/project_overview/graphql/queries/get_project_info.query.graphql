@@ -15,6 +15,7 @@ query getProjectInfo($projectPath: ID!) {
       title
       description
       projectIcon
+      primaryDeploymentBlueprint
       deploymentTemplates {
         title
         name

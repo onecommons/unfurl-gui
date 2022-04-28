@@ -191,7 +191,20 @@ export default {
         },
         selectedRequirement() {
             return this.createNodeResourceData?.requirement
+        },
+
+        checkAllRequirements() {
+            return this.completedRequirements && this.completedMainInputs;
+        },
+
+        primaryCardStatus() {
+            if(this.displayStatus && this.getDeploymentTemplate.status == 1) {
+                return 1
+            }
+            return null
+
         }
+
     },
 
     watch: {
@@ -431,9 +444,6 @@ export default {
             }
         },
 
-        checkAllRequirements() {
-            return this.completedRequirements && this.completedMainInputs;
-        },
 
         getLegendOfModal() {
             const gerundize = (word) => {
@@ -475,12 +485,10 @@ export default {
                 :display-validation="displayValidation"
                 :display-status="displayStatus"
                 :main-card-class="'primary-card'"
+                :use-status="primaryCardStatus"
                 :custom-title="customTitle"
                 :readonly="readonly"
                 :card="getPrimaryCard"
-                :icon-title="true"
-                :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
-                :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"
                 :is-primary="true"
                 @deleteNode="onDeleteNode"
                 >
@@ -520,9 +528,6 @@ export default {
                             :display-status="displayStatus"
                             :readonly="readonly"
                             :card="card"
-                            :icon-title="true"
-                            :icon-color="card.status ? 'icon-green' : 'icon-red'"
-                            :icon-name="card.status ? 'check-circle-filled' : 'warning-solid'"
                             :actions="true"
                             :level="idx"
                             class="gl-mt-6"

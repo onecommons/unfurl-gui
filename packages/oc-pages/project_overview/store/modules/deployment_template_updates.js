@@ -144,7 +144,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
     }
 }
 
-export function createEnvironmentInstance({type, name, title, description, environmentName, dependentName, dependentRequirement}) {
+export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
@@ -152,6 +152,7 @@ export function createEnvironmentInstance({type, name, title, description, envir
             properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
+        /*
         const dependencies = resourceType?.requirements?.map(req => ({
             constraint: req,
             match: null,
@@ -159,6 +160,7 @@ export function createEnvironmentInstance({type, name, title, description, envir
             name: req.name,
             __typename: 'Dependency'
         })) || []
+        */
 
         const template = {
             type: typeof(type) == 'string'? type: type.name,
@@ -167,7 +169,7 @@ export function createEnvironmentInstance({type, name, title, description, envir
             description,
             __typename: "ResourceTemplate",
             properties,
-            dependencies
+            dependencies: dependencies || []
         }
 
         const patch = accumulator['DeploymentEnvironment'][environmentName]
@@ -339,7 +341,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, deploymentTemplateName, dependentName, dependentRequirement}) {
+export function createResourceTemplate({type, name, title, description, dependencies, deploymentTemplateName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const result = []
 
@@ -361,6 +363,7 @@ export function createResourceTemplate({type, name, title, description, deployme
             properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
+        /*
         const dependencies = resourceType?.requirements?.map(req => ({
             constraint: req,
             match: null,
@@ -368,6 +371,7 @@ export function createResourceTemplate({type, name, title, description, deployme
             name: req.name,
             __typename: 'Dependency'
         })) || []
+        */
         const patch = {
             type: typeof(type) == 'string'? type: type.name,
             name,
@@ -375,7 +379,7 @@ export function createResourceTemplate({type, name, title, description, deployme
             description,
             __typename: "ResourceTemplate",
             properties,
-            dependencies
+            dependencies: dependencies || []
         }
 
         result.push({patch, target: name, typename: "ResourceTemplate"})

@@ -175,6 +175,7 @@ const actions = {
         primary = deploymentTemplate._primary
         if(!primary) return false;
         primary = {...primary}
+        // NOTE sometimes this is failing and as a bandaid I'm also doing it in project_application_blueprint
         deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
         blueprint = {...blueprint, projectPath} // maybe we want to do it here
 
@@ -209,6 +210,21 @@ const actions = {
                     appendDeploymentTemplateInBlueprint({templateName: deploymentTemplate.name}), 
                     {root: true}
                 );
+            }
+
+            // Push all resource templates into deployment.json, etc. so they can be referenced later
+            for(const resourceTemplateName of deploymentTemplate.resourceTemplates) {
+                let templateToCommit
+                if(
+                    !state.resourceTemplates[resourceTemplateName] &&
+                    (templateToCommit = rootGetters.resolveResourceTemplate(resourceTemplateName))
+                ) {
+                    commit(
+                        'pushPreparedMutation',
+                        createResourceTemplate(templateToCommit),
+                        {root: true}
+                    )
+                }
             }
         }
 
@@ -323,11 +339,14 @@ const actions = {
                     return {
                         constraint: {...req, visibility: req.visibility || 'visible'},
                         name: req.name,
-                        match: null,
+                        match: req.match || null,
                         target: null
                     };
 
                 });
+
+                dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
+
 
                 delete target.requirements;
             }
