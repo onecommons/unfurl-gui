@@ -28,3 +28,12 @@
 [submodule "apollo-server/repos/testing/minecraft"]
 	path = apollo-server/repos/testing/minecraft
 	url = https://gitlab.com/onecommons/testing/minecraft-real.git
+[submodule "apollo-server/repos/testing/odoo"]
+	path = apollo-server/repos/testing/odoo
+	url = https://gitlab.com/onecommons/testing/odoo.git
+[submodule "apollo-server/repos/testing/discourse"]
+	path = apollo-server/repos/testing/discourse
+	url = https://gitlab.com/onecommons/testing/discourse.git
+[submodule "apollo-server/repos/testing/mediawiki"]
+	path = apollo-server/repos/testing/mediawiki
+	url = https://gitlab.com/onecommons/testing/mediawiki.git
