@@ -99,6 +99,9 @@ export default {
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
         },
+        attributes() {
+            return [].concat(this.card.attributes || [], this.card.computedProperties || [])
+        },
         propertiesStyle() {
             if(this.card.dependentName) {
                 return {width: 'max(75%, 400px)'}
@@ -115,7 +118,7 @@ export default {
             return (
                 !this.shouldRenderInputs &&
                 this.renderInputs && 
-                this.card.attributes?.length
+                this.attributes.length
             )
         },
         requirements() {
@@ -150,7 +153,7 @@ export default {
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
         </oc-tab>
         <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="card.attributes.length">
-            <oc-properties-list :container-style="propertiesStyle" :card="card" property="attributes" />
+            <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
         </oc-tab>
         <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">
             <oc-properties-list :container-style="propertiesStyle" :card="card" property="outputs" />

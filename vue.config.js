@@ -84,13 +84,14 @@ module.exports = {
         }
         const projectPaths = getProjectPaths()
         const normalizedPath = req.url.split('/').filter(s => s).join('/')
-        if(!projectPaths.includes(normalizedPath)) {
+        let matchingPath
+        if(!(matchingPath = projectPaths.find(path => normalizedPath.startsWith(path)))) {
           next(); return
         }
 
         const templateParameters = {
           htmlWebpackPlugin: {
-            options: {...projectPageBase, projectPath: normalizedPath, inject: true}
+            options: {...projectPageBase, projectPath: matchingPath, inject: true}
           }
         }
         res.send( demoTemplate(templateParameters) )

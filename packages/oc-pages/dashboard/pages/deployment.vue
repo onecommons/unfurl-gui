@@ -41,6 +41,6 @@ export default {
 <template>
     <div>
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <deployment-resources :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
+        <deployment-resources :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
     </div>
 </template>

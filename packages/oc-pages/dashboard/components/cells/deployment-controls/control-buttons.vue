@@ -31,7 +31,7 @@ export default {
 <template>
 <div class="control-button-container">
     <component :is='component' v-if="hasButton('open')" target="_blank" rel="noopener noreferrer" :href="deployment.url" variant="confirm">
-        <gl-icon :size="14" name="pencil-square"/> 
+        <gl-icon :size="14" name="external-link"/> 
         {{__('Open Live App')}}
     </component>
     <component :is='component' v-if="hasButton('edit-draft')" target="_blank" rel="noopener noreferrer" :href="resumeEditingTarget" style="background-color: #eee">

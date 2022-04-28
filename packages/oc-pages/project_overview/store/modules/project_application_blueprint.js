@@ -170,12 +170,12 @@ const actions = {
                 throw new Error('Could not fetch project blueprint')
             }
         }
-        dispatch('useProjectState', {root})
+        dispatch('useProjectState', {projectPath, root})
 
 
         commit('loaded', true)
     },
-    useProjectState({state, commit, getters}, {root, shouldMerge}) {
+    useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
@@ -183,6 +183,9 @@ const actions = {
         let transforms
         transforms = {
             ResourceTemplate(resourceTemplate) {
+                resourceTemplate.dependencies = resourceTemplate.dependencies || []
+                resourceTemplate.properties = resourceTemplate.properties || []
+
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
                     resourceTemplate.dependencies.push(generatedDep)
                 }
@@ -191,7 +194,7 @@ const actions = {
                 }
 
                 if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
-                resourceTemplate.dependencies?.forEach(dep => {
+                resourceTemplate.dependencies.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
                 resourceTemplate.__typename = 'ResourceTemplate'
@@ -202,6 +205,9 @@ const actions = {
                 }
                 if(deploymentTemplate.ResourceTemplate) {
                     Object.values(deploymentTemplate.ResourceTemplate).forEach(transforms.ResourceTemplate)
+                }
+                if(projectPath && !deploymentTemplate.projectPath) {
+                    deploymentTemplate.projectPath = projectPath
                 }
                 deploymentTemplate.__typename = 'DeploymentTemplate'
             },
@@ -341,6 +347,9 @@ const getters = {
             if(generatedDependencies.length == resourceTemplate.dependencies?.length) {
                 return [] // assuming they're correct
             }
+            if(!resourceTemplate.dependencies?.length) {
+                return generatedDependencies
+            }
             const result = []
             for(const generated of generatedDependencies) {
                 if(!resourceTemplate.dependencies.some(dep => dep.name == generated.name)) {
@@ -355,6 +364,9 @@ const getters = {
             const generatedProperties = getters.propertiesFromResourceType(resourceTemplate.type)
             if(generatedProperties.length == resourceTemplate.properties?.length) {
                 return [] // assuming they're correct
+            }
+            if(!resourceTemplate.properties?.length) {
+                return generatedProperties
             }
             const result = []
             for(const generated of generatedProperties) {

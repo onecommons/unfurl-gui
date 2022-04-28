@@ -63,9 +63,9 @@ const actions = {
                         return r
                     }
                 }) || []
+                // TODO remove deployment.statuses
                 deployment.statuses = [deployment.resources.find(resource => resource?.name == deployment.primary)]
                 if(!deployment.statuses[0]) deployment.statuses.pop()
-                deployment.isStopped = deployment.resources.length == 0 || deployment.resources.some(resource => resource?.status != 1)
                 deployment.resources = deployment.resources.filter(r => {
                     return r.visibility != 'hidden' && (
                         r.visibility == 'visible' ||
@@ -73,7 +73,9 @@ const actions = {
                         r.attributes?.find(a => a.name == 'console_url')
                     )
                 })
-                if(!deployment.isStopped) deployments++
+                if(deployment.__typename == 'Deployment' && deployment.status == 1) {
+                    deployments++
+                }
                 totalDeployments++
                 const application = {...rootGetters.getApplicationBlueprint};
                 application.projectPath = deployment.projectPath

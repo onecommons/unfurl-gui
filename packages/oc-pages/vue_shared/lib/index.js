@@ -1,0 +1,1 @@
+export {tryResolveDirective} from './directives'

@@ -73,7 +73,7 @@ export default class DeploymentItem {
         return workflow + ' at ' + this.createdAtTime
     }
     get isEditable() {
-        return this.isDraft || this.jobStatusIsEditable
+        return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
     }
     get isDraft() {
         return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
@@ -82,8 +82,6 @@ export default class DeploymentItem {
         return this.deployment.__typename == 'Deployment' && !this.isDeployed
     }
     get isDeployed() {
-        return this.deployment.__typename == 'Deployment' && (this.deployment.statuses?.length ?? 0) > 0 && this.deployment.statuses.every(rt => {
-            return rt?.status && rt.status != 5 && rt.status != 3 && rt.status != 4
-        })
+        return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)
     }
 }
