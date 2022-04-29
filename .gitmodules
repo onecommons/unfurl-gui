@@ -13,33 +13,3 @@
 [submodule "apollo-server/repos/blueprints/ghost"]
 	path = apollo-server/repos/blueprints/ghost
 	url = https://gitlab.com/onecommons/blueprints/ghost.git
-[submodule "apollo-server/repos/testing/magento"]
-	path = apollo-server/repos/testing/magento
-	url = https://gitlab.com/onecommons/testing/magento.git
-[submodule "apollo-server/repos/testing/drupal"]
-	path = apollo-server/repos/testing/drupal
-	url = https://gitlab.com/onecommons/testing/drupal.git
-[submodule "apollo-server/repos/testing/wordpress"]
-	path = apollo-server/repos/testing/wordpress
-	url = https://gitlab.com/onecommons/testing/wordpress.git
-[submodule "apollo-server/repos/testing/wireguard"]
-	path = apollo-server/repos/testing/wireguard
-	url = https://gitlab.com/onecommons/testing/wireguard-real.git
-[submodule "apollo-server/repos/testing/minecraft"]
-	path = apollo-server/repos/testing/minecraft
-	url = https://gitlab.com/onecommons/testing/minecraft-real.git
-[submodule "apollo-server/repos/testing/odoo"]
-	path = apollo-server/repos/testing/odoo
-	url = https://gitlab.com/onecommons/testing/odoo.git
-[submodule "apollo-server/repos/testing/discourse"]
-	path = apollo-server/repos/testing/discourse
-	url = https://gitlab.com/onecommons/testing/discourse.git
-[submodule "apollo-server/repos/testing/mediawiki"]
-	path = apollo-server/repos/testing/mediawiki
-	url = https://gitlab.com/onecommons/testing/mediawiki.git
-[submodule "apollo-server/repos/testing/nginx"]
-	path = apollo-server/repos/testing/nginx
-	url = https://unfurl.cloud/root/nginx.git
-[submodule "apollo-server/repos/testing/mongodb-test"]
-	path = apollo-server/repos/testing/mongodb-test
-	url = https://gitlab.com/onecommons/testing/mongodb-test.git
