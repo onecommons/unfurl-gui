@@ -30,6 +30,7 @@ module.exports = (on, config) => {
   })(OC_URL)
 
   config.env.OC_NAMESPACE = config.env.OC_NAMESPACE || 'demo'
+  config.env.REPOS_NAMESPACE = config.env.REPOS_NAMESPACE || 'testing'
 
   on('task', {
     log (message) {

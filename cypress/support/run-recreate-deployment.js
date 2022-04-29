@@ -1,4 +1,6 @@
 const OC_URL = Cypress.env('OC_URL')
+const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -8,8 +10,18 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       const {DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
       const dt = Object.values(DeploymentTemplate)[0]
       const primary = ResourceTemplate[dt.primary]
-      const env = Object.values(DeploymentPath)[0].environment
-      cy.visit(`${OC_URL}/${dt.projectPath}`)
+      let env = Object.values(DeploymentPath)[0].environment
+      if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
+        env = AWS_ENVIRONMENT_NAME
+      }
+      let projectPath  = dt.projectPath
+      if(REPOS_NAMESPACE) {
+        projectPath = projectPath.split('/')
+        projectPath[0] = REPOS_NAMESPACE
+        projectPath = projectPath.join('/')
+      }
+
+      cy.visit(`${OC_URL}/${projectPath}`)
 
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
@@ -62,7 +74,8 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.get('input:first').blur({ force: true })
       cy.wait(100)
 
-      cy.contains('button', 'Deploy').click()
+      cy.get('[data-testid="deploy-button"]').click()
+      cy.url().should('not.include', 'deployment-drafts', {timeout: 20000})
 
     })
   })

@@ -27,6 +27,10 @@ Cypress.Cookies.defaults({
 })
 
 before(() => {
+  Cypress.on('uncaught:exception', (err, runnable) => {
+    return false
+  })
+  if(Cypress.spec.name.startsWith('00_visitor')) return
   const BASE_URL = Cypress.env('OC_URL') || 'localhost:8080'
 
   const USERNAME = Cypress.env('OC_USERNAME')
