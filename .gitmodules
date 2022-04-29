@@ -13,3 +13,27 @@
 [submodule "apollo-server/repos/blueprints/ghost"]
 	path = apollo-server/repos/blueprints/ghost
 	url = https://gitlab.com/onecommons/blueprints/ghost.git
+[submodule "apollo-server/repos/blueprints/discourse"]
+	path = apollo-server/repos/blueprints/discourse
+	url = https://gitlab.com/onecommons/blueprints/discourse.git
+[submodule "apollo-server/repos/blueprints/drupal"]
+	path = apollo-server/repos/blueprints/drupal
+	url = https://gitlab.com/onecommons/blueprints/drupal.git
+[submodule "apollo-server/repos/blueprints/magento"]
+	path = apollo-server/repos/blueprints/magento
+	url = https://gitlab.com/onecommons/blueprints/magento.git
+[submodule "apollo-server/repos/blueprints/mediawiki"]
+	path = apollo-server/repos/blueprints/mediawiki
+	url = https://gitlab.com/onecommons/blueprints/mediawiki.git
+[submodule "apollo-server/repos/blueprints/minecraft"]
+	path = apollo-server/repos/blueprints/minecraft
+	url = https://gitlab.com/onecommons/blueprints/minecraft.git
+[submodule "apollo-server/repos/blueprints/odoo"]
+	path = apollo-server/repos/blueprints/odoo
+	url = https://gitlab.com/onecommons/blueprints/odoo.git
+[submodule "apollo-server/repos/blueprints/wireguard"]
+	path = apollo-server/repos/blueprints/wireguard
+	url = https://gitlab.com/onecommons/blueprints/wireguard.git
+[submodule "apollo-server/repos/blueprints/wordpress"]
+	path = apollo-server/repos/blueprints/wordpress
+	url = https://gitlab.com/onecommons/blueprints/wordpress.git
