@@ -25,6 +25,14 @@
 // Cypress.Commands.overwrite('visit', (originalFn, url, options) => { ... })
 //
 //
+
+import './run-recreate-deployment'
+import './create-aws-environment'
+import './create-gcp-environment'
+import './environments'
+import 'cypress-wait-until'
+import 'cypress-file-upload'
+
 Cypress.Commands.add('waitForGraphql', () => {
   // https://stackoverflow.com/questions/59171600/allow-cy-wait-to-fail
   cy.on('fail', (err) => {

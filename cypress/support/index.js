@@ -15,12 +15,6 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
-import './run-recreate-deployment'
-
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
-//
-//
 
 Cypress.Cookies.defaults({
   preserve: /.*/

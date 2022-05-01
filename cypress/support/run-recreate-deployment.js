@@ -1,6 +1,7 @@
 const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
+const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -10,10 +11,21 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       const {DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
       const dt = Object.values(DeploymentTemplate)[0]
       const primary = ResourceTemplate[dt.primary]
+
       let env = Object.values(DeploymentPath)[0].environment
+      let ensureEnvExists = false
       if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
         env = AWS_ENVIRONMENT_NAME
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createAWSEnvironment({environmentName: env})
+        })
+      } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
+        env = GCP_ENVIRONMENT_NAME
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createGCPEnvironment({environmentName: env})
+        })
       }
+
       let projectPath  = dt.projectPath
       if(REPOS_NAMESPACE) {
         projectPath = projectPath.split('/')
@@ -27,7 +39,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
 
       cy.get('[data-testid="deployment-name-input"]').invoke('val', '')
       cy.wait(500)
-      cy.get('[data-testid="deployment-name-input"]').type(`Cypress ${dt.title}`)
+      cy.get('[data-testid="deployment-name-input"]').type(`Cypress ${dt.title} ${Date.now().toString(36)}`)
       cy.get('[data-testid="deployment-environment-select"]').click()
       cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click()
 
@@ -75,7 +87,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.wait(100)
 
       cy.get('[data-testid="deploy-button"]').click()
-      cy.url().should('not.include', 'deployment-drafts', {timeout: 20000})
+      cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
 
     })
   })

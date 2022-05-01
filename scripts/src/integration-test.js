@@ -3,6 +3,8 @@
 
 const {execFileSync, spawnSync} = require('child_process')
 const path = require('path')
+const fs = require('fs')
+const {unfurlGuiRoot} = require('./shared/util.js')
 
 const READ_ARGS = {
   username: (args) => args.u || args.username,
@@ -25,6 +27,25 @@ function readArgs(args) {
   return result
 }
 
+
+const ENVIORONMENT_VARIABLE_TRANSFORMATIONS = {
+  'GOOGLE_APPLICATION_CREDENTIALS': (value) => {
+    const targetDir = path.join('tmp', path.basename(value))
+    fs.copyFileSync(value, path.join(unfurlGuiRoot, 'cypress/fixtures', targetDir))
+    return targetDir
+  }
+
+}
+
+function transformEnvironmentVariables(key, value) {
+
+  let transformation
+  if(transformation = ENVIORONMENT_VARIABLE_TRANSFORMATIONS[key]) {
+    return transformation(value)
+  }
+  return value
+}
+
 const FORWARD_ENVIRONMENT_VARIABLES = [
   'OC_USERNAME',
   'OC_PASSWORD',
@@ -37,12 +58,14 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'OC_IMPERSONATE', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME' // always overriden
 ]
 
+
+
 function forwardedEnvironmentVariables(override) {
   const result = {}
   for(const envvar of FORWARD_ENVIRONMENT_VARIABLES) {
     let value
     if(value = override[envvar] || process.env[envvar]) {
-      result[`CYPRESS_${envvar}`] = value
+      result[`CYPRESS_${envvar}`] = transformEnvironmentVariables(envvar, value)
     }
   }
   return result
@@ -62,7 +85,13 @@ function createDashboardCommand(username, dashboardRepo) {
     file = path.join(__dirname, 'create-user.js'),
     args = ['--username', username, '--dashboard', dashboardRepo],
     options = {}
-  return execFileSync.bind(null, file, args, options)
+  return () => {
+    try {
+      execFileSync(file, args, options)
+    } catch(e) {
+      console.error(e)
+    }
+  }
 }
 
 function invokeCypressCommand(baseArgs, forwardedEnv) {
