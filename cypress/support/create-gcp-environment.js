@@ -8,6 +8,12 @@ function createGCPEnvironment({environmentName}) {
   cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
   cy.url().should('not.include', '/dashboard/environments')
   authenticateGCP()
+
+  cy.fixture(GOOGLE_APPLICATION_CREDENTIALS).then(credentials => {
+    const {project_id} = credentials
+    cy.contains(project_id).should('be.visible')
+    cy.contains(GCP_ZONE).should('be.visible')
+  })
 }
 
 function authenticateGCP() {

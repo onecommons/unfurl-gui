@@ -20,6 +20,9 @@ describe('GCP environments', () => {
     cy.environmentShouldExist(ENVIRONMENT_NAME)
   })
 
+  it('Can create a gcp environment', () => {
+    cy.createGCPEnvironment({environmentName: ENVIRONMENT_NAME})
+  })
 
   it('Can create a gcp env from the overview page', () => {
     cy.visit(`${BASE_URL}/${REPOS_NAMESPACE}/simple-blueprint`)
@@ -37,13 +40,4 @@ describe('GCP environments', () => {
 
     cy.contains('button', ENVIRONMENT_NAME, {timeout: 10000}).should('be.visible')
   })
-
-
-  // currently fails because clusters aren't cleaned up
-  it('Can create a gcp environment', () => {
-    cy.createGCPEnvironment({environmentName: ENVIRONMENT_NAME})
-  })
-
-
-
 })
