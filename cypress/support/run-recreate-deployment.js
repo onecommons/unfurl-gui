@@ -37,9 +37,17 @@ Cypress.Commands.add('recreateDeployment', fixture => {
 
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
+      const useTitle = `Cy ${dt.title} ${Date.now().toString(36)}`
+      // this thing is rediculous
+      cy.get('[data-testid="deployment-name-input"]').focus()
       cy.get('[data-testid="deployment-name-input"]').invoke('val', '')
       cy.wait(500)
-      cy.get('[data-testid="deployment-name-input"]').type(`Cypress ${dt.title} ${Date.now().toString(36)}`)
+      // TODO try to make cypress less flakey without this
+      cy.get('[data-testid="deployment-name-input"]').type(useTitle)
+      cy.get('[data-testid="deployment-name-input"]').invoke('val', '')
+      cy.wait(500)
+      cy.get('[data-testid="deployment-name-input"]').type(useTitle)
+
       cy.get('[data-testid="deployment-environment-select"]').click()
       cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click()
 
@@ -70,8 +78,14 @@ Cypress.Commands.add('recreateDeployment', fixture => {
           cy.get(`[data-testid^=tab-requirements-]`).last().click() // this is a bit hacky
 
           cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`).click()
+
           cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
           cy.get('[data-testid="create-resource-template-title"]').invoke('val', '').type(match.title)
+          cy.wait(500)
+          // TODO try to make cypress less flakey without this
+          cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
+          cy.get('[data-testid="create-resource-template-title"]').invoke('val', '').type(match.title)
+          
           cy.contains('button', 'Next').click()
           if(!$document.querySelector(`[data-testid="card-${match.name}"]`)) {
             recreateTemplate(match)
@@ -89,6 +103,11 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.get('[data-testid="deploy-button"]').click()
       cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
 
+      cy.withJobFromURL(job => {
+        cy.expectSuccessfulJob(job)
+      })
+
+      cy.undeploy(useTitle)
     })
   })
 })

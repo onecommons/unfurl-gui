@@ -26,10 +26,12 @@
 //
 //
 
+import './undeploy' // should be imported before run-recreate-deployment
 import './run-recreate-deployment'
 import './create-aws-environment'
 import './create-gcp-environment'
 import './environments'
+import './ci-jobs'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
 

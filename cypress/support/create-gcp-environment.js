@@ -11,7 +11,7 @@ function createGCPEnvironment({environmentName}) {
 
   cy.fixture(GOOGLE_APPLICATION_CREDENTIALS).then(credentials => {
     const {project_id} = credentials
-    cy.contains(project_id).should('be.visible')
+    cy.contains(project_id, {timeout: 12000}).should('be.visible')
     cy.contains(GCP_ZONE).should('be.visible')
   })
 }
