@@ -59,7 +59,7 @@ async function main() {
     const username = args.name || args.username
     console.log(`Creating a dashboard at ${username}/dashboard`)
     if(! pushLocalRepo(dashboard, `${username}/dashboard`)) {
-      throw new Error('Failed to push local repo tp dashboard')
+      throw new Error('Failed to push local repo to dashboard')
     }
   }
 }
