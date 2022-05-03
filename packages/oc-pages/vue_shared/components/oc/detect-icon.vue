@@ -95,7 +95,7 @@ export default {
             return detectIcon(this.type || this._env, !this.noDefault && DEFAULT)
         },
         customIcon() {
-            return detectIconCustomSVG(this.type || this._env)
+            return this.type?.icon || detectIconCustomSVG(this.type || this._env)
         },
         customStyle() {
             if (this.$attrs.size) {
@@ -108,6 +108,7 @@ export default {
             }
         },
         customURL() {
+            if(this.type?.icon) return this.type?.icon
             const icon = this.$options.icons[this.customIcon] || this.customIcon
             if(!icon) return
             if(icon.startsWith('<svg')) {

@@ -1,47 +1,37 @@
 <script>
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash, { FLASH_TYPES } from '../../vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
+
+
+const ERROR_CONTEXT = {
+    fetchProjectInfo: 'Failed to load project'
+}
 
 export default {
     name: 'MainComponent',
 
     async beforeCreate() {
-        if(location.search == '?test-queries') {
-            const {data} = await  graphqlClient.clients.defaultClient.query({
-                query: gql`
-
-                  query getUnfurlRoot($fullPath: ID!) {
-                      applicationBlueprint(fullPath: $fullPath) @client {
-                          applicationBlueprint 
-                          ResourceType
-
-                      }
-                  }
-
-`, 
-            variables: {dehydrated: true, fullPath: this.$projectGlobal.projectPath, templateSlug: 'apostrophe-demo'}
-            })
-
-            console.log(data)
-            window.data = data
-            return 
-        }
+        let errorContext
         try {
             const {projectPath} = this.$projectGlobal
             // TODO do everything in one query?
+            errorContext = 'handleResize'
+            this.$store.dispatch('handleResize')
+            errorContext = 'ocFetchEnvironments'
             await this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
-            const promises = [
-                this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch}),
-                this.$store.dispatch('handleResize')
-            ]
-            await Promise.all(promises).then(_ => this.fetchingComplete = true )
-            return true
+            errorContext = 'fetchProjectInfo'
+            await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch})
         } catch(err) {
             console.error('@main.vue', err)
-            return createFlash({ message: err.message, type: FLASH_TYPES.ALERT });
-        }
+            return createFlash({
+                message: err.message,
+                type: FLASH_TYPES.ALERT,
+                issue: ERROR_CONTEXT[errorContext] || errorContext,
+                projectPath: this.$projectGlobal?.projectPath
+            });
+        } finally { this.fetchingComplete = true }
     },
 
     computed: {

@@ -112,11 +112,12 @@ export default {
             class="col-md-4 align_left"
             >
             <gl-form-input
+                data-testid="environment-name-input"
                 v-model="environmentName"
                 type="text"
                 />
             <error-small :condition="duplicateName">
-                {{__(`Environment name is taken`)}}
+                {{__('Environment name is taken')}}
             </error-small>
             <error-small :condition="nameStartsWithNumber">
                 {{__('Environment names cannot begin with a number')}}
@@ -128,11 +129,11 @@ export default {
             class="col-md-4 align_left"
             >
             <div class="dropdown-parent">
-                <gl-dropdown>
+                <gl-dropdown data-testid="cloud-provider-dropdown">
                     <template #button-text>
                         <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="selectedCloudProvider" no-default/>{{selectedCloudProvider || __('Select')}} </div>
                     </template>
-                    <gl-dropdown-item :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
+                    <gl-dropdown-item :data-testid="`env-option-${SHORT_NAMES[env]}`" :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
                         <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
                     </gl-dropdown-item>
                 </gl-dropdown>
