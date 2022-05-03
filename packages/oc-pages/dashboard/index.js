@@ -25,7 +25,7 @@ export default (elemId='js-table-component') => {
     const element = document.getElementById(elemId);
     window.gon = {...window.gon, ...element.dataset}
 
-    const result = new Vue({
+    const vm = new Vue({
         el: element,
         apolloProvider,
         store,
@@ -34,6 +34,10 @@ export default (elemId='js-table-component') => {
             return createElement(Dashboard);
         },
     });
-    //window.app = result
-    return result
+
+    if(window.Cypress || sessionStorage['debug']) {
+        window.$store = vm.$store
+    }
+
+    return vm
 };

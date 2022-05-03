@@ -13,7 +13,8 @@ const state = {
     environments: [],
     projectEnvironments: [],
     resourceTypeDictionaries: {},
-    variablesByEnvironment: {}
+    variablesByEnvironment: {},
+    ready: false
 };
 
 function connectionsToArray(environment) {
@@ -46,6 +47,10 @@ const mutations = {
 
     setDeploymentPaths(state, deploymentPaths) {
         state.deploymentPaths = deploymentPaths
+    },
+
+    setReady(state, readyStatus) {
+        state.ready = readyStatus
     },
 
     patchEnvironment(state, { envName, patch }) {
@@ -237,7 +242,7 @@ const actions = {
     async fetchEnvironmentVariables({commit}, {fullPath}) {
         const envvars = await fetchEnvironmentVariables(fullPath)
         const variablesByEnvironment = {}
-        for(const variable of envvars) {
+        for(const variable of envvars || []) {
             if(!variable.environment_scope) continue
             const varsForEnv = variablesByEnvironment[variable.environment_scope] || {}
             varsForEnv[variable.key] = variable.value
@@ -246,10 +251,11 @@ const actions = {
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
-        return Promise.all([
+        await Promise.all([
             dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath}),
             dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
         ])
+        commit('setReady', true)
     }
 
 };
@@ -342,6 +348,9 @@ const getters = {
             } catch(e) {}
             return null
         }
+    },
+    environmentsAreReady(state) {
+        return state.ready
     }
 };
 

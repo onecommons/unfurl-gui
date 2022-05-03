@@ -52,7 +52,7 @@ export default (elemId='js-oc-project-overview') => {
     ...element.dataset
   };
 
-  return new Vue({
+  const vm =  new Vue({
     el: element,
     apolloProvider,
     store,
@@ -61,4 +61,11 @@ export default (elemId='js-oc-project-overview') => {
       return createElement(MainComponent);
     },
   });
+
+  if(window.Cypress || sessionStorage['debug']) {
+    window.$store = vm.$store
+  }
+
+  return vm
+
 };
