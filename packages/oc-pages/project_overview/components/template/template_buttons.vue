@@ -62,15 +62,15 @@ export default {
 }
 </script>
 <template>
-    <div class="gl-mt-6 gl-mb-6 d-flex justify-content-end">
-        <div>
+    <div class="gl-mt-6 gl-mb-6 d-flex justify-content-between template-buttons flex-wrap">
+        <div class="d-flex">
             <gl-button
                 v-show="mergeStatus != 'hidden'"
                 title="Merge Request"
                 :aria-label="__(`Merge Request`)"
                 icon="merge-request-open"
                 type="button"
-                class="gl-mr-3"
+                class=""
                 :disabled="mergeStatus == 'disabled'"
                 >{{ __('Merge Request') }}</gl-button
             >
@@ -81,7 +81,7 @@ export default {
                 type="button"
                 icon="remove"
                 :disabled="disableDelete"
-                class="gl-mr-3"
+                class=""
                 @click.prevent="launchModalDeleteTemplate"
                 >{{ __(`Delete ${target}`) }}</gl-button
             >
@@ -91,7 +91,7 @@ export default {
                 :aria-label="__('Cancel Deployment')"
                 type="button"
                 icon="cancel"
-                class="gl-mr-3"
+                class=""
                 @click.prevent="cancelDeployment"
                 >{{ __('Cancel Deployment') }}
             </gl-button>
@@ -104,7 +104,7 @@ export default {
                 variant="confirm"
                 icon="doc-new"
                 :disabled="saveStatus == 'disabled'"
-                class="gl-mr-3"
+                class=""
                 @click.prevent="saveTemplate"
                 >{{ __('Save Changes') }}</gl-button
             >
@@ -116,13 +116,13 @@ export default {
                 type="button"
                 icon="doc-new"
                 :disabled="saveDraftStatus == 'disabled'"
-                class="gl-mr-3"
+                
                 @click.prevent="saveDraft"
                 >{{ __('Save as Draft') }}</gl-button
             >
 
         </div>
-        <div>
+        <div class="d-flex">
             <gl-button
                 v-show="deployStatus != 'hidden'"
                 title="Deploy"
@@ -139,3 +139,20 @@ export default {
         </div>
     </div>
 </template>
+<style scoped>
+.template-buttons  >>> .gl-button {
+    margin: 0.5em;
+    margin-top: 0;
+}
+@media only screen and (max-width: 500px) {
+  .template-buttons {
+      flex-direction: column;
+  }
+
+
+  .template-buttons > * {
+
+      flex-direction: column;
+  }
+}
+</style>

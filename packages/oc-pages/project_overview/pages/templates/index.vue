@@ -586,7 +586,9 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <oc-inputs :data-testid="`oc-inputs-${getPrimaryCard.name}`" :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
+            <div class="m-2">
+              <oc-inputs :data-testid="`oc-inputs-${getPrimaryCard.name}`" :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
+            </div>
 
             <!-- Requirements List -->
             <oc-list

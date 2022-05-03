@@ -110,7 +110,20 @@ export default {
         },
         status() {
             return this.useStatus ?? this.card.status
-        }
+        },
+
+        statusIconProps() {
+            const card = this.card
+            const isValid = this.cardIsValid(card)
+
+            const size = this.isPrimary? 24: 16
+            const className = ['gl-ml-3']
+            if(isValid) className.push('icon-green')
+            const title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
+            const name = isValid? 'check-circle-filled': 'error-filled'
+            return {name, size, 'class': className, title}
+        },
+
 
     },
     methods: {
@@ -154,16 +167,12 @@ export default {
                 <div class="mr-4 d-flex">
                     <slot name="header">
                         <div class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
-                            <detect-icon v-if="card && card.type" :size="18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
+                            <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
-                            <gl-icon
+                            <detect-icon
                                 v-if="displayValidation"
-                                :size="14"
-                                v-gl-tooltip.hover
-                                :class="['gl-ml-3', cardIsValid(card)? 'icon-green': '']"
-                                :name="cardIsValid(card)? 'check-circle-filled': 'status_preparing'"
-                                :title="cardIsValid(card)? 'Complete': `${customTitle || card.title} is Incomplete`"
-                                />
+                                v-bind="statusIconProps"
+                            />
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="displayStatus">
@@ -217,7 +226,6 @@ export default {
 .primary-card ~ .gl-card-body {
 	background-color: #EEEEEE38 !important;
 }
-.header-inner > * { height: 18px; }
 .header-inner {height: 24px;}
 .primary-card .oc_card_title {
 	font-size: 18px !important;
@@ -270,11 +278,25 @@ export default {
         /* TODO move this into global css */
         background: rgb(227, 247, 255);
     }
+
+    .oc-card.primary h4 {
+        line-height: 1 !important;
+    }
+
 }
 
 .oc-card:not(.primary) >>> .gl-card-body {
     background-color: white;
     /* sorry Mathew */
+}
+
+.oc-card:not(.primary) h4 {
+    font-size: 14px !important;
+}
+
+.oc-card.primary h4 {
+    font-size: 18px;
+    line-height: 0;
 }
 
 .oc-card >>> .gl-card-body {
@@ -302,4 +324,6 @@ export default {
     padding: 0.4em;
     margin: 0 0.25em;
 }
+
+
 </style>

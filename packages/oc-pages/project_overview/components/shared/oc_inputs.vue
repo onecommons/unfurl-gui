@@ -321,10 +321,12 @@ export default {
   width: 300px;
   max-width: 300px;
 }
-.oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component { 
-  width: 150px;
-  max-width: 150px;
-  margin-right: 150px;
+@media only screen and (min-width: 430px) {
+    .oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component { 
+      width: 150px;
+      max-width: 150px;
+      margin-right: 150px;
+    }
 }
 
 </style>
