@@ -68,7 +68,8 @@ export default {
     },
 
     formValues() {
-      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value}), {})
+      // element formily needs ?? undefined for some reason
+      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? undefined}), {})
       return result
     },
 
@@ -217,6 +218,14 @@ export default {
         let overrideValue = false
         try{
           const next = {...property, ...this.fromSchema[property.name]}
+
+          /*
+           * uncomment to default to minimum
+          if(next.type == 'number' && next.required && next.minimum && (next.default ?? null) === null) {
+            next.default = next.minimum
+          }
+          */
+
           next.initialValue = _.cloneDeepWith(next.value || next.default, function(value) {
             if(Array.isArray(value) && value.length > 0) {
               return value.map(input => ({input}))
