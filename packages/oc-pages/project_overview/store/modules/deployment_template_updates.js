@@ -307,7 +307,7 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
         if(dependentName && dependentRequirement) {
             console.warn("this isn't tested yet")
             result.push(
-                deleteResourceTemplateInDependent({dependentName, dependentRequirement})
+                deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName})
             )
 
         }
@@ -316,9 +316,18 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
     }
 }
 
-export function appendResourceTemplateInDependent({templateName, dependentName, dependentRequirement}) {
+export function appendResourceTemplateInDependent({templateName, dependentName, dependentRequirement, deploymentTemplateName}) {
     return function (accumulator) {
-        const patch = accumulator['ResourceTemplate'][dependentName]
+        let patch, typename
+        try { 
+            patch = accumulator['DeploymentTemplate'][deploymentTemplateName]['ResourceTemplate'][dependentName]
+            typename = 'DeploymentTemplate'
+        } catch(e) {}
+
+        if(!patch) {
+            patch = accumulator['ResourceTemplate'][dependentName]
+            typename = 'ResourceTemplate'
+        }
         for(const dependency of patch.dependencies) {
             if(dependency.name == dependentRequirement) {
                 dependency.match = templateName
@@ -328,9 +337,20 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
     }
 }
 
-export function deleteResourceTemplateInDependent({dependentName, dependentRequirement}) {
+export function deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName}) {
     return function (accumulator) {
-        const patch = accumulator['ResourceTemplate'][dependentName]
+        let patch
+        let typename
+        try {
+            patch = accumulator['DeploymentTemplate'][deploymentTemplateName]['ResourceTemplate'][dependentName]
+            typename = 'DeploymentTemplate'
+        } catch(e) {}
+
+        if(!patch) {
+            patch = accumulator['ResourceTemplate'][dependentName]
+            typename = 'ResourceTemplate'
+        }
+
         for(const dependency of patch.dependencies) {
             if(dependency.name == dependentRequirement) {
                 dependency.match = null
@@ -353,7 +373,7 @@ export function createResourceTemplate({type, name, title, description, dependen
 
         if(dependentName && dependentRequirement) {
             result.push(
-                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement})//(accumulator)[0]
+                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName})//(accumulator)[0]
             )
         }
 

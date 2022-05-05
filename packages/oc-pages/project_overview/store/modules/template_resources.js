@@ -389,7 +389,7 @@ const actions = {
         const resourceTemplate = rootGetters.lookupConnection(environmentName, nodeResource);
         commit(
             'pushPreparedMutation',
-            appendResourceTemplateInDependent({dependentName, dependentRequirement, templateName: nodeResource})
+            appendResourceTemplateInDependent({dependentName, dependentRequirement, templateName: nodeResource, deploymentTemplateName: state.deploymentTemplate.name})
 
         )
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace});
@@ -423,8 +423,7 @@ const actions = {
             }
 
             if(actionLowerCase === "disconnect"){
-
-                commit('pushPreparedMutation', deleteResourceTemplateInDependent({dependentName: dependentName, dependentRequirement}), {root: true});
+                commit('pushPreparedMutation', deleteResourceTemplateInDependent({dependentName: dependentName, dependentRequirement, deploymentTemplateName: state.deploymentTemplate.name}), {root: true});
             }
 
             return true;
