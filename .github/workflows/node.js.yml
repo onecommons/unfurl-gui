@@ -20,10 +20,7 @@ jobs:
       - name: Run apollo and serve
         run: yarn start
       - name: Install Cypress dependencies
-        run: sudo apt-get update --fix-missing && sudo apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
-
-      - name: Add Cypress
-        run: yarn add cypress
+        run: sudo apt-get update --fix-missing && sudo env DEBIAN_FRONTEND="noninteractive" apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
       - name: Run Cypress
         run: xargs yarn run cypress run -C cypress-ci.json -s  < cypress/ci-tests.txt
         #- name: Archive test screenshots
