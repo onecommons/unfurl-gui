@@ -62,7 +62,13 @@ Cypress.Commands.add('recreateDeployment', fixture => {
             cy.get(`[data-testid=tab-inputs-${template.name}]`).click()
           }
           for(const property of template.properties) {
-            cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`).last().type(property.value)
+            let value = property.value
+            if(typeof value == 'object' && value) {
+              if(typeof value.get_env == 'string') {
+                value = Cypress.env(value.get_env.split('__').pop()) || value.get_env
+              }
+            }
+            cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`).last().invoke('val', '').type(value)
           }
         }
 
