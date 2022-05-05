@@ -37,3 +37,6 @@
 [submodule "apollo-server/repos/blueprints/wordpress"]
 	path = apollo-server/repos/blueprints/wordpress
 	url = https://gitlab.com/onecommons/blueprints/wordpress.git
+[submodule "apollo-server/repos/blueprints/nginx"]
+        path = apollo-server/repos/blueprints/nginx
+	url = https://gitlab.com/onecommons/blueprints/nginx.git
