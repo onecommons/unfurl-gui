@@ -15,10 +15,13 @@ jobs:
         run: npm install --global yarn
       - name: Install yarn dependencies
         run: YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
-      - name: Run apollo
-        run: rm -rf live/ && yarn run apollo:start &
-      - name: Run server
-        run: yarn run serve &
+      - name: Run unit tests
+        run: yarn test
+      - name: Run apollo and serve
+        run: yarn start
+      - name: Install Cypress dependencies
+        run: apt-get update --fix-missing && apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
+
       - name: Add Cypress
         run: yarn add cypress
       - name: Run Cypress
