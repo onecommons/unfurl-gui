@@ -5,38 +5,35 @@ on: [push]
 jobs:
   build:
     name: Test
-    runs-on: self-hosted
-    container: ubuntu
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v2
         with:
           submodules: recursive
       - uses: actions/setup-node@v2.5.1
-      - name: Install node, yarn
-        run: npm install --global yarn
       - name: Install yarn dependencies
         run: YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
       - name: Run unit tests
         run: yarn test
+      - name: Update Unfurl
+        run: pip3 install -U  "git+https://github.com/onecommons/unfurl.git#egg=unfurl"
       - name: Run apollo and serve
         run: yarn start
-      - name: Install Cypress dependencies
-        run: sudo apt-get update --fix-missing && sudo env DEBIAN_FRONTEND="noninteractive" apt-get install libgtk2.0-0 libgtk-3-0 libgbm-dev libnotify-dev libgconf-2-4 libnss3 libxss1 libasound2 libxtst6 xauth xvfb -y
       - name: Run Cypress
         run: xargs yarn run cypress run -C cypress-ci.json -s  < cypress/ci-tests.txt
-        #- name: Archive test screenshots
-        #if: always()
-        #uses: actions/upload-artifact@v2
-        #with:
-        #name: screenshots
-        #path: |
-        #  cypress/screenshots/
-        #- name: Archive test videos
-        #if: always()
-        #uses: actions/upload-artifact@v2
-        #with:
-          #name: videos
-          #path: |
-        #cypress/videos/
+      - name: Archive test screenshots
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: screenshots
+          path: |
+            cypress/screenshots/
+      - name: Archive test videos
+        if: always()
+        uses: actions/upload-artifact@v2
+        with:
+          name: videos
+          path: |
+            cypress/videos/
 
 

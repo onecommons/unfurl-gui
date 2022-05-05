@@ -31,6 +31,7 @@ module.exports = (on, config) => {
 
   config.env.OC_NAMESPACE = config.env.OC_NAMESPACE || 'demo'
   config.env.REPOS_NAMESPACE = config.env.REPOS_NAMESPACE || 'testing'
+  config.env.SIMPLE_BLUEPRINT = config.env.SIMPLE_BLUEPRINT || 'simple-blueprint'
 
   on('task', {
     log (message) {

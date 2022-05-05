@@ -3,6 +3,7 @@ const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('GCP_ENVIRONMENT_NAME')
 const GOOGLE_APPLICATION_CREDENTIALS = Cypress.env('GOOGLE_APPLICATION_CREDENTIALS')
 const GCP_ZONE = Cypress.env('GCP_ZONE') || 'us-central1-a'
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
 
@@ -25,7 +26,7 @@ describe('GCP environments', () => {
   })
 
   it('Can create a gcp env from the overview page', () => {
-    cy.visit(`${BASE_URL}/${REPOS_NAMESPACE}/simple-blueprint`)
+    cy.visit(`${BASE_URL}/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}`)
 
     cy.contains('.oc_table_row', 'Google Cloud Platform') // TODO replace table row with testid
       .within(() => {

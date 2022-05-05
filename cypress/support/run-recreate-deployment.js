@@ -2,6 +2,7 @@ const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
+const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -33,7 +34,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
         projectPath = projectPath.join('/')
       }
 
-      cy.visit(`${OC_URL}/${projectPath}`)
+      cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
 
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
