@@ -6,7 +6,6 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
-    options: --shm-size 2gb
     steps:
       - uses: actions/checkout@v2
         with:
@@ -26,7 +25,7 @@ jobs:
       - name: Add Cypress
         run: yarn add cypress
       - name: Run Cypress
-        run: xargs yarn run cypress run -s  < cypress/ci-tests.txt
+        run: xargs yarn run cypress run -C cypress-ci.json -s  < cypress/ci-tests.txt
       - name: Archive test screenshots
         if: always()
         uses: actions/upload-artifact@v2
@@ -34,12 +33,12 @@ jobs:
           name: screenshots
           path: |
             cypress/screenshots/
-      - name: Archive test videos
-        if: always()
-        uses: actions/upload-artifact@v2
-        with:
-          name: videos
-          path: |
-            cypress/videos/
+        #- name: Archive test videos
+        #if: always()
+        #uses: actions/upload-artifact@v2
+        #with:
+          #name: videos
+          #path: |
+        #cypress/videos/
 
 
