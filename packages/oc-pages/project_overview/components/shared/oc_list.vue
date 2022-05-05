@@ -175,6 +175,10 @@ export default {
         display: flex;
         flex-direction: column;
     }
+    div.ci-table {
+        grid-template-columns: repeat(1, auto);
+        grid-auto-rows: unset;
+    }
 }
 /**/
 
@@ -183,5 +187,11 @@ export default {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.ci-table {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-auto-rows: 4em;
 }
 </style>

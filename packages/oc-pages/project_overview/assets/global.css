@@ -17,10 +17,8 @@ h2.oc-title-section {
     width: 100%;
   }
   .oc_table_row {
-    border-bottom: 1px solid #eeeeee;
     padding: 10px 0px;
     color: #303030;
-    font-size: 14px;
   }
   .oc-table-section .title {
     font-style: normal;

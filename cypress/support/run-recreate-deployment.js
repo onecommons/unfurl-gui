@@ -101,13 +101,15 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.wait(100)
 
       cy.get('[data-testid="deploy-button"]').click()
-      cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
+      cy.whenGitlab(() => {
+        cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
 
-      cy.withJobFromURL(job => {
-        cy.expectSuccessfulJob(job)
+        cy.withJobFromURL(job => {
+          cy.expectSuccessfulJob(job)
+        })
+
+        cy.undeploy(useTitle)
       })
-
-      cy.undeploy(useTitle)
     })
   })
 })

@@ -1,1 +1,2 @@
-cypress/integration/project_overview_deploy_spec.js
+cypress/integration/generated/_production-gcp__simple-blueprint__google-cloud-platform-1.js
+cypress/integration/generated/_staging-aws__simple-blueprint__amazon-web-services-ec2-1.js

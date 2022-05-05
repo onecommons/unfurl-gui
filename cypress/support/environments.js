@@ -9,6 +9,9 @@ Cypress.Commands.add('withEnvironment', (environmentName, cb)=> {
   }))
 
   cy.window().then((win) => {
+    // this will be run quite frequently because environment tests check if they should run cleanup before executing
+    // this is a good place to add sanity checks for environments
+    expect(win.$store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
     const env = win.$store.getters.getEnvironments.find(env => env.name == environmentName)
     cb(env)
   })

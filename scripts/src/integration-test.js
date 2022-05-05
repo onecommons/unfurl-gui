@@ -80,11 +80,15 @@ function identifierFromCurrentTime(baseId) {
 }
 
 function createDashboardCommand(username, dashboardRepo) {
-  if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
+  //if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
   const 
     file = path.join(__dirname, 'create-user.js'),
-    args = ['--username', username, '--dashboard', dashboardRepo],
+    args = ['--username', username],//, '--dashboard', dashboardRepo],
     options = {}
+  if(dashboardRepo) {
+    args.push('--dashboard')
+    args.push(dashboardRepo)
+  }
   return () => {
     try {
       execFileSync(file, args, options)

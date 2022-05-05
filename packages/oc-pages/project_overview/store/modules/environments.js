@@ -6,7 +6,8 @@ import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared
 import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
-import {fetchEnvironmentVariables} from '../../../vue_shared/client_utils/envvars'
+import {patchEnv, fetchEnvironmentVariables} from '../../../vue_shared/client_utils/envvars'
+import {tryResolveDirective} from 'oc_vue_shared/lib'
 
 
 const state = {
@@ -237,7 +238,6 @@ const actions = {
         }
         commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
-
     },
     async fetchEnvironmentVariables({commit}, {fullPath}) {
         const envvars = await fetchEnvironmentVariables(fullPath)
@@ -250,12 +250,19 @@ const actions = {
         }
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
+    async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {
+        if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
+            const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
+            await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD})
+            await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
+        }
+    },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
         await Promise.all([
             dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath}),
             dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
         ])
-        commit('setReady', true)
+        dispatch('generateVaultPasswordIfNeeded', {fullPath: fullPath || projectPath}).then(() => commit('setReady', true))
     }
 
 };
