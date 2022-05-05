@@ -6,6 +6,7 @@ jobs:
   build:
     name: Test
     runs-on: ubuntu-latest
+    options: --shm-size 2gb
     steps:
       - uses: actions/checkout@v2
         with:
