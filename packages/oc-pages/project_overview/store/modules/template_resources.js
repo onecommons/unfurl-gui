@@ -221,7 +221,7 @@ const actions = {
                 ) {
                     commit(
                         'pushPreparedMutation',
-                        createResourceTemplate(templateToCommit),
+                        () => [{patch: templateToCommit, target: templateToCommit.name, typename: 'ResourceTemplate'}],
                         {root: true}
                     )
                 }

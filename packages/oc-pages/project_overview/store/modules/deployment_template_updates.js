@@ -65,6 +65,23 @@ const Serializers = {
                 }
             }
         }
+        const resourceTemplates = []
+        function addMatchedResourceTemplates(templateName) {
+            let template 
+            try {
+                template = state.DeploymentTemplate[dt.name].ResourceTemplate[templateName]
+            } catch(e) {}
+            if(!template) {
+                template = state.ResourceTemplate[templateName]
+            }
+
+            if(template) {
+                resourceTemplates.push(templateName)
+                template.dependencies?.forEach(dep => dep.match && addMatchedResourceTemplates(dep.match))
+            }
+        }
+        addMatchedResourceTemplates(dt.primary)
+        dt.resourceTemplates = resourceTemplates
     },
     // TODO unit test
     ResourceTemplate(rt) {

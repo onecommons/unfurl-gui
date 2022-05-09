@@ -162,7 +162,9 @@ export default {
             </div>
         </div>
         <div v-if="!isMobileLayout || requirementFilled"
-            class="table-section oc-table-section section-wrap d-flex justify-content-center align-items-center validation">
+            class="table-section oc-table-section section-wrap d-flex align-items-center validation"
+            :class="{'justify-content-center': !readonly}"
+        >
             <detect-icon
                 v-if="displayValidation"
                 v-gl-tooltip.hover
@@ -231,6 +233,7 @@ export default {
                     @click="sendRequirement(dependency)">{{ __('Create') }}</gl-button>
             </div>
         </div>
+        <div v-else></div>
     </div>
 </template>
 <style scoped>
