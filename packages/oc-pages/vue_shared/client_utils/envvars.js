@@ -31,28 +31,23 @@ export async function patchEnv(env, environmentScope, fullPath) {
 
     if(window.gon.unfurl_gui) {
         console.log({envPatch})
-    } else {
-        if(envPatch.length) {
-            const currentVars = (await axios.get(endpoint)).data.variables
-            for(const currentVar of currentVars) {
-                const existingVar = envPatch.find(newVar => newVar.key == currentVar.key)
-                if(existingVar) {
-                    existingVar.id = currentVar.id
-                }
+    }
+    if(envPatch.length) {
+        const currentVars = (await axios.get(endpoint)).data.variables
+        for(const currentVar of currentVars) {
+            const existingVar = envPatch.find(newVar => newVar.key == currentVar.key)
+            if(existingVar) {
+                existingVar.id = currentVar.id
             }
-            await axios.patch(endpoint, {variables_attributes: envPatch})
         }
+        await axios.patch(endpoint, {variables_attributes: envPatch})
     }
 
 }
 
 export async function fetchEnvironmentVariables(fullPath) {
-    // #!if false
-    
     if(!fullPath) { console.warn('TODO use fullPath for fetchEnvironmentVariables') }
     const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint
-    return (await axios.get(endpoint)).data.variables
-
-    // #!endif
-    return []
+    const data = (await axios.get(endpoint)).data
+    return data.variables
 }
