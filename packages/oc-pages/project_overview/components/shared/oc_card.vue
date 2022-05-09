@@ -176,7 +176,7 @@ export default {
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="displayStatus">
-                            <status-icon :size="16" :state="card.state" :status="status" />
+                            <status-icon :size="16" :state="card.state" :status="status" display-text/>
                         </div>
                     </slot>
                 </div>

@@ -100,7 +100,22 @@ export default {
             return Array.isArray(this.$store._actions.setRequirementSelected)
         },
         attributes() {
-            return [].concat(this.card.attributes || [], this.card.computedProperties || [])
+            const attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
+
+            const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
+            if(consoleURLIndex != -1) {
+                const consoleURL = attributes[consoleURLIndex]
+                attributes.splice(consoleURLIndex, 1)
+                attributes.unshift({
+                    name: 'Status',
+                    status: this.card.status,
+                    outboundLink: consoleURL.value,
+                    outboundLinkText: `View ${this.card.title}`
+                })
+                
+            }
+
+            return attributes
         },
         propertiesStyle() {
             if(this.card.dependentName) {
