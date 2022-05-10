@@ -219,9 +219,13 @@ const actions = {
                     !state.resourceTemplates[resourceTemplateName] &&
                     (templateToCommit = rootGetters.resolveResourceTemplate(resourceTemplateName))
                 ) {
+                    let typename = 'ResourceTemplate'
+                    // Do not confuse unfurl by committing as 'ResourceTemplate' with defaults
+                    // we could handle this more generically, but this is the only code path where this is possible
+                    if (templateToCommit.directives?.includes('default')) typename = 'DefaultTemplate'
                     commit(
                         'pushPreparedMutation',
-                        () => [{patch: templateToCommit, target: templateToCommit.name, typename: 'ResourceTemplate'}],
+                        () => [{patch: templateToCommit, target: templateToCommit.name, typename}],
                         {root: true}
                     )
                 }
