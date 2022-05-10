@@ -30,6 +30,9 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
 }
 
 export function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy}) {
+
+    const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
+
     return toGlVariablesAttributes({
         WORKFLOW: workflow,
         DEPLOY_ENVIRONMENT: environmentName,
@@ -38,7 +41,7 @@ export function prepareVariables({workflow, projectUrl, environmentName, deployP
         DEPLOYMENT: deploymentName,
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,
         UNFURL_MOCK_DEPLOY: mockDeploy && 'true',
-        UNFURL_LOGGING: mockDeploy && 'trace'
+        UNFURL_LOGGING: (mockDeploy || UNFURL_TRACE) && 'trace'
     })
 }
 

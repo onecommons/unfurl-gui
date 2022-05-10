@@ -50,7 +50,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.get('[data-testid="deployment-name-input"]').type(useTitle)
 
       cy.get('[data-testid="deployment-environment-select"]').click()
-      cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click()
+      cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click({force: true})
 
       cy.contains('button', 'Next').click()
 
@@ -65,7 +65,8 @@ Cypress.Commands.add('recreateDeployment', fixture => {
             let value = property.value
             if(typeof value == 'object' && value) {
               if(typeof value.get_env == 'string') {
-                value = Cypress.env(value.get_env.split('__').pop()) || value.get_env
+                const envName = value.get_env.split('__').pop()
+                value = Cypress.env(envName) || envName
               }
             }
             cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`).last().invoke('val', '').type(value)

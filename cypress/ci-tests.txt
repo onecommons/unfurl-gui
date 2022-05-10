@@ -1,3 +1,6 @@
+cypress/integration/00_visitor/sanity_check.js
+cypress/integration/00_visitor/view_simple_blueprint.js
+
 cypress/integration/generated/_production-gcp__simple-blueprint__google-cloud-platform-1.js
 cypress/integration/generated/_staging-aws__simple-blueprint__amazon-web-services-ec2-1.js
 cypress/integration/generated/_production-gcp__ghost__ghost-gcp.js
