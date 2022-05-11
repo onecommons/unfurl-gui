@@ -472,10 +472,24 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
     }
 }
 
+
+function readCommittedNames(accumulator) {
+    const committedNames = []
+    for(const typename in accumulator) {
+        if(['ResourceTemplate', 'ApplicationBlueprint', 'DeploymentTemplate'].includes(typename)) {
+            for(const name in accumulator[typename]) {
+                committedNames.push(`${typename}.${name}`)
+            }
+        }
+    }
+    return committedNames
+}
+
 const state = {
     preparedMutations: [],
     accumulator: {},
     patches: {},
+    committedNames: [],
     env: {},
     isCommitting: false,
     useBaseState: false
@@ -486,8 +500,8 @@ const getters = {
     getAccumulator(state) { return state.accumulator },
     getPatches(state) { return state.patches },
     hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) },
-    safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting}
-
+    safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
+    isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
 
 }
 
@@ -540,6 +554,7 @@ const mutations = {
         state.accumulator = {}
         state.patches = {}
         state.env = {}
+        state.committedNames = []
         state.useBaseState = false
         state.effectiveFirstMutation = 0
         if(!o?.dryRun) {
@@ -551,9 +566,11 @@ const mutations = {
     },
     setBaseState(state, baseState) {
         state.accumulator = baseState
+        state.committedNames = readCommittedNames(baseState)
     },
     useBaseState(state, baseState) {
         state.accumulator = baseState
+        state.committedNames = readCommittedNames(baseState)
         state.useBaseState = true
     },
     clearPreparedMutations(state) {
@@ -612,7 +629,9 @@ const actions = {
             const patchesByTypename = getters.getPatches[key]
             Object.entries(patchesByTypename).forEach(([name, record]) => {
                 if(record == null) {
-                    patch.push({__deleted: name, __typename: key})
+                    if(getters.isCommittedName(key, name)) {
+                        patch.push({__deleted: name, __typename: key})
+                    }
                 }
                 else {
                     patch.push({name, ...record, __typename: key})
@@ -626,6 +645,7 @@ const actions = {
         }
 
         if(o?.dryRun) {
+            console.log(state.committedNames)
             console.log(variables)
             if(Object.keys(state.env)) console.log(state.env)
             return
