@@ -136,9 +136,17 @@ const actions = {
             }
         }
         commit('updateLastFetchedFrom', {environmentName})
-        dispatch('createMatchedResources', {resource, isDeploymentTemplate})
         commit('setDeploymentTemplate', deploymentTemplate)
-        commit('createTemplateResource', resource)
+
+        if(isDeploymentTemplate) {
+            dispatch('createMatchedResources', {resource, isDeploymentTemplate})
+            commit('createTemplateResource', resource)
+        } else {
+            // hacky workaround for broken dependency hierarchy in resources for default templates
+            for(const resource of rootGetters.getResources) {
+                commit('createTemplateResource', resource)
+            }
+        }
 
     },
 
@@ -515,6 +523,33 @@ const getters = {
         return function(cardName) {
             const card = state.resourceTemplates[cardName?.name || cardName]
             if(!card) return false
+
+            if(card.__typename == 'Resource') {
+                return getters.resourceCardIsHidden(card)
+            } else if(card.__typename == 'ResourceTemplate') {
+                return getters.templateCardIsHidden(card)
+            } else {
+                throw new Error(
+                    card.__typename ?
+                    `Card "${card.title}" has __typename ${card.__typename}` :
+                    `Card "${card.title}" has no typename`
+                )
+            }
+        }
+    },
+    resourceCardIsHidden(state, getters) {
+        return function(card) {
+            // TODO duplicated logic from table_data
+            const isVisible = card.visibility != 'hidden' && (
+                card.visibility == 'visible' ||
+                card.attributes?.find(a => a.name == 'id') ||
+                card.attributes?.find(a => a.name == 'console_url')
+            )
+            return !isVisible
+        }
+    },
+    templateCardIsHidden(state, getters) {
+        return function(card) {
             switch(card.visibility) {
                 case 'hidden':
                     return true
@@ -526,10 +561,16 @@ const getters = {
             }
         }
     },
-    getCardsStacked: (_state, getters, _, rootGetters) => {
+    getCardsStacked: (_state, getters, _a, rootGetters) => {
         if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
-        return Object.values(_state.resourceTemplates).filter((rt) => {
+        let cards = Object.values(_state.resourceTemplates)
+
+        // hacky workaround for broken dependency hierarchy in resources for default templates
+        const isDeployment = _state.deploymentTemplate.__typename == 'Deployment'
+
+        return cards.filter((rt) => {
             if(!rootGetters.REVEAL_HIDDEN_TEMPLATES && getters.cardIsHidden(rt.name)) return false
+            if(isDeployment) return true
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
 
