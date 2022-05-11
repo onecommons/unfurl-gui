@@ -231,7 +231,7 @@ const actions = {
                 if(!resourceType.title) resourceType.title = resourceType.name
                 resourceType.__typename = 'ResourceType'
             },
-            Resource(resource) {
+            Resource(resource, root) {
                 if(!resource.dependencies) resource.dependencies = resource.connections || []
                 if(!resource.attributes) resource.attributes = []
                 if(!resource.visibility) resource.visibility = 'inherit'
@@ -239,6 +239,13 @@ const actions = {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
                 resource.__typename = 'Resource'
+
+                // infer types from template when they're not available
+                if(!resource.type && resource.template) {
+                    try {
+                        resource.type = root['ResourceTemplate'][resource.template].type
+                    } catch(e) {}
+                }
             },
             Deployment(deployment) {
                 const dt = getters.resolveDeploymentTemplate(deployment.deploymentTemplate)
