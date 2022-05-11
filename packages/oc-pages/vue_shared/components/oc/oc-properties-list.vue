@@ -2,9 +2,10 @@
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import {Status} from 'oc_vue_shared/oc-components'
+import {JSONView} from 'vue-json-component'
 export default {
     name: 'OcPropertiesList',
-    components: {GlIcon, Status},
+    components: {GlIcon, Status, 'json-view': JSONView},
     data() {
         return {expanded: true}
     },
@@ -66,7 +67,14 @@ export default {
                             <div v-if="property.icon" class="icon-container">
                                 <gl-icon :size="12" :name="property.icon" />
                             </div>
-                            {{property.value}}
+                            <json-view
+                              v-if="property.value && typeof property.value == 'object'"
+                              :data="property.value"
+                              :rootKey="property.name"
+                            />
+                            <span v-else>
+                              {{property.value}}
+                            </span>
                         </div>
 
                         <div v-if="property.outboundLink" class="outbound-link-container d-flex">
