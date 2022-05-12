@@ -3,6 +3,7 @@ const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -60,7 +61,7 @@ describe('AWS environments', () => {
   })
 
   it('Can create an aws env from the overview page', () => {
-    cy.visit(`${BASE_URL}/${REPOS_NAMESPACE}/simple-blueprint`)
+    cy.visit(`${BASE_URL}/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}`)
 
     cy.contains('.oc_table_row', 'Amazon Web Services') // TODO replace table row with testid
       .within(() => {

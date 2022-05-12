@@ -20150,6 +20150,7 @@ __metadata:
     vue-apollo: ^3.0.3
     vue-class-component: ^7.2.3
     vue-cli-plugin-apollo: ~0.22.2
+    vue-json-component: ^0.4.1
     vue-property-decorator: ^8.4.2
     vue-router: 3.4.9
     vue-template-compiler: 2.6.12
@@ -20806,6 +20807,13 @@ __metadata:
   version: 2.3.4
   resolution: "vue-hot-reload-api@npm:2.3.4"
   checksum: 9befc0b3d6c1cc69430813fb7cfd2125c6a228730a36fad0653e4ddb60c8d4cf3ddc9649d2c9105c3d6044b42e8c8dce62b3c245bc65a6f187c1e2ca82a79252
+  languageName: node
+  linkType: hard
+
+"vue-json-component@npm:^0.4.1":
+  version: 0.4.1
+  resolution: "vue-json-component@npm:0.4.1"
+  checksum: ff566e846dd8e646137759834da81467e2fdecc992f89eb797924530f623c6e7e55bdabf1bb5d96e2619b5d8f782d9cb3609f47170ffd60b67f0bbe7178f5069
   languageName: node
   linkType: hard
 

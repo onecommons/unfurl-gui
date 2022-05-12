@@ -1,0 +1,17 @@
+apiVersion: unfurl/v1alpha1
+kind: Ensemble
+# This ensemble contains global resources created for the environments.
+# Currently it only used for exporting types into environments.json
+spec:
+  service_template:
+    +include:
+      file: service-template.yaml
+      repository: types
+
+    repositories:
+      types:
+        url: https://gitlab.com/onecommons/unfurl-types
+
+    topology_template:
+
+      node_templates:  

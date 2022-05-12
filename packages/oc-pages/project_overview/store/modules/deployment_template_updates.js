@@ -65,6 +65,23 @@ const Serializers = {
                 }
             }
         }
+        const resourceTemplates = []
+        function addMatchedResourceTemplates(templateName) {
+            let template 
+            try {
+                template = state.DeploymentTemplate[dt.name].ResourceTemplate[templateName]
+            } catch(e) {}
+            if(!template) {
+                template = state.ResourceTemplate[templateName]
+            }
+
+            if(template) {
+                resourceTemplates.push(templateName)
+                template.dependencies?.forEach(dep => dep.match && addMatchedResourceTemplates(dep.match))
+            }
+        }
+        addMatchedResourceTemplates(dt.primary)
+        dt.resourceTemplates = resourceTemplates
     },
     // TODO unit test
     ResourceTemplate(rt) {
@@ -307,7 +324,7 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
         if(dependentName && dependentRequirement) {
             console.warn("this isn't tested yet")
             result.push(
-                deleteResourceTemplateInDependent({dependentName, dependentRequirement})
+                deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName})
             )
 
         }
@@ -316,9 +333,18 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
     }
 }
 
-export function appendResourceTemplateInDependent({templateName, dependentName, dependentRequirement}) {
+export function appendResourceTemplateInDependent({templateName, dependentName, dependentRequirement, deploymentTemplateName}) {
     return function (accumulator) {
-        const patch = accumulator['ResourceTemplate'][dependentName]
+        let patch, typename
+        try { 
+            patch = accumulator['DeploymentTemplate'][deploymentTemplateName]['ResourceTemplate'][dependentName]
+            typename = 'DeploymentTemplate'
+        } catch(e) {}
+
+        if(!patch) {
+            patch = accumulator['ResourceTemplate'][dependentName]
+            typename = 'ResourceTemplate'
+        }
         for(const dependency of patch.dependencies) {
             if(dependency.name == dependentRequirement) {
                 dependency.match = templateName
@@ -328,9 +354,20 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
     }
 }
 
-export function deleteResourceTemplateInDependent({dependentName, dependentRequirement}) {
+export function deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName}) {
     return function (accumulator) {
-        const patch = accumulator['ResourceTemplate'][dependentName]
+        let patch
+        let typename
+        try {
+            patch = accumulator['DeploymentTemplate'][deploymentTemplateName]['ResourceTemplate'][dependentName]
+            typename = 'DeploymentTemplate'
+        } catch(e) {}
+
+        if(!patch) {
+            patch = accumulator['ResourceTemplate'][dependentName]
+            typename = 'ResourceTemplate'
+        }
+
         for(const dependency of patch.dependencies) {
             if(dependency.name == dependentRequirement) {
                 dependency.match = null
@@ -353,7 +390,7 @@ export function createResourceTemplate({type, name, title, description, dependen
 
         if(dependentName && dependentRequirement) {
             result.push(
-                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement})//(accumulator)[0]
+                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName})//(accumulator)[0]
             )
         }
 
@@ -435,10 +472,24 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
     }
 }
 
+
+function readCommittedNames(accumulator) {
+    const committedNames = []
+    for(const typename in accumulator) {
+        if(['ResourceTemplate', 'ApplicationBlueprint', 'DeploymentTemplate'].includes(typename)) {
+            for(const name in accumulator[typename]) {
+                committedNames.push(`${typename}.${name}`)
+            }
+        }
+    }
+    return committedNames
+}
+
 const state = {
     preparedMutations: [],
     accumulator: {},
     patches: {},
+    committedNames: [],
     env: {},
     isCommitting: false,
     useBaseState: false
@@ -449,8 +500,8 @@ const getters = {
     getAccumulator(state) { return state.accumulator },
     getPatches(state) { return state.patches },
     hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) },
-    safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting}
-
+    safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
+    isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
 
 }
 
@@ -503,6 +554,7 @@ const mutations = {
         state.accumulator = {}
         state.patches = {}
         state.env = {}
+        state.committedNames = []
         state.useBaseState = false
         state.effectiveFirstMutation = 0
         if(!o?.dryRun) {
@@ -514,9 +566,11 @@ const mutations = {
     },
     setBaseState(state, baseState) {
         state.accumulator = baseState
+        state.committedNames = readCommittedNames(baseState)
     },
     useBaseState(state, baseState) {
         state.accumulator = baseState
+        state.committedNames = readCommittedNames(baseState)
         state.useBaseState = true
     },
     clearPreparedMutations(state) {
@@ -575,7 +629,9 @@ const actions = {
             const patchesByTypename = getters.getPatches[key]
             Object.entries(patchesByTypename).forEach(([name, record]) => {
                 if(record == null) {
-                    patch.push({__deleted: name, __typename: key})
+                    if(getters.isCommittedName(key, name)) {
+                        patch.push({__deleted: name, __typename: key})
+                    }
                 }
                 else {
                     patch.push({name, ...record, __typename: key})
@@ -589,6 +645,7 @@ const actions = {
         }
 
         if(o?.dryRun) {
+            console.log(state.committedNames)
             console.log(variables)
             if(Object.keys(state.env)) console.log(state.env)
             return

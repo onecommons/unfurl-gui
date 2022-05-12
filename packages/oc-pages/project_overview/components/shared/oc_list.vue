@@ -94,13 +94,43 @@ export default {
             'cardDependenciesAreValid',
             'getDisplayableDependenciesByCard',
             'getCardProperties',
+            'resolveResourceType',
             'cardStatus',
         ]),
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
         },
         attributes() {
-            return [].concat(this.card.attributes || [], this.card.computedProperties || [])
+            let attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
+            const titleMap = {}
+            const resourceType = this.resolveResourceType(this.card.type)
+
+            Object.entries(resourceType?.outputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
+            const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
+            if(consoleURLIndex != -1) {
+                const consoleURL = attributes[consoleURLIndex]
+                attributes.splice(consoleURLIndex, 1)
+
+                let outboundLink, outboundLinkText
+                if(this.card.status != 5) {
+                    outboundLink = consoleURL.value,
+                    outboundLinkText = `View ${this.card.title}`
+                }
+
+                attributes.unshift({
+                    name: 'Status',
+                    status: this.card.status,
+                    outboundLink,
+                    outboundLinkText
+                })
+            }
+
+            attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
+            return attributes
         },
         propertiesStyle() {
             if(this.card.dependentName) {
@@ -152,7 +182,7 @@ export default {
             <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="properties"/>
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
         </oc-tab>
-        <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="card.attributes.length">
+        <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
             <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
         </oc-tab>
         <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">

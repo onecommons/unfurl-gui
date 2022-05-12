@@ -182,6 +182,13 @@ const actions = {
         }
         let transforms
         transforms = {
+            // This is for templates that are hidden from unfurl, but are necessary for drafts to function
+            DefaultTemplate(defaultTemplate, root) {
+                root.ResourceTemplate[defaultTemplate.name] = {...defaultTemplate}
+                for(const key in defaultTemplate) {
+                    delete defaultTemplate[key]
+                }
+            },
             ResourceTemplate(resourceTemplate) {
                 resourceTemplate.dependencies = resourceTemplate.dependencies || []
                 resourceTemplate.properties = resourceTemplate.properties || []
@@ -224,7 +231,7 @@ const actions = {
                 if(!resourceType.title) resourceType.title = resourceType.name
                 resourceType.__typename = 'ResourceType'
             },
-            Resource(resource) {
+            Resource(resource, root) {
                 if(!resource.dependencies) resource.dependencies = resource.connections || []
                 if(!resource.attributes) resource.attributes = []
                 if(!resource.visibility) resource.visibility = 'inherit'
@@ -232,6 +239,13 @@ const actions = {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
                 resource.__typename = 'Resource'
+
+                // infer types from template when they're not available
+                if(!resource.type && resource.template) {
+                    try {
+                        resource.type = root['ResourceTemplate'][resource.template].type
+                    } catch(e) {}
+                }
             },
             Deployment(deployment) {
                 const dt = getters.resolveDeploymentTemplate(deployment.deploymentTemplate)
@@ -240,13 +254,13 @@ const actions = {
         }
 
         // guarunteed ordering
-        const ordering = uniq(['ResourceType', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
+        const ordering = uniq(['ResourceType', 'DefaultTemplate', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
         for(const key of ordering) {
             const value = root[key]
             if(typeof value != 'object') continue
             if(typeof transforms[key] == 'function')
-                Object.values(value).forEach(entry => {if(typeof entry == 'object') {transforms[key](entry)}})
+                Object.values(value).forEach(entry => {if(typeof entry == 'object') {transforms[key](entry, root)}})
             commit('setProjectState', {key, value})
         }
         if(root.ApplicationBlueprint) {

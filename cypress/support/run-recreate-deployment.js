@@ -2,6 +2,7 @@ const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
+const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -33,7 +34,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
         projectPath = projectPath.join('/')
       }
 
-      cy.visit(`${OC_URL}/${projectPath}`)
+      cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
 
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
@@ -49,7 +50,7 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.get('[data-testid="deployment-name-input"]').type(useTitle)
 
       cy.get('[data-testid="deployment-environment-select"]').click()
-      cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click()
+      cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click({force: true})
 
       cy.contains('button', 'Next').click()
 
@@ -61,7 +62,14 @@ Cypress.Commands.add('recreateDeployment', fixture => {
             cy.get(`[data-testid=tab-inputs-${template.name}]`).click()
           }
           for(const property of template.properties) {
-            cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`).last().type(property.value)
+            let value = property.value
+            if(typeof value == 'object' && value) {
+              if(typeof value.get_env == 'string') {
+                const envName = value.get_env.split('__').pop()
+                value = Cypress.env(envName) || envName
+              }
+            }
+            cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`).last().invoke('val', '').type(value)
           }
         }
 

@@ -23,7 +23,7 @@
         :title="__(StatusIndicators[status][2])"
       />
     </div>
-    <div v-if="text">{{__(StatusIndicators[status])}}</div>
+    <div v-if="text || displayText" class="ml-1">{{__(StatusIndicators[status][2])}}</div>
     <!-- ignoring state for now -->
     <!--div v-if="state == 5">
       {{__(StateNames[state])}}
@@ -81,6 +81,7 @@ export default {
       type: Boolean,
       default: false
     },
+    displayText: Boolean, // alias for text
     state: {
       type: Number,
       default: -1
