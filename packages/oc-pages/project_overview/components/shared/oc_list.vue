@@ -110,6 +110,11 @@ export default {
                     titleMap[name] = value?.title
                 })
 
+            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
             const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
             if(consoleURLIndex != -1) {
                 const consoleURL = attributes[consoleURLIndex]

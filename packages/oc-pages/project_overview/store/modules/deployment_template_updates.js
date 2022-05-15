@@ -9,6 +9,26 @@ import {userDefaultPath} from '../../../vue_shared/util.mjs'
 import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 import {patchEnv} from '../../../vue_shared/client_utils/envvars'
 
+/*
+ * this module is used to prepare a set of patches and push them to correct path using updateDeploymentObj
+ * the shape of areguments passed to updateDeploymentObj changed after this module was created, so there are unnecessary transformations and an internal representation of patches that doesn't make much sense
+
+ * this module also handles posting environment variables for sensitive inputs and cleaning up state before it's committed
+ * some of the normalizations done prior to committing are done to prevent errors in unfurl
+
+ * there are some exported functions that are expected to be used in combination with pushPreparedMutation
+ * the behavior for these is a bit unusual and if you need to directly commit an object, I'd committing pushPreparedMutation like this:   
+          this.pushPreparedMutation(() => {
+             return [{
+               typename: 'DeploymentPath',
+               patch: {__typename: 'DeploymentPath', environment},
+               target: this.deploymentDir
+             }] 
+
+
+ * some concepts like committedNames and fetchRoot are inconsistent between targets (i.e. deployment.json vs environments.json)
+ * this is pretty ugly and what I'd consider refactoring first
+*/
 
 function convertFieldToDictionaryIfNeeded(node, field) {
     if(Array.isArray(node[field])) {
@@ -629,7 +649,7 @@ const actions = {
             const patchesByTypename = getters.getPatches[key]
             Object.entries(patchesByTypename).forEach(([name, record]) => {
                 if(record == null) {
-                    if(getters.isCommittedName(key, name)) {
+                    if(state.committedNames.length == 0 || getters.isCommittedName(key, name)) {
                         patch.push({__deleted: name, __typename: key})
                     }
                 }
