@@ -74,6 +74,7 @@ const Serializers = {
     DeploymentEnvironment(env) {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
+        return Object.values(env.instances || {})
     },
     DeploymentTemplate(dt, state) {
         // should we be serializing local templates?
@@ -601,7 +602,13 @@ const mutations = {
             for(const record of Object.values(state.patches[typename])) {
                 if(record && typeof record == 'object') {
                     if(Serializers[typename]) {
-                        Serializers[typename](record, state.accumulator)
+                        const nestedPatches = Serializers[typename](record, state.accumulator)
+                        if(Array.isArray(nestedPatches)) {
+                            for(const p of nestedPatches) {
+                                if(Serializers[p.__typename])
+                                    Serializers[p.__typename](p, record)
+                            }
+                        }
                     }
                     Serializers['*'](record, state.accumulator)
                 }
