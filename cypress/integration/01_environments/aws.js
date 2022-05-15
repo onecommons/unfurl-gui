@@ -1,5 +1,6 @@
 const BASE_URL = Cypress.env('OC_URL')
-const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('AWS_ENVIRONMENT_NAME')
+// const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('AWS_ENVIRONMENT_NAME')
+const ENVIRONMENT_NAME = 'env-test-aws-2022-05-11t19-30-55-239z'
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
@@ -48,16 +49,10 @@ describe('AWS environments', () => {
   })
 
   it('Can create an aws environment', () => {
-    cy.createAWSEnvironment({environmentName: ENVIRONMENT_NAME})
-    /*
-    cy.visit(`${BASE_URL}/dashboard/environments`)
-    createEnvironmentButton().click()
-    completeEnvironmentDialog()
-    cy.url().should('not.include', '/dashboard/environments')
-
-    authenticateWithAccessKeys()
-    cy.contains(ENVIRONMENT_NAME).should('exist')
-    */
+    cy.createAWSEnvironment({
+      environmentName: ENVIRONMENT_NAME,
+      shouldCreateExternalResource: true,
+    })
   })
 
   it('Can create an aws env from the overview page', () => {
@@ -70,11 +65,12 @@ describe('AWS environments', () => {
 
     cy.get('.dropdown-toggle.btn-default').click() // TODO use a testid
     createEnvironmentButton().click()
-    
+
     completeEnvironmentDialog(false)
     authenticateWithAccessKeys()
 
     cy.contains('button', ENVIRONMENT_NAME, {timeout: 10000}).should('be.visible')
+
   })
 
 })

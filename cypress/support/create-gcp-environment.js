@@ -2,7 +2,7 @@ const GOOGLE_APPLICATION_CREDENTIALS = Cypress.env('GOOGLE_APPLICATION_CREDENTIA
 const BASE_URL = Cypress.env('OC_URL')
 const GCP_ZONE = Cypress.env('GCP_ZONE') || 'us-central1-a'
 
-function createGCPEnvironment({environmentName}) {
+function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
   cy.visit(`${BASE_URL}/dashboard/environments`)
   cy.clickCreateEnvironmentButton()
   cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
@@ -14,6 +14,11 @@ function createGCPEnvironment({environmentName}) {
     cy.contains(project_id, {timeout: 12000}).should('be.visible')
     cy.contains(GCP_ZONE).should('be.visible')
   })
+
+  // create external resource
+  if (shouldCreateExternalResource) {
+    cy.createDigitalOceanDNSInstance(environmentName);
+  }
 }
 
 function authenticateGCP() {

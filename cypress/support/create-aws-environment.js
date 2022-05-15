@@ -48,12 +48,13 @@ Cypress.Commands.add('awsAuthenticateEnvironment', options => {
   cy.url().should('not.include', '/dashboard/-/clusters')
 })
 
-Cypress.Commands.add('createAWSEnvironment', options => {
-  const {
-    environmentName
-  } = Object.assign({
-    environmentName: ENVIRONMENT_NAME
-  }, options)
+Cypress.Commands.add('createAWSEnvironment', (options) => {
+  const { environmentName, shouldCreateExternalResource } = Object.assign(
+    {
+      environmentName: ENVIRONMENT_NAME,
+    },
+    options
+  )
 
   cy.visit(`${BASE_URL}/dashboard/environments`)
   createEnvironmentButton().click()
@@ -61,4 +62,9 @@ Cypress.Commands.add('createAWSEnvironment', options => {
   cy.url().should('not.include', '/dashboard/environments')
   cy.awsAuthenticateEnvironment()
   cy.contains(environmentName).should('exist')
-})
+
+  // create external resource
+  if (shouldCreateExternalResource) {
+    cy.createDigitalOceanDNSInstance(environmentName)
+  }
+});

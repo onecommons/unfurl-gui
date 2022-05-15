@@ -2,6 +2,9 @@ const BASE_URL = Cypress.env('OC_URL')
 const CLOUD_PROVIDER_DROPDOWN = '[data-testid="cloud-provider-dropdown"]'
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
 const envOptionSelector = provider =>  `[data-testid="env-option-${provider}"]`
+const DIGITALOCEAN_TOKEN = Cypress.env('DIGITALOCEAN_TOKEN')
+const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
+import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
 Cypress.Commands.add('withEnvironment', (environmentName, cb)=> {
   cy.waitUntil(() => cy.window().then(win => {
@@ -24,7 +27,6 @@ Cypress.Commands.add('whenEnvironmentExists', (environmentName, cb) => {
 Cypress.Commands.add('whenEnvironmentAbsent', (environmentName, cb) => {
   return cy.withEnvironment(environmentName, env => !env && cb())
 })
-
 
 Cypress.Commands.add('environmentShouldExist', environmentName => {
   return cy.withEnvironment(environmentName, env => expect(env).to.not.be.undefined)
@@ -55,12 +57,42 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
   cy.contains('button', 'Next').click()
 })
 
-
-
 Cypress.Commands.add('deleteEnvironment', environmentName => {
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
   cy.wait(5000)
   cy.contains('button', 'Delete Environment', {timeout: 10000}).click({force: true})
   cy.contains('button.js-modal-action-primary', 'Delete').click()
   cy.contains('was deleted successfully', {timeout: 10000}).should('be.visible')
+})
+
+Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
+  cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
+  cy.wait(5000)
+  cy.contains('button', 'Add External Resource').click()
+  cy.get('[data-testid="resource-selection-DigitalOceanDNSZone"]').click()
+
+  // todo: use a test id for this input, and use different name
+  cy.get('input#input2')
+    .clear()
+    .type(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
+
+  const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
+  cy.contains("button", "Next").click()
+  cy.get(
+    `input[data-testid="oc-input-${digitalOceanName}-DIGITALOCEAN_TOKEN"]`
+  ).type(DIGITALOCEAN_TOKEN || "default")
+  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).type(
+    "untrusted.me"
+  )
+  cy.wait(100)
+  cy.contains("button", "Save Changes").click()
+  cy.wait(5000)
+  cy.contains("Environment was saved successfully!").should("exist")
+
+  // check if external instance save properly
+  cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
+  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).should(
+    "have.value",
+    "untrusted.me"
+  )
 })
