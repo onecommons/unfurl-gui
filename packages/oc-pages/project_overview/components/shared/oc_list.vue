@@ -94,13 +94,26 @@ export default {
             'cardDependenciesAreValid',
             'getDisplayableDependenciesByCard',
             'getCardProperties',
+            'resolveResourceType',
             'cardStatus',
         ]),
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
         },
         attributes() {
-            const attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
+            let attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
+            const titleMap = {}
+            const resourceType = this.resolveResourceType(this.card.type)
+
+            Object.entries(resourceType?.outputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
+            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
 
             const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
             if(consoleURLIndex != -1) {
@@ -121,6 +134,7 @@ export default {
                 })
             }
 
+            attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
             return attributes
         },
         propertiesStyle() {

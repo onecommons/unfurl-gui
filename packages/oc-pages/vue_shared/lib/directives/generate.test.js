@@ -49,6 +49,21 @@ test('abcdEF', () => {
     expect(resolved).toMatch(/^[abcdEF]{80}$/)
 })
 
+test('numbers', () => {
+    const resolved = resolve({preset: 'number', len: 100})
+    expect(resolved).toContain('0')
+    expect(resolved).toContain('1')
+    expect(resolved).toContain('2')
+    expect(resolved).toContain('3')
+    expect(resolved).toContain('4')
+    expect(resolved).toContain('5')
+    expect(resolved).toContain('6')
+    expect(resolved).toContain('7')
+    expect(resolved).toContain('8')
+    expect(resolved).toContain('9')
+    expect(resolved).toMatch(/^\d{100}$/)
+})
+
 test('password', () => {
     const password = resolve({ranges: [[33, 126]], len: 15})
     expect(password).toMatch(/^[\u0021-\u007E]{15}$/)
@@ -57,4 +72,11 @@ test('password', () => {
 test('password preset arg', () => {
     const password = resolve({preset: 'password'})
     expect(password).toMatch(/^[\u0021-\u007E]{15}$/)
+})
+
+test('password preset works for ghost', () => {
+    for(let i = 0; i < 10; i++) {
+        const password = resolve({preset: 'password'})
+        expect(password).toMatch(/^(?=.*\d).{10,}$/)
+    }
 })
