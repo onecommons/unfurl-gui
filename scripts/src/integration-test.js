@@ -80,7 +80,7 @@ const ERROR_CREATE_USER_NO_DASHBOARD = 'A dashboard must be specified if a user 
 
 function identifierFromCurrentTime(baseId) {
   const d = new Date(Date.now())
-  return `${baseId}-${d.toISOString().replace(/(:|\.)/g, '-')}`
+  return `${baseId}-${d.toISOString().replace(/(:|\.)/g, '-').slice(0,-5)}`
 }
 
 function createDashboardCommand(username, dashboardRepo) {

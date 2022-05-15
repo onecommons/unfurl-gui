@@ -4,6 +4,7 @@ const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
 const envOptionSelector = provider =>  `[data-testid="env-option-${provider}"]`
 const DIGITALOCEAN_TOKEN = Cypress.env('DIGITALOCEAN_TOKEN')
 const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
 Cypress.Commands.add('withEnvironment', (environmentName, cb)=> {
@@ -48,7 +49,7 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
   } = Object.assign({
   }, options)
 
-  cy.wait(200)
+  cy.wait(BASE_TIMEOUT / 25)
   cy.get(ENVIRONMENT_NAME_INPUT).type(environmentName)
   if(provider) {
     cy.get(CLOUD_PROVIDER_DROPDOWN).click()
@@ -59,16 +60,17 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
 
 Cypress.Commands.add('deleteEnvironment', environmentName => {
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
-  cy.wait(5000)
-  cy.contains('button', 'Delete Environment', {timeout: 10000}).click({force: true})
+  cy.wait(BASE_TIMEOUT)
+  cy.contains('button', 'Delete Environment', {timeout: BASE_TIMEOUT * 2}).click({force: true})
   cy.contains('button.js-modal-action-primary', 'Delete').click()
-  cy.contains('was deleted successfully', {timeout: 10000}).should('be.visible')
+  cy.contains('was deleted successfully', {timeout: BASE_TIMEOUT * 2}).should('be.visible')
 })
 
 Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
-  cy.wait(5000)
+  cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
+  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
   cy.get('[data-testid="resource-selection-DigitalOceanDNSZone"]').click()
 
   // todo: use a test id for this input, and use different name
@@ -84,9 +86,9 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).type(
     "untrusted.me"
   )
-  cy.wait(100)
+  cy.wait(BASE_TIMEOUT / 50)
   cy.contains("button", "Save Changes").click()
-  cy.wait(5000)
+  cy.wait(BASE_TIMEOUT)
   cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly

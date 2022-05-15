@@ -1,5 +1,5 @@
 <script>
-import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
+import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox, GlTabs} from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
@@ -11,10 +11,12 @@ import OcList from '../../../project_overview/components/shared/oc_list.vue';
 import OcListResource from '../../../project_overview/components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../../project_overview/components/shared/oc_template_header.vue';
 import TemplateButtons from '../../../project_overview/components/template/template_buttons.vue';
+import OcTab from '../../../vue_shared/components/oc/oc-tab.vue'
 import { slugify } from '../../util.mjs'
 import { deleteDeploymentTemplate } from '../../../project_overview/store/modules/deployment_template_updates'
 import {bus} from 'oc_vue_shared/bus'
 
+console.assert(OcTab)
 
 const statusPropDefinition = {
     type: String,
@@ -32,7 +34,8 @@ export default {
         OcList,
         OcListResource,
         OcTemplateHeader,
-        TemplateButtons
+        TemplateButtons,
+        GlTabs, OcTab
     },
 
     props: {
@@ -203,6 +206,25 @@ export default {
             }
             return null
 
+        },
+
+        mappedAvailableTypes() {
+            const mapping = {}
+            for(const type of this.currentAvailableResourceTypes) {
+                const directSuperClass = type.extends[1]
+                const children = mapping[directSuperClass] || []
+                children.push(type)
+                mapping[directSuperClass] = children
+            }
+            for(const key in mapping) {
+                const typeTitle = this.resolveResourceTypeFromAny(key)?.title
+                if(typeTitle) {
+                    mapping[typeTitle] = mapping[key]
+                    delete mapping[key]
+                }
+            }
+
+            return mapping
         }
 
     },
@@ -587,9 +609,14 @@ export default {
             @primary="$emit('addTopLevelResource', {selection: topLevelSelection, title: resourceName})"
             @cancel="cleanModalResource"
             v-model="selectingTopLevel"
-            >
+        >
 
-            <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="currentAvailableResourceTypes"/>
+            <gl-tabs>
+                <oc-tab :title="baseType" :title-testid="'external-resource-tab-' + mappedAvailableTypes[baseType][0].extends[1]" :title-count="mappedAvailableTypes[baseType].length" v-for="baseType in Object.keys(mappedAvailableTypes || {})">
+                    <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[baseType]"/>
+                </oc-tab>
+
+            </gl-tabs>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
                 <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
