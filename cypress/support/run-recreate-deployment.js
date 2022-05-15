@@ -4,6 +4,7 @@ const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
+import slugify from '../../packages/oc-pages/vue_shared/slugify'
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -118,7 +119,8 @@ Cypress.Commands.add('recreateDeployment', fixture => {
                   .prev()
                   .click()
 
-                cy.get(`[data-testid="resource-selection-${DIGITALOCEAN_DNS_NAME}"]`).click()
+                const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME)
+                cy.get(`[data-testid="resource-selection-${digitalOceanName}"]`).click()
 
                 cy.contains('button', 'Next').click()
               } else {

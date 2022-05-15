@@ -3,7 +3,8 @@ const CLOUD_PROVIDER_DROPDOWN = '[data-testid="cloud-provider-dropdown"]'
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
 const envOptionSelector = provider =>  `[data-testid="env-option-${provider}"]`
 const DIGITALOCEAN_TOKEN = Cypress.env('DIGITALOCEAN_TOKEN')
-// const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME'
+const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
+import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
 Cypress.Commands.add('withEnvironment', (environmentName, cb)=> {
   cy.waitUntil(() => cy.window().then(win => {
@@ -75,11 +76,12 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
     .clear()
     .type(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
 
+  const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
   cy.contains("button", "Next").click()
   cy.get(
-    'input[data-testid="oc-input-digitaloceandnszone-DIGITALOCEAN_TOKEN"]'
+    `input[data-testid="oc-input-${digitalOceanName}-DIGITALOCEAN_TOKEN"]`
   ).type(DIGITALOCEAN_TOKEN || "default")
-  cy.get('input[data-testid="oc-input-digitaloceandnszone-name"]').type(
+  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).type(
     "untrusted.me"
   )
   cy.wait(100)
@@ -89,7 +91,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
 
   // check if external instance save properly
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
-  cy.get('input[data-testid="oc-input-digitaloceandnszone-name"]').should(
+  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).should(
     "have.value",
     "untrusted.me"
   )
