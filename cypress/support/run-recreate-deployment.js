@@ -6,6 +6,10 @@ const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const PRIMARY = 1
 const HIDDEN = 2
 
+function pseudorandomPassword() {
+  return (Math.sqrt(Math.random()) * 100000000).toString(36) + (Math.sqrt(Math.random()) * 100000000).toString(36)
+}
+
 Cypress.Commands.add('recreateDeployment', fixture => {
   cy.document().then($document => {
     cy.fixture(fixture).then(deployment => {
@@ -66,7 +70,15 @@ Cypress.Commands.add('recreateDeployment', fixture => {
             if(typeof value == 'object' && value) {
               if(typeof value.get_env == 'string') {
                 const envName = value.get_env.split('__').pop()
-                value = Cypress.env(envName) || envName
+                const envValue = Cypress.env(envName)
+                if(envValue) {
+                  value = Cypress.env(envName)
+                } else if (envName.includes('password')) {
+                  value = pseudorandomPassword()
+                }
+                else {
+                  value = envName
+                }
               }
             }
             cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`).last().invoke('val', '').type(value)
