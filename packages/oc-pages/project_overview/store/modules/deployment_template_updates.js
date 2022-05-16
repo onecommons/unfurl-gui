@@ -399,7 +399,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, dependencies, deploymentTemplateName, dependentName, dependentRequirement}) {
+export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const result = []
 
@@ -416,28 +416,33 @@ export function createResourceTemplate({type, name, title, description, dependen
         }
 
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
-        let properties 
-        try {
-            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
-        } catch(e) { properties = [] }
+        let _properties = properties
+        if(!_properties) {
+            try {
+                _properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
+            } catch(e) { _properties = [] }
+        }
 
-        /*
-        const dependencies = resourceType?.requirements?.map(req => ({
-            constraint: req,
-            match: null,
-            target: null,
-            name: req.name,
-            __typename: 'Dependency'
-        })) || []
-        */
+        let _dependencies = dependencies
+        // duplicated logic, avoid using
+        if(!_dependencies) {
+            _dependencies = resourceType?.requirements?.map(req => ({
+                constraint: req,
+                match: req.match ?? null,
+                target: null,
+                name: req.name,
+                __typename: 'Dependency'
+            })) || []
+        }
+
         const patch = {
             type: typeof(type) == 'string'? type: type.name,
             name,
             title,
             description,
             __typename: "ResourceTemplate",
-            properties,
-            dependencies: dependencies || []
+            properties: _properties,
+            dependencies: _dependencies
         }
 
         result.push({patch, target: name, typename: "ResourceTemplate"})
