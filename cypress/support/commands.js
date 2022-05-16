@@ -36,7 +36,7 @@ import './obsolete.js'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
 
-function whenUnfurlGUI() {
+function whenUnfurlGUI(cb) {
   cy.window().then(win => {
     if(win.gon.unfurl_gui) {
       cb()
@@ -52,5 +52,13 @@ function whenGitlab(cb) {
   })
 }
 
+function withStore(cb) {
+  cy.window().then(win => {
+    console.log(win.$store)
+    cb(win.$store)
+  })
+}
+
 Cypress.Commands.add('whenGitlab', whenGitlab)
 Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
+Cypress.Commands.add('withStore', withStore)

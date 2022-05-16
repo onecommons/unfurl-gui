@@ -4,6 +4,7 @@ const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 const PRIMARY = 1
 const HIDDEN = 2
@@ -169,13 +170,21 @@ Cypress.Commands.add('recreateDeployment', options => {
 
       // formily oninput bug
       cy.get('input:first').blur({ force: true })
-      cy.wait(100)
+      cy.wait(BASE_TIMEOUT / 50)
 
       if(shouldDeploy) {
         cy.get('[data-testid="deploy-button"]').click()
-        cy.whenGitlab(() => {
-          cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
+        cy.url({timeout: BASE_TIMEOUT * 4}).should('not.include', 'deployment-drafts')
+        cy.whenUnfurlGUI(() => {
+          cy.wait(BASE_TIMEOUT)
+          // TODO figure out how to chain this?
+          cy.withStore((store) => {
+            console.log(Object.keys(store.getters))
+            expect(store.getters.getDeployment.status).to.equal(1)
+          })
 
+        })
+        cy.whenGitlab(() => {
           cy.withJobFromURL((job) => {
             cy.expectSuccessfulJob(job)
           })
