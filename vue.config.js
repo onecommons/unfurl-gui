@@ -101,9 +101,6 @@ module.exports = {
       app.use(graphqlProxy)
       app.use(expressProxy)
       app.use(postProxy)
-      app.get(`/:user/dashboard/-/pipelines/:deployment`, (req, res) => {
-        res.redirect(`/dashboard/deployments/${req.params.deployment}`)
-      })
     },
   },
   pluginOptions: {
