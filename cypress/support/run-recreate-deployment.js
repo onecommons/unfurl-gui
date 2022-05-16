@@ -16,6 +16,7 @@ Cypress.Commands.add('recreateDeployment', options => {
   let fixture, shouldDeploy, shouldSave
   if (typeof options == 'string') {
     fixture = options
+    shouldDeploy = true
   } else {
     fixture = options.fixture
     shouldSave = options.shouldSave ?? false

@@ -53,6 +53,7 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
   cy.get(ENVIRONMENT_NAME_INPUT).type(environmentName)
   if(provider) {
     cy.get(CLOUD_PROVIDER_DROPDOWN).click()
+    cy.wait(BASE_TIMEOUT / 50)
     cy.get(envOptionSelector(provider)).click()
   }
   cy.contains('button', 'Next').click()
