@@ -64,9 +64,17 @@ const actions = {
                     }
                 }) || []
 
+                const deploymentPrimary = deployment.resources.find(resource => resource?.name == deployment.primary)
                 // TODO remove deployment.statuses
-                deployment.statuses = [deployment.resources.find(resource => resource?.name == deployment.primary)]
-                if(!deployment.statuses[0]) deployment.statuses.pop()
+                if(deploymentPrimary) {
+                    deployment.statuses = [deploymentPrimary]
+                    let urlAttribute
+                    if(!deployment.url && (urlAttribute = deploymentPrimary.attributes.find(a => a.name == 'url'))) {
+                        deployment.url = urlAttribute.value
+                    }
+                } else {
+                    deployment.statuses = []
+                }
 
                 // TODO share this logic
                 deployment.resources = deployment.resources.filter(r => {
