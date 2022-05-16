@@ -10,7 +10,7 @@ import slugify from '../../packages/oc-pages/vue_shared/slugify'
 Cypress.Commands.add('withEnvironment', (environmentName, cb)=> {
   cy.waitUntil(() => cy.window().then(win => {
     return win.$store.getters.environmentsAreReady
-  }))
+  }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
 
   cy.window().then((win) => {
     // this will be run quite frequently because environment tests check if they should run cleanup before executing

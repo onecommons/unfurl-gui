@@ -24,9 +24,19 @@ Cypress.Commands.add('recreateDeployment', options => {
   }
   cy.document().then($document => {
     cy.fixture(fixture).then(deployment => {
-      const {DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
+      const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
       const dt = Object.values(DeploymentTemplate)[0]
       const primary = ResourceTemplate[dt.primary]
+
+      for(const key in DefaultTemplate) {
+        if(ResourceTemplate[key]) continue
+        ResourceTemplate[key] = DefaultTemplate[key]
+      }
+
+      for(const key in dt.ResourceTemplate || []) {
+        ResourceTemplate[key] = dt.ResourceTemplate[key]
+      }
+
 
       let env = Object.values(DeploymentPath)[0].environment
       let ensureEnvExists = false
@@ -103,10 +113,11 @@ Cypress.Commands.add('recreateDeployment', options => {
           }
         }
 
-        for (const dependency of template.dependencies) {
+        for(const dependency of template.dependencies) {
           if (!dependency.match) continue
 
           const match = ResourceTemplate[dependency.match]
+          expect(match).to.exist
 
           if (dependency.constraint.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)
