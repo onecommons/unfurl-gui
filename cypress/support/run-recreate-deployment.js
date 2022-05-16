@@ -12,7 +12,15 @@ function pseudorandomPassword() {
   return (Math.sqrt(Math.random()) * 100000000).toString(36) + (Math.sqrt(Math.random()) * 100000000).toString(36)
 }
 
-Cypress.Commands.add('recreateDeployment', fixture => {
+Cypress.Commands.add('recreateDeployment', options => {
+  let fixture, shouldDeploy, shouldSave
+  if (typeof options == 'string') {
+    fixture = options
+  } else {
+    fixture = options.fixture
+    shouldSave = options.shouldSave ?? false
+    shouldDeploy = options.shouldDeploy ?? !shouldSave
+  }
   cy.document().then($document => {
     cy.fixture(fixture).then(deployment => {
       const {DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
@@ -151,16 +159,21 @@ Cypress.Commands.add('recreateDeployment', fixture => {
       cy.get('input:first').blur({ force: true })
       cy.wait(100)
 
-      cy.get('[data-testid="deploy-button"]').click()
-      cy.whenGitlab(() => {
-        cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
+      if(shouldDeploy) {
+        cy.get('[data-testid="deploy-button"]').click()
+        cy.whenGitlab(() => {
+          cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
 
-        cy.withJobFromURL((job) => {
-          cy.expectSuccessfulJob(job)
+          cy.withJobFromURL((job) => {
+            cy.expectSuccessfulJob(job)
+          })
+
+          cy.undeploy(useTitle)
         })
-
-        cy.undeploy(useTitle)
-      })
+      } else if(shouldSave) {
+        cy.get('[data-testid="save-draft-btn"]').click()
+        cy.url().should('not.contain', 'deployment-drafts')
+      }
     })
   })
 })

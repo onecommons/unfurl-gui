@@ -341,6 +341,7 @@ const actions = {
             target.name = name;
             target.title = title;
 
+            target._uncommitted = true
             target.__typename = 'ResourceTemplate'
             target.visibility = target.visibility || 'inherit'
             try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}

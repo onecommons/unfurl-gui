@@ -20,7 +20,7 @@ pathComponents.pop()
 const dashboardDir = path.join(...pathComponents)
 
 const fixtureName = `_${environmentName}__${blueprintName}__${deploymentName}`,
-  fixturePath = `blueprints/deployments/${fixtureName}`
+  fixturePath = `generated/deployments/${fixtureName}`
 
 const testTemplate = fs.readFileSync(
   path.join(__dirname, 'fixture-from-deployment', 'recreate-deployment.template.js'),

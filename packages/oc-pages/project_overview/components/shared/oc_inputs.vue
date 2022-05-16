@@ -205,7 +205,7 @@ export default {
             }
           })
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
-          if(disregardUncommitted) this.clientDisregardUncommitted()
+          if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
       }

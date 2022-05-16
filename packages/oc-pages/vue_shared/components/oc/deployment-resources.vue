@@ -612,7 +612,7 @@ export default {
         >
 
             <gl-tabs>
-                <oc-tab :title="baseType" :title-testid="'external-resource-tab-' + mappedAvailableTypes[baseType][0].extends[1]" :title-count="mappedAvailableTypes[baseType].length" v-for="baseType in Object.keys(mappedAvailableTypes || {})">
+                <oc-tab :title="baseType" :key="baseType" :title-testid="'external-resource-tab-' + mappedAvailableTypes[baseType][0].extends[1]" :title-count="mappedAvailableTypes[baseType].length" v-for="baseType in Object.keys(mappedAvailableTypes || {})">
                     <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[baseType]"/>
                 </oc-tab>
 

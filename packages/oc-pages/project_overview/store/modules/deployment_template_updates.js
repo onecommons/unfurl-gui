@@ -81,7 +81,7 @@ const Serializers = {
         const localResourceTemplates = dt?.ResourceTemplate
         if(localResourceTemplates) {
             for(const rt of Object.keys(localResourceTemplates)) {
-                if(state.ResourceTemplate.hasOwnProperty(rt)) {
+                if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
                     delete localResourceTemplates[rt]
                 }
             }
