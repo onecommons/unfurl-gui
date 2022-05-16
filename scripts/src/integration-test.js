@@ -58,7 +58,8 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'SIMPLE_BLUEPRINT',
   'DIGITALOCEAN_TOKEN',
   'MOCK_DEPLOY', 'UNFURL_MOCK_DEPLOY',
-  'OC_IMPERSONATE', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME' // always overriden
+  'OC_IMPERSONATE', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', // always overriden
+  'DIGITALOCEAN_DNS_NAME'
 ]
 
 
@@ -79,7 +80,7 @@ const ERROR_CREATE_USER_NO_DASHBOARD = 'A dashboard must be specified if a user 
 
 function identifierFromCurrentTime(baseId) {
   const d = new Date(Date.now())
-  return `${baseId}-${d.toISOString().replace(/(:|\.)/g, '-')}`
+  return `${baseId}-${d.toISOString().replace(/(:|\.)/g, '-').slice(0,-5)}`
 }
 
 function createDashboardCommand(username, dashboardRepo) {

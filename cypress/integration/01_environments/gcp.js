@@ -22,7 +22,10 @@ describe('GCP environments', () => {
   })
 
   it('Can create a gcp environment', () => {
-    cy.createGCPEnvironment({environmentName: ENVIRONMENT_NAME})
+    cy.createGCPEnvironment({
+      environmentName: ENVIRONMENT_NAME,
+      shouldCreateExternalResource: true,
+    })
   })
 
   it('Can create a gcp env from the overview page', () => {

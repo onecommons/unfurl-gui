@@ -100,7 +100,8 @@ export default app => {
 
     const cwd = resolveLiveRepoFile(userHome, '')
     const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('.')[0]; // strip .git
-    const blueprintProjectURL = `https://gitlab.com/onecommons/${repo}`
+    //const blueprintProjectURL = `https://gitlab.com/onecommons/${repo}`
+    const blueprintProjectURL = path.resolve(__dirname, './repos/' + repo)
     const env = {...process.env, ...variablesForEnvironment(DEPLOY_ENVIRONMENT), BLUEPRINT_PROJECT_URL: blueprintProjectURL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, WORKFLOW}
 
     console.log(blueprintProjectURL)

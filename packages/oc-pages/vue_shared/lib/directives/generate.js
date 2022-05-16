@@ -25,11 +25,19 @@ function getRandomCode(ranges) {
 }
 
 export default function resolve(params) {
+    const len = params.length || params.len
     if(params.preset == 'password') {
-        return resolve({ranges: [[33, 126]], len: 15})
+        let password = resolve({ranges: [[33, 126]], len: len || 15})
+        if(!password.match(/\d/)) {
+            const num = resolve({preset: 'number', len: 1})
+            const index = Math.floor(Math.random() * len) 
+            password = password.slice(0, index) + num + password.slice(index+1)
+        }
+        return password
+    } else if (params.preset == 'number') {
+        return resolve({ranges: [[48, 57]], len: len || 1})
     }
     const {ranges} = params
-    const len = params.length || params.len
     const codes = Array.from(Array(len), getRandomCode.bind(null, ranges))
 
     return String.fromCodePoint.apply(null, codes)
