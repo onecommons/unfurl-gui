@@ -21,7 +21,7 @@ jobs:
       - name: Update Unfurl
         run: pip3 install -U  "git+https://github.com/onecommons/unfurl.git#egg=unfurl"
       - name: Run apollo and serve
-        run: yarn start
+        run: UNFURL_MOCK_DEPLOY='true' yarn start
       - name: Run Cypress
         run: xargs yarn run cypress run -C cypress-ci.json -s  < cypress/ci-tests.txt
       - name: Archive test screenshots
