@@ -58,12 +58,19 @@ describe('AWS environments', () => {
   it('Can create an aws env from the overview page', () => {
     cy.visit(`${BASE_URL}/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}`)
 
-    cy.contains('.oc_table_row', 'Amazon Web Services') // TODO replace table row with testid
+    // cy.contains('.oc_table_row', 'Amazon Web Services') // TODO replace table row with testid
+    //   .within(() => {
+    //     cy.contains('button', 'Deploy').click()
+    //   })
+
+    const TEMPLATE_NAME = 'aws' 
+    cy.get(`[data-testid="template-${TEMPLATE_NAME}]"`)   // using constant now, this can be reused
       .within(() => {
         cy.contains('button', 'Deploy').click()
       })
 
-    cy.get('.dropdown-toggle.btn-default').click() // TODO use a testid
+    // cy.get('.dropdown-toggle.btn-default').click() // TODO use a testid
+    cy.get('[data-testid="dropdown-default"]').click()
     createEnvironmentButton().click()
 
     completeEnvironmentDialog(false)

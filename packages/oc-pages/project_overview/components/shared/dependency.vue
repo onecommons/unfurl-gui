@@ -218,6 +218,7 @@ export default {
                     title="connect"
                     :aria-label="__(`connect`)"
                     type="button"
+                    :data-testid="`connect-dependency-${card.name}.${dependency.name}`"
                     class="oc_requirements_actions"
                     :disabled="getValidConnections($route.params.environment, dependency).length == 0"
                     @click.prevent="connectToResource(dependency)"

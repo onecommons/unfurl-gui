@@ -117,17 +117,13 @@ Cypress.Commands.add('recreateDeployment', options => {
             .last()
             .click() // this is a bit hacky
 
-          // todo: use test id instead of prev
-          cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
-            .prev()
+          cy.get(`[data-testid="connect-dependency-${template.name}.${dependency.name}]`)
             .invoke('attr', 'disabled')
             .then((disabled) => {
               // if button is enabled, and the env is provided, connects it 
               if (!disabled && DIGITALOCEAN_DNS_NAME) {
-                cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
-                  .prev()
-                  .click()
-
+                cy.get(`[data-testid="connect-dependency-${template.name}.${dependency.name}]`).click()
+                
                 const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME)
                 cy.get(`[data-testid="resource-selection-${digitalOceanName}"]`).click()
 

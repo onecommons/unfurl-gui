@@ -74,10 +74,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
   cy.get('[data-testid="resource-selection-DigitalOceanDNSZone"]').click()
 
-  // todo: use a test id for this input, and use different name
-  cy.get('input#input2')
-    .clear()
-    .type(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
+  cy.get(`input[data-testid="resource-name"]`).clear().type(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
 
   const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME || "DigitalOceanDNSZone")
   cy.contains("button", "Next").click()
