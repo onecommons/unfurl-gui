@@ -1,0 +1,20 @@
+apiVersion: unfurl/v1alpha1
+kind: Ensemble
++include:
+  file: ensemble-template.yaml
+  repository: spec
+spec:
+  deployment_blueprints:
+    +?include: deployment.json#/DeploymentTemplate
+  service_template:
+    metadata:
+      +?include: deployment.json#/ApplicationBlueprint
+    topology_template:
+      node_templates:
+        +?include: deployment.json#/ResourceTemplate
+    repositories:
+    # Files that are shared across ensemble instances should be placed in this "spec" repository
+      spec:
+        url: https://gitlab.com/onecommons//testing/simple-blueprint#:.
+metadata:
+  uri: https://github.com/onecommons/unfurl-gui.git#:apollo-server/repos/user1/dashboard/environments/production-gcp/testing/simple-blueprint/google-cloud-platform-1/ensemble.yaml
