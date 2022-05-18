@@ -27,7 +27,7 @@ function getRandomCode(ranges) {
 export default function resolve(params) {
     const len = params.length || params.len
     if(params.preset == 'password') {
-        let password = resolve({ranges: [[33, 126]], len: len || 15})
+        let password = resolve({ranges: [[33, 91], [93, 126]], len: len || 15})
         if(!password.match(/\d/)) {
             const num = resolve({preset: 'number', len: 1})
             const index = Math.floor(Math.random() * len) 
