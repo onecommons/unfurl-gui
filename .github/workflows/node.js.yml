@@ -11,18 +11,16 @@ jobs:
         with:
           submodules: recursive
       - uses: actions/setup-node@v2.5.1
-      - name: Install node, yarn
-        run: npm install --global yarn
       - name: Install yarn dependencies
         run: YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
-      - name: Run apollo
-        run: rm -rf live/ && yarn run apollo:start &
-      - name: Run server
-        run: yarn run serve &
-      - name: Add Cypress
-        run: yarn add cypress
+      - name: Run unit tests
+        run: yarn test
+      - name: Update Unfurl
+        run: pip3 install -U  "git+https://github.com/onecommons/unfurl.git#egg=unfurl"
+      - name: Run apollo and serve
+        run: yarn start
       - name: Run Cypress
-        run: xargs yarn run cypress run -s  < cypress/ci-tests.txt
+        run: xargs yarn run cypress run -C cypress-ci.json -s  < cypress/ci-tests.txt
       - name: Archive test screenshots
         if: always()
         uses: actions/upload-artifact@v2

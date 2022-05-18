@@ -8426,6 +8426,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"cypress-file-upload@npm:^5.0.8":
+  version: 5.0.8
+  resolution: "cypress-file-upload@npm:5.0.8"
+  peerDependencies:
+    cypress: ">3.0.0"
+  checksum: 9c70ca7e0bb137d0ec0b8d38987219ce15b26ac3a40e3ed4e78e6ad4690392eab905586848eec6ad8edd42ee480e68ccc63007b2ebd0a02f4b3eca116ff017e3
+  languageName: node
+  linkType: hard
+
+"cypress-wait-until@npm:^1.7.2":
+  version: 1.7.2
+  resolution: "cypress-wait-until@npm:1.7.2"
+  checksum: e3fe3c35ef8cfda39fb8919ae63a238bd580a98f5c02120306b32d6502ddfa9bfc3afde733cd9b282035b9f67e8386bd6c58bd59ca5fd2ea65291e6d9bac1ed7
+  languageName: node
+  linkType: hard
+
 "cypress@npm:^9.2.1":
   version: 9.2.1
   resolution: "cypress@npm:9.2.1"
@@ -20105,6 +20121,8 @@ __metadata:
     bootstrap: 4.5.3
     core-js: ^3.6.5
     cypress: ^9.2.1
+    cypress-file-upload: ^5.0.8
+    cypress-wait-until: ^1.7.2
     element-ui: ^2.15.6
     eslint: ^6.7.2
     eslint-plugin-graphql: ^2.1.1
@@ -20132,6 +20150,7 @@ __metadata:
     vue-apollo: ^3.0.3
     vue-class-component: ^7.2.3
     vue-cli-plugin-apollo: ~0.22.2
+    vue-json-component: ^0.4.1
     vue-property-decorator: ^8.4.2
     vue-router: 3.4.9
     vue-template-compiler: 2.6.12
@@ -20788,6 +20807,13 @@ __metadata:
   version: 2.3.4
   resolution: "vue-hot-reload-api@npm:2.3.4"
   checksum: 9befc0b3d6c1cc69430813fb7cfd2125c6a228730a36fad0653e4ddb60c8d4cf3ddc9649d2c9105c3d6044b42e8c8dce62b3c245bc65a6f187c1e2ca82a79252
+  languageName: node
+  linkType: hard
+
+"vue-json-component@npm:^0.4.1":
+  version: 0.4.1
+  resolution: "vue-json-component@npm:0.4.1"
+  checksum: ff566e846dd8e646137759834da81467e2fdecc992f89eb797924530f623c6e7e55bdabf1bb5d96e2619b5d8f782d9cb3609f47170ffd60b67f0bbe7178f5069
   languageName: node
   linkType: hard
 

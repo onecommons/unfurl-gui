@@ -1,9 +1,11 @@
 <script>
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
+import {Status} from 'oc_vue_shared/oc-components'
+import {JSONView} from 'vue-json-component'
 export default {
     name: 'OcPropertiesList',
-    components: {GlIcon},
+    components: {GlIcon, Status, 'json-view': JSONView},
     data() {
         return {expanded: true}
     },
@@ -57,14 +59,27 @@ export default {
                 <div class="properties-list-item" v-for="property in _properties" :key="property.name">
                     <div class="name-column">{{property.name}}</div>
                     <div :style="property.valueStyle" class="value-column">
-                        <div v-if="property.icon" class="icon-container">
-                            <gl-icon :size="12" :name="property.icon" />
-                        </div>
-                        {{property.value}}
+                        <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
 
-                        <div v-if="property.outboundLink" class="outbound-link-container">
-                            <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener">
-                                <gl-icon :size="14" name="external-link"/>
+                            <Status :status="property.status" display-text />
+                        </div>
+                        <div v-else>
+                            <div v-if="property.icon" class="icon-container">
+                                <gl-icon :size="12" :name="property.icon" />
+                            </div>
+                            <json-view
+                              v-if="property.value && typeof property.value == 'object'"
+                              :data="property.value"
+                              :rootKey="property.name"
+                            />
+                            <span v-else>
+                              {{property.value}}
+                            </span>
+                        </div>
+
+                        <div v-if="property.outboundLink" class="outbound-link-container d-flex">
+                            <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
+                                <gl-icon class="mr-1" :size="14" name="external-link"/>
                                 {{__(property.outboundLinkText)}}
                             </a>
                         </div>

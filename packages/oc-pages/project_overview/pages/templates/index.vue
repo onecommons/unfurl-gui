@@ -455,9 +455,16 @@ export default {
           const {href} = router.resolve({name: 'projectHome', query: {}})
           window.history.replaceState({}, null, href)
         }
-        if(! await redirectToJobConsole({pipelineData}, {beforeRedirect}) && pipelineData?.id) {
-          beforeRedirect()
-          return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
+
+        if(!window.gon.unfurl_gui) {
+            if(! await redirectToJobConsole({pipelineData}, {beforeRedirect}) && pipelineData?.id) {
+                beforeRedirect()
+                return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
+            }
+        }
+        else {
+            // unfurl gui has issues with redirecting from the server
+            window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${slugify(this.$route.query.fn)}`
         }
       } catch (err) {
         console.error(err)
@@ -586,7 +593,9 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <oc-inputs :data-testid="`oc-inputs-${getPrimaryCard.name}`" :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
+            <div class="m-2">
+              <oc-inputs :data-testid="`oc-inputs-${getPrimaryCard.name}`" :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
+            </div>
 
             <!-- Requirements List -->
             <oc-list

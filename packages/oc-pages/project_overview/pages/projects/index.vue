@@ -126,7 +126,8 @@ export default {
             if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.name)
                 return {
                     fn: this.templateForkedName || undefined,
-                    ts: this.projectSlugName || undefined
+                    ts: this.projectSlugName || undefined,
+                    tn: this.templateSelected.name || undefined // used to control modal for #oc-569
 
                 }
             else return {}
@@ -159,6 +160,8 @@ export default {
     watch: {
         querySpec: function(query, oldQuery) {
             if(_.isEqual(query, oldQuery)) return
+
+
             const path = this.$route.path
             if(document.activeElement.tagName == 'INPUT') {
                 const el = document.activeElement
@@ -169,6 +172,7 @@ export default {
             } else {
                 this.$router.replace({path, query})
             }
+
         },
         templateSelected: function(val) {
             if(this.templateForkedName) return
@@ -253,8 +257,6 @@ export default {
         
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
-            this.$refs['oc-templates-deploy'].show()
-
             this.templateForkedName = this.$route.query?.fn
         }
     },
@@ -438,6 +440,8 @@ export default {
             <gl-modal
                 ref="oc-templates-deploy"
                 modal-id="oc-templates-deploy"
+                :visible="!!$route.query.tn"
+
                 :title="modalTitle"
                 :action-primary="primaryProps"
                 :action-cancel="cancelProps"
@@ -472,12 +476,12 @@ export default {
                         <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
                         <gl-dropdown data-testid="deployment-environment-select" ref="dropdown">
                             <template #button-text>
-                                <span><detect-icon class="mr-2" no-default :env="(defaultEnvironmentName != __('Select') && defaultEnvironmentName) || null"/>{{defaultEnvironmentName}}</span>
+                                <span class="d-flex" style="line-height: 1"><detect-icon class="mr-2" no-default :env="(defaultEnvironmentName != __('Select') && defaultEnvironmentName) || null"/>{{defaultEnvironmentName}}</span>
                             </template>
 
                             <div v-if="getEnvironments.length > 0">
                               <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
-                                    <div><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
+                                    <div class="d-flex align-items-center"><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
                                 </gl-dropdown-item>
                                 <gl-dropdown-divider />
                             </div>

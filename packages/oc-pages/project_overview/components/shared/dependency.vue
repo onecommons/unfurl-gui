@@ -1,5 +1,5 @@
 <script>
-import {GlIcon, GlButton, GlTooltipDirective} from '@gitlab/ui'
+import {GlButton, GlTooltipDirective} from '@gitlab/ui'
 import {DetectIcon, StatusIcon} from '../../../vue_shared/oc-components'
 import {mapGetters, mapActions} from 'vuex'
 import {bus} from 'oc_vue_shared/bus'
@@ -26,7 +26,7 @@ export default {
         }
     },
     components: {
-        GlIcon, GlButton,
+        GlButton,
         DetectIcon,
         StatusIcon,
     },
@@ -66,9 +66,27 @@ export default {
         requirementFilled() {
             return !!this.dependency?.match
         },
-        iconTitle() {
-            return this.requirementSatisfied? 'Complete': 'Incomplete'
-        }
+        statusIconProps() {
+            const card = this.card
+
+            const size = 16
+            const className = []
+            let title
+            let name
+            if(this.requirementFilled && this.requirementSatisfied) {
+                className.push('icon-green')
+                name = 'check-circle-filled'
+                title = 'Complete'
+            } else if (this.requirementFilled) {
+                name = 'error-filled'
+                title = 'Error'
+            } else {
+                className.push('icon-red')
+                name = 'error'
+                title = 'Incomplete'
+            }
+            return {name, size, 'class': className, title}
+        },
 
     },
     methods: {
@@ -113,27 +131,24 @@ export default {
 }
 </script>
 <template>
-    <div class="gl-responsive-table-row oc_table_row">
+    <div class="oc_table_row">
         <div
-            class="table-section oc-table-section section-wrap text-truncate section-40 align_left justify-content-between">
+            class="table-section oc-table-section section-wrap align_left d-flex justify-content-between align-items-center">
             <div>
-                <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
-                <span class=" title" style="font-weight: bold; color: #353545">{{ dependencyConstraint.title }}</span>
-                <div class="oc_requirement_description gl-mb-2">
+                <div class="title d-flex align-items-center">
+                    <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
+                    <span style="line-height: 0; font-weight: bold; color: #353545">{{ dependencyConstraint.title }}</span>
+                </div>
+                <div class="oc_requirement_description">
                     {{ dependencyConstraint.description}}
                 </div>
             </div>
-            <div v-if="isMobileLayout" class="ml-2 mr-2 validation">
-                <gl-icon
-                    v-if="displayValidation && requirementFilled"
+            <div v-if="isMobileLayout && !requirementFilled" class="ml-2 mr-2 validation">
+                <detect-icon
+                    v-if="displayValidation"
                     v-gl-tooltip.hover
-                    :title="iconTitle"
-                    :size="14"
-                    :class="{
-                            'icon-green': requirementSatisfied,
-                            }"
-                    :name="requirementSatisfied ? 'check-circle-filled' : 'status_preparing'"
-                    />
+                    v-bind="statusIconProps"
+                />
                 <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
 
                     <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
@@ -146,19 +161,16 @@ export default {
                 </span>
             </div>
         </div>
-        <!-- TODO fix this -->
-        <div v-if="!isMobileLayout"
-            class="table-section oc-table-section section-wrap text-truncate section-30 align_left validation">
-            <gl-icon
-                v-if="displayValidation && requirementFilled"
+        <div v-if="!isMobileLayout || requirementFilled"
+            class="table-section oc-table-section section-wrap d-flex align-items-center validation"
+            :class="{'justify-content-center': !readonly}"
+        >
+            <detect-icon
+                v-if="displayValidation"
                 v-gl-tooltip.hover
-                :title="iconTitle"
-                :size="14"
-                :class="{
-                    'icon-green': requirementSatisfied,
-                }"
-                :name="requirementSatisfied ? 'check-circle-filled' : 'status_preparing'"
+                v-bind="statusIconProps"
             />
+
             <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
 
                 <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
@@ -173,52 +185,78 @@ export default {
 
         <div
             v-if="!readonly && requirementMatchIsValid(dependency)"
-            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-end">
-            <gl-button
-            v-if="getCurrentActionLabel(dependency) !== 'Disconnect'"
-                title="edit"
-                :aria-label="__(`edit`)"
-                type="button"
-                class="oc_requirements_actions"
-                @click.prevent="findElementToScroll({requirement: dependency})"
+            class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
+            <div style="height: 32px;">
+                <gl-button
+                    v-if="getCurrentActionLabel(dependency) !== 'Disconnect'"
+                    title="edit"
+                    :aria-label="__(`edit`)"
+                    type="button"
+                    class="oc_requirements_actions"
+                    @click.prevent="findElementToScroll({requirement: dependency})"
                 >{{ __('Edit') }}</gl-button>
-            <gl-button
-                v-if="getCurrentActionLabel(dependency)"
-                :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
-                :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
-                type="button"
-                :data-testid="`delete-or-disconnect-${card.name}.${dependency.name}`"
-                class="gl-ml-3 oc_requirements_actions"
-                @click.prevent="openDeleteModal(getCurrentActionLabel(dependency))">
-                {{
-                    getCurrentActionLabel(dependency) 
-                }}</gl-button>
+                <gl-button
+                    v-if="getCurrentActionLabel(dependency)"
+                    :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
+                    :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
+                    type="button"
+                    :data-testid="`delete-or-disconnect-${card.name}.${dependency.name}`"
+                    class="gl-ml-3 oc_requirements_actions"
+                    @click.prevent="openDeleteModal(getCurrentActionLabel(dependency))">
+                    {{
+                        getCurrentActionLabel(dependency) 
+                    }}</gl-button>
+            </div>
         </div>
+        <!-- TODO get rid of duplication here -->
         <div
             v-else-if="!readonly"
-            class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-end">
-            <gl-button
-                v-if="canConnectServices"
-                title="connect"
-                :aria-label="__(`connect`)"
-                type="button"
-                class="oc_requirements_actions"
-                :disabled="getValidConnections($route.params.environment, dependency).length == 0"
-                @click.prevent="connectToResource(dependency)"
-            >{{ __('Connect') }}</gl-button>
+            class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
+            <div style="height: 32px;">
+                <gl-button
+                    v-if="canConnectServices"
+                    title="connect"
+                    :aria-label="__(`connect`)"
+                    type="button"
+                    class="oc_requirements_actions"
+                    :disabled="getValidConnections($route.params.environment, dependency).length == 0"
+                    @click.prevent="connectToResource(dependency)"
+                >{{ __('Connect') }}</gl-button>
 
-            <gl-button
-                title="create"
-                :aria-label="__(`create`)"
-                type="button"
-                :data-testid="`create-dependency-${card.name}.${dependency.name}`"
-                class="gl-ml-3 oc_requirements_actions"
-                :disabled="availableResourceTypesForRequirement(dependency).length == 0"
-                @click="sendRequirement(dependency)">{{ __('Create') }}</gl-button>
+                <gl-button
+                    title="create"
+                    :aria-label="__(`create`)"
+                    type="button"
+                    :data-testid="`create-dependency-${card.name}.${dependency.name}`"
+                    class="gl-ml-3 oc_requirements_actions"
+                    :disabled="availableResourceTypesForRequirement(dependency).length == 0"
+                    @click="sendRequirement(dependency)">{{ __('Create') }}</gl-button>
+            </div>
         </div>
+        <div v-else></div>
     </div>
 </template>
 <style scoped>
 .validation { display: flex; align-items: center; }
 .validation > * {margin: 0 0.1em;}
+
+.title {
+    height: 16px;
+    color: #303030;
+    margin-bottom: 0.25em;
+}
+
+.oc_table_row {
+    display: contents;
+}
+
+.oc_requirement_description {
+    color: #666666
+}
+
+.oc-table-section {
+    border-bottom-style: solid;
+    border-color: #EEEEEE;
+    border-width: 1px;
+}
 </style>

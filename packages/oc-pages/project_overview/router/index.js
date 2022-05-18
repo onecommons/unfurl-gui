@@ -15,7 +15,7 @@ const isPrivateRoute = createDenyList(
     function(to) {
         if(
             to.name != routeNames.OC_PROJECT_VIEW_HOME ||
-            !(to.query.ts || to.query.fn)
+            !(to.query.ts || to.query.fn || to.query.tn)
         ) return false 
 
         return true

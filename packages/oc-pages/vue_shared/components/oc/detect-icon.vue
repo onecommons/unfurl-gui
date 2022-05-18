@@ -13,6 +13,7 @@ import MailIcon from './icons/Mail_server.svg'
 import GCPInstance from './icons/gcp_vm.svg'
 import EC2Instance from './icons/ec2.svg'
 import MongoDbIcon from './icons/mongodb.svg'
+import ErrorFilled from './icons/error_filled.svg'
 
 const DEFAULT = 'pod'
 
@@ -32,28 +33,30 @@ const CUSTOM_ICON_MAPPINGS = {
     mail: 'MailIcon',
     mongodb: MongoDbIcon,
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
-    'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon'
+    'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon',
+    'error-filled': 'ErrorFilled'
+
 }
 
-function applyTypeToMaping(type, mapping) {
+function applyTypeToMapping(type, mapping) {
     if(!type) return
     if(typeof type == 'string') {
         return mapping[type.toLowerCase()]
     }
     let result
-    result = applyTypeToMaping(type?.name, mapping)
+    result = applyTypeToMapping(type?.name, mapping)
     if(result) return result
     
     if(Array.isArray(type.extends)) {
         for(const tn of type.extends) {
-            result = applyTypeToMaping(tn, mapping)
+            result = applyTypeToMapping(tn, mapping)
             if(result) return result
         }
     }
 }
 
 function detectIcon(type, defaultIcon) {
-    const result = applyTypeToMaping(type, GL_ICON_MAPPINGS)
+    const result = applyTypeToMapping(type, GL_ICON_MAPPINGS)
     if(defaultIcon) {
         return result || defaultIcon
     }
@@ -61,7 +64,7 @@ function detectIcon(type, defaultIcon) {
 }
 
 function detectIconCustomSVG(type) {
-    return applyTypeToMaping(type, CUSTOM_ICON_MAPPINGS)
+    return applyTypeToMapping(type, CUSTOM_ICON_MAPPINGS)
 }
 
 export default {
@@ -74,10 +77,14 @@ export default {
         env: {
             type: [Object, String]
         },
+        name: {
+            type: String,
+            default: null
+        },
         noDefault: Boolean
     },
     icons: {
-        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon
+        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled
     },
     computed: {
         ...mapGetters(['lookupEnvironment']),
@@ -92,10 +99,10 @@ export default {
 
         },
         detectedIcon() {
-            return detectIcon(this.type || this._env, !this.noDefault && DEFAULT)
+            return this.name || detectIcon(this.type || this._env, !this.noDefault && DEFAULT)
         },
         customIcon() {
-            return detectIconCustomSVG(this.type || this._env)
+            return this.type?.icon || detectIconCustomSVG(this.name || this.type || this._env)
         },
         customStyle() {
             if (this.$attrs.size) {
@@ -108,6 +115,7 @@ export default {
             }
         },
         customURL() {
+            if(this.type?.icon) return this.type?.icon
             const icon = this.$options.icons[this.customIcon] || this.customIcon
             if(!icon) return
             if(icon.startsWith('<svg')) {
@@ -124,8 +132,13 @@ export default {
     <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />
 </template>
 <style scoped>
+.custom-icon {
+    display: inline-block;
+    width: 1em; height: 1em; position: relative;
+}
 .custom-icon > img{
     width: 1em;
     height: 1em;
+    position: absolute;
 }
 </style>

@@ -58,7 +58,8 @@ module.exports = {
         protocolRewrite: process.env.SSL_PROXY,
       })
 
-      const expressProxy =  httpProxyMiddleware('/proxied', {
+      // patterns can't be used unless they're all patterns
+      const expressProxy =  httpProxyMiddleware(['/proxied/**', '/*/dashboard/-/variables'], {
         target: 'http://localhost:4000',
         changeOrigin: true,
         ws: true,
@@ -100,9 +101,6 @@ module.exports = {
       app.use(graphqlProxy)
       app.use(expressProxy)
       app.use(postProxy)
-      app.get(`/:user/dashboard/-/pipelines/:deployment`, (req, res) => {
-        res.redirect(`/dashboard/deployments/${req.params.deployment}`)
-      })
     },
   },
   pluginOptions: {

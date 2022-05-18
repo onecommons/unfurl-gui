@@ -63,6 +63,9 @@ export default {
         ]),
         visitProject() {
             return `/${this.getProjectInfo.fullPath}/-/project`
+        },
+        livePreview() {
+            return this.$projectGlobal.livePreview || this.getProjectInfo.livePreview
         }
     },
 
@@ -111,7 +114,7 @@ export default {
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
-                <gl-button v-if="getProjectInfo.livePreview" :href="getProjectInfo.livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm ml-3" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
+                <gl-button v-if="livePreview" :href="livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm ml-1" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
             </div>
         </div>
     </div>

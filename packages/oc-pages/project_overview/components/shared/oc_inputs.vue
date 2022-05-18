@@ -62,13 +62,16 @@ export default {
       return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
     },
 
+    /*
     initialFormValues() {
       const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.initialValue}), {})
       return result
     },
+     */
 
     formValues() {
-      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value}), {})
+      // element formily needs ?? undefined for some reason
+      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? undefined}), {})
       return result
     },
 
@@ -103,7 +106,7 @@ export default {
       let status = 'valid'
       try {
         await this.form.validate()
-        for(const key of Object.keys(this.initialFormValues)) {
+        for(const key of Object.keys(this.formValues)) {
           await this.form.fields[key]?.validate()
         }
       } catch(e) {
@@ -202,7 +205,7 @@ export default {
             }
           })
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
-          if(disregardUncommitted) this.clientDisregardUncommitted()
+          if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
       }
@@ -217,7 +220,15 @@ export default {
         let overrideValue = false
         try{
           const next = {...property, ...this.fromSchema[property.name]}
-          next.initialValue = _.cloneDeepWith(next.value || next.default, function(value) {
+
+          /*
+           * uncomment to default to minimum
+          if(next.type == 'number' && next.required && next.minimum && (next.default ?? null) === null) {
+            next.default = next.minimum
+          }
+          */
+
+          next.value = _.cloneDeepWith(next.value || next.default, function(value) {
             if(Array.isArray(value) && value.length > 0) {
               return value.map(input => ({input}))
             }
@@ -231,9 +242,11 @@ export default {
                 return resolvedDirective
             }
           })
+          /*
           if(overrideValue) {
             next.value = next.initialValue
           }
+           */
           result.push(next)
         } catch (e) {
           console.error(e)
@@ -246,7 +259,7 @@ export default {
   mounted() {
     this.mainInputs = this.getMainInputs()
     const form = createForm({
-      initialValues: this.initialFormValues,
+        //initialValues: this.initialFormValues,
       values: this.formValues,
       effects: () => {
         onFieldInputValueChange('*', async (field, ...args) => {
@@ -321,10 +334,12 @@ export default {
   width: 300px;
   max-width: 300px;
 }
-.oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component { 
-  width: 150px;
-  max-width: 150px;
-  margin-right: 150px;
+@media only screen and (min-width: 430px) {
+    .oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component { 
+      width: 150px;
+      max-width: 150px;
+      margin-right: 150px;
+    }
 }
 
 </style>

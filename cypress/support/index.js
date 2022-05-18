@@ -15,23 +15,22 @@
 
 // Import commands.js using ES2015 syntax:
 import './commands'
-import './run-recreate-deployment'
-
-// Alternatively you can use CommonJS syntax:
-// require('./commands')
-//
-//
 
 Cypress.Cookies.defaults({
   preserve: /.*/
 })
 
 before(() => {
+  Cypress.on('uncaught:exception', (err, runnable) => {
+    return false
+  })
+  if(Cypress.spec.name.startsWith('00_visitor')) return
   const BASE_URL = Cypress.env('OC_URL') || 'localhost:8080'
 
   const USERNAME = Cypress.env('OC_USERNAME')
   const PASSWORD = Cypress.env('OC_PASSWORD')
   const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
+  const MOCK_DEPLOY = Cypress.env('MOCK_DEPLOY') || Cypress.env('UNFURL_MOCK_DEPLOY')
   cy.visit(`${BASE_URL}/users/sign_in`).wait(100)
   cy.url().then(url => {
     if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
@@ -44,5 +43,11 @@ before(() => {
         cy.get('[data-qa-selector="impersonate_user_link"]').click()
       }
     }
+  })
+  cy.window().then(win => {
+    if(MOCK_DEPLOY) {
+      win.sessionStorage['mock-deploy'] = 't'
+    }
+    win.sessionStorage['unfurl-trace'] = 't'
   })
 })

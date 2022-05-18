@@ -63,9 +63,20 @@ const actions = {
                         return r
                     }
                 }) || []
+
+                const deploymentPrimary = deployment.resources.find(resource => resource?.name == deployment.primary)
                 // TODO remove deployment.statuses
-                deployment.statuses = [deployment.resources.find(resource => resource?.name == deployment.primary)]
-                if(!deployment.statuses[0]) deployment.statuses.pop()
+                if(deploymentPrimary) {
+                    deployment.statuses = [deploymentPrimary]
+                    let urlAttribute
+                    if(!deployment.url && (urlAttribute = deploymentPrimary.attributes.find(a => a.name == 'url'))) {
+                        deployment.url = urlAttribute.value
+                    }
+                } else {
+                    deployment.statuses = []
+                }
+
+                // TODO share this logic
                 deployment.resources = deployment.resources.filter(r => {
                     return r.visibility != 'hidden' && (
                         r.visibility == 'visible' ||
@@ -73,6 +84,7 @@ const actions = {
                         r.attributes?.find(a => a.name == 'console_url')
                     )
                 })
+
                 if(deployment.__typename == 'Deployment' && deployment.status == 1) {
                     deployments++
                 }
@@ -119,8 +131,8 @@ const getters = {
     totalDeploymentsCount(state) {return state.counters.totalDeployments},
     environmentsCount(state) {return state.counters.environments},
     applicationsCount(state) {return state.counters.applications}
-
 }
+
 export default {
     state, getters, mutations, actions
 }

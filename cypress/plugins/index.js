@@ -30,6 +30,9 @@ module.exports = (on, config) => {
   })(OC_URL)
 
   config.env.OC_NAMESPACE = config.env.OC_NAMESPACE || 'demo'
+  config.env.REPOS_NAMESPACE = config.env.REPOS_NAMESPACE || 'testing'
+  config.env.SIMPLE_BLUEPRINT = config.env.SIMPLE_BLUEPRINT || 'simple-blueprint'
+  config.env.BASE_TIMEOUT = config.defaultCommandTimeout || 5000
 
   on('task', {
     log (message) {

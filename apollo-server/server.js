@@ -16,11 +16,62 @@ function setPid(program, pid) {
 setPid('apollo', process.pid)
 
 
+const variables = [
+  {
+    environment_scope: 'production-gcp',
+    id: 1,
+    key: 'hello',
+    value: 'world',
+    variable_type: 'env_var',
+    protected: false
+  }
+]
+let highestVariableID = 1
+
+function variablesForEnvironment(environmentName) {
+  const result = {}
+  for(const variable of variables) {
+    if(variable.environment_scope == environmentName || variable.environment_scope == '*') {
+      result[variable.key] = variable.value
+    }
+  }
+  return result
+}
 
 export default app => {
   app.use(express.json({ limit: '50mb' }))
   app.use('/files', express.static(path.resolve(__dirname, '../live/uploads')))
   app.use('/proxied', proxiedRoutes)
+  app.use((req, res, next) => {
+    console.log(req.url)
+    next()
+  })
+
+
+  app.get(`/:user/${USER_HOME_PROJECT}/-/variables`, (req, res) => {
+    res.send({variables})
+  })
+
+  app.patch(`/:user/${USER_HOME_PROJECT}/-/variables`, (req, res) => {
+    const variables_attributes = req.body.variables_attributes || []
+    for(const variable of variables_attributes) {
+      variable.value = variable.secret_value
+      delete variable.secret_value
+      if(!variable.environment_scope) variable.environment_scope = '*'
+      if(variable.id) {
+        let idx = variables.findIndex(v => v.id == variable.id)
+        variables[idx] = variable
+        highestVariableID = Math.max(variable.id, highestVariableID)
+      } else {
+        variable.id = ++highestVariableID
+        variables.push(variable)
+      }
+    }
+    res.send({variables})
+  })
+
+
+
   app.post(`/:user/${USER_HOME_PROJECT}/-/pipelines`, (req, res) => {
 
     let BLUEPRINT_PROJECT_URL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, DEPLOYMENT
@@ -46,17 +97,22 @@ export default app => {
 
     const cloned = fs.existsSync(resolveLiveRepoFile(userHome, path.join(DEPLOY_PATH, 'ensemble.yaml')))
 
+
     const cwd = resolveLiveRepoFile(userHome, '')
     const repo = (new URL(BLUEPRINT_PROJECT_URL).pathname).split('.')[0]; // strip .git
+    //const blueprintProjectURL = `https://gitlab.com/onecommons/${repo}`
     const blueprintProjectURL = path.resolve(__dirname, './repos/' + repo)
-    const clone = `${UNFURL_CMD} -vv clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton dashboard ${blueprintProjectURL} ${DEPLOY_PATH}`
-    const deploy = `${UNFURL_CMD} -vvv --home . ${WORKFLOW} --approve ${DEPLOY_PATH}`
-    const exportCmd = `${UNFURL_CMD} -vv --home . export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
+    const env = {...process.env, ...variablesForEnvironment(DEPLOY_ENVIRONMENT), BLUEPRINT_PROJECT_URL: blueprintProjectURL, DEPLOY_ENVIRONMENT, DEPLOY_PATH, WORKFLOW}
+
+    console.log(blueprintProjectURL)
+    const clone = `${UNFURL_CMD} -vv --home '' clone --existing --overwrite --mono --use-environment ${DEPLOY_ENVIRONMENT} --skeleton dashboard ${blueprintProjectURL} ${DEPLOY_PATH}`
+    const deploy = `${UNFURL_CMD} -vvv --home '' ${WORKFLOW} --approve ${DEPLOY_PATH}`
+    const exportCmd = `${UNFURL_CMD} -vv --home '' export ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
     function execHelper(cmd) {
       console.log(cmd)
       currentCommand = cmd
-      output = execSync(cmd, {cwd})
+      output = execSync(cmd, {cwd, env})
     }
     try {
       if(!cloned) {

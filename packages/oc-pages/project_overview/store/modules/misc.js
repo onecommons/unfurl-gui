@@ -39,6 +39,9 @@ const getters = {
     },
     REVEAL_HIDDEN_TEMPLATES() {
         return !!Object.keys(sessionStorage).find(key => key == 'reveal-hidden-templates')
+    },
+    UNFURL_TRACE() {
+        return !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace')
     }
 
 }

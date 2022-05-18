@@ -70,7 +70,6 @@ export default {
                                 type="button"
                                 @click="editTemplate(item)">{{ __("Edit") }}</gl-button>
                             <gl-button
-                                v-gl-modal.oc-templates-deploy
                                 :title="__('Deploy')"
                                 :aria-label="__('Deploy')"
                                 :data-testid="`deploy-template-${item.name}`"

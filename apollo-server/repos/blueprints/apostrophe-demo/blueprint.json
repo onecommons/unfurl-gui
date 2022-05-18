@@ -4,6 +4,7 @@
       "name": "unfurl.nodes.GoogleCloudObject",
       "title": "GoogleCloudObject",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -44,6 +45,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudProject"
         }
       ],
@@ -54,6 +56,7 @@
       "name": "unfurl.nodes.CloudObject",
       "title": "CloudObject",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -94,6 +97,7 @@
       "name": "tosca.nodes.Root",
       "title": "Root",
       "description": "The TOSCA root node all other TOSCA base node types derive from.\n",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -115,6 +119,7 @@
       "name": "unfurl.nodes.GoogleCloudProject",
       "title": "GoogleCloudProject",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -158,6 +163,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudResource"
         }
       ],
@@ -173,6 +179,7 @@
       "name": "unfurl.nodes.CloudAccount",
       "title": "CloudAccount",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -202,6 +209,7 @@
       "name": "unfurl.nodes.GoogleCloudServiceKey",
       "title": "GoogleCloudServiceKey",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -249,6 +257,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudProject"
         }
       ],
@@ -261,6 +270,7 @@
       "name": "unfurl.nodes.GoogleCloudResource",
       "title": "GoogleCloudResource",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -321,6 +331,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudProject"
         }
       ],
@@ -331,6 +342,7 @@
       "name": "unfurl.nodes.GoogleCloudOrganization",
       "title": "GoogleCloudOrganization",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -387,6 +399,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudProject"
         }
       ],
@@ -399,6 +412,7 @@
       "name": "unfurl.nodes.GoogleCloudFolder",
       "title": "GoogleCloudFolder",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -455,6 +469,7 @@
           "description": "",
           "min": 1,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudResource"
         },
         {
@@ -463,6 +478,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudProject"
         }
       ],
@@ -475,6 +491,7 @@
       "name": "Base",
       "title": "Base",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -498,6 +515,7 @@
       "title": "Compute",
       "description": "",
       "badge": "COMPUTE",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -540,6 +558,7 @@
       "name": "AWSInstance",
       "title": "AWSInstance",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -602,6 +621,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.AWSAccount"
         }
       ],
@@ -614,6 +634,7 @@
       "name": "unfurl.nodes.AWSResource",
       "title": "AWSResource",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -654,6 +675,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.AWSAccount"
         }
       ],
@@ -664,6 +686,7 @@
       "name": "GCPInstance",
       "title": "GCPInstance",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -726,6 +749,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.GoogleCloudProject"
         }
       ],
@@ -734,17 +758,18 @@
       ],
       "implementation_requirements": []
     },
-    "MongoDb": {
-      "name": "MongoDb",
-      "title": "MongoDb",
+    "MongoDB": {
+      "name": "MongoDB",
+      "title": "MongoDB",
       "description": "",
       "badge": "Database",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
       },
       "extends": [
-        "MongoDb",
+        "MongoDB",
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -763,6 +788,7 @@
       "title": "Atlas MongoDB Service",
       "description": "",
       "badge": "Database",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -781,7 +807,7 @@
       },
       "extends": [
         "Atlas",
-        "MongoDb",
+        "MongoDB",
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -797,17 +823,18 @@
       ],
       "implementation_requirements": []
     },
-    "SelfHosted_MongoDb": {
-      "name": "SelfHosted_MongoDb",
+    "SelfHosted_MongoDB": {
+      "name": "SelfHosted_MongoDB",
       "title": "Self-hosted MongoDB",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
       },
       "extends": [
-        "SelfHosted_MongoDb",
-        "MongoDb",
+        "SelfHosted_MongoDB",
+        "MongoDB",
         "Base",
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -824,6 +851,7 @@
           "description": "",
           "min": 1,
           "max": 1,
+          "match": null,
           "resourceType": "Compute"
         }
       ],
@@ -837,6 +865,7 @@
       "title": "DNS",
       "description": "DNS provider for domain name configuration",
       "badge": "DNS",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -862,6 +891,7 @@
       "name": "DockerHost",
       "title": "DockerHost",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -907,6 +937,7 @@
       "name": "MEANStack",
       "title": "MEANStack",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -949,6 +980,7 @@
           "description": "A compute instance with at least 512MB RAM",
           "min": 1,
           "max": 1,
+          "match": null,
           "resourceType": "Compute"
         },
         {
@@ -957,15 +989,17 @@
           "description": "",
           "min": 1,
           "max": 1,
+          "match": null,
           "resourceType": "DNS"
         },
         {
-          "name": "db",
-          "title": "db",
+          "name": "DB",
+          "title": "DB",
           "description": "MongoDB database service",
           "min": 1,
           "max": 1,
-          "resourceType": "MongoDb"
+          "match": null,
+          "resourceType": "MongoDB"
         },
         {
           "name": "mail",
@@ -973,6 +1007,7 @@
           "description": "",
           "min": 1,
           "max": 1,
+          "match": null,
           "resourceType": "Mail"
         }
       ],
@@ -986,6 +1021,7 @@
       "title": "Mail Server",
       "description": "Mail server to use for sending mail (optional)",
       "badge": "MAIL",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -999,6 +1035,7 @@
       "name": "tosca.relationships.Root",
       "title": "Root",
       "description": "The TOSCA root Relationship Type all other TOSCA base Relationship Types derive from.\n",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1011,6 +1048,7 @@
       "name": "SendGrid",
       "title": "SendGrid",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1025,6 +1063,7 @@
       "name": "unfurl.nodes.Installer.Terraform",
       "title": "Terraform",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1054,6 +1093,7 @@
       "name": "unfurl.nodes.Installer",
       "title": "Installer",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1077,6 +1117,7 @@
       "name": "unfurl.nodes.Repository",
       "title": "Repository",
       "description": "Reification of a TOSCA repository. Artifacts listed in the \"artifacts\" section of this node template will able available in the repository.\n",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -1149,6 +1190,7 @@
       "name": "unfurl.nodes.LocalRepository",
       "title": "LocalRepository",
       "description": "Represents the collection of artifacts available to the local operation host.\n",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -1222,6 +1264,7 @@
       "name": "unfurl.nodes.ArtifactBuilder",
       "title": "ArtifactBuilder",
       "description": "Creates or builds the given artifact and \"uploads\" it to the artifact's repository.\n",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1244,6 +1287,7 @@
       "name": "unfurl.nodes.ArtifactInstaller",
       "title": "ArtifactInstaller",
       "description": "Reification of an artifact that needs to be installed. Node templates of this type are \"discovered\" when artifacts need to be installed on an operation_host.\n",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1274,6 +1318,7 @@
       "name": "unfurl.nodes.Installation",
       "title": "Installation",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1295,6 +1340,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.Installer"
         }
       ],
@@ -1305,6 +1351,7 @@
       "name": "unfurl.nodes.Default",
       "title": "Default",
       "description": "Used if pre-existing instances are declared with no TOSCA template",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1327,6 +1374,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.Installer"
         }
       ],
@@ -1339,6 +1387,7 @@
       "name": "unfurl.nodes.AWSAccount",
       "title": "AWSAccount",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1369,6 +1418,7 @@
       "name": "unfurl.nodes.AzureAccount",
       "title": "AzureAccount",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1399,6 +1449,7 @@
       "name": "unfurl.nodes.AzureResource",
       "title": "AzureResource",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1439,6 +1490,7 @@
           "description": "",
           "min": 0,
           "max": 1,
+          "match": null,
           "resourceType": "unfurl.nodes.AzureAccount"
         }
       ],
@@ -1451,6 +1503,7 @@
       "name": "unfurl.relationships.InstalledBy",
       "title": "InstalledBy",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1460,10 +1513,55 @@
         "tosca.relationships.Root"
       ]
     },
+    "unfurl.relationships.Configures": {
+      "name": "unfurl.relationships.Configures",
+      "title": "Configures",
+      "description": "",
+      "visibility": "inherit",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "extends": [
+        "unfurl.relationships.Configures",
+        "tosca.relationships.Root"
+      ]
+    },
+    "unfurl.relationships.ConfiguringHostedOn": {
+      "name": "unfurl.relationships.ConfiguringHostedOn",
+      "title": "ConfiguringHostedOn",
+      "description": "",
+      "visibility": "inherit",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "extends": [
+        "unfurl.relationships.ConfiguringHostedOn",
+        "unfurl.relationships.Configures",
+        "tosca.relationships.Root",
+        "tosca.relationships.HostedOn"
+      ]
+    },
+    "tosca.relationships.HostedOn": {
+      "name": "tosca.relationships.HostedOn",
+      "title": "HostedOn",
+      "description": "",
+      "visibility": "inherit",
+      "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "extends": [
+        "tosca.relationships.HostedOn",
+        "tosca.relationships.Root"
+      ]
+    },
     "unfurl.relationships.ConnectsTo.Ansible": {
       "name": "unfurl.relationships.ConnectsTo.Ansible",
       "title": "Ansible",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -1523,6 +1621,7 @@
       "name": "tosca.relationships.ConnectsTo",
       "title": "ConnectsTo",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1536,6 +1635,7 @@
       "name": "unfurl.relationships.ConnectsTo.CloudAccount",
       "title": "CloudAccount",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1550,6 +1650,7 @@
       "name": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
       "title": "GoogleCloudProject",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -1574,6 +1675,7 @@
       "name": "unfurl.relationships.ConnectsTo.AWSAccount",
       "title": "AWSAccount",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -1595,6 +1697,7 @@
       "name": "unfurl.relationships.ConnectsTo.Azure",
       "title": "Azure",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1610,6 +1713,7 @@
       "name": "unfurl.relationships.ConnectsTo.Packet",
       "title": "Packet",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {
@@ -1632,6 +1736,7 @@
       "name": "unfurl.relationships.ConnectsTo.OpenStack",
       "title": "OpenStack",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1647,6 +1752,7 @@
       "name": "unfurl.relationships.ConnectsTo.Rackspace",
       "title": "Rackspace",
       "description": "",
+      "visibility": "inherit",
       "inputsSchema": {
         "type": "object",
         "properties": {}
@@ -1672,7 +1778,60 @@
           "value": "the_app_image"
         }
       ],
-      "dependencies": []
+      "dependencies": [
+        {
+          "constraint": {
+            "name": "host",
+            "title": "host",
+            "description": "A compute instance with at least 512MB RAM",
+            "min": 1,
+            "max": 1,
+            "match": null,
+            "resourceType": "Compute"
+          },
+          "name": "host",
+          "__typename": "Requirement"
+        },
+        {
+          "constraint": {
+            "name": "resolver",
+            "title": "resolver",
+            "description": "",
+            "min": 1,
+            "max": 1,
+            "match": null,
+            "resourceType": "DNS"
+          },
+          "name": "resolver",
+          "__typename": "Requirement"
+        },
+        {
+          "constraint": {
+            "name": "DB",
+            "title": "DB",
+            "description": "MongoDB database service",
+            "min": 1,
+            "max": 1,
+            "match": null,
+            "resourceType": "MongoDB"
+          },
+          "name": "DB",
+          "__typename": "Requirement"
+        },
+        {
+          "constraint": {
+            "name": "mail",
+            "title": "mail",
+            "description": "",
+            "min": 1,
+            "max": 1,
+            "match": null,
+            "resourceType": "Mail"
+          },
+          "name": "mail",
+          "__typename": "Requirement"
+        }
+      ]
     },
     "app_container": {
       "type": "DockerHost",
@@ -1730,7 +1889,13 @@
       "name": "gcp",
       "slug": "gcp",
       "blueprint": "apostrophe-demo",
-      "primary": "the_app"
+      "primary": "the_app",
+      "resourceTemplates": [
+        "atlas_service",
+        "the_app",
+        "app_container"
+      ],
+      "ResourceTemplate": {}
     },
     "aws": {
       "title": "Amazon Web Services EC2",
@@ -1740,7 +1905,13 @@
       "name": "aws",
       "slug": "aws",
       "blueprint": "apostrophe-demo",
-      "primary": "the_app"
+      "primary": "the_app",
+      "resourceTemplates": [
+        "atlas_service",
+        "the_app",
+        "app_container"
+      ],
+      "ResourceTemplate": {}
     },
     "k8s": {
       "title": "Kubernetes",
@@ -1750,7 +1921,13 @@
       "name": "k8s",
       "slug": "k8s",
       "blueprint": "apostrophe-demo",
-      "primary": "the_app"
+      "primary": "the_app",
+      "resourceTemplates": [
+        "atlas_service",
+        "the_app",
+        "app_container"
+      ],
+      "ResourceTemplate": {}
     },
     "selfhosted": {
       "title": "Self-Hosted",
@@ -1760,7 +1937,13 @@
       "name": "selfhosted",
       "slug": "selfhosted",
       "blueprint": "apostrophe-demo",
-      "primary": "the_app"
+      "primary": "the_app",
+      "resourceTemplates": [
+        "atlas_service",
+        "the_app",
+        "app_container"
+      ],
+      "ResourceTemplate": {}
     }
   },
   "ApplicationBlueprint": {
@@ -1779,7 +1962,8 @@
       "livePreview": "https://demo-apostrophe-demo.dev3.unfurl.cloud/",
       "sourceCodeUrl": "https://github.com/aszs/apostrophe-sandbox.git",
       "image": "https://unfurl.cloud/demo/apostrophe-demo/-/raw/dc4b22d93e34ef232573f5a4223d0e76b8a92433/.unfurl/Screen_Shot_2021-09-15_at_1.02.07_PM.png",
-      "projectIcon": null
+      "projectIcon": null,
+      "primaryDeploymentBlueprint": null
     }
   }
 }
