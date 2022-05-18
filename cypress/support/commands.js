@@ -36,6 +36,8 @@ import './obsolete.js'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
 
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+
 function whenUnfurlGUI(cb) {
   cy.window().then(win => {
     if(win.gon.unfurl_gui) {
@@ -53,10 +55,13 @@ function whenGitlab(cb) {
 }
 
 function withStore(cb) {
-  cy.window().then(win => {
-    console.log(win.$store)
-    cb(win.$store)
-  })
+  cy.waitUntil(() => cy.window().then(win => {
+    if(win.$store.getters.environmentsAreReady) {
+      cb && cb(win.$store)
+      return win.$store
+    }
+    else {return false}
+  }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
 }
 
 Cypress.Commands.add('whenGitlab', whenGitlab)

@@ -63,6 +63,7 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
   cy.url().should('not.include', '/dashboard/environments')
   cy.awsAuthenticateEnvironment()
   cy.contains(environmentName).should('exist')
+  cy.contains('Amazon Web Services').should('exist')
 
   // create external resource
   if (shouldCreateExternalResource) {

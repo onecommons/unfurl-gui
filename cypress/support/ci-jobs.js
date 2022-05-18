@@ -34,6 +34,16 @@ function withJobFromURL(cb) {
   })
 }
 
+function assertDeploymentRunning(deploymentTitle) {
+  cy.visit(`${BASE_URL}/dashboard/deployments?show=running`)
+  cy.contains('td', deploymentTitle).within(() => {
+    //cy.get('[data-testid="status_success_solid-icon"]').should('exist')
+    cy.get('[data-testid="status_success_solid-icon"]').should('exist')
+    cy.get('[data-testid="status_success_solid-icon"]').scrollIntoView()
+  })
+}
+
 Cypress.Commands.add('withCompletedJob', withCompletedJob)
 Cypress.Commands.add('expectSuccessfulJob', expectSuccessfulJob)
 Cypress.Commands.add('withJobFromURL', withJobFromURL)
+Cypress.Commands.add('assertDeploymentRunning', assertDeploymentRunning)
