@@ -63,10 +63,10 @@ export default {
                 </slot>
                 <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
             </div>
-            <div ref="transitionTarget" class="properties-list-inner">
-                <div class="properties-list-item" v-for="property in _properties" :key="property.name">
-                    <div class="name-column">{{property.name}}</div>
-                    <div :style="property.valueStyle" class="value-column">
+            <table ref="transitionTarget" class="properties-list-inner">
+                <tr class="properties-list-item" v-for="property in _properties" :key="property.name">
+                    <td class="name-column">{{ property.name.replaceAll('_', ' ') }}</td>
+                    <td :style="property.valueStyle" class="value-column">
                         <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
 
                             <Status :status="property.status" display-text />
@@ -93,9 +93,9 @@ export default {
                                 {{__(property.outboundLinkText)}}
                             </a>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 
@@ -115,9 +115,10 @@ export default {
 
 .properties-list-inner {
     transition: margin 0.5s;
+    width: 100%;
+    table-layout: auto;
 }
 .properties-list-item {
-    display: flex;
     margin: -1px;
     min-width: 22em;
 }
@@ -152,13 +153,11 @@ export default {
 .name-column {
     font-weight: bold;
     background: #fafafa;
-    width: 10em;
     border-top-color: white;
     border-right-style: solid;
     color: #585d60;
 }
 .value-column {
-    width: calc(100% - 10em);
     padding-left: 3em; padding-right: 3em;
     color: #666666;
     border-color: #eeeeee;
