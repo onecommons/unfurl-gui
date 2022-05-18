@@ -80,3 +80,12 @@ test('password preset works for ghost', () => {
         expect(password).toMatch(/^(?=.*\d).{10,}$/)
     }
 })
+
+// mariadb/mysql
+test("password preset doesn't contain backslash", () => {
+    for(let i = 0; i < 50; i++) {
+        const password = resolve({preset: 'password'})
+        expect(password).not.toContain('\\')
+    }
+
+})

@@ -184,7 +184,11 @@ const actions = {
         transforms = {
             // This is for templates that are hidden from unfurl, but are necessary for drafts to function
             DefaultTemplate(defaultTemplate, root) {
-                root.ResourceTemplate[defaultTemplate.name] = {...defaultTemplate}
+                // Do not override existing templates with defaults
+                if(!root.ResourceTemplate[defaultTemplate.name]) {
+                    root.ResourceTemplate[defaultTemplate.name] = {...defaultTemplate}
+                }
+
                 for(const key in defaultTemplate) {
                     delete defaultTemplate[key]
                 }
