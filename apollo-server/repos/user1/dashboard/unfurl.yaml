@@ -1,4 +1,5 @@
 # unfurl -v --home '' export --format environments > environments.json
++?include-local: local/unfurl.yaml
 apiVersion: unfurl/v1alpha1
 kind: Project
 
