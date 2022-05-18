@@ -341,6 +341,7 @@ const actions = {
             target.name = name;
             target.title = title;
 
+            target._uncommitted = true
             target.__typename = 'ResourceTemplate'
             target.visibility = target.visibility || 'inherit'
             try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
@@ -394,16 +395,28 @@ const actions = {
         }
     },
 
-    async connectNodeResource({state,rootGetters, commit}, {dependentName, dependentRequirement, nodeResource}) {
+    async connectNodeResource({state, rootGetters, commit}, {dependentName, dependentRequirement, nodeResource}) {
 
         const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const resourceTemplate = rootGetters.lookupConnection(environmentName, nodeResource);
+        /*
         commit(
             'pushPreparedMutation',
             appendResourceTemplateInDependent({dependentName, dependentRequirement, templateName: nodeResource, deploymentTemplateName: state.deploymentTemplate.name})
 
         )
+        */
+
+        // Workaround for connected resource issues
+        
+        commit(
+            'pushPreparedMutation',
+            createResourceTemplate({...resourceTemplate, name: `__${nodeResource}`, dependentName, dependentRequirement, deploymentTemplateName: state.lastFetchedFrom.templateSlug}),
+        )
+
+        //
+
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace});
     },
 
@@ -521,6 +534,7 @@ const getters = {
     },
     cardIsHidden(state, getters) {
         return function(cardName) {
+            if(cardName?.startsWith('__')) return true
             const card = state.resourceTemplates[cardName?.name || cardName]
             if(!card) return false
 

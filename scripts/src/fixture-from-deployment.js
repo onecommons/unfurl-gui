@@ -19,8 +19,7 @@ pathComponents.pop()
 
 const dashboardDir = path.join(...pathComponents)
 
-const 
-  fixtureName = `_${environmentName}__${blueprintName}__${deploymentName}`,
+const fixtureName = `_${environmentName}__${blueprintName}__${deploymentName}`,
   fixturePath = `generated/deployments/${fixtureName}`
 
 const testTemplate = fs.readFileSync(
@@ -66,6 +65,6 @@ fs.writeFileSync(
 )
 
 fs.writeFileSync(
-  path.join(unfurlGuiRoot, 'cypress/integration/generated', `${fixtureName}.js`),
+  path.join(unfurlGuiRoot, 'cypress/integration/blueprints', `${fixtureName}.js`),
   testTemplate
 )

@@ -10,5 +10,5 @@ test('multiple keys', () => {
 
 test('generate password', () => {
     expect(tryResolveDirective({_generate: {preset: 'password'}}))
-        .toMatch(/^[\u0021-\u007E]{15}$/)
+        .toMatch(/^[\u0021-\u007E]{15,}$/)
 })
