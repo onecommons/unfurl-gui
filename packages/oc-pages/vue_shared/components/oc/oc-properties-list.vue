@@ -29,7 +29,7 @@ export default {
         _properties() {
             const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
             return properties
-        }
+        },
     },
     methods: {
         toggleExpanded() {
@@ -40,6 +40,14 @@ export default {
             } else {
                 transitionTarget.style.marginTop = `-${transitionTarget.offsetHeight}px`
             }
+        },
+        isUrl(value) {
+            const regex = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi)
+            return regex.test(value)
+        },
+        isEmail(value) {
+            const regex = new RegExp(/[a-z0-9]+@[a-z]+\.[a-z]{2,3}/)
+            return regex.test(value)
         }
     }
 }
@@ -72,6 +80,8 @@ export default {
                               :data="property.value"
                               :rootKey="property.name"
                             />
+                            <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
+                            <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
                             <span v-else>
                               {{property.value}}
                             </span>
