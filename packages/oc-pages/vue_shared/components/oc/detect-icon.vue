@@ -14,12 +14,11 @@ import GCPInstance from './icons/gcp_vm.svg'
 import EC2Instance from './icons/ec2.svg'
 import MongoDbIcon from './icons/mongodb.svg'
 import ErrorFilled from './icons/error_filled.svg'
+import DatabaseIcon from './icons/Database.svg'
 
 const DEFAULT = 'pod'
 
 const GL_ICON_MAPPINGS = {
-    dns: 'earth',
-    mail: 'mail', email: 'mail',
 }
 
 const CUSTOM_ICON_MAPPINGS = {
@@ -30,7 +29,8 @@ const CUSTOM_ICON_MAPPINGS = {
     gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
     ec2compute: EC2Instance, 'unfurl.nodes.ec2compute': EC2Instance,
     dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
-    mail: 'MailIcon',
+    db: 'DatabaseIcon', sqldb: 'DatabaseIcon',
+    mail: 'MailIcon', email: 'MailIcon', smtpserver: 'MailIcon',
     mongodb: MongoDbIcon,
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
     'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon',
@@ -84,7 +84,7 @@ export default {
         noDefault: Boolean
     },
     icons: {
-        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled
+        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon
     },
     computed: {
         ...mapGetters(['lookupEnvironment']),
