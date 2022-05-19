@@ -3,9 +3,11 @@ import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import {Status} from 'oc_vue_shared/oc-components'
 import {JSONView} from 'vue-json-component'
+import Redacted from './redacted.vue'
+
 export default {
     name: 'OcPropertiesList',
-    components: {GlIcon, Status, 'json-view': JSONView},
+    components: {GlIcon, Status, 'json-view': JSONView, Redacted},
     data() {
         return {expanded: true}
     },
@@ -71,7 +73,7 @@ export default {
 
                             <Status :status="property.status" display-text />
                         </div>
-                        <div v-else>
+                        <div v-else style="width: 100%">
                             <div v-if="property.icon" class="icon-container">
                                 <gl-icon :size="12" :name="property.icon" />
                             </div>
@@ -82,6 +84,10 @@ export default {
                             />
                             <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
                             <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
+
+                            <!-- todo: use other criteria -->
+                            <Redacted v-else-if="typeof property.value === 'string' && property.value.includes('REDACTED')" :value="property.value" />
+
                             <span v-else>
                               {{property.value}}
                             </span>
