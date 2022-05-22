@@ -17,9 +17,10 @@ const mutations = {
     }
 }
 const actions = {
-    async loadDashboard({commit, dispatch, rootGetters}) {
+    async loadDashboard({commit, dispatch, rootGetters}, options={}) {
+        const {fetchPolicy} = options
         commit('setDashboardLoaded', false)
-        await dispatch('ocFetchEnvironments', {fullPath: `${window.gon.current_username}/${USER_HOME_PROJECT}`});
+        await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
         const items = [];
         let deployments = 0
         let applications = 0 

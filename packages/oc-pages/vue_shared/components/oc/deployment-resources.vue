@@ -527,6 +527,7 @@ export default {
                     <!-- Inputs -->
                     <!--oc-inputs :card="getPrimaryCard" :main-inputs="primaryCardProperties" :component-key="1" /-->
 
+                    <slot name="primary-pre"/>
                     <!-- Requirements List -->
                     <oc-list v-if="Object.keys(getPrimaryCard).length > 0"
                         tabs-title="Dependencies"
