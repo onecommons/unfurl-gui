@@ -34,6 +34,7 @@ export default {
             delete sessionStorage['oc_flash']
         }
 
+        /*
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
@@ -82,6 +83,7 @@ export default {
                 patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
             })
         }
+         */
 
         this.isLoaded = true
 

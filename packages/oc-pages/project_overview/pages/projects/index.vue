@@ -220,6 +220,7 @@ export default {
         }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
+        /*
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
 
         delete sessionStorage['instantiate_env']
@@ -251,6 +252,8 @@ export default {
             })
         }
         //
+
+         */
 
         const templateSelected = this.$route.query?.ts?
             this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null 

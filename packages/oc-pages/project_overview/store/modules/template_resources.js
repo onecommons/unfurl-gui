@@ -683,7 +683,11 @@ const getters = {
         }
     },
     getCurrentEnvironment(state, _getters, _, rootGetters) {
+      try {
         return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
+      } catch(e) {
+        return null
+      }
     },
     getCurrentEnvironmentName(state) {
         return state.lastFetchedFrom.environmentName

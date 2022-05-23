@@ -46,7 +46,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['lookupEnvironment']),
+        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath']),
         environmentsList() {
             const result = [
                 'Google Cloud Platform',
@@ -68,7 +68,7 @@ export default {
             return result
         },
         action() {
-            return `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments`
+            return `${window.origin}/${this.getHomeProjectPath}/-/environments`
         }
     },
     watch: {
@@ -90,10 +90,12 @@ export default {
             let redirectTarget = _redirectTarget || window.location.pathname + window.location.search
             // rails is settings params weird
             if(!redirectTarget.includes('?')) redirectTarget += '?'
-            const url = `${window.origin}/${window.gon.current_username}/${USER_HOME_PROJECT}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+            const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
             if(SHORT_NAMES[this.selectedCloudProvider]) sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
             await axios.get(url)
-            this.$refs.form.submit()
+            sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
+            sessionStorage['environmentFormAction'] = this.action
+            window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${SHORT_NAMES[this.selectedCloudProvider]}`
         },
         slugify
     },

@@ -1,4 +1,8 @@
 import axios from '~/lib/utils/axios_utils'
+import graphqlClient from 'oc/project_overview/graphql';
+import {UpdateDeploymentObject} from 'oc/project_overview/graphql/mutations/update_deployment_object.graphql'
+import {postFormDataWithEntries} from './forms'
+import {deleteEnvironmentVariables} from './envvars.js'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -29,6 +33,7 @@ export async function deleteEnvironmentByName(projectPath, environmentName) {
     const stop_path = env?.stop_path
     const delete_path = env?.delete_path
 
+    await deleteEnvironmentVariables(environmentName, projectPath)
     if(stop_path && delete_path) {
         await axios.post(stop_path)
         await axios.delete(delete_path)
@@ -42,12 +47,8 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
     // #!if false
     const {variables} = (await axios.get(`/${projectPath}/-/variables`)).data
     const patchVariables = []
-    for(const variable of variables) {
-        if(variable.environment_scope == environmentName) {
-            variable._destroy = true
-            patchVariables.push(variable)
-        }
-    }
+
+    await deleteEnvironmentVariables(environmentName, projectPath)
     if(patchVariables.length) {
         await axios.patch(`/${projectPath}/-/variables`, {variables_attributes: patchVariables})
     }
@@ -55,4 +56,28 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
     await axios.post(`/${projectPath}/-/environments/${environmentId}/stop`)
     await axios.delete(`/api/v4/projects/${projectId}/environments/${environmentId}`)
     // #!endif
+}
+
+export async function initUnfurlEnvironment(projectPath, environment) {
+    const variables = {
+        patch: [{
+            ...environment,
+            connections: {primary_provider: environment.primary_provider},
+            __typename: 'DeploymentEnvironment'
+        }],
+        fullPath: projectPath,
+        path: 'environments.json'
+    }
+    return await graphqlClient.clients.defaultClient.mutate({
+        mutation: UpdateDeploymentObject,
+        variables
+    })
+}
+
+export async function postGitlabEnvironmentForm() {
+    const environmentFormEntries = JSON.parse(sessionStorage['environmentFormEntries'])
+    const environmentFormAction = sessionStorage['environmentFormAction']
+    postFormDataWithEntries(environmentFormAction, environmentFormEntries)
+
+
 }

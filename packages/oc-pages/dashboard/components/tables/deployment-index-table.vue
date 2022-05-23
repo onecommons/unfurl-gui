@@ -150,11 +150,29 @@ export default {
         ]),
         async deploy() {
             //return await redirectToJobConsole(await this.deployInto(this.deploymentParameters), {newTab: true})
-            return await redirectToJobConsole(await this.deployInto(this.deploymentParameters))
+            //return await redirectToJobConsole(await this.deployInto(this.deploymentParameters))
+            await this.deployInto(this.deploymentParameters)
+            const {deployment, environment} = this.target
+            window.location.href = this.$router.resolve({
+                name: routes.OC_DASHBOARD_DEPLOYMENTS, 
+                params: {
+                    name: deployment.name,
+                    environment: environment.name
+                }
+            }).href
         },
         async undeploy() {
             //return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters), {newTab: true})
-            return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters))
+            //return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters))
+            await this.undeployFrom(this.deploymentParameters)
+            const {deployment, environment} = this.target
+            window.location.href = this.$router.resolve({
+                name: routes.OC_DASHBOARD_DEPLOYMENTS, 
+                params: {
+                    name: deployment.name,
+                    environment: environment.name
+                }
+            }).href
         },
         statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
         resumeEditingLink(scope) {
