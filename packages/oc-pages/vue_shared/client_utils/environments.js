@@ -77,7 +77,11 @@ export async function initUnfurlEnvironment(projectPath, environment) {
 export async function postGitlabEnvironmentForm() {
     const environmentFormEntries = JSON.parse(sessionStorage['environmentFormEntries'])
     const environmentFormAction = sessionStorage['environmentFormAction']
-    postFormDataWithEntries(environmentFormAction, environmentFormEntries)
-
-
+    try {
+        const result = await postFormDataWithEntries(environmentFormAction, environmentFormEntries)
+        if(result.code >= 400) throw new Error()
+        return result
+    } catch(e) {
+        throw new Error(`Failed to create dashboard environment: ${e.message}`)
+    }
 }

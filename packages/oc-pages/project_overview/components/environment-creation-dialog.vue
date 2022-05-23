@@ -93,6 +93,7 @@ export default {
             const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
             if(SHORT_NAMES[this.selectedCloudProvider]) sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
             await axios.get(url)
+            sessionStorage['cancelTo'] = window.location.href
             sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
             sessionStorage['environmentFormAction'] = this.action
             window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${SHORT_NAMES[this.selectedCloudProvider]}`

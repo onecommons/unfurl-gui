@@ -6,5 +6,5 @@ export async function postFormDataWithEntries(url, entries) {
         formData.append(key, value)
     }
 
-    axios.post(url, formData)
+    return await axios.post(url, formData)
 }
