@@ -96,3 +96,18 @@ export default {
         <router-view v-if="isLoaded && !doNotRender"/>
     </div>
 </template>
+<style>
+
+.container-limited.limit-container-width:not(.gl-banner-content) {
+    max-width: min(100vw, max(80%, 990px));
+    display: flex;
+    justify-content: center;
+}
+.container-limited.limit-container-width:not(.gl-banner-content) > * {
+    width: 100%;
+}
+main {
+    min-width: min(990px, 100%);
+    max-width: 100vw;
+}
+</style>

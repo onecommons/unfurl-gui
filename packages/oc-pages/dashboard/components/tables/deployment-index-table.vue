@@ -35,11 +35,11 @@ const tabFilters =  [
         filter(item) { return item.isDraft }
     },
     {
-        title: 'Incomplete',
+        title: 'Failed',
         filter(item) { return !item.isDeployed && !item.isDraft && !item.isUndeployed}
     },
     {
-        title: 'Undeployed',
+        title: 'Destroyed',
         filter(item) { return item.isUndeployed }
     }
 ]
