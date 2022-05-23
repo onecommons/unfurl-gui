@@ -121,7 +121,6 @@ export default {
             'getUsername',
             'getHomeProjectPath',
             'getCurrentEnvironment',
-            'getValidResourceTypes',
             'getValidConnections',
             'getHomeProjectPath',
             'getApplicationBlueprint',
