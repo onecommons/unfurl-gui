@@ -43,3 +43,6 @@
 [submodule "apollo-server/repos/blueprints/node-express"]
 	path = apollo-server/repos/testing/node-express
 	url = https://gitlab.com/onecommons/testing/node-express.git
+[submodule "apollo-server/repos/testing/wordpress"]
+	path = apollo-server/repos/testing/wordpress
+	url = https://gitlab.com/onecommons/testing/wordpress.git

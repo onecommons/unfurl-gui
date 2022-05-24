@@ -66,4 +66,11 @@ export default {
 button.dropdown-item:disabled {
     color: #9b9b9b;
 }
+
+.container-limited.limit-container-width:not(.gl-banner-content) {
+    max-width: max(80%, 990px);
+    display: flex;
+    justify-content: center;
+}
+main {min-width: min(990px, 95vw);}
 </style>

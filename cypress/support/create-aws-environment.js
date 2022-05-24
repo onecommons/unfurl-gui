@@ -3,8 +3,9 @@ const ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
-const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000})
+const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
 const CLOUD_PROVIDER_DROPDOWN = '[data-testid="cloud-provider-dropdown"]'
 const ENV_OPTION_AWS = `[data-testid="env-option-aws"]`
@@ -62,6 +63,7 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
   cy.url().should('not.include', '/dashboard/environments')
   cy.awsAuthenticateEnvironment()
   cy.contains(environmentName).should('exist')
+  cy.contains('Amazon Web Services').should('exist')
 
   // create external resource
   if (shouldCreateExternalResource) {

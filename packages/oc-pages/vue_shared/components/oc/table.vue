@@ -295,7 +295,7 @@ export default {
 };
 </script>
 <template>
-  <div :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
+  <div class="p-0" :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
     <div v-if="!hideFilter && _items.length > 1" class="row fluid no-gutters filter-searchbox" >
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
@@ -328,7 +328,7 @@ export default {
           id="accounts-table"
           ref="selectableTable"
           :tbody-tr-class="rowClass"
-          responsive="lg"
+          :responsive="true"
           :items="_items"
           :fields="_fields"
           primary-key="id"
@@ -409,7 +409,7 @@ export default {
   border-style: solid;
   border-radius: 4px;
   border-width: 1px;
-  font-size: 1em;
+  font-size: 1.15em;
 }
 
 
@@ -425,7 +425,7 @@ export default {
 }
 
 .oc-table >>> th {
-  padding: 0.25em 0;
+  padding: 0.25em;
   font-family: 'Open Sans';
   font-size: 0.95em;
   font-weight: bold;
@@ -447,7 +447,7 @@ export default {
 .table-body {
   display: flex;
   align-items: center;
-  padding: 0.4rem 0;
+  padding: 0.4rem 0.25em;
   border-style: none;
   border-bottom-style: solid;
   border-width: 1px;
