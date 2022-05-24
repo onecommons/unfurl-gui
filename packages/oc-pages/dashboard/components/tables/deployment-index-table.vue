@@ -17,7 +17,7 @@ import Vue from 'vue'
 function deploymentGroupBy(item) {
     let result 
     try{
-        result = `${item.deployment.name}:${item.application.name}`
+        result = `${item.deployment.name}:${item.application.name}:${item.environment.name}`
     } catch(e) {return }
     return result
 }

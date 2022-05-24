@@ -64,6 +64,7 @@ export default class DeploymentItem {
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
     get createdAtText() {
+        if(!(this.createdAtDate && this.createdAtTime)) return ''
         return `${this.createdAtDate} ${this.createdAtTime}`
       /*
         if(!this.createdAt) return 

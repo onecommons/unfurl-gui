@@ -426,6 +426,7 @@ export default {
 
 .oc-table >>> th {
   padding: 0.25em;
+  white-space: nowrap;
   font-family: 'Open Sans';
   font-size: 0.95em;
   font-weight: bold;
