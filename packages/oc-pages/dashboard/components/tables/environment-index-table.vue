@@ -4,6 +4,7 @@ import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ApplicationCell from '../cells/application-cell.vue'
 import DeploymentCell from '../cells/deployment-cell.vue'
+import EnvironmentStatus from '../cells/environment-status.vue'
 import * as routes from '../../router/constants'
 import {textValueFromKeys} from '../../dashboard-utils'
 
@@ -14,7 +15,7 @@ function deploymentGroupBy(item) {
 
 export default {
     components: {
-        TableComponent, StatusIcon, EnvironmentCell, ApplicationCell, DeploymentCell
+        TableComponent, StatusIcon, EnvironmentCell, ApplicationCell, DeploymentCell, EnvironmentStatus
     },
     props: {
         items: {
@@ -53,10 +54,20 @@ export default {
           */
             {
                 key: 'status',
+                label: 'State',
+                tableBodyStyles: {'justify-content': 'flex-end'},
+                groupBy: (item) => item.context.environment?.name,
+                textValue: () => '',
+            },
+
+            /*
+            {
+                key: 'status',
                 groupBy: deploymentGroupBy,
                 textValue: (item) => (item.deployment?.statuses || []).map(resource => resource.name).join(' '),
                 label: 'Status'
             },
+             */
         ]
 
         return {fields, routes}
@@ -73,11 +84,11 @@ export default {
                 {{__('Status')}}
             </div>
         </template>
-        <template #status="scope">
+        <!--template #status="scope">
             <div v-if="scope.item.context.deployment" class="d-flex justify-content-center" style="left: 7px; 2px;">
                 <StatusIcon :size="18" :key="status.name" v-for="status in scope.item.context.deployment.statuses" :status="status.status" />
             </div>
-        </template>
+        </template-->
         <template #deployment="scope">
             <deployment-cell
                 :scope="scope"
@@ -91,6 +102,9 @@ export default {
         </template>
         <template #environment="scope">
             <environment-cell :environment="scope.item.context.environment"/>
+        </template>
+        <template #status$all="scope">
+            <environment-status v-if="scope.item._depth == 0" :scope="scope"/>
         </template>
 
     </table-component>

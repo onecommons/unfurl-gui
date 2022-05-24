@@ -80,15 +80,6 @@ export default {
     data() {
         const self = this
         const fields = [
-            /*
-            {
-                key: 'status',
-                tableBodyStyles: {'justify-content': 'center'},
-                groupBy: deploymentGroupBy,
-                textValue: (item) => '@' + (item.deployment?.statuses || []).map(resource => resource?.name || '').join(' '),
-                label: 'Status'
-            },
-            */
             {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
             {
                 key: 'environment',
@@ -96,21 +87,6 @@ export default {
                 s: 'Environment',
                 groupBy: (item) => item.environment?.name
             },
-          /*
-           * TODO figure out how to implement commit lookup
-            {
-                key: 'commit',
-                shallow: true,
-                label: 'Commit',
-                textValue: () => 'which commit?',
-            },
-            {
-                key: 'last-update',
-                shallow: true,
-                label: 'Last Update',
-                textValue: () => '12/13/21',
-            },
-          */
             {
                 key: 'resource',
                 label: 'Resources',
@@ -149,8 +125,6 @@ export default {
             'undeployFrom'
         ]),
         async deploy() {
-            //return await redirectToJobConsole(await this.deployInto(this.deploymentParameters), {newTab: true})
-            //return await redirectToJobConsole(await this.deployInto(this.deploymentParameters))
             await this.deployInto(this.deploymentParameters)
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
@@ -158,12 +132,13 @@ export default {
                 params: {
                     name: deployment.name,
                     environment: environment.name
+                },
+                query: {
+                  show: 'console'
                 }
             }).href
         },
         async undeploy() {
-            //return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters), {newTab: true})
-            //return await redirectToJobConsole(await this.undeployFrom(this.deploymentParameters))
             await this.undeployFrom(this.deploymentParameters)
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
@@ -171,6 +146,9 @@ export default {
                 params: {
                     name: deployment.name,
                     environment: environment.name
+                },
+                query: {
+                  show: 'console'
                 }
             }).href
         },
@@ -446,12 +424,13 @@ export default {
                 <div class="d-flex">
                     <deployment-status-icon :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <a :href="`/${scope.item.context.deployment.projectPath}`">
-                            <b> {{scope.item.context.application.title}}: </b>
-                        </a>
                         <a :href="deploymentItem(scope, 'viewableLink')">
-                            {{scope.item.context.deployment.title}}
+                            <b>{{scope.item.context.deployment.title}}:</b>
                         </a>
+                        <a :href="`/${scope.item.context.deployment.projectPath}`">
+                            ({{scope.item.context.application.title}})
+                        </a>
+
                     </div>
                 </div>
             </template>

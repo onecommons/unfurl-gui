@@ -82,7 +82,7 @@ export default class DeploymentItem {
         return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
     }
     get isUndeployed() {
-        return this.deployment.__typename == 'Deployment' && !this.isDeployed
+        return this.deployment.__typename == 'Deployment' && !this.isDeployed && (this.deployment?.status != 3)
     }
     get isDeployed() {
         return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)
