@@ -1,3 +1,4 @@
+import axios from '~/lib/utils/axios_utils'
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
@@ -19,6 +20,18 @@ export default class DeploymentItem {
     get artifactsLink() {
         if(this.projectPath && this.job) {
             return `${this.consoleLink}/artifacts/browse`
+        }
+    }
+
+    get rawLink() {
+        if(this.projectPath && this.job) {
+            return `${this.consoleLink}/raw`
+        }
+    }
+
+    get cancelLink() {
+        if(this.projectPath && this.job) {
+            return `${this.consoleLink}/cancel`
         }
     }
 
@@ -87,5 +100,14 @@ export default class DeploymentItem {
     }
     get isDeployed() {
         return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)
+    }
+    get isJobCancelable() {
+        return this.job?.cancelable ?? false
+    }
+
+
+    async cancelJob() {
+        if(!this.isJobCancelable) throw new Error(`Job ${this.job?.id || -1} is not cancelable`)
+        await axios.post(this.cancelLink)
     }
 }

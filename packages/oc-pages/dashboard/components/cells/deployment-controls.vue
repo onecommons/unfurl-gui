@@ -54,6 +54,7 @@ export default {
         },
         controlButtons() {
             const result = []
+            if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
             if(this.deploymentItem?.isDraft) result.push('edit-draft')
             else if(this.deploymentItem?.isEditable) result.push('edit-deployment')
@@ -89,12 +90,17 @@ export default {
         deleteDeployment() {
           this.$emit('deleteDeployment', this.deployment, this.environment)
         },
+        // teardown in ui
         stopDeployment() {
           this.$emit('stopDeployment', this.deployment, this.environment)
         },
         startDeployment() {
           this.$emit('startDeployment', this.deployment, this.environment)
         },
+        async cancelJob() {
+            await this.deploymentItem.cancelJob()
+            window.location.reload()
+        }
     },
 }
 </script>
@@ -110,6 +116,7 @@ export default {
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
+         @cancelJob="cancelJob"
         />
         <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
             <template #button-content>
@@ -126,6 +133,7 @@ export default {
              @deleteDeployment="deleteDeployment"
              @stopDeployment="stopDeployment"
              @startDeployment="startDeployment"
+             @cancelJob="cancelJob"
             />
         </gl-dropdown>
     </div>

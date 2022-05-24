@@ -15,7 +15,7 @@ const LOOKUP_JOBS = gql`
                         nodes {
                             id
                             status
-
+                            cancelable
                         }
                     }
                 }
@@ -96,9 +96,7 @@ const actions = {
             const pipelineId = pipeline.id.split('/').pop()
             for(const job of pipeline.jobs.nodes) {
                 const jobId = job.id.split('/').pop()
-                const status = job.status
-
-                newJobsByPipelineId[pipelineId] = Object.freeze({id: jobId, status})
+                newJobsByPipelineId[pipelineId] = Object.freeze({...job, id: jobId})
             }
         }
         commit('setJobsByPipelineId', newJobsByPipelineId)
