@@ -28,7 +28,10 @@ export default {
         cancelJob() {
             this.$emit('cancelJob')
         },
-   }
+        showPreviousJobs() {
+            this.$emit('showPreviousJobs')
+        },
+    }
 }
 </script>
 <template>
@@ -56,6 +59,10 @@ export default {
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
     <component :is='component' v-if="issuesLink" :href="issuesLink"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
+    <component :is='component' v-if="hasButton('job-history')" @click="showPreviousJobs">
+        <gl-icon :size="16" name="history"/> 
+        {{__('Previous Jobs')}}
+    </component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>

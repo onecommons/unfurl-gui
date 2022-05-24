@@ -8,6 +8,11 @@ export default class DeploymentItem {
         return this.deployPath?.pipeline
     }
 
+    get pipelines() {
+        return this.deployPath?.pipelines
+    }
+
+
     get createdAt() {
         const date = this.pipeline?.commit?.created_at
         return date && new Date(date)

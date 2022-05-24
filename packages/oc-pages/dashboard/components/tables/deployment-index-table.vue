@@ -295,7 +295,7 @@ export default {
                 case 'delete':
                     return `Are you sure you want to delete ${targetTitle}?`
                 case 'undeploy':
-                    return `Are you sure you want to undeploy ${targetTitle}? It will not be deleted and you will be able to redeploy at any time.`
+                    return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
                 case 'deploy':
                     return `Deploy ${targetTitle}?`
                 default: return ''
