@@ -66,6 +66,10 @@ export default {
                         }
                     case null:
                         self.initialCompletionState = complete? 'complete': 'incomplete'
+                        if(self.initialCompletionState == 'incomplete') {
+                            self.$emit('active-deployment')
+                        }
+
                         break
 
                 }

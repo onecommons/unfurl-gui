@@ -34,6 +34,7 @@ export default {
             delete sessionStorage['oc_flash']
         }
 
+        /*
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
@@ -82,6 +83,7 @@ export default {
                 patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
             })
         }
+         */
 
         this.isLoaded = true
 
@@ -94,3 +96,18 @@ export default {
         <router-view v-if="isLoaded && !doNotRender"/>
     </div>
 </template>
+<style>
+
+.container-limited.limit-container-width:not(.gl-banner-content) {
+    max-width: min(100vw, max(80%, 990px));
+    display: flex;
+    justify-content: center;
+}
+.container-limited.limit-container-width:not(.gl-banner-content) > * {
+    width: 100%;
+}
+main {
+    min-width: min(990px, 100%);
+    max-width: 100vw;
+}
+</style>

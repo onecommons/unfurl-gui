@@ -186,8 +186,8 @@ Cypress.Commands.add('recreateDeployment', options => {
 
         })
         cy.whenGitlab(() => {
-          cy.url({timeout: BASE_TIMEOUT * 4}).should('not.include', 'deployment-drafts')
-          cy.withJobFromURL((job) => {
+          cy.url({timeout: BASE_TIMEOUT * 4}).should('include', dt.name)
+          cy.withJob((job) => {
             cy.expectSuccessfulJob(job)
           })
           cy.assertDeploymentRunning(dt.title)

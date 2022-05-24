@@ -502,7 +502,7 @@ export default {
         <!-- Header of templates -->
         <oc-template-header v-if="target != 'Environment'" :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: $route.params.environment}"/>
             <!-- Content -->
-        <div class="row-fluid gl-mt-6 gl-mb-6">
+        <div class="row-fluid">
             <oc-card
                 :display-validation="displayValidation"
                 :display-status="displayStatus"

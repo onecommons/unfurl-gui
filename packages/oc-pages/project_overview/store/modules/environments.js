@@ -189,6 +189,7 @@ const actions = {
                         deployments
                         clientPayload
                         name
+                        state
                     }
                 }
             }

@@ -7,39 +7,39 @@ const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
-Cypress.Commands.add('withEnvironment', (environmentName, cb)=> {
-  cy.waitUntil(() => cy.window().then(win => {
-    return win.$store.getters.environmentsAreReady
+Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
+  return cy.waitUntil(() => cy.withStore().then(store => {
+    if(!store.getters.environmentsAreReady) return false
+    expect(store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
+    return store
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
-
-  cy.window().then((win) => {
-    // this will be run quite frequently because environment tests check if they should run cleanup before executing
-    // this is a good place to add sanity checks for environments
-    expect(win.$store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
-    const env = win.$store.getters.getEnvironments.find(env => env.name == environmentName)
-    cb(env)
-  })
+    .then(store => {
+      const env = store.getters.lookupEnvironment(environmentName) || null
+      cb && cb(env)
+      return env
+    })
 })
 
 Cypress.Commands.add('whenEnvironmentExists', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName, env => env && cb(env))
+  return cy.withEnvironment(environmentName).then(env => env && cb(env))
 })
 
 Cypress.Commands.add('whenEnvironmentAbsent', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName, env => !env && cb())
+  return cy.withEnvironment(environmentName).then(env => !env && cb())
 })
 
 Cypress.Commands.add('environmentShouldExist', environmentName => {
-  return cy.withEnvironment(environmentName, env => expect(env).to.not.be.undefined)
+  //return cy.withEnvironment(environmentName, env => expect(env).to.not.be.undefined)
+  return cy.withEnvironment(environmentName).should('exist')
 })
 
 Cypress.Commands.add('environmentShouldNotExist', environmentName => {
-  return cy.withEnvironment(environmentName, env => expect(env).to.be.undefined)
+  //return cy.withEnvironment(environmentName, env => expect(env).to.be.undefined)
+  return cy.withEnvironment(environmentName).should('not.exist')
 })
 
 Cypress.Commands.add('clickCreateEnvironmentButton', () => {
-  const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
-  createEnvironmentButton().click()
+  cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false}).click()
 })
 
 Cypress.Commands.add('completeEnvironmentDialog', options => {

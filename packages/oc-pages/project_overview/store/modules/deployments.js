@@ -7,6 +7,7 @@ const state = {loaded: false, callbacks: [], deployments: {}};
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;
+        state.loaded = true
     },
 };
 const actions = {

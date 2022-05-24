@@ -6,14 +6,23 @@ import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
+import {GlTabs} from '@gitlab/ui'
+import {OcTab} from 'oc_vue_shared/oc-components'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
+import {DeploymentIndexTable} from 'oc_dashboard/components'
 export default {
-    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper},
+    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable},
     data() {
-        return {bus, jobsData: null, viewReady: false}
+        return {bus, jobsData: null, viewReady: false, currentTab: 0}
     },
     computed: {
-        ...mapGetters(['getDeploymentDictionary', 'lookupDeploymentOrDraft', 'lookupEnvironment', 'lookupDeployPath']),
+        ...mapGetters([
+            'getDeploymentDictionary',
+            'lookupDeploymentOrDraft',
+            'lookupEnvironment',
+            'lookupDeployPath',
+            'getDashboardItems'
+        ]),
         breadcrumbItems() {
             return  [
                 {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}, text: 'Deployments'},
@@ -37,6 +46,14 @@ export default {
         },
         state() {
             return this.getDeploymentDictionary(this.deployment.name, this.environment.name)
+        },
+        tableItems() {
+            return this.getDashboardItems.filter(item => {
+                return (
+                    item.context.environment.name == this.environment.name &&
+                    item.context.deployment.name == this.deployment.name
+                )
+            })
         }
     },
     watch: {
@@ -57,6 +74,11 @@ export default {
             this.useProjectState({root: cloneDeep(this.state)})
             this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
+        },
+        setTabToConsoleIfNeeded() {
+            if(!this.$route.query?.show == 'console') {
+                this.currentTab = 1
+            }
         }
     },
     async mounted() {
@@ -64,14 +86,25 @@ export default {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
         this.prepareView()
+        if(this.$route.query?.show == 'console') {
+            this.currentTab = 1
+        }
     }
 }
 </script>
 <template>
     <div id="deployment-view-container">
+
         <dashboard-breadcrumbs style="overflow-anchor: auto" :items="breadcrumbItems" />
-        <console-wrapper v-if="jobsData" :jobs-data="jobsData" />
-        <deployment-resources v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
+        <deployment-index-table :items="tableItems" hide-filter />
+        <gl-tabs class="mt-4" v-model="currentTab">
+            <oc-tab title="Deployment">
+                <deployment-resources v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
+            </oc-tab>
+            <oc-tab title="Console">
+                <console-wrapper ref="consoleWrapper" @active-deployment="setTabToConsoleIfNeeded" v-if="jobsData" :jobs-data="jobsData" />
+            </oc-tab>
+        </gl-tabs>
     </div>
 </template>
 <style>

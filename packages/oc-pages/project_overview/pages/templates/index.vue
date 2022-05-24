@@ -460,7 +460,7 @@ export default {
         }
 
         beforeRedirect() // this is weird, the logic around here has just changed a lot recently
-        window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${slugify(this.$route.query.fn)}`
+        window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${slugify(this.$route.query.fn)}?show=console`
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];
