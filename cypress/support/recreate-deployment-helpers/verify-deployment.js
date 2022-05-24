@@ -26,20 +26,34 @@ const verificationRoutines = {
     const passwordEnvKey = (`${dt.name}__${dt.primary}__password`).replace(/-/g, '_')
     console.log(env, dt.name, dt.primary, passwordEnvKey)
 
-  cy.withStore().then(store => {
-    expect(store).to.exist
-    const password = store.getters.lookupVariableByEnvironment(passwordEnvKey, env)
-    const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.untrusted.me --username ${email} --password ${password}`
-    console.log(command)
-    cy.waitUntil(() => {
-      return cy.exec(
-        command, 
-        {failOnNonZeroExit: false}
-      ).then(result => {console.log(result); return result.code == 0})
-    }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
-  })
-  }
+    cy.withStore().then(store => {
+      expect(store).to.exist
+      const password = store.getters.lookupVariableByEnvironment(passwordEnvKey, env)
+      const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.untrusted.me --username ${email} --password ${password}`
+      console.log(command)
+      cy.waitUntil(() => {
+        return cy.exec(
+            command, 
+            {failOnNonZeroExit: false}
+          ).then(result => {console.log(result); return result.code == 0})
+        }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
+    })
+  },
 
+  'testingsimple-blueprint': (deployment, env) => {
+    cy.withStore().then(store => {
+      expect(store).to.exist
+      const resource = store.getters.getResources[0]
+      const publicAddress = resource.attributes.filter((at) => at.name === 'public_address')[0].value 
+      const command = `./scripts/src/blueprint-validation/simple-blueprint.js --publicAddress http://${publicAddress}`
+      cy.waitUntil(() => {
+            return cy.exec(
+                command, 
+                {failOnNonZeroExit: false}
+              ).then(result => {console.log(result); return result.code == 0})
+            }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
+    })
+  }
 }
 
 function verifyDeployment(deployment, env) {
@@ -47,7 +61,6 @@ function verifyDeployment(deployment, env) {
   const ab = Object.values(deployment.ApplicationBlueprint)[0] 
   const routine = verificationRoutines[ab.name]
   routine && routine(deployment, env)
-
 }
 
 Cypress.Commands.add('verifyDeployment', verifyDeployment)
