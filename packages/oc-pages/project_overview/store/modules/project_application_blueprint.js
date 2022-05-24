@@ -5,102 +5,6 @@ import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
 import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
 import Vue from 'vue'
 
-
-// TODO these classes are barely used and probably shouldn't stay
-class ApplicationBlueprint {
-
-    constructor(source, state) {
-        for (const key in source) {
-            this[key] = source[key]
-        }
-
-        this._state = state
-    }
-
-
-    getDeploymentTemplate(name) {
-        const dt = this._state['DeploymentTemplate'][name]
-        if(!dt) return null
-        return new DeploymentTemplate(dt, this._state)
-    }
-
-    toJSON() {
-        const result = {...this}
-        delete result._state
-        return result
-    }
-  
-}
-
-class DeploymentTemplate {
-
-    constructor(source, state) {
-        for (const key in source) {
-            this[key] = source[key]
-        }
-
-        this._state = state
-    }
-
-    get _primary() {
-        let primary
-        try {
-            primary = this._state['DeploymentTemplate'][this.name].ResourceTemplate[this.primary]
-        } catch(e) {}
-
-        if(!primary) primary = this._state['ResourceTemplate'][this.primary]
-
-        if(primary) return new ResourceTemplate(primary, this._state)
-
-        return null
-    }
-
-    toJSON() {
-        const result = {...this}
-        delete result._state
-        return result
-    }
-
-}
-
-class ResourceTemplate {
-    
-    constructor(source, state) {
-        for(const key in source) {
-            this[key] = source[key]
-        }
-
-        this._state = state
-
-        /*
-        for(const requirement of this._type.requirements) {
-            if(!this.dependencies.find(dep => dep.constraint.name == requirement.name)) {
-
-                this.dependencies.push({
-                    __typename: 'Dependency',
-                    name: requirement.name,
-                    match: null,
-                    target: null
-                })
-            }
-        }
-        */
-    }
-
-    get _type() {
-        return this._state['ResourceType'][this.type]
-    }
-
-    toJSON() {
-        const result = {...this}
-        delete result._state
-        return result
-    }
-
-
-}
-
-
 const state = {loaded: false, callbacks: [], clean: true}
 const mutations = {
     setProjectState(state, {key, value}) {
@@ -278,9 +182,7 @@ const actions = {
     
 }
 
-function storeResolver(typename, options) {
-    const defaults = {}
-    const {instantiateAs} = Object.assign(defaults, options)
+function storeResolver(typename) {
     return function(state) {
         const dictionary = typeof typename == 'string'? state[typename]: state
         if(!dictionary) return () => null
@@ -294,8 +196,22 @@ function storeResolver(typename, options) {
             }
             if(entry) {
                 let result
-                if(instantiateAs) {
-                    result = new instantiateAs(entry, state)
+                if (typename === 'DeploymentTemplate') {
+                    // TODO maybe there is another way to do this
+                    // NOTE entry might be frozen, so here I assign the new field first
+                    result = {
+                        ...result,
+                        _primary: state['ResourceTemplate'][entry.primary]
+                    }
+                    result = Object.assign(result, entry)
+                } else if (typename === 'ResourceTemplate') {
+                    // TODO maybe there is another way to do this
+                    // NOTE entry might be frozen, so here I assign the new field first
+                    result = {
+                        ...result,
+                        _type: state['ResourceTemplate'][entry.type]
+                    }
+                    result = Object.assign(result, entry)
                 }
                 else result = entry
                 return Object.freeze(result)
@@ -309,15 +225,14 @@ function storeResolver(typename, options) {
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType: storeResolver('ResourceType'),
-    resolveResourceTemplate: storeResolver('ResourceTemplate', {instantiateAs: ResourceTemplate}),
-    resolveDeploymentTemplate: storeResolver('DeploymentTemplate', {instantiateAs: DeploymentTemplate}),
+    resolveResourceTemplate: storeResolver('ResourceTemplate'),
+    resolveDeploymentTemplate: storeResolver('DeploymentTemplate'),
     resolveLocalResourceTemplate: storeResolver(
         function(state, deploymentTemplate, name) {
             try {
                 return state.DeploymentTemplate[deploymentTemplate].ResourceTemplate[name]
             } catch(e) {return null}
-        },
-        {instantiateAs: ResourceTemplate}
+        }
     ),
     resolveResource(state) {
         return name => {
@@ -399,7 +314,7 @@ const getters = {
             return result
         }
     },
-    getApplicationBlueprint(state) { return new ApplicationBlueprint(state.applicationBlueprint, state)},
+    getApplicationBlueprint(state) { return state.applicationBlueprint },
 
     getResources(state) {return Object.values(state.Resource || {})},
     getDeployment(state) {return Object.values(state.Deployment || {})[0]},
@@ -412,78 +327,6 @@ const getters = {
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }
     },
-    getValidResourceTypes(state, getters) {
-        return function(dependency, _deploymentTemplate, environment) {
-            // having trouble getting fetches finished before the ui starts rendering
-            try {
-                if(!dependency || !state.ResourceType) return []
-                const dependencyName = typeof(dependency) == 'string'? dependency:
-                    dependency.name
-                //dependency.resourceType || dependency.constraint && dependency.constraint.resourceType.name
-
-                function filteredByType(resourceType) {
-                    let typeName = typeof(resourceType) == 'string'? resourceType: resourceType.name
-                    return Object.values(state.ResourceType).filter(type => {
-                        const isValidImplementation =  Array.isArray(type.extends) && type.extends.includes(typeName)
-                        const isConcreteType = Array.isArray(type.implementations) && type.implementations.length > 0
-                        return isValidImplementation && isConcreteType
-                    })
-                }
-                let result = filteredByType(dependencyName)
-
-                const deploymentTemplate = typeof _deploymentTemplate == 'string'?
-                    getters.resolveDeploymentTemplate(_deploymentTemplate) :
-                    new DeploymentTemplate(_deploymentTemplate, state)
-
-                if(result.length == 0 && deploymentTemplate) {
-                    const dependencies = deploymentTemplate._primary.dependencies
-                    if(dependencies) {
-                        const dependency = dependencies.find(dependency => dependency.name == dependencyName)
-                        if(dependency) {
-                            result = filteredByType(dependency.constraint.resourceType)
-                        }
-                    }
-                }
-
-                // providing an environment if this is a deployment
-                if(environment) {
-                    // TODO resolve the connection type to check extends
-                    result = result.filter(type => {
-                        if(Array.isArray(type.implementation_requirements) && type.implementation_requirements.length) {
-                            return type.implementation_requirements.every(
-                                req => environment.connections.some(conn => conn.type == req) 
-                            )
-                        }
-                        return true
-                    })
-                }
-                // old algorithm
-                else {
-                    // TODO query for this information
-                    const CLOUD_MAPPINGS = {
-                        [lookupCloudProviderAlias('gcp')]: 'unfurl.nodes.GoogleCloudObject', 
-                        [lookupCloudProviderAlias('aws')]: 'unfurl.nodes.AWSResource',
-                        [lookupCloudProviderAlias('azure')]: 'unfurl.nodes.AzureResources', 
-                        //[lookupCloudProviderAlias('k8s')]: unknown
-                    }
-
-                    if(deploymentTemplate?.cloud) {
-                        const allowedCloudVendor = lookupCloudProviderAlias(deploymentTemplate.cloud)
-                        result = result.filter(type => {
-                            return !type.extends.includes('unfurl.nodes.CloudObject') ||
-                                type.extends.includes(CLOUD_MAPPINGS[allowedCloudVendor])
-                        })
-                    }
-                }
-
-                return result
-
-            } catch(e) {
-                console.error(e)
-                return []
-            }
-        }
-    }
 }
 
 

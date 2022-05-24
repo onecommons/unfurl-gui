@@ -158,7 +158,9 @@ const actions = {
         let _syncState = syncState
         let blueprint = rootGetters.getApplicationBlueprint;
         let deploymentTemplate
-        function setdt() { deploymentTemplate = blueprint.getDeploymentTemplate(templateSlug); }
+        function setdt() { 
+            deploymentTemplate = rootGetters.resolveDeploymentTemplate(templateSlug)
+        }
         setdt()
         let primary
         let deploymentDict
