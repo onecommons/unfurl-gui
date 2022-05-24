@@ -441,7 +441,7 @@ export default {
             <gl-card v-if="$projectGlobal.readme">
                 <template #header>
                     <div class="d-flex align-items-center">
-                        <gl-icon name="doc-text" class="mr-2"/>
+                        <gl-icon name="information-o" class="mr-2"/>
                         <h5 class="mb-0 mt-0">
                             {{__('README.md')}}
                         </h5>

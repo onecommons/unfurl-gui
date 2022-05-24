@@ -1,6 +1,5 @@
 <script>
 import TableComponent from '../../../vue_shared/components/oc/table.vue'
-import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ApplicationCell from '../cells/application-cell.vue'
 import DeploymentCell from '../cells/deployment-cell.vue'
@@ -15,7 +14,7 @@ function deploymentGroupBy(item) {
 
 export default {
     components: {
-        TableComponent, StatusIcon, EnvironmentCell, ApplicationCell, DeploymentCell, EnvironmentStatus
+        TableComponent, EnvironmentCell, ApplicationCell, DeploymentCell, EnvironmentStatus
     },
     props: {
         items: {
