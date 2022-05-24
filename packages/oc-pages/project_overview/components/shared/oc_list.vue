@@ -176,7 +176,7 @@ export default {
 </script>
 <template>
     <gl-tabs v-if="shouldRenderTabs" class="">
-      <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${card.name}`" title="Requirements" :titleCount="requirements.length">
+      <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${card.name}`" title="Components" :titleCount="requirements.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
                     <dependency :card="requirement.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name + '-template'"/>
