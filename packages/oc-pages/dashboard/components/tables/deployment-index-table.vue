@@ -416,13 +416,13 @@ export default {
         </gl-tabs>
         <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
-                <div class="ml-2">
+                <div class="ml-2" style="padding-left: 30px">
                     {{__('Deployment')}}
                 </div>
             </template>
             <template #deployment="scope">
                 <div class="d-flex">
-                    <deployment-status-icon :scope="scope" />
+                    <deployment-status-icon width="40px" :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
                         <a :href="deploymentItem(scope, 'viewableLink')">
                             <b>{{scope.item.context.deployment.title}}:</b>
