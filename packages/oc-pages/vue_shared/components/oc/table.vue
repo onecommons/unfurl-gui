@@ -524,7 +524,7 @@ export default {
 
 .oc-table >>> tr.table-expanded {
   border-color: #D1CFD7;
-  height: 3em;
+  height: 0;
 }
 .oc-table >>> tr.table-expanded > td {
   height: 3em;

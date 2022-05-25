@@ -8,6 +8,7 @@ export {default as OcPropertiesList} from './components/oc/oc-properties-list.vu
 export {default as DeploymentResources} from './components/oc/deployment-resources.vue'
 export {default as OcTab} from './components/oc/oc-tab.vue'
 export {default as ErrorSmall} from './components/oc/ErrorSmall.vue'
+export {default as EmptyStateJob} from './components/oc/empty-state-job.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 export const PageNotFound = Vue.component("page-not-found", {

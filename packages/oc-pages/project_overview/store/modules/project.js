@@ -280,7 +280,8 @@ const actions = {
     },
 
     syncGlobalVars({commit}, globalVars) {
-        const projectIcon = document.querySelector('#oc-project-overview-icon img')?.src
+        const projectIconEl = document.querySelector('#oc-project-overview-icon img')
+        const projectIcon = projectIconEl?.getAttribute('data-src') || projectIconEl?.src
         commit("SET_GLOBAL_VARS", {...globalVars, projectIcon});
     },
 
