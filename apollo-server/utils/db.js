@@ -13,6 +13,10 @@ export function resolveLiveRepoFile(repo, path) {
   return resolve(LIVE_REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
 }
 
+export function resolveRepoFile(repo, path) {
+  return resolve(REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
+}
+
 export function readLiveRepoFile(repo, path) {
   const target = resolveLiveRepoFile(repo, path)
   console.log('read', target)
@@ -25,6 +29,20 @@ export function readLiveRepoFile(repo, path) {
     return null
   }
 }
+
+export function readRepoFile(repo, path) {
+  const target = resolveRepoFile(repo, path)
+  console.log('read', target)
+  try {
+    return JSON.parse(
+      fs.readFileSync(target, 'utf-8')
+    )
+  } catch(e) {
+    if(!e.message.startsWith('ENOENT')) console.error(e.message)
+    return null
+  }
+}
+
 export function writeLiveRepoFile(repo, path, _contents) {
   const dest = resolveLiveRepoFile(repo, path)
   const destDir = dirname(dest)

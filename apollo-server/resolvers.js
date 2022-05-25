@@ -1,7 +1,7 @@
 import GraphQLJSON from 'graphql-type-json'
 import _ from 'lodash';
 import {join, resolve} from 'path'
-import {writeLiveRepoFile, readLiveRepoFile} from './utils/db'
+import {writeLiveRepoFile, readLiveRepoFile, readRepoFile} from './utils/db'
 import {getBlueprintJson} from './utils/iterate_projects'
 
 const username = process.env.UNFURL_CLOUD_USERNAME || "demo"
@@ -106,7 +106,7 @@ export default {
         // XXX merge in defaults
         // const defaults = environments['DeploymentEnvironment']['defaults']
         // env_hash['connections'] = defaults.merge(env_hash || Hash.new)
-        mergeTypes(environments);
+        //mergeTypes(environments); this wasn't working for some reason
         const result = Object.entries(environments['DeploymentEnvironment']).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
@@ -116,7 +116,7 @@ export default {
           clientPayload: {
             // XXX for consistency should be: "DeploymentEnvironment": { [key]: value },
             "DeploymentEnvironment": value,
-            "ResourceType": environments["ResourceType"],
+            "ResourceType": readRepoFile('unfurl-types', 'unfurl-types.json').ResourceType,
             "DeploymentPath": environments["DeploymentPath"]
           }
         }));
