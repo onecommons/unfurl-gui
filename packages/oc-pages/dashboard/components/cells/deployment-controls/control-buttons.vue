@@ -68,12 +68,12 @@ export default {
 </template>
 <style scoped>
 .control-button-container >>> .gl-button-text {
-    font-size: 1em;
+    font-size: 0.95em;
     font-weight: 600;
     display: flex;
     align-items: center;
 }
-.control-button-container >>> .gl-button { width: 9em; padding: 0.2em 0;}
+.control-button-container >>> .gl-button { width: 10em; padding: 0.2em 0;}
 .control-button-container >>> .gl-new-dropdown-item-text-primary { display: flex; align-items: center; }
 .control-button-container >>> .gl-icon { margin-right: 0.25em; }
 </style>

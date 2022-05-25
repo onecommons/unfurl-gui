@@ -169,6 +169,6 @@ export default {
 <style scoped>
 #jobs-dropdown { position: absolute; } 
 #jobs-dropdown >>> .dropdown-toggle { padding: 0; } 
-.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
+.deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
 .deployment-controls > * { display: flex; margin: 0 0.25em;}
 </style>

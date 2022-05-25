@@ -413,6 +413,10 @@ export default {
 }
 
 
+.oc-table >>> .table-responsive {
+  margin-bottom: 0;
+}
+
 .oc-table >>> tbody tr {
   height: 4.25em;
 }
@@ -421,7 +425,10 @@ export default {
   margin-top: -1px;
   border-bottom-style: solid;
   border-bottom-color: white;
-  border-bottom-width: 40px; /*fix scrollbar position*/
+}
+
+.oc-table >>> tr:last-child .table-body {
+  border-bottom-style: none;
 }
 
 .oc-table >>> th {
