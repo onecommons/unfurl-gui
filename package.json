@@ -2,6 +2,9 @@
   "name": "unfurl-gui",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=14 <17"
+  },
   "scripts": {
     "start": "./scripts/start",
     "stop": "./scripts/stop",

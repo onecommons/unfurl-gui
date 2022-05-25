@@ -55,11 +55,13 @@ for(const tld of fs.readdirSync(REPOS_SEED)) {
 const targetBase = join(LIVE_REPOS_DIR, "demo")
 if(!process.env.NO_FIXTURES) {
   for(const filePath in files) {
+    const liveFilePath = resolve(targetBase, filePath)
+    if(fs.existsSync(liveFilePath)) continue
     const fileContents = files[filePath]
     const targetDir = resolve(targetBase, dirname(filePath))
     console.log(`possibly overwriting files in ${targetDir}, set NO_FIXTURES=1 to disable this.`)
     mkdirp.sync(targetDir)
-    fs.writeFileSync(resolve(targetBase, filePath), fileContents)
+    fs.writeFileSync(liveFilePath, fileContents)
   }
 } else {
   console.log(`NO_FIXTURES is set, keeping files in ${REPOS_SEED}`)
