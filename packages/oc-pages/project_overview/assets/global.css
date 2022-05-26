@@ -43,8 +43,13 @@ h2.oc-title-section {
     background-color: #E3F7FF !important;
 }
 */
-
 .deploy-action {
   background: #E3F7FF !important;
 
 }
+.gl-dark .deploy-action {
+  background: transparent !important;
+
+}
+
+
