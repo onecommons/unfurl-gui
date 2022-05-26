@@ -6,13 +6,14 @@ import store from './store';
 import {GlTooltipDirective} from '@gitlab/ui'
 import __ from '~/locale';
 import ElementUI from 'element-ui'
+import {setupTheme} from 'oc_vue_shared/theme'
 
 import './assets/global.css';
-import 'element-ui/lib/theme-chalk/index.css'
  
 Vue.use(ElementUI)
 Vue.directive('gl-tooltip', GlTooltipDirective)
-//export {bus} from 'oc/bus-shim';
+
+setupTheme(Vue)
 
 export default (elemId='js-oc-project-overview') => {
   const element = document.getElementById(elemId);
