@@ -3,13 +3,19 @@ import apolloProvider from './graphql';
 import MainComponent from './components/main.vue';
 import createRouter from './router';
 import store from './store';
-import {GlTooltipDirective} from '@gitlab/ui'
+import {GlTooltipDirective} from '@gitlab/ui';
 import __ from '~/locale';
-import ElementUI from 'element-ui'
+import ElementUI from 'element-ui';
 
 import './assets/global.css';
-import 'element-ui/lib/theme-chalk/index.css'
- 
+import 'element-ui/lib/theme-chalk/index.css';
+// import 'element-theme-dark';
+// TODO dynamic import
+// if (document.getElementsByClassName('gl-dark')[0]) {
+//     import('element-theme-dark'); }
+//     else {
+//     import('element-ui/lib/theme-chalk/index.css');
+// }
 Vue.use(ElementUI)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 //export {bus} from 'oc/bus-shim';

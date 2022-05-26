@@ -1,16 +1,22 @@
 import Vue from 'vue';
 //import TableComponentContainer from './components/table.vue';
-import Dashboard from './dashboard.vue'
+import Dashboard from './dashboard.vue';
 import apolloProvider from './graphql';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
-import createRouter from './router'
+import createRouter from './router';
 import createFlash, { FLASH_TYPES } from '../vue_shared/client_utils/oc-flash';
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 
 
-import 'element-ui/lib/theme-chalk/index.css'
-
+import 'element-ui/lib/theme-chalk/index.css';
+// import 'element-theme-dark';
+// TODO dynamic import
+// if (document.getElementsByClassName('gl-dark')[0]) {
+//     import('element-theme-dark'); }
+//     else {
+//     import('element-ui/lib/theme-chalk/index.css');
+// }
 Vue.use(GlToast);
 Vue.directive('gl-tooltip', GlTooltipDirective)
 const router = createRouter()

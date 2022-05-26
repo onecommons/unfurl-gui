@@ -9159,6 +9159,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"element-theme-dark@npm:^1.0.3":
+  version: 1.0.3
+  resolution: "element-theme-dark@npm:1.0.3"
+  checksum: 801be028193162e22b6d0a4dc07220fba697da5081129fd5eb45a0961a6f11fa6ebec85d774890d2881ab6f38aaf5e00c791fcb58f0a78f09324794602f37b55
+  languageName: node
+  linkType: hard
+
 "element-ui@npm:^2.15.6":
   version: 2.15.6
   resolution: "element-ui@npm:2.15.6"
@@ -20123,6 +20130,7 @@ __metadata:
     cypress: ^9.2.1
     cypress-file-upload: ^5.0.8
     cypress-wait-until: ^1.7.2
+    element-theme-dark: ^1.0.3
     element-ui: ^2.15.6
     eslint: ^6.7.2
     eslint-plugin-graphql: ^2.1.1
