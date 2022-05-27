@@ -106,14 +106,14 @@ export default {
                 :count="applicationsCount" 
                 s="Application" 
                 p="Applications" 
-                color="#f4f4f4"
+                class="qcard1"
                 create-link="/explore" />
             <quantity-card 
                 :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                 :count="environmentsCount"
                 s="Environment"
                 p="Environments"
-                color="#f4f4f4"
+                class="qcard2"
                 :create-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
         </div>
         <div class="d-flex">
@@ -122,7 +122,7 @@ export default {
                 :count="runningDeploymentsCount"
                 s="Running Deployment"
                 p="Running Deployments"
-                color="#e2fbeb"
+                class="qcard3"
                 create-link="/explore" />
             <!-- TODO figure out a better way to show stopped deployments -->
             <quantity-card
@@ -130,7 +130,7 @@ export default {
                 :count="totalDeploymentsCount"
                 s="Total Deployment"
                 p="Total Deployments"
-                color="#fff4f4"/>
+                class="qcard4" />
         </div>
     </div>
     <TableComponent :items="tableItems" :fields="tableFields">
