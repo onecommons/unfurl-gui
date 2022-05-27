@@ -90,11 +90,17 @@ export default {
 
   },
   data() {
-    const hackyBadgeClass = {}
-    try {
-      hackyBadgeClass[`badge-${StatusIndicators[this.status][0]}`] = true
-    } catch(e) {}
-    return { StatusIndicators, hackyBadgeClass, StateNames};
+    return { StatusIndicators, StateNames};
+  },
+  computed: {
+    hackyBadgeClass() {
+      const result = {}
+      try {
+        result[`badge-${StatusIndicators[this.status][0]}`] = true
+      } catch(e) {}
+
+      return result
+    }
   },
   components: {
     GlIcon//, BBadge

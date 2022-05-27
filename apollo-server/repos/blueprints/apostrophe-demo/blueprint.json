@@ -9,6 +9,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.GoogleCloudObject",
         "unfurl.nodes.CloudObject",
@@ -61,6 +65,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.CloudObject",
         "tosca.nodes.Root",
@@ -102,6 +110,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "tosca.nodes.Root",
         "tosca.capabilities.Node",
@@ -128,6 +140,39 @@
             "required": true,
             "description": "User defined name of the project",
             "type": "string"
+          }
+        }
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "project_id": {
+            "title": "project_id",
+            "required": true,
+            "type": "string"
+          },
+          "organization_id": {
+            "title": "organization_id",
+            "required": true,
+            "$toscatype": "integer",
+            "type": "number"
+          },
+          "billing_account": {
+            "title": "billing_account",
+            "required": true,
+            "type": "string"
+          },
+          "folder_id": {
+            "title": "folder_id",
+            "required": true,
+            "$toscatype": "integer",
+            "type": "number"
+          },
+          "activate_apis": {
+            "title": "activate_apis",
+            "default": [],
+            "required": true,
+            "type": "array"
           }
         }
       },
@@ -184,6 +229,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.CloudAccount",
         "tosca.nodes.Root",
@@ -215,6 +264,22 @@
         "properties": {
           "account_id": {
             "title": "account_id",
+            "required": true,
+            "type": "string"
+          }
+        }
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "filename": {
+            "title": "filename",
+            "required": true,
+            "type": "string"
+          },
+          "download_location": {
+            "title": "download_location",
+            "default": "secrets",
             "required": true,
             "type": "string"
           }
@@ -293,6 +358,16 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "title": "name",
+            "required": true,
+            "type": "string"
+          }
+        }
+      },
       "extends": [
         "unfurl.nodes.GoogleCloudResource",
         "unfurl.nodes.GoogleCloudObject",
@@ -357,6 +432,33 @@
             "required": true,
             "$toscatype": "integer",
             "type": "number"
+          }
+        }
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "title": "type",
+            "default": "organization",
+            "required": true,
+            "type": "string"
+          },
+          "organization_id": {
+            "title": "organization_id",
+            "required": true,
+            "$toscatype": "integer",
+            "type": "number"
+          },
+          "parent": {
+            "title": "parent",
+            "required": true,
+            "type": "string"
+          },
+          "name": {
+            "title": "name",
+            "required": true,
+            "type": "string"
           }
         }
       },
@@ -430,6 +532,27 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "title": "type",
+            "default": "folder",
+            "required": true,
+            "type": "string"
+          },
+          "parent": {
+            "title": "parent",
+            "required": true,
+            "type": "string"
+          },
+          "name": {
+            "title": "name",
+            "required": true,
+            "type": "string"
+          }
+        }
+      },
       "extends": [
         "unfurl.nodes.GoogleCloudFolder",
         "unfurl.nodes.GoogleCloudResource",
@@ -496,6 +619,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "Base",
         "tosca.nodes.Root",
@@ -539,6 +666,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "Compute",
         "Base",
@@ -581,6 +712,10 @@
             "type": "number"
           }
         }
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
       },
       "extends": [
         "AWSInstance",
@@ -636,6 +771,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -710,6 +849,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "GCPInstance",
         "Compute",
@@ -768,6 +911,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "MongoDB",
         "Base",
@@ -805,6 +952,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "Atlas",
         "MongoDB",
@@ -829,6 +980,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -867,6 +1022,10 @@
       "badge": "DNS",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -915,6 +1074,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "DockerHost",
         "Compute",
@@ -953,6 +1116,10 @@
             "type": "string"
           }
         }
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
       },
       "extends": [
         "MEANStack",
@@ -1026,6 +1193,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "Mail",
         "tosca.relationships.Root"
@@ -1040,6 +1211,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "tosca.relationships.Root"
       ]
@@ -1050,6 +1225,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1067,6 +1246,16 @@
       "inputsSchema": {
         "type": "object",
         "properties": {}
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "main": {
+            "title": "main",
+            "required": true,
+            "type": "string"
+          }
+        }
       },
       "extends": [
         "unfurl.nodes.Installer.Terraform",
@@ -1095,6 +1284,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1172,6 +1365,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.Repository",
         "tosca.nodes.Root",
@@ -1245,6 +1442,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.LocalRepository",
         "unfurl.nodes.Repository",
@@ -1269,6 +1470,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.ArtifactBuilder",
         "tosca.nodes.Root",
@@ -1289,6 +1494,10 @@
       "description": "Reification of an artifact that needs to be installed. Node templates of this type are \"discovered\" when artifacts need to be installed on an operation_host.\n",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1323,6 +1532,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.Installation",
         "tosca.nodes.Root",
@@ -1353,6 +1566,10 @@
       "description": "Used if pre-existing instances are declared with no TOSCA template",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1392,6 +1609,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.AWSAccount",
         "unfurl.nodes.CloudAccount",
@@ -1423,6 +1644,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.nodes.AzureAccount",
         "unfurl.nodes.CloudAccount",
@@ -1451,6 +1676,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1508,6 +1737,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.relationships.InstalledBy",
         "tosca.relationships.Root"
@@ -1519,6 +1752,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1536,6 +1773,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.relationships.ConfiguringHostedOn",
         "unfurl.relationships.Configures",
@@ -1549,6 +1790,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1611,6 +1856,10 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.relationships.ConnectsTo.Ansible",
         "tosca.relationships.ConnectsTo",
@@ -1626,6 +1875,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "tosca.relationships.ConnectsTo",
         "tosca.relationships.Root"
@@ -1637,6 +1890,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1664,6 +1921,58 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "CLOUDSDK_CORE_PROJECT": {
+            "title": "CLOUDSDK_CORE_PROJECT",
+            "required": true,
+            "description": "id of the project",
+            "type": "string"
+          },
+          "CLOUDSDK_COMPUTE_REGION": {
+            "title": "CLOUDSDK_COMPUTE_REGION",
+            "required": true,
+            "description": "default region to use",
+            "type": "string"
+          },
+          "CLOUDSDK_COMPUTE_ZONE": {
+            "title": "CLOUDSDK_COMPUTE_ZONE",
+            "required": true,
+            "description": "default zone to use",
+            "type": "string"
+          },
+          "GOOGLE_APPLICATION_CREDENTIALS": {
+            "title": "GOOGLE_APPLICATION_CREDENTIALS",
+            "required": true,
+            "description": "Path to file containing service account private keys in JSON format",
+            "type": "string"
+          },
+          "GOOGLE_OAUTH_ACCESS_TOKEN": {
+            "title": "GOOGLE_OAUTH_ACCESS_TOKEN",
+            "required": true,
+            "description": "A temporary OAuth 2.0 access token obtained from the Google Authorization server",
+            "type": "string"
+          },
+          "GCP_SERVICE_ACCOUNT_CONTENTS": {
+            "title": "GCP_SERVICE_ACCOUNT_CONTENTS",
+            "required": true,
+            "description": "Content of file containing service account private keys",
+            "sensitive": true,
+            "type": "string"
+          },
+          "GCP_AUTH_KIND": {
+            "title": "GCP_AUTH_KIND",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "application",
+              "machineaccount",
+              "serviceaccount"
+            ]
+          }
+        }
+      },
       "extends": [
         "unfurl.relationships.ConnectsTo.GoogleCloudProject",
         "unfurl.relationships.ConnectsTo.CloudAccount",
@@ -1686,6 +1995,52 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "AWS_DEFAULT_REGION": {
+            "title": "AWS_DEFAULT_REGION",
+            "required": true,
+            "description": "The default region to use, e.g. us-west-1, us-west-2, etc.",
+            "type": "string"
+          },
+          "AWS_ACCESS_KEY_ID": {
+            "title": "AWS_ACCESS_KEY_ID",
+            "required": true,
+            "description": "The access key for your AWS account",
+            "type": "string"
+          },
+          "AWS_SECRET_ACCESS_KEY": {
+            "title": "AWS_SECRET_ACCESS_KEY",
+            "required": true,
+            "description": "The secret key for your AWS account.",
+            "sensitive": true,
+            "type": "string"
+          },
+          "AWS_SESSION_TOKEN": {
+            "title": "AWS_SESSION_TOKEN",
+            "required": true,
+            "description": "The session key for your AWS account.",
+            "sensitive": true,
+            "type": "string"
+          },
+          "AWS_PROFILE": {
+            "title": "AWS_PROFILE",
+            "required": true,
+            "type": "string"
+          },
+          "AWS_SHARED_CREDENTIALS_FILE": {
+            "title": "AWS_SHARED_CREDENTIALS_FILE",
+            "required": true,
+            "type": "string"
+          },
+          "AWS_CONFIG_FILE": {
+            "title": "AWS_CONFIG_FILE",
+            "required": true,
+            "type": "string"
+          }
+        }
+      },
       "extends": [
         "unfurl.relationships.ConnectsTo.AWSAccount",
         "unfurl.relationships.ConnectsTo.CloudAccount",
@@ -1701,6 +2056,53 @@
       "inputsSchema": {
         "type": "object",
         "properties": {}
+      },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "AZURE_CLIENT_ID": {
+            "title": "AZURE_CLIENT_ID",
+            "required": true,
+            "type": "string"
+          },
+          "AZURE_TENANT": {
+            "title": "AZURE_TENANT",
+            "required": true,
+            "type": "string"
+          },
+          "AZURE_SUBSCRIPTION_ID": {
+            "title": "AZURE_SUBSCRIPTION_ID",
+            "required": true,
+            "description": "for authentication with service principal",
+            "type": "string"
+          },
+          "AZURE_SECRET": {
+            "title": "AZURE_SECRET",
+            "required": true,
+            "description": "for authentication with service principal",
+            "sensitive": true,
+            "type": "string"
+          },
+          "AZURE_AD_USER": {
+            "title": "AZURE_AD_USER",
+            "required": true,
+            "description": "for authentication with Active Directory",
+            "type": "string"
+          },
+          "AZURE_PASSWORD": {
+            "title": "AZURE_PASSWORD",
+            "required": true,
+            "description": "for authentication with Active Directory",
+            "sensitive": true,
+            "type": "string"
+          },
+          "AZURE_ADFS_AUTHORITY_URL": {
+            "title": "AZURE_ADFS_AUTHORITY_URL",
+            "required": true,
+            "description": "set if you have your own ADFS authority",
+            "type": "string"
+          }
+        }
       },
       "extends": [
         "unfurl.relationships.ConnectsTo.Azure",
@@ -1725,6 +2127,17 @@
           }
         }
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {
+          "PACKET_API_TOKEN": {
+            "title": "PACKET_API_TOKEN",
+            "required": true,
+            "sensitive": true,
+            "type": "string"
+          }
+        }
+      },
       "extends": [
         "unfurl.relationships.ConnectsTo.Packet",
         "unfurl.relationships.ConnectsTo.CloudAccount",
@@ -1738,6 +2151,10 @@
       "description": "",
       "visibility": "inherit",
       "inputsSchema": {
+        "type": "object",
+        "properties": {}
+      },
+      "computedPropertiesSchema": {
         "type": "object",
         "properties": {}
       },
@@ -1757,6 +2174,10 @@
         "type": "object",
         "properties": {}
       },
+      "computedPropertiesSchema": {
+        "type": "object",
+        "properties": {}
+      },
       "extends": [
         "unfurl.relationships.ConnectsTo.Rackspace",
         "unfurl.relationships.ConnectsTo.OpenStack",
@@ -1772,6 +2193,7 @@
       "name": "the_app",
       "title": "the_app",
       "description": "",
+      "directives": [],
       "properties": [
         {
           "name": "container_image",
@@ -1838,6 +2260,7 @@
       "name": "app_container",
       "title": "app_container",
       "description": "",
+      "directives": [],
       "properties": [
         {
           "name": "CPUs",
@@ -1859,6 +2282,7 @@
       "name": "atlas_service",
       "title": "atlas_service",
       "description": "",
+      "directives": [],
       "properties": [
         {
           "name": "login",
@@ -1870,6 +2294,18 @@
         }
       ],
       "dependencies": []
+    },
+    "configurator-artifacts": {
+      "type": "unfurl.nodes.LocalRepository",
+      "name": "configurator-artifacts",
+      "title": "configurator-artifacts",
+      "description": "",
+      "directives": [
+        "default"
+      ],
+      "properties": [],
+      "dependencies": [],
+      "visibility": "hidden"
     }
   },
   "Overview": {
@@ -1891,9 +2327,10 @@
       "blueprint": "apostrophe-demo",
       "primary": "the_app",
       "resourceTemplates": [
-        "atlas_service",
+        "app_container",
         "the_app",
-        "app_container"
+        "atlas_service",
+        "configurator-artifacts"
       ],
       "ResourceTemplate": {}
     },
@@ -1907,9 +2344,10 @@
       "blueprint": "apostrophe-demo",
       "primary": "the_app",
       "resourceTemplates": [
-        "atlas_service",
+        "app_container",
         "the_app",
-        "app_container"
+        "atlas_service",
+        "configurator-artifacts"
       ],
       "ResourceTemplate": {}
     },
@@ -1923,9 +2361,10 @@
       "blueprint": "apostrophe-demo",
       "primary": "the_app",
       "resourceTemplates": [
-        "atlas_service",
+        "app_container",
         "the_app",
-        "app_container"
+        "atlas_service",
+        "configurator-artifacts"
       ],
       "ResourceTemplate": {}
     },
@@ -1939,9 +2378,10 @@
       "blueprint": "apostrophe-demo",
       "primary": "the_app",
       "resourceTemplates": [
-        "atlas_service",
+        "app_container",
         "the_app",
-        "app_container"
+        "atlas_service",
+        "configurator-artifacts"
       ],
       "ResourceTemplate": {}
     }

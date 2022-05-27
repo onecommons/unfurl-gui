@@ -65,13 +65,13 @@ test('numbers', () => {
 })
 
 test('password', () => {
-    const password = resolve({ranges: [[33, 126]], len: 15})
-    expect(password).toMatch(/^[\u0021-\u007E]{15}$/)
+    const password = resolve({ranges: [[48, 57], [65, 90], [97, 122]], len: 15})
+    expect(password).toMatch(/^[A-Za-z0-9]{15}$/)
 })
 
 test('password preset arg', () => {
     const password = resolve({preset: 'password'})
-    expect(password).toMatch(/^[\u0021-\u007E]{15}$/)
+    expect(password).toMatch(/^[A-Za-z0-9]{15}$/)
 })
 
 test('password preset works for ghost', () => {
@@ -80,3 +80,14 @@ test('password preset works for ghost', () => {
         expect(password).toMatch(/^(?=.*\d).{10,}$/)
     }
 })
+
+// mariadb/mysql
+/*
+test("password preset doesn't contain backslash", () => {
+    for(let i = 0; i < 50; i++) {
+        const password = resolve({preset: 'password'})
+        expect(password).not.toContain('\\')
+    }
+
+})
+*/

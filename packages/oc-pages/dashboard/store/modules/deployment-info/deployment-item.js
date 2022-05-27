@@ -64,6 +64,8 @@ export default class DeploymentItem {
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
     get createdAtText() {
+        return `${this.createdAtDate} ${this.createdAtTime}`
+      /*
         if(!this.createdAt) return 
         const today = (new Date(Date.now())).getDate() 
         const workflow = this.pipelineWorkflow == 'undeploy'? 'Undeployed': 'Deployed'
@@ -71,6 +73,7 @@ export default class DeploymentItem {
             return workflow + ' on ' + this.createdAtDate
         }
         return workflow + ' at ' + this.createdAtTime
+        */
     }
     get isEditable() {
         return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
@@ -79,7 +82,7 @@ export default class DeploymentItem {
         return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
     }
     get isUndeployed() {
-        return this.deployment.__typename == 'Deployment' && !this.isDeployed
+        return this.deployment.__typename == 'Deployment' && !this.isDeployed && (this.deployment?.status != 3)
     }
     get isDeployed() {
         return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)

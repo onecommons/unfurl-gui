@@ -23,6 +23,9 @@ export function isDiscoverable(resourceType, environment, resourceTypeResolver) 
 }
 
 export function isConfigurable(resourceType, environment, resourceTypeResolver) {
+    if(isDiscoverable(resourceType, environment, resourceTypeResolver)) {
+        return true
+    }
     // TODO integrate this
     if(! meetsImplementationRequirements(resourceType, environment, resourceTypeResolver)) return false
     return resourceType?.implementations?.includes('create') || resourceType?.implementations?.includes('configure')

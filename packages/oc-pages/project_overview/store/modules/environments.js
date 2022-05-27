@@ -15,6 +15,7 @@ const state = {
     projectEnvironments: [],
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
+    projectPath: null,
     ready: false
 };
 
@@ -188,6 +189,7 @@ const actions = {
                         deployments
                         clientPayload
                         name
+                        state
                     }
                 }
             }
@@ -257,9 +259,9 @@ const actions = {
             await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
         }
     },
-    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath}) {
+    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         await Promise.all([
-            dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath}),
+            dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath, fetchPolicy}),
             dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
         ])
         dispatch('generateVaultPasswordIfNeeded', {fullPath: fullPath || projectPath}).then(() => commit('setReady', true))

@@ -46,6 +46,7 @@ describe('AWS environments', () => {
   afterEach(() => {
     cy.visit(`${BASE_URL}/dashboard/environments`)
     cy.environmentShouldExist(ENVIRONMENT_NAME)
+    cy.contains('Local Development', {matchCase: false}).should('not.exist')
   })
 
   it('Can create an aws environment', () => {
