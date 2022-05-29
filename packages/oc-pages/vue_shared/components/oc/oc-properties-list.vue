@@ -3,9 +3,11 @@ import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import {Status} from 'oc_vue_shared/oc-components'
 import {JSONView} from 'vue-json-component'
+import Redacted from './redacted.vue'
+
 export default {
     name: 'OcPropertiesList',
-    components: {GlIcon, Status, 'json-view': JSONView},
+    components: {GlIcon, Status, 'json-view': JSONView, Redacted},
     data() {
         return {expanded: true}
     },
@@ -29,7 +31,7 @@ export default {
         _properties() {
             const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
             return properties
-        }
+        },
     },
     methods: {
         toggleExpanded() {
@@ -40,6 +42,14 @@ export default {
             } else {
                 transitionTarget.style.marginTop = `-${transitionTarget.offsetHeight}px`
             }
+        },
+        isUrl(value) {
+            const regex = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi)
+            return regex.test(value)
+        },
+        isEmail(value) {
+            const regex = new RegExp(/[a-z0-9]+@[a-z]+\.[a-z]{2,3}/)
+            return regex.test(value)
         }
     }
 }
@@ -55,15 +65,15 @@ export default {
                 </slot>
                 <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
             </div>
-            <div ref="transitionTarget" class="properties-list-inner">
-                <div class="properties-list-item" v-for="property in _properties" :key="property.name">
-                    <div class="name-column">{{property.name}}</div>
-                    <div :style="property.valueStyle" class="value-column">
+            <table ref="transitionTarget" class="properties-list-inner">
+                <tr class="properties-list-item" v-for="property in _properties" :key="property.name">
+                    <td class="name-column">{{ property.name.replaceAll('_', ' ') }}</td>
+                    <td :style="property.valueStyle" class="value-column">
                         <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
 
                             <Status :status="property.status" display-text />
                         </div>
-                        <div v-else>
+                        <div v-else style="width: 100%">
                             <div v-if="property.icon" class="icon-container">
                                 <gl-icon :size="12" :name="property.icon" />
                             </div>
@@ -72,6 +82,12 @@ export default {
                               :data="property.value"
                               :rootKey="property.name"
                             />
+                            <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
+                            <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
+
+                            <!-- todo: use other criteria -->
+                            <Redacted v-else-if="typeof property.value === 'string' && property.value.includes('REDACTED')" :value="property.value" />
+
                             <span v-else>
                               {{property.value}}
                             </span>
@@ -83,9 +99,9 @@ export default {
                                 {{__(property.outboundLinkText)}}
                             </a>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </td>
+                </tr>
+            </table>
         </div>
     </div>
 
@@ -105,9 +121,10 @@ export default {
 
 .properties-list-inner {
     transition: margin 0.5s;
+    width: 100%;
+    table-layout: auto;
 }
 .properties-list-item {
-    display: flex;
     margin: -1px;
     min-width: 22em;
 }
@@ -142,13 +159,11 @@ export default {
 .name-column {
     font-weight: bold;
     background: #fafafa;
-    width: 10em;
     border-top-color: white;
     border-right-style: solid;
     color: #585d60;
 }
 .value-column {
-    width: calc(100% - 10em);
     padding-left: 3em; padding-right: 3em;
     color: #666666;
     border-color: #eeeeee;

@@ -16,7 +16,8 @@ import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
-import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
+import {getJobsData, redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
+import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 
 
 export default {
@@ -32,7 +33,8 @@ export default {
     OcInputs,
     OcListResource,
     OcTemplateHeader,
-    TemplateButtons
+    TemplateButtons,
+    ConsoleWrapper
   },
 
 
@@ -65,6 +67,7 @@ export default {
       durationOfAlerts: 5000,
       checkedNode: true,
       selectedServiceToConnect: '',
+      jobsData: null,
       refValue: {
         shortName: 'main',
         fullName: 'refs/heads/main',
@@ -456,16 +459,8 @@ export default {
           window.history.replaceState({}, null, href)
         }
 
-        if(!window.gon.unfurl_gui) {
-            if(! await redirectToJobConsole({pipelineData}, {beforeRedirect}) && pipelineData?.id) {
-                beforeRedirect()
-                return redirectTo(`${this.pipelinesPath}/${pipelineData.id}`);
-            }
-        }
-        else {
-            // unfurl gui has issues with redirecting from the server
-            window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${slugify(this.$route.query.fn)}`
-        }
+        beforeRedirect() // this is weird, the logic around here has just changed a lot recently
+        window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${slugify(this.$route.query.fn)}?show=console`
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];
@@ -567,9 +562,6 @@ export default {
       return `Are you sure you want to delete <b>${this.getDeploymentTemplate.title}</b> template ?`;
     },
 
-    replaceSpaceWithDash(str){
-      return str.replace(/ /g, '-');
-    }
   },
 };
 </script>
@@ -580,6 +572,9 @@ export default {
       <!-- Header of templates -->
       <oc-template-header
         :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: $route.params.environment}"/>
+
+      <console-wrapper v-if="jobsData" :jobs-data="jobsData" />
+
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
         <oc-card
@@ -731,3 +726,4 @@ export default {
 </template>
 <style scoped src="./style.css">
 </style>
+

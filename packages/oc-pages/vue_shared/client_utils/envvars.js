@@ -45,6 +45,23 @@ export async function patchEnv(env, environmentScope, fullPath) {
 
 }
 
+export async function deleteEnvironmentVariables(environmentScope, fullPath) {
+    if(!fullPath) { console.warn('TODO use fullPath for patchEnv') }
+    const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint
+    const currentVars = (await axios.get(endpoint)).data.variables
+    const envPatch = []
+
+    for(const currentVar of currentVars) {
+        if(currentVar.environment_scope == environmentScope) {
+            envPatch.push({...currentVar, _destroy: true})
+        }
+    }
+
+    if(envPatch.length > 0) {
+        return await axios.patch(endpoint, {variables_attributes: envPatch})
+    }
+}
+
 export async function fetchEnvironmentVariables(fullPath) {
     if(!fullPath) { console.warn('TODO use fullPath for fetchEnvironmentVariables') }
     const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint

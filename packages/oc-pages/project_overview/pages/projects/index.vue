@@ -1,6 +1,6 @@
 <script>
 import createFlash, { FLASH_TYPES } from '~/flash';
-import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
+import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider, GlMarkdown } from '@gitlab/ui';
 import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
 import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
@@ -38,7 +38,8 @@ export default {
         ErrorSmall,
         DetectIcon,
         DeployedBlueprints,
-        YourDeployments
+        YourDeployments,
+        GlMarkdown
     },
     directives: {
         GlModal: GlModalDirective,
@@ -220,6 +221,7 @@ export default {
         }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
+        /*
         const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
 
         delete sessionStorage['instantiate_env']
@@ -251,6 +253,8 @@ export default {
             })
         }
         //
+
+         */
 
         const templateSelected = this.$route.query?.ts?
             this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null 
@@ -434,6 +438,17 @@ export default {
 
             </gl-tabs>
 
+            <gl-card v-if="$projectGlobal.readme">
+                <template #header>
+                    <div class="d-flex align-items-center">
+                        <gl-icon name="information-o" class="mr-2"/>
+                        <h5 class="mb-0 mt-0">
+                            {{__('README.md')}}
+                        </h5>
+                    </div>
+                </template>
+                <gl-markdown v-html="$projectGlobal.readme" />
+            </gl-card>
 
 
             <!-- Modal -->

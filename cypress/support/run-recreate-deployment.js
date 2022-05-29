@@ -1,10 +1,12 @@
+import './recreate-deployment-helpers'
+import slugify from '../../packages/oc-pages/vue_shared/slugify'
 const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
-import slugify from '../../packages/oc-pages/vue_shared/slugify'
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -24,9 +26,21 @@ Cypress.Commands.add('recreateDeployment', options => {
   }
   cy.document().then($document => {
     cy.fixture(fixture).then(deployment => {
-      const {DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
+      const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
       const dt = Object.values(DeploymentTemplate)[0]
+      dt.title = `Cy ${dt.title} ${Date.now().toString(36)}`
+      dt.name = slugify(dt.title)
       const primary = ResourceTemplate[dt.primary]
+
+      for(const key in DefaultTemplate) {
+        if(ResourceTemplate[key]) continue
+        ResourceTemplate[key] = DefaultTemplate[key]
+      }
+
+      for(const key in dt.ResourceTemplate || []) {
+        ResourceTemplate[key] = dt.ResourceTemplate[key]
+      }
+
 
       let env = Object.values(DeploymentPath)[0].environment
       let ensureEnvExists = false
@@ -59,16 +73,15 @@ Cypress.Commands.add('recreateDeployment', options => {
 
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
-      const useTitle = `Cy ${dt.title} ${Date.now().toString(36)}`
       // this thing is rediculous
       cy.get('[data-testid="deployment-name-input"]').focus()
       cy.get('[data-testid="deployment-name-input"]').invoke('val', '')
       cy.wait(500)
       // TODO try to make cypress less flakey without this
-      cy.get('[data-testid="deployment-name-input"]').type(useTitle)
+      cy.get('[data-testid="deployment-name-input"]').type(dt.title)
       cy.get('[data-testid="deployment-name-input"]').invoke('val', '')
       cy.wait(500)
-      cy.get('[data-testid="deployment-name-input"]').type(useTitle)
+      cy.get('[data-testid="deployment-name-input"]').type(dt.title)
 
       cy.get('[data-testid="deployment-environment-select"]').click()
       cy.get(`[data-testid="deployment-environment-selection-${env}"]`).click({force: true})
@@ -103,10 +116,11 @@ Cypress.Commands.add('recreateDeployment', options => {
           }
         }
 
-        for (const dependency of template.dependencies) {
+        for(const dependency of template.dependencies) {
           if (!dependency.match) continue
 
           const match = ResourceTemplate[dependency.match]
+          expect(match).to.exist
 
           if (dependency.constraint.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)
@@ -158,18 +172,27 @@ Cypress.Commands.add('recreateDeployment', options => {
 
       // formily oninput bug
       cy.get('input:first').blur({ force: true })
-      cy.wait(100)
+      cy.wait(BASE_TIMEOUT / 50)
 
       if(shouldDeploy) {
         cy.get('[data-testid="deploy-button"]').click()
-        cy.whenGitlab(() => {
-          cy.url({timeout: 20000}).should('not.include', 'deployment-drafts')
-
-          cy.withJobFromURL((job) => {
-            cy.expectSuccessfulJob(job)
+        cy.whenUnfurlGUI(() => {
+          cy.url({timeout: BASE_TIMEOUT * 8}).should('not.include', 'deployment-drafts')
+          cy.wait(BASE_TIMEOUT)
+          // TODO figure out how to chain this?
+          cy.withStore((store) => {
+            expect(store.getters.getDeployment.status).to.equal(1)
           })
 
-          cy.undeploy(useTitle)
+        })
+        cy.whenGitlab(() => {
+          cy.url({timeout: BASE_TIMEOUT * 4}).should('include', dt.name)
+          cy.withJob((job) => {
+            cy.expectSuccessfulJob(job)
+          })
+          cy.assertDeploymentRunning(dt.title)
+          cy.verifyDeployment(deployment, env)
+          cy.undeploy(dt.title)
         })
       } else if(shouldSave) {
         cy.get('[data-testid="save-draft-btn"]').click()

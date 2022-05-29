@@ -61,13 +61,22 @@ export function undeploy(pipelinesPath, parameters, options) {
     )
 }
 
+export function getJobsPath(pipelineData) {
+    const projectId = pipelineData.projectId || pipelineData.project.id
+    const pipelineId = pipelineData.id
+    return `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
+}
+
+export async function getJobsData(pipelineData) {
+    const jobsPath = getJobsPath(pipelineData)
+    const jobsData = (await axios.get(jobsPath))?.data
+    return jobsData
+}
+
 export async function redirectToJobConsole({pipelineData}, options) {
     // #!if false
 
-    const projectId = pipelineData.project.id
-    const pipelineId = pipelineData.id
-    const jobsPath = `/api/v4/projects/${projectId}/pipelines/${pipelineId}/jobs`
-    const jobsData = (await axios.get(jobsPath))?.data
+    const jobsData = await getJobsData(pipelineData)
     if(Array.isArray(jobsData)) {
         const redirectTarget = jobsData[0]?.web_url || redirectTarget
         if(options?.newTab) {
