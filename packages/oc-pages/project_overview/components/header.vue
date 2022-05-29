@@ -87,7 +87,7 @@ export default {
                         </h1>
                     </div>
                     <div class="home-panel-metadata d-flex flex-wrap text-secondary gl-font-base gl-font-weight-normal gl-line-height-normal">
-                        <a style="color: #4A5053;" :href="visitProject">{{__('View Project')}}</a>
+                        <a class="view-project-link" :href="visitProject">{{__('View Project')}}</a>
                     </div>
                 </div>
             </div>
