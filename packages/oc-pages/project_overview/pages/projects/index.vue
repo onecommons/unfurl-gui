@@ -110,7 +110,8 @@ export default {
             'getDefaultEnvironmentName',
             'lookupDeploymentOrDraft',
             'lookupEnvironment',
-            'getHomeProjectPath'
+            'getHomeProjectPath',
+            'getLastUsedEnvironment'
         ]),
         primaryProps() {
             return {
@@ -139,7 +140,7 @@ export default {
         // NOTE I probably should have just used a watcher here
         defaultEnvironmentName() {
             return (
-                this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud) || __("Select")
+                this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud) || __("Select")
             )
         },
         inputProperties() {
@@ -210,7 +211,7 @@ export default {
         }
     },
     async mounted() {
-
+        this.initUserSettings({ username: this.getUsername })
         await Promise.all([
             this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath}),
             this.populateJobsList(),
@@ -312,6 +313,16 @@ export default {
                 }
 
                 if(this.instantiateAs == 'deployment-draft'){
+                    // store the environment in local storage
+                    const lastUsedEnvironment = { 
+                        cloud: this.templateSelected.cloud, 
+                        environmentName: this.templateSelected.environment 
+                    }
+                    this.updateLastUsedEnvironment({ 
+                        lastUsedEnvironment,
+                        username: this.getUsername
+                    })
+
                     this.redirectToTemplateEditor('deploymentDraftPage');
                 } else {
                     await this.commitPreparedMutations()
@@ -377,13 +388,15 @@ export default {
             'populateDeploymentItems',
             'populateJobsList',
             'populateTemplateResources',
-            'fetchProject'
+            'fetchProject',
+            'updateLastUsedEnvironment'
         ]),
         ...mapMutations([
             'pushPreparedMutation',
             'setUpdateObjectPath',
             'setUpdateObjectProjectPath',
-            'discardEnvironment'
+            'discardEnvironment',
+            'initUserSettings'
         ])
     }
 }

@@ -9,6 +9,7 @@ import project_application_blueprint from './modules/project_application_bluepri
 import deployment_info from '../../dashboard/store/modules/deployment-info'
 import misc from './modules/misc'
 import deployments from './modules/deployments'
+import user_settings from './modules/user_settings'
 
 Vue.use(Vuex);
 
@@ -23,7 +24,8 @@ const store = new Vuex.Store({
         templateResources,
         deployment_template_updates,
         project_application_blueprint,
-        deployment_info
+        deployment_info,
+        user_settings
     },
     strict: debug,
     plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
