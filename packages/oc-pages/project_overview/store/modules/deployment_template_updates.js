@@ -590,10 +590,12 @@ const mutations = {
 
         }
     },
+    // TODO figure out whether this is necessary
     setBaseState(state, baseState) {
         state.accumulator = baseState
         state.committedNames = readCommittedNames(baseState)
     },
+    // this one doesn't try to fetch a blueprint for the accumulator
     useBaseState(state, baseState) {
         state.accumulator = baseState
         state.committedNames = readCommittedNames(baseState)

@@ -199,7 +199,7 @@ export default {
                 case 'delete':
                     await this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
                     this.$router.replace({hash: '#_'})
-                    window.location.reload()
+                    this.handleDeleteRedirect()
                 default:
                     return
 
@@ -240,7 +240,14 @@ export default {
           //if(deploymentItem?.jobStatusIsUnsuccessful) return  ''
           return 'No resources'
 
-        }
+        },
+        handleDeleteRedirect() {
+            if(this.$route.name == routes.OC_DASHBOARD_DEPLOYMENTS) {
+                window.location.href = this.$router.resolve({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}).href
+            } else {
+                window.location.reload()
+            }
+        },
     },
     computed: {
         ...mapGetters([

@@ -148,6 +148,7 @@ const actions = {
     },
     async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
+        commit('useBaseState', {}, {root: true})
         commit('setUpdateObjectPath', 'environments.json', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit('pushPreparedMutation', () => {
