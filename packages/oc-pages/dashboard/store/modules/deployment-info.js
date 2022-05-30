@@ -87,6 +87,7 @@ const actions = {
         // #!if
         result = await graphqlClient.defaultClient.query({
             query: LOOKUP_JOBS,
+            fetchPolicy: 'network-only',
             variables: {fullPath: rootGetters.getHomeProjectPath}
         })
         // #!endif

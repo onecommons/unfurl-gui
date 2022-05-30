@@ -19,12 +19,20 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath'])
+        ...mapGetters(['getHomeProjectPath, getDashboardItems'])
     },
     methods: {
-        ...mapActions(['fetchProjectEnvironments', 'loadDashboard']),
+        ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
         async mountJobsConsole() {
-            this.consoleApp = compatibilityMountJobConsole()//(await import('~/jobs')).default()
+            this.consoleApp = compatibilityMountJobConsole()
+        },
+        async onComplete() {
+            await Promise.all([
+                this.loadDashboard({fetchPolicy: 'network-only'}),
+                this.populateJobsList()
+            ])
+
+            await this.populateDeploymentItems(this.$store.getters.getDashboardItems)
         },
         visitJobLogSection(jobLogSection, highestLineNumber=0) {
             if(jobLogSection.content && jobLogSection.lineNumber > highestLineNumber) {
@@ -61,8 +69,7 @@ export default {
                         break
                     case 'incomplete':
                         if(complete) {
-                        //await self.fetchProjectEnvironments({fullPath: this.getHomeProjectPath, fetchPolicy: 'network-only'})
-                            await self.loadDashboard({fetchPolicy: 'network-only'})
+                            await self.onComplete()
                         }
                     case null:
                         self.initialCompletionState = complete? 'complete': 'incomplete'

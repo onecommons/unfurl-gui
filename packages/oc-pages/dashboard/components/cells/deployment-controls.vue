@@ -112,7 +112,10 @@ export default {
             this.$refs.previousJobs?.show()
         },
         pipelineToJobsLink(pipeline) {
-            const result = `/${this.getHomeProjectPath}/-/jobs/${this.jobByPipelineId(pipeline.id).id}`
+            if(!pipeline) return
+            const jobId = this.jobByPipelineId(pipeline.id)?.id
+            if(!jobId) return
+            const result = `/${this.getHomeProjectPath}/-/jobs/${jobId}`
             return result
         },
         pipelineToJobStatus(pipeline) {

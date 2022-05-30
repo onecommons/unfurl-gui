@@ -125,20 +125,28 @@ export default {
             this.$refs.deploymentResources.cleanModalResource()
             this.$refs.deploymentResources.scrollDown(slugify(title))
         },
-        onSaveTemplate() {
+        onSaveTemplate(reload=true) {
             const environment = this.environment
             this.setUpdateObjectPath('environments.json')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             this.setEnvironmentScope(environment.name)
-            const ResourceType = this.environmentResourceTypeDict(environment)
-            const root = _.cloneDeep({
-                DeploymentEnvironment: {
-                    [environment.name]: environment
-                },
-                ResourceType 
-            })
-            this.useProjectState({root})
-            this.useBaseState(root)
+
+            if(reload) {
+                window.location.reload()
+            }
+            else {
+                // TODO this logic isn't working to reset everything properly
+                // my intuition is that it's not correctly using the new external external resources after this is saved, so they end up being lost when the user attempts to save again
+                const ResourceType = this.environmentResourceTypeDict(environment)
+                const root = _.cloneDeep({
+                    DeploymentEnvironment: {
+                        [environment.name]: environment
+                    },
+                    ResourceType 
+                })
+                this.useProjectState({root})
+                this.useBaseState(root)
+            }
         },
         async onDelete() {
             const environment = this.environment
@@ -166,7 +174,7 @@ export default {
             this.environmentLookupDiscoverable(environment)
         )
 
-        this.onSaveTemplate()
+        this.onSaveTemplate(false)
         this.populateTemplateResources2({resourceTemplates: environment.instances, environmentName, context: 'environment'})
 
 
