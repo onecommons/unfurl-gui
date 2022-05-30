@@ -278,6 +278,9 @@ export default {
         /* TODO move this into global css */
         background: rgb(227, 247, 255);
     }
+    .gl-dark .oc-card.primary >>> .gl-card-footer {
+        background:  transparent !important;
+    }
 
     .oc-card.primary h4 {
         line-height: 1 !important;
@@ -286,9 +289,13 @@ export default {
 }
 
 .oc-card:not(.primary) >>> .gl-card-body {
-    background-color: white;
+    background-color: white; 
     /* sorry Mathew */
 }
+.gl-dark .oc-card:not(.primary) >>> .gl-card-body {
+    background-color: transparent;
+}
+
 
 .oc-card:not(.primary) h4 {
     font-size: 14px !important;
@@ -302,8 +309,17 @@ export default {
 .oc-card >>> .gl-card-body {
     background-color: #FBFBFB;
 }
+.gl-dark .oc-card >>> .gl-card-body {
+    background-color: transparent;
+}
 .oc-card {
     border-color: #DBDBDB !important;
+}
+.gl-dark .oc-card {
+    border-color: #777 !important;
+}
+:global(.gl-dark) .oc-inputs >>> label {
+    color: #999 !important;  
 }
 
 .card-content-container.active {

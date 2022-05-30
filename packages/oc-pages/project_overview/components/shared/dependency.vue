@@ -137,7 +137,7 @@ export default {
             <div>
                 <div class="title d-flex align-items-center">
                     <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
-                    <span style="line-height: 0; font-weight: bold; color: #353545">{{ dependencyConstraint.title }}</span>
+                    <span class="oc_requirement_title">{{ dependencyConstraint.title }}</span>
                 </div>
                 <div class="oc_requirement_description">
                     {{ dependencyConstraint.description}}
@@ -249,14 +249,34 @@ export default {
 .oc_table_row {
     display: contents;
 }
-
+.oc_requirement_title {
+    line-height: 0; 
+    font-weight: bold; 
+    color: #353545;
+}
+.gl-dark .oc_requirement_title {
+    color: rgba(255, 255, 255, 0.6) !important;
+}
 .oc_requirement_description {
     color: #666666
 }
+
+.gl-dark .oc_requirement_description{
+    color: #999;
+}
+/* TODO fix formily label color
+.gl-dark .oc-inputs >>> label {
+    color: #999 !important;  
+}
+*/
 
 .oc-table-section {
     border-bottom-style: solid;
     border-color: #EEEEEE;
     border-width: 1px;
+}
+.gl-dark .oc-table-section {
+    border-color: #777;
+    
 }
 </style>
