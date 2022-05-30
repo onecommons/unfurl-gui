@@ -100,6 +100,17 @@ export default {
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
         },
+        properties() {
+            let properties = this.card.properties
+            const titleMap = {}
+            const resourceType = this.resolveResourceType(this.card.type)
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+            properties = properties.map(property => ({...property, name: titleMap[property.name] || property.name}))
+            return properties
+        },
         attributes() {
             let attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
             const titleMap = {}
@@ -183,8 +194,8 @@ export default {
                 </div>
             </div>
         </oc-tab>
-        <oc-tab v-if="shouldRenderInputs" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="card.properties.length">
-            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :card="card" property="properties"/>
+        <oc-tab v-if="shouldRenderInputs" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="properties.length">
+            <oc-properties-list v-if="readonly" :container-style="propertiesStyle" :properties="properties" />
             <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
         </oc-tab>
         <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
