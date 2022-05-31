@@ -107,6 +107,10 @@ export default {
         // const defaults = environments['DeploymentEnvironment']['defaults']
         // env_hash['connections'] = defaults.merge(env_hash || Hash.new)
         //mergeTypes(environments); this wasn't working for some reason
+        const unfurl_types = readRepoFile('unfurl-types', 'unfurl-types.json')
+        if (!unfurl_types) {
+          throw new Error("file 'unfurl-types/unfurl-types.json' not found")
+        }
         const result = Object.entries(environments['DeploymentEnvironment']).map(([key, value]) => ({
             __typeName: 'Environment',
             path: key,
@@ -116,7 +120,7 @@ export default {
           clientPayload: {
             // XXX for consistency should be: "DeploymentEnvironment": { [key]: value },
             "DeploymentEnvironment": value,
-            "ResourceType": readRepoFile('unfurl-types', 'unfurl-types.json').ResourceType,
+            "ResourceType": unfurl_types.ResourceType,
             "DeploymentPath": environments["DeploymentPath"]
           }
         }));
