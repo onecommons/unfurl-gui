@@ -35,7 +35,7 @@ export async function patchEnv(env, environmentScope, fullPath) {
     if(envPatch.length) {
         const currentVars = (await axios.get(endpoint)).data.variables
         for(const currentVar of currentVars) {
-            const existingVar = envPatch.find(newVar => newVar.key == currentVar.key)
+            const existingVar = envPatch.find(newVar => newVar.key == currentVar.key && currentVar.environment_scope == environmentScope)
             if(existingVar) {
                 existingVar.id = currentVar.id
             }
