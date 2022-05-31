@@ -15,6 +15,7 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
   // create external resource
   if (shouldCreateExternalResource) {
     cy.createDigitalOceanDNSInstance(environmentName);
+    cy.createMailResource(environmentName);
   }
 }
 

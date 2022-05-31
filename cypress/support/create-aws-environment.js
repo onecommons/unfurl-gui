@@ -68,5 +68,6 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
   // create external resource
   if (shouldCreateExternalResource) {
     cy.createDigitalOceanDNSInstance(environmentName)
+    cy.createMailResource(environmentName);
   }
 });

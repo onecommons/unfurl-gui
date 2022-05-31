@@ -5,6 +5,10 @@ const envOptionSelector = provider =>  `[data-testid="env-option-${provider}"]`
 const DIGITALOCEAN_TOKEN = Cypress.env('DIGITALOCEAN_TOKEN')
 const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+const SMTP_HOST = Cypress.env('SMTP_HOST')
+const MAIL_RESOURCE_NAME = Cypress.env('MAIL_RESOURCE_NAME') || 'Mail Server'
+const MAIL_USERNAME = Cypress.env('MAIL_USERNAME')
+const MAIL_PASSWORD = Cypress.env('MAIL_PASSWORD')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
 Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
@@ -89,13 +93,56 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   )
   cy.wait(BASE_TIMEOUT / 50)
   cy.contains("button", "Save Changes").click()
-  cy.wait(BASE_TIMEOUT)
-  cy.contains("Environment was saved successfully!").should("exist")
+  cy.wait(BASE_TIMEOUT) // TODO this isn't very reliable
+  // this broke with reloading after saving
+  //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
   cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).should(
     "have.value",
     "untrusted.me"
+  )
+})
+
+Cypress.Commands.add('createMailResource', environmentName => {
+  if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
+  cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
+  cy.wait(BASE_TIMEOUT)
+  cy.contains('button', 'Add External Resource').click()
+  cy.get('[data-testid="external-resource-tab-SMTPServer"]').click()
+  cy.get('[data-testid="resource-selection-GenericSMTPServer"]').click()
+
+  // todo: use a test id for this input, and use different name
+  cy.get('input#input2')
+    .clear()
+    .type(MAIL_RESOURCE_NAME)
+
+  const mailResourceName = slugify(MAIL_RESOURCE_NAME)
+  cy.contains("button", "Next").click()
+  cy.get(
+    `input[data-testid="oc-input-${mailResourceName}-host"]`
+  ).type(SMTP_HOST)
+  cy.get(`input[data-testid="oc-input-${mailResourceName}-user_name"]`).type(
+    MAIL_USERNAME
+  )
+  cy.get(`input[data-testid="oc-input-${mailResourceName}-password"]`).type(
+    MAIL_PASSWORD
+  )
+  cy.get(`input[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
+    'tls'
+  )
+
+  cy.wait(BASE_TIMEOUT / 50)
+  cy.contains("button", "Save Changes").click()
+  cy.wait(BASE_TIMEOUT) // TODO this isn't very reliable
+  // this broke with reloading after saving
+  //cy.contains("Environment was saved successfully!").should("exist")
+
+  // check if external instance save properly
+  cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
+  cy.get(`input[data-testid="oc-input-${mailResourceName}-host"]`).should(
+    "have.value",
+    SMTP_HOST
   )
 })
