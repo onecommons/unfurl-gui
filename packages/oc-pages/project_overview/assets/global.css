@@ -47,12 +47,18 @@ h2.oc-title-section {
   background: #E3F7FF !important;
 
 }
-.gl-dark .deploy-action {
-  background: transparent !important;
-}
 .view-project-link {
   color: #4A5053;
   padding-top: 4px;
+}
+
+/* oc dark mode fixes */
+.gl-dark .oc_table_row, 
+.gl-dark .oc-table-section .title {
+  color: #EDFCFA;
+}
+.gl-dark .deploy-action {
+  background: transparent !important;
 }
 .gl-dark .view-project-link {
   color: #EDFCFA !important;
