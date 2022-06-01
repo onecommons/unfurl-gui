@@ -156,6 +156,9 @@ export default {
     display: flex;
     justify-content: space-between;
 }
+.gl-dark .header {
+    color: #121212;
+}
 .name-column {
     font-weight: bold;
     background: #fafafa;
