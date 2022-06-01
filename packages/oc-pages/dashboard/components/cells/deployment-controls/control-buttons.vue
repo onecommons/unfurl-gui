@@ -52,7 +52,7 @@ export default {
         <gl-icon :size="16" name="external-link"/>
         {{__('View Deployment')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-deployment')" target="_blank" rel="noopener noreferrer" :href="resumeEditingTarget" style="background-color: #eee">
+    <component :is='component' v-if="hasButton('edit-deployment')" target="_blank" rel="noopener noreferrer" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Deployment')}}
     </component>
