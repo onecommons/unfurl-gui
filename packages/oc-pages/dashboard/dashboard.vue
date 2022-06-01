@@ -103,9 +103,11 @@ export default {
     display: flex;
     justify-content: center;
 }
+/* oc - followed removed to fix alert layout issue, hopefully doesn't break anything else...
+
 .container-limited.limit-container-width:not(.gl-banner-content) > * {
     width: 100%;
-}
+} */
 main {
     min-width: min(990px, 100%);
     max-width: 100vw;
