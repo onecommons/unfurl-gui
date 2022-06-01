@@ -19,7 +19,7 @@ async function startApollo() {
   return new Promise((resolve, reject) => {
     let resolved = false
     const apollo = spawn(
-      'yarn', 
+      'yarn',
       ['run', 'vue-cli-service', 'apollo:start'],
       {
         cwd: unfurlGuiRoot
@@ -36,7 +36,7 @@ async function startApollo() {
       })
     })
     apollo.stderr.on('data', data => {
-      log(data)
+      log(data, "stderr");
     })
     apollo.on('exit', code => {
       exitCodes['apollo'] = code
@@ -49,7 +49,7 @@ async function startApollo() {
 async function startServe() {
   if(isProgramRunning('serve')) {
     process.send({stdout: 'Vue cli server is already running', exit: true})
-    return 
+    return
   }
   const log = getLogWriter('serve')
   return new Promise((resolve, reject) => {
