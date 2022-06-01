@@ -12,7 +12,7 @@ import deployments from './modules/deployments'
 
 Vue.use(Vuex);
 
-const debug = process.env.NODE_ENV !== "production";
+const development = process.env.NODE_ENV !== "production";
 
 const store = new Vuex.Store({
     modules: {
@@ -25,8 +25,8 @@ const store = new Vuex.Store({
         project_application_blueprint,
         deployment_info
     },
-    strict: debug,
-    plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
+    strict: development,
+    plugins: development && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
 });
 
 export default store;

@@ -48,6 +48,13 @@ const mutations = {
     },
 
     setDeploymentPaths(state, deploymentPaths) {
+        deploymentPaths.forEach(
+            dp => {
+                if(Array.isArray(dp.pipelines)) {
+                    dp.pipeline = dp.pipelines[dp.pipelines.length - 1]
+                }
+            }
+        )
         state.deploymentPaths = deploymentPaths
     },
 
@@ -89,6 +96,7 @@ const mutations = {
 const actions = {
 
     async environmentTriggerPipeline({rootGetters, getters, commit, dispatch}, parameters) {
+        const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
         const deployVariables = prepareVariables({
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
@@ -102,6 +110,8 @@ const actions = {
             return {pipelineData: data, error}
 
         }
+        const pipelines = [...(dp?.pipelines || [])]
+
         const pipeline = data?
             {
                 id: data.id,
@@ -110,6 +120,8 @@ const actions = {
                 variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
             } :
             null
+
+        if(pipeline) {pipelines.push(pipeline)}
 
         commit('setUpdateObjectPath', 'environments.json', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
@@ -120,7 +132,7 @@ const actions = {
                     __typename: 'DeploymentPath',
                     environment: parameters.environmentName,
                     projectId: data?.project?.id,
-                    pipeline
+                    pipelines
                 },
                 target: parameters.deployPath
             }]
@@ -136,6 +148,7 @@ const actions = {
     },
     async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
+        commit('useBaseState', {}, {root: true})
         commit('setUpdateObjectPath', 'environments.json', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit('pushPreparedMutation', () => {
@@ -224,6 +237,7 @@ const actions = {
                 delete environment.deploymentEnvironment
                 delete environment.clientPayload
                 environment.__typename = 'DeploymentEnvironment' // just documenting this to avoid confusion with __typename Environment
+
                 connectionsToArray(environment)
 
                 return environment

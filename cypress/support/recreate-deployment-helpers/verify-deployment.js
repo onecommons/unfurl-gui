@@ -19,25 +19,18 @@ const verificationRoutines = {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
-    const email = primary.properties.find(prop => prop.name == 'email').value
+    const email = Cypress.env('MAIL_USERNAME')
+    const phoneyUserEmail = `jdenne${Math.random().toString(36).slice(-4)}@${Cypress.env('SMTP_HOST')}`
+    const password = env + '1'
     const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
-
-    //const env = Object.values(deployment.DeploymentPath)[0].environment
-    const passwordEnvKey = (`${dt.name}__${dt.primary}__password`).replace(/-/g, '_')
-    console.log(env, dt.name, dt.primary, passwordEnvKey)
-
-  cy.withStore().then(store => {
-    expect(store).to.exist
-    const password = store.getters.lookupVariableByEnvironment(passwordEnvKey, env)
-    const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.untrusted.me --username ${email} --password ${password}`
+    const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.untrusted.me --admin-email ${email} --admin-password ${password} --register-email ${phoneyUserEmail} --register-name "John Denne"`
     console.log(command)
     cy.waitUntil(() => {
       return cy.exec(
         command, 
-        {failOnNonZeroExit: false}
+        {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
     }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
-  })
   }
 
 }

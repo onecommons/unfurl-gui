@@ -13,6 +13,10 @@ export function resolveLiveRepoFile(repo, path) {
   return resolve(LIVE_REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
 }
 
+export function resolveRepoFile(repo, path) {
+  return resolve(REPOS_DIR, repo, typeof(path) == 'string'? path: 'unfurl.json')
+}
+
 export function readLiveRepoFile(repo, path) {
   const target = resolveLiveRepoFile(repo, path)
   console.log('read', target)
@@ -25,6 +29,20 @@ export function readLiveRepoFile(repo, path) {
     return null
   }
 }
+
+export function readRepoFile(repo, path) {
+  const target = resolveRepoFile(repo, path)
+  console.log('read', target)
+  try {
+    return JSON.parse(
+      fs.readFileSync(target, 'utf-8')
+    )
+  } catch(e) {
+    if(!e.message.startsWith('ENOENT')) console.error(e.message)
+    return null
+  }
+}
+
 export function writeLiveRepoFile(repo, path, _contents) {
   const dest = resolveLiveRepoFile(repo, path)
   const destDir = dirname(dest)
@@ -55,11 +73,13 @@ for(const tld of fs.readdirSync(REPOS_SEED)) {
 const targetBase = join(LIVE_REPOS_DIR, "demo")
 if(!process.env.NO_FIXTURES) {
   for(const filePath in files) {
+    const liveFilePath = resolve(targetBase, filePath)
+    if(fs.existsSync(liveFilePath)) continue
     const fileContents = files[filePath]
     const targetDir = resolve(targetBase, dirname(filePath))
     console.log(`possibly overwriting files in ${targetDir}, set NO_FIXTURES=1 to disable this.`)
     mkdirp.sync(targetDir)
-    fs.writeFileSync(resolve(targetBase, filePath), fileContents)
+    fs.writeFileSync(liveFilePath, fileContents)
   }
 } else {
   console.log(`NO_FIXTURES is set, keeping files in ${REPOS_SEED}`)

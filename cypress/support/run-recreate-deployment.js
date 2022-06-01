@@ -98,9 +98,9 @@ Cypress.Commands.add('recreateDeployment', options => {
             if (typeof value == 'object' && value) {
               if (typeof value.get_env == 'string') {
                 const envName = value.get_env.split('__').pop()
-                const envValue = Cypress.env(envName)
+                const envValue = Cypress.env(value.get_env) || Cypress.env(envName)
                 if(envValue) {
-                  value = Cypress.env(envName)
+                  value = envValue
                 } else if (envName.includes('password')) {
                   value = pseudorandomPassword()
                 }
@@ -137,13 +137,13 @@ Cypress.Commands.add('recreateDeployment', options => {
             .invoke('attr', 'disabled')
             .then((disabled) => {
               // if button is enabled, and the env is provided, connects it 
-              if (!disabled && DIGITALOCEAN_DNS_NAME) {
+              if (!disabled) { //&& DIGITALOCEAN_DNS_NAME) {
                 cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
                   .prev()
                   .click()
 
-                const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME)
-                cy.get(`[data-testid="resource-selection-${digitalOceanName}"]`).click()
+                //const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME)
+                cy.get(`[data-testid^="resource-selection-"]`).click()
 
                 cy.contains('button', 'Next').click()
               } else {

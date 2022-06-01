@@ -1,3 +1,4 @@
+import axios from '~/lib/utils/axios_utils'
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
@@ -6,6 +7,11 @@ export default class DeploymentItem {
     get pipeline() {
         return this.deployPath?.pipeline
     }
+
+    get pipelines() {
+        return this.deployPath?.pipelines
+    }
+
 
     get createdAt() {
         const date = this.pipeline?.commit?.created_at
@@ -19,6 +25,18 @@ export default class DeploymentItem {
     get artifactsLink() {
         if(this.projectPath && this.job) {
             return `${this.consoleLink}/artifacts/browse`
+        }
+    }
+
+    get rawLink() {
+        if(this.projectPath && this.job) {
+            return `${this.consoleLink}/raw`
+        }
+    }
+
+    get cancelLink() {
+        if(this.projectPath && this.job) {
+            return `${this.consoleLink}/cancel`
         }
     }
 
@@ -64,6 +82,7 @@ export default class DeploymentItem {
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
     get createdAtText() {
+        if(!(this.createdAtDate && this.createdAtTime)) return ''
         return `${this.createdAtDate} ${this.createdAtTime}`
       /*
         if(!this.createdAt) return 
@@ -86,5 +105,14 @@ export default class DeploymentItem {
     }
     get isDeployed() {
         return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)
+    }
+    get isJobCancelable() {
+        return this.job?.cancelable ?? false
+    }
+
+
+    async cancelJob() {
+        if(!this.isJobCancelable) throw new Error(`Job ${this.job?.id || -1} is not cancelable`)
+        await axios.post(this.cancelLink)
     }
 }

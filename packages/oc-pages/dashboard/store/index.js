@@ -1,10 +1,6 @@
 import Vue from "vue";
 import Vuex from "vuex";
-import createLogger from "vuex/dist/logger";
-//import environments from "./modules/environments";
-//import project from "./modules/project";
-//import deployment_template_updates from "./modules/deployment_template_updates";
-//import templateResources from "./modules/template_resources";
+// TODO move these modules to vue_shared
 import deployments from '../../project_overview/store/modules/deployments'
 import environments from '../../project_overview/store/modules/environments'
 import project_application_blueprint from '../../project_overview/store/modules/project_application_blueprint';
@@ -13,12 +9,11 @@ import deployment_template_updates from '../../project_overview/store/modules/de
 import template_resources from '../../project_overview/store/modules/template_resources'
 import table_data from './modules/table_data'
 import deployment_info from './modules/deployment-info'
-//import misc from './modules/misc';
 import {createCiVariablesStore} from '../../vue_shared/oc-components'
 
 Vue.use(Vuex);
 
-const debug = process.env.NODE_ENV !== "production";
+const development = process.env.NODE_ENV !== "production";
 
 const modules = {
     project_application_blueprint,
@@ -39,7 +34,6 @@ if(variableDataEl && !gon.unfurl_gui) {
         isGroup: false,
         isProtectedByDefault: false
     })
-    console.log(ci_variables)
     ci_variables.namespaced = true
     modules.ci_variables = ci_variables
 }
@@ -47,8 +41,8 @@ if(variableDataEl && !gon.unfurl_gui) {
 
 const store = new Vuex.Store({
     modules,
-    strict: debug,
-    plugins: debug && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
+    strict: development,
+    plugins: development && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
 });
 
 export default store;

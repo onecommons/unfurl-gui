@@ -10,7 +10,11 @@ export default {
         GlButton
     },
     props: {
-        scope: Object
+        scope: Object,
+        width: {
+            type: String,
+            default: '30px'
+        }
     },
     computed: {
         ...mapGetters(['deploymentItemDirect']),
@@ -57,7 +61,7 @@ export default {
 }
 </script>
 <template>
-<div class="d-flex justify-content-center align-items-center" style="width:30px;" v-gl-tooltip.hover="title"  >
+<div class="d-flex justify-content-center align-items-center" :style="{width: width}" v-gl-tooltip.hover="title"  >
     <StatusIcon v-if="deployment.status" :size="16" :status="deployment.status" no-tooltip/>
     <gl-button v-else-if="jobStatus" style="padding: 0" pill size="small" :href="consoleLink" category="tertiary" :icon="`status_${jobStatus}`" />
     <gl-icon v-else-if="hasDeployPath" name="pencil-square" :size="16" />

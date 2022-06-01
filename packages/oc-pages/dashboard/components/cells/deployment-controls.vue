@@ -18,6 +18,7 @@ export default {
     components: {
         GlIcon,
         GlDropdown,
+        GlDropdownItem,
         ControlButtons
     },
     computed: {
@@ -25,6 +26,7 @@ export default {
             'lookupDeployPath',
             'getHomeProjectPath',
             'deploymentItemDirect',
+            'jobByPipelineId'
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
@@ -35,6 +37,9 @@ export default {
         deployPath() { return this.lookupDeployPath(this.deployment?.name, this.environment?.name) },
         pipeline() {
             return this.deployPath?.pipeline
+        },
+        pipelines() {
+            return this.deployPath?.pipelines || []
         },
         createdAt() {
             const date = this.pipeline?.commit?.created_at
@@ -54,12 +59,14 @@ export default {
         },
         controlButtons() {
             const result = []
+            if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
             if(this.deploymentItem?.isDraft) result.push('edit-draft')
             else if(this.deploymentItem?.isEditable) result.push('edit-deployment')
             else result.push('view-deployment')
             //if(this.isUndeployed) result.push('deploy')
             if(this.deploymentItem?.isDeployed) result.push('teardown')
+            if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
             result.push('delete')
             return result
         },
@@ -89,12 +96,32 @@ export default {
         deleteDeployment() {
           this.$emit('deleteDeployment', this.deployment, this.environment)
         },
+        // teardown in ui
         stopDeployment() {
           this.$emit('stopDeployment', this.deployment, this.environment)
         },
         startDeployment() {
           this.$emit('startDeployment', this.deployment, this.environment)
         },
+        async cancelJob() {
+            await this.deploymentItem.cancelJob()
+            window.location.reload()
+        },
+        showPreviousJobs() {
+            //this.$emit('showPreviousJobs', this.deployment, this.environment)
+            this.$refs.previousJobs?.show()
+        },
+        pipelineToJobsLink(pipeline) {
+            if(!pipeline) return
+            const jobId = this.jobByPipelineId(pipeline.id)?.id
+            if(!jobId) return
+            const result = `/${this.getHomeProjectPath}/-/jobs/${jobId}`
+            return result
+        },
+        pipelineToJobStatus(pipeline) {
+            return this.jobByPipelineId(pipeline.id)?.status?.toLowerCase()
+        }
+
     },
 }
 </script>
@@ -110,6 +137,8 @@ export default {
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
+         @cancelJob="cancelJob"
+         @showPreviousJobs="showPreviousJobs"
         />
         <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
             <template #button-content>
@@ -126,13 +155,23 @@ export default {
              @deleteDeployment="deleteDeployment"
              @stopDeployment="stopDeployment"
              @startDeployment="startDeployment"
-            />
+             @cancelJob="cancelJob"
+             @showPreviousJobs="showPreviousJobs"
+             />
         </gl-dropdown>
     </div>
+    <gl-dropdown ref="previousJobs" v-if="pipelines.length > 1" id="jobs-dropdown" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
+        <gl-dropdown-item :href="pipelineToJobsLink(pipeline)" :key="pipeline.id" v-for="pipeline in pipelines.slice(0, -1)">
+            {{(new Date(pipeline.commit.committed_date)).toLocaleDateString()}}
+            {{(new Date(pipeline.commit.committed_date)).toLocaleTimeString()}}
+            ({{pipeline.variables.WORKFLOW}} / {{pipelineToJobStatus(pipeline)}})
+        </gl-dropdown-item>
+    </gl-dropdown>
 </div>
 </template>
 <style scoped>
-    
-.deployment-controls {font-size: 0.95em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
+#jobs-dropdown { position: absolute; } 
+#jobs-dropdown >>> .dropdown-toggle { padding: 0; } 
+.deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
 .deployment-controls > * { display: flex; margin: 0 0.25em;}
 </style>

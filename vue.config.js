@@ -59,7 +59,11 @@ module.exports = {
       })
 
       // patterns can't be used unless they're all patterns
-      const expressProxy =  httpProxyMiddleware(['/proxied/**', '/*/dashboard/-/variables'], {
+      const expressProxy =  httpProxyMiddleware([
+        '/proxied/**',
+        '/*/dashboard/-/variables',
+        '/*/unfurl-types/-/raw/*/icons/*'
+      ], {
         target: 'http://localhost:4000',
         changeOrigin: true,
         ws: true,

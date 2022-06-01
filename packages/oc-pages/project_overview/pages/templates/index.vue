@@ -594,7 +594,7 @@ export default {
 
             <!-- Requirements List -->
             <oc-list
-              tabs-title="Requirements"
+              tabs-title="Components"
               :title-key="getPrimaryCard.title"
               :cloud="getDeploymentTemplate.cloud"
               :deployment-template="getDeploymentTemplate"
@@ -621,7 +621,7 @@ export default {
                     <!--oc-inputs :card="card" :main-inputs="card.properties" :component-key="2" /-->
 
                     <oc-list
-                      tabs-title="Requirements"
+                      tabs-title="Components"
                       :template-dependencies="getDependencies(card.name)"
                       :deployment-template="getDeploymentTemplate"
                       :level="idx"

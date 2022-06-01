@@ -48,6 +48,18 @@ export default app => {
   })
 
 
+  app.get('/onecommons/unfurl-types/-/raw/main/icons/:icon', async (req, res) => {
+    try {
+      const fileContents = await fs.promises.readFile(path.join(__dirname, 'repos', 'unfurl-types', 'icons', req.params.icon), 'utf-8')
+      res.setHeader('content-type', 'image/svg+xml')
+      res.send(fileContents)
+    }
+    catch(e) {
+      console.error(e)
+      res.status(404).send()
+    }
+  })
+
   app.get(`/:user/${USER_HOME_PROJECT}/-/variables`, (req, res) => {
     res.send({variables})
   })

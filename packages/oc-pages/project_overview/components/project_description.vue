@@ -168,7 +168,7 @@ export default {
             <div class="row">
                 <div class="col-lg-12">
                     <gl-tabs>
-                        <oc-tab title="Requirements" :titleCount="requirements.length" v-if="shouldRenderRequirements">
+                        <oc-tab title="Components" :titleCount="requirements.length" v-if="shouldRenderRequirements">
                             <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
                                     <div class="gl-display-flex gl-justify-content-space-between">

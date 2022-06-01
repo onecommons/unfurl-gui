@@ -17,7 +17,7 @@ import Vue from 'vue'
 function deploymentGroupBy(item) {
     let result 
     try{
-        result = `${item.deployment.name}:${item.application.name}`
+        result = `${item.deployment.name}:${item.application.name}:${item.environment.name}`
     } catch(e) {return }
     return result
 }
@@ -199,7 +199,7 @@ export default {
                 case 'delete':
                     await this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
                     this.$router.replace({hash: '#_'})
-                    window.location.reload()
+                    this.handleDeleteRedirect()
                 default:
                     return
 
@@ -240,7 +240,14 @@ export default {
           //if(deploymentItem?.jobStatusIsUnsuccessful) return  ''
           return 'No resources'
 
-        }
+        },
+        handleDeleteRedirect() {
+            if(this.$route.name == routes.OC_DASHBOARD_DEPLOYMENTS) {
+                window.location.href = this.$router.resolve({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}).href
+            } else {
+                window.location.reload()
+            }
+        },
     },
     computed: {
         ...mapGetters([
@@ -295,7 +302,7 @@ export default {
                 case 'delete':
                     return `Are you sure you want to delete ${targetTitle}?`
                 case 'undeploy':
-                    return `Are you sure you want to undeploy ${targetTitle}? It will not be deleted and you will be able to redeploy at any time.`
+                    return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
                 case 'deploy':
                     return `Deploy ${targetTitle}?`
                 default: return ''
@@ -416,13 +423,13 @@ export default {
         </gl-tabs>
         <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
-                <div class="ml-2">
+                <div class="ml-2" style="padding-left: 30px">
                     {{__('Deployment')}}
                 </div>
             </template>
             <template #deployment="scope">
                 <div class="d-flex">
-                    <deployment-status-icon :scope="scope" />
+                    <deployment-status-icon width="40px" :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
                         <a :href="deploymentItem(scope, 'viewableLink')">
                             <b>{{scope.item.context.deployment.title}}:</b>

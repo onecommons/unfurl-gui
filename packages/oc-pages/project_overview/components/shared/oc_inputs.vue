@@ -228,7 +228,7 @@ export default {
           }
           */
 
-          next.value = _.cloneDeepWith(next.value || next.default, function(value) {
+          next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
             if(Array.isArray(value) && value.length > 0) {
               return value.map(input => ({input}))
             }

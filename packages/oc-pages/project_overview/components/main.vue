@@ -68,9 +68,17 @@ button.dropdown-item:disabled {
 }
 
 .container-limited.limit-container-width:not(.gl-banner-content) {
-    max-width: max(80%, 990px);
+    max-width: min(1100px, max(60%, 990px));
     display: flex;
     justify-content: center;
 }
-main {min-width: min(990px, 95vw);}
+
+.container-limited.limit-container-width:not(.gl-banner-content) > * {
+    width: 100%;
+}
+
+main {
+    min-width: min(990px, 100%);
+    max-width: 100vw;
+}
 </style>

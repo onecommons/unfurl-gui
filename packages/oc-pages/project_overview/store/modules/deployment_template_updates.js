@@ -70,7 +70,8 @@ function normalizeEnvName(_name) {
     return name
 }
 
-const Serializers = {
+let Serializers
+Serializers = {
     DeploymentEnvironment(env) {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
@@ -83,6 +84,8 @@ const Serializers = {
             for(const rt of Object.keys(localResourceTemplates)) {
                 if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
                     delete localResourceTemplates[rt]
+                } else {
+                    Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                 }
             }
         }
@@ -108,7 +111,7 @@ const Serializers = {
     ResourceTemplate(rt) {
         delete rt.visibility // do not commit template visibility
         rt.dependencies = rt.dependencies?.filter(dep => {
-            return dep.match || dep.target
+            return dep.match || dep.target || dep.constraint.match
         })
 
         // This won't filter out any required properties because the user shouldn't be allowed 
@@ -127,6 +130,7 @@ const Serializers = {
                 })
             }
         })
+
         rt.dependencies.forEach(dep => {
             if(! dep.constraint.visibility) {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
@@ -590,10 +594,12 @@ const mutations = {
 
         }
     },
+    // TODO figure out whether this is necessary
     setBaseState(state, baseState) {
         state.accumulator = baseState
         state.committedNames = readCommittedNames(baseState)
     },
+    // this one doesn't try to fetch a blueprint for the accumulator
     useBaseState(state, baseState) {
         state.accumulator = baseState
         state.committedNames = readCommittedNames(baseState)

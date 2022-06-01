@@ -1,3 +1,5 @@
+**Node LTS is recommended**
+
 ## Project setup & commands
 ```
 yarn install

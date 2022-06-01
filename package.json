@@ -2,6 +2,9 @@
   "name": "unfurl-gui",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=14 <17"
+  },
   "scripts": {
     "start": "./scripts/start",
     "stop": "./scripts/stop",
@@ -15,7 +18,10 @@
     "apollo": "vue-cli-service apollo:dev --generate-schema",
     "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",
     "apollo:schema:publish": "vue-cli-service apollo:schema:publish",
-    "apollo:start": "vue-cli-service apollo:start"
+    "apollo:start": "vue-cli-service apollo:start",
+    "create-user": "./scripts/create-user",
+    "set-repo-visibility": "./scripts/set-repo-visibility",
+    "push-local-repo": "./scripts/push-local-repo"
   },
   "dependencies": {
     "@formily/core": "^2.0.7",
