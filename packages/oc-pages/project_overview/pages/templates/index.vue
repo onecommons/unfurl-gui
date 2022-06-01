@@ -101,7 +101,9 @@ export default {
       'getHomeProjectPath',
       'getProjectInfo',
       'lookupConfigurableTypes',
-      'lookupEnvironment'
+      'lookupEnvironment',
+      'getParentDependency',
+      'getPrimary'
     ]),
     
     deploymentDir() {
@@ -210,7 +212,25 @@ export default {
     selected: function(val) {
       if(Object.keys(val).length > 0) {
         if(!this.userEditedResourceName) {
-          this.resourceName = this.resolveResourceTypeFromAny(val.name)?.title || val.name;
+          let dependentName = this.createNodeResourceData.dependentName
+          let dependent = this.getParentDependency(dependentName)
+
+          // check if dependent visible 
+          let primaryDependencies = this.getPrimary.dependencies
+          let resourceParentName = ''
+          for (const pd of primaryDependencies) {
+            if (
+              dependent &&
+              dependent.dependentRequirement === pd.name &&
+              pd.constraint.visibility === 'visible'
+            ) {
+              resourceParentName = dependent.title
+            }
+          }
+          
+          this.resourceName = resourceParentName ?
+            this.getRequirementSelected.requirement.constraint.title + ' for ' + resourceParentName :
+            this.resolveResourceTypeFromAny(val.name)?.title || val.name
         }
       }
     },

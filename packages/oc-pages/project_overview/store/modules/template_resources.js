@@ -738,6 +738,19 @@ const getters = {
         return function(variableName) {
             return rootGetters.lookupVariableByEnvironment(variableName, state.lastFetchedFrom.environmentName)
         }
+    },
+    getParentDependency(state, getters) {
+        return function(dependencyName) {
+            let primaryName = state.deploymentTemplate.primary 
+            if (dependencyName === primaryName) return
+
+            let dependency = state.resourceTemplates[dependencyName]
+            let dependent = getters.getParentDependency(dependency.dependentName) || dependency
+            return dependent
+        }
+    },
+    getPrimary(state) {
+        return state.resourceTemplates[state.deploymentTemplate.primary]
     }
 };
 
