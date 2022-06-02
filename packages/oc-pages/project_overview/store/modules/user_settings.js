@@ -1,3 +1,5 @@
+import Vue from 'vue'
+
 const LOCALSTORAGE_KEY = 'us'
 
 const state = {
@@ -10,10 +12,18 @@ const mutations = {
   },
   setLastUsedEnvironmentList(state, { updatedLastUsedEnvironmentList }) {
     state.lastUsedEnvironmentList = updatedLastUsedEnvironmentList
+  },
+  // not meant to be used publicly
+  _applyUserSetting(state, {key, value}) {
+    Vue.set(state, key, value)
   }
 }
 
 const actions = {
+  applyUserSetting({commit, dispatch, rootGetters}, props) {
+    commit('_applyUserSetting', props)
+    dispatch('save', {username: rootGetters.getUsername})
+  },
   updateLastUsedEnvironment({ commit, dispatch, state }, { lastUsedEnvironment, username }) {
     let foundSameCloud = false
 
@@ -40,7 +50,8 @@ const actions = {
   save({ state }, { username }) {
     // save the state into local storage
     localStorage.setItem(`${LOCALSTORAGE_KEY}-${username}`, JSON.stringify(state))
-  }
+  },
+
 }
 
 const getters = {
