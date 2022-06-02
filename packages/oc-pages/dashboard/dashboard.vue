@@ -15,7 +15,7 @@ export default {
             'updateEnvironment',
             'populateJobsList',
             'populateDeploymentItems',
-            'applyUserSetting'
+            //'applyUserSetting'
         ]),
         ...mapMutations([
             'initUserSettings',
@@ -27,12 +27,14 @@ export default {
             'getDashboardItems',
             'getHomeProjectPath',
             'getUsername',
-            'totalDeploymentsCount',
-            'environmentsCount',
+            //'totalDeploymentsCount',
+            //'environmentsCount',
         ]),
+        /*
         ...mapState([
             'user_settings'
         ])
+         */
     },
     async mounted() {
         await Promise.all([this.loadDashboard(), this.populateJobsList()])
@@ -47,6 +49,7 @@ export default {
 
         this.initUserSettings({username: this.getUsername})
 
+        /*
         const shouldRedirectToExplore = (
             this.totalDeploymentsCount + this.environmentsCount == 0 &&
             !this.user_settings[USER_TOURED_EXPLORE_PAGE] &&
@@ -58,6 +61,7 @@ export default {
 
             this.applyUserSetting({key: USER_TOURED_EXPLORE_PAGE, value: true})
         }
+         */
 
         this.isLoaded = true
     }
