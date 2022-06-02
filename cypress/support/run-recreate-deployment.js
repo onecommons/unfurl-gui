@@ -71,6 +71,8 @@ Cypress.Commands.add('recreateDeployment', options => {
 
       cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
 
+      cy.get(`[data-testid="deploy-template-${dt.source}"]`)
+      cy.wait(BASE_TIMEOUT / 2)
       cy.get(`[data-testid="deploy-template-${dt.source}"]`).click()
 
       // this thing is rediculous
