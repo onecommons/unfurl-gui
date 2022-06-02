@@ -89,6 +89,7 @@ Serializers = {
                 }
             }
         }
+        /*
         const resourceTemplates = []
         function addMatchedResourceTemplates(templateName) {
             let template 
@@ -105,7 +106,8 @@ Serializers = {
             }
         }
         addMatchedResourceTemplates(dt.primary)
-        dt.resourceTemplates = resourceTemplates
+        */
+        dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
     },
     // TODO unit test
     ResourceTemplate(rt) {
@@ -114,6 +116,8 @@ Serializers = {
             return dep.match || dep.target || dep.constraint.match
         })
 
+        rt.properties = _.unionBy(rt.properties, rt.computedProperties, 'name')
+        
         // This won't filter out any required properties because the user shouldn't be allowed 
         // to deploy with null required values
         rt.properties = rt.properties?.filter(prop => {

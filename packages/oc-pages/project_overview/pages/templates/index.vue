@@ -83,7 +83,6 @@ export default {
       'getProjectInfo',
       'getRequirementSelected',
       'getTemplate',
-      'getServicesToConnect',
       'getPrimaryCard',
       'getCardsStacked',
       'getDeploymentTemplate',
@@ -146,14 +145,6 @@ export default {
       if(this.triggeredDeployment) return 'disabled'
       if(this.$route.name != 'deploymentDraftPage') return 'hidden'
       return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
-      /*
-      switch(this.$route.name) {
-        case 'deploymentDraftPage':
-          return 'hidden'
-        default: 
-          return 'enabled'
-      }
-      */
     },
     cancelStatus() {
       return this.$route.name == 'deploymentDraftPage'? 'enabled': 'hidden';
@@ -164,12 +155,6 @@ export default {
     },
     getMainInputs() {
       return cloneDeep(this.$store.getters.getProjectInfo.inputs);
-    },
-
-    getServicesToConnect() {
-      // TODO
-      //return this.fetchServices(this.servicesToConnect);
-      return [];
     },
 
     primaryPropsDelete() {
@@ -340,22 +325,6 @@ export default {
       this.componentKey += 1;
     },
 
-    /*
-    fetchServices(array) {
-        return array.filter(resource => {
-          // eslint-disable-next-line no-prototype-builtins
-            if(this.getRequirementSelected.requirement){
-                if (this.getRequirementSelected.requirement.hasOwnProperty('title')) {
-                const { type } = this.getRequirementSelected.requirement;
-                if (resource.type.toLowerCase().includes(type.toLowerCase())){
-                    return resource;
-                }
-                }
-            }
-        });
-    },
-    */
-
     scrollDown(elId, timeOut=0) {
       clearTimeout(this.uiTimeout);  
       const anchorId = btoa(elId).replace(/=/g, '');
@@ -367,8 +336,6 @@ export default {
         timeOut,
       );
     },
-
-    
 
     launchModal(refId, timeToWait) {
       const ref = this.$refs[refId];
@@ -430,15 +397,18 @@ export default {
         await this.commitPreparedMutations();
         if(type == 'draft'){
           await this.createDeploymentPathPointer()
-          createFlash({
+          sessionStorage['oc_flash'] = JSON.stringify({
             message: __('Draft saved!'),
             type: FLASH_TYPES.SUCCESS,
             duration: this.durationOfAlerts,
+            linkText: 'Return to overview',
+            linkTo: `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}` // TODO 
           });
           const query = {...this.$route.query}
           delete query.ts
-          this.$router.replace({query})
-          window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
+          window.location.href = this.$router.resolve({...this.$route, query}).href
+          window.location.reload()
+          //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           createFlash({
             // TODO this doesn't make sense if it's a template
@@ -503,10 +473,8 @@ export default {
         this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug}))
 
         await this.commitPreparedMutations()
-        //if (isOk) { deleteDeploymentTemplate should throw errors
         this.activeSkeleton = false;
         this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
-        //}
       }catch (e) {
         this.activeSkeleton = false;
         console.error(e);
@@ -517,7 +485,6 @@ export default {
     openModalDeleteTemplate() {
       this.launchModal('oc-delete-template', 500);
     },
-
 
     // NOTE this kicks off instantiation of a ResourceTemplate from a ResourceType
     async onSubmitTemplateResourceModal() {
@@ -597,6 +564,9 @@ export default {
 
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
+        <div>
+
+        </div>
         <oc-card
           :custom-title="getDeploymentTemplate.title"
           :main-card-class="'primary-card'"
