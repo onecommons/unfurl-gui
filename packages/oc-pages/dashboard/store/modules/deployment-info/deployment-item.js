@@ -77,7 +77,7 @@ export default class DeploymentItem {
     
     get readonlyLink() { return `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`}
     get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
-    get viewableLink() { return this.isEditable? this.editableLink: this.readonlyLink }
+    get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
 
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }

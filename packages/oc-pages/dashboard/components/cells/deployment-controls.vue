@@ -62,8 +62,10 @@ export default {
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
             if(this.deploymentItem?.isDraft) result.push('edit-draft')
-            else if(this.deploymentItem?.isEditable) result.push('edit-deployment')
-            else result.push('view-deployment')
+            else {
+              if(this.deploymentItem?.isEditable) result.push('edit-deployment')
+              result.push('view-deployment')
+            }
             //if(this.isUndeployed) result.push('deploy')
             if(this.deploymentItem?.isDeployed) result.push('teardown')
             if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
@@ -77,7 +79,7 @@ export default {
             return this.controlButtons.slice(1)
         },
         resumeEditingTarget() {
-            return this.deploymentItem?.viewableLink
+            return this.deploymentItem?.editableLink
         },
         viewDeploymentTarget() {
             return this.deploymentItem?.viewableLink
