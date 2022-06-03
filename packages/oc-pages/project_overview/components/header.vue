@@ -92,15 +92,13 @@ export default {
                 </div>
             </div>
             <div class="project-repo-buttons gl-display-flex gl-justify-content-md-end gl-align-items-start gl-flex-wrap gl-mt-3">
-                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
-                    <gl-button>
-                        <gl-icon
-                            name="upload"
-                            :size="16"
-                        />
-                        <span>{{ __("Deploys") }}</span>
-                    </gl-button>
-                    <a href="#" class="gl-button btn btn-default btn-sm  count">{{ this.$projectGlobal.deploymentCount }}</a>
+                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 uf-header-project uf-deploy-count">
+                <gl-icon
+                    name="upload"
+                    :size="16"
+                />
+                {{ this.$projectGlobal.deploymentCount }}
+                <span>{{ __("Deploys") }}</span>
                 </div>
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
@@ -125,5 +123,15 @@ export default {
     width: 100%;
 }
 .uf-header-project {
+}
+.uf-deploy-count {
+    padding: 1rem 0.5rem;
+    font-weight: bold;
+}
+.uf-deploy-count .gl-icon {
+    margin-right: 0.2rem;
+}
+.uf-deploy-count span {
+    margin-left: 0.2rem
 }
 </style>
