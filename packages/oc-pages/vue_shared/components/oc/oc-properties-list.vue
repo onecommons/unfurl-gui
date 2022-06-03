@@ -65,39 +65,39 @@ export default {
                 </slot>
                 <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
             </div>
-            <table ref="transitionTarget" class="properties-list-inner">
-                <tr class="properties-list-item" v-for="property in _properties" :key="property.name">
+            <table ref="transitionTarget" class="properties-list-inner" style="display: table;">
+                <tr style="display: table-row" class="properties-list-item" v-for="property in _properties" :key="property.name">
                     <td class="name-column">{{ property.name.replaceAll('_', ' ') }}</td>
                     <td :style="property.valueStyle" class="value-column">
-                        <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
-
-                            <Status :status="property.status" display-text />
-                        </div>
-                        <div v-else style="width: 100%">
-                            <div v-if="property.icon" class="icon-container">
-                                <gl-icon :size="12" :name="property.icon" />
+                        <div style="display: flex; justify-content: space-between;">
+                            <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
+                                <Status :status="property.status" display-text />
                             </div>
-                            <json-view
-                              v-if="property.value && typeof property.value == 'object'"
-                              :data="property.value"
-                              :rootKey="property.name"
-                            />
-                            <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
-                            <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
+                            <div v-else style="width: 100%">
+                                <div v-if="property.icon" class="icon-container">
+                                    <gl-icon :size="12" :name="property.icon" />
+                                </div>
+                                <json-view
+                                v-if="property.value && typeof property.value == 'object'"
+                                :data="property.value"
+                                :rootKey="property.name"
+                                />
+                                <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
+                                <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
 
-                            <!-- todo: use other criteria -->
-                            <Redacted v-else-if="typeof property.value === 'string' && property.value.includes('REDACTED')" :value="property.value" />
+                                <!-- todo: use other criteria -->
+                                <Redacted v-else-if="typeof property.value === 'string' && property.value.includes('REDACTED')" :value="property.value" />
 
-                            <span v-else>
-                              {{property.value}}
-                            </span>
-                        </div>
-
-                        <div v-if="property.outboundLink" class="outbound-link-container d-flex">
-                            <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
-                                <gl-icon class="mr-1" :size="14" name="external-link"/>
-                                {{__(property.outboundLinkText)}}
-                            </a>
+                                <span v-else>
+                                {{property.value}}
+                                </span>
+                            </div>
+                            <div v-if="property.outboundLink" class="outbound-link-container d-flex">
+                                <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
+                                    <gl-icon class="mr-1" :size="14" name="external-link"/>
+                                    {{__(property.outboundLinkText)}}
+                                </a>
+                            </div>
                         </div>
                     </td>
                 </tr>
@@ -119,6 +119,11 @@ export default {
     overflow: hidden;
 }
 
+.gl-dark .properties-list-container {
+    background-color: #121212;
+    border-color: #626464;
+}
+
 .properties-list-inner {
     transition: margin 0.5s;
     width: 100%;
@@ -133,10 +138,10 @@ export default {
     border-width: 1px;
     border-color: #d8d8d8;
     border-top-style: inherit;
+    display: table-cell;
 }
-.value-column {
-    display: flex;
-    justify-content: space-between;
+.gl-dark .name-column, .value-column {
+    border-color: #626464;
 }
 
 .properties-list-item:nth-child(n+2) {
@@ -159,6 +164,7 @@ export default {
 .gl-dark .header {
     color: #121212;
 }
+
 .name-column {
     font-weight: bold;
     background: #fafafa;
@@ -166,11 +172,22 @@ export default {
     border-right-style: solid;
     color: #585d60;
 }
+.gl-dark .name-column {
+    background: #2F3030;
+    border-top-color: #626464;
+    color: #ffffffde;
+}
+
 .value-column {
     padding-left: 3em; padding-right: 3em;
     color: #666666;
     border-color: #eeeeee;
     position: relative;
+}
+.gl-dark .value-column {
+    border-color: #626464;
+    position: relative;
+    color: #ffffffde;
 }
 .icon-container {
     position: absolute;
