@@ -96,25 +96,51 @@ export default {
             'getCardProperties',
             'resolveResourceType',
             'cardStatus',
+            'lookupVariableByEnvironment'
         ]),
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
         },
+        // TODO reuse code between attributes and properties
         properties() {
             let properties = this.card.properties
             const titleMap = {}
+            const sensitiveMap = {}
             const resourceType = this.resolveResourceType(this.card.type)
             Object.entries(resourceType?.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
                 })
-            properties = properties.map(property => ({...property, name: titleMap[property.name] || property.name}))
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
+
+            properties = properties.map(property => {
+              const name = titleMap[property.name] || property.name
+              const sensitive = sensitiveMap[property.name]
+              let value = property.value
+              value = value?.get_env? this.lookupVariableByEnvironment(value.get_env, this.getCurrentEnvironment): value
+              return {...property, name, value, sensitive}
+            })
+
             return properties
         },
         attributes() {
             let attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
             const titleMap = {}
+            const sensitiveMap = {}
             const resourceType = this.resolveResourceType(this.card.type)
+
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
 
             Object.entries(resourceType?.outputsSchema?.properties || {})
                 .forEach(([name, value]) => {
@@ -125,6 +151,16 @@ export default {
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
                 })
+
+            Object.entries(resourceType?.outputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
+
+            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
 
             const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
             if(consoleURLIndex != -1) {
@@ -144,8 +180,15 @@ export default {
                     outboundLinkText
                 })
             }
+            attributes = attributes.map(attribute => {
+              const name = titleMap[attribute.name] || attribute.name
+              const sensitive = sensitiveMap[attribute.name]
+              let value = attribute.value
+              value = value?.get_env? this.lookupVariableByEnvironment(value.get_env, this.getCurrentEnvironment): value
+              return {...attribute, name, value, sensitive}
+            })
 
-            attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
+            //attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
             return attributes
         },
         propertiesStyle() {

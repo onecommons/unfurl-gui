@@ -9,6 +9,8 @@ import {userDefaultPath} from '../../../vue_shared/util.mjs'
 import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
 import {patchEnv} from '../../../vue_shared/client_utils/envvars'
 
+
+const SECRET_DIRECTIVE = "get_env"
 /*
  * this module is used to prepare a set of patches and push them to correct path using updateDeploymentObj
  * the shape of areguments passed to updateDeploymentObj changed after this module was created, so there are unnecessary transformations and an internal representation of patches that doesn't make much sense
@@ -89,6 +91,7 @@ Serializers = {
                 }
             }
         }
+        /*
         const resourceTemplates = []
         function addMatchedResourceTemplates(templateName) {
             let template 
@@ -105,7 +108,8 @@ Serializers = {
             }
         }
         addMatchedResourceTemplates(dt.primary)
-        dt.resourceTemplates = resourceTemplates
+        */
+        dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
     },
     // TODO unit test
     ResourceTemplate(rt) {
@@ -114,6 +118,8 @@ Serializers = {
             return dep.match || dep.target || dep.constraint.match
         })
 
+        rt.properties = _.unionBy(rt.properties, rt.computedProperties, 'name')
+        
         // This won't filter out any required properties because the user shouldn't be allowed 
         // to deploy with null required values
         rt.properties = rt.properties?.filter(prop => {
@@ -173,7 +179,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
         if(isSensitive) {
             const envname = normalizeEnvName(`${templateName}__${propertyName}`)
             env = {[envname]: propertyValue}
-            _propertyValue = {"get_env": envname}
+            _propertyValue = {[SECRET_DIRECTIVE]: envname}
         }
         const patch = accumulator['DeploymentEnvironment'][environmentName]
         const instance = Array.isArray(patch.instances) ?
@@ -261,7 +267,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         if(isSensitive) {
             const envname = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
             env = {[envname]: propertyValue}
-            _propertyValue = {"get_env": envname}
+            _propertyValue = {[SECRET_DIRECTIVE]: envname}
         }
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)

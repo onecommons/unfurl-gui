@@ -132,7 +132,7 @@ export default {
         }
         currentValue['x-data'] = value
         currentValue['x-component-props'] = {
-          placeholder: currentValue.title,
+          placeholder: currentValue.placeholder,
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`
         }
         let componentType = currentValue.type;
@@ -301,10 +301,14 @@ export default {
 </div>
 </template>
 <style scoped>
+.gl-dark >>> input::placeholder {
+    opacity: 0.7;
+}
 .oc-inputs {
   max-width: 100%;
   overflow: hidden;
 }
+
 .formily-element-form-default {
   display: inline-flex;
   flex-direction: column;

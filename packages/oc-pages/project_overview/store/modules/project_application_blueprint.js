@@ -101,6 +101,10 @@ const actions = {
                 resourceTemplate.dependencies = resourceTemplate.dependencies || []
                 resourceTemplate.properties = resourceTemplate.properties || []
 
+                const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
+                resourceTemplate.properties = properties
+                resourceTemplate.computedProperties = computedProperties
+
                 for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
                     resourceTemplate.dependencies.push(generatedDep)
                 }
@@ -110,6 +114,9 @@ const actions = {
 
                 for(const prop of resourceTemplate.properties) {
                     if(prop.value == '<<REDACTED>>') prop.value = null
+                    if(prop.value?.secret) {
+                        prop.value.get_env = prop.value.secret
+                    }
                 }
 
                 if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
@@ -150,6 +157,13 @@ const actions = {
                 resource.dependencies.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
+
+                for(const attribute of resource.attributes) {
+                    if(attribute.value?.secret) {
+                        attribute.value.get_env = attribute.value.secret
+                    }
+                }
+
                 resource.__typename = 'Resource'
 
                 // infer types from template when they're not available
@@ -312,6 +326,21 @@ const getters = {
                 }
             }
             return result
+        }
+    },
+    groupProperties(_, getters) {
+        return function(resourceTemplate) {
+            const type = getters.resolveResourceType(resourceTemplate.type)
+            const groups = {properties: [], computedProperties: []}
+
+            for(const property of resourceTemplate.properties || []) {
+                if(type?.inputsSchema?.properties?.hasOwnProperty(property.name)) {
+                    groups.properties.push(property)
+                } else if(type?.computedPropertiesSchema?.properties?.hasOwnProperty(property.name)) {
+                    groups.computedProperties.push(property)
+                }
+            }
+            return groups
         }
     },
     getApplicationBlueprint(state) { return state.applicationBlueprint },

@@ -1,5 +1,4 @@
 const stylesheets = [
-  'icon.css',
   'container.css',
   'form.css',
   'dialog.css',
@@ -34,6 +33,7 @@ const stylesheets = [
 
 export function setupTheme(app) {
   if(document.querySelector('body.gl-dark')) {
+    import('element-ui/lib/theme-chalk/index.css')
     for(const stylesheet of stylesheets) {
       import(`element-theme-dark/lib/${stylesheet}`)
     }

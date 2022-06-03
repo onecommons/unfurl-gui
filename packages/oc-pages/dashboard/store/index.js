@@ -3,6 +3,7 @@ import Vuex from "vuex";
 // TODO move these modules to vue_shared
 import deployments from '../../project_overview/store/modules/deployments'
 import environments from '../../project_overview/store/modules/environments'
+import user_settings from '../../project_overview/store/modules/user_settings'
 import project_application_blueprint from '../../project_overview/store/modules/project_application_blueprint';
 import misc from '../../project_overview/store/modules/misc'
 import deployment_template_updates from '../../project_overview/store/modules/deployment_template_updates'
@@ -23,7 +24,8 @@ const modules = {
     deployment_template_updates,
     template_resources,
     table_data,
-    deployment_info
+    deployment_info,
+    user_settings,
 }
 const variableDataEl = document.querySelector('#js-oc-ci-variables')
 

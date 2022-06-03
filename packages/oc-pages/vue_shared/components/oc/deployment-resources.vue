@@ -285,6 +285,14 @@ export default {
         });
     },
 
+    mounted() {
+        if(this.$route.hash) {
+            try {
+                this.scrollDown(this.$route.hash)
+            } catch(e) {}
+        }
+    },
+
     beforeDestroy() {
         window.removeEventListener('beforeunload', this.unloadHandler);
         this.resetTemplateResourceState();
@@ -331,8 +339,9 @@ export default {
             const anchorId = btoa(elId).replace(/=/g, '');
             this.uiTimeout = setTimeout(
                 () => {
-                    const anchor = document.querySelector(`#${anchorId}`);
-                    anchor?.scrollIntoView({behavior: "smooth", block: "center", inline: "start"});
+                    let anchor = document.querySelector(anchorId.startsWith('#') ? anchorId : `#${anchorId}`);
+                    anchor = anchor || document.querySelector(elId.startsWith('#') ? elId  : `#${elId}`)
+                    anchor?.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
                 },
                 timeOut,
             );

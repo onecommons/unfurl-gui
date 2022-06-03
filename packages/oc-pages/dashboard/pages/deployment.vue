@@ -21,7 +21,8 @@ export default {
             'lookupDeploymentOrDraft',
             'lookupEnvironment',
             'lookupDeployPath',
-            'getDashboardItems'
+            'getDashboardItems',
+            'environmentResourceTypeDict'
         ]),
         breadcrumbItems() {
             return  [
@@ -71,7 +72,11 @@ export default {
                 e.flash = true
                 throw e
             }
-            this.useProjectState({root: cloneDeep(this.state)})
+            let state = {...this.state}
+            if(!state.ResourceType) {
+              state.ResourceType = this.environmentResourceTypeDict(this.environment.name)
+            }
+            this.useProjectState({root: cloneDeep(state)})
             this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },

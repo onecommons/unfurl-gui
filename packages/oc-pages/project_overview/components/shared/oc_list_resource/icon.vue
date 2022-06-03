@@ -48,7 +48,6 @@ export default {
 .oc_resource_icon {
     width: 24px;
     height: 24px;
-    background-color: #ffffff;
 }
 .oc_resource_icon img {
     width: 100%;

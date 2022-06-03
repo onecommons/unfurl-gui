@@ -5,6 +5,7 @@ import routes from './routes';
 import * as routeNames from './constants.js'
 import { PageNotFound } from '../../vue_shared/oc-components'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
+import { hideLastFlash } from '../../vue_shared/client_utils/oc-flash'
 
 Vue.use(VueRouter);
 
@@ -37,6 +38,9 @@ export default function createRouter(base) {
 
 
     router.beforeEach((to, from, next) => {
+        if(to.name != from.name) {
+            hideLastFlash()
+        }
         if(!window.gon.current_username) {
             if(isPrivateRoute(to)) {
                 setTimeout( () => window.location.href = '/users/sign_in?redirect_to_referer=yes', 1)
