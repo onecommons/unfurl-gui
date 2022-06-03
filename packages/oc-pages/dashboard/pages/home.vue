@@ -135,7 +135,7 @@ export default {
     </div>
     <TableComponent :items="tableItems" :fields="tableFields">
     <template #empty>
-      <center class="mt-5" style="font-size: 1.3em;">
+      <center class="my-5" style="font-size: 1.3em;">
         You haven't deployed anything yet. Browse our <a href="/explore" target="_blank">Starter Application Blueprints</a> to get started!
       </center>
     </template>
