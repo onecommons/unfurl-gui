@@ -118,7 +118,7 @@ export default {
             </div>
         </div>
     </div>
-    <TableComponent v-if="totalDeploymentsCount > 0":items="tableItems" :fields="tableFields">
+    <TableComponent v-if="totalDeploymentsCount > 0" :items="tableItems" :fields="tableFields">
     <template #empty>
       <center class="mt-5" style="font-size: 1.3em;">
         You haven't deployed anything yet. Browse our <a href="/explore" target="_blank">Starter Application Blueprints</a> to get started!

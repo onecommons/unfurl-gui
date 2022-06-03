@@ -85,8 +85,7 @@ export default {
                                 <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
                                 <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
 
-                                <!-- todo: use other criteria -->
-                                <Redacted v-else-if="typeof property.value === 'string' && property.value.includes('REDACTED')" :value="property.value" />
+                                <Redacted v-else-if="property.sensitive" :value="property.value" />
 
                                 <span v-else>
                                 {{property.value}}

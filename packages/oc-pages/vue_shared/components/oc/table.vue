@@ -586,6 +586,6 @@ th .control-cell {
 </style>
 
 <style>
-thead * { line-height: 0!important }
-thead.no-collapse-all * { line-height: 2!important }
+.oc-table thead * { line-height: 0!important }
+.oc-table thead.no-collapse-all * { line-height: 2!important }
 </style>

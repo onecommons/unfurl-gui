@@ -114,6 +114,9 @@ const actions = {
 
                 for(const prop of resourceTemplate.properties) {
                     if(prop.value == '<<REDACTED>>') prop.value = null
+                    if(prop.value?.secret) {
+                        prop.value.get_env = prop.value.secret
+                    }
                 }
 
                 if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
@@ -154,6 +157,13 @@ const actions = {
                 resource.dependencies.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
+
+                for(const attribute of resource.attributes) {
+                    if(attribute.value?.secret) {
+                        attribute.value.get_env = attribute.value.secret
+                    }
+                }
+
                 resource.__typename = 'Resource'
 
                 // infer types from template when they're not available

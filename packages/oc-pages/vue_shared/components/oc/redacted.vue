@@ -27,8 +27,8 @@ export default {
 
 <template>
     <div class="redacted-container">
-        <div>
-            <span v-if="isHidden">******</span>
+        <div v-if="value">
+            <span v-if="isHidden"> {{value.replace(/./g, '*')}}</span>
             <span v-else>{{ value }}</span>
         </div>
         <gl-icon @click="toggle" :name="isHidden ? 'eye' : 'eye-slash'" style="cursor: pointer"/>

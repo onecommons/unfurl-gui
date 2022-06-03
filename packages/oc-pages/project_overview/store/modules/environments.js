@@ -366,8 +366,9 @@ const getters = {
     },
     lookupVariableByEnvironment(state) {
         return function(variable, environmentName) {
+            const name = environmentName?.name || environmentName
             try {
-                return state.variablesByEnvironment[environmentName][variable]
+                return state.variablesByEnvironment[name][variable]
             } catch(e) {}
             return null
         }
