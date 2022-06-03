@@ -54,7 +54,7 @@ span.text {margin-bottom: 0.4em;}
 .card {
     padding-top: 0.5em;
     height: 13em;
-    width: 13em;
+    min-width: 13em;
     border-width: 0; /* not sure why this is necessary */
     border-radius: 1em;
     display: flex;
@@ -63,6 +63,20 @@ span.text {margin-bottom: 0.4em;}
     justify-content: center;
     color: #4a5053;
     font-weight: 600;
+}
+@media only screen and (max-width: 768px) {
+    .card {
+        width: 70vw;
+        height: unset;
+        padding-bottom: 1.2em;
+    }
+    span.count {
+        line-height: 1;
+        font-size: 4.5em;
+        margin-bottom: 0;
+    }
+    span.text {margin-bottom: 0.2em;}
+
 }
 
 .card >>> a, .card a { text-decoration: underline !important; }

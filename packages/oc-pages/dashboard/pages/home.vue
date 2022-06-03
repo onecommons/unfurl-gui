@@ -84,7 +84,7 @@ export default {
     <div style="width: fit-content; margin: auto;">
         <dashboard-welcome v-if="totalDeploymentsCount == 0" />
         <div class="quantity-cards">
-            <div class="d-flex">
+            <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card 
                     :to="{name: routes.OC_DASHBOARD_HOME}" 
                     :count="applicationsCount" 
@@ -100,7 +100,7 @@ export default {
                     class="qcard2"
                     :create-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
             </div>
-            <div class="d-flex">
+            <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'running'}}"
                     :count="runningDeploymentsCount"

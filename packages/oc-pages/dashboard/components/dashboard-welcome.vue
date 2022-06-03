@@ -38,13 +38,14 @@ export default {
 .instructions {
     font-size: 2em;
     line-height: 1.8125;
-    width: 40rem;
+    max-width: 40rem;
 }
 .greeting > * {
     padding-left: 2.625rem;
 }
 .wcard {
     padding-top: 1em;
+    margin: 0.5em;
     padding-bottom: 1em;
     border-radius: 10px;
     margin-bottom: 4.5em;
