@@ -460,7 +460,7 @@ export default {
                         </h5>
                     </div>
                 </template>
-                <gl-markdown v-html="$projectGlobal.readme" />
+                <gl-markdown class="md" v-html="$projectGlobal.readme" />
             </gl-card>
 
 
