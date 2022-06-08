@@ -31,6 +31,8 @@ before(() => {
   const PASSWORD = Cypress.env('OC_PASSWORD')
   const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
   const MOCK_DEPLOY = Cypress.env('MOCK_DEPLOY') || Cypress.env('UNFURL_MOCK_DEPLOY')
+  const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
+  const DEPLOY_TAG = Cypress.env('DEPLOY_TAG')
   cy.visit(`${BASE_URL}/users/sign_in`).wait(100)
   cy.url().then(url => {
     if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
@@ -41,10 +43,17 @@ before(() => {
       if(IMPERSONATE) {
         cy.visit(`${BASE_URL}/admin/users/${IMPERSONATE}`)
         cy.get('[data-qa-selector="impersonate_user_link"]').click()
+        cy.url().should('not.contain', 'admin')
       }
     }
   })
   cy.window().then(win => {
+    if(DEPLOY_IMAGE) {
+      win.sessionStorage['deploy-image'] = DEPLOY_IMAGE
+    }
+    if(DEPLOY_TAG) {
+      win.sessionStorage['deploy-tag'] = DEPLOY_TAG
+    }
     if(MOCK_DEPLOY) {
       win.sessionStorage['mock-deploy'] = 't'
     }

@@ -42,8 +42,15 @@ const getters = {
     },
     UNFURL_TRACE() {
         return !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace')
+    },
+    DEPLOY_IMAGE() {
+        return sessionStorage['deploy-image'] || 'onecommons/unfurl:latest'
+    },
+    /*
+    DEPLOY_TAG() {
+        return sessionStorage['deploy-tag'] || 'latest'
     }
-
+    */
 }
 
 const actions = {

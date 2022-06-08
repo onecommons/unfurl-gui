@@ -40,7 +40,7 @@ function withJob(cb) {
 }
 
 function assertDeploymentRunning(deploymentTitle) {
-  cy.visit(`${BASE_URL}/dashboard/deployments?show=running`)
+  //cy.visit(`${BASE_URL}/dashboard/deployments?show=running`)
   cy.contains('td', deploymentTitle).within(() => {
     //cy.get('[data-testid="status_success_solid-icon"]').should('exist')
     cy.get('[data-testid="status_success_solid-icon"]').should('exist')
