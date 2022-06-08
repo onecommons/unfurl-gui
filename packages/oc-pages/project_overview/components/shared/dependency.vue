@@ -255,7 +255,7 @@ export default {
     color: #353545;
 }
 .gl-dark .oc_requirement_title {
-    color: rgba(255, 255, 255, 0.6) !important;
+    color: rgba(255, 255, 255) !important;
 }
 .oc_requirement_description {
     color: #666666

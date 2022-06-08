@@ -323,6 +323,14 @@ export default {
   position: relative;
 }
 
+.gl-dark >>> .formily-element-form-item-label-content > label { 
+  color: white;
+}
+
+.gl-dark >>> .formily-element-form-item-colon { 
+  color: white;
+}
+
 .oc-inputs >>> .formily-element-form-item-control-content { justify-content: flex-end; }
 .oc-inputs >>> .formily-element-form-item-extra {
   left: calc(100% - 300px);
