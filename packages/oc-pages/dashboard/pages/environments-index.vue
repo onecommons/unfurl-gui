@@ -69,7 +69,7 @@ export default {
 <template>
     <div>
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <div class="row d-flex flex-wrap m-5 justify-content-between">
+        <div class="row d-flex flex-wrap mx-3 my-5 justify-content-between">
             <div class="mr-4">
                 <div v-show="getDashboardItems.length == 0">
                     This page will show all of your environments once you've created some. <br>
