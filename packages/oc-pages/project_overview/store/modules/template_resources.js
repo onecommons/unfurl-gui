@@ -658,6 +658,26 @@ const getters = {
         // TODO figure out how to handle resources of a service
         return state.context != 'environment' && rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
     },
+    resolveRequirementMatchChildren: (_state, getters) => function (requirement) {
+        const match = typeof requirement == 'string'? requirement:
+            state.context == 'deployment' ? requirement.target : requirement.match
+        const resourceTemplate = _state.resourceTemplates[match]
+        let children = []
+        if (resourceTemplate?.dependencies) {
+            for (const dep of resourceTemplate?.dependencies) {
+                if (dep.constraint.visibility === 'visible' && dep?.completionStatus) {
+                    // dependency is visible && there is completionStatus field (i think the status doesn't matter here)
+                    children.push(_state.resourceTemplates[dep.match]?.title)
+                } else {
+                    // dependency is hidden or inherit || no completionStatus field
+                    if (dep.match) {
+                        children = children.concat(getters.resolveRequirementMatchChildren(dep.match))
+                    }
+                }
+            }
+        }
+        return children 
+    },
     cardInputsAreValid(state) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
