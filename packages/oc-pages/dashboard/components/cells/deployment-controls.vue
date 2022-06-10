@@ -4,6 +4,7 @@ import {mapGetters} from 'vuex'
 import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
 import {generateIssueLink} from '../../../vue_shared/client_utils/issues'
 import ControlButtons from './deployment-controls/control-buttons.vue'
+import * as routes from '../../router/constants'
 export default {
     props: {
         resumeEditingLink: [Object, String],
@@ -64,7 +65,7 @@ export default {
             if(this.deploymentItem?.isDraft) result.push('edit-draft')
             else {
               if(this.deploymentItem?.isEditable) result.push('edit-deployment')
-              result.push('view-deployment')
+              if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
             }
             //if(this.isUndeployed) result.push('deploy')
             if(this.deploymentItem?.isDeployed) result.push('teardown')
