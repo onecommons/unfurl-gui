@@ -286,9 +286,9 @@ export default {
     },
 
     mounted() {
-        if(this.$route.hash) {
+        if(window.location.hash) {
             try {
-                this.scrollDown(this.$route.hash)
+                this.scrollDown(window.location.hash)
             } catch(e) {}
         }
     },

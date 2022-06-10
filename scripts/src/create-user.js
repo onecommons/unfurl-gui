@@ -17,8 +17,8 @@ async function createUser(o) {
     projects_limit: 100000,
     can_create_group: 0,
     access_level: 'reqular',
-    external: 0,
-    'credit_card_validation_attributes][credit_card_validated_at': 0
+    external: o.hasOwnProperty('external') ? o.external : 1,
+    'credit_card_validation_attributes][credit_card_validated_at': 0,
   }
   options.email = o.email || `${options.username}@unfurl.cloud`
   const form = new FormData()
@@ -39,14 +39,6 @@ async function createUser(o) {
 
 module.exports = createUser
 
-if(require.main === module) {
-  try {
-    main()
-  } catch(e) {
-    console.error(e.message)
-    process.exit(1)
-  }
-}
 
 async function main() {
   const args = require('minimist')(process.argv.slice(2))
@@ -62,4 +54,17 @@ async function main() {
       throw new Error('Failed to push local repo to dashboard')
     }
   }
+}
+
+async function tryMain() {
+  try {
+    await main()
+  } catch(e) {
+    console.error(e.message)
+    process.exit(1)
+  }
+}
+
+if(require.main === module) {
+  tryMain()
 }

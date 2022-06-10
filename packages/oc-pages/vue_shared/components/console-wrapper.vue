@@ -135,16 +135,19 @@ export default {
 </style>
 <style>
 aside[data-testid="job-sidebar"] {
-  display: none;
+    display: none;
 }
 [data-testid="job-content"] > :is(header, .js-environment-container) {
-  display: none;
+    display: none;
 }
 [data-testid="job-content"] .top-bar {
-  top: 0px !important;
-  margin-top: -10px;
+    display: none;
+    /*
+    top: 0px !important;
+    margin-top: -10px;
+     */
 }
 [title="Scroll to top"], [title="Scroll to bottom"] {
-  display: none;
+    display: none;
 }
 </style>

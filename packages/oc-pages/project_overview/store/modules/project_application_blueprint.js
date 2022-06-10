@@ -184,7 +184,7 @@ const actions = {
 
         for(const key of ordering) {
             const value = root[key]
-            if(typeof value != 'object') continue
+            if(!value || typeof value != 'object') continue
             if(typeof transforms[key] == 'function')
                 Object.values(value).forEach(entry => {if(typeof entry == 'object') {transforms[key](entry, root)}})
             commit('setProjectState', {key, value})

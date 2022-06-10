@@ -4,6 +4,7 @@ process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
 axios.defaults.withCredentials = true
+axios.defaults.timeout = 40000
 const validateStatus = axios.defaults.validateStatus = () => true
 const { CookieJar } = require('tough-cookie')
 const jar = new CookieJar()

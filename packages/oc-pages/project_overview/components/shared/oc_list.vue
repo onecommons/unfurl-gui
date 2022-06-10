@@ -247,7 +247,7 @@ export default {
         <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">
             <oc-properties-list :container-style="propertiesStyle" :card="card" property="outputs" />
         </oc-tab>
-        <oc-tab v-if="shouldRenderExtras" title="Extras" :titleCount="extras.length">
+        <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${card.name}`" :titleCount="extras.length">
             <div class="row-fluid">
                 <div class="ci-table" role="grid">
                     <dependency :card="extra.card" :readonly="readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name + '-template'"/>
