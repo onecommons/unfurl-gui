@@ -20,6 +20,7 @@ export default {
     computed: {
         ...mapGetters([
             'getDeploymentDictionary',
+            'deploymentItemDirect',
             'lookupDeploymentOrDraft',
             'lookupEnvironment',
             'lookupDeployPath',
@@ -44,8 +45,11 @@ export default {
         pipelineId() {
             return this.lookupDeployPath(this.deploymentName, this.environmentName)?.pipeline?.id
         },
+        deploymentItem() {
+            return this.deploymentItemDirect({environment: this.environmentName, deployment: this.deploymentName})
+        },
         state() {
-            return this.getDeploymentDictionary(this.deploymentName, this.environmentName)
+            return Object.freeze(this.getDeploymentDictionary(this.deploymentName, this.environmentName))
         },
         tableItems() {
             return this.getDashboardItems.filter(item => {
@@ -69,8 +73,6 @@ export default {
             }
         },
         currentTab(tab) {
-            console.log({tab})
-
             if(this.$route.hash && tab == 1){
                 this.$router.push({...this.$route, hash: undefined})
             }
@@ -80,8 +82,8 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['useProjectState', 'populateDeploymentResources']),
-        prepareView() {
+        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources']),
+        async prepareView() {
             this.viewReady = false
 
             if(!this.state) {
@@ -89,11 +91,16 @@ export default {
                 e.flash = true
                 throw e
             }
-            let state = {...this.state}
-            if(!state.ResourceType) {
-              state.ResourceType = this.environmentResourceTypeDict(this.environment.name)
+            if(this.deployment.__typename == 'DeploymentTemplate') {
+                await this.fetchProject({projectPath: this.deployment.projectPath})
+                this.useProjectState({root: cloneDeep(this.state), shouldMerge: true})
+            } else {
+                let ResourceType =  this.state.ResourceType
+                if(!ResourceType) {
+                    ResourceType = this.environmentResourceTypeDict(this.environment.name)
+                }
+                this.useProjectState({root: cloneDeep({...this.state, ResourceType})})
             }
-            this.useProjectState({root: cloneDeep(state)})
             this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },

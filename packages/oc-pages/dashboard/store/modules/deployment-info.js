@@ -32,7 +32,7 @@ const state = {
 const getters = {
     deploymentItemDirect(state) {
         return function({environment, deployment}, method, ...args) {
-            const key = `${environment?.name}:${deployment?.name}`
+            const key = `${environment?.name || environment}:${deployment?.name || deployment}`
             let result = state.deploymentItems[key]
             if(result && method) {
                 if(args.length) {
