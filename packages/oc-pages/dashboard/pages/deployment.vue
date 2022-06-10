@@ -13,7 +13,9 @@ import {DeploymentIndexTable} from 'oc_dashboard/components'
 export default {
     components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable},
     data() {
-        return {bus, jobsData: null, viewReady: false, currentTab: 0}
+        const environmentName = this.$route.params.environment
+        const deploymentName = this.$route.params.name
+        return {bus, jobsData: null, viewReady: false, currentTab: 0, environmentName, deploymentName}
     },
     computed: {
         ...mapGetters([
@@ -31,28 +33,25 @@ export default {
             ]
         },
         deployment() {
-            const environmentName = this.$route.params.environment
-            const deploymentName = this.$route.params.name
-            return this.lookupDeploymentOrDraft(deploymentName, environmentName)
+            return this.lookupDeploymentOrDraft(this.deploymentName, this.environmentName)
         },
         environment() {
-            const environmentName = this.$route.params.environment
-            return this.lookupEnvironment(environmentName)
+            return this.lookupEnvironment(this.environmentName)
         },
         projectId() {
-            return this.lookupDeployPath(this.deployment.name, this.environment.name)?.projectId
+            return this.lookupDeployPath(this.deploymentName, this.environmentName)?.projectId
         },
         pipelineId() {
-            return this.lookupDeployPath(this.deployment.name, this.environment.name)?.pipeline?.id
+            return this.lookupDeployPath(this.deploymentName, this.environmentName)?.pipeline?.id
         },
         state() {
-            return this.getDeploymentDictionary(this.deployment.name, this.environment.name)
+            return this.getDeploymentDictionary(this.deploymentName, this.environmentName)
         },
         tableItems() {
             return this.getDashboardItems.filter(item => {
                 return (
-                    item.context.environment.name == this.environment.name &&
-                    item.context.deployment.name == this.deployment.name
+                    item.context.environment.name == this.environmentName &&
+                    item.context.deployment.name == this.deploymentName
                 )
             })
         }
@@ -60,6 +59,24 @@ export default {
     watch: {
         state(val) {
             this.prepareView()
+        },
+        $route() {
+            if(this.$route.hash) {
+                if(this.currentTab == 1) {
+                    this.currentTab = 0
+                }
+                this.$refs.deploymentResources.scrollDown(this.$route.hash, 500)
+            }
+        },
+        currentTab(tab) {
+            console.log({tab})
+
+            if(this.$route.hash && tab == 1){
+                this.$router.push({...this.$route, hash: undefined})
+            }
+            else if(this.$route.query?.show && tab == 0) {
+                this.$router.push({...this.$route, query: undefined})
+            }
         }
     },
     methods: {
@@ -81,35 +98,32 @@ export default {
             this.viewReady = true
         },
         setTabToConsoleIfNeeded() {
-            if(!this.$route.query?.show == 'console') {
+            if(this.$route.query?.show == 'console') {
                 this.currentTab = 1
             }
         }
+    },
+    created() {
+        if(!this.viewReady) this.prepareView()
     },
     async mounted() {
         if(!window.gon.unfurl_gui) {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
-        this.prepareView()
-        if(this.$route.query?.show == 'console') {
-            this.currentTab = 1
-        }
+        this.setTabToConsoleIfNeeded()
     }
 }
 </script>
 <template>
     <div id="deployment-view-container">
-
         <dashboard-breadcrumbs style="overflow-anchor: auto" :items="breadcrumbItems" />
         <deployment-index-table :items="tableItems" hide-filter />
         <gl-tabs class="mt-4" v-model="currentTab">
-            <oc-tab title="Deployment">
-                <deployment-resources v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
-            </oc-tab>
-            <oc-tab title="Console">
-                <console-wrapper ref="consoleWrapper" @active-deployment="setTabToConsoleIfNeeded" v-if="jobsData" :jobs-data="jobsData" />
-            </oc-tab>
+            <oc-tab title="Deployment" />
+            <oc-tab title="Console" />
         </gl-tabs>
+        <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
+        <console-wrapper v-show="currentTab == 1" ref="consoleWrapper" @active-deployment="setTabToConsoleIfNeeded" v-if="jobsData" :jobs-data="jobsData" />
     </div>
 </template>
 <style>
