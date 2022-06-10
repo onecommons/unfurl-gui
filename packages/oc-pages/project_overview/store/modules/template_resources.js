@@ -169,7 +169,7 @@ const actions = {
                 if(dict._environment != environmentName) continue
                 let dt
                 try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
-                if(dt?.slug != templateSlug) continue
+                if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
 
                 dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true})
                 _syncState = false // override sync state if we just loaded this

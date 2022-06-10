@@ -110,7 +110,7 @@ export default {
         // this.getDeploymentTemplate.name not loaded yet
 
         // params.slug is the blueprint unfortunately
-        const deploymentSlug = slugify(this.$route.query.fn)
+        const deploymentSlug = this.$route.params.slug //slugify(this.$route.query.fn)
         return `environments/${environment}/${this.getProjectInfo.fullPath}/${deploymentSlug}`
     },
     saveStatus() {
@@ -402,7 +402,7 @@ export default {
             type: FLASH_TYPES.SUCCESS,
             duration: this.durationOfAlerts,
             linkText: 'Return to overview',
-            linkTo: `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}` // TODO 
+            linkTo: `/${this.project.globalVars.projectPath}#${this.$route.params.slug}` // TODO 
           });
           const query = {...this.$route.query}
           delete query.ts
@@ -433,7 +433,7 @@ export default {
           environmentName: this.$route.params.environment,
           projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
           deployPath: this.deploymentDir,
-          deploymentName: slugify(this.$route.query.fn),
+          deploymentName: this.$route.params.slug,
           deploymentBlueprint: this.$route.query.ts
         })
 
@@ -450,7 +450,7 @@ export default {
         }
 
         beforeRedirect() // this is weird, the logic around here has just changed a lot recently
-        window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${slugify(this.$route.query.fn)}?show=console`
+        window.location.href = `/dashboard/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];

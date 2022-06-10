@@ -5,7 +5,7 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
-import {GlTabs, GlModal} from '@gitlab/ui'
+import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
 import _ from 'lodash'
@@ -53,6 +53,7 @@ export default {
         GlModal,
         GlTabs,
         OcTab,
+        GlFormInput, GlFormGroup,
         DeploymentStatusIcon
     },
     props: {
@@ -114,15 +115,16 @@ export default {
         let currentTab = tabFilters.findIndex(tab => tab.title.toLowerCase() == show?.toLowerCase())
         if(currentTab == -1) currentTab = 0
 
-        const intent = '', target = null
-        return {fields, routes, intent, target, transition: false, currentTab}
+        const intent = '', target = null, newDeploymentTitle = null
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle}
 
     },
     methods: {
         ...mapActions([
             'deleteDeployment',
             'deployInto',
-            'undeployFrom'
+            'undeployFrom',
+            'cloneDeployment'
         ]),
         async deploy() {
             await this.deployInto(this.deploymentParameters)
@@ -200,6 +202,9 @@ export default {
                     await this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
                     this.$router.replace({hash: '#_'})
                     this.handleDeleteRedirect()
+                case 'clone':
+                    const clonedDeploymentName = await this.cloneDeployment({deployment, environment, newDeploymentTitle: this.newDeploymentTitle})
+                    window.location.href = `/dashboard/deployments/${environment.name}/${clonedDeploymentName}`
                 default:
                     return
 
@@ -216,6 +221,11 @@ export default {
         onIntentToStart(deployment, environment) {
             this.intent = 'deploy'
             this.target = {deployment, environment}
+        },
+        onIntentToClone(deployment, environment) {
+            this.intent = 'clone'
+            this.target = {deployment, environment}
+            this.newDeploymentTitle = deployment.title
         },
         hasDeployPath(scope) {
             return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
@@ -305,6 +315,8 @@ export default {
                     return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
                 case 'deploy':
                     return `Deploy ${targetTitle}?`
+                case 'clone':
+                    return `Clone ${targetTitle}?`
                 default: return ''
             }
         },
@@ -417,6 +429,11 @@ export default {
                     Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
                 </div>
             </div>
+            <div v-if="intent == 'clone'">
+                <gl-form-group class="m-3" label="New deployment title">
+                    <gl-form-input v-model="newDeploymentTitle"/>
+                </gl-form-group>
+            </div>
         </gl-modal>
         <gl-tabs v-model="currentTab" v-if="useTabs">
             <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
@@ -465,7 +482,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>

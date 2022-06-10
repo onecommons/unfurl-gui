@@ -114,7 +114,7 @@ export default {
         if(!this.viewReady) this.prepareView()
     },
     async mounted() {
-        if(!window.gon.unfurl_gui) {
+        if(!window.gon.unfurl_gui && this.projectId && this.pipelineId) {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
         this.setTabToConsoleIfNeeded()
@@ -127,7 +127,7 @@ export default {
         <deployment-index-table :items="tableItems" hide-filter />
         <gl-tabs class="mt-4" v-model="currentTab">
             <oc-tab title="Deployment" />
-            <oc-tab title="Console" />
+            <oc-tab v-show="jobsData" title="Console" />
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
         <console-wrapper v-show="currentTab == 1" ref="consoleWrapper" @active-deployment="setTabToConsoleIfNeeded" v-if="jobsData" :jobs-data="jobsData" />

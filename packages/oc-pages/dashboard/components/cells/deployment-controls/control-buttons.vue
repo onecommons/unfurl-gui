@@ -25,6 +25,9 @@ export default {
         startDeployment() {
             this.$emit('startDeployment')
         },
+        cloneDeployment() {
+            this.$emit('cloneDeployment')
+        },
         cancelJob() {
             this.$emit('cancelJob')
         },
@@ -55,6 +58,10 @@ export default {
     <component :is='component' v-if="hasButton('edit-deployment')" target="_blank" rel="noopener noreferrer" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Deployment')}}
+    </component>
+    <component :is='component' v-if="hasButton('clone-deployment')" @click="cloneDeployment">
+        <gl-icon :size="16" name="duplicate"/>
+        {{__('Clone Deployment')}}
     </component>
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
