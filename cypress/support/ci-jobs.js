@@ -18,7 +18,7 @@ function withCompletedJob(job, cb) {
       }
     })
     return !running
-  }, {timeout: 120000})
+  }, {timeout: BASE_TIMEOUT * 20})
 }
 
 function expectSuccessfulJob(job) {

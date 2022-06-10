@@ -3,6 +3,7 @@ const expect = require('expect')
 process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
+axios.defaults.timeout = 40000
 axios.defaults.withCredentials = true
 const validateStatus = axios.defaults.validateStatus = () => true
 const { CookieJar } = require('tough-cookie')

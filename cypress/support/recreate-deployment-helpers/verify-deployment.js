@@ -78,7 +78,6 @@ const verificationRoutines = {
   },
 
   ghost(deployment, env) {
-
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
@@ -93,7 +92,7 @@ const verificationRoutines = {
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
-    }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
+    }, {timeout: BASE_TIMEOUT * 20,  interval: BASE_TIMEOUT * 2})
   }
 
 }
