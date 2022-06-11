@@ -15,7 +15,9 @@ async function startApollo() {
     process.send({stdout: 'Apollo is already running', exit: true})
     return
   }
+
   const log = getLogWriter('apollo')
+
   return new Promise((resolve, reject) => {
     let resolved = false
     const apollo = spawn(
@@ -25,6 +27,7 @@ async function startApollo() {
         cwd: unfurlGuiRoot
       }
     )
+
     apollo.stdout.on('data', data => {
       data.toString().split('\n').forEach(line => {
         log(line)
@@ -35,9 +38,11 @@ async function startApollo() {
         }
       })
     })
+
     apollo.stderr.on('data', data => {
       log(data, "stderr");
     })
+
     apollo.on('exit', code => {
       exitCodes['apollo'] = code
       const message = `Apollo exited with ${code}`
@@ -61,6 +66,7 @@ async function startServe() {
         cwd: unfurlGuiRoot
       }
     )
+
     serve.stdout.on('data', data => {
       data.toString().split('\n').forEach(line => {
         log(line)
@@ -71,9 +77,11 @@ async function startServe() {
         }
       })
     })
+
     serve.stderr.on('data', data => {
       log(data, 'stderr')
     })
+
     serve.on('exit', code => {
       exitCodes['serve'] = code
       const message = `Vue cli server exited with ${code}`
@@ -92,8 +100,9 @@ async function main() {
     const child = fork(
       path.join(__dirname, 'start.js'),
       args,
-      {detached: true, silent: true}
+      {detached: true, stdio: 'ignore'}
     )
+
     child.on('message', ({stdout, stderr, exit}) => {
       if(stdout) {
         console.log(stdout)
@@ -105,6 +114,7 @@ async function main() {
         process.exit()
       }
     })
+
   } else {
     const log = getLogWriter('control')
 
@@ -129,12 +139,15 @@ async function main() {
 
     while(true) {
       let logMessage = []
+
       if(shouldStartApollo) {
         logMessage.push(`Apollo exited ${exitCodes['apollo'] || 'no'}`)
       }
+
       if(shouldStartServe) {
         logMessage.push(`Dev server exited ${exitCodes['serve'] || 'no'}`)
       }
+
       log(logMessage.join(';\t'))
       if(
         (shouldStartApollo && isProgramRunning('apollo')) ||
