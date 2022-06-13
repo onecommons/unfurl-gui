@@ -35,8 +35,9 @@ const CUSTOM_ICON_MAPPINGS = {
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
     'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon',
     'error-filled': 'ErrorFilled'
-
 }
+
+const NO_FILTER = ['GCP']
 
 function applyTypeToMapping(type, mapping) {
     if(!type) return
@@ -104,6 +105,13 @@ export default {
         customIcon() {
             return this.type?.icon || detectIconCustomSVG(this.name || this.type || this._env)
         },
+        customImageStyle() {
+            const styles = {}
+            if(NO_FILTER.includes(this.customIcon)) {
+                styles['filter'] = 'unset'
+            }
+            return styles
+        },
         customStyle() {
             if (this.$attrs.size) {
                 return {
@@ -127,7 +135,7 @@ export default {
 </script>
 <template>
     <span class="custom-icon" :style="customStyle" v-if="customIcon">
-        <img :src="customURL">
+        <img :style="customImageStyle" :src="customURL">
     </span>
     <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />
 </template>
@@ -136,9 +144,12 @@ export default {
     display: inline-block;
     width: 1em; height: 1em; position: relative;
 }
-.custom-icon > img{
+.custom-icon > img {
     width: 1em;
     height: 1em;
     position: absolute;
+}
+.gl-dark .custom-icon > img {
+    filter: invert(1) hue-rotate(180deg);
 }
 </style>

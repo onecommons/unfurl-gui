@@ -407,7 +407,6 @@ export default {
           const query = {...this.$route.query}
           delete query.ts
           window.location.href = this.$router.resolve({...this.$route, query}).href
-          window.location.reload()
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           createFlash({

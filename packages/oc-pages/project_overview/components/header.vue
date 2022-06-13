@@ -118,6 +118,12 @@ export default {
     </div>
 </template>
 <style scoped>
+.count-badge {
+  align-items: center;
+}
+.project-repo-buttons {
+  align-items: center;
+}
 .project_icon_oc,
 .button_id_project {
     width: 100%;
@@ -125,7 +131,6 @@ export default {
 .uf-header-project {
 }
 .uf-deploy-count {
-    padding: 1rem 0.5rem;
     font-weight: bold;
 }
 .uf-deploy-count .gl-icon {
