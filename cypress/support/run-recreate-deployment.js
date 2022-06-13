@@ -212,6 +212,7 @@ Cypress.Commands.add('recreateDeployment', options => {
       })
       cy.whenGitlab(() => {
         cy.url({timeout: BASE_TIMEOUT * 4}).should('include', dt.name)
+        cy.wait(BASE_TIMEOUT)
         cy.withJob((job) => {
           cy.expectSuccessfulJob(job)
         })

@@ -45,6 +45,23 @@ const verificationRoutines = {
     }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
   },
 
+  nextcloud(deployment, env) {
+    const dt = _dt(deployment)
+    const ab = _ab(deployment)
+    const primary = _primary(deployment)
+    const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
+    const username = 'jdenne'
+    const password = env + '1'
+    const command = `./scripts/src/blueprint-validation/nextcloud.js --base-url https://${subdomain}.untrusted.me --register-name ${username} --register-password ${password}`
+    console.log(command)
+    cy.waitUntil(() => {
+      return cy.exec(
+        command, 
+        {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
+      ).then(result => {console.log(result); return result.code == 0})
+    }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
+  },
+
   wordpress(deployment, env) {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
