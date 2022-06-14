@@ -79,6 +79,7 @@ const actions = {
             deploymentDir = deploymentDir.join('/')
             const objectPath = `${deploymentDir}/deployment.json`
             state.DeploymentTemplate[newDeploymentName] = state.DeploymentTemplate[prevDeploymentName]
+            state.DeploymentTemplate[newDeploymentName].title = newDeploymentTitle
             state.DeploymentTemplate[newDeploymentName].name = newDeploymentName
             state.DeploymentTemplate[newDeploymentName].slug = newDeploymentName
             delete state.DeploymentTemplate[prevDeploymentName]
