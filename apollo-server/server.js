@@ -121,12 +121,14 @@ export default app => {
     const deploy = `${UNFURL_CMD} -vvv --home '' ${WORKFLOW} --use-environment ${DEPLOY_ENVIRONMENT} --approve ${DEPLOY_PATH}`
     const exportCmd = `${UNFURL_CMD} -vv --home '' export --use-environment ${DEPLOY_ENVIRONMENT} ${DEPLOY_PATH} > ${DEPLOY_PATH}/ensemble.json`
     let currentCommand, output
+
     function execHelper(cmd) {
       console.log("***** RUNNING COMMAND ******")
       console.log(cmd)
       currentCommand = cmd
-      output = execSync(cmd, {cwd, env})
+      output = execSync(cmd, {cwd, env, stdio: 'inherit'})
     }
+
     try {
       if(!cloned) {
         execHelper(clone)

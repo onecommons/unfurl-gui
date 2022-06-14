@@ -11,7 +11,7 @@ mkdirp.sync(logDir)
 function getPid(program) {
   try{
     return fs.readFileSync(path.join(tmpDir, `${program}.pid`), {encoding: 'utf-8'})
-  } catch(e) { console.error(e)}
+  } catch(e) { console.error(`warn: could not get pidfile for ${program}!`) }
 }
 
 function isPidRunning(pid) {

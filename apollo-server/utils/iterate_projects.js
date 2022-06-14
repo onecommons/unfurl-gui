@@ -12,7 +12,7 @@ function exportBlueprint(cwd, fullPath, ensemble) {
   console.log(cmd)
   let out;
   try {
-    out = execSync(cmd, { cwd });
+    out = execSync(cmd, { cwd, stdio: 'inherit'});
   } catch (e) {
     console.log(`error exporting ${fullPath}:`, e)
     return false;
