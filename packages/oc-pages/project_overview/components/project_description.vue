@@ -191,7 +191,7 @@ export default {
                             </ul>
 
                         </oc-tab>
-                        <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderExtras">
+                        <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderRequirements && shouldRenderExtras">
                             <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
                                     <div class="gl-display-flex gl-justify-content-space-between">
@@ -214,7 +214,7 @@ export default {
                             </ul>
 
                         </oc-tab>
-                        <oc-tab v-if="outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
+                        <oc-tab v-if="shouldRenderRequirements && outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
                             <div v-if="inputs.length">
                                 <div class="detail-heading">Inputs</div>
                                 <ul class="pl-4" v-if="inputs.length > 0">
