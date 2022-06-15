@@ -58,8 +58,10 @@ const getters = {
   getUserSettings(state) {
     return state 
   },
-  getLastUsedEnvironment: (state) => function({ cloud }) {
-    return state.lastUsedEnvironmentList.find((e) => e.cloud === cloud)?.environmentName
+  getLastUsedEnvironment: (state, _a, _b, rootGetters) => function({ cloud }) {
+    return state.lastUsedEnvironmentList
+      .filter((e) => rootGetters.lookupEnvironment(e.name))
+      .find((e) => e.cloud === cloud)?.environmentName
   }
 }
 

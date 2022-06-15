@@ -62,6 +62,7 @@ export default {
       selected: {},
       autoSaveTime: 2000,
       nodeTitle: '',
+      nodeChildren: [],
       nodeLevel: null,
       nodeAction: '',
       durationOfAlerts: 5000,
@@ -91,6 +92,7 @@ export default {
       'safeToNavigateAway',
       'requirementMatchIsValid',
       'resolveRequirementMatchTitle',
+      'resolveRequirementMatchChildren',
       'cardIsValid',
       'getUsername',
       'getHomeProjectPath',
@@ -260,6 +262,7 @@ export default {
       this.nodeAction = obj.action? obj.action : __('Delete');
         
       this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
+      this.nodeChildren = this.resolveRequirementMatchChildren(obj.name)
       this.launchModal('oc-delete-node', 500);
     });
   },
@@ -407,7 +410,6 @@ export default {
           const query = {...this.$route.query}
           delete query.ts
           window.location.href = this.$router.resolve({...this.$route, query}).href
-          window.location.reload()
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           createFlash({
@@ -542,7 +544,8 @@ export default {
         }
         return nword + 'ing';
       };
-        return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>? <span style="text-transform: capitalize;">${gerundize(this.nodeAction)}</span> <b>${this.nodeTitle}</b> might affect other resources that are linked to it.`;
+        return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>? 
+        ${this.nodeChildren.length > 0 ? `<span style="text-transform: capitalize;">${gerundize(this.nodeAction)}</span> <b>${this.nodeTitle}</b> might affect other resources that are linked to it.` : ''}`;
     },
 
     legendDeleteTemplate() {
@@ -677,9 +680,11 @@ export default {
         @primary="handleDeleteNode"
       >
         <p v-html="getLegendOfModal()"></p>
-        <!-- enable this when it's functional -->
-        <!--gl-form-checkbox v-model="checkedNode"
-          ><b>{{ nodeTitle }}</b></gl-form-checkbox-->
+        <ul>
+          <li v-for="(child, idx) in this.nodeChildren" :key="idx">
+            {{ child }}
+          </li>
+        </ul>
       </gl-modal> 
 
       <!-- Modal Connect -->

@@ -4,6 +4,8 @@ const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
+const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -67,7 +69,8 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
 
   // create external resource
   if (shouldCreateExternalResource) {
-    cy.createDigitalOceanDNSInstance(environmentName)
-    cy.createMailResource(environmentName);
+    cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+    cy.uncheckedCreateMail();
+    cy.saveExternalResources()
   }
 });

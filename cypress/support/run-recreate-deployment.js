@@ -3,9 +3,10 @@ import slugify from '../../packages/oc-pages/vue_shared/slugify'
 const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
+const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
+const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
-const DIGITALOCEAN_DNS_NAME = Cypress.env('DIGITALOCEAN_DNS_NAME')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const PRIMARY = 1
 const HIDDEN = 2
@@ -42,9 +43,11 @@ Cypress.Commands.add('recreateDeployment', options => {
 
 
     let env = Object.values(DeploymentPath)[0].environment
+    let dnsZone
     let ensureEnvExists = false
     if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
       env = AWS_ENVIRONMENT_NAME
+      dnsZone = AWS_DNS_ZONE
       cy.whenEnvironmentAbsent(env, () => {
         cy.createAWSEnvironment({
           environmentName: env,
@@ -53,6 +56,7 @@ Cypress.Commands.add('recreateDeployment', options => {
       })
     } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
       env = GCP_ENVIRONMENT_NAME
+      dnsZone = GCP_DNS_ZONE
       cy.whenEnvironmentAbsent(env, () => {
         cy.createGCPEnvironment({
           environmentName: env,
@@ -161,12 +165,11 @@ Cypress.Commands.add('recreateDeployment', options => {
             .invoke('attr', 'disabled')
             .then((disabled) => {
               // if button is enabled, and the env is provided, connects it 
-              if (!disabled) { //&& DIGITALOCEAN_DNS_NAME) {
+              if (!disabled) {
                 cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
                   .prev()
                   .click()
 
-                //const digitalOceanName = slugify(DIGITALOCEAN_DNS_NAME)
                 cy.get(`[data-testid^="resource-selection-"]`).click()
 
                 cy.contains('button', 'Next').click()
@@ -212,11 +215,12 @@ Cypress.Commands.add('recreateDeployment', options => {
       })
       cy.whenGitlab(() => {
         cy.url({timeout: BASE_TIMEOUT * 4}).should('include', dt.name)
+        cy.wait(BASE_TIMEOUT)
         cy.withJob((job) => {
           cy.expectSuccessfulJob(job)
         })
         cy.assertDeploymentRunning(dt.title)
-        cy.verifyDeployment(deployment, env)
+        cy.verifyDeployment(deployment, env, dnsZone)
         cy.undeploy(dt.title)
       })
     } else if(shouldSave) {

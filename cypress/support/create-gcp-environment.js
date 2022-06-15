@@ -1,6 +1,8 @@
 const GOOGLE_APPLICATION_CREDENTIALS = Cypress.env('GOOGLE_APPLICATION_CREDENTIALS')
 const BASE_URL = Cypress.env('OC_URL')
-const GCP_ZONE = Cypress.env('GCP_ZONE') || 'us-central1-a'
+const GCP_ZONE = Cypress.env('CLOUDSDK_COMPUTE_ZONE') || 'us-central1-a'
+const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
+const GCP_DNS_TYPE = Cypress.env('GCP_DNS_TYPE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
@@ -14,8 +16,9 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
 
   // create external resource
   if (shouldCreateExternalResource) {
-    cy.createDigitalOceanDNSInstance(environmentName);
-    cy.createMailResource(environmentName);
+    cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
+    cy.uncheckedCreateMail();
+    cy.saveExternalResources()
   }
 }
 
