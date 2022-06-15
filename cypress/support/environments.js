@@ -8,6 +8,8 @@ const SMTP_HOST = Cypress.env('SMTP_HOST')
 const MAIL_RESOURCE_NAME = Cypress.env('MAIL_RESOURCE_NAME') || 'Mail Server'
 const MAIL_USERNAME = Cypress.env('MAIL_USERNAME')
 const MAIL_PASSWORD = Cypress.env('MAIL_PASSWORD')
+const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
+const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const 
   DIGITALOCEAN_DNS_TYPE = 'DigitalOceanDNSZone',
   GCP_DNS_TYPE = 'GoogleCloudDNSZone',
@@ -162,9 +164,15 @@ function uncheckedCreateGoogleCloudDNS(zone) {
 function uncheckedCreateRoute53DNS(zone) {
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
-  cy.get('[data-testid="resource-selection-GoogleCloudDNSZone"]').click()
+  cy.get('[data-testid="resource-selection-Route53DNSZone"]').click()
   cy.contains("button", "Next").click()
   const awsName = slugify(AWS_DNS_TYPE)
+  cy.get(`input[data-testid="oc-input-${awsName}-access_key_id"]`).type(
+    AWS_ACCESS_KEY
+  )
+  cy.get(`input[data-testid="oc-input-${awsName}-secret_access_key"]`).type(
+    AWS_SECRET_ACCESS_KEY
+  )
   cy.get(`input[data-testid="oc-input-${awsName}-name"]`).type(
     zone
   )
@@ -184,6 +192,7 @@ function uncheckedCreateDNS(type, zone) {
 function saveExternalResources() {
   cy.wait(BASE_TIMEOUT / 50)
   cy.contains("button", "Save Changes").click()
+  cy.wait(BASE_TIMEOUT)
 }
 
 Cypress.Commands.add('uncheckedCreateDNS', uncheckedCreateDNS)
