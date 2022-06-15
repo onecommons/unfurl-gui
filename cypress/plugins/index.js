@@ -16,6 +16,14 @@
  * @type {Cypress.PluginConfig}
  */
 // eslint-disable-next-line no-unused-vars
+//
+
+
+const 
+  DIGITALOCEAN_DNS_TYPE = 'DigitalOceanDNSZone',
+  GCP_DNS_TYPE = 'GoogleCloudDNSZone',
+  AWS_DNS_TYPE = 'Route53DNSZone'
+
 module.exports = (on, config) => {
   // `on` is used to hook into various events Cypress emits
   // `config` is the resolved Cypress config
@@ -34,6 +42,21 @@ module.exports = (on, config) => {
   config.env.SIMPLE_BLUEPRINT = config.env.SIMPLE_BLUEPRINT || 'simple-blueprint'
   config.env.BASE_TIMEOUT = config.defaultCommandTimeout || 5000
 
+  const 
+    DIGITALOCEAN_DNS_ZONE = config.env.DIGITALOCEAN_DNS_ZONE || 'untrusted.me',
+    GCP_DNS_ZONE = config.env.GCP_DNS_ZONE,
+    AWS_DNS_ZONE = config.env.AWS_DNS_ZONE
+
+  config.env.GCP_DNS_TYPE = GCP_DNS_ZONE ?
+    GCP_DNS_TYPE: DIGITALOCEAN_DNS_TYPE
+
+  config.env.AWS_DNS_TYPE = AWS_DNS_ZONE ?
+    AWS_DNS_TYPE: DIGITALOCEAN_DNS_TYPE
+
+  config.env.GCP_DNS_ZONE = GCP_DNS_ZONE || DIGITALOCEAN_DNS_ZONE
+  config.env.AWS_DNS_ZONE = AWS_DNS_ZONE || DIGITALOCEAN_DNS_ZONE
+
+  console.log(config.env)
   on('task', {
     log (message) {
       console.log(message)

@@ -15,7 +15,7 @@ function _primary(deployment) {
 }
 
 const verificationRoutines = {
-  minecraft(deployment, env) {
+  minecraft(deployment, env, dnsZone) {
     cy.withStore().its('getters.getCardsStacked.length').should('be.gt', 0)
     cy.withStore().then($store => {
       const compute = $store.getters.getCardsStacked[0]
@@ -30,12 +30,12 @@ const verificationRoutines = {
       }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
     })
   },
-  mediawiki(deployment, env) {
+  mediawiki(deployment, env, dnsZone) {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
     const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
-    const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.untrusted.me`
+    const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.${dnsZone}`
     console.log(command)
     cy.waitUntil(() => {
       return cy.exec(
@@ -45,14 +45,14 @@ const verificationRoutines = {
     }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
   },
 
-  nextcloud(deployment, env) {
+  nextcloud(deployment, env, dnsZone) {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
     const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
     const username = 'jdenne'
     const password = env + '1'
-    const command = `./scripts/src/blueprint-validation/nextcloud.js --base-url https://${subdomain}.untrusted.me --register-name ${username} --register-password ${password}`
+    const command = `./scripts/src/blueprint-validation/nextcloud.js --base-url https://${subdomain}.${dnsZone} --register-name ${username} --register-password ${password}`
     console.log(command)
     cy.waitUntil(() => {
       return cy.exec(
@@ -62,12 +62,12 @@ const verificationRoutines = {
     }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
   },
 
-  wordpress(deployment, env) {
+  wordpress(deployment, env, dnsZone) {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
     const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
-    const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.untrusted.me`
+    const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.${dnsZone}`
     console.log(command)
     cy.waitUntil(() => {
       return cy.exec(
@@ -77,14 +77,14 @@ const verificationRoutines = {
     }, {timeout: BASE_TIMEOUT * 10,  interval: BASE_TIMEOUT})
   },
 
-  baserow(deployment, env) {
+  baserow(deployment, env, dnsZone) {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
     const phoneyUserEmail = `jdenne${Math.random().toString(36).slice(-4)}@${Cypress.env('SMTP_HOST')}`
     const password = env + '1'
     const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
-    const command = `./scripts/src/blueprint-validation/baserow.js --base-url https://${subdomain}.untrusted.me --register-email ${phoneyUserEmail} --register-password ${password}`
+    const command = `./scripts/src/blueprint-validation/baserow.js --base-url https://${subdomain}.${dnsZone} --register-email ${phoneyUserEmail} --register-password ${password}`
     console.log(command)
     cy.waitUntil(() => {
       return cy.exec(
@@ -94,7 +94,7 @@ const verificationRoutines = {
     }, {timeout: BASE_TIMEOUT * 60,  interval: BASE_TIMEOUT * 6}) // baserow is slow to bootstrap
   },
 
-  ghost(deployment, env) {
+  ghost(deployment, env, dnsZone) {
     const dt = _dt(deployment)
     const ab = _ab(deployment)
     const primary = _primary(deployment)
@@ -102,7 +102,7 @@ const verificationRoutines = {
     const phoneyUserEmail = `jdenne${Math.random().toString(36).slice(-4)}@${Cypress.env('SMTP_HOST')}`
     const password = env + '1'
     const subdomain = primary.properties.find(prop => prop.name == 'subdomain').value
-    const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.untrusted.me --admin-email ${email} --admin-password ${password} --register-email ${phoneyUserEmail} --register-name "John Denne"`
+    const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.${dnsZone} --admin-email ${email} --admin-password ${password} --register-email ${phoneyUserEmail} --register-name "John Denne"`
     console.log(command)
     cy.waitUntil(() => {
       return cy.exec(
@@ -114,12 +114,12 @@ const verificationRoutines = {
 
 }
 
-function verifyDeployment(deployment, env) {
+function verifyDeployment(deployment, env, dnsZone) {
   console.log(deployment)
   if(MOCK_DEPLOY) return
   const ab = Object.values(deployment.ApplicationBlueprint)[0] 
   const routine = verificationRoutines[ab.name]
-  routine && routine(deployment, env)
+  routine && routine(deployment, env, dnsZone)
 }
 
 Cypress.Commands.add('verifyDeployment', verifyDeployment)

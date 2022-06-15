@@ -11,7 +11,7 @@ function undeploy(deploymentTitle) {
   cy.withJob(job => {
     cy.expectSuccessfulJob(job)
     cy.withCompletedJob(job, () => {
-      cy.visit(`${BASE_URL}/dashboard/deployments?show=undeployed`)
+      cy.visit(`${BASE_URL}/dashboard/deployments?show=destroyed`)
       cy.contains('td', deploymentTitle).should('exist')
     })
   })
