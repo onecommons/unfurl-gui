@@ -1,6 +1,7 @@
 <script>
 import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
 import { bus } from 'oc_vue_shared/bus';
+import { mapGetters } from 'vuex';
 
 import { __ } from '~/locale';
 
@@ -22,6 +23,15 @@ export default {
         editable: {
             type: Boolean,
             required: false
+        },
+        // environmentsAreReady: {
+        //     type: Boolean,
+        //     required: false
+        // }
+    },
+    data() {
+        return {
+            disableDeployButton: true
         }
     },
     methods: {
@@ -34,6 +44,18 @@ export default {
         },
         redirectToDeployment() {
             window.location.href = this.$projectGlobal.linkDeployment;
+        }
+    },
+    computed: {
+        ...mapGetters([
+            'environmentsAreReady'
+        ])
+    },
+    watch: {
+        environmentsAreReady(newState, _oldState) {
+            if (newState) {
+                this.disableDeployButton = false
+            }
         }
     }
 }
@@ -76,6 +98,7 @@ export default {
                                 class="deploy-action"
                                 icon="upload"
                                 type="button"
+                                :disabled="disableDeployButton"
                                 @click="deployTemplate(item)" >{{ __("Deploy") }}</gl-button>
                     </span>
                 </div>
