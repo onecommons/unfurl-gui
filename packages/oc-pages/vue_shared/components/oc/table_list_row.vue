@@ -30,6 +30,11 @@ export default {
             disableDeployButton: true
         }
     },
+    mounted() {
+        if (this.environmentsAreReady) {
+            this.disableDeployButton = false
+        }
+    },  
     methods: {
         deployTemplate(template) {
             bus.$emit('deployTemplate', template);
