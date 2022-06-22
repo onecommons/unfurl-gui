@@ -24,10 +24,6 @@ export default {
             type: Boolean,
             required: false
         },
-        // environmentsAreReady: {
-        //     type: Boolean,
-        //     required: false
-        // }
     },
     data() {
         return {
