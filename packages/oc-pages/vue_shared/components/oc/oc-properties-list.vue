@@ -199,4 +199,8 @@ export default {
     margin-left: 1.5em;
     font-size: 0.9em;
 }
+
+.gl-dark .json-view-item {
+    filter: invert(1) hue-rotate(180deg) brightness(1.1);
+}
 </style>
