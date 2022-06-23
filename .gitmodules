@@ -1,48 +1,60 @@
-[submodule "apollo-server/repos/testing/dashboard"]
-	path = apollo-server/repos/testing/dashboard
-	url = https://gitlab.com/onecommons/testing/dashboard.git
-[submodule "apollo-server/repos/testing/apostrophe-blueprint"]
-	path = apollo-server/repos/testing/apostrophe-blueprint
-	url = https://gitlab.com/onecommons/testing/apostrophe-blueprint.git
-[submodule "apollo-server/repos/testing/simple-blueprint"]
-	path = apollo-server/repos/testing/simple-blueprint
-	url = https://gitlab.com/onecommons/testing/simple-blueprint.git
 [submodule "apollo-server/repos/unfurl-types"]
-	path = apollo-server/repos/unfurl-types
-	url = https://gitlab.com/onecommons/testing/unfurl-types.git
+    path = apollo-server/repos/unfurl-types
+    url = https://gitlab.com/onecommons/testing/unfurl-types.git
+[submodule "apollo-server/repos/blueprints/baserow"]
+    path = apollo-server/repos/blueprints/baserow
+    url = https://gitlab.com/onecommons/blueprints/baserow.git
 [submodule "apollo-server/repos/blueprints/ghost"]
-	path = apollo-server/repos/blueprints/ghost
-	url = https://gitlab.com/onecommons/blueprints/ghost.git
-[submodule "apollo-server/repos/blueprints/discourse"]
-	path = apollo-server/repos/blueprints/discourse
-	url = https://gitlab.com/onecommons/blueprints/discourse.git
-[submodule "apollo-server/repos/blueprints/drupal"]
-	path = apollo-server/repos/blueprints/drupal
-	url = https://gitlab.com/onecommons/blueprints/drupal.git
-[submodule "apollo-server/repos/blueprints/magento"]
-	path = apollo-server/repos/blueprints/magento
-	url = https://gitlab.com/onecommons/blueprints/magento.git
+    path = apollo-server/repos/blueprints/ghost
+    url = https://gitlab.com/onecommons/blueprints/ghost.git
+[submodule "apollo-server/repos/blueprints/gogs"]
+    path = apollo-server/repos/blueprints/gogs
+    url = https://gitlab.com/onecommons/blueprints/gogs.git
 [submodule "apollo-server/repos/blueprints/mediawiki"]
-	path = apollo-server/repos/blueprints/mediawiki
-	url = https://gitlab.com/onecommons/blueprints/mediawiki.git
+    path = apollo-server/repos/blueprints/mediawiki
+    url = https://gitlab.com/onecommons/blueprints/mediawiki.git
 [submodule "apollo-server/repos/blueprints/minecraft"]
-	path = apollo-server/repos/blueprints/minecraft
-	url = https://gitlab.com/onecommons/blueprints/minecraft.git
-[submodule "apollo-server/repos/blueprints/odoo"]
-	path = apollo-server/repos/blueprints/odoo
-	url = https://gitlab.com/onecommons/blueprints/odoo.git
-[submodule "apollo-server/repos/blueprints/wireguard"]
-	path = apollo-server/repos/blueprints/wireguard
-	url = https://gitlab.com/onecommons/blueprints/wireguard.git
+    path = apollo-server/repos/blueprints/minecraft
+    url = https://gitlab.com/onecommons/blueprints/minecraft.git
+[submodule "apollo-server/repos/blueprints/mod9"]
+    path = apollo-server/repos/blueprints/mod9
+    url = https://gitlab.com/onecommons/blueprints/mod9.git
 [submodule "apollo-server/repos/blueprints/wordpress"]
-	path = apollo-server/repos/blueprints/wordpress
-	url = https://gitlab.com/onecommons/blueprints/wordpress.git
-[submodule "apollo-server/repos/blueprints/nginx"]
-        path = apollo-server/repos/blueprints/nginx
-	url = https://gitlab.com/onecommons/blueprints/nginx.git
-[submodule "apollo-server/repos/blueprints/node-express"]
-	path = apollo-server/repos/testing/node-express
-	url = https://gitlab.com/onecommons/testing/node-express.git
-[submodule "apollo-server/repos/testing/wordpress"]
-	path = apollo-server/repos/testing/wordpress
-	url = https://gitlab.com/onecommons/testing/wordpress.git
+    path = apollo-server/repos/blueprints/wordpress
+    url = https://gitlab.com/onecommons/blueprints/wordpress.git
+[submodule "apollo-server/repos/blueprints/zulip"]
+    path = apollo-server/repos/blueprints/zulip
+    url = https://gitlab.com/onecommons/blueprints/zulip.git
+[submodule "apollo-server/repos/testing/apostrophe-blueprint"]
+    path = apollo-server/repos/testing/apostrophe-blueprint
+    url = https://gitlab.com/onecommons/testing/apostrophe-blueprint.git
+[submodule "apollo-server/repos/testing/dashboard"]
+    path = apollo-server/repos/testing/dashboard
+    url = https://gitlab.com/onecommons/testing/dashboard.git
+[submodule "apollo-server/repos/testing/diaspora"]
+    path = apollo-server/repos/testing/diaspora
+    url = https://gitlab.com/onecommons/testing/diaspora.git
+[submodule "apollo-server/repos/testing/discourse"]
+    path = apollo-server/repos/testing/discourse
+    url = https://gitlab.com/onecommons/testing/discourse.git
+[submodule "apollo-server/repos/testing/drupal"]
+    path = apollo-server/repos/testing/drupal
+    url = https://gitlab.com/onecommons/testing/drupal.git
+[submodule "apollo-server/repos/testing/magneto"]
+    path = apollo-server/repos/testing/magneto
+    url = https://gitlab.com/onecommons/testing/magento.git
+[submodule "apollo-server/repos/testing/nginx"]
+    path = apollo-server/repos/testing/nginx
+    url = https://gitlab.com/onecommons/testing/nginx.git
+[submodule "apollo-server/repos/testing/node-express"]
+    path = apollo-server/repos/testing/node-express
+    url = https://gitlab.com/onecommons/testing/node-express.git
+[submodule "apollo-server/repos/testing/odoo"]
+    path = apollo-server/repos/testing/odoo
+    url = https://gitlab.com/onecommons/testing/odoo.git
+[submodule "apollo-server/repos/testing/simple-blueprint"]
+    path = apollo-server/repos/testing/simple-blueprint
+    url = https://gitlab.com/onecommons/testing/simple-blueprint.git
+[submodule "apollo-server/repos/testing/wireguard"]
+    path = apollo-server/repos/testing/wireguard
+    url = https://gitlab.com/onecommons/testing/wireguard.git
