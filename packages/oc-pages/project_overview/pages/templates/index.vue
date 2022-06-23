@@ -104,7 +104,8 @@ export default {
       'lookupConfigurableTypes',
       'lookupEnvironment',
       'getParentDependency',
-      'getPrimary'
+      'getPrimary',
+      'environmentsAreReady'
     ]),
     
     deploymentDir() {
@@ -224,6 +225,12 @@ export default {
 
     resourceName: function(val) {
       this.alertNameExists = this.requirementMatchIsValid(slugify(val));
+    },
+
+    environmentsAreReady(newState, _oldState) {
+      if (newState) {
+        this.fetchItems()
+      }
     }
   },
 
@@ -234,7 +241,6 @@ export default {
   mounted() {
     const banner = document.querySelector('.js-uf-welcome-banner')
     if(banner) {banner.style.display = 'none'}
-    this.fetchItems();
   },
 
   created() {
