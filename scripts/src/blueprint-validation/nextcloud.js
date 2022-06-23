@@ -24,6 +24,7 @@ async function main({baseURL, registerName, registerPassword}) {
   expect(initialRequest.status).toBeLessThan(400)
 
   if(initialRequest.data.match(/Create.*admin account/g)) {
+    expect(initialRequest.data).not.toMatch(/Configure the database/g)
     const form = new FormData()
     form.append('install', 'true')
     form.append('adminlogin', registerName)
@@ -70,7 +71,7 @@ async function tryMain() {
       //console.error(e)
       process.exit(1)
     } else {
-      console.log(e)
+      console.log(e.message)
       console.log('Baserow tests failed')
       process.exit(1)
     }

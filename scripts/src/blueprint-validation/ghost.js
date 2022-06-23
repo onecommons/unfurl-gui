@@ -83,7 +83,7 @@ async function tryMain() {
       //console.error(e)
       process.exit(1)
     } else {
-      console.log(e)
+      console.log(e.message)
       console.log('Ghost tests failed')
       process.exit(1)
     }

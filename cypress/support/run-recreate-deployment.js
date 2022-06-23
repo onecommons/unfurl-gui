@@ -8,6 +8,8 @@ const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+const GENERATE_SUBDOMAINS = Cypress.env('GENERATE_SUBDOMAINS')
+const TEARDOWN = Cypress.env('TEARDOWN')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -44,6 +46,7 @@ Cypress.Commands.add('recreateDeployment', options => {
 
     let env = Object.values(DeploymentPath)[0].environment
     let dnsZone
+    let subdomain
     let ensureEnvExists = false
     if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
       env = AWS_ENVIRONMENT_NAME
@@ -103,7 +106,11 @@ Cypress.Commands.add('recreateDeployment', options => {
           }
           for (const property of template.properties) {
             let value = property.value
-            if (typeof value == 'object' && value) {
+            let name = property.name
+            if(GENERATE_SUBDOMAINS && name == 'subdomain') {
+              value = subdomain = (Date.now()).toString(36) + pseudorandomPassword().slice(0, 4)
+            }
+            else if(typeof value == 'object' && value) {
               if (typeof value.get_env == 'string') {
                 const envName = value.get_env.split('__').pop()
                 const envValue = Cypress.env(value.get_env) || Cypress.env(envName)
@@ -205,7 +212,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     if(shouldDeploy) {
       cy.get('[data-testid="deploy-button"]').click()
       cy.whenUnfurlGUI(() => {
-        cy.url({timeout: BASE_TIMEOUT * 8}).should('not.include', 'deployment-drafts')
+        cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
         // TODO figure out how to chain this?
         cy.withStore((store) => {
@@ -214,14 +221,16 @@ Cypress.Commands.add('recreateDeployment', options => {
 
       })
       cy.whenGitlab(() => {
-        cy.url({timeout: BASE_TIMEOUT * 4}).should('include', dt.name)
+        cy.url({timeout: BASE_TIMEOUT * 10}).should('include', dt.name)
         cy.wait(BASE_TIMEOUT)
         cy.withJob((job) => {
           cy.expectSuccessfulJob(job)
         })
         cy.assertDeploymentRunning(dt.title)
-        cy.verifyDeployment(deployment, env, dnsZone)
-        cy.undeploy(dt.title)
+        cy.verifyDeployment(deployment, env, dnsZone, subdomain)
+        if(TEARDOWN) {
+          cy.undeploy(dt.title)
+        }
       })
     } else if(shouldSave) {
       cy.get('[data-testid="save-draft-btn"]').click()

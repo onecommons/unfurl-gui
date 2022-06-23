@@ -111,7 +111,8 @@ export default {
             'lookupDeploymentOrDraft',
             'lookupEnvironment',
             'getHomeProjectPath',
-            'getLastUsedEnvironment'
+            'getLastUsedEnvironment',
+            'environmentsAreReady'
         ]),
         primaryProps() {
             return {
@@ -181,6 +182,11 @@ export default {
             if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(val.title)
             else this.templateForkedName = ''
 
+        },
+        environmentsAreReady(newState, _oldState) {
+            if (newState && this.yourDeployments.length) {
+                this.populateDeploymentItems(this.yourDeployments)
+            }
         }
     },
 
@@ -213,13 +219,9 @@ export default {
     async mounted() {
         this.initUserSettings({ username: this.getUsername })
         await Promise.all([
-            this.fetchProjectInfo({projectPath: this.$projectGlobal.projectPath}),
             this.populateJobsList(),
             this.loadPrimaryDeploymentBlueprint()
         ])
-        if(this.yourDeployments.length) {
-            this.populateDeploymentItems(this.yourDeployments)
-        }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         /*
@@ -442,7 +444,7 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab v-if="yourDeployments.length > 0" title="Your Deployments">
+                <oc-tab v-if="this.environmentsAreReady && yourDeployments.length > 0" title="Your Deployments">
                     <div class="">
                         <your-deployments />
                     </div>

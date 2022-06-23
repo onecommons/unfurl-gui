@@ -14,13 +14,24 @@ export default {
 
     async beforeCreate() {
         let errorContext
+
+        errorContext = 'ocFetchEnvironments'
+        this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
+            .catch((err) => {
+                console.error('@main.vue', err)
+                return createFlash({
+                    message: err.message,
+                    type: FLASH_TYPES.ALERT,
+                    issue: ERROR_CONTEXT[errorContext] || errorContext,
+                    projectPath: this.$projectGlobal?.projectPath
+                });
+            })
+
         try {
             const {projectPath} = this.$projectGlobal
             // TODO do everything in one query?
             errorContext = 'handleResize'
             this.$store.dispatch('handleResize')
-            errorContext = 'ocFetchEnvironments'
-            await this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
             errorContext = 'fetchProjectInfo'
             await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch})
         } catch(err) {
@@ -31,7 +42,9 @@ export default {
                 issue: ERROR_CONTEXT[errorContext] || errorContext,
                 projectPath: this.$projectGlobal?.projectPath
             });
-        } finally { this.fetchingComplete = true }
+        } finally { 
+            this.fetchingComplete = true 
+        }
     },
 
     computed: {
