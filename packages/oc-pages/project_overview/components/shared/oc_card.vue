@@ -124,7 +124,6 @@ export default {
             return {name, size, 'class': className, title}
         },
 
-
     },
     methods: {
 

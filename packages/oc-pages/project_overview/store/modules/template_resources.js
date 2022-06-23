@@ -49,8 +49,11 @@ const mutations = {
     createTemplateResource(_state, target ) {
         // eslint-disable-next-line no-param-reassign
         if(!target.name) return;
-        _state.resourceTemplates[target.name] = { ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name};
-        _state.resourceTemplates = {..._state.resourceTemplates};
+        Vue.set(
+            _state.resourceTemplates,
+            target.name,
+            { ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name}
+        )
     },
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
@@ -411,15 +414,15 @@ const actions = {
         */
 
         // Workaround for connected resource issues
-        
+        const resourceTemplateNode = {...resourceTemplate, name: `__${nodeResource}`, dependentName, dependentRequirement, deploymentTemplateName: state.lastFetchedFrom.templateSlug}
         commit(
             'pushPreparedMutation',
-            createResourceTemplate({...resourceTemplate, name: `__${nodeResource}`, dependentName, dependentRequirement, deploymentTemplateName: state.lastFetchedFrom.templateSlug}),
+            createResourceTemplate(resourceTemplateNode),
         )
 
         //
-
-        commit('createReference', {dependentName, dependentRequirement, resourceTemplate, fieldsToReplace});
+        commit('createReference', {dependentName, dependentRequirement, resourceTemplate: resourceTemplateNode, fieldsToReplace});
+        commit('createTemplateResource', resourceTemplateNode)
     },
 
     async disconnectNodeResource({}, {dependentName, dependentRequirement}) {
@@ -536,7 +539,6 @@ const getters = {
     },
     cardIsHidden(state, getters) {
         return function(cardName) {
-            if(cardName?.startsWith('__')) return true
             const card = state.resourceTemplates[cardName?.name || cardName]
             if(!card) return false
 
@@ -584,7 +586,7 @@ const getters = {
         // hacky workaround for broken dependency hierarchy in resources for default templates
         const isDeployment = _state.deploymentTemplate.__typename == 'Deployment'
 
-        return cards.filter((rt) => {
+        const result = cards.filter((rt) => {
             if(!rootGetters.REVEAL_HIDDEN_TEMPLATES && getters.cardIsHidden(rt.name)) return false
             if(isDeployment) return true
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
@@ -597,6 +599,7 @@ const getters = {
             )
                 
         });
+        return result
     },
     getDependencies: (_state) => {
         return function(resourceTemplateName) {
