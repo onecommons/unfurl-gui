@@ -45,6 +45,7 @@ export default {
   data() {
     return {
       uiTimeout: null,
+      triedFetching: false,
       createNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
@@ -238,12 +239,15 @@ export default {
     return this.fetchItems();
   },
 
-  mounted() {
+  beforeCreate() {
     const banner = document.querySelector('.js-uf-welcome-banner')
     if(banner) {banner.style.display = 'none'}
   },
 
   created() {
+    if(this.environmentsAreReady && !this.triedFetching) {
+      this.fetchItems()
+    }
     this.syncGlobalVars(this.$projectGlobal);
     bus.$on('moveToElement', (obj) => {
       const { elId } = obj;
@@ -355,6 +359,7 @@ export default {
 
     async fetchItems(n=1) {
       try {
+        this.triedFetching = true
         const projectGlobal = this.project.globalVars
         const projectPath = projectGlobal?.projectPath
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
