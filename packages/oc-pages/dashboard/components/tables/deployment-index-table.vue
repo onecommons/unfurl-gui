@@ -31,12 +31,30 @@ const tabFilters =  [
         filter(item) { return item.isDeployed }
     },
     {
+        title: 'In Progress',
+        filter(item) {
+            return (
+                !item.jobStatusIsUnsuccessful &&
+                !item.isDeployed &&
+                !item.isDraft &&
+                !item.isUndeployed
+            )
+        }
+    },
+    {
         title: 'Drafts',
         filter(item) { return item.isDraft }
     },
     {
         title: 'Failed',
-        filter(item) { return !item.isDeployed && !item.isDraft && !item.isUndeployed}
+        filter(item) {
+            return (
+                item.jobStatusIsUnsuccessful &&
+                !item.isDeployed &&
+                !item.isDraft &&
+                !item.isUndeployed
+            )
+        }
     },
     {
         title: 'Destroyed',
