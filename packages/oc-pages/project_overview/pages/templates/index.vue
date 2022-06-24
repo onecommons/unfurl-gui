@@ -371,6 +371,7 @@ export default {
           this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
           this.setEnvironmentScope(environmentName)
         }
+        // TODO see if we can get rid of this, since it's probably already loaded
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
