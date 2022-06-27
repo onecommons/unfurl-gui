@@ -298,16 +298,14 @@ export default {
 }
 
 .text-description {
-    font-size: 14px;
+    font-size: 16px;
     margin-bottom: 0.5em;
     font-weight: 400;
-    font-size: 14px;
 }
 .oc-list-ordered {
     margin: 0px;
     padding: 0px;
     font-weight: 400;
-    font-size: 14px;
     list-style-type: none;
 }
 
