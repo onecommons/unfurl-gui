@@ -354,4 +354,8 @@ export default {
     }
 }
 
+.oc-inputs >>> .formily-element-form-item {
+  font-size: 1rem !important;
+}
+
 </style>

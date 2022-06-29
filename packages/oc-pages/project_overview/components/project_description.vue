@@ -298,7 +298,7 @@ export default {
 }
 
 .text-description {
-    font-size: 16px;
+    font-size: 1rem;
     margin-bottom: 0.5em;
     font-weight: 400;
 }
