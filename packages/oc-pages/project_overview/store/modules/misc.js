@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
 function isMobileLayout() {

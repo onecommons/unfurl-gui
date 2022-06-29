@@ -1,7 +1,7 @@
 <script>
 import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
-import {DetectIcon, OcPropertiesList} from '../../../vue_shared/oc-components'
-import OcTab from '../../../vue_shared/components/oc/oc-tab.vue'
+import {DetectIcon, OcPropertiesList} from 'oc_vue_shared/oc-components'
+import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
 import OcInputs from './oc_inputs.vue'
 import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
@@ -205,6 +205,7 @@ export default {
         },
         shouldRenderAttributes() {
             return (
+                // TODO fix these names
                 !this.shouldRenderInputs &&
                 this.renderInputs && 
                 this.attributes.length

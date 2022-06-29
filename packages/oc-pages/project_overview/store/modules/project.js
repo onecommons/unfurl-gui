@@ -5,8 +5,8 @@ import graphqlClient from '../../graphql';
 import gql from 'graphql-tag'
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
-import {userDefaultPath} from '../../../vue_shared/util.mjs'
-import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash'
+import {userDefaultPath} from 'oc_vue_shared/util.mjs'
+import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 
 
 const state = {

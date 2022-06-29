@@ -9,6 +9,7 @@ import {createForm, onFieldInputValueChange} from "@formily/core";
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {getCustomInputComponent} from './oc_inputs'
 
+
 const ComponentMap = {
   string: 'Input',
   boolean: 'Checkbox',

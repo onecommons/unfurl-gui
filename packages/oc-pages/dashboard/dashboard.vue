@@ -1,8 +1,8 @@
 <script>
 import createFlash, { FLASH_TYPES } from '~/flash';
 import {mapActions, mapMutations, mapGetters, mapState} from 'vuex'
-import {lookupCloudProviderAlias} from '../vue_shared/util.mjs'
-import {deleteEnvironmentByName} from '../vue_shared/client_utils/environments'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import * as routes from './router/constants'
 const USER_TOURED_EXPLORE_PAGE = 'USER_TOURED_EXPLORE_PAGE'
 export default {

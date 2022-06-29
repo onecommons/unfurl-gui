@@ -1,6 +1,6 @@
 import gql from 'graphql-tag';
 import graphqlClient from '../../graphql';
-import {slugify, USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import _ from 'lodash'
 
 const state = {loaded: false, callbacks: [], deployments: {}};

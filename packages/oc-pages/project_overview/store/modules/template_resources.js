@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { slugify } from '../../../vue_shared/util.mjs';
+import { slugify } from 'oc_vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 

@@ -1,6 +1,7 @@
 <script>
 import axios from '~/lib/utils/axios_utils'
-import {GlLoadingIcon} from '@gitlab/ui'
+import {GlTabs, GlLoadingIcon, GlPaginatedList} from '@gitlab/ui'
+import OcTab from './oc-tab.vue'
 import GitHubReposAuthenticate from './github-repos/github-repos-authenticate.vue'
 
 const AUTHENTICATED = 1
@@ -9,7 +10,10 @@ export default {
     name: 'GitHubRepos',
     components: {
         GitHubReposAuthenticate,
-        GlLoadingIcon
+        GlLoadingIcon,
+        GlPaginatedList,
+        GlTabs,
+        OcTab
     },
     props: {
         githubImportConfigured: Boolean,
@@ -50,19 +54,48 @@ export default {
                 }
             }
 
+        },
+        namespaceFromFullName(fullName) {
+            return fullName.split('/').slice(0, -1).join('/')
+        }
+    },
+
+    computed: {
+        reposByTab() {
+            const result = {}
+            for(const repo of this.provider_repos) {
+                const namespace = this.namespaceFromFullName(repo.full_name)
+                const list = result[namespace] || []
+                list.push({...repo, namespace})
+                result[namespace] = list
+            }
+            return result
+        },
+        tabs() {
+            return Object.keys(this.reposByTab)
         }
     },
 
     mounted() {
         this.loadStatus()
-    }
+    },
+
 
 }
 </script>
 <template>
     <div>
         <div v-if="status == AUTHENTICATED">
-            <div v-for="repo in provider_repos">{{repo.full_name}}</div>
+            <gl-tabs justified>
+                <oc-tab :title="tab" :key="tab" v-for="tab in tabs">
+                    <gl-paginated-list :per-page="5" filter="full_name" itemKey="full_name" :list="reposByTab[tab]">
+                        <template #default="{listItem}">
+                            {{listItem.full_name}}
+                        </template>
+                    </gl-paginated-list>
+                    <!-- <div v-for="repo in reposByTab[tab]">{{repo.full_name}}</div> -->
+                </oc-tab>
+            </gl-tabs>
         </div>
         <div v-else-if="status == UNAUTHENTICATED">
             <GitHubReposAuthenticate @authenticationWindowClosed="loadStatus" />

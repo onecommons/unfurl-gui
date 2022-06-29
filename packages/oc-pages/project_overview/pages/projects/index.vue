@@ -1,8 +1,8 @@
 <script>
 import createFlash, { FLASH_TYPES } from '~/flash';
 import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider, GlMarkdown } from '@gitlab/ui';
-import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
-import ErrorSmall from '../../../vue_shared/components/oc/ErrorSmall.vue'
+import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
+import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
 import { s__, __ } from '~/locale';
@@ -11,10 +11,10 @@ import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
-import {OcTab, DetectIcon} from '../../../vue_shared/oc-components'
+import {OcTab, DetectIcon} from 'oc_vue_shared/oc-components'
 import { bus } from 'oc_vue_shared/bus';
-import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
-import {deleteEnvironmentByName} from '../../../vue_shared/client_utils/environments'
+import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {

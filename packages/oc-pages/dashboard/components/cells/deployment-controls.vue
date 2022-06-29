@@ -1,8 +1,8 @@
 <script>
 import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
-import {lookupPipelineJobs} from '../../../vue_shared/client_utils/pipelines'
-import {generateIssueLink} from '../../../vue_shared/client_utils/issues'
+import {lookupPipelineJobs} from 'oc_vue_shared/client_utils/pipelines'
+import {generateIssueLink} from 'oc_vue_shared/client_utils/issues'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import * as routes from '../../router/constants'
 export default {

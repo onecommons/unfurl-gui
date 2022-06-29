@@ -2,12 +2,12 @@
 import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
 import _ from 'lodash'
-import {slugify, USER_HOME_PROJECT} from '../../vue_shared/util.mjs'
+import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import LogosCloud from './shared/logos_cloud.vue'
-import {DetectIcon, ErrorSmall} from '../../vue_shared/oc-components'
-import {lookupCloudProviderAlias} from '../../vue_shared/util.mjs'
-import {token} from '../../vue_shared/compat.js'
+import {DetectIcon, ErrorSmall} from 'oc_vue_shared/oc-components'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {token} from 'oc_vue_shared/compat.js'
 import {mapGetters} from 'vuex'
 
 const SHORT_NAMES = {
