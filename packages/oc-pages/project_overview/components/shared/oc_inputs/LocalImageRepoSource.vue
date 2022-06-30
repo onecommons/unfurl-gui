@@ -3,7 +3,7 @@ import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
-import {mapActions, mapMutations} from 'vuex'
+import {mapActions} from 'vuex'
 
 /*
 const response = {
@@ -238,29 +238,6 @@ const response = {
 }
 */
 
-/*
-query {
-  project(fullPath:"aszs/CNG") {
-    __typename
-    id
-    containerRepositoriesCount
-    containerRepositories {
-      __typename
-      nodes {
-        id
-        migrationState
-        name
-        path
-        status
-        location
-        __typename
-      }
-    }
-  }
-}
-
- */
-
 const query = gql`
 query getContainerRepositories($fullPath: ID!) {
     project(fullPath: $fullPath) {
@@ -309,12 +286,15 @@ export default {
             containerRepositories: null,
             userProjectSuggestionsPromise: fetchUserProjects(),
             containerRepositoriesPromise: null,
+            containerRepositories: [],
         }
         for(const prop of this.card.properties) {
-            data[prop.name] = prop.value // expecting project_id, repository_id, repository_tag (repository_tag has a default)
+            data[prop.name] = prop.value // expecting project_id, repository_id, repository_tag, registry_url (repository_tag has a default)
         }
 
-        if(!data.repository_tag) data.repository_tag = 'latest'
+        if(!data.repository_tag) {
+            data.repository_tag = 'latest'
+        }
         return data
     },
     watch: {
@@ -329,19 +309,31 @@ export default {
             if(!val) {
                 this.repository_tag = 'latest'
             }
+
             this.updateValue('repository_id')
+            
+            const containerRepository = this.containerRepositories.find(cr => cr.path == val)
+            if(!containerRepository) return
+
+            // do I just guess this when containerRepository is missing?
+            this.registry_url = containerRepository.location
+                .slice(0, 0 - val.length)
+                .split('/')
+                .filter(pathComponent => pathComponent)
+                .join('/') // I don't know if the registry_url can include a path
+
+            this.updateValue('registry_url')
         },
         repository_tag() {
             this.updateValue('repository_tag')
         }
     },
     methods: {
-        ...mapActions(['updateProperty']),
-        ...mapMutations(['setCardInputValidStatus']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         updateValue(propertyName) {
             const status = this.project_id && this.repository_id && this.repository_tag ?
                 'valid': 'missing'
-            this.setCardInputValidStatus({card: this.card, status})
+            this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
 
             if(propertyName) {
                 this.updateProperty({
@@ -349,7 +341,8 @@ export default {
                     templateName: this.card.name,
                     propertyName,
                     propertyValue: this[propertyName],
-                    sensitive: false
+                    debounce: 300,
+                    sensitive: false,
                 })
             }
         },
@@ -367,12 +360,12 @@ export default {
             if(!this.containerRepositoriesPromise) {
                 this.containerRepositoriesPromise = fetchContainerRepositories(this.repository_id)
             }
-            const containerRepositories = await this.containerRepositoriesPromise
+            const containerRepositories = this.containerRepositories = await this.containerRepositoriesPromise
             callback(
                 callbackFilter(
                     queryString,
                     containerRepositories
-                        .map(repo => ({value: repo.name}))
+                        .map(repo => ({value: repo.path}))
                 )
             )
         }
