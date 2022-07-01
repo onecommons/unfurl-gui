@@ -725,7 +725,6 @@ const getters = {
     },
     currentAvailableResourceTypes(state) {
         return state.availableResourceTypes
-        //disabled="getValidResourceTypes(requirement, deploymentTemplate, getCurrentEnvironment)
     },
     availableResourceTypesForRequirement(_, getters) {
         return function(requirement) {
