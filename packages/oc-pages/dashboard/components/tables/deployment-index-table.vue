@@ -11,6 +11,7 @@ import {redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import Vue from 'vue'
+import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 
 
 
@@ -71,8 +72,10 @@ export default {
         GlModal,
         GlTabs,
         OcTab,
-        GlFormInput, GlFormGroup,
-        DeploymentStatusIcon
+        GlFormInput,
+        GlFormGroup,
+        DeploymentStatusIcon,
+        DashboardRouterLink
     },
     props: {
         items: {
@@ -466,9 +469,9 @@ export default {
                 <div class="d-flex">
                     <deployment-status-icon width="40px" :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <a :href="deploymentItem(scope, 'viewableLink')">
+                        <dashboard-router-link :noRouter="noRouter" :href="deploymentItem(scope, 'viewableLink')">
                             <b>{{scope.item.context.deployment.title}}:</b>
-                        </a>
+                        </dashboard-router-link>
                         <a :href="`/${scope.item.context.deployment.projectPath}`">
                             ({{scope.item.context.application.title}})
                         </a>
