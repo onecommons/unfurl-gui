@@ -15,6 +15,7 @@ export async function generateIssueLink(projectPath, {title, description, contex
         'Dashboard Project': projectPath,
         'Referring URL': window.location.pathname + window.location.search + window.location.hash,
     }
+    if(!_context['Dashboard Project']) delete _context['Dashboard Project']
     const email = await fetchUserPublicEmail()
     const result = [BASE_URL]
 

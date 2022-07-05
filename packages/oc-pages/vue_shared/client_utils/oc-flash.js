@@ -18,7 +18,7 @@ export default function createFlash(options) {
         //message = `${message}<div>${options.issue}</div>`
     }
     const result = glCreateFlash({...options, message, type})
-    if(options.projectPath && (options.issue || type == FLASH_TYPES.ALERT)) {
+    if(options.issue || type == FLASH_TYPES.ALERT) {
         window.requestAnimationFrame(async () => {
             const flashText = result.querySelector('.flash-container .flash-text')
             const issueContext = document.createElement('SPAN')
