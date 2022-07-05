@@ -1,14 +1,14 @@
 <script>
 import * as routes from '../router/constants'
-import { FLASH_TYPES } from '../../vue_shared/client_utils/oc-flash'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
-import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from '../../vue_shared/oc-components'
+import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from 'oc_vue_shared/oc-components'
 import _ from 'lodash'
 import { __ } from '~/locale'
-import {lookupCloudProviderAlias, slugify} from '../../vue_shared/util.mjs'
-import {deleteEnvironment} from '../../vue_shared/client_utils/environments'
+import {lookupCloudProviderAlias, slugify} from 'oc_vue_shared/util.mjs'
+import {deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import { redirectTo } from '~/lib/utils/url_utility';
 
 

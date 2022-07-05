@@ -2,11 +2,11 @@ import { __ } from "~/locale";
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
-import { USER_HOME_PROJECT, lookupCloudProviderAlias } from '../../../vue_shared/util.mjs'
-import {isDiscoverable} from '../../../vue_shared/client_utils/resource_types'
-import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
-import {prepareVariables, triggerPipeline} from '../../../vue_shared/client_utils/pipelines'
-import {patchEnv, fetchEnvironmentVariables} from '../../../vue_shared/client_utils/envvars'
+import { USER_HOME_PROJECT, lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
+import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
+import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
+import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 
 

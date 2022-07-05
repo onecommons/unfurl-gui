@@ -1,6 +1,6 @@
 <script>
 import * as routes from '../../router/constants'
-import {DetectIcon} from '../../../vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/oc-components'
 export default {
     components: { DetectIcon },
     props: {

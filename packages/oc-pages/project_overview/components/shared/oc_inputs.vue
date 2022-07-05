@@ -7,6 +7,8 @@ import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {createForm, onFieldInputValueChange} from "@formily/core";
 import {tryResolveDirective} from 'oc_vue_shared/lib'
+import {getCustomInputComponent} from './oc_inputs'
+
 
 const ComponentMap = {
   string: 'Input',
@@ -52,7 +54,8 @@ export default {
     return {
       form: null,
       mainInputs: [],
-      saveTriggers: {}
+      saveTriggers: {},
+      customComponent: null,
     }
   },
   computed: {
@@ -257,6 +260,11 @@ export default {
     }
   },
   mounted() {
+    const customComponent = getCustomInputComponent(this.card.type)
+    if(customComponent) {
+      this.customComponent = customComponent
+      return
+    }
     this.mainInputs = this.getMainInputs()
     const form = createForm({
         //initialValues: this.initialFormValues,
@@ -286,7 +294,8 @@ export default {
 </script>
 <template>
 <div class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
-  <FormProvider v-if="form" :form="form">
+  <component :is="customComponent" v-if="customComponent" :card="card" />
+  <FormProvider v-else-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"

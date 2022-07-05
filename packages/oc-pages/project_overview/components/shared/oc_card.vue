@@ -3,9 +3,9 @@ import { GlButton, GlCard, GlIcon, GlBadge, GlTooltipDirective} from "@gitlab/ui
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from 'oc_vue_shared/bus';
-import StatusIcon from '../../../vue_shared/components/oc/Status.vue'
-import {DetectIcon} from '../../../vue_shared/oc-components'
-import {generateCardId} from '../../../vue_shared/util.mjs'
+import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
+import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {generateCardId} from 'oc_vue_shared/util.mjs'
 
 import { __ } from '~/locale';
 

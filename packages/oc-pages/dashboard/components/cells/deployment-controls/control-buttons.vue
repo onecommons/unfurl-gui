@@ -47,15 +47,15 @@ export default {
         <gl-icon :size="16" name="external-link"/> 
         {{__('Open Live App')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-draft')" target="_blank" rel="noopener noreferrer" :href="resumeEditingTarget">
+    <component :is='component' v-if="hasButton('edit-draft')" rel="noopener noreferrer" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Draft')}}
     </component>
-    <component :is='component' v-if="hasButton('view-deployment')" :href="viewDeploymentTarget" target="_blank" rel="noopener noreferer" variant="confirm">
+    <component :is='component' v-if="hasButton('view-deployment')" :href="viewDeploymentTarget" rel="noopener noreferer" variant="confirm">
         <gl-icon :size="16" name="external-link"/>
         {{__('View Deployment')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-deployment')" target="_blank" rel="noopener noreferrer" :href="resumeEditingTarget">
+    <component :is='component' v-if="hasButton('edit-deployment')" rel="noopener noreferrer" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Deployment')}}
     </component>

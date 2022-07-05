@@ -2,7 +2,7 @@
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
-import createFlash, { FLASH_TYPES } from '../../../vue_shared/client_utils/oc-flash';
+import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
 import _ from 'lodash'
@@ -14,9 +14,9 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from 'oc_vue_shared/bus';
-import { slugify, USER_HOME_PROJECT } from '../../../vue_shared/util.mjs'
+import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
-import {getJobsData, redirectToJobConsole} from '../../../vue_shared/client_utils/pipelines'
+import {getJobsData, redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 
 

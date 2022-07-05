@@ -3,9 +3,9 @@ import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
 import * as routeNames from './constants.js'
-import { PageNotFound } from '../../vue_shared/oc-components'
+import { PageNotFound } from 'oc_vue_shared/oc-components'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
-import { hideLastFlash } from '../../vue_shared/client_utils/oc-flash'
+import { hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
 
 Vue.use(VueRouter);
 

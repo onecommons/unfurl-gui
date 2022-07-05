@@ -1,6 +1,6 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import DeploymentResources from '../../vue_shared/components/oc/deployment-resources.vue'
+import DeploymentResources from 'oc_vue_shared/components/oc/deployment-resources.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'

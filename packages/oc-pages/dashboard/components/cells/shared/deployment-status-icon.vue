@@ -1,5 +1,5 @@
 <script>
-import StatusIcon from '../../../../vue_shared/components/oc/Status.vue'
+import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {GlIcon, GlButton, GlTooltipDirective} from '@gitlab/ui'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'

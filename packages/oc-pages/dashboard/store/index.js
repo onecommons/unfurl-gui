@@ -10,7 +10,7 @@ import deployment_template_updates from '../../project_overview/store/modules/de
 import template_resources from '../../project_overview/store/modules/template_resources'
 import table_data from './modules/table_data'
 import deployment_info from './modules/deployment-info'
-import {createCiVariablesStore} from '../../vue_shared/oc-components'
+import {createCiVariablesStore} from 'oc_vue_shared/oc-components'
 
 Vue.use(Vuex);
 

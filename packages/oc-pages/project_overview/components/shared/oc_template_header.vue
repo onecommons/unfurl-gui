@@ -1,8 +1,8 @@
 <script>
 import { __ } from '~/locale';
-import {DetectIcon} from '../../../vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/oc-components'
 import {mapGetters} from 'vuex'
-import {ProjectIcon} from '../../../vue_shared/oc-components'
+import {ProjectIcon} from 'oc_vue_shared/oc-components'
 
 export default {
     name: 'OcTemplateHeader',

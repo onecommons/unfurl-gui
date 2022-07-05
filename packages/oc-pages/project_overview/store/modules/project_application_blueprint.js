@@ -1,8 +1,8 @@
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
-import {lookupCloudProviderAlias} from '../../../vue_shared/util.mjs'
-import {isConfigurable} from '../../../vue_shared/client_utils/resource_types'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import Vue from 'vue'
 
 const state = {loaded: false, callbacks: [], clean: true}

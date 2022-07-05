@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { slugify } from '../../../vue_shared/util.mjs';
+import { slugify } from 'oc_vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 
@@ -11,6 +11,8 @@ const baseState = () => ({
     inputValidationStatus: {},
     availableResourceTypes: [],
 });
+
+const timeouts = {}
 
 const state = baseState();
 
@@ -103,7 +105,13 @@ const mutations = {
 
     templateUpdateProperty(state, {templateName, propertyName, propertyValue}) {
         const template = state.resourceTemplates[templateName]
-        template.properties.find(prop => prop.name == propertyName).value = propertyValue
+        let property = template.properties.find(prop => prop.name == propertyName)
+        if(property) {
+            property.value = propertyValue
+        } else {
+            console.warn(`[OC] Updated a property "${propertyName}" with ${JSON.stringify(propertyValue)}.  This property was not found in the schema`)
+            template.properties.push({name: propertyName, value: propertyValue})
+        }
         Vue.set(state.resourceTemplates, templateName, template)
     },
 }
@@ -462,7 +470,17 @@ const actions = {
             throw new Error(err.message);
         }
     },
-    updateProperty({state, getters, commit}, {deploymentName, templateName, propertyName, propertyValue, isSensitive}) {
+    updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, isSensitive, debounce}) {
+        if(debounce) {
+            const handle = setTimeout(() => {
+                dispatch(
+                    'updateProperty',
+                    {deploymentName, templateName, propertyName, propertyValue, isSensitive}
+                )
+            }, debounce)
+            dispatch('updateTimeout', {deploymentName, templateName, propertyName, handle})
+            return
+        }
         const template = state.resourceTemplates[templateName]
         const templatePropertyValue = template.properties.find(prop => prop.name == propertyName)?.value
 
@@ -480,7 +498,31 @@ const actions = {
                 updatePropertyInResourceTemplate({deploymentName, templateName, propertyName, propertyValue, isSensitive})
             )
         }
-    }
+    },
+    // I tried this with proper commits but it performed poorly
+    updateTimeout(_, {key, deploymentName, templateName, propertyName, handle}) {
+        const _key = key || `${deploymentName}.${templateName}.${propertyName}`
+        let oldHandle
+        if(oldHandle = timeouts[_key]) {
+            clearTimeout(oldHandle)
+        }
+        timeouts[_key] = handle
+    },    
+    updateCardInputValidStatus({commit, dispatch}, {card, status, debounce}) {
+        if(debounce) {
+            const key = `card:${card.name}`
+            const handle = setTimeout(() => {
+                dispatch(
+                    'updateCardInputValidStatus',
+                    {card, status}
+                )
+            }, debounce)
+            dispatch('updateTimeout', {key, handle})
+            return
+        }
+        commit('setCardInputValidStatus', {card, status})
+    },
+
 };
 
 const getters = {

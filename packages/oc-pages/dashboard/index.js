@@ -5,7 +5,7 @@ import apolloProvider from './graphql';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router';
-import createFlash, { FLASH_TYPES } from '../vue_shared/client_utils/oc-flash';
+import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {setupTheme} from 'oc_vue_shared/theme'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 

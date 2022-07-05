@@ -1,7 +1,7 @@
 <script>
 import * as routes from '../../router/constants'
-import StatusIcon from '../../../vue_shared/components/oc/Status.vue';
-import {generateCardId} from '../../../vue_shared/util.mjs'
+import StatusIcon from 'oc_vue_shared/components/oc/Status.vue';
+import {generateCardId} from 'oc_vue_shared/util.mjs'
 export default {
     components: { StatusIcon },
     props: {

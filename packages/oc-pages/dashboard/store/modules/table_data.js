@@ -1,4 +1,4 @@
-import {USER_HOME_PROJECT} from '../../../vue_shared/util.mjs'
+import {USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import _ from 'lodash'
 const state = {
     loaded: false,
