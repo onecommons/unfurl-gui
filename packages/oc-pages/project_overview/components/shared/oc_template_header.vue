@@ -45,7 +45,7 @@ export default {
     color: #1F75CB;;
 }
 .template-title {
-  font-size: 21px !important;
+  font-size: 1.5rem;
   color: #303030;
   font-style: normal;
   line-height: 24px;

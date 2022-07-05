@@ -47,6 +47,7 @@ export default {
     data() {
 
         return {
+            triedPopulatingDeploymentItems: false,
             instantiateAs: null,
             projectSlugName: null,
             templateForkedName: null,
@@ -222,6 +223,10 @@ export default {
             this.populateJobsList(),
             this.loadPrimaryDeploymentBlueprint()
         ])
+        if (this.environmentsAreReady && this.yourDeployments.length && !this.triedPopulatingDeploymentItems) {
+            this.triedPopulatingDeploymentItems = true
+            this.populateDeploymentItems(this.yourDeployments)
+        }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
         /*

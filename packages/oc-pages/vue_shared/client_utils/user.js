@@ -30,8 +30,23 @@ export async function fetchUserProjects(_options) {
 
     const nodes = response.data?.currentUser?.projectMemberships?.nodes || []
 
-    console.log({nodes, response})
     return nodes
         .filter(node => node.accessLevel.integerValue >= options.minimumAccessLevel && node.project.name != 'dashboard')
         .map(node => node.project)
+}
+
+const getUserPublicEmailQuery = gql`
+query getUserPublicEmail {
+    currentUser {
+      publicEmail
+    }
+}
+`
+
+export async function fetchUserPublicEmail() {
+    const response = await graphqlClient.clients.defaultClient.query({
+        query: getUserPublicEmailQuery
+    })
+
+    return response.data?.currentUser?.publicEmail || null // using || because it defaults to an empty string
 }

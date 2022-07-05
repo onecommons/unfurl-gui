@@ -18,8 +18,8 @@ export default function createFlash(options) {
         //message = `${message}<div>${options.issue}</div>`
     }
     const result = glCreateFlash({...options, message, type})
-    if(options.projectPath && (options.issue || type == FLASH_TYPES.ALERT)) {
-        window.requestAnimationFrame(() => {
+    if(options.issue || type == FLASH_TYPES.ALERT) {
+        window.requestAnimationFrame(async () => {
             const flashText = result.querySelector('.flash-container .flash-text')
             const issueContext = document.createElement('SPAN')
             const issueContainer = document.createElement('DIV')
@@ -27,7 +27,7 @@ export default function createFlash(options) {
 
             issueContext.textContent = options.issue
 
-            createIssueLink.href = generateIssueLink(options.projectPath, {title: options.issue, description: message, context: options.issueContext})
+            createIssueLink.href = await generateIssueLink(options.projectPath, {title: options.issue, description: message, context: options.issueContext})
             createIssueLink.textContent = options.issue? 'Click to create an issue: ': 'Click to create an issue.'
             createIssueLink.appendChild(issueContext)
 
