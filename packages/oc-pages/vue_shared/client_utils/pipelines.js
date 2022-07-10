@@ -2,6 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import { redirectTo } from '~/lib/utils/url_utility';
 import {generateAccessToken} from './user'
 
+const MASK_VARIABLES = ['UNFURL_ACCESS_TOKEN']
 function toGlVariablesAttributes(variables) {
     const result = []
     Object.entries(variables).forEach(([key, secret_value]) => {
@@ -13,6 +14,7 @@ function toGlVariablesAttributes(variables) {
         }
         result.push({
             key,
+            masked: MASK_VARIABLES.includes(key),
             secret_value,
             variable_type: 'unencrypted_var'
         })

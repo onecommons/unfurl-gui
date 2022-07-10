@@ -117,7 +117,7 @@ const actions = {
                 id: data.id,
                 flags: data.flags,
                 commit: data.commit,
-                variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
+                variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
             } :
             null
 
