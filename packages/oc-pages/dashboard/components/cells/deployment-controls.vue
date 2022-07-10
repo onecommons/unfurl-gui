@@ -2,7 +2,6 @@
 import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import {lookupPipelineJobs} from 'oc_vue_shared/client_utils/pipelines'
-import {generateIssueLink} from 'oc_vue_shared/client_utils/issues'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import * as routes from '../../router/constants'
 export default {
@@ -86,14 +85,14 @@ export default {
         viewDeploymentTarget() {
             return this.deploymentItem?.viewableLink
         },
-        issuesLink() {
-            return generateIssueLink(
+        issuesLinkArgs() {
+            return [
                 this.getHomeProjectPath,
                 {
                     title: `Issue with deployment "${this.deployment.title}"`,
                     description: 'Please describe the issue you are experiencing:'
                 }
-            )
+            ]
         }
     },
     methods: {
@@ -158,7 +157,7 @@ export default {
              :resume-editing-target="resumeEditingTarget"
              :view-deployment-target="viewDeploymentTarget"
              :control-buttons="contextMenuControlButtons"
-             :issues-link="issuesLink"
+             :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
              @deleteDeployment="deleteDeployment"
              @stopDeployment="stopDeployment"

@@ -97,7 +97,7 @@ const actions = {
 
     async environmentTriggerPipeline({rootGetters, getters, commit, dispatch}, parameters) {
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
-        const deployVariables = prepareVariables({
+        const deployVariables = await prepareVariables({
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
