@@ -16,8 +16,10 @@ export default {
 }
 </script>
 <template>
-    <github-repos-authenticate @authenticationWindowClosed="importHandler.loadRepos()" v-if="importHandler.status == oauthStatus.UNAUTHENTICATED"/>
-    <div v-else class="d-contents">
-        <slot></slot>
+    <div>
+        <github-repos-authenticate @authenticationWindowClosed="importHandler.loadRepos()" v-if="importHandler.status == oauthStatus.UNAUTHENTICATED"/>
+        <div v-show="importHandler.status == oauthStatus.AUTHENTICATED" class="d-contents">
+            <slot></slot>
+        </div>
     </div>
 </template>
