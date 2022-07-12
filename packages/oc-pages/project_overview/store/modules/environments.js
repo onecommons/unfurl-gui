@@ -7,6 +7,7 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
+import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 
 
@@ -273,12 +274,19 @@ const actions = {
             await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
         }
     },
+    async createAccessTokenIfNeeded({getters, dispatch}) {
+        if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
+            const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
+            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}) // can't currently be masked due to mask limitations
+        }
+    },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         await Promise.all([
             dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath, fetchPolicy}),
             dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
         ])
         dispatch('generateVaultPasswordIfNeeded', {fullPath: fullPath || projectPath}).then(() => commit('setReady', true))
+        dispatch('createAccessTokenIfNeeded')
     }
 
 };
