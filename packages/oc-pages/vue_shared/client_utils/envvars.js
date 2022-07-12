@@ -15,7 +15,13 @@ export async function patchEnv(env, environmentScope, fullPath) {
             key = `_` + key.split('').map(c => c.charCodeAt(0).toString(16)).join('')
         }
 
-        const secret_value = env[_key]
+        let secret_value = env[_key]
+        let data = {}
+
+        if(typeof secret_value == 'object') {
+            data = secret_value
+            secret_value = data.value || data.secret_value
+        }
 
         envPatch.push({
             key,
@@ -24,7 +30,8 @@ export async function patchEnv(env, environmentScope, fullPath) {
             variable_type: 'env_var',
             // TODO check on below
             masked: false,
-            protected: false
+            protected: false,
+            ...data
         })
     }
 
