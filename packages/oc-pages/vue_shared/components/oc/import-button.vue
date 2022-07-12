@@ -33,16 +33,18 @@ export default {
         repoImport() {
             if(this.state == PENDING) {
                 this.repoImport.pollChanges()
+                this.emitFinishedImport()
             }
         }
     },
     methods: {
-        dispatchClick() {
+        async dispatchClick() {
             let event
             switch(this.state) {
                 case AVAILABLE: 
                     event = 'startImport'
-                    this.repoImport.importSelf(this.getCurrentNamespace)
+                    await this.repoImport.importSelf(this.getCurrentNamespace)
+                    this.emitFinishedImport()
                     break
                 default:
                     break
@@ -51,6 +53,10 @@ export default {
             if(event) {
                 this.$emit(event)
             }
+        },
+        emitFinishedImport() {
+          const emit = this.$emit.bind(this, 'importFinished')
+          this.repoImport.pollPromise.then(emit)
         }
     }
 }

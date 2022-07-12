@@ -37,14 +37,18 @@ class GithubImport {
     pollChanges(period=1000) {
         if(pollIntervalHandle) {clearInterval(pollIntervalHandle)}
 
-        pollIntervalHandle = setInterval(async () => {
-            const changes = (await axios.get('/import/github/realtime_changes.json')).data
-            this.import_status = changes.find(change => this.id == change.id).import_status
+        const self = this
+        this.pollPromise = new Promise((resolve, reject) => {
+            pollIntervalHandle = setInterval(async () => {
+                const changes = (await axios.get('/import/github/realtime_changes.json')).data
+                self.import_status = changes.find(change => self.id == change.id).import_status
 
-            if(this.import_status == 'finished') {
-                clearInterval(pollIntervalHandle)
-            }
-        }, period)
+                if(self.import_status == 'finished') {
+                    resolve()
+                    clearInterval(pollIntervalHandle)
+                }
+            }, period)
+        })
     }
 
     async importSelf(target_namespace) {

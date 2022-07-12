@@ -141,6 +141,9 @@ export default {
                     sensitive: false,
                 })
             }
+        },
+        onImportFinished() {
+          this.branchesPromise = fetchRepositoryBranches(this.repoImport.id)
         }
     },
     async mounted() {
@@ -170,7 +173,7 @@ export default {
                 </div>
                 <div class="d-flex align-items-end">
                     <div>
-                        <import-button :repoImport="repoImport"/>
+                        <import-button @importFinished="onImportFinished" :repoImport="repoImport"/>
                     </div>
                 </div>
             </div>
