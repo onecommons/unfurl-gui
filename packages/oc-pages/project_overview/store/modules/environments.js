@@ -269,7 +269,7 @@ const actions = {
     async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
-            await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD})
+            await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD: {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}})
             await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
         }
     },
