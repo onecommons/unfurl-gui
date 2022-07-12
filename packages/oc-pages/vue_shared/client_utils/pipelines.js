@@ -1,6 +1,8 @@
 import axios from '~/lib/utils/axios_utils'
 import { redirectTo } from '~/lib/utils/url_utility';
+import {generateAccessToken} from './user'
 
+const MASK_VARIABLES = ['UNFURL_ACCESS_TOKEN']
 function toGlVariablesAttributes(variables) {
     const result = []
     Object.entries(variables).forEach(([key, secret_value]) => {
@@ -12,6 +14,7 @@ function toGlVariablesAttributes(variables) {
         }
         result.push({
             key,
+            masked: MASK_VARIABLES.includes(key),
             secret_value,
             variable_type: 'unencrypted_var'
         })
@@ -29,10 +32,12 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
     return data
 }
 
-export function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy}) {
+export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy}) {
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
     const DEPLOY_IMAGE = sessionStorage['deploy-image']
+
+    const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
 
     return toGlVariablesAttributes({
         WORKFLOW: workflow,
@@ -43,22 +48,23 @@ export function prepareVariables({workflow, projectUrl, environmentName, deployP
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,
         UNFURL_MOCK_DEPLOY: mockDeploy && 'true',
         UNFURL_LOGGING: (mockDeploy || UNFURL_TRACE) && 'trace',
+        UNFURL_ACCESS_TOKEN,
         DEPLOY_IMAGE
     })
 }
 
-export function deploy(pipelinesPath, parameters, options) {
+export async function deploy(pipelinesPath, parameters, options) {
     return triggerPipeline(
         pipelinesPath,
-        prepareVariables({...parameters, workflow: 'deploy'}),
+        await prepareVariables({...parameters, workflow: 'deploy'}),
         options
     )
 }
 
-export function undeploy(pipelinesPath, parameters, options) {
+export async function undeploy(pipelinesPath, parameters, options) {
     return triggerPipeline(
         pipelinesPath,
-        prepareVariables({...parameters, workflow: 'undeploy'}),
+        await prepareVariables({...parameters, workflow: 'undeploy'}),
         options
     )
 }
