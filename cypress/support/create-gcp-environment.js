@@ -32,7 +32,7 @@ function validateGCPEnvironment(filePath=GOOGLE_APPLICATION_CREDENTIALS) {
 }
 
 function authenticateGCP(filePath=GOOGLE_APPLICATION_CREDENTIALS, click=true) {
-  cy.contains('button', 'GOOGLE_APPLICATION_CREDENTIALS', {timeout: BASE_TIMEOUT * 2}).click()
+  cy.contains('button', 'Upload Service Account Key', {timeout: BASE_TIMEOUT * 2}).click()
   cy.get('input[type="file"]').attachFile({
     encoding: 'utf-8',
     filePath,

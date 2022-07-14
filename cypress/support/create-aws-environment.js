@@ -6,11 +6,17 @@ const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
+const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
 const CLOUD_PROVIDER_DROPDOWN = '[data-testid="cloud-provider-dropdown"]'
 const ENV_OPTION_AWS = `[data-testid="env-option-aws"]`
+
+Cypress.Commands.add('selectAWSRegion', region => {
+  cy.contains('Select your region:', {matchCase: false}).next().click()
+  cy.contains('button', region).click()
+})
 
 Cypress.Commands.add('selectAWSAuthenticationMethod', method => {
   cy.contains('button', 'Select').click()
@@ -38,11 +44,14 @@ Cypress.Commands.add('awsCompleteEnvironmentDialog', options => {
 // TODO support other auth methods
 Cypress.Commands.add('awsAuthenticateEnvironment', options => {
   const {
-    authMethod
+    authMethod,
+    region
   } = Object.assign({
     authMethod: 'token'
   }, options)
 
+  console.log({region})
+  if(region) cy.selectAWSRegion(region)
   cy.selectAWSAuthenticationMethod(authMethod)
   cy.contains('AWS Access key ID').next().type(AWS_ACCESS_KEY)
 
@@ -63,7 +72,7 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
   createEnvironmentButton().click()
   cy.awsCompleteEnvironmentDialog({environmentName})
   cy.url().should('not.include', '/dashboard/environments')
-  cy.awsAuthenticateEnvironment()
+  cy.awsAuthenticateEnvironment({region: AWS_DEFAULT_REGION})
   cy.contains(environmentName).should('exist')
   cy.contains('Amazon Web Services').should('exist')
 
