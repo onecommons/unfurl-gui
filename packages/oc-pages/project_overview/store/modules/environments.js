@@ -8,6 +8,7 @@ import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
+import {generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 
 
@@ -40,6 +41,10 @@ function connectionsToArray(environment) {
     }
 
     return environment
+}
+
+function toProjectTokenEnvKey(projectId) {
+    return `_project_token__${projectId}`
 }
 
 const mutations = {
@@ -287,6 +292,15 @@ const actions = {
         ])
         dispatch('generateVaultPasswordIfNeeded', {fullPath: fullPath || projectPath}).then(() => commit('setReady', true))
         dispatch('createAccessTokenIfNeeded')
+    },
+    async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
+        const key = toProjectTokenEnvKey(projectId)
+        let token
+        if(!(token = getters.lookupProjectToken(projectId))) {
+            const token = await generateProjectAccessToken(projectId)
+            await patchEnv({ [key]: token }, '*', rootGetters.getHomeProjectPath)
+        }
+        return {key, token}
     }
 
 };
@@ -379,6 +393,12 @@ const getters = {
                 return state.variablesByEnvironment[name][variable]
             } catch(e) {}
             return null
+        }
+    },
+    lookupProjectToken(state, getters) {
+        return function(projectId) {
+            const key = toProjectTokenEnvKey(projectId)
+            return getters.lookupVariableByEnvironment(key, '*')
         }
     },
     environmentsAreReady(state) {

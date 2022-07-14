@@ -5,7 +5,7 @@ import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
-import {fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/repositories'
+import {fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
 import {mapActions, mapGetters} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
@@ -20,7 +20,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'GithubMirroredRepoImageSource',
-    components: {ElAutocomplete, ElInput, ElCard, GithubAuth, ImportButton},
+    components: {ElAutocomplete, ElInput, GithubAuth, ImportButton},
     props: {
         card: Object
     },
@@ -34,6 +34,8 @@ export default {
             github_project: null,
             branchesPromise: null,
             projectInfo: null,
+            login: null,
+            password: null,
             AUTHENTICATED,
             UNAUTHENTICATED,
         }
@@ -60,7 +62,7 @@ export default {
             }
         },
         registry_url() {
-            if(this.projectInfo) {
+            if(this.projectInfo && this.project_id) {
                 return this.projectInfo.container_registry_image_prefix
                     .slice(0, 0 - this.project_id.length)
                     .split('/')
@@ -73,7 +75,9 @@ export default {
         github_project(val) {
             this.repoImport = this.importHandler.findRepo(val)
             this.branch = null
-            this.projectInfo = null
+            if(this.projectInfo?.id != this.repoImport?.id) {
+                this.projectInfo = null
+            }
             this.updateValue('github_project')
         },
         branch() {
@@ -94,15 +98,25 @@ export default {
         repoImport(val) {
             if(val?.importStatus > 1) {
                 this.branchesPromise = fetchRepositoryBranches(val.id)
-                const self = this
-                fetchProjectInfo(val.id).then(info => self.projectInfo = info)
+                this.updateProjectInfo(val.id)
+                this.setupRegistryCredentials(val.id)
             } else {
                 this.branchesPromise = null
             }
         },
     },
     methods: {
-        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        async updateProjectInfo(projectId) {
+            this.projectInfo = await fetchProjectInfo(projectId)
+        },
+        async setupRegistryCredentials(projectId) {
+            const {key} = await this.generateProjectTokenIfNeeded({projectId})
+            this.login = 'DashboardProjectAccessToken'
+            this.password = {get_env: key}
+            this.updateValue('login')
+            this.updateValue('password')
+        },
         async getRepoSuggestions(queryString, callback) {
             const repos = await this.importHandler.listRepos()
             callback(
@@ -127,7 +141,9 @@ export default {
                 this.branch &&
                 this.project_id &&
                 this.remote_git_url &&
-                this.registry_url
+                this.registry_url &&
+                this.login &&
+                this.password
             ) ? 'valid': 'missing'
             this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
 
@@ -143,7 +159,9 @@ export default {
             }
         },
         onImportFinished() {
-          this.branchesPromise = fetchRepositoryBranches(this.repoImport.id)
+            this.branchesPromise = fetchRepositoryBranches(this.repoImport.id)
+            this.updateProjectInfo(this.repoImport.id)
+            this.setupRegistryCredentials(this.repoImport.id)
         }
     },
     async mounted() {
@@ -160,7 +178,6 @@ export default {
 }
 </script>
 <template>
-    <el-card>
         <github-auth :importHandler="importHandler">
             <div class="d-flex flex-wrap justify-content-between">
                 <div style="flex-grow: 1;" class="d-flex flex-column">
