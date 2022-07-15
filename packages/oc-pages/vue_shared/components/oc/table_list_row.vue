@@ -26,15 +26,8 @@ export default {
         },
     },
     data() {
-        return {
-            disableDeployButton: true
-        }
+        return {}
     },
-    mounted() {
-        if (this.environmentsAreReady) {
-            this.disableDeployButton = false
-        }
-    },  
     methods: {
         deployTemplate(template) {
             bus.$emit('deployTemplate', template);
@@ -49,16 +42,13 @@ export default {
     },
     computed: {
         ...mapGetters([
-            'environmentsAreReady'
-        ])
-    },
-    watch: {
-        environmentsAreReady(newState, _oldState) {
-            if (newState) {
-                this.disableDeployButton = false
-            }
+            'environmentsAreReady',
+            'getUsername'
+        ]),
+        disableDeployButton() {
+            return this.getUsername && !this.environmentsAreReady
         }
-    }
+    },
 }
 </script>
 <template>
