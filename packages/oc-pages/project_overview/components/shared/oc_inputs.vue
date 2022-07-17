@@ -89,6 +89,13 @@ export default {
       return result
     },
 
+    tabsSchemas() {
+        // returns a list of inputSchemas for additional tabs, the name of the tab inputsSchema.tab_title
+        const tabs = [];
+        this.findTabs(this.cardType?.inputsSchema?.properties, tabs);
+        return tabs
+    },
+
     schema() {
       return {
         type: this.cardType?.inputsSchema?.type,
@@ -120,8 +127,18 @@ export default {
         status
       )
     },
+    findTabs(properties, tabs) {
+      return _.forEach(properties, (currentValue) => {
+        if (currentValue.tab_title) {
+          tabs.push(currentValue)
+        }
+        if (componentType === 'object' && currentValue.properties) {
+          this.findTabs(currentValue.properties, tabs)
+        }
+      });
+    },
     convertProperties(properties) {
-      return _.mapValues(properties, (value, name) => {
+      return _.filter(_.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
         if (!currentValue.type) {
           currentValue.type = 'string'
@@ -139,6 +156,9 @@ export default {
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`
         }
         let componentType = currentValue.type;
+        if (currentValue.tab_title) {
+            return null;
+        }
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
         } else if (componentType === 'array') {
@@ -188,7 +208,7 @@ export default {
         }
         currentValue['x-component'] = ComponentMap[componentType]
         return currentValue;
-      });
+      }));
     },
 
     updateFieldValidation(field, status) {
