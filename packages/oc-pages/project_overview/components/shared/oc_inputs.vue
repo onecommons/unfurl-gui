@@ -178,10 +178,10 @@ export default {
           } else if (currentValue.sensitive) {
             componentType = 'password';
           }
-          if (currentValue.const === null) {
-            currentValue['x-hidden'] = true;
-          } else if (currentValue.const === 'readonly') {
+          if (currentValue.const === 'readonly') {
             currentValue['x-read-only'] = true;
+          } else if (currentValue.const) {
+            currentValue['x-hidden'] = true;
           }
         }
         currentValue['x-component'] = ComponentMap[componentType]
