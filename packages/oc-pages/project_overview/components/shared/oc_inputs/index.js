@@ -1,6 +1,8 @@
 import LocalImageRepoSource from './LocalImageRepoSource.vue'
+import GithubMirroredRepoImageSource from './GithubMirroredRepoImageSource.vue'
 
 const customComponents = {
+    GithubMirroredRepoImageSource,
     LocalImageRepoSource,
 }
 

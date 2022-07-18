@@ -27,6 +27,7 @@ const mutations = {
 const getters = {
     getRouterHook(state) {return state.routerHook},
     getHomeProjectPath(_, getters)  {return `${getters.getUsername}/${USER_HOME_PROJECT}`},
+    getCurrentNamespace(_, getters) {return getters.getUsername},
     getUsername() {return window.gon.current_username},
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
