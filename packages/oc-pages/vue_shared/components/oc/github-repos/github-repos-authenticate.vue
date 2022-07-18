@@ -1,4 +1,5 @@
 <script>
+const STATUS_URL = '/import/github/status?close=true'
 import {GlIcon, GlButton} from '@gitlab/ui'
 export default {
     name: 'GitHubReposAuthenticate',
@@ -11,14 +12,14 @@ export default {
             const left = screen.width / 2 - width / 2
             const top = screen.height / 2 - height / 2
             let handle = window.open(
-                "/import/github/status",
+                STATUS_URL,
                 "_blank",
                 `resizable=1, scrollbars=1, fullscreen=0, left=${left}, top=${top}, height=${height}, width=${width}, toolbar=0, menubar=0, status=0`
             )
             
             // not sure if this is necessary - open it in a different tab
             if(handle == null) {
-                handle = window.open("/import/github/status", "_blank")
+                handle = window.open(STATUS_URL, "_blank")
             }
 
             if(handle) {
@@ -32,7 +33,7 @@ export default {
                 }, 100)
 
             } else {
-                window.location.href = "/import/github/status"
+              window.location.href = STATUS_URL
             }
 
         }

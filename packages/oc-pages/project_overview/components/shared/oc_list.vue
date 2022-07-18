@@ -230,7 +230,7 @@ export default {
             return this.readonly ?? this.card.name.startsWith('__')
         },
         customInputComponent() {
-            return getCustomInputComponent(this.card.type)
+            return !this._readonly && getCustomInputComponent(this.card.type)
         }
     },
 }
