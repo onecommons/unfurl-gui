@@ -470,32 +470,41 @@ const actions = {
             throw new Error(err.message);
         }
     },
-    updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, isSensitive, debounce}) {
+    updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, isSensitive, debounce, nestedPropName}) {
         if(debounce) {
             const handle = setTimeout(() => {
                 dispatch(
                     'updateProperty',
-                    {deploymentName, templateName, propertyName, propertyValue, isSensitive}
+                    {deploymentName, templateName, propertyName, propertyValue, isSensitive, nestedPropName}
                 )
             }, debounce)
             dispatch('updateTimeout', {deploymentName, templateName, propertyName, handle})
             return
         }
         const template = state.resourceTemplates[templateName]
-        const templatePropertyValue = template.properties.find(prop => prop.name == propertyName)?.value
 
-        if(_.isEqual(templatePropertyValue ?? null, propertyValue ?? null)) return
+        const templatePropertyValue = template.properties.find(prop => prop.name == nestedPropName || propertyName)?.value
 
-        commit('templateUpdateProperty', {templateName, propertyName, propertyValue})
+        const update = {}
+        update.propertyValue = propertyValue
+        update.propertyName = nestedPropName || propertyName
+
+        if(nestedPropName) {
+            update.propertyValue = {...templatePropertyValue, [propertyName]: propertyValue}
+        }
+
+        if(_.isEqual(templatePropertyValue ?? null, update.propertyValue ?? null)) return
+
+        commit('templateUpdateProperty', {templateName, ...update})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, propertyName, propertyValue, isSensitive})
+                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, ...update, isSensitive})
             )
         } else {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInResourceTemplate({deploymentName, templateName, propertyName, propertyValue, isSensitive})
+                updatePropertyInResourceTemplate({deploymentName, templateName, ...update, isSensitive})
             )
         }
     },

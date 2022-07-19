@@ -74,6 +74,10 @@ export default {
             type: Boolean,
             default: true
         },
+        renderInputTabs: {
+            type: Boolean,
+            default: true
+        },
         renderOutputs: {
             type: Boolean,
             default: true
@@ -231,6 +235,20 @@ export default {
         },
         customInputComponent() {
             return !this._readonly && getCustomInputComponent(this.card.type)
+        },
+        cardType() {
+            return this.resolveResourceType(this.card.type)
+        },
+       inputTabs() {
+           if(!this.renderInputTabs || this._readonly) return []
+           const result = []
+           for(const [name, value] of Object.entries(this.cardType.inputsSchema.properties)) {
+               if(value.tab_title) {
+                   const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
+                   result.push({name, tab_title: value.tab_title, value, count})
+               }
+           }
+           return result
         }
     },
 }
@@ -248,7 +266,10 @@ export default {
             </oc-tab>
             <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="properties.length">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties" />
-                <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
+                <oc-inputs v-else :card="card" />
+            </oc-tab>
+            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
+                <oc-inputs :card="card" :tab="tab.tab_title"/>
             </oc-tab>
             <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
                 <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />

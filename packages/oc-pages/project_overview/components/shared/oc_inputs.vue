@@ -39,11 +39,7 @@ export default {
   },
 
   props: {
-    tabsTitle: {
-      type: String,
-      required: false,
-      default: __('Inputs')
-    },
+    tab: String,
     card: {
       type: Object
     },
@@ -59,8 +55,18 @@ export default {
   computed: {
     ...mapGetters(['resolveResourceType', 'cardInputsAreValid', 'lookupEnvironmentVariable']),
 
+    // we want this to recurse eventually
+    nestedProp() {
+      const properties = this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+      if(this.tab) {
+        const [name, prop] = Object.entries(properties).find(([name, prop]) => prop.tab_title == this.tab)
+        return {...prop, name}
+      }
+      return null
+    },
+
     fromSchema() {
-      return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+      return this.nestedProp?.properties || this.cardType?.inputsSchema?.properties || {}
     },
 
     /*
@@ -87,17 +93,10 @@ export default {
       return result
     },
 
-    tabsSchemas() {
-        // returns a list of inputSchemas for additional tabs, the name of the tab inputsSchema.tab_title
-        const tabs = [];
-        this.findTabs(this.cardType?.inputsSchema?.properties, tabs);
-        return tabs
-    },
-
     schema() {
       return {
         type: this.cardType?.inputsSchema?.type,
-        properties: this.convertProperties(this.cardType?.inputsSchema?.properties || {}),
+        properties: this.convertProperties(this.fromSchema),
       }
     },
 
@@ -125,18 +124,9 @@ export default {
         status
       )
     },
-    findTabs(properties, tabs) {
-      return _.forEach(properties, (currentValue) => {
-        if (currentValue.tab_title) {
-          tabs.push(currentValue)
-        }
-        if (componentType === 'object' && currentValue.properties) {
-          this.findTabs(currentValue.properties, tabs)
-        }
-      });
-    },
     convertProperties(properties) {
-      return _.filter(_.mapValues(properties, (value, name) => {
+      //_.filter turns this into an array
+      return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
         if (!currentValue.type) {
           currentValue.type = 'string'
@@ -154,8 +144,9 @@ export default {
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`
         }
         let componentType = currentValue.type;
-        if (currentValue.tab_title) {
-            return null;
+        if (!this.tab && currentValue.tab_title) {
+          // we haven't figured out recursion yet
+          return null;
         }
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
@@ -206,7 +197,7 @@ export default {
         }
         currentValue['x-component'] = ComponentMap[componentType]
         return currentValue;
-      }));
+      });
     },
 
     updateFieldValidation(field, status) {
@@ -225,7 +216,7 @@ export default {
               return value.map(o => o?.input? o?.input: o)
             }
           })
-          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
+          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
@@ -237,10 +228,19 @@ export default {
     getMainInputs() {
       const self = this
       const result = []
-      for (const property of this.card.properties) {
+
+      const properties = this.card.properties || []
+
+      for (const [name, definition] of Object.entries(this.fromSchema)) {
         let overrideValue = false
         try{
-          const next = {...property, ...this.fromSchema[property.name]}
+          let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))
+
+          if(this.nestedProp) {
+            property = {value: (property?.value && property.value[name]) ?? null, name}
+          }
+
+          const next = {...property, ...definition}
 
           /*
            * uncomment to default to minimum
@@ -271,7 +271,6 @@ export default {
           result.push(next)
         } catch (e) {
           console.error(e)
-          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
         }
       }
       return result
