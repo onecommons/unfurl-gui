@@ -12,6 +12,7 @@ import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
 
 const {AUTHENTICATED, UNAUTHENTICATED} = oauthStatus
+const {IMPORTED} = importStatus
 
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
@@ -36,6 +37,7 @@ export default {
             projectInfo: null,
             login: null,
             password: null,
+            branchError: null, // couldn't get this working in the element ui componenet
             AUTHENTICATED,
             UNAUTHENTICATED,
         }
@@ -77,6 +79,9 @@ export default {
                     .join('/') // I don't know if the registry_url can include a path
             }
             return null
+        },
+        searchableBranchesTip() {
+            return this.github_project && !this.branch && this.repoImport?.importStatus != IMPORTED
         }
     },
     watch: {
@@ -155,11 +160,18 @@ export default {
             ) ? 'valid': 'missing'
 
 
-            if(Promise.allSettled([this.branchesPromise])) {
+            if(this.repoImport?.importStatus == IMPORTED) {
                 const branches = (await this.branchesPromise) || []
-                console.log(branches, this.branch, this.branchesPromise)
-                if(!branches.some(branch => branch.name == this.branch))
-                status = 'error'
+                if(!branches.some(branch => branch.name == this.branch)) {
+                    status = 'error'
+                    if(this.branch) {
+                        this.branchError = true
+                    } else {
+                        this.branchError = null
+                    }
+                } else {
+                    this.branchError = null
+                }
             }
             this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
 
@@ -200,9 +212,18 @@ export default {
                     <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
                         <template #prepend>Github Project</template>
                     </el-autocomplete>
-                    <el-autocomplete label="Branch" clearable class="mt-4" style="width: min(300px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
+                    <!-- no error prop? -->
+                    <el-autocomplete :error="branchError" label="Branch" clearable class="mt-4" style="width: min(300px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
                         <template #prepend>Branch</template>
                     </el-autocomplete> 
+                    <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
+                        <span v-if="branchError" style="color: red;">
+                            The {{branch}} branch doesn't exist or wasn't imported successfully.
+                        </span>
+                        <span v-else-if="searchableBranchesTip">
+                            Your branches will be searchable above when the import process is finished.
+                        </span>
+                    </div>
                 </div>
                 <div class="d-flex align-items-end">
                     <div>
