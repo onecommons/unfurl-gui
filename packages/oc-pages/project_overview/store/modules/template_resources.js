@@ -803,7 +803,10 @@ const getters = {
     },
     lookupEnvironmentVariable(state, _a, _b, rootGetters) {
         return function(variableName) {
-            return rootGetters.lookupVariableByEnvironment(variableName, state.lastFetchedFrom.environmentName)
+            return (
+              rootGetters.lookupVariableByEnvironment(variableName, state.lastFetchedFrom.environmentName) || 
+              rootGetters.lookupVariableByEnvironment(variableName, '*')
+            )
         }
     },
     getParentDependency(state, getters) {
