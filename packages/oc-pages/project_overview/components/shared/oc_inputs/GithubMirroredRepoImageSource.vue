@@ -60,11 +60,13 @@ export default {
             if(this.project_id) {
                 return `${gon.gitlab_url}/${this.project_id}`
             }
+            return null
         },
         registry_url() {
             if(this.registryURL) {
+                /* eslint-disable */
+                setTimeout(() => this.updateValue('registry_url'), 1)
                 return this.registryURL // value won't change
-                this.updateValue('registry_url')
             }
 
             if(this.projectInfo && this.project_id) {
@@ -74,6 +76,7 @@ export default {
                     .filter(pathComponent => pathComponent)
                     .join('/') // I don't know if the registry_url can include a path
             }
+            return null
         }
     },
     watch: {
@@ -140,8 +143,8 @@ export default {
                 )
             )
         },
-        updateValue(propertyName) {
-            const status = (
+        async updateValue(propertyName) {
+            let status = (
                 this.github_project &&
                 this.branch &&
                 this.project_id &&
@@ -150,6 +153,14 @@ export default {
                 this.login &&
                 this.password
             ) ? 'valid': 'missing'
+
+
+            if(Promise.allSettled([this.branchesPromise])) {
+                const branches = (await this.branchesPromise) || []
+                console.log(branches, this.branch, this.branchesPromise)
+                if(!branches.some(branch => branch.name == this.branch))
+                status = 'error'
+            }
             this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
 
             if(propertyName) {
