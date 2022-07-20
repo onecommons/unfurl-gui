@@ -38,7 +38,7 @@ export default {
             login: null,
             password: null,
             branchError: null, // couldn't get this working in the element ui componenet
-            useDefaultBranch: true,
+            useDefaultBranch: false,
             AUTHENTICATED,
             UNAUTHENTICATED,
         }
@@ -209,6 +209,7 @@ export default {
         }
         Vue.nextTick(() => {
             this.branch = this.card.properties.find(prop => prop.name == 'branch')?.value
+            if(!this.branch) {this.useDefaultBranch = true}
         })
     }
 }
