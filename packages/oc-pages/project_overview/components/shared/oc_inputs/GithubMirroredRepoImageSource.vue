@@ -30,7 +30,6 @@ export default {
         importHandler.loadRepos()
         const data =  {
             importHandler,
-            repoImport: null,
             branch: null,
             github_project: null,
             branchesPromise: null,
@@ -83,13 +82,18 @@ export default {
         },
         searchableBranchesTip() {
             return !this.useDefaultBranch && this.github_project && !this.branch && this.repoImport?.importStatus != IMPORTED
+        },
+        repoImport() {
+            if(this.importHandler.status == AUTHENTICATED) {
+                return this.importHandler.findRepo(this.github_project)
+            }
+            return null
         }
     },
     watch: {
         projectInfo() { this.setDefaultBranchIfPossible() },
         useDefaultBranch() { this.setDefaultBranchIfPossible() },
         github_project(val) {
-            this.repoImport = this.importHandler.findRepo(val)
             this.branch = null
             if(this.projectInfo?.id != this.repoImport?.id) {
                 this.projectInfo = null

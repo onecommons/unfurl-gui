@@ -1,11 +1,16 @@
 <script>
 const STATUS_URL = '/import/github/status?close=true'
+import {sleep} from '../../../client_utils/misc'
+import {oauthStatus} from '../../../client_utils/github-import'
 import {GlIcon, GlButton} from '@gitlab/ui'
 export default {
     name: 'GitHubReposAuthenticate',
     components: {GlIcon, GlButton},
+    props: {
+        importHandler: Object
+    },
     methods: {
-        openStatus(e) {
+        async openStatus(e) {
             e.preventDefault()
             const height = Math.floor(Math.max(window.outerHeight / 2, 600))
             const width = Math.floor(Math.max(window.outerWidth / 2, 400))
@@ -23,15 +28,14 @@ export default {
             }
 
             if(handle) {
-                console.log(handle)
-                const timer = setInterval(() => {
-                    if(handle.closed) {
-                        console.log("Handle closed")
-                        this.$emit('authenticationWindowClosed')
-                        clearInterval(timer)
-                    }
-                }, 100)
-
+                while(!handle.closed && this.importHandler.status == oauthStatus.UNAUTHENTICATED) {
+                    await this.importHandler.loadRepos()
+                    await sleep(30)
+                }
+                handle.close()
+                if(this.importHandler.status == oauthStatus.AUTHENTICATED) {
+                    this.$emit('authenticated')
+                }
             } else {
               window.location.href = STATUS_URL
             }

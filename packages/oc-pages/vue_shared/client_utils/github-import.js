@@ -1,4 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
+import {sleep} from './misc'
 
 export const AUTHENTICATED = 1
 export const UNAUTHENTICATED = 2
@@ -18,10 +19,6 @@ export const importStatus = {
     DISABLED, PENDING, AVAILABLE, IMPORTED
 }
 
-let pollIntervalHandle
-function asyncSleep(period) {
-    return new Promise(resolve => setTimeout(resolve, period))
-}
 
 class GithubImport {
     constructor(repo) {
@@ -52,7 +49,7 @@ class GithubImport {
                     resolve()
                     return
                 }
-                await asyncSleep(period * i++)
+                await sleep(period * i++)
             }
             reject()
         })
