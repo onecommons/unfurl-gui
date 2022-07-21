@@ -160,8 +160,11 @@ export default {
     display: flex;
     justify-content: space-between;
 }
+
 .gl-dark .header {
-    color: #121212;
+    background: #232931;
+    border-color: #626464;
+    color: #ffffffde;
 }
 
 .name-column {
@@ -172,7 +175,7 @@ export default {
     color: #585d60;
 }
 .gl-dark .name-column {
-    background: #2F3030;
+    background: #171920;
     border-top-color: #626464;
     color: #ffffffde;
 }
