@@ -19,7 +19,8 @@ export default {
 </script>
 <template>
     <el-card class="auth-container" v-loading="!importHandler.status">
-        <github-repos-authenticate @authenticationWindowClosed="importHandler.loadRepos()" v-if="importHandler.status == oauthStatus.UNAUTHENTICATED"/>
+        <github-repos-authenticate @authenticated="$emit('authenticated')" :importHandler="importHandler" v-if="importHandler.status == oauthStatus.UNAUTHENTICATED"/>
+        <!-- there was an element ui bug when this was v-if -->
         <div v-show="importHandler.status == oauthStatus.AUTHENTICATED" class="d-contents">
             <slot></slot>
         </div>
