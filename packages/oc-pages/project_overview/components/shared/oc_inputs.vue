@@ -141,6 +141,47 @@ export default {
         let componentType = currentValue.type;
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
+        } else if (componentType === 'object' && currentValue.additionalProperties) {
+          currentValue.items = {
+            type: 'object',
+            'x-decorator': 'ArrayItems.Item',
+            properties: {
+              space: {
+                type: 'void',
+                'x-component': 'Space',
+                properties: {
+                  key: {
+                    'x-decorator': 'FormItem',
+                    'x-component': 'Input'
+                  },
+                  value: {
+                    'x-decorator': 'FormItem',
+                    'x-component': ComponentMap[currentValue.additionalProperties.type],
+                  },
+                  remove: {
+                    type: 'void',
+                    'x-decorator': 'FormItem',
+                    'x-component': 'ArrayItems.Remove'
+                  }
+                }
+              }
+            }
+          }
+          currentValue.properties = {
+            add: {
+              type: 'void',
+              title: 'Add',
+              'x-component': 'ArrayItems.Addition'
+            }
+          }
+
+          currentValue['x-decorator'] = 'FormItem'
+          currentValue['x-component'] = 'ArrayItems'
+          currentValue['type'] = 'array'
+
+          // NOTE since this has 'type: object' but using the array component
+          // return is needed here to avoid assigning ComponentMap['object'] to x-component
+          return currentValue
         } else if (componentType === 'array') {
           const items = currentValue.items
           //items['x-decorator'] = 'ArrayItems.Item'
