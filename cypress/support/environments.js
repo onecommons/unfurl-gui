@@ -170,6 +170,10 @@ function uncheckedCreateRoute53DNS(zone) {
   cy.get(`input[data-testid="oc-input-${awsName}-access_key_id"]`).type(
     AWS_ACCESS_KEY
   )
+  cy.wait(100) // cypress keeps typing true before the key
+  cy.get(`input[data-testid="oc-input-${awsName}-access_key_id"]`).invoke('val', '').type(
+    AWS_ACCESS_KEY
+  )
   cy.get(`input[data-testid="oc-input-${awsName}-secret_access_key"]`).type(
     AWS_SECRET_ACCESS_KEY
   )

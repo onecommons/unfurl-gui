@@ -43,7 +43,7 @@ export default {
         return data
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace']),
+        ...mapGetters(['getCurrentNamespace', 'registryURL']),
         project_id() {
             if(this.repoImport) {
                 return `${this.getCurrentNamespace}/${this.repoImport.sanitized_name}`
@@ -62,6 +62,11 @@ export default {
             }
         },
         registry_url() {
+            if(this.registryURL) {
+                return this.registryURL // value won't change
+                this.updateValue('registry_url')
+            }
+
             if(this.projectInfo && this.project_id) {
                 return this.projectInfo.container_registry_image_prefix
                     .slice(0, 0 - this.project_id.length)

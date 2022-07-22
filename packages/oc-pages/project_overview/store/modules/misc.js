@@ -47,6 +47,9 @@ const getters = {
     DEPLOY_IMAGE() {
         return sessionStorage['deploy-image'] || 'onecommons/unfurl:latest'
     },
+    registryURL() {
+        return sessionStorage['registry-url']
+    }
     /*
     DEPLOY_TAG() {
         return sessionStorage['deploy-tag'] || 'latest'
