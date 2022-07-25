@@ -28,8 +28,7 @@ export async function patchEnv(env, environmentScope, fullPath) {
             secret_value,
             environment_scope: environmentScope,
             variable_type: 'env_var',
-            // TODO check on below
-            masked: false,
+            masked: true,
             protected: false,
             ...data
         })
