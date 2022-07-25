@@ -38,6 +38,11 @@ export default {
         async openIssue() {
             const link = await generateIssueLink(...this.issuesLinkArgs)
             window.open(link, '_blank')
+        },
+        beforeResumeEdit() {
+            // TODO move this into user_settings store
+            sessionStorage['editing-draft-from'] = window.location.href
+            sessionStorage['editing-target'] = this.resumeEditingTarget
         }
     }
 }
@@ -52,7 +57,7 @@ export default {
         <gl-icon :size="16" name="external-link"/> 
         {{__('Open Live App')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-draft')" rel="noopener noreferrer" :href="resumeEditingTarget">
+    <component :is='component' v-if="hasButton('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Draft')}}
     </component>
@@ -60,7 +65,7 @@ export default {
         <gl-icon :size="16" name="external-link"/>
         {{__('View Deployment')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-deployment')" rel="noopener noreferrer" :href="resumeEditingTarget">
+    <component :is='component' v-if="hasButton('edit-deployment')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Deployment')}}
     </component>

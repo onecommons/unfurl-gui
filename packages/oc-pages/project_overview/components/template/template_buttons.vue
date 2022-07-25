@@ -35,7 +35,16 @@ export default {
         },
 
         cancelDeployment() {
-            this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
+            const editingTarget = sessionStorage['editing-target']
+            const editingDraftFrom = sessionStorage['editing-draft-from']
+            // these don't need to be deleted because they will be overwritten by all current methods of editing a deployment
+            //delete sessionStorage['editing-target']
+            //delete sessionStorage['editing-draft-from']
+            if(decodeURIComponent(location.href.slice(location.origin.length)) == editingTarget) {
+                window.location.href = editingDraftFrom
+            } else {
+                this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
+            }
         }
     },
     computed: {
