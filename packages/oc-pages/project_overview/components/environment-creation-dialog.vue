@@ -88,11 +88,14 @@ export default {
     },
     methods: {
         async createLocalDevEnvironment() {
+          // this is an ugly hack, refactor to just submit the form
+          sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
+          sessionStorage['environmentFormAction'] = this.action
           await postGitlabEnvironmentForm();
           const result = await initUnfurlEnvironment(
             this.getHomeProjectPath,
             {
-              name: this.environmentName,
+              name: slugify(this.environmentName),
             }
           )
           return result
