@@ -2,7 +2,8 @@
 import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
 import _ from 'lodash'
-import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import LogosCloud from './shared/logos_cloud.vue'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/oc-components'
@@ -86,17 +87,35 @@ export default {
         }
     },
     methods: {
+        async createLocalDevEnvironment() {
+          await postGitlabEnvironmentForm();
+          const result = await initUnfurlEnvironment(
+            this.getHomeProjectPath,
+            {
+              name: this.environmentName,
+            }
+          )
+          return result
+        },
+
         async beginEnvironmentCreation(_redirectTarget) {
             let redirectTarget = _redirectTarget || window.location.pathname + window.location.search
             // rails is settings params weird
-            if(!redirectTarget.includes('?')) redirectTarget += '?'
-            const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
-            if(SHORT_NAMES[this.selectedCloudProvider]) sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
-            await axios.get(url)
+            if (!redirectTarget.includes('?')) redirectTarget += '?'
+            if (SHORT_NAMES[this.selectedCloudProvider]) {
+              const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+              sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
+              await axios.get(url); // set redirect
+            }
             sessionStorage['cancelTo'] = window.location.href
             sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
             sessionStorage['environmentFormAction'] = this.action
-            window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${SHORT_NAMES[this.selectedCloudProvider]}`
+            if (!SHORT_NAMES[this.selectedCloudProvider]) {
+              await this.createLocalDevEnvironment()
+              window.location.href = redirectTarget;
+            } else {
+              window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${SHORT_NAMES[this.selectedCloudProvider]}`
+            }
         },
         slugify
     },
