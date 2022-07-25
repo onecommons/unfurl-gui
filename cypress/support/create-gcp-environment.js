@@ -39,7 +39,10 @@ function authenticateGCP(filePath=GOOGLE_APPLICATION_CREDENTIALS, click=true) {
     lastModified: new Date().getTime(),
     force: true
   })
-  cy.get('input[placeholder="us-central1-a"]').clear().type(GCP_ZONE)
+  cy.get('button[data-toggle="dropdown"]').click()
+  cy.get('input[placeholder="Search zones"]').clear().type(GCP_ZONE)
+  cy.contains('button', GCP_ZONE).should('be.visible')
+  cy.contains('button', GCP_ZONE).click()
   if(click) {
     cy.contains('button', 'Save').click()
     cy.url({timeout: BASE_TIMEOUT * 2}).should('not.include', '/dashboard/-/clusters')
