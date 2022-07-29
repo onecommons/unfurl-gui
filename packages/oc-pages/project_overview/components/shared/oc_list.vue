@@ -8,6 +8,8 @@ import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'
 import Dependency from './dependency.vue'
+import {getCustomInputComponent} from './oc_inputs'
+
 
 export default {
     name: 'OcList',
@@ -72,6 +74,10 @@ export default {
             type: Boolean,
             default: true
         },
+        renderInputTabs: {
+            type: Boolean,
+            default: true
+        },
         renderOutputs: {
             type: Boolean,
             default: true
@@ -96,7 +102,7 @@ export default {
             'getCardProperties',
             'resolveResourceType',
             'cardStatus',
-            'lookupVariableByEnvironment'
+            'lookupEnvironmentVariable'
         ]),
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
@@ -120,7 +126,7 @@ export default {
               const name = titleMap[property.name] || property.name
               const sensitive = sensitiveMap[property.name]
               let value = property.value
-              value = value?.get_env? this.lookupVariableByEnvironment(value.get_env, this.getCurrentEnvironment): value
+              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
               return {...property, name, value, sensitive}
             })
 
@@ -184,7 +190,7 @@ export default {
               const name = titleMap[attribute.name] || attribute.name
               const sensitive = sensitiveMap[attribute.name]
               let value = attribute.value
-              value = value?.get_env? this.lookupVariableByEnvironment(value.get_env, this.getCurrentEnvironment): value
+              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
               return {...attribute, name, value, sensitive}
             })
 
@@ -222,41 +228,64 @@ export default {
         shouldRenderRequirements() { return this.requirements?.length },
         shouldRenderExtras() {return this.extras?.length},
         shouldRenderTabs() {
-            return this.shouldRenderRequirements || this.shouldRenderInputs || this.shouldRenderExtras || this.shouldRenderAttributes || this.shouldRenderOutputs
+            return this.shouldRenderRequirements || (this.shouldRenderInputs && !this.customInputComponent) || this.shouldRenderExtras || this.shouldRenderAttributes || this.shouldRenderOutputs
         },
         _readonly() {
             return this.readonly ?? this.card.name.startsWith('__')
         },
+        customInputComponent() {
+            return !this._readonly && getCustomInputComponent(this.card.type)
+        },
+        cardType() {
+            return this.resolveResourceType(this.card.type)
+        },
+       inputTabs() {
+           if(!this.renderInputTabs || this._readonly) return []
+           const result = []
+           for(const [name, value] of Object.entries(this.cardType.inputsSchema.properties)) {
+               if(value.tab_title) {
+                   const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
+                   result.push({name, tab_title: value.tab_title, value, count})
+               }
+           }
+           return result
+        }
     },
 }
 </script>
 <template>
-    <gl-tabs v-if="shouldRenderTabs" class="">
-      <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${card.name}`" title="Components" :titleCount="requirements.length">
-            <div class="row-fluid">
-                <div class="ci-table" role="grid">
-                    <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name + '-template'"/>
+    <div>
+        <component :is="customInputComponent" v-if="customInputComponent" :card="card"/>
+        <gl-tabs v-if="shouldRenderTabs" class="">
+            <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${card.name}`" title="Components" :titleCount="requirements.length">
+                <div class="row-fluid">
+                    <div class="ci-table" role="grid">
+                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name + '-template'"/>
+                    </div>
                 </div>
-            </div>
-        </oc-tab>
-        <oc-tab v-if="shouldRenderInputs" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="properties.length">
-            <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties" />
-            <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
-        </oc-tab>
-        <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
-            <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
-        </oc-tab>
-        <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">
-            <oc-properties-list :container-style="propertiesStyle" :card="card" property="outputs" />
-        </oc-tab>
-        <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${card.name}`" :titleCount="extras.length">
-            <div class="row-fluid">
-                <div class="ci-table" role="grid">
-                    <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name + '-template'"/>
+            </oc-tab>
+            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="properties.length">
+                <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties" />
+                <oc-inputs v-else :card="card" />
+            </oc-tab>
+            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
+                <oc-inputs :card="card" :tab="tab.tab_title"/>
+            </oc-tab>
+            <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
+                <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
+            </oc-tab>
+            <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">
+                <oc-properties-list :container-style="propertiesStyle" :card="card" property="outputs" />
+            </oc-tab>
+            <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${card.name}`" :titleCount="extras.length">
+                <div class="row-fluid">
+                    <div class="ci-table" role="grid">
+                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name + '-template'"/>
+                    </div>
                 </div>
-            </div>
-        </oc-tab>
-    </gl-tabs>
+            </oc-tab>
+        </gl-tabs>
+    </div>
 </template>
 <style scoped>
 /* this is currently also defined elsewhere */

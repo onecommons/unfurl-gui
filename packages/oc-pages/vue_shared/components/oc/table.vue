@@ -434,7 +434,7 @@ export default {
 .oc-table >>> th {
   padding: 0.25em;
   white-space: nowrap;
-  font-family: 'Open Sans';
+  font-family: 'Noto Sans';
   font-size: 0.95em;
   font-weight: bold;
   color: #4A5053;
@@ -444,7 +444,7 @@ export default {
 }
 
 .oc-table >>> td {
-  font-family: 'Open Sans';
+  font-family: 'Noto Sans';
   white-space: nowrap;
   font-size: 0.8125em;
   border-style: none;

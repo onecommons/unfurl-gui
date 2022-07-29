@@ -1,12 +1,13 @@
 <script>
 import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
+import {generateIssueLink} from 'oc_vue_shared/client_utils/issues'
 export default {
     props: {
         deployment: Object,
         environment: Object,
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
-        issuesLink: String,
+        issuesLinkArgs: Array,
         controlButtons: Array,
         component: {
             type: [String, Object],
@@ -34,6 +35,10 @@ export default {
         showPreviousJobs() {
             this.$emit('showPreviousJobs')
         },
+        async openIssue() {
+            const link = await generateIssueLink(...this.issuesLinkArgs)
+            window.open(link, '_blank')
+        }
     }
 }
 </script>
@@ -65,7 +70,7 @@ export default {
     </component>
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
-    <component :is='component' v-if="issuesLink" :href="issuesLink"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
+    <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
     <component :is='component' v-if="hasButton('job-history')" @click="showPreviousJobs">
         <gl-icon :size="16" name="history"/> 
         {{__('Previous Jobs')}}

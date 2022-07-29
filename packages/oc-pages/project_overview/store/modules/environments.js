@@ -7,6 +7,8 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
+import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
+import {generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 
 
@@ -39,6 +41,10 @@ function connectionsToArray(environment) {
     }
 
     return environment
+}
+
+function toProjectTokenEnvKey(projectId) {
+    return `_project_token__${projectId}`
 }
 
 const mutations = {
@@ -97,7 +103,7 @@ const actions = {
 
     async environmentTriggerPipeline({rootGetters, getters, commit, dispatch}, parameters) {
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
-        const deployVariables = prepareVariables({
+        const deployVariables = await prepareVariables({
             ...parameters,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
@@ -117,7 +123,7 @@ const actions = {
                 id: data.id,
                 flags: data.flags,
                 commit: data.commit,
-                variables: Object.values(deployVariables).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
+                variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
             } :
             null
 
@@ -269,8 +275,14 @@ const actions = {
     async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
-            await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD})
+            await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD: {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}})
             await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
+        }
+    },
+    async createAccessTokenIfNeeded({getters, dispatch}) {
+        if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
+            const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
+            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}) // can't currently be masked due to mask limitations
         }
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
@@ -279,6 +291,16 @@ const actions = {
             dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
         ])
         dispatch('generateVaultPasswordIfNeeded', {fullPath: fullPath || projectPath}).then(() => commit('setReady', true))
+        dispatch('createAccessTokenIfNeeded')
+    },
+    async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
+        const key = toProjectTokenEnvKey(projectId)
+        let token
+        if(!(token = getters.lookupProjectToken(projectId))) {
+            const token = await generateProjectAccessToken(projectId)
+            await patchEnv({ [key]: token }, '*', rootGetters.getHomeProjectPath)
+        }
+        return {key, token}
     }
 
 };
@@ -371,6 +393,12 @@ const getters = {
                 return state.variablesByEnvironment[name][variable]
             } catch(e) {}
             return null
+        }
+    },
+    lookupProjectToken(state, getters) {
+        return function(projectId) {
+            const key = toProjectTokenEnvKey(projectId)
+            return getters.lookupVariableByEnvironment(key, '*')
         }
     },
     environmentsAreReady(state) {

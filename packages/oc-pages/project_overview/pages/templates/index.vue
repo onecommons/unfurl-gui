@@ -607,6 +607,7 @@ export default {
               :level="1"
               :show-type-first="true"
               :render-inputs="false"
+              :render-input-tabs="true"
               :card="getPrimaryCard"
               />
             <div v-if="getCardsStacked.length > 0">

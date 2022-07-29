@@ -30,6 +30,7 @@ const stylesheets = [
   'time-select.css',
   'tooltip.css',
   'upload.css',
+  'loading.css',
 ]
 
 
