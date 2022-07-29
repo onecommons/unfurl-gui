@@ -34,7 +34,7 @@ export default {
             github_project: null,
             branchesPromise: null,
             projectInfo: null,
-            login: null,
+            username: null,
             password: null,
             branchError: null, // couldn't get this working in the element ui componenet
             useDefaultBranch: false,
@@ -132,9 +132,9 @@ export default {
         },
         async setupRegistryCredentials(projectId) {
             const {key} = await this.generateProjectTokenIfNeeded({projectId})
-            this.login = 'DashboardProjectAccessToken'
+            this.username = 'DashboardProjectAccessToken'
             this.password = {get_env: key}
-            this.updateValue('login')
+            this.updateValue('username')
             this.updateValue('password')
         },
         async getRepoSuggestions(queryString, callback) {
@@ -162,7 +162,7 @@ export default {
                 this.project_id &&
                 this.remote_git_url &&
                 this.registry_url &&
-                this.login &&
+                this.username &&
                 this.password
             ) ? 'valid': 'missing'
 

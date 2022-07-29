@@ -13,6 +13,10 @@ export async function fetchProjectAccessTokens(projectId) {
 }
 
 export async function generateProjectAccessToken(projectId, options) {
+    if(isNaN(parseInt(projectId))) {
+        throw new Error('Project id must be a number')
+    }
+    console.log(`Generating a project token for ${projectId}`)
     const _options = Object.assign({
         name: 'DashboardProjectAccessToken',
         scopes: ['read_repository', 'read_registry']

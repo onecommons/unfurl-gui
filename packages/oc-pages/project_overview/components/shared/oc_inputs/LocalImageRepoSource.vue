@@ -53,6 +53,8 @@ export default {
             containerRepositories: null,
             userProjectSuggestionsPromise: fetchUserProjects(),
             containerRepositoriesPromise: null,
+            username: null,
+            password: null,
             containerRepositories: [],
         }
         for(const prop of this.card.properties) {
@@ -96,9 +98,19 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        async setupRegistryCredentials() {
+            const projects = await this.userProjectSuggestionsPromise
+            const projectId = projects.find(project => project.fullPath == this.project_id)?.id
+            if(!projectId) return
+            const {key} = await this.generateProjectTokenIfNeeded({projectId})
+            this.username = 'DashboardProjectAccessToken'
+            this.password = {get_env: key}
+            this.updateValue('username')
+            this.updateValue('password')
+        },
         updateValue(propertyName) {
-            const status = this.project_id && this.repository_id && this.repository_tag ?
+            const status = this.username && this.password && this.project_id && this.repository_id && this.repository_tag ?
                 'valid': 'missing'
             this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
 
@@ -139,6 +151,7 @@ export default {
     },
     mounted() {
         this.updateValue()
+        this.setupRegistryCredentials()
     }
 }
 </script>

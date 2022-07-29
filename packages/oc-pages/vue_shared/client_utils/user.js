@@ -13,6 +13,7 @@ query getUserProjects {
                     integerValue
                 }
                 project {
+                    id
                     fullPath
                     name
                 }
@@ -34,8 +35,12 @@ export async function fetchUserProjects(_options) {
     const nodes = response.data?.currentUser?.projectMemberships?.nodes || []
 
     return nodes
-        .filter(node => node.accessLevel.integerValue >= options.minimumAccessLevel && node.project.name != 'dashboard')
-        .map(node => node.project)
+        .filter(node => node.accessLevel.integerValue >= options.minimumAccessLevel && node.project.name.toLowerCase() != 'dashboard')
+        .map(node => {
+            const project = node.project
+            project.id = parseInt(project.id.split('/').pop())
+            return project
+        })
 }
 
 const getUserPublicEmailQuery = gql`
