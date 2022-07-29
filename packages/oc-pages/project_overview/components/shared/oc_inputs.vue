@@ -150,6 +150,53 @@ export default {
         }
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
+        } else if (componentType === 'object' && currentValue.additionalProperties) {
+          currentValue.items = {
+            type: 'object',
+            'x-decorator': 'ArrayItems.Item',
+            properties: {
+              space: {
+                type: 'void',
+                'x-component': 'Space',
+                properties: {
+                  key: {
+                    'x-decorator': 'FormItem',
+                    'x-component': 'Input',
+                    'x-component-props': {
+                      placeholder: 'key'
+                    }
+                  },
+                  value: {
+                    'x-decorator': 'FormItem',
+                    'x-component': ComponentMap[currentValue.additionalProperties.type],
+                    'x-component-props': {
+                      placeholder: 'value'
+                    }
+                  },
+                  remove: {
+                    type: 'void',
+                    'x-decorator': 'FormItem',
+                    'x-component': 'ArrayItems.Remove'
+                  }
+                }
+              }
+            }
+          }
+          currentValue.properties = {
+            add: {
+              type: 'void',
+              title: 'Add',
+              'x-component': 'ArrayItems.Addition'
+            }
+          }
+
+          currentValue['x-decorator'] = 'FormItem'
+          currentValue['x-component'] = 'ArrayItems'
+          currentValue['type'] = 'array'
+
+          // NOTE since this has 'type: object' but using the array component
+          // return is needed here to avoid assigning ComponentMap['object'] to x-component
+          return currentValue
         } else if (componentType === 'array') {
           const items = currentValue.items
           //items['x-decorator'] = 'ArrayItems.Item'
@@ -212,9 +259,20 @@ export default {
         this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value, disregardUncommitted=false) {
           // TODO move cloneDeep/serializer into another function
           const propertyValue = _.cloneDeepWith(value, function(value) {
-            if(Array.isArray(value) && value.length > 0) {
-              return value.map(o => o?.input? o?.input: o)
-            }
+            if(Array.isArray(value)) {
+              if (value.length == 0) {
+                return null
+              }
+              if (value.some(o => o?.input !== undefined)) {
+                return value.map(o => o?.input? o?.input: o)
+              } else if (value.some(o => o?.key !== undefined)) {
+                const result = {}
+                for(const entry of value)  {
+                  result[entry.key] = entry.value
+                }
+                return result
+              }
+            } 
           })
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
@@ -242,15 +300,19 @@ export default {
 
           const next = {...property, ...definition}
 
+          const isMap = next.additionalProperties && _.isObject(next.value)
+          if(isMap) { // I don't know how to handle this in clone deep
+            next.value = Object.entries(next.value).map(([key, value]) => ({key, value}))
+          }
+
           /*
            * uncomment to default to minimum
           if(next.type == 'number' && next.required && next.minimum && (next.default ?? null) === null) {
             next.default = next.minimum
           }
           */
-
           next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
-            if(Array.isArray(value) && value.length > 0) {
+            if(Array.isArray(value) && value.length > 0 && !isMap) {
               return value.map(input => ({input}))
             }
             if(value?.get_env) {
