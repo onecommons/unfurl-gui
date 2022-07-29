@@ -3,11 +3,12 @@ import Vue from 'vue'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
-import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard, Checkbox as ElCheckbox} from 'element-ui'
+import {Autocomplete as ElAutocomplete, Card as ElCard, Checkbox as ElCheckbox} from 'element-ui'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
-import {fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
-import {mapActions, mapGetters} from 'vuex'
+import {mapMutations, mapActions, mapGetters} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
 
@@ -21,7 +22,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'GithubMirroredRepoImageSource',
-    components: {ElAutocomplete, ElInput, GithubAuth, ImportButton, ElCheckbox},
+    components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox},
     props: {
         card: Object
     },
@@ -34,7 +35,7 @@ export default {
             github_project: null,
             branchesPromise: null,
             projectInfo: null,
-            login: null,
+            username: null,
             password: null,
             branchError: null, // couldn't get this working in the element ui componenet
             useDefaultBranch: false,
@@ -45,7 +46,7 @@ export default {
         return data
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace', 'registryURL']),
+        ...mapGetters(['getCurrentNamespace', 'registryURL', 'cardIsValid']),
         project_id() {
             if(this.repoImport) {
                 return `${this.getCurrentNamespace}/${this.repoImport.sanitized_name}`
@@ -127,14 +128,15 @@ export default {
     },
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapMutations(['onDeploy', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject']),
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
         },
         async setupRegistryCredentials(projectId) {
             const {key} = await this.generateProjectTokenIfNeeded({projectId})
-            this.login = 'DashboardProjectAccessToken'
+            this.username = 'DashboardProjectAccessToken'
             this.password = {get_env: key}
-            this.updateValue('login')
+            this.updateValue('username')
             this.updateValue('password')
         },
         async getRepoSuggestions(queryString, callback) {
@@ -162,7 +164,7 @@ export default {
                 this.project_id &&
                 this.remote_git_url &&
                 this.registry_url &&
-                this.login &&
+                this.username &&
                 this.password
             ) ? 'valid': 'missing'
 
@@ -211,10 +213,26 @@ export default {
             await this.importHandler.loadReposPromise
             this.github_project = github_project
         }
+
         Vue.nextTick(() => {
             this.branch = this.card.properties.find(prop => prop.name == 'branch')?.value
             if(!this.branch) {this.useDefaultBranch = true}
         })
+
+
+        this.onDeploy(async () => {
+            if(this.cardIsValid(this.card)) {
+                if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
+                    console.log('image already exists')
+                } else {
+                    const upstream = await triggerPipeline(`/${this.projectInfo.path_with_namespace}/-/pipelines`, [], {ref: this.branch})
+                    this.setUpstreamCommit(upstream.commit)
+                    this.setUpstreamId(upstream.id)
+                    this.setUpstreamProject(upstream.project)
+                }
+            }
+        })
+        
     }
 }
 </script>
@@ -225,6 +243,7 @@ export default {
                     <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
                         <template #prepend>Github Project</template>
                     </el-autocomplete>
+                    <a target="_blank" style="height: 0; width: min(500px, 100%); text-align: right;" v-if="projectInfo && projectInfo.web_url" :href="projectInfo.web_url">{{projectInfo.name_with_namespace}}</a>
                     <div class="mt-4">
                         <el-autocomplete :disabled="useDefaultBranch" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
                             <template #prepend>Branch</template>

@@ -64,6 +64,24 @@ const mutations = {
         state.deploymentPaths = deploymentPaths
     },
 
+    setUpstreamCommit(state, upstreamCommit) {
+        state.upstreamCommit = upstreamCommit
+    },
+
+    setUpstreamId(state, upstreamId) {
+        state.upstreamId = upstreamId
+    },
+
+    setUpstreamProject(state, upstreamProject) {
+        state.upstreamProject = upstreamProject
+    },
+
+    clearUpstream(state) {
+        state.upstreamCommit = null
+        state.upstreamProject = null
+        state.upstreamId = null
+    },
+
     setReady(state, readyStatus) {
         state.ready = readyStatus
     },
@@ -101,7 +119,8 @@ const mutations = {
 
 const actions = {
 
-    async environmentTriggerPipeline({rootGetters, getters, commit, dispatch}, parameters) {
+    async environmentTriggerPipeline({rootGetters, state, getters, commit, dispatch}, parameters) {
+        if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
         const deployVariables = await prepareVariables({
             ...parameters,
@@ -123,9 +142,14 @@ const actions = {
                 id: data.id,
                 flags: data.flags,
                 commit: data.commit,
-                variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {})
+                variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {}),
+                upstreamCommit: state.upstreamCommit,
+                upstreamId: state.upstreamId,
+                upstreamProject: state.upstreamProject
             } :
             null
+
+        commit('clearUpstream')
 
         if(pipeline) {pipelines.push(pipeline)}
 
