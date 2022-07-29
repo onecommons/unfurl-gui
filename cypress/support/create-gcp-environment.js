@@ -32,14 +32,17 @@ function validateGCPEnvironment(filePath=GOOGLE_APPLICATION_CREDENTIALS) {
 }
 
 function authenticateGCP(filePath=GOOGLE_APPLICATION_CREDENTIALS, click=true) {
-  cy.contains('button', 'GOOGLE_APPLICATION_CREDENTIALS', {timeout: BASE_TIMEOUT * 2}).click()
+  cy.contains('button', 'Upload Service Account Key', {timeout: BASE_TIMEOUT * 2}).click()
   cy.get('input[type="file"]').attachFile({
     encoding: 'utf-8',
     filePath,
     lastModified: new Date().getTime(),
     force: true
   })
-  cy.get('input[placeholder="us-central1-a"]').clear().type(GCP_ZONE)
+  cy.get('button[data-toggle="dropdown"]').click()
+  cy.get('input[placeholder="Search zones"]').clear().type(GCP_ZONE)
+  cy.contains('button', GCP_ZONE).should('be.visible')
+  cy.contains('button', GCP_ZONE).click()
   if(click) {
     cy.contains('button', 'Save').click()
     cy.url({timeout: BASE_TIMEOUT * 2}).should('not.include', '/dashboard/-/clusters')

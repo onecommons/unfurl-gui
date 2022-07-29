@@ -20,9 +20,10 @@ const BASE_URL = Cypress.env('OC_URL') || 'localhost:8080'
 const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')
 const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
-const MOCK_DEPLOY = Cypress.env('MOCK_DEPLOY') || Cypress.env('UNFURL_MOCK_DEPLOY')
+const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
-const DEPLOY_TAG = Cypress.env('DEPLOY_TAG')
+const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
+const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
 Cypress.Cookies.defaults({
   preserve: /.*/
@@ -59,6 +60,9 @@ beforeEach(() => {
     }
     if(MOCK_DEPLOY) {
       win.sessionStorage['mock-deploy'] = 't'
+    }
+    if(UNFURL_VALIDATION_MODE) {
+      win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
     }
     win.sessionStorage['unfurl-trace'] = 't'
   })

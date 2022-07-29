@@ -27,7 +27,7 @@ const verificationRoutines = {
           command, 
           {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
         ).then(result => {console.log(result); return result.code == 0})
-      }, {timeout: BASE_TIMEOUT * 12,  interval: BASE_TIMEOUT})
+      }, {timeout: BASE_TIMEOUT * 15,  interval: BASE_TIMEOUT})
     })
   },
   mediawiki(deployment, env, dnsZone, sub) {
@@ -42,7 +42,7 @@ const verificationRoutines = {
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
-    }, {timeout: BASE_TIMEOUT * 12,  interval: BASE_TIMEOUT})
+    }, {timeout: BASE_TIMEOUT * 15,  interval: BASE_TIMEOUT})
   },
 
   nextcloud(deployment, env, dnsZone, sub) {
@@ -59,7 +59,7 @@ const verificationRoutines = {
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
-    }, {timeout: BASE_TIMEOUT * 12,  interval: BASE_TIMEOUT})
+    }, {timeout: BASE_TIMEOUT * 15,  interval: BASE_TIMEOUT})
   },
 
   wordpress(deployment, env, dnsZone, sub) {
@@ -74,7 +74,7 @@ const verificationRoutines = {
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
-    }, {timeout: BASE_TIMEOUT * 12,  interval: BASE_TIMEOUT})
+    }, {timeout: BASE_TIMEOUT * 15,  interval: BASE_TIMEOUT})
   },
 
   baserow(deployment, env, dnsZone, sub) {

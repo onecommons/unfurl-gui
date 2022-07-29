@@ -38,6 +38,7 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
     const DEPLOY_IMAGE = sessionStorage['deploy-image']
+    const UNFURL_VALIDATION_MODE = sessionStorage['unfurl-validation-mode']
 
     //const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN') currently saving this in the environment
 
@@ -50,7 +51,7 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,
         UNFURL_MOCK_DEPLOY: mockDeploy && 'true',
         UNFURL_LOGGING: (mockDeploy || UNFURL_TRACE) && 'trace',
-        //UNFURL_ACCESS_TOKEN,
+        UNFURL_VALIDATION_MODE,
         DEPLOY_IMAGE
     })
 }
