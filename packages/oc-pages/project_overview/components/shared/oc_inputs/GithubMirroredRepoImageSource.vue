@@ -225,6 +225,7 @@ export default {
                     <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
                         <template #prepend>Github Project</template>
                     </el-autocomplete>
+                    <a target="_blank" style="height: 0; width: min(500px, 100%); text-align: right;" v-if="projectInfo && projectInfo.web_url" :href="projectInfo.web_url">{{projectInfo.name_with_namespace}}</a>
                     <div class="mt-4">
                         <el-autocomplete :disabled="useDefaultBranch" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
                             <template #prepend>Branch</template>
