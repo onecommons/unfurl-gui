@@ -113,7 +113,11 @@ Serializers = {
     },
     // TODO unit test
     ResourceTemplate(rt) {
-        delete rt.visibility // do not commit template visibility
+        try {
+            delete rt.visibility // do not commit template visibility
+        } catch(e) {
+            console.error(e) // seems to happen when visibility was already set?
+        }
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target || dep.constraint.match
         })

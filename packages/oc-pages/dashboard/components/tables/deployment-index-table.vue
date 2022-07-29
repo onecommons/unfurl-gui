@@ -97,6 +97,7 @@ export default {
         }
     },
     data() {
+        const glDark = document.querySelector('body.gl-dark') // not getting gl dark for some reason on this component
         const self = this
         const fields = [
             {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
@@ -134,7 +135,7 @@ export default {
         if(currentTab == -1) currentTab = 0
 
         const intent = '', target = null, newDeploymentTitle = null
-        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle}
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, glDark}
 
     },
     methods: {
@@ -426,7 +427,7 @@ export default {
 }
 </script>
 <template>
-    <div ref="container" class="deployment-index-table" :class="{transition}">
+    <div ref="container" class="deployment-index-table" :class="{transition, 'gl-dark': glDark}">
         <gl-modal
             modalId="deployment-index-table"
             :title="modalTitle"
@@ -516,9 +517,18 @@ export default {
     background-color: white;
     transition: background-color 0.5s;
 }
+
 .deployment-index-table.transition >>> .highlight {
     background-color: #FDFFE3;
+}
 
+.deployment-index-table.gl-dark >>> .highlight {
+    background-color: black;
+    transition: background-color 0.5s;
+}
+
+.deployment-index-table.gl-dark.transition >>> .highlight {
+    background-color: #181A00;
 }
 
 .external-link-container >>> button {

@@ -1,4 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
+import {sleep} from './misc'
 
 export const AUTHENTICATED = 1
 export const UNAUTHENTICATED = 2
@@ -18,7 +19,6 @@ export const importStatus = {
     DISABLED, PENDING, AVAILABLE, IMPORTED
 }
 
-let pollIntervalHandle
 
 class GithubImport {
     constructor(repo) {
@@ -35,16 +35,24 @@ class GithubImport {
     }
 
     pollChanges(period=1000) {
-        if(pollIntervalHandle) {clearInterval(pollIntervalHandle)}
+        let id
+        id = this.pollId = Date.now()
 
-        pollIntervalHandle = setInterval(async () => {
-            const changes = (await axios.get('/import/github/realtime_changes.json')).data
-            this.import_status = changes.find(change => this.id == change.id).import_status
+        this.pollPromise = new Promise(async(resolve, reject) => {
+            let i = 1
+            while(id == this.pollId) { // don't poll for multiple repos
+                await axios.get('/import/github/status')
+                const changes = (await axios.get('/import/github/realtime_changes.json')).data
+                this.import_status = changes.find(change => this.id == change.id).import_status
 
-            if(this.import_status == 'finished') {
-                clearInterval(pollIntervalHandle)
+                if(this.import_status == 'finished') {
+                    resolve()
+                    return
+                }
+                await sleep(period * i++)
             }
-        }, period)
+            reject()
+        })
     }
 
     async importSelf(target_namespace) {

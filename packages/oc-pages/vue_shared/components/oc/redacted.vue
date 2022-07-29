@@ -9,7 +9,7 @@ export default {
     props: {
         value: {
             type: String,
-            required: true
+            default: null,
         }
     },
     data() {
@@ -26,8 +26,8 @@ export default {
 </script>
 
 <template>
-    <div class="redacted-container">
-        <div v-if="value">
+    <div v-if="value" class="redacted-container">
+        <div>
             <span v-if="isHidden"> {{value.replace(/./g, '*')}}</span>
             <span v-else>{{ value }}</span>
         </div>

@@ -55,21 +55,22 @@ export async function fetchUserPublicEmail() {
 }
 
 
-export async function generateAccessToken(tokenName) {
+export async function generateAccessToken(tokenName, options) {
+    const {scopes, expiresAt} = Object.assign({
+        scopes: ['api', 'read_user', 'read_api', 'read_repository', 'write_repository', 'read_registry', 'write_registry'],
+        expiresAt: ''
+    }, options)
+
     const baseURL = '/-/profile/personal_access_tokens'
-    const expiresAt = new Date(Date.now() + 3600 * 1000).toISOString().slice(0, 10)
     const data = [
         ['authenticity_token', csrf.token],
         ['personal_access_token[name]', tokenName],
         ['personal_access_token[expires_at]', expiresAt],
-        ['personal_access_token[scopes][]', 'api'],
-        ['personal_access_token[scopes][]', 'read_user'],
-        ['personal_access_token[scopes][]', 'read_api'],
-        ['personal_access_token[scopes][]', 'read_repository'],
-        ['personal_access_token[scopes][]', 'write_repository'],
-        ['personal_access_token[scopes][]', 'read_registry'],
-        ['personal_access_token[scopes][]', 'write_registry'],
     ]
+
+    for(const scope of scopes) {
+        data.push(['personal_access_token[scopes][]', scope])
+    }
 
     const query = data.map(entry => `${encodeURIComponent(entry[0])}=${encodeURIComponent(entry[1])}`).join('&')
 

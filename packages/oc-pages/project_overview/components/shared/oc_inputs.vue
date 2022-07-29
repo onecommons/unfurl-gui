@@ -39,11 +39,7 @@ export default {
   },
 
   props: {
-    tabsTitle: {
-      type: String,
-      required: false,
-      default: __('Inputs')
-    },
+    tab: String,
     card: {
       type: Object
     },
@@ -59,8 +55,18 @@ export default {
   computed: {
     ...mapGetters(['resolveResourceType', 'cardInputsAreValid', 'lookupEnvironmentVariable']),
 
+    // we want this to recurse eventually
+    nestedProp() {
+      const properties = this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+      if(this.tab) {
+        const [name, prop] = Object.entries(properties).find(([name, prop]) => prop.tab_title == this.tab)
+        return {...prop, name}
+      }
+      return null
+    },
+
     fromSchema() {
-      return this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+      return this.nestedProp?.properties || this.cardType?.inputsSchema?.properties || {}
     },
 
     /*
@@ -90,7 +96,7 @@ export default {
     schema() {
       return {
         type: this.cardType?.inputsSchema?.type,
-        properties: this.convertProperties(this.cardType?.inputsSchema?.properties || {}),
+        properties: this.convertProperties(this.fromSchema),
       }
     },
 
@@ -119,6 +125,7 @@ export default {
       )
     },
     convertProperties(properties) {
+      //_.filter turns this into an array
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
         if (!currentValue.type) {
@@ -137,8 +144,59 @@ export default {
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`
         }
         let componentType = currentValue.type;
+        if (!this.tab && currentValue.tab_title) {
+          // we haven't figured out recursion yet
+          return null;
+        }
         if (componentType === 'object' && currentValue.properties) {
           currentValue.properties = this.convertProperties(currentValue.properties)
+        } else if (componentType === 'object' && currentValue.additionalProperties) {
+          currentValue.items = {
+            type: 'object',
+            'x-decorator': 'ArrayItems.Item',
+            properties: {
+              space: {
+                type: 'void',
+                'x-component': 'Space',
+                properties: {
+                  key: {
+                    'x-decorator': 'FormItem',
+                    'x-component': 'Input',
+                    'x-component-props': {
+                      placeholder: 'key'
+                    }
+                  },
+                  value: {
+                    'x-decorator': 'FormItem',
+                    'x-component': ComponentMap[currentValue.additionalProperties.type],
+                    'x-component-props': {
+                      placeholder: 'value'
+                    }
+                  },
+                  remove: {
+                    type: 'void',
+                    'x-decorator': 'FormItem',
+                    'x-component': 'ArrayItems.Remove'
+                  }
+                }
+              }
+            }
+          }
+          currentValue.properties = {
+            add: {
+              type: 'void',
+              title: 'Add',
+              'x-component': 'ArrayItems.Addition'
+            }
+          }
+
+          currentValue['x-decorator'] = 'FormItem'
+          currentValue['x-component'] = 'ArrayItems'
+          currentValue['type'] = 'array'
+
+          // NOTE since this has 'type: object' but using the array component
+          // return is needed here to avoid assigning ComponentMap['object'] to x-component
+          return currentValue
         } else if (componentType === 'array') {
           const items = currentValue.items
           //items['x-decorator'] = 'ArrayItems.Item'
@@ -178,10 +236,10 @@ export default {
           } else if (currentValue.sensitive) {
             componentType = 'password';
           }
-          if (currentValue.const === null) {
-            currentValue['x-hidden'] = true;
-          } else if (currentValue.const === 'readonly') {
+          if (currentValue.const === 'readonly') {
             currentValue['x-read-only'] = true;
+          } else if (currentValue.const) {
+            currentValue['x-hidden'] = true;
           }
         }
         currentValue['x-component'] = ComponentMap[componentType]
@@ -201,11 +259,22 @@ export default {
         this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value, disregardUncommitted=false) {
           // TODO move cloneDeep/serializer into another function
           const propertyValue = _.cloneDeepWith(value, function(value) {
-            if(Array.isArray(value) && value.length > 0) {
-              return value.map(o => o?.input? o?.input: o)
-            }
+            if(Array.isArray(value)) {
+              if (value.length == 0) {
+                return null
+              }
+              if (value.some(o => o?.input !== undefined)) {
+                return value.map(o => o?.input? o?.input: o)
+              } else if (value.some(o => o?.key !== undefined)) {
+                const result = {}
+                for(const entry of value)  {
+                  result[entry.key] = entry.value
+                }
+                return result
+              }
+            } 
           })
-          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive})
+          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
@@ -217,10 +286,24 @@ export default {
     getMainInputs() {
       const self = this
       const result = []
-      for (const property of this.card.properties) {
+
+      const properties = this.card.properties || []
+
+      for (const [name, definition] of Object.entries(this.fromSchema)) {
         let overrideValue = false
         try{
-          const next = {...property, ...this.fromSchema[property.name]}
+          let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))
+
+          if(this.nestedProp) {
+            property = {value: (property?.value && property.value[name]) ?? null, name}
+          }
+
+          const next = {...property, ...definition}
+
+          const isMap = next.additionalProperties && _.isObject(next.value)
+          if(isMap) { // I don't know how to handle this in clone deep
+            next.value = Object.entries(next.value).map(([key, value]) => ({key, value}))
+          }
 
           /*
            * uncomment to default to minimum
@@ -228,9 +311,8 @@ export default {
             next.default = next.minimum
           }
           */
-
           next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
-            if(Array.isArray(value) && value.length > 0) {
+            if(Array.isArray(value) && value.length > 0 && !isMap) {
               return value.map(input => ({input}))
             }
             if(value?.get_env) {
@@ -251,7 +333,6 @@ export default {
           result.push(next)
         } catch (e) {
           console.error(e)
-          throw new Error(`No schema definition for '${property.name}' on Resource Type '${this.cardType.name}'`)
         }
       }
       return result

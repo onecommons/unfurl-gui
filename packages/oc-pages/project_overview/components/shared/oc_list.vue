@@ -74,6 +74,10 @@ export default {
             type: Boolean,
             default: true
         },
+        renderInputTabs: {
+            type: Boolean,
+            default: true
+        },
         renderOutputs: {
             type: Boolean,
             default: true
@@ -98,7 +102,7 @@ export default {
             'getCardProperties',
             'resolveResourceType',
             'cardStatus',
-            'lookupVariableByEnvironment'
+            'lookupEnvironmentVariable'
         ]),
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
@@ -122,7 +126,7 @@ export default {
               const name = titleMap[property.name] || property.name
               const sensitive = sensitiveMap[property.name]
               let value = property.value
-              value = value?.get_env? this.lookupVariableByEnvironment(value.get_env, this.getCurrentEnvironment): value
+              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
               return {...property, name, value, sensitive}
             })
 
@@ -186,7 +190,7 @@ export default {
               const name = titleMap[attribute.name] || attribute.name
               const sensitive = sensitiveMap[attribute.name]
               let value = attribute.value
-              value = value?.get_env? this.lookupVariableByEnvironment(value.get_env, this.getCurrentEnvironment): value
+              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
               return {...attribute, name, value, sensitive}
             })
 
@@ -230,7 +234,21 @@ export default {
             return this.readonly ?? this.card.name.startsWith('__')
         },
         customInputComponent() {
-            return getCustomInputComponent(this.card.type)
+            return !this._readonly && getCustomInputComponent(this.card.type)
+        },
+        cardType() {
+            return this.resolveResourceType(this.card.type)
+        },
+       inputTabs() {
+           if(!this.renderInputTabs || this._readonly) return []
+           const result = []
+           for(const [name, value] of Object.entries(this.cardType.inputsSchema.properties)) {
+               if(value.tab_title) {
+                   const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
+                   result.push({name, tab_title: value.tab_title, value, count})
+               }
+           }
+           return result
         }
     },
 }
@@ -248,7 +266,10 @@ export default {
             </oc-tab>
             <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="properties.length">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties" />
-                <oc-inputs v-else :card="card" :main-inputs="getCardProperties(card)" />
+                <oc-inputs v-else :card="card" />
+            </oc-tab>
+            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
+                <oc-inputs :card="card" :tab="tab.tab_title"/>
             </oc-tab>
             <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
                 <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
