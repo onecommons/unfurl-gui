@@ -3,49 +3,28 @@ import graphqlClient from '../../graphql';
 import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import _ from 'lodash'
 
-const state = {loaded: false, callbacks: [], deployments: {}};
+const state = {loaded: false, callbacks: [], deployments: {}, deploymentHooks: []};
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;
         state.loaded = true
     },
+
+    onDeploy(state, cb) {
+        state.deploymentHooks.push(cb)
+        state.deploymentHooks = state.deploymentHooks
+    },
+
+    clearDeploymentHooks(state) {
+        state.deploymentHooks = []
+    }
 };
 const actions = {
     // NOTE this is done in the environments store
     async fetchDeployments({commit}, params) {
         console.warn('fetch deployments has no effect and will be removed')
-        /*
-        const {username, projectPath, fullPath, fetchPolicy, applicationBlueprint} = params;
-        const query = gql`
-          query getDeployments($projectPath: ID!, $applicationBlueprint: ID), {
-              deployments(projectPath: $projectPath, applicationBlueprint: $applicationBlueprint)
-          }
-        `;
-
-        let deployments = []
-        try {
-
-            const result = await graphqlClient.defaultClient.query({
-                query,
-                variables: {
-                    ...params,
-                    projectPath: projectPath || fullPath || `${username}/${USER_HOME_PROJECT}`,
-                },
-                fetchPolicy
-
-            });
-
-            const {data, errors} = result;
-            if(data?.deployments) deployments = data.deployments
-        } catch(e) {
-            console.error(e)
-
-        }
-
-        commit('setDeployments', deployments);
-        */
-
     },
+
     async createDeploymentPathPointer({commit, dispatch, rootGetters}, {environment, deploymentDir, dryRun}) {
         commit('setUpdateObjectPath', 'environments.json')
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath)
@@ -102,6 +81,18 @@ const actions = {
             await dispatch('createDeploymentPathPointer', {environment: environmentName, deploymentDir, dryRun})
             return newDeploymentName
         }
+    },
+    
+    async runDeploymentHooks({state, commit}) {
+        const promises = []
+        for(const hook of state.deploymentHooks) {
+            let result = hook()
+            if(typeof result?.then == 'function') {
+                result = await result
+            }
+            if(result === false) { return false }
+        }
+        return true
     }
 };
 const getters = {

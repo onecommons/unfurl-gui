@@ -26,7 +26,7 @@ function toGlVariablesAttributes(variables) {
 export async function triggerPipeline(pipelinesPath, variables_attributes, options) {
     // TODO implement followRedirect
     const defaults = {followRedirect: false, ref: 'main'}
-    const {ref, followRedirect} = {...options, ...defaults}
+    const {ref, followRedirect} = {...defaults, ...options}
 
     const {data} = await axios.post(pipelinesPath, {ref, variables_attributes})
     return data

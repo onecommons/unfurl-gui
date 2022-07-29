@@ -443,13 +443,16 @@ export default {
       try {
         this.triggeredDeployment = true;
         await this.triggerSave();
-        const {pipelineData, error} = await this.deployInto({
+        const result = await this.deployInto({
           environmentName: this.$route.params.environment,
           projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
           deployPath: this.deploymentDir,
           deploymentName: this.$route.params.slug,
           deploymentBlueprint: this.$route.query.ts
         })
+        if(result === false) return
+
+        const {pipelineData, error} = result
 
         if(error) {
           throw new Error(error)
