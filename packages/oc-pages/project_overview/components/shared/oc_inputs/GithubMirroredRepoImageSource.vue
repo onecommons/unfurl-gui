@@ -49,7 +49,7 @@ export default {
         ...mapGetters(['getCurrentNamespace', 'registryURL', 'cardIsValid']),
         project_id() {
             if(this.repoImport) {
-                return `${this.getCurrentNamespace}/${this.repoImport.sanitized_name}`
+                return `${this.getCurrentNamespace}/${this.repoImport.sanitized_name}`.toLowerCase()
             }
             return null
         },
