@@ -1,4 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
+import * as routes from '../../../router/constants'
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
@@ -75,9 +76,13 @@ export default class DeploymentItem {
         }
     }
     
-    get readonlyLink() { return `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`}
+    get readonlyLink() { return `/home/${this.namespace}/-/${this.environment.name}/${this.deployment.name}`}
     get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
     get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
+
+    get viewableTo() {
+        return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}}
+    }
 
     get createdAtDate() { return this.createdAt?.toLocaleDateString() }
     get createdAtTime() { return this.createdAt?.toLocaleTimeString() }

@@ -13,33 +13,38 @@ export default [
     component: DashboardHome,
   },
   {
+    //name: constants.OC_DASHBOARD_HOME,
+    path: '/home',
+    component: DashboardHome,
+  },
+  {
     name: constants.OC_DASHBOARD_ENVIRONMENTS,
-    path: '/environments/:name',
+    path: '$DELIMITER/environments/:name',
     component: Environment
   },
   {
     name: constants.OC_DASHBOARD_DEPLOYMENTS,
-    path: '/deployments/:environment/:name',
+    path: '$DELIMITER/deployments/:environment/:name',
     component: Deployment
   },
   {
     name: constants.OC_DASHBOARD_APPLICATIONS,
-    path: '/applications/:name',
+    path: '$DELIMITER/applications/:name',
     component: Hello
   },
   {
     name: constants.OC_DASHBOARD_DEPLOYMENTS_INDEX,
-    path: '/deployments',
+    path: '$DELIMITER/deployments',
     component: DeploymentsIndex
   },
   {
     name: constants.OC_DASHBOARD_APPLICATIONS_INDEX,
-    path: '/applications',
+    path: '$DELIMITER/applications',
     component: Hello
   },
   {
     name: constants.OC_DASHBOARD_ENVIRONMENTS_INDEX,
-    path: '/environments',
+    path: '$DELIMITER/environments',
     component: EnvironmentsIndex
   },
 

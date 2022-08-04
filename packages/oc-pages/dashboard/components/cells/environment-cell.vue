@@ -1,5 +1,6 @@
 <script>
 import * as routes from '../../router/constants'
+import {mapGetters} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/oc-components'
 export default {
     components: { DetectIcon },
@@ -11,9 +12,10 @@ export default {
         return {routes}
     },
     computed: {
+        ...mapGetters(['getCurrentNamespace']),
         destination() {
             return this.noRouter ?
-                {href: `/dashboard/environments/${this.$props?.environment?.name}`} :
+                {href: `/home/${this.getCurrentNamespace}/-/environments/${this.$props?.environment?.name}`} :
                 this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
         }
     }

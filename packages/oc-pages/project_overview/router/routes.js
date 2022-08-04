@@ -32,5 +32,5 @@ export default [
     path: '/users/sign_in', // not being used
     component: SignIn
   },
-  { path: '*', component: PageNotFound },
+  //{ path: '*', component: PageNotFound },
 ];

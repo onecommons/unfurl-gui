@@ -470,7 +470,7 @@ export default {
                 <div class="d-flex">
                     <deployment-status-icon width="40px" :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <dashboard-router-link :noRouter="noRouter" :href="deploymentItem(scope, 'viewableLink')">
+                        <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem(scope, 'viewableLink'): deploymentItem(scope, 'viewableTo')">
                             <b>{{scope.item.context.deployment.title}}:</b>
                         </dashboard-router-link>
                         <a :href="`/${scope.item.context.deployment.projectPath}`">

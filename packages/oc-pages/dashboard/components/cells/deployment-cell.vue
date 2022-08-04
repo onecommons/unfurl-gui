@@ -33,17 +33,10 @@ export default {
     },
     computed: {
         ...mapGetters(['deploymentItemDirect']),
-        viewableLink() {
+        deploymentItem() {
             const {environment, deployment} = this
             const deploymentItem = this.deploymentItemDirect({environment, deployment})
-
-            return deploymentItem?.viewableLink
-        },
-        to() {
-            const href = this.noRouter?
-                `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`: // TODO use from routes.js
-                {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}
-            return this.noRouter? {href}: {to: href}
+            return deploymentItem
         },
         statuses() {
             return _.uniqBy(this.deployment.statuses || [], 'type')
@@ -54,9 +47,8 @@ export default {
 <template>
 <div class="d-flex align-items-center">
     <deployment-status-icon :scope="scope" />
-    <dashboard-router-link :noRouter="noRouter" :href="viewableLink">
+    <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem.viewableLink: deploymentItem.viewableTo">
         <div v-if="displayStatus && deployment" class="status-item">
-            <!--status-icon v-for="resource in statuses" :key="resource.name" :status="resource.status"/-->
             <div class="font-weight-bold" style="line-height: 0">{{deployment.title}}</div>
         </div> 
         <div v-else-if="deployment"> {{deployment.title}} </div>
