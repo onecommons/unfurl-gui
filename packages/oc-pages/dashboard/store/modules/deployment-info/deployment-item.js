@@ -15,7 +15,7 @@ export default class DeploymentItem {
     }
 
     get projectId() {
-        return this.deployPath?.project_id
+        return this.deployPath?.project_id || this.deployPath?.projectId // project_id will be used on DeploymentPath records going forward
     }
     
     get commitId() {
