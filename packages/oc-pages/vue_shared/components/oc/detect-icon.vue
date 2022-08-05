@@ -15,6 +15,9 @@ import EC2Instance from './icons/ec2.svg'
 import MongoDbIcon from './icons/mongodb.svg'
 import ErrorFilled from './icons/error_filled.svg'
 import DatabaseIcon from './icons/Database.svg'
+import Protected from './icons/protected.svg'
+import Failed from './icons/failed.svg'
+import Absent from './icons/absent.svg'
 
 const DEFAULT = 'pod'
 
@@ -34,7 +37,8 @@ const CUSTOM_ICON_MAPPINGS = {
     mongodb: MongoDbIcon,
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
     'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon',
-    'error-filled': 'ErrorFilled'
+    'error-filled': 'ErrorFilled',
+    'protected': Protected, 'failed': Failed, 'absent': Absent
 }
 
 const NO_FILTER = ['GCP']
@@ -85,7 +89,8 @@ export default {
         noDefault: Boolean
     },
     icons: {
-        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon
+        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon,
+        Protected, Failed, Absent,
     },
     computed: {
         ...mapGetters(['lookupEnvironment']),
