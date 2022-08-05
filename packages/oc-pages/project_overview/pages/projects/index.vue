@@ -2,7 +2,6 @@
 import createFlash, { FLASH_TYPES } from '~/flash';
 import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider, GlMarkdown } from '@gitlab/ui';
 import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
-import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
 import { s__, __ } from '~/locale';
@@ -11,7 +10,7 @@ import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
-import {OcTab, DetectIcon} from 'oc_vue_shared/oc-components'
+import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/oc-components'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
@@ -24,6 +23,7 @@ export default {
     },
     components: {
         OcTab,
+        EnvironmentSelection,
         GlModal,
         GlCard, GlIcon, GlTabs,
         GlFormGroup,
@@ -31,12 +31,7 @@ export default {
         HeaderProjectView,
         TableWithoutHeader,
         EnvironmentCreationDialog,
-        GlDropdown,
-        GlDropdownItem,
-        GlDropdownDivider,
         ProjectDescriptionBox,
-        ErrorSmall,
-        DetectIcon,
         DeployedBlueprints,
         YourDeployments,
         GlMarkdown
@@ -74,7 +69,7 @@ export default {
             }
             if(this.deployDialogError) return true
             if(!this.templateForkedName) return true
-            if(this.instantiateAs != 'template' && this.defaultEnvironmentName == __("Select")) return true
+            if(this.instantiateAs != 'template' && !this.selectedEnvironment) return true
 
             return false
         },
@@ -91,7 +86,7 @@ export default {
         },
         deployDialogError() {
             if(this.instantiateAs == 'deployment-draft') {
-                const environment = this.defaultEnvironmentName == __("Select")? null : this.defaultEnvironmentName
+                const environment = this.selectedEnvironment ?? null
                 if(environment && this.lookupDeploymentOrDraft(slugify(this.templateForkedName), environment)) {
                     return `'${this.templateForkedName.trim()}' already exists in environment '${environment}'`
                 }
@@ -100,7 +95,6 @@ export default {
         },
         ...mapGetters([
             'yourDeployments',
-            'getEnvironments',
             'getProjectInfo',
             'getProjectDescription',
             'getTemplatesList',
@@ -142,7 +136,7 @@ export default {
         // NOTE I probably should have just used a watcher here
         defaultEnvironmentName() {
             return (
-                this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud) || __("Select")
+                this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud)
             )
         },
         inputProperties() {
@@ -187,6 +181,12 @@ export default {
         environmentsAreReady(newState, _oldState) {
             if (newState && this.yourDeployments.length) {
                 this.populateDeploymentItems(this.yourDeployments)
+            }
+        },
+        defaultEnvironmentName: {
+            immediate: true,
+            handler(val) {
+                if(!this.selectedEnvironment) this.selectedEnvironment = val
             }
         }
     },
@@ -506,23 +506,16 @@ export default {
                         />
 
                     </gl-form-group>
-                    <div class="col-md-6 dropdown-parent" v-if="instantiateAs!='template'">
+                    <div class="col-md-6" v-if="instantiateAs!='template'">
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                        <!-- selectedEnvironment ends up populating defaultEnvironmentName -->
-                        <gl-dropdown data-testid="deployment-environment-select" ref="dropdown">
-                            <template #button-text>
-                                <span class="d-flex" style="line-height: 1"><detect-icon class="mr-2" no-default :env="(defaultEnvironmentName != __('Select') && defaultEnvironmentName) || null"/>{{defaultEnvironmentName}}</span>
-                            </template>
-
-                            <div v-if="getEnvironments.length > 0">
-                              <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="() => selectedEnvironment = env.name" :key="env.name">
-                                    <div class="d-flex align-items-center"><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
-                                </gl-dropdown-item>
-                                <gl-dropdown-divider />
-                            </div>
-                            <gl-dropdown-item class="disabled" @click="createNewEnvironment"><div style="white-space: pre">{{ __("Create new environment") }}</div></gl-dropdown-item>
-                        </gl-dropdown>
-                        <error-small :message="deployDialogError"/>
+                        <environment-selection 
+                            v-model="selectedEnvironment"
+                            :instantiateAs="instantiateAs"
+                            :provider="templateSelected && templateSelected.cloud"
+                            :error="deployDialogError"
+                            @createNewEnvironment="createNewEnvironment"
+                            environment-creation
+                        />
                     </div>
                 </div>
             </gl-modal>
