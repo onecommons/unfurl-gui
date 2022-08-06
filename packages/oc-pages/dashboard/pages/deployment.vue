@@ -40,7 +40,8 @@ export default {
             return this.lookupEnvironment(this.environmentName)
         },
         projectId() {
-            return this.lookupDeployPath(this.deploymentName, this.environmentName)?.projectId
+            const deployPath = this.lookupDeployPath(this.deploymentName, this.environmentName)
+            return deployPath?.project_id || deployPath?.projectId // project_id will be used on DeploymentPath records going forward
         },
         pipelineId() {
             return this.lookupDeployPath(this.deploymentName, this.environmentName)?.pipeline?.id

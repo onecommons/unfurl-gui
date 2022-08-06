@@ -5,6 +5,7 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
+import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
@@ -68,6 +69,7 @@ export default {
         EnvironmentCell,
         ResourceCell,
         DeploymentControls,
+        LastDeploy,
         GlModal,
         GlTabs,
         OcTab,
@@ -488,13 +490,7 @@ export default {
             </template>
             <template #last-deploy$all="scope">
                 <div v-if="scope.item._depth == 0" style="letter-spacing: -0.06em">
-                    {{deploymentItem(scope, 'createdAtText')}}
-                    <div v-if="deploymentItem(scope, 'createdAt')">
-                        <span v-if="deploymentItem(scope, 'consoleLink')">
-                            <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
-                            <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
-                        </span>
-                    </div>
+                    <last-deploy :deployment-item="deploymentItem(scope)" />
                 </div>
 
             </template>

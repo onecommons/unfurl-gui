@@ -73,6 +73,7 @@ export default {
                 this.repository_id = null
             }
             this.updateValue('project_id')
+            this.setupRegistryCredentials()
         },
         repository_id(val) {
             if(!val) {
@@ -90,6 +91,7 @@ export default {
                 .split('/')
                 .filter(pathComponent => pathComponent)
                 .join('/') // I don't know if the registry_url can include a path
+                .toLowerCase()
 
             this.updateValue('registry_url')
         },
