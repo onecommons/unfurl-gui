@@ -7,6 +7,7 @@ import GCP from './icons/gcp.svg'
 import K8s from './icons/k8s.svg'
 import Azure from './icons/azure.svg'
 import AWS from './icons/aws.svg'
+import DigitalOcean from './icons/digital_ocean.svg'
 import LocalDevIcon from './icons/local_dev.svg'
 import DnsIcon from './icons/DNS.svg'
 import MailIcon from './icons/Mail_server.svg'
@@ -15,6 +16,9 @@ import EC2Instance from './icons/ec2.svg'
 import MongoDbIcon from './icons/mongodb.svg'
 import ErrorFilled from './icons/error_filled.svg'
 import DatabaseIcon from './icons/Database.svg'
+import Protected from './icons/protected.svg'
+import Failed from './icons/failed.svg'
+import Absent from './icons/absent.svg'
 
 const DEFAULT = 'pod'
 
@@ -23,9 +27,10 @@ const GL_ICON_MAPPINGS = {
 
 const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.googlecloudproject': 'GCP', 'google cloud platform': 'GCP',
-    'unfurl.relationships.connectsto.k8scluster': 'K8s',
+    'unfurl.relationships.connectsto.k8scluster': 'K8s', 'kubernetes': 'K8s',
     'unfurl.relationships.connectsto.azure': 'Azure', 'azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS', 'amazon web services': 'AWS',
+    'unfurl.relationships.connectsto.digitalocean': 'DigitalOcean', 'digital ocean': 'DigitalOcean',
     gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
     ec2compute: EC2Instance, 'unfurl.nodes.ec2compute': EC2Instance,
     dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
@@ -34,7 +39,8 @@ const CUSTOM_ICON_MAPPINGS = {
     mongodb: MongoDbIcon,
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
     'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon',
-    'error-filled': 'ErrorFilled'
+    'error-filled': 'ErrorFilled',
+    'protected': Protected, 'failed': Failed, 'absent': Absent
 }
 
 const NO_FILTER = ['GCP']
@@ -85,7 +91,8 @@ export default {
         noDefault: Boolean
     },
     icons: {
-        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon
+        GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, DigitalOcean, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon,
+        Protected, Failed, Absent,
     },
     computed: {
         ...mapGetters(['lookupEnvironment']),
