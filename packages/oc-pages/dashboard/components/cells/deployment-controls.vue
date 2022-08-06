@@ -1,8 +1,8 @@
 <script>
 import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
-import {lookupPipelineJobs} from 'oc_vue_shared/client_utils/pipelines'
 import ControlButtons from './deployment-controls/control-buttons.vue'
+import PipelineDropdownItem from './deployment-controls/pipeline-dropdown-item.vue'
 import * as routes from '../../router/constants'
 export default {
     props: {
@@ -19,7 +19,8 @@ export default {
         GlIcon,
         GlDropdown,
         GlDropdownItem,
-        ControlButtons
+        ControlButtons,
+        PipelineDropdownItem
     },
     computed: {
         ...mapGetters([
@@ -124,9 +125,6 @@ export default {
             const result = `/${this.getHomeProjectPath}/-/jobs/${jobId}`
             return result
         },
-        pipelineToJobStatus(pipeline) {
-            return this.jobByPipelineId(pipeline.id)?.status?.toLowerCase()
-        }
 
     },
 }
@@ -169,10 +167,8 @@ export default {
         </gl-dropdown>
     </div>
     <gl-dropdown ref="previousJobs" v-if="pipelines.length > 1" id="jobs-dropdown" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
-        <gl-dropdown-item :href="pipelineToJobsLink(pipeline)" :key="pipeline.id" v-for="pipeline in pipelines.slice(0, -1)">
-            {{(new Date(pipeline.commit.committed_date)).toLocaleDateString()}}
-            {{(new Date(pipeline.commit.committed_date)).toLocaleTimeString()}}
-            ({{pipeline.variables.WORKFLOW}} / {{pipelineToJobStatus(pipeline)}})
+        <gl-dropdown-item :href="pipelineToJobsLink(pipeline)" :key="pipeline.id" v-for="(pipeline, n) in pipelines.slice(0, -1)">
+            <pipeline-dropdown-item :deployment-item="deploymentItem" :pipeline-index="n"/>
         </gl-dropdown-item>
     </gl-dropdown>
 </div>

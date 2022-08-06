@@ -35,7 +35,6 @@ const mutations = {
         state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
     },
     setCardInputValidStatus(state, {card, status}) {
-        console.log(card.name, status)
         Vue.set(state.inputValidationStatus, card.name, status)
     },
 
@@ -483,7 +482,7 @@ const actions = {
         }
         const template = state.resourceTemplates[templateName]
 
-        const templatePropertyValue = template.properties.find(prop => prop.name == nestedPropName || propertyName)?.value
+        const templatePropertyValue = template.properties.find(prop => prop.name == (nestedPropName || propertyName))?.value
 
         const update = {}
         update.propertyValue = propertyValue
