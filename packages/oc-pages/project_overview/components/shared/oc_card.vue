@@ -298,6 +298,7 @@ export default {
 
 .oc-card:not(.primary) h4 {
     font-size: 1rem !important;
+    line-height: 1rem !important;
 }
 
 .oc-card.primary h4 {
