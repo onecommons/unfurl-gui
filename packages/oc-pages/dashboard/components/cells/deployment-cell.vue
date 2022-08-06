@@ -3,8 +3,10 @@ import * as routes from '../../router/constants'
 import DeploymentStatusIcon from './shared/deployment-status-icon.vue'
 import {mapGetters} from 'vuex'
 import _ from 'lodash'
+import DashboardRouterLink from "../../components/dashboard-router-link.vue"
+
 export default {
-    components: { DeploymentStatusIcon},
+    components: { DeploymentStatusIcon, DashboardRouterLink },
     props: {
         deployment: {
             type: Object,
@@ -31,20 +33,11 @@ export default {
     },
     computed: {
         ...mapGetters(['deploymentItemDirect']),
-        viewableLink() {
+        deploymentItem() {
             const {environment, deployment} = this
             const deploymentItem = this.deploymentItemDirect({environment, deployment})
-
-            return deploymentItem?.viewableLink
+            return deploymentItem
         },
-        /*
-        to() {
-            const href = this.noRouter?
-                `/dashboard/deployments/${this.environment.name}/${this.deployment.name}`: // TODO use from routes.js
-                {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}
-            return this.noRouter? {href}: {to: href}
-        },
-        */
         statuses() {
             return _.uniqBy(this.deployment.statuses || [], 'type')
         }
@@ -54,14 +47,12 @@ export default {
 <template>
 <div class="d-flex align-items-center">
     <deployment-status-icon :scope="scope" />
-    <!--component :is="noRouter? 'a': 'router-link'" v-if="deployment && deployment.name" v-bind="to" -->
-    <a :href="viewableLink">
+    <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem.viewableLink: deploymentItem.viewableTo">
         <div v-if="displayStatus && deployment" class="status-item">
-                <!--status-icon v-for="resource in statuses" :key="resource.name" :status="resource.status"/-->
-                <div class="font-weight-bold" style="line-height: 0">{{deployment.title}}</div>
-        </div>
+            <div class="font-weight-bold" style="line-height: 0">{{deployment.title}}</div>
+        </div> 
         <div v-else-if="deployment"> {{deployment.title}} </div>
-    </a>
+    </dashboard-router-link>
 </div>
 </template>
 <style scoped>

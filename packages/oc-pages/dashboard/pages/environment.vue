@@ -82,6 +82,8 @@ export default {
                     return __('Azure')
                 case lookupCloudProviderAlias('k8s'):
                     return __('Kubernetes')
+                case lookupCloudProviderAlias('DigitalOcean'):
+                    return __('Digital Ocean')
                 default: return __('Local development')
             }
         },

@@ -5,12 +5,14 @@ import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
+import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import Vue from 'vue'
+import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 
 
 
@@ -68,11 +70,14 @@ export default {
         EnvironmentCell,
         ResourceCell,
         DeploymentControls,
+        LastDeploy,
         GlModal,
         GlTabs,
         OcTab,
-        GlFormInput, GlFormGroup,
-        DeploymentStatusIcon
+        GlFormInput,
+        GlFormGroup,
+        DeploymentStatusIcon,
+        DashboardRouterLink
     },
     props: {
         items: {
@@ -467,9 +472,9 @@ export default {
                 <div class="d-flex">
                     <deployment-status-icon width="40px" :scope="scope" />
                     <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <a :href="deploymentItem(scope, 'viewableLink')">
+                        <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem(scope, 'viewableLink'): deploymentItem(scope, 'viewableTo')">
                             <b>{{scope.item.context.deployment.title}}:</b>
-                        </a>
+                        </dashboard-router-link>
                         <a :href="`/${scope.item.context.deployment.projectPath}`">
                             ({{scope.item.context.application.title}})
                         </a>
@@ -488,13 +493,7 @@ export default {
             </template>
             <template #last-deploy$all="scope">
                 <div v-if="scope.item._depth == 0" style="letter-spacing: -0.06em">
-                    {{deploymentItem(scope, 'createdAtText')}}
-                    <div v-if="deploymentItem(scope, 'createdAt')">
-                        <span v-if="deploymentItem(scope, 'consoleLink')">
-                            <a :href="deploymentItem(scope, 'consoleLink')">View Job {{deploymentItem(scope, 'jobStatusMessage')}}</a> /
-                            <a :href="deploymentItem(scope, 'artifactsLink')">View Artifacts</a>
-                        </span>
-                    </div>
+                    <last-deploy :deployment-item="deploymentItem(scope)" />
                 </div>
 
             </template>

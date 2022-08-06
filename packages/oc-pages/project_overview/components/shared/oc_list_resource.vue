@@ -111,7 +111,7 @@ export default {
                 <span  class=" oc_resource-details">
                     <a :href="resource.details_url" rel="noopener noreferrer" target="_blank">
                         {{ __('Details') }}
-                        <gl-icon :size="12" name="external-link" />
+                        <gl-icon :size="14" name="external-link" />
                     </a>
                 </span>
             </div>

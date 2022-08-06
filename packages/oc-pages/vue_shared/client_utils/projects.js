@@ -14,6 +14,10 @@ export async function fetchProjectAccessTokens(projectId) {
     return (await axios.get(`/api/v4/projects/${projectId}/access_tokens`))?.data
 }
 
+export async function fetchCommit(projectId, commitHash) {
+    return (await axios.get(`/api/v4/projects/${projectId}/repository/commits/${commitHash}`))?.data
+}
+
 export async function generateProjectAccessToken(projectId, options) {
     if(isNaN(parseInt(projectId))) {
         throw new Error('Project id must be a number')

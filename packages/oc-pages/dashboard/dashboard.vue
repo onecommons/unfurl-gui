@@ -18,6 +18,7 @@ export default {
             //'applyUserSetting'
         ]),
         ...mapMutations([
+            'setCurrentNamespace',
             'initUserSettings',
         ])
     },
@@ -37,6 +38,13 @@ export default {
          */
     },
     async mounted() {
+        const pathComponents = this.$router.options.base.split('/');
+        while(pathComponents.length > 0 && pathComponents[0] == '') pathComponents.shift();
+        const currentNamespace = pathComponents.includes('dashboard')? 
+            pathComponents.slice(0, Math.max(0, pathComponents.lastIndexOf('dashboard'))).join('/'):
+            pathComponents.slice(1).join('/');
+        this.setCurrentNamespace(currentNamespace);
+
         await Promise.all([this.loadDashboard(), this.populateJobsList()])
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()

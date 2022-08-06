@@ -9,7 +9,8 @@ function isMobileLayout() {
 
 const state = {
     routerHook: DEFAULT_ROUTER_HOOK,
-    isMobileLayout: isMobileLayout()
+    isMobileLayout: isMobileLayout(),
+    namespace: null
 }
 
 const mutations = {
@@ -20,14 +21,17 @@ const mutations = {
 
     setMobileLayout(state, isMobileLayout) {
         state.isMobileLayout = isMobileLayout
-    }
+    },
 
+    setCurrentNamespace(state, namespace) {
+        state.namespace = namespace
+    }
 }
 
 const getters = {
     getRouterHook(state) {return state.routerHook},
-    getHomeProjectPath(_, getters)  {return `${getters.getUsername}/${USER_HOME_PROJECT}`},
-    getCurrentNamespace(_, getters) {return getters.getUsername},
+    getCurrentNamespace(state, getters) {return state.namespace || getters.getUsername},
+    getHomeProjectPath(_, getters)  {return `${getters.getCurrentNamespace}/${USER_HOME_PROJECT}`},
     getUsername() {return window.gon.current_username},
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
