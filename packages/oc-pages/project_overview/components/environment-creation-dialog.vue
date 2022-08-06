@@ -5,16 +5,20 @@ import _ from 'lodash'
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
-import LogosCloud from './shared/logos_cloud.vue'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/oc-components'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {token} from 'oc_vue_shared/compat.js'
 import {mapGetters} from 'vuex'
 
-const SHORT_NAMES = {
+
+const LOCAL_DEV = 'Local Dev'
+
+const CLUSTER_PROVIDER_NAMES = {
     'Google Cloud Platform': 'gcp',
     'Amazon Web Services': 'aws',
-    'Local Dev': ''
+    'Digital Ocean': '',
+    'Kubernetes': '',
+    [LOCAL_DEV]: ''
 }
 
 export default {
@@ -40,7 +44,7 @@ export default {
         return {
             environmentName: '',
             selectedCloudProvider: __('Select'),
-            SHORT_NAMES,
+            CLUSTER_PROVIDER_NAMES,
             token,
             nameStartsWithNumber: false,
             duplicateName: false
@@ -49,11 +53,7 @@ export default {
     computed: {
         ...mapGetters(['lookupEnvironment', 'getHomeProjectPath']),
         environmentsList() {
-            const result = [
-                'Google Cloud Platform',
-                'Amazon Web Services',
-                'Local Dev',
-            ]
+            const result = Object.keys(CLUSTER_PROVIDER_NAMES)
 
             if(this.allowAny) return result
 
@@ -62,7 +62,7 @@ export default {
             //local dev not currently supported on other platforms
             //if(cloudProviderName) {
                 return result.filter(envName => {
-                    return lookupCloudProviderAlias(this.SHORT_NAMES[envName]) == cloudProviderName
+                    return lookupCloudProviderAlias(this.CLUSTER_PROVIDER_NAMES[envName]) == cloudProviderName
                 })
             //}
 
@@ -92,32 +92,39 @@ export default {
           sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
           sessionStorage['environmentFormAction'] = this.action
           await postGitlabEnvironmentForm();
-          const result = await initUnfurlEnvironment(
+          const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
+              name: 'primary_provider', 
+              type: lookupCloudProviderAlias(this.selectedCloudProvider),
+              __typename: 'ResourceTemplate'
+          } : undefined
+
+          initUnfurlEnvironment(
             this.getHomeProjectPath,
             {
               name: slugify(this.environmentName),
+              primary_provider
             }
           )
-          return result
         },
 
         async beginEnvironmentCreation(_redirectTarget) {
             let redirectTarget = _redirectTarget || window.location.pathname + window.location.search
             // rails is settings params weird
             if (!redirectTarget.includes('?')) redirectTarget += '?'
-            if (SHORT_NAMES[this.selectedCloudProvider]) {
-              const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
-              sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
-              await axios.get(url); // set redirect
-            }
+
             sessionStorage['cancelTo'] = window.location.href
             sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
             sessionStorage['environmentFormAction'] = this.action
-            if (!SHORT_NAMES[this.selectedCloudProvider]) {
+
+            if (! CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]) {
               await this.createLocalDevEnvironment()
               window.location.href = redirectTarget;
             } else {
-              window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${SHORT_NAMES[this.selectedCloudProvider]}`
+              const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+              sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
+              await axios.get(url); // set redirect
+
+              window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]}`
             }
         },
         slugify
@@ -158,7 +165,7 @@ export default {
                     <template #button-text>
                         <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="selectedCloudProvider" no-default/>{{selectedCloudProvider || __('Select')}} </div>
                     </template>
-                    <gl-dropdown-item :data-testid="`env-option-${SHORT_NAMES[env]}`" :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
+                    <gl-dropdown-item :data-testid="`env-option-${CLUSTER_PROVIDER_NAMES[env]}`" :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
                         <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
                     </gl-dropdown-item>
                 </gl-dropdown>
@@ -167,7 +174,7 @@ export default {
         <form class="d-none" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
             <input name="environment[name]" :value="slugify(environmentName)">
-            <input name="provider" :value="SHORT_NAMES[selectedCloudProvider]">
+            <input name="provider" :value="CLUSTER_PROVIDER_NAMES[selectedCloudProvider]">
         </form>
     </div>
 </template>
