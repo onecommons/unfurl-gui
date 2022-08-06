@@ -76,6 +76,7 @@ const actions = {
                 context.deployPath = rootGetters.lookupDeployPath(context.deployment.name, context.environment.name)
                 context.job = getters.jobByPipelineId(context.deployPath?.pipeline?.id)
                 context.projectPath = rootGetters.getHomeProjectPath
+                context.namespace = rootGetters.getCurrentNamespace
                 dict[itemKey] = new DeploymentItem(context)
             }
         }
