@@ -76,10 +76,15 @@ const mutations = {
         state.upstreamProject = upstreamProject
     },
 
+    setIncrementalDeployment(state, incrementalDeploymentEnabled) {
+        state.incrementalDeploymentEnabled = incrementalDeploymentEnabled
+    },
+
     clearUpstream(state) {
         state.upstreamCommit = null
         state.upstreamProject = null
         state.upstreamId = null
+        state.incrementalDeploymentEnabled = false
     },
 
     setReady(state, readyStatus) {
@@ -141,11 +146,11 @@ const actions = {
             {
                 id: data.id,
                 flags: data.flags,
-                commit: data.commit,
+                'commit_id': data.commit?.id || data.commit,
                 variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {}),
-                upstreamCommit: state.upstreamCommit,
-                upstreamId: state.upstreamId,
-                upstreamProject: state.upstreamProject
+                'upstream_commit_id': state.upstreamCommit?.id || state.upstreamCommit,
+                'upstream_pipeline_id': state.upstreamId,
+                'upstream_project_id': state.upstreamProject?.id || state.upstreamProject
             } :
             null
 
@@ -161,8 +166,9 @@ const actions = {
                 patch: {
                     __typename: 'DeploymentPath',
                     environment: parameters.environmentName,
-                    projectId: data?.project?.id,
-                    pipelines
+                    'project_id': data?.project?.id,
+                    pipelines,
+                    'incremental_deploy': state.incrementalDeploymentEnabled ?? false,
                 },
                 target: parameters.deployPath
             }]

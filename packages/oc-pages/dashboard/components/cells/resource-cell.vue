@@ -36,7 +36,7 @@ export default {
 <template>
     <dashboard-router-link :noRouter="noRouter" :href="to">
         <div v-if="resource" class="status-item">
-            <status-icon :size="16" :status="resource.status" class="mr-1"/>
+            <status-icon :size="16" :status="resource.status" :isProtected="resource['protected']" class="mr-1"/>
             <div style="line-height: 0">{{resource.title}}</div>
         </div>
     </dashboard-router-link>

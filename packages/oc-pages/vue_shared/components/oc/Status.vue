@@ -6,24 +6,27 @@
         standard gl-badge doesn't have good adequate control
         normally just gl-icon would be enough with proper variants
       -->
-      <gl-icon
+      <detect-icon
         v-if="!noTooltip"
         :variant="StatusIndicators[status][0]"
         :name="StatusIndicators[status][1]"
         class="status-icon"
+        :class="iconClass"
         :size="size"
         :title="__(StatusIndicators[status][2])"
         v-gl-tooltip.hover
       />
-      <gl-icon v-else
+      <detect-icon v-else
         :variant="StatusIndicators[status][0]"
         :name="StatusIndicators[status][1]"
         class="status-icon"
+        :class="iconClass"
         :size="size"
         :title="__(StatusIndicators[status][2])"
       />
     </div>
-    <div v-if="text || displayText" class="ml-1">{{__(StatusIndicators[status][2])}}</div>
+    <detect-icon v-gl-tooltip.hover class="gl-ml-1" v-if="isProtected" title="Protected" name="protected" :size="size" />
+    <div v-if="text || displayText" class="ml-1">{{_text}}</div>
     <!-- ignoring state for now -->
     <!--div v-if="state == 5">
       {{__(StateNames[state])}}
@@ -38,6 +41,7 @@
 </template>
 <script>
 import { GlIcon } from '@gitlab/ui';
+import { DetectIcon } from 'oc_vue_shared/oc-components'
 
 const StatusIndicators = [
   // Unknown
@@ -47,11 +51,11 @@ const StatusIndicators = [
   // Degraded
   ["warning", "status_running", "Degraded"],
   // Error
-  ["danger", "status_warning", "Error"],
+  ["", "failed", "Error"],
   // Pending
   ["neutral", "status_preparing", "Pending"],
   // Absent
-  ["info", "status_open", "Absent"]
+  ["", "absent", "Absent"]
 ]
 
 const StateNames = [
@@ -81,6 +85,14 @@ export default {
       type: Boolean,
       default: false
     },
+    isProtected: {
+      type: Boolean,
+      default: false
+    },
+    iconClass: {
+      type: Array,
+      default: () => []
+    },
     displayText: Boolean, // alias for text
     state: {
       type: Number,
@@ -100,10 +112,18 @@ export default {
       } catch(e) {}
 
       return result
-    }
+    },
+    _text() {
+      if(!this.status) return null
+      const result = StatusIndicators[this.status][2]
+      if(this.isProtected) {
+        return `Protected (${result})`
+      }
+      return result
+    },
   },
   components: {
-    GlIcon//, BBadge
+    DetectIcon,
   }
 };
 </script>

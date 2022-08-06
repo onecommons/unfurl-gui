@@ -1,13 +1,13 @@
 <script>
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
-import {Status} from 'oc_vue_shared/oc-components'
+import {DetectIcon, Status} from 'oc_vue_shared/oc-components'
 import {JSONView} from 'vue-json-component'
 import Redacted from './redacted.vue'
 
 export default {
     name: 'OcPropertiesList',
-    components: {GlIcon, Status, 'json-view': JSONView, Redacted},
+    components: {GlIcon, Status, 'json-view': JSONView, Redacted, DetectIcon},
     data() {
         return {expanded: true}
     },
@@ -71,11 +71,11 @@ export default {
                     <td :style="property.valueStyle" class="value-column">
                         <div style="display: flex; justify-content: space-between;">
                             <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
-                                <Status :status="property.status" display-text />
+                                <Status :status="property.status" :size="14" display-text />
                             </div>
                             <div v-else style="width: 100%">
                                 <div v-if="property.icon" class="icon-container">
-                                    <gl-icon :size="12" :name="property.icon" />
+                                    <detect-icon :size="14" :name="property.icon" />
                                 </div>
                                 <json-view
                                 v-if="property.value && typeof property.value == 'object'"
@@ -93,7 +93,7 @@ export default {
                             </div>
                             <div v-if="property.outboundLink" class="outbound-link-container d-flex">
                                 <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
-                                    <gl-icon class="mr-1" :size="14" name="external-link"/>
+                                    <detect-icon class="mr-1" :size="14" name="external-link"/>
                                     {{__(property.outboundLinkText)}}
                                 </a>
                             </div>

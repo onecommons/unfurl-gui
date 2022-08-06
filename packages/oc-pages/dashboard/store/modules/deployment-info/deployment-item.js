@@ -1,8 +1,10 @@
 import axios from '~/lib/utils/axios_utils'
 import * as routes from '../../../router/constants'
+import {fetchCommit} from 'oc_vue_shared/client_utils/projects'
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
+        this.commitPromises = []
     }
 
     get pipeline() {
@@ -13,9 +15,30 @@ export default class DeploymentItem {
         return this.deployPath?.pipelines
     }
 
+    get projectId() {
+        return this.deployPath?.project_id || this.deployPath?.projectId // project_id will be used on DeploymentPath records going forward
+    }
+    
+    get commitId() {
+        return this.pipeline?.commit?.id || this.pipeline?.commit_id
+    }
 
-    get createdAt() {
-        const date = this.pipeline?.commit?.created_at
+    async getCommit(n=-1) {
+        const i = n == -1 ? this.pipelines.lastIndex: n
+
+        let commitPromise
+        if(!(commitPromise = this.commitPromises[i])) {
+            commitPromise = this.commitPromises[i] = fetchCommit(this.projectId, this.commitId)
+        }
+        try {
+            return await commitPromise
+        } catch(e) {
+            return null
+        }
+    }
+
+    async getCreatedAt(n=-1) {
+        const date = (await this.getCommit(n))?.created_at
         return date && new Date(date)
     }
 
@@ -79,25 +102,16 @@ export default class DeploymentItem {
     get readonlyLink() { return `/home/${this.namespace}/-/${this.environment.name}/${this.deployment.name}`}
     get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
     get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
-
     get viewableTo() {
         return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}}
     }
 
-    get createdAtDate() { return this.createdAt?.toLocaleDateString() }
-    get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
-    get createdAtText() {
-        if(!(this.createdAtDate && this.createdAtTime)) return ''
-        return `${this.createdAtDate} ${this.createdAtTime}`
-      /*
-        if(!this.createdAt) return 
-        const today = (new Date(Date.now())).getDate() 
-        const workflow = this.pipelineWorkflow == 'undeploy'? 'Undeployed': 'Deployed'
-        if(this.createdAt.getDate() != today) {
-            return workflow + ' on ' + this.createdAtDate
-        }
-        return workflow + ' at ' + this.createdAtTime
-        */
+    async getCreatedAtDate(n=-1) { const createdAt = await this.getCreatedAt(n); return createdAt?.toLocaleDateString() }
+    async getCreatedAtTime(n=-1) { const createdAt = await this.getCreatedAt(n); return createdAt?.toLocaleTimeString() }
+    async getCreatedAtText(n=-1) {
+        const createdAtDate = await this.getCreatedAtDate(n), createdAtTime = await this.getCreatedAtTime(n)
+        if(!(createdAtDate && createdAtTime)) return ''
+        return `${createdAtDate} ${createdAtTime}`
     }
     get isEditable() {
         return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
