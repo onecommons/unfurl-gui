@@ -5,6 +5,7 @@ import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
+import {Card as ElCard} from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 
@@ -35,6 +36,7 @@ export default {
   components: {
     FormProvider,
     FormLayout,
+    ElCard,
     ...fields
   },
 
@@ -367,7 +369,7 @@ export default {
 }
 </script>
 <template>
-<div class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+<el-card class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
   <FormProvider v-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
@@ -380,7 +382,7 @@ export default {
       <SchemaField :schema="schema"/>
     </FormLayout>
   </FormProvider>
-</div>
+</el-card>
 </template>
 <style scoped>
 .gl-dark >>> input::placeholder {
