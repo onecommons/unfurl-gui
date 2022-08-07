@@ -1,6 +1,8 @@
 import gql from 'graphql-tag';
 import graphqlClient from '../../graphql';
 import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
+import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import _ from 'lodash'
 
 const state = {loaded: false, callbacks: [], deployments: {}, deploymentHooks: []};
@@ -40,47 +42,83 @@ const actions = {
         await dispatch('commitPreparedMutations', {dryRun}, {root: true})
     },
 
-    async cloneDeployment({getters, dispatch, rootGetters, commit}, {deployment, environment, newDeploymentTitle, dryRun}) {
+    async cloneDeployment({getters, dispatch, rootGetters, commit}, {deployment, environment, newDeploymentTitle, targetEnvironment, dryRun}) {
         const deploymentName = deployment?.name || deployment
         const environmentName = environment?.name || environment
-        const deploymentDict = getters.getDeploymentDictionary(deploymentName, environmentName)
+        const targetEnvironmentName = (targetEnvironment?.name ||  targetEnvironment || environmentName)
+        const sourceDeploymentDict = getters.getDeploymentDictionary(deploymentName, environmentName)
         const deployPathName = rootGetters.lookupDeployPath(deploymentName, environmentName)?.name
-        if(deploymentDict && deployPathName) {
-            const {DeploymentTemplate, ResourceTemplate, ApplicationBlueprint, DefaultTemplate} = deploymentDict
-            const state = _.cloneDeep({DeploymentTemplate, ResourceTemplate, ApplicationBlueprint})
-            let deploymentDir = deployPathName.split('/')
-            const prevDeploymentName = deploymentDir[deploymentDir.lastIndex]
+
+        function getPreviousDeploymentName(deployPathName) {
+            return deployPathName.split('/').pop()
+        }
+
+        function getNewDeploymentName(newDeploymentTitle, targetEnvironmentName) {
             let newDeploymentName =  newDeploymentTitle && slugify(newDeploymentTitle)
-            if(!newDeploymentName || getters.lookupDeploymentOrDraft(newDeploymentName, environmentName)) {
+            if(!newDeploymentName || getters.lookupDeploymentOrDraft(newDeploymentName, targetEnvironmentName)) {
                 newDeploymentName = `clone-${Date.now().toString(36)}`
             }
-            deploymentDir[deploymentDir.lastIndex] = newDeploymentName
-            deploymentDir = deploymentDir.join('/')
-            const objectPath = `${deploymentDir}/deployment.json`
-            state.DeploymentTemplate[newDeploymentName] = state.DeploymentTemplate[prevDeploymentName]
-            state.DeploymentTemplate[newDeploymentName].title = newDeploymentTitle
-            state.DeploymentTemplate[newDeploymentName].name = newDeploymentName
-            state.DeploymentTemplate[newDeploymentName].slug = newDeploymentName
-            delete state.DeploymentTemplate[prevDeploymentName]
-            commit('useBaseState', {}, {root: true})
-            commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
-            commit('setUpdateObjectPath', objectPath, {root: true})
-            for(const [typename, dictionary] of Object.entries(state)) {
-                for(const [name, value] of Object.entries(dictionary)) {
-                    commit(
-                        'pushPreparedMutation',
-                        () => [{typename, patch: value, target: name}],
-                        {root: true}
-                    )
-                }
-            }
-            await dispatch('commitPreparedMutations', {dryRun}, {root: true})
-            if(dryRun) {
-                commit('clearPreparedMutations', null, {root:true})
-            }
-            await dispatch('createDeploymentPathPointer', {environment: environmentName, deploymentDir, dryRun})
+
             return newDeploymentName
         }
+
+        function renameDeploymentTemplate(dt, name, title) {
+            dt.title = title
+            dt.name = name
+            dt.slug = name
+        }
+
+        if(sourceDeploymentDict && deployPathName) {
+            const {DeploymentTemplate, ResourceTemplate, ApplicationBlueprint, DefaultTemplate} = sourceDeploymentDict
+            const deploymentObj = _.cloneDeep({DeploymentTemplate, ResourceTemplate, ApplicationBlueprint})
+            const prevDeploymentName = getPreviousDeploymentName(deployPathName)
+            const newDeploymentName = getNewDeploymentName(newDeploymentTitle, targetEnvironmentName)
+
+            deploymentObj.DeploymentTemplate[newDeploymentName] = deploymentObj.DeploymentTemplate[prevDeploymentName]
+            renameDeploymentTemplate(deploymentObj.DeploymentTemplate[newDeploymentName], newDeploymentName, newDeploymentTitle)
+            delete deploymentObj.DeploymentTemplate[prevDeploymentName]
+
+            if(targetEnvironmentName != environmentName) {
+                const variables = environmentVariableDependencies(deploymentObj)
+                const {patch, prefix} = await shareEnvironmentVariables(rootGetters.getHomeProjectPath, environmentName, targetEnvironmentName, variables)
+                prefixEnvironmentVariables(deploymentObj, prefix)
+            }
+
+            return await dispatch('commitClonedDeployment', {deploymentObj, deployPathName, newDeploymentName, environmentName, targetEnvironmentName, dryRun})
+
+        }
+    },
+
+    async commitClonedDeployment({dispatch, commit, rootGetters}, {deploymentObj, deployPathName, newDeploymentName, environmentName, targetEnvironmentName, dryRun}) {
+        function getDeploymentDir(deployPathName, newDeploymentName) {
+            const splits = deployPathName.split('/')
+            splits[splits.indexOf(environmentName)] = targetEnvironmentName
+            splits.pop()
+            splits.push(newDeploymentName)
+            return splits.join('/')
+        }
+
+        const deploymentDir = getDeploymentDir(deployPathName, newDeploymentName)
+        const objectPath = `${deploymentDir}/deployment.json`
+
+        commit('useBaseState', {}, {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
+        commit('setUpdateObjectPath', objectPath, {root: true})
+        for(const [typename, dictionary] of Object.entries(deploymentObj)) {
+            for(const [name, value] of Object.entries(dictionary)) {
+                commit(
+                    'pushPreparedMutation',
+                    () => [{typename, patch: value, target: name}],
+                    {root: true}
+                )
+            }
+        }
+        await dispatch('commitPreparedMutations', {dryRun}, {root: true})
+        if(dryRun) {
+            commit('clearPreparedMutations', null, {root:true})
+        }
+        await dispatch('createDeploymentPathPointer', {environment: targetEnvironmentName, deploymentDir, dryRun})
+        return newDeploymentName
     },
     
     async runDeploymentHooks({state, commit}) {

@@ -510,7 +510,6 @@ export default {
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
                         <environment-selection 
                             v-model="selectedEnvironment"
-                            :instantiateAs="instantiateAs"
                             :provider="templateSelected && templateSelected.cloud"
                             :error="deployDialogError"
                             @createNewEnvironment="createNewEnvironment"

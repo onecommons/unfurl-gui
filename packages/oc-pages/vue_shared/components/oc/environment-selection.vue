@@ -6,9 +6,9 @@ export default {
     name: 'EnvironmentSelection',
     props: {
         provider: String,
-        instantiateAs: String,
         error: String,
-        value: String
+        value: String,
+        environmentCreation: Boolean,
     },
     components: {
         GlDropdown,
@@ -31,7 +31,7 @@ export default {
 </script>
 <template>
     <div class="dropdown-parent">
-        <gl-dropdown data-testid="deployment-environment-select" ref="dropdown">
+        <gl-dropdown v-if="environmentCreation || matchingEnvironments.length > 0" data-testid="deployment-environment-select" ref="dropdown">
             <template #button-text>
                 <span class="d-flex" style="line-height: 1"><detect-icon v-if="value" class="mr-2" no-default :env="value"/>{{value || __("Select")}}</span>
             </template>
@@ -40,10 +40,11 @@ export default {
                 <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="$emit('input', env.name)" :key="env.name">
                     <div class="d-flex align-items-center"><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
                 </gl-dropdown-item>
-                <gl-dropdown-divider />
+                <gl-dropdown-divider v-if="environmentCreation"/>
             </div>
-            <gl-dropdown-item class="disabled" @click="$emit('createNewEnvironment')"><div style="white-space: pre">{{ __("Create new environment") }}</div></gl-dropdown-item>
+            <gl-dropdown-item class="disabled" v-if="environmentCreation" @click="$emit('createNewEnvironment')"><div style="white-space: pre">{{ __("Create new environment") }}</div></gl-dropdown-item>
         </gl-dropdown>
+        <div v-else>No environments are available.</div>
         <error-small :message="error"/>
     </div>
 </template>

@@ -1,6 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
-import {OcTab} from 'oc_vue_shared/oc-components'
+import {OcTab, EnvironmentSelection} from 'oc_vue_shared/oc-components'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
@@ -74,6 +74,7 @@ export default {
         GlModal,
         GlTabs,
         OcTab,
+        EnvironmentSelection,
         GlFormInput,
         GlFormGroup,
         DeploymentStatusIcon,
@@ -139,8 +140,8 @@ export default {
         let currentTab = tabFilters.findIndex(tab => tab.title.toLowerCase() == show?.toLowerCase())
         if(currentTab == -1) currentTab = 0
 
-        const intent = '', target = null, newDeploymentTitle = null
-        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, glDark}
+        const intent = '', target = null, newDeploymentTitle = null, cloneTargetEnvironment = null
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark}
 
     },
     methods: {
@@ -227,8 +228,15 @@ export default {
                     this.$router.replace({hash: '#_'})
                     this.handleDeleteRedirect()
                 case 'clone':
-                    const clonedDeploymentName = await this.cloneDeployment({deployment, environment, newDeploymentTitle: this.newDeploymentTitle})
-                    window.location.href = `/dashboard/deployments/${environment.name}/${clonedDeploymentName}`
+                    const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment)
+                    const clonedDeploymentName = await this.cloneDeployment({
+                        deployment,
+                        environment,
+                        newDeploymentTitle: this.newDeploymentTitle,
+                        targetEnvironment,
+                    })
+                    const redirectLocation = `/home/${this.getCurrentNamespace}/-/deployments/${this.cloneTargetEnvironment}/${clonedDeploymentName}`
+                    window.location.href = redirectLocation
                 default:
                     return
 
@@ -249,6 +257,7 @@ export default {
         onIntentToClone(deployment, environment) {
             this.intent = 'clone'
             this.target = {deployment, environment}
+            this.cloneTargetEnvironment = environment.name
             this.newDeploymentTitle = deployment.title
         },
         hasDeployPath(scope) {
@@ -288,8 +297,10 @@ export default {
             'pipelinesPath',
             'UNFURL_MOCK_DEPLOY',
             'lookupDeployPath',
+            'lookupEnvironment',
             'getDeploymentDictionary',
             'getHomeProjectPath',
+            'getCurrentNamespace',
             'deploymentItemDirect'
         ]),
         projectPath() {
@@ -399,6 +410,9 @@ export default {
         },
         deleteWarning() {
             return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isDeployed')
+        },
+        provider() {
+            return this.target?.environment?.primary_provider?.type ?? null
         }
     },
     watch: {
@@ -456,6 +470,11 @@ export default {
             <div v-if="intent == 'clone'">
                 <gl-form-group class="m-3" label="New deployment title">
                     <gl-form-input v-model="newDeploymentTitle"/>
+                    <environment-selection 
+                        class="mt-2"
+                        v-model="cloneTargetEnvironment"
+                        :provider="target.environment.primary_provider.type"
+                    />
                 </gl-form-group>
             </div>
         </gl-modal>
