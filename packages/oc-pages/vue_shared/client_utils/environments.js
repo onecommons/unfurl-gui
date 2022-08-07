@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import graphqlClient from 'oc_pages/project_overview/graphql';
 import {UpdateDeploymentObject} from 'oc_pages/project_overview/graphql/mutations/update_deployment_object.graphql'
 import {postFormDataWithEntries} from './forms'
-import {deleteEnvironmentVariables} from './envvars.js'
+import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars.js'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -23,6 +23,30 @@ export async function lookupEnvironmentId(projectPath, environmentName) {
     result = environments.find(env => env.name == environmentName)?.id ?? -1
 
     return result
+}
+
+export async function shareEnvironmentVariables(projectPath, sourceEnvironment, targetEnvironment, variables, prefix=null) {
+    let _prefix = prefix
+    if(!_prefix) {
+        _prefix = `_${Date.now().toString(36)}`
+    }
+
+
+    const patch = {}
+    for(const environmentVariable of await fetchEnvironmentVariables(projectPath)) {
+        if(environmentVariable.environment_scope != sourceEnvironment) continue
+        if(!variables.includes(environmentVariable.key)) continue
+        delete environmentVariable.id
+        environmentVariable.environment_scope = targetEnvironment
+        environmentVariable.key = `${_prefix}__${environmentVariable.key}`
+
+        patch[environmentVariable.key] = environmentVariable
+    }
+
+    return {
+        prefix: _prefix,
+        patch: await patchEnv(patch, targetEnvironment, projectPath)
+    }
 }
 
 export async function deleteEnvironmentByName(projectPath, environmentName) {
