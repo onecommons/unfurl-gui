@@ -118,7 +118,7 @@ export default {
 
             const size = this.isPrimary? 24: 16
             const className = ['gl-ml-3']
-            let title 
+            let title
             if (this.displayValidation) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
             const name = isValid? 'check-circle-filled': 'error-filled'
             const isProtected = this.card['protected']
@@ -169,11 +169,11 @@ export default {
                         <div class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
-                            <detect-icon v-if="displayValidation" />
+                            <detect-icon v-if="displayValidation" v-bind="statusIconProps" />
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="displayStatus">
-                            <status-icon :size="16" :state="card.state" :status="status" display-text v-bind="statusIconProps "/>
+                            <status-icon :size="16" :state="card.state" :status="status" display-text v-bind="statusIconProps" />
                         </div>
                     </slot>
                 </div>
