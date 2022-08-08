@@ -15,6 +15,8 @@ export default {
     async beforeCreate() {
         let errorContext
 
+        this.$store.dispatch('populateCurrentUser').catch(() => {})
+
         errorContext = 'ocFetchEnvironments'
         this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
             .catch((err) => {

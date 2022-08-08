@@ -11,6 +11,7 @@ export {default as GitHubRepos} from './components/oc/github-repos.vue'
 export {default as ErrorSmall} from './components/oc/ErrorSmall.vue'
 export {default as EmptyStateJob} from './components/oc/empty-state-job.vue'
 export {default as EnvironmentSelection} from './components/oc/environment-selection.vue'
+export {default as DeploymentScheduler} from './components/oc/deployment-scheduler.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 export const PageNotFound = Vue.component("page-not-found", {

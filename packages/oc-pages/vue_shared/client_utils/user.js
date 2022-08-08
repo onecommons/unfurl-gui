@@ -94,3 +94,7 @@ export async function generateAccessToken(tokenName, options) {
     const dom = domParser.parseFromString(response.data, 'text/html')
     return dom.querySelector('#created-personal-access-token')?.value
 }
+
+export async function fetchUser() {
+    return (await axios.get('/api/v4/user'))?.data
+}
