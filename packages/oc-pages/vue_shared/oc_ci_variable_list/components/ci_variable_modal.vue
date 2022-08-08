@@ -222,7 +222,7 @@ export default {
         />
       </gl-form-group>
 
-      <div class="d-none">
+      <div class="d-flex">
         <gl-form-group
           :label="__('Type')"
           label-for="ci-variable-type"
@@ -236,7 +236,7 @@ export default {
           v-if="!isGroup"
           :label="__('Environment scope')"
           label-for="ci-variable-env"
-          class="w-50"
+          class="w-50 d-none"
           data-testid="environment-scope"
         >
           <ci-environments-dropdown
@@ -248,10 +248,10 @@ export default {
         </gl-form-group>
       </div>
 
-      <gl-form-group class="d-none" :label="__('Flags')" label-for="ci-variable-flags">
+      <gl-form-group class="d-flex" :label="__('Flags')" label-for="ci-variable-flags">
         <gl-form-checkbox
           v-model="protected_variable"
-          class="mb-0"
+          class="mb-0 d-none"
           data-testid="ci-variable-protected-checkbox"
         >
           {{ __('Protect variable') }}
@@ -265,6 +265,7 @@ export default {
 
         <gl-form-checkbox
           ref="masked-ci-variable"
+          class="ml-2"
           v-model="masked"
           data-testid="ci-variable-masked-checkbox"
         >

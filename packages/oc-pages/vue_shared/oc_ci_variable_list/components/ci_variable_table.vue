@@ -28,7 +28,6 @@ export default {
       label: s__('CiVariables|Value'),
       customStyle: { width: '40%' },
     },
-    /* oc change
     {
       key: 'protected',
       label: s__('CiVariables|Protected'),
@@ -39,7 +38,6 @@ export default {
       label: s__('CiVariables|Masked'),
       customStyle: { width: '100px' },
     },
-    */
     {
       key: 'actions',
       label: '',
