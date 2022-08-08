@@ -140,7 +140,7 @@ export default {
         }
         currentValue['x-data'] = value
         currentValue['x-component-props'] = {
-          placeholder: currentValue.placeholder,
+          placeholder: currentValue.placeholder || ' ',
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`
         }
         let componentType = currentValue.type;
