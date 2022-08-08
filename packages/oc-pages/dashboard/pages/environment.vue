@@ -36,21 +36,8 @@ export default {
     name: 'Environment',
     components: {OcTab, GlTabs, CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources, DetectIcon},
     data() {
-        const gcpProps = [
-            {name: 'Status', value: 'Connected', valueStyle: {'font-weight': 'bold'}, icon: 'status_success_solid', outboundLink: 'https://youtube.com', outboundLinkText: 'Go to console'},
-            {name: 'Zone', value: 'Value 1'},
-            {name: 'Access Key', value: 'Value 2'},
-            {name: 'Password', value: '**********'},
-        ]
-        const sendGridProps = [
-            {name: 'Status', value: 'Running', valueStyle: {'font-weight': 'bold'}, icon: 'status_success_solid', outboundLink: 'https://youtube.com', outboundLinkText: 'View DB1 (on GCP)'},
-            {name: 'Property 1', value: 'Value 1'},
-            {name: 'Property 2', value: 'Value 2'},
-            {name: 'Property 3', value: 'Value 3'},
-        ]
-
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, gcpProps, sendGridProps, width, unfurl_gui: window.gon.unfurl_gui}
+        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0}
     },
     computed: {
         ...mapGetters([
@@ -87,6 +74,10 @@ export default {
                 default: return __('Local development')
             }
         },
+        hasProviderTab() {
+            const primaryProviderType = this?.environment?.primary_provider?.type
+            return primaryProviderType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primaryProviderType)
+        },
         saveStatus() {
             for(const card of this.getCardsStacked) {
                 if(!this.cardIsValid(card)) return 'disabled'
@@ -101,6 +92,23 @@ export default {
         },
         showDeploymentResources() {
             return this.getCardsStacked.length > 0 || this.hasPreparedMutations
+        },
+        showingDeploymentResourceTab() {
+            if(this.hasProviderTab) {
+                return this.currentTab < 2
+            }
+            return this.currentTab == 0
+        },
+        showingProviderTab() {
+            return this.hasProviderTab && this.currentTab == 0
+        },
+        resourceFilter() {
+            if(this.showingProviderTab) {
+                return (resource) => resource.name == 'primary_provider'
+            } else {
+                return (resource) => resource.name != 'primary_provider'
+            }
+
         }
     },
     methods: {
@@ -200,7 +208,8 @@ export default {
                 </div>
             </template>
         </oc-properties-list>
-        <gl-tabs class="mt-4">
+        <gl-tabs v-model="currentTab" class="mt-4">
+            <oc-tab title="Provider" v-if="hasProviderTab"></oc-tab>
             <oc-tab title="Resources">
                 <div class="d-flex" v-if="!showDeploymentResources">
                     <div class="mr-4">
@@ -220,45 +229,46 @@ export default {
                         </gl-button>
                     </div>
                 </div>
-                <deployment-resources v-show="showDeploymentResources" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
-                    <template #header>
-                        <!-- potentially tricky to translate -->
-                        <div class="d-flex align-items-center">
-                            <h2 style="margin: 0 1.25em">{{__('External Resources used by')}} <span style="font-weight: 400">{{environment.name}}</span></h2>
-                        </div>
-                    </template>
-                    <template #primary-controls>
-                        <div v-if="!isMobileLayout" class="confirm-container">
-                            <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
-                                <div>
-                                    <gl-icon name="plus"/>
-                                    {{__('Add External Resource')}}
-                                </div>
-                            </gl-button>
-                        </div>
-                    </template>
-                    <template #primary-controls-footer>
-                        <div v-if="isMobileLayout" class="confirm-container">
-                            <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
-                                <div>
-                                    <gl-icon name="plus"/>
-                                    {{__('Add External Resource')}}
-                                </div>
-                            </gl-button>
-                        </div>
-                    </template>
-                </deployment-resources>
             </oc-tab>
             <oc-tab title="Variables">
                 <ci-variable-settings v-if="!unfurl_gui"/>
             </oc-tab>
         </gl-tabs>
-        <div v-if="!showDeploymentResources" class="form-actions d-flex justify-content-end">
+        <div v-if="!(showDeploymentResources || showingProviderTab)" class="form-actions d-flex justify-content-end">
             <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
                 <gl-icon name="remove"/>
                 Delete Environment
             </gl-button>
         </div>
+        <deployment-resources v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
+            <template v-if="!showingProviderTab" #header>
+                <!-- potentially tricky to translate -->
+                <div class="d-flex align-items-center">
+                    <h2 style="margin: 0 1.25em">{{__('External Resources used by')}} <span style="font-weight: 400">{{environment.name}}</span></h2>
+                </div>
+            </template>
+            <template #primary-controls>
+                <div v-if="!showingProviderTab && !isMobileLayout" class="confirm-container">
+                    <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                        <div>
+                            <gl-icon name="plus"/>
+                            {{__('Add External Resource')}}
+                        </div>
+                    </gl-button>
+                </div>
+            </template>
+            <template #primary-controls-footer>
+                <div v-if="!showingProviderTab && isMobileLayout" class="confirm-container">
+                    <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                        <div>
+                            <gl-icon name="plus"/>
+                            {{__('Add External Resource')}}
+                        </div>
+                    </gl-button>
+                </div>
+            </template>
+        </deployment-resources>
+
     </div>
 </template>
 <style scoped>

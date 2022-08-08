@@ -99,7 +99,7 @@ export default {
             };
         },
         id() {
-            return generateCardId(this.card.name)
+            return generateCardId(this.card?.name)
         },
         ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
 
@@ -118,6 +118,7 @@ export default {
 
             const size = this.isPrimary? 24: 16
             const className = ['gl-ml-3']
+            if(isValid) className.push('icon-green')
             let title
             if (this.displayValidation) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
             const name = isValid? 'check-circle-filled': 'error-filled'
@@ -163,16 +164,16 @@ export default {
 <template>
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <div :id="id" :data-testid="'card-' + card.name" class="d-flex position-relative w-100 justify-content-between">
+            <div :id="id" :data-testid="card && ('card-' + card.name)" class="d-flex position-relative w-100 justify-content-between">
                 <div class="mr-4 d-flex">
                     <slot name="header">
-                        <div class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
+                        <div v-if="card" class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
                             <detect-icon v-if="displayValidation" v-bind="statusIconProps" />
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
-                        <div class="d-flex m-1" v-if="displayStatus">
+                        <div class="d-flex m-1" v-if="card && displayStatus">
                             <status-icon :size="16" :state="card.state" :status="status" display-text v-bind="statusIconProps" />
                         </div>
                     </slot>
@@ -180,7 +181,7 @@ export default {
 
                 <div class="d-flex align-items-center">
                     <slot name="controls">
-                        <gl-button v-if="!isPrimary && !readonly" @click="openDeletemodal" class="controls">
+                        <gl-button v-if="card && !isPrimary && !readonly && !card._permanent" @click="openDeletemodal" class="controls">
                             <div class="d-flex align-items-center">
                                 <gl-icon name="remove" />
                                 <div> {{__('Remove')}} </div>
