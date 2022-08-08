@@ -1,5 +1,6 @@
 import _ from 'lodash'
 import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import { fetchUser } from 'oc_vue_shared/client_utils/user'
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
 function isMobileLayout() {
@@ -10,7 +11,8 @@ function isMobileLayout() {
 const state = {
     routerHook: DEFAULT_ROUTER_HOOK,
     isMobileLayout: isMobileLayout(),
-    namespace: null
+    namespace: null,
+    user: null
 }
 
 const mutations = {
@@ -25,6 +27,10 @@ const mutations = {
 
     setCurrentNamespace(state, namespace) {
         state.namespace = namespace
+    },
+
+    setUser(state, user) {
+        state.user = user
     }
 }
 
@@ -33,6 +39,9 @@ const getters = {
     getCurrentNamespace(state, getters) {return state.namespace || getters.getUsername},
     getHomeProjectPath(_, getters)  {return `${getters.getCurrentNamespace}/${USER_HOME_PROJECT}`},
     getUsername() {return window.gon.current_username},
+    getUser(state) {
+        return state.user
+    },
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
     pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },
@@ -73,6 +82,10 @@ const actions = {
             30
         ))
     },
+
+    async populateCurrentUser({commit}) {
+        commit('setUser', await fetchUser())
+    } 
 }
 
 export default {state, mutations, getters, actions}
