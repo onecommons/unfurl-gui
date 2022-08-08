@@ -570,6 +570,12 @@ const getters = {
             }
         }
     },
+    getCardExtends(state, getters) {
+        return function(card) {
+            return getters.resolveResourceTypeFromAny(getters.getCardType(card))?.extends ?? null
+        }
+
+    },
     constraintIsHidden(state, getters) {
         return function(dependentName, dependentRequirement) {
             const constraint = state.resourceTemplates[dependentName]
@@ -829,6 +835,10 @@ const getters = {
     },
     getPrimary(state) {
         return state.resourceTemplates[state.deploymentTemplate.primary]
+    },
+
+    hasIncrementalDeployOption(state, getters) {
+        return getters.getCardsStacked.some(card => getters.getCardExtends(card)?.includes('ContainerImageSource'))
     }
 };
 

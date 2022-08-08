@@ -18,7 +18,8 @@ const state = {
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
     projectPath: null,
-    ready: false
+    ready: false,
+    upstreamCommit: null, upstreamProject: null, upstreamId: null, incrementalDeploymentEnabled: false,
 };
 
 function connectionsToArray(environment) {
@@ -154,7 +155,6 @@ const actions = {
             } :
             null
 
-        commit('clearUpstream')
 
         if(pipeline) {pipelines.push(pipeline)}
 
@@ -173,7 +173,9 @@ const actions = {
                 target: parameters.deployPath
             }]
         })
+
         await dispatch('commitPreparedMutations', {}, {root: true})
+        commit('clearUpstream')
         return {pipelineData: data}
     },
     deployInto({dispatch}, parameters) {

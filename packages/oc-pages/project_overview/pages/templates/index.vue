@@ -1,5 +1,5 @@
 <script>
-import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput, GlFormCheckbox} from '@gitlab/ui';
+import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput } from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
@@ -13,6 +13,7 @@ import OcInputs from '../../components/shared/oc_inputs.vue'
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
+import {DeploymentScheduler} from 'oc_vue_shared/oc-components'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
@@ -27,14 +28,14 @@ export default {
     GlSkeletonLoader,
     GlFormGroup,
     GlFormInput,
-    //GlFormCheckbox,
     OcCard,
     OcList,
     OcInputs,
     OcListResource,
     OcTemplateHeader,
     TemplateButtons,
-    ConsoleWrapper
+    ConsoleWrapper,
+    DeploymentScheduler
   },
 
 
@@ -100,13 +101,12 @@ export default {
       'getCurrentEnvironment',
       'availableResourceTypesForRequirement',
       'getValidConnections',
-      'getHomeProjectPath',
       'getProjectInfo',
       'lookupConfigurableTypes',
       'lookupEnvironment',
       'getParentDependency',
       'getPrimary',
-      'environmentsAreReady'
+      'environmentsAreReady',
     ]),
     
     deploymentDir() {
@@ -649,6 +649,7 @@ export default {
 
       </div>
       <!-- End Content -->
+      <deployment-scheduler />
 
       <!-- Buttons -->
       <template-buttons 
