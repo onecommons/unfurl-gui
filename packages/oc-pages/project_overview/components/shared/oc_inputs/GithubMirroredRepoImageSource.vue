@@ -224,6 +224,7 @@ export default {
             if(this.cardIsValid(this.card)) {
                 if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
                     console.log('image already exists')
+                    this.setUpstreamProject(this.projectInfo.id)
                 } else {
                     const upstream = await triggerPipeline(`/${this.projectInfo.path_with_namespace}/-/pipelines`, [], {ref: this.branch})
                     this.setUpstreamCommit(upstream.commit)

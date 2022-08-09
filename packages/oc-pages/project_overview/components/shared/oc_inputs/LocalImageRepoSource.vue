@@ -3,7 +3,7 @@ import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
-import {mapActions} from 'vuex'
+import {mapActions, mapMutations} from 'vuex'
 
 const query = gql`
 query getContainerRepositories($fullPath: ID!) {
@@ -101,6 +101,7 @@ export default {
     },
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapMutations(['onDeploy', 'setUpstreamProject']),
         async setupRegistryCredentials() {
             const projects = await this.userProjectSuggestionsPromise
             const projectId = projects.find(project => project.fullPath == this.project_id)?.id
@@ -154,6 +155,16 @@ export default {
     mounted() {
         this.updateValue()
         this.setupRegistryCredentials()
+
+        this.onDeploy(async () => {
+            if(this.cardIsValid(this.card)) {
+                const projects = await this.userProjectSuggestionsPromise
+                const projectId = projects.find(project => project.fullPath == this.project_id)?.id
+                if(projectId) {
+                    this.setUpstreamProject(projectId)
+                }
+            }
+        })
     }
 }
 </script>
