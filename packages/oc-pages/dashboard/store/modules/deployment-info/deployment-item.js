@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import * as routes from '../../../router/constants'
-import {fetchCommit} from 'oc_vue_shared/client_utils/projects'
+import {fetchCommit, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
@@ -49,6 +49,13 @@ export default class DeploymentItem {
     get artifactsLink() {
         if(this.projectPath && this.job) {
             return `${this.consoleLink}/artifacts/browse`
+        }
+    }
+
+    async getUpstreamPipelineLink() {
+        if(this.projectPath && this.pipeline?.upstream_pipeline_id && this.pipeline?.upstream_project_id) {
+            const upstreamProjectPath = (await fetchProjectInfo(this.pipeline.upstream_project_id))?.path_with_namespace
+            return `/${upstreamProjectPath}/-/pipelines/${this.pipeline.upstream_pipeline_id}`
         }
     }
 
