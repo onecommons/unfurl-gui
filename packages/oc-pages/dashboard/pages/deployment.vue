@@ -9,7 +9,10 @@ import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import {GlTabs} from '@gitlab/ui'
 import {OcTab} from 'oc_vue_shared/oc-components'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
+import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
+import {FLASH_TYPES, default as createFlash} from 'oc_vue_shared/client_utils/oc-flash'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
+
 export default {
     components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable},
     data() {
@@ -25,6 +28,7 @@ export default {
             'lookupEnvironment',
             'lookupDeployPath',
             'getDashboardItems',
+            'isAcknowledged',
             'environmentResourceTypeDict'
         ]),
         breadcrumbItems() {
@@ -80,10 +84,23 @@ export default {
             else if(this.$route.query?.show && tab == 0) {
                 this.$router.push({...this.$route, query: undefined})
             }
+        },
+        deploymentItem: {
+            immediate: true,
+            async handler(val) {
+                if(!val.pipeline?.upstream_project_id) return
+                const upstreamPipeline = (await fetchProjectPipelines(val.pipeline.upstream_project_id)).shift()
+                const acknowledgement = `upstream-failure-${upstreamPipeline.id}`
+                if(upstreamPipeline?.status == 'failed' && !this.isAcknowledged(acknowledgement)) {
+                    const message = 'An error occurred in an upstream pipeline.'
+                    createFlash({type: FLASH_TYPES.ALERT, message, linkTo: upstreamPipeline.web_url, linkText: 'View failed pipeline'})
+                    this.acknowledge(acknowledgement)
+                }
+            }
         }
     },
     methods: {
-        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources']),
+        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge']),
         async prepareView() {
             this.viewReady = false
 
@@ -119,6 +136,10 @@ export default {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
         this.setTabToConsoleIfNeeded()
+
+        console.log(this.isAcknowledged('foo'))
+        this.acknowledge('foo')
+
     }
 }
 </script>

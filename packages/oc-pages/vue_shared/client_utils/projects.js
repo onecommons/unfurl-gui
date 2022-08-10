@@ -10,6 +10,10 @@ export async function fetchProjectInfo(projectId) {
     return (await axios.get(`/api/v4/projects/${projectId}`))?.data
 }
 
+export async function fetchProjectPipelines(projectId) {
+    return (await axios.get(`/api/v4/projects/${projectId}/pipelines`))?.data
+}
+
 export async function fetchProjectAccessTokens(projectId) {
     return (await axios.get(`/api/v4/projects/${projectId}/access_tokens`))?.data
 }
