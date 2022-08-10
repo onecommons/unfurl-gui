@@ -8,6 +8,7 @@ export default {
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
         viewJobsLink: String,
+        viewArtifactsLink: String,
         issuesLinkArgs: Array,
         controlButtons: Array,
         component: {
@@ -80,6 +81,10 @@ export default {
     <component :is='component' v-if="hasButton('job-history')" :href="viewJobsLink">
         <gl-icon :size="16" name="history"/> 
         {{__('Previous Jobs')}}
+    </component>
+    <component :is='component' v-if="hasButton('view-artifacts')" :href="viewArtifactsLink">
+        <gl-icon :size="16" name="archive"/> 
+        {{__('View Artifacts')}}
     </component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>

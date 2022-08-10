@@ -71,6 +71,12 @@ export default {
             //if(this.isUndeployed) result.push('deploy')
             if(this.deploymentItem?.isDeployed) result.push('teardown')
             if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
+
+            const pipeline = this.deploymentItem?.pipeline
+            if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
+                result.push('view-artifacts')
+            } 
+
             result.push('delete')
             return result
         },
@@ -143,6 +149,7 @@ export default {
          :view-deployment-target="viewDeploymentTarget"
          :resume-editing-target="resumeEditingTarget"
          :view-jobs-link="viewJobsLink"
+         :view-artifacts-link="deploymentItem.artifactsLink"
          :control-buttons="primaryControlButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
@@ -160,6 +167,7 @@ export default {
              :resume-editing-target="resumeEditingTarget"
              :view-jobs-link="viewJobsLink"
              :view-deployment-target="viewDeploymentTarget"
+             :view-artifacts-link="deploymentItem.artifactsLink"
              :control-buttons="contextMenuControlButtons"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
