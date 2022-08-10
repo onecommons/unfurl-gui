@@ -7,6 +7,7 @@ export default {
         environment: Object,
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
+        viewJobsLink: String,
         issuesLinkArgs: Array,
         controlButtons: Array,
         component: {
@@ -76,7 +77,7 @@ export default {
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
     <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
-    <component :is='component' v-if="hasButton('job-history')" @click="showPreviousJobs">
+    <component :is='component' v-if="hasButton('job-history')" :href="viewJobsLink">
         <gl-icon :size="16" name="history"/> 
         {{__('Previous Jobs')}}
     </component>
