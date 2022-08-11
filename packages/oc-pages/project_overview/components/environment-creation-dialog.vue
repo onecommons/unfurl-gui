@@ -165,7 +165,7 @@ export default {
                     <template #button-text>
                         <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="selectedCloudProvider" no-default/>{{selectedCloudProvider || __('Select')}} </div>
                     </template>
-                    <gl-dropdown-item :data-testid="`env-option-${CLUSTER_PROVIDER_NAMES[env]}`" :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
+                    <gl-dropdown-item :data-testid="`env-option-${CLUSTER_PROVIDER_NAMES[env] || env.replace(/\s+/g, '')}`" :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
                         <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
                     </gl-dropdown-item>
                 </gl-dropdown>

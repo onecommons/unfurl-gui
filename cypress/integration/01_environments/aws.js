@@ -1,6 +1,5 @@
 const BASE_URL = Cypress.env('OC_URL')
-// const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('AWS_ENVIRONMENT_NAME')
-const ENVIRONMENT_NAME = 'env-test-aws-2022-05-11t19-30-55-239z'
+const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
