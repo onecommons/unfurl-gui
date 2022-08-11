@@ -7,7 +7,7 @@ export default {
       default: false
     },
     href: {
-      type: String | Object,
+      type: [String, Object],
       required: true
     },
   },
