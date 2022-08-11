@@ -1,5 +1,5 @@
 <script>
-import {GlIcon, GlDropdown, GlDropdownItem} from '@gitlab/ui'
+import {GlIcon, GlDropdown, /*GlDropdownItem*/} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import PipelineDropdownItem from './deployment-controls/pipeline-dropdown-item.vue'
@@ -18,9 +18,9 @@ export default {
     components: {
         GlIcon,
         GlDropdown,
-        GlDropdownItem,
+        //GlDropdownItem,
         ControlButtons,
-        PipelineDropdownItem
+        //PipelineDropdownItem
     },
     computed: {
         ...mapGetters([
@@ -71,6 +71,12 @@ export default {
             //if(this.isUndeployed) result.push('deploy')
             if(this.deploymentItem?.isDeployed) result.push('teardown')
             if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
+
+            const pipeline = this.deploymentItem?.pipeline
+            if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
+                result.push('view-artifacts')
+            } 
+
             result.push('delete')
             return result
         },
@@ -85,6 +91,9 @@ export default {
         },
         viewDeploymentTarget() {
             return this.deploymentItem?.viewableLink
+        },
+        viewJobsLink() {
+            return this.deployPath? `/${this.getHomeProjectPath}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
         },
         issuesLinkArgs() {
             return [
@@ -114,10 +123,12 @@ export default {
             await this.deploymentItem.cancelJob()
             window.location.reload()
         },
+        /*
         showPreviousJobs() {
             //this.$emit('showPreviousJobs', this.deployment, this.environment)
             this.$refs.previousJobs?.show()
         },
+         */
         pipelineToJobsLink(pipeline) {
             if(!pipeline) return
             const jobId = this.jobByPipelineId(pipeline.id)?.id
@@ -137,13 +148,14 @@ export default {
          :environment="environment"
          :view-deployment-target="viewDeploymentTarget"
          :resume-editing-target="resumeEditingTarget"
+         :view-jobs-link="viewJobsLink"
+         :view-artifacts-link="deploymentItem.artifactsLink"
          :control-buttons="primaryControlButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
          @cloneDeployment="cloneDeployment"
          @cancelJob="cancelJob"
-         @showPreviousJobs="showPreviousJobs"
         />
         <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
             <template #button-content>
@@ -153,7 +165,9 @@ export default {
              :deployment="deployment"
              :environment="environment"
              :resume-editing-target="resumeEditingTarget"
+             :view-jobs-link="viewJobsLink"
              :view-deployment-target="viewDeploymentTarget"
+             :view-artifacts-link="deploymentItem.artifactsLink"
              :control-buttons="contextMenuControlButtons"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
@@ -162,15 +176,14 @@ export default {
              @startDeployment="startDeployment"
              @cloneDeployment="cloneDeployment"
              @cancelJob="cancelJob"
-             @showPreviousJobs="showPreviousJobs"
              />
         </gl-dropdown>
     </div>
-    <gl-dropdown ref="previousJobs" v-if="pipelines.length > 1" id="jobs-dropdown" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
+    <!--gl-dropdown ref="previousJobs" v-if="pipelines.length > 1" id="jobs-dropdown" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
         <gl-dropdown-item :href="pipelineToJobsLink(pipeline)" :key="pipeline.id" v-for="(pipeline, n) in pipelines.slice(0, -1)">
             <pipeline-dropdown-item :deployment-item="deploymentItem" :pipeline-index="n"/>
         </gl-dropdown-item>
-    </gl-dropdown>
+    </gl-dropdown-->
 </div>
 </template>
 <style scoped>

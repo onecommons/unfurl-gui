@@ -7,13 +7,15 @@ export default {
     data() {
         return {
             createdAtText: null,
+            upstreamPipelineLink: null
         }
     },
     watch: {
         deploymentItem: {
             immediate: true,
-            async handler(item) {
-                this.createdAtText = await item.getCreatedAtText() 
+            handler(item) {
+                item.getUpstreamPipelineLink().then(res => this.upstreamPipelineLink = res) // this doesn't fetch when there's no upstream pipeline reference
+                item.getCreatedAtText().then(res => this.createdAtText = res)
             }
         }
     }
@@ -26,7 +28,8 @@ export default {
         <div v-if="createdAtText">
             <span v-if="deploymentItem.consoleLink">
                 <a :href="deploymentItem.consoleLink">View Job {{deploymentItem.jobStatusMessage}}</a> /
-                <a :href="deploymentItem.artifactsLink">View Artifacts</a>
+                <a v-if="upstreamPipelineLink" :href="upstreamPipelineLink">View Build</a>
+                <a v-else :href="deploymentItem.artifactsLink">View Artifacts</a>
             </span>
         </div>
     </div>
