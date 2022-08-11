@@ -67,8 +67,8 @@ export default {
         customTitle: {
             type: String,
             default: () => ''
-        }
-
+        },
+        filter: Function
     },
 
     directives: {
@@ -224,8 +224,15 @@ export default {
             }
 
             return mapping
-        }
+        },
 
+        presentableCards() {
+            if(typeof this.filter != 'function') {
+                return this.getCardsStacked
+            } else {
+                return this.getCardsStacked.filter(this.filter)
+            }
+        }
     },
 
     watch: {
@@ -518,8 +525,9 @@ export default {
                 :use-status="primaryCardStatus"
                 :custom-title="customTitle"
                 :readonly="readonly"
-                :card="getPrimaryCard"
+                :card="(typeof filter == 'function' ? filter(getPrimaryCard) && getPrimaryCard: getPrimaryCard) || null"
                 :is-primary="true"
+                class="gl-mb-6"
                 @deleteNode="onDeleteNode"
                 >
                 <template v-if="this.$slots.header" #header>
@@ -537,7 +545,7 @@ export default {
 
                     <slot name="primary-pre"/>
                     <!-- Requirements List -->
-                    <oc-list v-if="Object.keys(getPrimaryCard).length > 0"
+                    <oc-list v-if="Object.keys(getPrimaryCard).length > 0 && (typeof filter == 'function' ? filter(getPrimaryCard) && getPrimaryCard: getPrimaryCard)"
                         tabs-title="Dependencies"
                         :display-validation="displayValidation"
                         :render-inputs="renderInputs"
@@ -551,9 +559,9 @@ export default {
                         :readonly="readonly"
                         :card="getPrimaryCard"
                         />
-                    <div v-if="getCardsStacked.length > 0">
+                    <div v-if="presentableCards.length > 0">
                         <oc-card
-                            v-for="(card, idx) in getCardsStacked"
+                            v-for="(card, idx) in presentableCards"
                             :key="__('levelOne-') + card.title"
                             :display-validation="displayValidation"
                             :display-status="displayStatus"
@@ -561,7 +569,7 @@ export default {
                             :card="card"
                             :actions="true"
                             :level="idx"
-                            class="gl-mt-6"
+                            class="gl-mb-6"
                             @deleteNode="onDeleteNode"
                             >
                             <template #controls>

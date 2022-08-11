@@ -3,6 +3,7 @@ import graphqlClient from '../../graphql';
 import {uniq} from 'lodash'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
+import _ from 'lodash'
 import Vue from 'vue'
 
 const state = {loaded: false, callbacks: [], clean: true}
@@ -176,11 +177,18 @@ const actions = {
             Deployment(deployment) {
                 const dt = getters.resolveDeploymentTemplate(deployment.deploymentTemplate)
                 deployment.projectPath = dt?.projectPath
+            },
+            DeploymentEnvironment(de, root) {
+                const providerType = de.primary_provider?.type
+                if(providerType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(providerType)) {
+                    if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
+                    root.ResourceTemplate['primary_provider'] = _.cloneDeep(de.primary_provider)
+                }
             }
         }
 
         // guarunteed ordering
-        const ordering = uniq(['ResourceType', 'DefaultTemplate', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
+        const ordering = uniq(['ResourceType', 'DefaultTemplate', 'DeploymentEnvironment', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
         for(const key of ordering) {
             const value = root[key]

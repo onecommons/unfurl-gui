@@ -77,7 +77,11 @@ Serializers = {
     DeploymentEnvironment(env) {
         allowFields(env, 'connections', 'instances')
         fieldsToDictionary(env, 'connections', 'instances')
-        return Object.values(env.instances || {})
+        if(env.instances.primary_provider) {
+            env.connections.primary_provider = env.instances.primary_provider
+            delete env.instances.primary_provider
+        }
+        return Object.values(env.instances || {}).concat(Object.values(env.connections))
     },
     DeploymentTemplate(dt, state) {
         // should we be serializing local templates?

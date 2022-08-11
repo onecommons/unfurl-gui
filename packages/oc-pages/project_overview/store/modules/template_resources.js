@@ -309,8 +309,32 @@ const actions = {
     // used by /dashboard/environment/<environment-name> TODO merge these actions
     populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
         for(const resource of resourceTemplates) {
-            //dispatch('createMatchedResources', {resource})
             commit('createTemplateResource', {...resource})
+        }
+        let primary_provider
+        if(primary_provider = getters.lookupResourceTemplate('primary_provider')) {
+            primary_provider = _.cloneDeep(primary_provider)
+            commit('pushPreparedMutation', (accumulator) => {
+                const patch = accumulator['DeploymentEnvironment'][environmentName]
+                if(Array.isArray(patch.instances)) {
+                    const instance = patch.instances.find(instance => instance.name == 'primary_provider')
+                    if(instance) {
+                        Object.assign(instance, primary_provider)
+                    } else {
+                        patch.instances.push(primary_provider)
+                    }
+                } else {
+                    console.warn('untested code path')
+                    patch.instances['primary_provider'] = primary_provider
+                }
+                return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
+            }, {root: true});
+
+            commit('clientDisregardUncommitted', null, {root: true})
+
+            commit('createTemplateResource', {...primary_provider, title: 'Primary Provider', _permanent: true})
+
+            commit('setDeploymentTemplate', {primary: 'primary_provider'})
         }
         commit('updateLastFetchedFrom', {environmentName, noPrimary: true});
         commit('setContext', context)
@@ -636,7 +660,7 @@ const getters = {
         }
     },
     getCardsStacked: (_state, getters, _a, rootGetters) => {
-        if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates)
+        if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates).filter(rt => !_state.deploymentTemplate?.primary || rt.name != _state.deploymentTemplate.primary)
         let cards = Object.values(_state.resourceTemplates)
 
         // hacky workaround for broken dependency hierarchy in resources for default templates
