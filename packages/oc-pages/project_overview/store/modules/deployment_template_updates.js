@@ -145,7 +145,7 @@ Serializers = {
             }
         })
 
-        rt.dependencies.forEach(dep => {
+        rt.dependencies?.forEach(dep => {
             if(! dep.constraint.visibility) {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
             }
