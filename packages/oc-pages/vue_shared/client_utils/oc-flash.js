@@ -18,7 +18,17 @@ export default function createFlash(options) {
         //message = `${message}<div>${options.issue}</div>`
     }
     const result = glCreateFlash({...options, message, type})
-    if(options.issue || type == FLASH_TYPES.ALERT) {
+    if(options.linkTo && options.linkText) {
+        window.requestAnimationFrame(() => {
+            const flashText = result.querySelector('.flash-container .flash-text')
+            const link = document.createElement('A')
+            const linkContainer = document.createElement('DIV')
+            link.textContent = options.linkText
+            link.href = options.linkTo
+            linkContainer.appendChild(link)
+            flashText.appendChild(linkContainer)
+        })
+    } else if(options.issue || type == FLASH_TYPES.ALERT) {
         window.requestAnimationFrame(async () => {
             const flashText = result.querySelector('.flash-container .flash-text')
             const issueContext = document.createElement('SPAN')
@@ -35,17 +45,7 @@ export default function createFlash(options) {
 
             flashText.appendChild(issueContainer)
         })
-    } else if(options.linkTo && options.linkText) {
-        window.requestAnimationFrame(() => {
-            const flashText = result.querySelector('.flash-container .flash-text')
-            const link = document.createElement('A')
-            const linkContainer = document.createElement('DIV')
-            link.textContent = options.linkText
-            link.href = options.linkTo
-            linkContainer.appendChild(link)
-            flashText.appendChild(linkContainer)
-        })
-    }
+    } 
     lastOCFlash = result
     return result
 }

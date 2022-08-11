@@ -32,7 +32,7 @@ export default {
         const data =  {
             importHandler,
             branch: null,
-            github_project: null,
+            source_repo: null,
             branchesPromise: null,
             projectInfo: null,
             username: null,
@@ -82,11 +82,11 @@ export default {
             return null
         },
         searchableBranchesTip() {
-            return !this.useDefaultBranch && this.github_project && !this.branch && this.repoImport?.importStatus != IMPORTED
+            return !this.useDefaultBranch && this.source_repo && !this.branch && this.repoImport?.importStatus != IMPORTED
         },
         repoImport() {
             if(this.importHandler.status == AUTHENTICATED) {
-                return this.importHandler.findRepo(this.github_project)
+                return this.importHandler.findRepo(this.source_repo)
             }
             return null
         }
@@ -94,12 +94,12 @@ export default {
     watch: {
         projectInfo() { this.setDefaultBranchIfPossible() },
         useDefaultBranch() { this.setDefaultBranchIfPossible() },
-        github_project(val) {
+        source_repo(val) {
             this.branch = null
             if(this.projectInfo?.id != this.repoImport?.id) {
                 this.projectInfo = null
             }
-            this.updateValue('github_project')
+            this.updateValue('source_repo')
         },
         branch() {
             this.updateValue('branch')
@@ -159,7 +159,7 @@ export default {
         },
         async updateValue(propertyName) {
             let status = (
-                this.github_project &&
+                this.source_repo &&
                 this.branch &&
                 this.project_id &&
                 this.remote_git_url &&
@@ -208,10 +208,10 @@ export default {
     },
     async mounted() {
         this.updateValue()
-        const github_project = this.card.properties.find(prop => prop.name == 'github_project')?.value
-        if(github_project) {
+        const source_repo = this.card.properties.find(prop => prop.name == 'source_repo')?.value
+        if(source_repo) {
             await this.importHandler.loadReposPromise
-            this.github_project = github_project
+            this.source_repo = source_repo
         }
 
         Vue.nextTick(() => {
@@ -224,6 +224,7 @@ export default {
             if(this.cardIsValid(this.card)) {
                 if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
                     console.log('image already exists')
+                    this.setUpstreamProject(this.projectInfo.id)
                 } else {
                     const upstream = await triggerPipeline(`/${this.projectInfo.path_with_namespace}/-/pipelines`, [], {ref: this.branch})
                     this.setUpstreamCommit(upstream.commit)
@@ -240,7 +241,7 @@ export default {
         <github-auth :importHandler="importHandler">
             <div class="d-flex flex-wrap justify-content-between">
                 <div style="flex-grow: 1;" class="d-flex flex-column">
-                    <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
+                    <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="source_repo" :fetch-suggestions="getRepoSuggestions">
                         <template #prepend>Github Project</template>
                     </el-autocomplete>
                     <a target="_blank" style="height: 0; width: min(500px, 100%); text-align: right;" v-if="projectInfo && projectInfo.web_url" :href="projectInfo.web_url">{{projectInfo.name_with_namespace}}</a>

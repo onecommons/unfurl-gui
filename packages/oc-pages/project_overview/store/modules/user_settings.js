@@ -9,6 +9,7 @@ const state = {
 const mutations = {
   initUserSettings(state, { username }) {
     Object.assign(state, JSON.parse(localStorage.getItem(`${LOCALSTORAGE_KEY}-${username}`)))
+    if(!state.acknowledged) state.acknowledged = {}
   },
   setLastUsedEnvironmentList(state, { updatedLastUsedEnvironmentList }) {
     state.lastUsedEnvironmentList = updatedLastUsedEnvironmentList
@@ -24,6 +25,11 @@ const actions = {
     commit('_applyUserSetting', props)
     dispatch('save', {username: rootGetters.getUsername})
   },
+
+  acknowledge({state, dispatch}, acknowledgement) {
+    dispatch('applyUserSetting', {key: 'acknowledged', value: {...state.acknowledged, [acknowledgement]: '1'}})
+  },
+
   updateLastUsedEnvironment({ commit, dispatch, state }, { lastUsedEnvironment, username }) {
     let foundSameCloud = false
 
@@ -56,7 +62,12 @@ const actions = {
 
 const getters = {
   getUserSettings(state) {
-    return state 
+    return state
+  },
+  isAcknowledged(state) {
+    return function(acknowledgement) {
+      return state.acknowledged?.hasOwnProperty(acknowledgement)
+    }
   },
   getLastUsedEnvironment: (state, _a, _b, rootGetters) => function({ cloud }) {
     return state.lastUsedEnvironmentList
