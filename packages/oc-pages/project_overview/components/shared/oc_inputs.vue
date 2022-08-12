@@ -8,6 +8,7 @@ import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, 
 import {Card as ElCard} from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
 import {tryResolveDirective} from 'oc_vue_shared/lib'
+import {getCustomTooltip} from './oc_inputs'
 
 
 const ComponentMap = {
@@ -135,11 +136,15 @@ export default {
         }
         currentValue.title = currentValue.title ?? name;
         currentValue['x-decorator'] = 'FormItem'
+        currentValue['x-decorator-props'] = {}
+
         if(currentValue.type == 'number') {
-          currentValue['x-decorator-props'] = {
-            className: 'oc-input-number'
-          }
+          currentValue['x-decorator-props'].className = 'oc-input-number'
         }
+        if(getCustomTooltip(name)) {
+          currentValue['x-decorator-props'].tooltip = {...getCustomTooltip(name), f: () => ({$store: this.$store, card: this.card})}
+        }
+
         currentValue['x-data'] = value
         currentValue['x-component-props'] = {
           placeholder: currentValue.placeholder || ' ',
