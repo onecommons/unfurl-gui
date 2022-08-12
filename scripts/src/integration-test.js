@@ -50,17 +50,15 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'OC_USERNAME',
   'OC_PASSWORD',
   'OC_URL',
-  'AWS_ACCESS_KEY_ID',
-  'AWS_DEFAULT_REGION',
-  'AWS_SECRET_ACCESS_KEY',
+  'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION', 'AWS_SECRET_ACCESS_KEY',
   'GOOGLE_APPLICATION_CREDENTIALS', 'CLOUDSDK_COMPUTE_ZONE', 'CLOUDSDK_CORE_PROJECT',
+  'DIGITALOCEAN_TOKEN', 'DO_DEFAULT_REGION',
+  'DIGITALOCEAN_DNS_NAME', // not currently in use
   'REPOS_NAMESPACE',
   'SIMPLE_BLUEPRINT',
-  'DIGITALOCEAN_TOKEN',
   'GCP_DNS_ZONE', 'AWS_DNS_ZONE',
   'MOCK_DEPLOY', 'UNFURL_MOCK_DEPLOY', 'UNFURL_VALIDATION_MODE', 'VALIDATION_MODE',
-  'OC_IMPERSONATE', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', // always overriden
-  'DIGITALOCEAN_DNS_NAME', // not currently in use
+  'OC_IMPERSONATE', 'DO_ENVIRONMENT_NAME', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', // always overriden
   'MAIL_USERNAME', 'MAIL_PASSWORD', 'SMTP_HOST', 'MAIL_RESOURCE_NAME',
   'DEPLOY_IMAGE', 'DEPLOY_TAG',
   'TEARDOWN', 'GENERATE_SUBDOMAINS', // used in recreate deployment
@@ -130,8 +128,9 @@ async function main() {
 
   const GCP_ENVIRONMENT_NAME = identifierFromCurrentTime('gcp').toLowerCase()
   const AWS_ENVIRONMENT_NAME = identifierFromCurrentTime('aws').toLowerCase()
+  const DO_ENVIRONMENT_NAME = identifierFromCurrentTime('do').toLowerCase()
 
-  const forwardedEnv = forwardedEnvironmentVariables({OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, REPOS_NAMESPACE})
+  const forwardedEnv = forwardedEnvironmentVariables({OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, REPOS_NAMESPACE})
 
   const cypressCommand = invokeCypressCommand(args._, forwardedEnv)
 

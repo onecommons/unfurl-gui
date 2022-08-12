@@ -2,6 +2,7 @@ import './recreate-deployment-helpers'
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const DO_ENVIRONMENT_NAME = Cypress.env('DO_ENVIRONMENT_NAME')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
@@ -62,6 +63,15 @@ Cypress.Commands.add('recreateDeployment', options => {
       dnsZone = GCP_DNS_ZONE
       cy.whenEnvironmentAbsent(env, () => {
         cy.createGCPEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+        })
+      })
+    } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.DigitalOcean') {
+      env = DO_ENVIRONMENT_NAME
+      dnsZone = AWS_DNS_ZONE // not a mistake
+      cy.whenEnvironmentAbsent(env, () => {
+        cy.createDigitalOceanEnvironment({
           environmentName: env,
           shouldCreateExternalResource: true,
         })
