@@ -27,7 +27,7 @@ export async function lookupEnvironmentId(projectPath, environmentName) {
 
 export async function shareEnvironmentVariables(projectPath, sourceEnvironment, targetEnvironment, variables, prefix=null) {
     let _prefix = prefix
-    if(!_prefix) {
+    if(_prefix === null) {
         _prefix = `_${Date.now().toString(36)}`
     }
 
@@ -38,7 +38,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
         if(!variables.includes(environmentVariable.key)) continue
         delete environmentVariable.id
         environmentVariable.environment_scope = targetEnvironment
-        environmentVariable.key = `${_prefix}__${environmentVariable.key}`
+        environmentVariable.key = prefix? `${_prefix}__${environmentVariable.key}`: environmentVariable.key
 
         patch[environmentVariable.key] = environmentVariable
     }

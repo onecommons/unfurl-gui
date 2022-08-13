@@ -4,11 +4,11 @@ import { __ } from '~/locale';
 import _ from 'lodash'
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
-import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem} from '@gitlab/ui'
+import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider, GlFormCheckbox} from '@gitlab/ui'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/oc-components'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {token} from 'oc_vue_shared/compat.js'
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
 
 
 const LOCAL_DEV = 'Local Dev'
@@ -27,6 +27,8 @@ export default {
         GlFormInput,
         GlDropdown,
         GlDropdownItem,
+        GlDropdownDivider,
+        GlFormCheckbox,
         DetectIcon,
         ErrorSmall
     },
@@ -47,11 +49,12 @@ export default {
             CLUSTER_PROVIDER_NAMES,
             token,
             nameStartsWithNumber: false,
-            duplicateName: false
+            duplicateName: false,
+            enableShowExistingProviders: true,
         }
     },
     computed: {
-        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath']),
+        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders']),
         environmentsList() {
             const result = Object.keys(CLUSTER_PROVIDER_NAMES)
 
@@ -70,6 +73,23 @@ export default {
         },
         action() {
             return `${window.origin}/${this.getHomeProjectPath}/-/environments`
+        },
+        filteredAvailableProviders() {
+            return this.availableProviders.filter(provider => {
+                if(provider.source == 'instance') return true
+                if([lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(provider.template.type)) return false
+
+                return true
+            })
+        },
+        showExistingProviders() {
+            return this.enableShowExistingProviders && this.availableProviders?.length
+        },
+        currentType() {
+            return this.selectedCloudProvider?.template?.type || this.selectedCloudProvider
+        },
+        currentText() {
+            return this.displayProvider(this.selectedCloudProvider) || this.selectedCloudProvider || __('Select')
         }
     },
     watch: {
@@ -87,6 +107,7 @@ export default {
         }
     },
     methods: {
+        ...mapActions(['environmentFromProvider']),
         async createLocalDevEnvironment() {
           // this is an ugly hack, refactor to just submit the form
           sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
@@ -116,7 +137,13 @@ export default {
             sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
             sessionStorage['environmentFormAction'] = this.action
 
-            if (! CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]) {
+            if(typeof this.selectedCloudProvider != 'string') {
+                sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
+                sessionStorage['environmentFormAction'] = this.action
+                await postGitlabEnvironmentForm();
+                await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: this.selectedCloudProvider})
+                window.location.href = redirectTarget;
+            } else if(! CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]) {
               await this.createLocalDevEnvironment()
               window.location.href = redirectTarget;
             } else {
@@ -126,6 +153,9 @@ export default {
 
               window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]}`
             }
+        },
+        displayProvider(provider) {
+            return provider?.template?.name == 'primary_provider' && provider?.source == 'connection'? provider?.environment?.name: provider?.template?.name
         },
         slugify
     },
@@ -158,18 +188,33 @@ export default {
 
         <gl-form-group
             label="Cloud Provider"
-            class="col-md-4 align_left"
+            class="col-md-8 align_left"
             >
-            <div class="dropdown-parent">
-                <gl-dropdown data-testid="cloud-provider-dropdown">
-                    <template #button-text>
-                        <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="selectedCloudProvider" no-default/>{{selectedCloudProvider || __('Select')}} </div>
-                    </template>
-                    <gl-dropdown-item :data-testid="`env-option-${CLUSTER_PROVIDER_NAMES[env] || env.replace(/\s+/g, '')}`" :key="env" v-for="env in environmentsList" @click="() => selectedCloudProvider = env">
-                        <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
-                    </gl-dropdown-item>
-                </gl-dropdown>
-            </div>
+                <div class="dropdown-parent">
+                    <gl-dropdown data-testid="cloud-provider-dropdown">
+                        <template #header>
+                            <div>
+                                <gl-form-checkbox v-model="enableShowExistingProviders" style="margin: 0 1rem;">Show existing providers</gl-form-checkbox>
+                                <gl-dropdown-divider />
+                            </div>
+                        </template>
+                        <template #button-text>
+                            <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="currentType" no-default/>{{currentText}} </div>
+                        </template>
+                        <gl-dropdown-item :data-testid="`env-option-${CLUSTER_PROVIDER_NAMES[env] || env.replace(/\s+/g, '')}`" :key="env" v-for="env in environmentsList" @click="selectedCloudProvider = env">
+                            <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
+                        </gl-dropdown-item>
+                        <div v-if="showExistingProviders">
+                            <gl-dropdown-divider />
+                            <gl-dropdown-item @click="selectedCloudProvider = provider" :key="`${provider.template.name}.${provider.environment.name}`" v-for="provider in filteredAvailableProviders">
+                                <div style="display: flex; align-items: center;"> 
+                                    <detect-icon class="mr-2" :type="provider.template.type"/>
+                                    <div style="white-space: pre">{{displayProvider(provider)}}</div>
+                                </div>
+                            </gl-dropdown-item>
+                        </div>
+                    </gl-dropdown>
+                </div>
         </gl-form-group>
         <form class="d-none" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
