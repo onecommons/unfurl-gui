@@ -83,7 +83,7 @@ export default {
             })
         },
         showExistingProviders() {
-            return this.enableShowExistingProviders && this.availableProviders?.length
+            return this.enableShowExistingProviders && this.filteredAvailableProviders?.length
         },
         currentType() {
             return this.selectedCloudProvider?.template?.type || this.selectedCloudProvider
@@ -192,7 +192,7 @@ export default {
             >
                 <div class="dropdown-parent">
                     <gl-dropdown data-testid="cloud-provider-dropdown">
-                        <template #header>
+                        <template v-if="filteredAvailableProviders.length > 0" #header>
                             <div>
                                 <gl-form-checkbox v-model="enableShowExistingProviders" style="margin: 0 1rem;">Show existing providers</gl-form-checkbox>
                                 <gl-dropdown-divider />
