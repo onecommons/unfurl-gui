@@ -33,7 +33,7 @@ export default {
         const data =  {
             importHandler,
             branch: null,
-            source_repo: null,
+            github_project: null,
             branchesPromise: null,
             projectInfo: null,
             username: null,
@@ -87,11 +87,11 @@ export default {
             return null
         },
         searchableBranchesTip() {
-            return !this.useDefaultBranch && this.source_repo && !this.branch && this.repoImport?.importStatus != IMPORTED
+            return !this.useDefaultBranch && this.github_project && !this.branch && this.repoImport?.importStatus != IMPORTED
         },
         repoImport() {
             if(this.importHandler.status == AUTHENTICATED) {
-                return this.importHandler.findRepo(this.source_repo)
+                return this.importHandler.findRepo(this.github_project)
             }
             return null
         }
@@ -99,12 +99,12 @@ export default {
     watch: {
         projectInfo() { this.setDefaultBranchIfPossible() },
         useDefaultBranch() { this.setDefaultBranchIfPossible() },
-        source_repo(val) {
+        github_project(val) {
             this.branch = null
             if(this.projectInfo?.id != this.repoImport?.id) {
                 this.projectInfo = null
             }
-            this.updateValue('source_repo')
+            this.updateValue('github_project')
         },
         branch() {
             this.updateValue('branch')
@@ -133,7 +133,7 @@ export default {
     },
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
-        ...mapMutations(['onDeploy', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject']),
+        ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject']),
         generateIssueLinkSync,
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
@@ -165,7 +165,7 @@ export default {
         },
         async updateValue(propertyName) {
             let status = (
-                this.source_repo &&
+                this.github_project &&
                 this.branch &&
                 this.project_id &&
                 this.remote_git_url &&
@@ -214,10 +214,10 @@ export default {
     },
     async mounted() {
         this.updateValue()
-        const source_repo = this.card.properties.find(prop => prop.name == 'source_repo')?.value
-        if(source_repo) {
+        const github_project = this.card.properties.find(prop => prop.name == 'github_project')?.value
+        if(github_project) {
             await this.importHandler.loadReposPromise
-            this.source_repo = source_repo
+            this.github_project = github_project
         }
 
         Vue.nextTick(() => {
@@ -226,7 +226,7 @@ export default {
         })
 
 
-        this.onDeploy(async () => {
+        this.onSaveEnvironment(async () => {
             if(this.cardIsValid(this.card)) {
                 if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
                     console.log('image already exists')
@@ -252,7 +252,7 @@ export default {
     <github-auth v-else :importHandler="importHandler">
         <div class="d-flex flex-wrap justify-content-between">
             <div style="flex-grow: 1;" class="d-flex flex-column">
-                <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="source_repo" :fetch-suggestions="getRepoSuggestions">
+                <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
                     <template #prepend>Github Project</template>
                 </el-autocomplete>
                 <a target="_blank" style="height: 0; width: min(500px, 100%); text-align: right;" v-if="projectInfo && projectInfo.web_url" :href="projectInfo.web_url">{{projectInfo.name_with_namespace}}</a>

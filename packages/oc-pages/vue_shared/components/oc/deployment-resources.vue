@@ -328,6 +328,7 @@ export default {
             'connectNodeResource',
             'deleteDeploymentTemplate',
             'commitPreparedMutations',
+            'runEnvironmentSaveHooks',
         ]),
 
         promptAddExternalResource() {
@@ -361,8 +362,9 @@ export default {
             }, timeToWait);
         },
 
-        async triggerSave() {
+        async triggerSave(reason) {
             try {
+                if(reason != 'deploy') { await this.runEnvironmentSaveHooks() }
                 await this.commitPreparedMutations();
                 this.$emit('saveTemplate')
                 createFlash({
@@ -382,7 +384,7 @@ export default {
             try {
                 this.deployButton = false;
                 this.loadingDeployment = true;
-                await this.triggerSave();
+                await this.triggerSave('deploy');
                 await this.createDeploymentPathPointer({projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
                 const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName });
                 createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
