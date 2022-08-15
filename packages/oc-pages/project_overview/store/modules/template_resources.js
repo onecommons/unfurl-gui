@@ -431,27 +431,71 @@ const actions = {
         }
     },
 
-    async connectNodeResource({state, rootGetters, commit}, {dependentName, dependentRequirement, nodeResource}) {
+    async connectNodeResource({getters, state, rootGetters, commit}, {dependentName, dependentRequirement, externalResource, resource}) {
 
         const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
-        const resourceTemplate = rootGetters.lookupConnection(environmentName, nodeResource);
-        /*
-        commit(
-            'pushPreparedMutation',
-            appendResourceTemplateInDependent({dependentName, dependentRequirement, templateName: nodeResource, deploymentTemplateName: state.deploymentTemplate.name})
+        const deploymentTemplateName = state.lastFetchedFrom.templateSlug
+        let resourceTemplateNode
+        if(externalResource) {
+            const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
+            resourceTemplateNode = {...resourceTemplate, name: `__${externalResource}`, dependentName, dependentRequirement, deploymentTemplateName}
+            commit(
+                'pushPreparedMutation',
+                createResourceTemplate(resourceTemplateNode),
+            )
+        } else if(resource) {
 
-        )
-        */
+            function setManifestIfNeeded() {
+                const environment = rootGetters.lookupEnvironment(environmentName)
+                if(environment.external?.hasOwnProperty(resource._deployment)) return
 
-        // Workaround for connected resource issues
-        const resourceTemplateNode = {...resourceTemplate, name: `__${nodeResource}`, dependentName, dependentRequirement, deploymentTemplateName: state.lastFetchedFrom.templateSlug}
-        commit(
-            'pushPreparedMutation',
-            createResourceTemplate(resourceTemplateNode),
-        )
+                commit(
+                    'pushPreparedMutation',
+                    (acc) => {
+                        let patch 
+                        try {
+                            patch = acc['DeploymentEnvironment'][environmentName]
+                        } catch(e) {
+                            patch = rootGetters.lookupEnvironment(environmentName)
+                        }
+                        const external = patch.external || {}
 
-        //
+                        /*
+                             <DEPLOYMENTNAME>:
+                                 manifest: <DEPLOYMENTPATH>
+                                 instance: "*"
+                        */
+
+                        const manifest = rootGetters.lookupDeployPath(resource._deployment, environmentName)?.name
+                        external[resource._deployment] = {
+                            manifest,
+                            instance: "*"
+                        }
+
+                        patch.external = external
+                        return [{typename: 'DeploymentEnvironment', patch, target: environmentName}]
+                    },
+                    {root: true}
+                )
+            } 
+
+            commit('onSaveEnvironment', () => {
+                if(getters.cardIsValid(resource.name)) {
+                    setManifestIfNeeded()
+                }
+            })
+
+            commit(
+                'pushPreparedMutation',
+                () => [{typename: 'ResourceTemplate', patch: resource, target: resource.name}]
+            )
+            commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: resource.name, dependentName, dependentRequirement, deploymentTemplateName}))
+            resourceTemplateNode = resource
+        } else {
+            throw new Error('connectNodeResource must be called with either "resource" or "externalResource" set')
+        }
+
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate: resourceTemplateNode, fieldsToReplace});
         commit('createTemplateResource', resourceTemplateNode)
     },
@@ -621,6 +665,7 @@ const getters = {
         return function(cardName) {
             const card = state.resourceTemplates[cardName?.name || cardName]
             if(!card) return false
+            if(card.directives?.includes('select')) return true
 
             if(card.__typename == 'Resource') {
                 return getters.resourceCardIsHidden(card)

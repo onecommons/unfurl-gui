@@ -325,7 +325,8 @@ export default {
       'commitPreparedMutations',
       'populateTemplateResources',
       'fetchProject',
-      'deployInto'
+      'deployInto',
+      'createDeploymentPathPointer'
     ]),
 
     unloadHandler(e) {
@@ -394,25 +395,12 @@ export default {
         this.activeSkeleton = false;
       }
     },
-    async createDeploymentPathPointer() {
-      this.setUpdateObjectPath('environments.json')
-      this.setUpdateObjectProjectPath(this.getHomeProjectPath)
-      const environment = this.$route.params.environment
-      this.pushPreparedMutation(() => {
-        return [{
-          typename: 'DeploymentPath',
-          patch: {__typename: 'DeploymentPath', environment},
-          target: this.deploymentDir
-        }]
-      })
-      await this.commitPreparedMutations()
-    },
     debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
     async triggerSave(type) {
       try {
         await this.commitPreparedMutations();
         if(type == 'draft'){
-          await this.createDeploymentPathPointer()
+          await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
           sessionStorage['oc_flash'] = JSON.stringify({
             message: __('Draft saved!'),
             type: FLASH_TYPES.SUCCESS,
@@ -526,8 +514,12 @@ export default {
     async onSubmitModalConnect() {
       //throw new Error('connectNodeResource needs to be reimplemented')
       try { 
-        const { name } = this.selectedServiceToConnect;
-        await this.connectNodeResource({ nodeResource: name, ...this.connectNodeResourceData });
+        if(this.selectedServiceToConnect?.__typename == 'Resource') {
+            await this.connectNodeResource({ resource: this.selectedServiceToConnect, ...this.connectNodeResourceData });
+        } else {
+            const { name } = this.selectedServiceToConnect;
+            await this.connectNodeResource({ externalResource: name, ...this.connectNodeResourceData });
+        }
       }catch(e) {
         console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });

@@ -17,6 +17,7 @@ const state = {
     projectEnvironments: [],
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
+    saveEnvironmentHooks: [],
     projectPath: null,
     ready: false,
     upstreamCommit: null, upstreamProject: null, upstreamId: null, incrementalDeploymentEnabled: false,
@@ -49,6 +50,15 @@ function toProjectTokenEnvKey(projectId) {
 }
 
 const mutations = {
+
+    onSaveEnvironment(state, cb) {
+        state.saveEnvironmentHooks.push(cb)
+        state.saveEnvironmentHooks = state.saveEnvironmentHooks
+    },
+
+    clearSaveEnvironmentHooks(state) {
+        state.saveEnvironmentHooks = []
+    },
 
     setEnvironments(state, environments) {
         state.environments = environments
@@ -125,6 +135,18 @@ const mutations = {
 
 const actions = {
 
+    async runEnvironmentSaveHooks({state, commit}) {
+        const promises = []
+        for(const hook of state.saveEnvironmentHooks) {
+            let result = hook()
+            if(typeof result?.then == 'function') {
+                result = await result
+            }
+            if(result === false) { return false }
+        }
+        return true
+    },
+
     async environmentTriggerPipeline({rootGetters, state, getters, commit, dispatch}, parameters) {
         if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
@@ -174,6 +196,7 @@ const actions = {
             }]
         })
 
+        await dispatch('runEnvironmentSaveHooks')
         await dispatch('commitPreparedMutations', {}, {root: true})
         commit('clearUpstream')
         return {pipelineData: data}
@@ -261,6 +284,8 @@ const actions = {
             // alternatively we could check if it's cached
             environments = cloneDeep(data.project.environments).nodes.map(environment => {
                 Object.assign(environment, environment.deploymentEnvironment)
+                // alternative to adding a graphql type?
+                environment.external = environment.clientPayload.DeploymentEnvironment.external || {}
                 const deploymentPaths = Object.values(environment.clientPayload.DeploymentPath || {})
                 commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
                 commit('setDeploymentPaths', deploymentPaths)
@@ -356,6 +381,13 @@ const getters = {
             const cextends = rootGetters.resolveResourceType(conn.type)?.extends
             return cextends && cextends.includes(constraintType)
         })
+        rootGetters.filteredPrimariesByEnvironment(environmentName, (primary, {type}) => type?.extends?.includes(constraintType))
+            .forEach(primary => {
+                const name = `__${primary._deployment}`
+                const title = rootGetters.lookupDeployment(primary._deployment, environmentName)?.title || name
+                result.push({...primary, name, title})
+            })
+
         return result
     },
     getMatchingEnvironments: (_, getters) => function(type) {
