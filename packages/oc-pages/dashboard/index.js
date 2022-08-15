@@ -7,10 +7,11 @@ import store from './store';
 import createRouter from './router';
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {setupTheme} from 'oc_vue_shared/theme'
-import {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
+import ElementUI, {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 
 Vue.use(GlToast);
+Vue.use(ElementUI)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 Vue.component('el-popover', ElPopover)
 
