@@ -45,7 +45,15 @@ export default {
             pathComponents.slice(1).join('/');
         this.setCurrentNamespace(currentNamespace);
 
-        await Promise.all([this.loadDashboard(), this.populateJobsList()])
+        try {
+          await Promise.all([this.loadDashboard(), this.populateJobsList()])
+        } catch(e) {
+          if(currentNamespace != this.getUsername) {
+            window.location.href = '/404.html'
+          } else {
+            throw(e)
+          }
+        }
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()
         
