@@ -20,3 +20,10 @@ test('prefix environment variables', () => {
     expect(environmentVariableDependencies(deploymentObj)).toContain('foo__mail_server__password')
 
 })
+
+const ResourceTemplate1 = () => JSON.parse('{"name":"primary_provider","type":"unfurl.relationships.ConnectsTo.DigitalOcean","__typename":"ResourceTemplate","dependencies":[],"properties":[{"name":"DIGITALOCEAN_TOKEN","value":{"get_env":"primary_provider__DIGITALOCEAN_TOKEN"}}],"computedProperties":[]}')
+
+test('list environment variable dependencies in a resource template', () => {
+    const resourceTemplate = ResourceTemplate1()
+    expect(environmentVariableDependencies(resourceTemplate)).toHaveLength(1)
+})
