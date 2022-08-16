@@ -27,18 +27,18 @@ const actions = {
         console.warn('fetch deployments has no effect and will be removed')
     },
 
-    async createDeploymentPathPointer({commit, dispatch, rootGetters}, {environment, deploymentDir, dryRun}) {
+    async createDeploymentPathPointer({commit, dispatch, rootGetters}, {projectPath, environment, deploymentDir, dryRun, environmentName}) {
         commit('setUpdateObjectPath', 'environments.json')
-        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath)
-        const environmentName = environment?.name || environment
-        commit(
-            'pushPreparedMutation',
-            () => [{
+        commit('setUpdateObjectProjectPath', projectPath || rootGetters.getHomeProjectPath)
+        const _environmentName = environmentName || environment?.name || environment
+        const mutation = () => [{
                 typename: 'DeploymentPath',
-                patch: {__typename: 'DeploymentPath', environment: environmentName},
+                patch: {__typename: 'DeploymentPath', environment: _environmentName},
                 target: deploymentDir
             }]
-        )
+        
+        commit('pushPreparedMutation', mutation, {root: true})
+        await dispatch('runEnvironmentSaveHooks', null, {root: true})
         await dispatch('commitPreparedMutations', {dryRun}, {root: true})
     },
 
@@ -182,6 +182,24 @@ const getters = {
             return getters.getDeployments.filter(dep => dep._environment == environment)
         }
     },
+
+    filteredPrimariesByEnvironment(_, getters) {
+        return function(environmentName, filter) {
+            const result = []
+            getters.getDeploymentsByEnvironment(environmentName).forEach(deployment => {
+                const dictionary = getters.getDeploymentDictionary(deployment.name, environmentName)
+                const primary = dictionary.Resource[deployment.primary]
+                const template = dictionary.ResourceTemplate[primary.template]
+                const type = dictionary.ResourceType[template.type]
+
+                if(filter(primary, {dictionary, type, deployment, template})) {
+                    result.push({...primary, _deployment: deployment.name, _type: type})
+                }
+            })
+            return result
+        }
+    },
+
     getNextDefaultDeploymentName: (_, getters) => function(templateTitle, environment) {
         const re = new RegExp(`${templateTitle} (\\d+)`)
         let max = 1

@@ -75,7 +75,7 @@ function normalizeEnvName(_name) {
 let Serializers
 Serializers = {
     DeploymentEnvironment(env) {
-        allowFields(env, 'connections', 'instances')
+        allowFields(env, 'connections', 'instances', 'external')
         fieldsToDictionary(env, 'connections', 'instances')
         if(env.instances.primary_provider) {
             env.connections.primary_provider = env.instances.primary_provider
@@ -117,6 +117,11 @@ Serializers = {
     },
     // TODO unit test
     ResourceTemplate(rt) {
+        if(rt.__typename == 'Resource') return Serializers.Resource(rt)
+        if(rt.directives?.includes('select')) {
+            allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', '__typename')
+            return
+        }
         try {
             delete rt.visibility // do not commit template visibility
         } catch(e) {
@@ -150,6 +155,30 @@ Serializers = {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
             }
         })
+    },
+    Resource(resource) {
+        /*
+        <template_name>:
+           directives:
+             - select
+           imported: <DEPLOYMENTNAME>:<original_template_name>
+           type: <type_name>
+        */
+
+        const newObject = {
+            name: resource.name,
+            title: resource.title,
+            directives: ['select'],
+            imported: `${resource._deployment}:${resource.template}`,
+            type: resource._type?.name || resource._type, // somehow the full type entry ended up here?
+            __typename: 'ResourceTemplate'
+        }
+
+        for(const key in resource) {
+            if(resource.hasOwnProperty(key)) delete resource[key]
+        }
+        Object.assign(resource, newObject)
+        console.log('resource!', resource)
     },
     '*': function(any) {
         for(const key in any) {

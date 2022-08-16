@@ -361,20 +361,6 @@ export default {
             }, timeToWait);
         },
 
-        async createDeploymentPathPointer() {
-            this.setUpdateObjectPath('environments.json')
-            this.setUpdateObjectProjectPath(this.getHomeProjectPath)
-            const environment = this.$route.params.environment
-            this.pushPreparedMutation(() => {
-                return [{
-                    typename: 'DeploymentPath',
-                    patch: {__typename: 'DeploymentPath', environment},
-                    target: this.deploymentDir
-                }]
-            })
-            await this.commitPreparedMutations()
-        },
-
         async triggerSave() {
             try {
                 await this.commitPreparedMutations();
@@ -397,7 +383,7 @@ export default {
                 this.deployButton = false;
                 this.loadingDeployment = true;
                 await this.triggerSave();
-                await this.createDeploymentPathPointer()
+                await this.createDeploymentPathPointer({projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
                 const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName });
                 createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
                 return redirectTo(`${this.pipelinesPath}/${data.id}`);
