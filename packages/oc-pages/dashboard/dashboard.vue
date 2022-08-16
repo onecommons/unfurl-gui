@@ -90,6 +90,16 @@ export default {
 </template>
 <style>
 
+@media (min-width: 768px) {
+    .layout-page.hide-when-top-nav-responsive-open.page-with-contextual-sidebar.page-with-icon-sidebar {
+        padding-left: 3em;
+    }
+}
+
+.container-fluid.limit-container-width .flash-container.sticky, .limit-container-width.container-sm .flash-container.sticky, .limit-container-width.container-md .flash-container.sticky, .limit-container-width.container-lg .flash-container.sticky, .limit-container-width.container-xl .flash-container.sticky {
+    max-width: 100%;
+}
+
 .container-limited.limit-container-width:not(.gl-banner-content) {
     max-width: min(100vw, max(80%, 990px));
     display: flex;
