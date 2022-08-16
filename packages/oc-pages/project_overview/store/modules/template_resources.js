@@ -341,13 +341,18 @@ const actions = {
     },
 
     // NOTE this doesn't work with instantiating from an unfurl.json blueprint because of local ResourceTemplate
-    createMatchedResources({commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
+    createMatchedResources({state, commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
         /*
         for(const attribute of resource.attributes) {
             commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
         }
         */
         for(const dependency of resource.dependencies) {
+            if(state.resourceTemplates.hasOwnProperty(dependency.match)) {
+                console.warn(`Cannot create matched resource for ${dependency.match}: already exists in store`)
+                continue
+            }
+
             const resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
             let child = resolvedDependencyMatch
             if(!isDeploymentTemplate && child) {
@@ -417,12 +422,13 @@ const actions = {
                 );
             }
 
+            commit("createTemplateResource", target);
+
             const fieldsToReplace = {
                 completionStatus: "created",
                 valid: true
             };
 
-            commit("createTemplateResource", target);
             commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace});
             return true;
         } catch(err) {
@@ -456,12 +462,17 @@ const actions = {
         commit('createTemplateResource', resourceTemplateNode)
     },
 
-    async disconnectNodeResource({}, {dependentName, dependentRequirement}) {
-    },
-
-    async deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
+    deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
+        if(!getters.getCardsStacked.find(card => card.name == name)) return
         try {
             const actionLowerCase = action.toLowerCase();
+
+            for(const {card, dependency} of getters.getDisplayableDependenciesByCard(name)) {
+                const match = dependency?.match
+                if(!match) continue
+                dispatch('deleteNode', {name: match, action, dependentName: card.name, dependentRequirement: dependency.name})
+            }
+
             if(dependentName) {
                 commit('deleteReference', {
                     dependentName,
