@@ -136,10 +136,6 @@ export default {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
         this.setTabToConsoleIfNeeded()
-
-        console.log(this.isAcknowledged('foo'))
-        this.acknowledge('foo')
-
     }
 }
 </script>
