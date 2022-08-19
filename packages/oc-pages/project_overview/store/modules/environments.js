@@ -324,7 +324,7 @@ const actions = {
         commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
     },
-    async fetchEnvironmentVariables({commit}, {fullPath}) {
+    async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
         const envvars = await fetchEnvironmentVariables(fullPath)
         const variablesByEnvironment = {}
         for(const variable of envvars || []) {
@@ -333,6 +333,7 @@ const actions = {
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
+        variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = rootGetters.getCurrentNamespace + '.u.opencloudservices.net'
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
     async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {

@@ -9,10 +9,13 @@ import * as ROUTES from './constants'
 Vue.use(VueRouter);
 routes.push({ path: "*", component: PageNotFound })
 
+const base = baseRouteNaive(window.location.pathname);
+const delimiter = base.includes('dashboard')? '': '/-'
+
 const navigationElements = {
-    dashboard:  document.querySelector('aside.nav-sidebar li a[href="/dashboard"]')?.parentElement,
-    environments: document.querySelector('aside.nav-sidebar li a[href="/dashboard/environments"]')?.parentElement,
-    deployments: document.querySelector('aside.nav-sidebar li a[href="/dashboard/deployments"]')?.parentElement
+    dashboard:  document.querySelector(`aside.nav-sidebar li a[href$="${base}"]`)?.parentElement,
+    environments: document.querySelector('aside.nav-sidebar li a[href$="environments"]')?.parentElement,
+    deployments: document.querySelector('aside.nav-sidebar li a[href$="deployments"]')?.parentElement
 }
 
 export default function createRouter() {
@@ -24,8 +27,6 @@ export default function createRouter() {
     `)
     */
 
-    const base = baseRouteNaive(window.location.pathname);
-    const delimiter = base.includes('dashboard')? '': '/-'
 
     const router = new VueRouter({
         mode: 'history',

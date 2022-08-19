@@ -11,6 +11,7 @@ import {OcTab} from 'oc_vue_shared/oc-components'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
 import {FLASH_TYPES, default as createFlash} from 'oc_vue_shared/client_utils/oc-flash'
+import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
 
 export default {
@@ -132,14 +133,13 @@ export default {
         if(!this.viewReady) this.prepareView()
     },
     async mounted() {
+        if(!(this.environment && this.deployment)) {
+            notFoundError()
+        }
         if(!window.gon.unfurl_gui && this.projectId && this.pipelineId) {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
         this.setTabToConsoleIfNeeded()
-
-        console.log(this.isAcknowledged('foo'))
-        this.acknowledge('foo')
-
     }
 }
 </script>
