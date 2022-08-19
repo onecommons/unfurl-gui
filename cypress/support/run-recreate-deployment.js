@@ -112,7 +112,9 @@ Cypress.Commands.add('recreateDeployment', options => {
       cy.document().then($document => {
         if (variant != HIDDEN) {
           if (variant != PRIMARY) {
-            cy.get(`[data-testid=tab-inputs-${template.name}]`).click()
+            if($document.querySelector(`[data-testid=tab-inputs-${template.name}]`)) {
+              cy.get(`[data-testid=tab-inputs-${template.name}]`).click()
+            }
           }
           for (const property of template.properties) {
             let value = property.value
@@ -215,12 +217,15 @@ Cypress.Commands.add('recreateDeployment', options => {
 
     recreateTemplate(primary, PRIMARY)
 
+    console.log(options)
+    if(typeof options.afterRecreateDeployment == 'function') options.afterRecreateDeployment()
+
     // formily oninput bug
     cy.get('input:first').blur({ force: true })
     cy.wait(BASE_TIMEOUT / 50)
 
     if(shouldDeploy) {
-      cy.get('[data-testid="deploy-button"]').click()
+      cy.get('[data-testid="deploy-button"]:not([disabled])').click()
       cy.whenUnfurlGUI(() => {
         cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
