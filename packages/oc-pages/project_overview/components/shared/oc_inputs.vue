@@ -146,19 +146,18 @@ export default {
         }
 
         currentValue['x-data'] = value
+
         let componentType = currentValue.type;
+
         currentValue['x-component-props'] = {
           placeholder: currentValue.placeholder || ' ',
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`,
           type: componentType == 'string'? 'textarea': 'text'
         }
 
-
         if(currentValue.input_type) {
           currentValue['x-component-props']['type'] = currentValue.input_type
         }
-
-        let componentType = currentValue.type;
 
         if (!this.tab && currentValue.tab_title) {
           // we haven't figured out recursion yet
