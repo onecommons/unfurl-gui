@@ -14,10 +14,14 @@ export {default as EnvironmentSelection} from './components/oc/environment-selec
 export {default as DeploymentScheduler} from './components/oc/deployment-scheduler.vue'
 
 export let CiVariableSettings, createCiVariablesStore
+import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error'
 export const PageNotFound = Vue.component("page-not-found", {
   template: "",
-  created: function() {
-      window.location.href = "/404.html";
+  created() {
+    notFoundError()
+  },
+  unmounted() {
+    removeNotFoundError()
   }
 })
 export const SignIn = Vue.component("sign-in", { template: "", })
