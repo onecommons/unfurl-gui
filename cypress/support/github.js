@@ -9,7 +9,7 @@ function enterGithubToken() {
       cy.get('[data-qa-selector="authenticate_button"]').click()
     }
 
-    cy.go('back')
+    cy.visit(`${BASE_URL}`)
   }) 
 }
 

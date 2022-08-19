@@ -50,6 +50,7 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'OC_USERNAME',
   'OC_PASSWORD',
   'OC_URL',
+  'EXTERNAL',
   'GITHUB_ACCESS_TOKEN', 'GITHUB_USERNAME',
   'AWS_ACCESS_KEY_ID', 'AWS_DEFAULT_REGION', 'AWS_SECRET_ACCESS_KEY',
   'GOOGLE_APPLICATION_CREDENTIALS', 'CLOUDSDK_COMPUTE_ZONE', 'CLOUDSDK_CORE_PROJECT',
@@ -90,7 +91,7 @@ function createDashboardCommand(username, dashboardRepo) {
   //if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
   const 
     file = path.join(__dirname, 'create-user.js'),
-    args = ['--username', username],//, '--dashboard', dashboardRepo],
+    args = ['--username', username, '--external', process.env['EXTERNAL'] || '1'],
     options = {}
   if(dashboardRepo) {
     args.push('--dashboard')
