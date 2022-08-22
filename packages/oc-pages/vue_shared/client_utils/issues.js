@@ -9,14 +9,13 @@ const EMAIL_PARAM = 'tf_anonymous_requester_email'
 const DESCRIPTION_PARAM = 'tf_description'
 const TITLE_PARAM = 'tf_subject'
 
-export async function generateIssueLink(projectPath, {title, description, context}) {
+export function generateIssueLinkSync(projectPath, {title, description, context, email}) {
     const _context = {
         ...context,
         'Dashboard Project': projectPath,
         'Referring URL': window.location.pathname + window.location.search + window.location.hash,
     }
     if(!_context['Dashboard Project']) delete _context['Dashboard Project']
-    const email = await fetchUserPublicEmail()
     const result = [BASE_URL]
 
     result.push(encodeURIComponent(DESCRIPTION_PARAM))
@@ -47,4 +46,9 @@ export async function generateIssueLink(projectPath, {title, description, contex
     }
 
     return result.join('')
+}
+
+export async function generateIssueLink(projectPath, options) {
+    const email = await fetchUserPublicEmail()
+    return generateIssueLinkSync(projectPath, {...options, email})
 }

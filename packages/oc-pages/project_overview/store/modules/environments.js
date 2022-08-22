@@ -171,6 +171,11 @@ const actions = {
         }
         const pipelines = [...(dp?.pipelines || [])]
 
+
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+        await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
+
         const pipeline = data?
             {
                 id: data.id,
@@ -202,7 +207,6 @@ const actions = {
             }]
         })
 
-        await dispatch('runEnvironmentSaveHooks')
         await dispatch('commitPreparedMutations', {}, {root: true})
         commit('clearUpstream')
         return {pipelineData: data}

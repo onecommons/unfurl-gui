@@ -17,6 +17,7 @@ export default {
             'updateEnvironment',
             'populateJobsList',
             'populateDeploymentItems',
+            'populateCurrentUser',
             //'applyUserSetting'
         ]),
         ...mapMutations([
@@ -46,6 +47,7 @@ export default {
             pathComponents.slice(0, Math.max(0, pathComponents.lastIndexOf('dashboard'))).join('/'):
             pathComponents.slice(1).join('/');
         this.setCurrentNamespace(currentNamespace);
+        this.populateCurrentUser()
 
         try {
           await Promise.all([this.loadDashboard(), this.populateJobsList()])
