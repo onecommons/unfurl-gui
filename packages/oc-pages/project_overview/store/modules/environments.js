@@ -1,4 +1,5 @@
 import { __ } from "~/locale";
+import _ from 'lodash'
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
@@ -9,7 +10,9 @@ import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipe
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
 import {generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
+import {prefixEnvironmentVariables, environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 
 
 const state = {
@@ -50,6 +53,9 @@ function toProjectTokenEnvKey(projectId) {
 }
 
 const mutations = {
+    setProjectPath(state, projectPath) {
+        state.projectPath = projectPath
+    },
 
     onSaveEnvironment(state, cb) {
         state.saveEnvironmentHooks.push(cb)
@@ -185,6 +191,8 @@ const actions = {
 
         if(pipeline) {pipelines.push(pipeline)}
 
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
         commit('pushPreparedMutation', () => {
             return [{
                 typename: 'DeploymentPath',
@@ -320,7 +328,7 @@ const actions = {
         commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
     },
-    async fetchEnvironmentVariables({commit}, {fullPath}) {
+    async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
         const envvars = await fetchEnvironmentVariables(fullPath)
         const variablesByEnvironment = {}
         for(const variable of envvars || []) {
@@ -329,6 +337,7 @@ const actions = {
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
+        variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = rootGetters.getCurrentNamespace + '.u.opencloudservices.net'
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
     async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {
@@ -345,6 +354,7 @@ const actions = {
         }
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
+        commit('setProjectPath', fullPath || projectPath)
         await Promise.all([
             dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath, fetchPolicy}),
             dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
@@ -360,6 +370,43 @@ const actions = {
             await patchEnv({ [key]: token }, '*', rootGetters.getHomeProjectPath)
         }
         return {key, token}
+    },
+
+    async environmentFromProvider({state, commit, dispatch}, {provider, newEnvironmentName}) {
+        /* If the provider is a connection, we'll copy all of the instances and the environment variables associated with:
+         *   (1) the connection (2) each instance.
+         *
+         * If the provider is an instance, we'll copy only the instance and assume there are no dependencies.
+         * In this case we'll copy only environment variables associated with the instance itself.
+        */
+        const variables = []
+        let instances = []
+        const primary_provider = _.cloneDeep(provider.template)
+        environmentVariableDependencies(provider.template).forEach(v => variables.push(v))
+        if(provider.source == 'connection') {
+            instances = _.cloneDeep(provider.environment.instances)
+            for(const instance of instances) {
+                environmentVariableDependencies(instance).forEach(v => variables.push(v))
+            }
+        }
+        await shareEnvironmentVariables(state.projectPath, provider.environment.name, newEnvironmentName, variables, '')
+
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
+        commit('pushPreparedMutation', () => {
+            return [{
+                typename: 'DeploymentEnvironment',
+                patch: {
+                    __typename: 'DeploymentEnvironment',
+                    instances,
+                    connections: {
+                        primary_provider: provider.template
+                    }
+                },
+                target: newEnvironmentName
+            }]
+        })
+        await dispatch('commitPreparedMutations', {}, {root: true})
     }
 
 };
@@ -469,6 +516,26 @@ const getters = {
     },
     environmentsAreReady(state) {
         return state.ready
+    },
+    availableProviders(_, getters) {
+        const result = []
+        function isValidProvider(environment, template) {
+            const type = getters.environmentResolveResourceType(environment, template.type) 
+            return type.extends.includes('unfurl.relationships.ConnectsTo.CloudAccount') || type.extends.includes('unfurl.relationships.ConnectsTo.K8sCluster')
+        }
+        for(const environment of getters.getEnvironments) {
+            for(const connection of environment.connections) {
+                if(isValidProvider(environment, connection)) {
+                    result.push({environment, template: connection, source: 'connection'})
+                }
+            }
+            for(const instance of environment.instances) {
+                if(isValidProvider(environment, instance)) {
+                    result.push({environment, template: instance, source: 'instance'})
+                }
+            }
+        }
+        return result
     }
 };
 

@@ -1,4 +1,5 @@
 <script>
+import {mapGetters} from 'vuex'
 import EnvironmentCreationDialog from '../../project_overview/components/environment-creation-dialog.vue'
 import {GlModal} from '@gitlab/ui'
 import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
@@ -21,6 +22,7 @@ export default {
         }
     },
     computed: {
+        ...mapGetters(['getCurrentNamespace']),
         disablePrimary() {
             return !(this.cp && this.env && this.env != __('Select'))
         }
@@ -28,7 +30,7 @@ export default {
     methods: {
         async redirectToNewEnvironment(e) {
             e.preventDefault()
-            await this.$refs.environmentDialog.beginEnvironmentCreation(`/dashboard/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
+            await this.$refs.environmentDialog.beginEnvironmentCreation(`/home/${this.getCurrentNamespace}/-/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
         },
     }
 }

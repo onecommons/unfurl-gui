@@ -3,11 +3,13 @@ import createFlash, { FLASH_TYPES } from '~/flash';
 import {mapActions, mapMutations, mapGetters, mapState} from 'vuex'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
+import {GlLoadingIcon} from '@gitlab/ui'
 import * as routes from './router/constants'
 const USER_TOURED_EXPLORE_PAGE = 'USER_TOURED_EXPLORE_PAGE'
 export default {
     name: 'Dashboard',
     data() {return {isLoaded: false, doNotRender: false}},
+    components: {GlLoadingIcon},
     methods: {
         ...mapActions([
             'loadDashboard',
@@ -47,7 +49,15 @@ export default {
         this.setCurrentNamespace(currentNamespace);
         this.populateCurrentUser()
 
-        await Promise.all([this.loadDashboard(), this.populateJobsList()])
+        try {
+          await Promise.all([this.loadDashboard(), this.populateJobsList()])
+        } catch(e) {
+          if(currentNamespace != this.getUsername) {
+            window.location.href = '/404.html'
+          } else {
+            throw(e)
+          }
+        }
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()
         
@@ -79,10 +89,21 @@ export default {
 </script>
 <template>
     <div>
-        <router-view v-if="isLoaded && !doNotRender"/>
+        <gl-loading-icon v-if="!isLoaded" label="Loading" size="lg" style="margin-top: 5em;" />
+        <router-view v-else-if="!doNotRender"/>
     </div>
 </template>
 <style>
+
+@media (min-width: 768px) {
+    .layout-page.hide-when-top-nav-responsive-open.page-with-contextual-sidebar.page-with-icon-sidebar {
+        padding-left: 3em;
+    }
+}
+
+.container-fluid.limit-container-width .flash-container.sticky, .limit-container-width.container-sm .flash-container.sticky, .limit-container-width.container-md .flash-container.sticky, .limit-container-width.container-lg .flash-container.sticky, .limit-container-width.container-xl .flash-container.sticky {
+    max-width: 100%;
+}
 
 .container-limited.limit-container-width:not(.gl-banner-content) {
     max-width: min(100vw, max(80%, 990px));

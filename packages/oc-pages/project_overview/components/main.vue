@@ -3,6 +3,7 @@ import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
+import {GlLoadingIcon} from '@gitlab/ui'
 
 
 const ERROR_CONTEXT = {
@@ -11,7 +12,7 @@ const ERROR_CONTEXT = {
 
 export default {
     name: 'MainComponent',
-
+    components: {GlLoadingIcon},
     async beforeCreate() {
         let errorContext
 
@@ -70,7 +71,8 @@ export default {
 }
 </script>
 <template>
-    <div v-if="fetchingComplete && !shouldTestQueries" id="OcAppDeployments">
+    <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" />
+    <div v-else-if="!shouldTestQueries" id="OcAppDeployments">
         <router-view />
     </div>
 </template>
