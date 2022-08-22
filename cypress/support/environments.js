@@ -86,10 +86,10 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
 
   const digitalOceanName = slugify(DIGITALOCEAN_DNS_TYPE)
   cy.contains("button", "Next").click()
-  cy.get(
-    `input[data-testid="oc-input-${digitalOceanName}-DIGITALOCEAN_TOKEN"]`
+  cy.getInputOrTextarea(
+    `[data-testid="oc-input-${digitalOceanName}-DIGITALOCEAN_TOKEN"]`
   ).type(DIGITALOCEAN_TOKEN || "default")
-  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${digitalOceanName}-name"]`).type(
     "untrusted.me"
   )
   cy.wait(BASE_TIMEOUT / 50)
@@ -100,7 +100,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
 
   // check if external instance save properly
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
-  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).should(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${digitalOceanName}-name"]`).should(
     "have.value",
     "untrusted.me"
   )
@@ -121,16 +121,16 @@ function uncheckedCreateMail() {
 
   const mailResourceName = slugify(MAIL_RESOURCE_NAME)
   cy.contains("button", "Next").click()
-  cy.get(
-    `input[data-testid="oc-input-${mailResourceName}-host"]`
+  cy.getInputOrTextarea(
+    `[data-testid="oc-input-${mailResourceName}-host"]`
   ).type(SMTP_HOST)
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-user_name"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-user_name"]`).type(
     MAIL_USERNAME
   )
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-password"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-password"]`).type(
     MAIL_PASSWORD
   )
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
     'tls'
   )
 }
@@ -142,10 +142,10 @@ function uncheckedCreateDigitalOceanDNS(zone) {
 
   cy.contains("button", "Next").click()
   const digitalOceanName = slugify("DigitalOceanDNSZone")
-  cy.get(
-    `input[data-testid="oc-input-${digitalOceanName}-DIGITALOCEAN_TOKEN"]`
+  cy.getInputOrTextarea(
+    `[data-testid="oc-input-${digitalOceanName}-DIGITALOCEAN_TOKEN"]`
   ).type(DIGITALOCEAN_TOKEN || "default")
-  cy.get(`input[data-testid="oc-input-${digitalOceanName}-name"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${digitalOceanName}-name"]`).type(
     zone
   )
 }
@@ -156,7 +156,7 @@ function uncheckedCreateGoogleCloudDNS(zone) {
   cy.get('[data-testid="resource-selection-GoogleCloudDNSZone"]').click()
   cy.contains("button", "Next").click()
   const gcpName = slugify(GCP_DNS_TYPE)
-  cy.get(`input[data-testid="oc-input-${gcpName}-name"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${gcpName}-name"]`).type(
     zone
   )
 }
@@ -167,17 +167,17 @@ function uncheckedCreateRoute53DNS(zone) {
   cy.get('[data-testid="resource-selection-Route53DNSZone"]').click()
   cy.contains("button", "Next").click()
   const awsName = slugify(AWS_DNS_TYPE)
-  cy.get(`input[data-testid="oc-input-${awsName}-access_key_id"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-access_key_id"]`).type(
     AWS_ACCESS_KEY
   )
   cy.wait(100) // cypress keeps typing true before the key
-  cy.get(`input[data-testid="oc-input-${awsName}-access_key_id"]`).invoke('val', '').type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-access_key_id"]`).invoke('val', '').type(
     AWS_ACCESS_KEY
   )
-  cy.get(`input[data-testid="oc-input-${awsName}-secret_access_key"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-secret_access_key"]`).type(
     AWS_SECRET_ACCESS_KEY
   )
-  cy.get(`input[data-testid="oc-input-${awsName}-name"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-name"]`).type(
     zone
   )
 }
@@ -218,16 +218,16 @@ Cypress.Commands.add('createMailResource', environmentName => {
 
   const mailResourceName = slugify(MAIL_RESOURCE_NAME)
   cy.contains("button", "Next").click()
-  cy.get(
-    `input[data-testid="oc-input-${mailResourceName}-host"]`
+  cy.getInputOrTextarea(
+    `[data-testid="oc-input-${mailResourceName}-host"]`
   ).type(SMTP_HOST)
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-user_name"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-user_name"]`).type(
     MAIL_USERNAME
   )
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-password"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-password"]`).type(
     MAIL_PASSWORD
   )
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
     'tls'
   )
 
@@ -239,7 +239,7 @@ Cypress.Commands.add('createMailResource', environmentName => {
 
   // check if external instance save properly
   cy.visit(`${BASE_URL}/dashboard/environments/${environmentName}`)
-  cy.get(`input[data-testid="oc-input-${mailResourceName}-host"]`).should(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-host"]`).should(
     "have.value",
     SMTP_HOST
   )
