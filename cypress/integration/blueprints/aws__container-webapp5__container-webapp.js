@@ -48,8 +48,8 @@ describe('_aws-2022-08-18t23-03-03__container-webapp5__container-webapp', () => 
           cy.contains('a', 'Container').click()
           cy.contains('.formily-element-form-item-label', 'environment').next().within(() => {
             cy.contains('button', 'Add').click()
-            cy.get('input[placeholder="key"]').type('PORT')
-            cy.get('input[placeholder="value"]').type('5000')
+            cy.getInputOrTextarea('[placeholder="key"]').type('PORT')
+            cy.getInputOrTextarea('[placeholder="value"]').type('5000')
           })
           cy.contains('.formily-element-form-item-label', 'ports').next().within(() => {
             cy.contains('button', 'Add').click()

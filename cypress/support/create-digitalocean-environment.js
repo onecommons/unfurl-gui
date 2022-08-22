@@ -50,10 +50,10 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
 
   cy.wait(BASE_TIMEOUT / 2)
 
-  cy.get('input[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
+  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
 
   if(DO_DEFAULT_REGION) {
-    cy.get('input[data-testid="oc-input-primary_provider-default_region"]').type(DO_DEFAULT_REGION)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-default_region"]').type(DO_DEFAULT_REGION)
   }
 
   cy.contains('a', 'Resources').click()
