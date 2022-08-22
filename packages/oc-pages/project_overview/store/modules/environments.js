@@ -326,7 +326,7 @@ const actions = {
     },
     async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
         const envvars = await fetchEnvironmentVariables(fullPath)
-        const variablesByEnvironment = {}
+        const variablesByEnvironment = {'*': {}}
         for(const variable of envvars || []) {
             if(!variable.environment_scope) continue
             const varsForEnv = variablesByEnvironment[variable.environment_scope] || {}
