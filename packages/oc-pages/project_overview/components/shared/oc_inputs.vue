@@ -152,7 +152,6 @@ export default {
         currentValue['x-component-props'] = {
           placeholder: currentValue.placeholder || ' ',
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`,
-          type: componentType == 'string'? 'textarea': 'text'
         }
 
         if(currentValue.input_type) {
