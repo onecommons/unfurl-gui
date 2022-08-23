@@ -581,13 +581,21 @@ const getters = {
 const mutations = {
     setUpdateObjectPath(state, path) {
         if(state.preparedMutations.length > 0) {
-            throw new Error('Cannot update path - you have uncommitted mutations')
+            if(state.isCommitting) {
+                throw new Error('Cannot update path while committing')
+            }
+            console.error('Tried to update path with uncommitted mutations')
+            state.preparedMutation = []
         }
         state.path = path
     },
     setUpdateObjectProjectPath(state, projectPath) {
         if(state.preparedMutations.length > 0) {
-            throw new Error('Cannot update projectPath - you have uncommitted mutations')
+            if(state.isCommitting) {
+                throw new Error('Cannot update projectPath while committing')
+            }
+            console.error('Tried to update path with uncommitted mutations')
+            state.preparedMutation = []
         }
         state.projectPath = projectPath
     },
@@ -634,7 +642,7 @@ const mutations = {
             state.path = undefined
             state.projectPath = undefined
             state.environmentScope = undefined
-
+            state.preparedMutations = []
         }
     },
     // TODO figure out whether this is necessary
@@ -703,7 +711,7 @@ const actions = {
         commit('setBaseState', data?.applicationBlueprintProject?.json)
     },
 
-    async sendUpdateSubrequests({state, getters, rootState}, o){
+    async sendUpdateSubrequests({state, getters, commit, rootState}, o){
 
         const patch = []
         for(let key in getters.getPatches) {
@@ -731,6 +739,7 @@ const actions = {
             if(Object.keys(state.env)) console.log(state.env)
             return
         }
+
         await graphqlClient.clients.defaultClient.mutate({
             mutation: UpdateDeploymentObject,
             variables

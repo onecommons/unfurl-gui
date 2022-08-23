@@ -1,5 +1,6 @@
 const GITHUB_USERNAME = Cypress.env('GITHUB_USERNAME') || 'onecommons-dummy-220819'
 const GITHUB_ACCESS_TOKEN = Cypress.env('GITHUB_ACCESS_TOKEN')
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 const repoName = `buildpack-test-app-${Date.now().toString(36)}`
 
@@ -55,6 +56,8 @@ describe('_aws-2022-08-18t23-03-03__container-webapp5__container-webapp', () => 
             cy.contains('button', 'Add').click()
             cy.get('input.el-input__inner').type('5000:5000')
           })
+          cy.contains('button', 'Imported', {timeout: BASE_TIMEOUT * 2})
+          cy.wait(500)
         }
     })
   })

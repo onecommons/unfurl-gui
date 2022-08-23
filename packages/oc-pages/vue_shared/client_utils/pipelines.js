@@ -34,7 +34,7 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
 
 // this doens't need to be async if generateAccessToken is done upon first sign-in with the vault token, but I think it's a good contract to enforce
 // it's possible we'll want to make async calls here in the future
-export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy}) {
+export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy, upstreamCommit}) {
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
     const DEPLOY_IMAGE = sessionStorage['deploy-image']
@@ -42,6 +42,7 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
 
     //const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN') currently saving this in the environment
 
+    // falsey values will be filtered out
     return toGlVariablesAttributes({
         WORKFLOW: workflow,
         DEPLOY_ENVIRONMENT: environmentName,
@@ -49,6 +50,7 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
         DEPLOY_PATH: deployPath,
         DEPLOYMENT: deploymentName,
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,
+        UPSTREAM_COMMIT: upstreamCommit ?? null,
         UNFURL_MOCK_DEPLOY: mockDeploy && 'true',
         UNFURL_LOGGING: (mockDeploy || UNFURL_TRACE) && 'trace',
         UNFURL_VALIDATION_MODE,
