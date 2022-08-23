@@ -18,7 +18,7 @@ const {IMPORTED} = importStatus
 
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
-    return items.filter(item => item.value.includes(query))
+    return items.filter(item => item.value?.includes(query))
 }
 
 export default {

@@ -156,10 +156,17 @@ const actions = {
     async environmentTriggerPipeline({rootGetters, state, getters, commit, dispatch}, parameters) {
         if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
+
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+        await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
+
         const deployVariables = await prepareVariables({
             ...parameters,
+            upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
+
         let data, error
         data = await triggerPipeline(
             rootGetters.pipelinesPath,
@@ -167,14 +174,9 @@ const actions = {
         )
         if(error = data?.errors) {
             return {pipelineData: data, error}
-
         }
         const pipelines = [...(dp?.pipelines || [])]
 
-
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
-        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
-        await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
 
         const pipeline = data?
             {
