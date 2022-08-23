@@ -133,7 +133,7 @@ export default {
     },
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
-        ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject']),
+        ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject', 'setUpstreamBranch']),
         generateIssueLinkSync,
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
@@ -230,11 +230,23 @@ export default {
             if(this.cardIsValid(this.card)) {
                 if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
                     console.log('image already exists')
-                    this.setUpstreamProject(this.projectInfo.id)
+                    // this.setUpstreamId we need to look up the last pipeline that has the given branch and project
+                    const id = this.projectInfo.id
+                    const branch = this.branch || this.projectInfo.default_branch
+                    try {
+                      const commits = (await(`/api/v4/projects/${id}/repository/commits?ref=${branch}`)).data
+                      this.setUpstreamCommit(commits[0].id)
+                    } catch(e) {
+                      console.error("couldn't find upstream commit")
+                      console.error(e.message)
+                    }
+                    this.setUpstreamProject(id)
+                    this.setUpstreamBranch(branch)
                 } else {
                     const upstream = await triggerPipeline(`/${this.projectInfo.path_with_namespace}/-/pipelines`, [], {ref: this.branch})
                     this.setUpstreamCommit(upstream.commit)
                     this.setUpstreamId(upstream.id)
+                    this.setUpstreamBranch(this.branch || this.projectInfo.default_branch)
                     this.setUpstreamProject(upstream.project)
                 }
             }
