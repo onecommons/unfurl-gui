@@ -28,7 +28,7 @@ export async function patchEnv(env, environmentScope, fullPath) {
             secret_value,
             environment_scope: environmentScope,
             variable_type: 'env_var',
-            masked: secret_value.length >= 8,
+            masked: secret_value.length >= 8 && !secret_value.includes('\n'),
             protected: false,
             ...data
         })

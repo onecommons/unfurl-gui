@@ -93,6 +93,10 @@ const mutations = {
         state.upstreamProject = upstreamProject
     },
 
+    setUpstreamBranch(state, upstreamBranch) {
+        state.upstreamBranch = upstreamBranch
+    },
+
     setIncrementalDeployment(state, incrementalDeploymentEnabled) {
         state.incrementalDeploymentEnabled = incrementalDeploymentEnabled
     },
@@ -100,6 +104,7 @@ const mutations = {
     clearUpstream(state) {
         state.upstreamCommit = null
         state.upstreamProject = null
+        state.upstreamBranch = null
         state.upstreamId = null
         state.incrementalDeploymentEnabled = false
     },
@@ -164,6 +169,8 @@ const actions = {
         const deployVariables = await prepareVariables({
             ...parameters,
             upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
+            upstreamBranch: state.upstreamBranch,
+            upstreamProject: state.upstreamProject,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
@@ -186,7 +193,8 @@ const actions = {
                 variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {}),
                 'upstream_commit_id': state.upstreamCommit?.id || state.upstreamCommit,
                 'upstream_pipeline_id': state.upstreamId,
-                'upstream_project_id': state.upstreamProject?.id || state.upstreamProject
+                'upstream_project_id': state.upstreamProject?.id || state.upstreamProject,
+                'upstream_branch': state.upstreamBranch
             } :
             null
 
