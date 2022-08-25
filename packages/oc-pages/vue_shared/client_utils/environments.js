@@ -25,6 +25,7 @@ export async function lookupEnvironmentId(projectPath, environmentName) {
     return result
 }
 
+// use prefix='' to use no prefix
 export async function shareEnvironmentVariables(projectPath, sourceEnvironment, targetEnvironment, variables, prefix=null) {
     let _prefix = prefix
     if(_prefix === null) {
@@ -38,7 +39,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
         if(!variables.includes(environmentVariable.key)) continue
         delete environmentVariable.id
         environmentVariable.environment_scope = targetEnvironment
-        environmentVariable.key = prefix? `${_prefix}__${environmentVariable.key}`: environmentVariable.key
+        environmentVariable.key = _prefix? `${_prefix}__${environmentVariable.key}`: environmentVariable.key
 
         patch[environmentVariable.key] = environmentVariable
     }
