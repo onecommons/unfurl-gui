@@ -1,5 +1,6 @@
 const GITHUB_USERNAME = Cypress.env('GITHUB_USERNAME') || 'onecommons-dummy-220819'
 const GITHUB_ACCESS_TOKEN = Cypress.env('GITHUB_ACCESS_TOKEN')
+const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 const repoName = `buildpack-test-app-${Date.now().toString(36)}`
 

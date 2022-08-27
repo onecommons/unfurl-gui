@@ -9,6 +9,7 @@ import _ from 'lodash'
 import { __ } from '~/locale'
 import {lookupCloudProviderAlias, slugify} from 'oc_vue_shared/util.mjs'
 import {deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
+import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { redirectTo } from '~/lib/utils/url_utility';
 
 
@@ -179,6 +180,10 @@ export default {
     beforeMount() {
         const environmentName = this.$route.params.name
         const environment = this.lookupEnvironment(environmentName)
+        if(!environment) {
+            notFoundError()
+            return
+        }
         this.environment = environment
         this.setAvailableResourceTypes(
             this.environmentLookupDiscoverable(environment)

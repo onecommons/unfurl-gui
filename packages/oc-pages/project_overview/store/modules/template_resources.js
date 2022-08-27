@@ -697,7 +697,9 @@ const getters = {
             const isVisible = card.visibility != 'hidden' && (
                 card.visibility == 'visible' ||
                 card.attributes?.find(a => a.name == 'id') ||
-                card.attributes?.find(a => a.name == 'console_url')
+                card.attributes?.find(a => a.name == 'console_url') ||
+                card.properties?.find(a => a.name == 'console_url') ||
+                card.computedProperties?.find(a => a.name == 'console_url')
             )
             return !isVisible
         }

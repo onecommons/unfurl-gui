@@ -66,6 +66,11 @@ function withStore(cb) {
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
 }
 
+function getInputOrTextarea(selector) {
+  return cy.get(`input${selector}, textarea${selector}`)
+}
+
 Cypress.Commands.add('whenGitlab', whenGitlab)
 Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
 Cypress.Commands.add('withStore', withStore)
+Cypress.Commands.add('getInputOrTextarea', getInputOrTextarea)

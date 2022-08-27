@@ -37,9 +37,9 @@ before(() => {
   cy.visit(`${BASE_URL}/users/sign_in`).wait(100)
   cy.url().then(url => {
     if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
-      cy.get(`input[data-qa-selector="login_field"]`).type(USERNAME)
-      cy.get(`input[data-qa-selector="password_field"]`).type(PASSWORD)
-      cy.get(`input[data-qa-selector="sign_in_button"]`).click()
+      cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
+      cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(PASSWORD)
+      cy.getInputOrTextarea(`[data-qa-selector="sign_in_button"]`).click()
 
       if(IMPERSONATE) {
         cy.visit(`${BASE_URL}/admin/users/${IMPERSONATE}`)

@@ -93,6 +93,10 @@ const mutations = {
         state.upstreamProject = upstreamProject
     },
 
+    setUpstreamBranch(state, upstreamBranch) {
+        state.upstreamBranch = upstreamBranch
+    },
+
     setIncrementalDeployment(state, incrementalDeploymentEnabled) {
         state.incrementalDeploymentEnabled = incrementalDeploymentEnabled
     },
@@ -100,6 +104,7 @@ const mutations = {
     clearUpstream(state) {
         state.upstreamCommit = null
         state.upstreamProject = null
+        state.upstreamBranch = null
         state.upstreamId = null
         state.incrementalDeploymentEnabled = false
     },
@@ -156,10 +161,19 @@ const actions = {
     async environmentTriggerPipeline({rootGetters, state, getters, commit, dispatch}, parameters) {
         if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
+
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+        await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
+
         const deployVariables = await prepareVariables({
             ...parameters,
+            upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
+            upstreamBranch: state.upstreamBranch,
+            upstreamProject: state.upstreamProject,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
+
         let data, error
         data = await triggerPipeline(
             rootGetters.pipelinesPath,
@@ -167,9 +181,9 @@ const actions = {
         )
         if(error = data?.errors) {
             return {pipelineData: data, error}
-
         }
         const pipelines = [...(dp?.pipelines || [])]
+
 
         const pipeline = data?
             {
@@ -179,7 +193,8 @@ const actions = {
                 variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {}),
                 'upstream_commit_id': state.upstreamCommit?.id || state.upstreamCommit,
                 'upstream_pipeline_id': state.upstreamId,
-                'upstream_project_id': state.upstreamProject?.id || state.upstreamProject
+                'upstream_project_id': state.upstreamProject?.id || state.upstreamProject,
+                'upstream_branch': state.upstreamBranch
             } :
             null
 
@@ -202,7 +217,6 @@ const actions = {
             }]
         })
 
-        await dispatch('runEnvironmentSaveHooks')
         await dispatch('commitPreparedMutations', {}, {root: true})
         commit('clearUpstream')
         return {pipelineData: data}
@@ -324,15 +338,16 @@ const actions = {
         commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
     },
-    async fetchEnvironmentVariables({commit}, {fullPath}) {
+    async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
         const envvars = await fetchEnvironmentVariables(fullPath)
-        const variablesByEnvironment = {}
+        const variablesByEnvironment = {'*': {}}
         for(const variable of envvars || []) {
             if(!variable.environment_scope) continue
             const varsForEnv = variablesByEnvironment[variable.environment_scope] || {}
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
+        variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = rootGetters.getCurrentNamespace + '.u.opencloudservices.net'
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
     async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {

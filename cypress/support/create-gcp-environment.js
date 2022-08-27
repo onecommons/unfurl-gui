@@ -33,14 +33,14 @@ function validateGCPEnvironment(filePath=GOOGLE_APPLICATION_CREDENTIALS) {
 
 function authenticateGCP(filePath=GOOGLE_APPLICATION_CREDENTIALS, click=true) {
   cy.contains('button', 'Upload Service Account Key', {timeout: BASE_TIMEOUT * 2}).click()
-  cy.get('input[type="file"]').attachFile({
+  cy.getInputOrTextarea('[type="file"]').attachFile({
     encoding: 'utf-8',
     filePath,
     lastModified: new Date().getTime(),
     force: true
   })
   cy.get('button[data-toggle="dropdown"]').click()
-  cy.get('input[placeholder="Search zones"]').clear().type(GCP_ZONE)
+  cy.getInputOrTextarea('[placeholder="Search zones"]').clear().type(GCP_ZONE)
   cy.contains('button', GCP_ZONE).should('be.visible')
   cy.contains('button', GCP_ZONE).click()
   if(click) {

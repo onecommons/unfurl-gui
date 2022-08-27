@@ -106,7 +106,7 @@ export default class DeploymentItem {
         }
     }
     
-    get readonlyLink() { return `/home/${this.namespace}/-/${this.environment.name}/${this.deployment.name}`}
+    get readonlyLink() { return `/home/${this.namespace}/-/deployments/${this.environment.name}/${this.deployment.name}`}
     get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
     get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
     get viewableTo() {
