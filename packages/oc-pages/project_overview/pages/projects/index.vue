@@ -1,11 +1,20 @@
 <script>
-import { GlModal, GlBanner, GlButton, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider } from '@gitlab/ui';
-import TableWithoutHeader from '../../../vue_shared/components/oc/table_without_header.vue';
-import { mapGetters } from 'vuex';
-import { __ } from '~/locale';
+import createFlash, { FLASH_TYPES } from '~/flash';
+import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider, GlMarkdown } from '@gitlab/ui';
+import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
+import { mapGetters, mapActions, mapMutations } from 'vuex';
+import _ from 'lodash'
+import { s__, __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
-import { bus } from '../../bus';
+import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
+import DeployedBlueprints from '../../components/deployed-blueprints.vue'
+import YourDeployments from '../../components/your-deployments.vue'
+import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/oc-components'
+import { bus } from 'oc_vue_shared/bus';
+import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
+import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 
 export default {
     name: 'ProjectPageHome',
@@ -13,226 +22,501 @@ export default {
         buttonLabel: __('Create new template'),
     },
     components: {
+        OcTab,
+        EnvironmentSelection,
         GlModal,
-        GlButton,
+        GlCard, GlIcon, GlTabs,
         GlFormGroup,
         GlFormInput,
         HeaderProjectView,
         TableWithoutHeader,
-        GlDropdown,
-        GlDropdownItem,
-        GlDropdownDivider,
+        EnvironmentCreationDialog,
         ProjectDescriptionBox,
-        GlBanner
+        DeployedBlueprints,
+        YourDeployments,
+        GlMarkdown
     },
     directives: {
         GlModal: GlModalDirective,
     },
     data() {
+
         return {
+            triedPopulatingDeploymentItems: false,
+            instantiateAs: null,
             projectSlugName: null,
-            dropdownText: __("Select"),
             templateForkedName: null,
             templateSelected: {},
+            selectedEnvironment: null,
+            newEnvironmentProvider: null,
+            creatingEnvironment: false,
+            createEnvironmentName: '',
+            createEnvironmentProvider: '',
             modalNextStatus: true,
             showBannerIntro: true,
+            submitting: false,
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
-            }
+            },
+            currentTab: 0
         }
     },
     computed: {
-        ...mapGetters({
-            environmentsList: 'getEnvironmentsList',
-            projectInfo: 'getProjectInfo',
-            templatesList: 'getTemplatesList'
-        }),
+        shouldDisableSubmitTemplate() {
+            if(this.creatingEnvironment) {
+                return !(this.createEnvironmentProvider && this.createEnvironmentName)
+            }
+            if(this.deployDialogError) return true
+            if(!this.templateForkedName) return true
+            if(this.instantiateAs != 'template' && !this.selectedEnvironment) return true
+
+            return false
+        },
+        modalTitle() {
+            if(this.creatingEnvironment) {
+                return s__('OcDeployments|Create New Environment')
+            }
+            if(this.instantiateAs == 'template') {
+                return s__('OcDeployments|Create New Deployment Template')
+            }
+
+            return s__('OcDeployments|Create New Deployment')
+
+        },
+        deployDialogError() {
+            if(this.instantiateAs == 'deployment-draft') {
+                const environment = this.selectedEnvironment ?? null
+                if(environment && this.lookupDeploymentOrDraft(slugify(this.templateForkedName), environment)) {
+                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment}'`
+                }
+            }
+            return null
+        },
+        ...mapGetters([
+            'yourDeployments',
+            'getProjectInfo',
+            'getProjectDescription',
+            'getTemplatesList',
+            'hasEditPermissions',
+            'getUsername',
+            'getNextDefaultDeploymentName',
+            'getMatchingEnvironments',
+            'getDefaultEnvironmentName',
+            'lookupDeploymentOrDraft',
+            'lookupEnvironment',
+            'getHomeProjectPath',
+            'getLastUsedEnvironment',
+            'environmentsAreReady'
+        ]),
         primaryProps() {
             return {
                 text: __('Next'),
-                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled:  this.dropdownText === __("Select") || this.modalNextStatus}],
+                attributes: [{ category: 'primary' }, { variant: 'confirm' }, { disabled:  this.shouldDisableSubmitTemplate}],
             };
         },
         cancelProps() {
             return {
-                text: __('Cancel'),
+                text: this.creatingEnvironment? __('Back'): __('Cancel')
             };
+        },
+        querySpec() {
+            if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.name)
+                return {
+                    fn: this.templateForkedName || undefined,
+                    ts: this.projectSlugName || undefined,
+                    tn: this.templateSelected.name || undefined // used to control modal for #oc-569
+
+                }
+            else return {}
+        },
+        matchingEnvironments() {
+            return this.getMatchingEnvironments(this.templateSelected?.cloud)
+        },
+        // NOTE I probably should have just used a watcher here
+        defaultEnvironmentName() {
+            return (
+                this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud)
+            )
+        },
+        inputProperties() {
+            try {
+                return Object.values(this.getProjectInfo.primary.inputsSchema.properties || {})
+            } catch(e) {
+                return []
+            }
+        },
+        outputProperties() {
+            try {
+                return Object.values(this.getProjectInfo.primary.outputsSchema.properties || {})
+            } catch(e) {
+                return []
+            }
+
         }
     },
     watch: {
-        templateForkedName(val) {
-            //  Activate next button with string more that one character
-            if (val && val.length > 0) {
-                this.modalNextStatus = false;
+        querySpec: function(query, oldQuery) {
+            if(_.isEqual(query, oldQuery)) return
+
+
+            const path = this.$route.path
+            if(document.activeElement.tagName == 'INPUT') {
+                const el = document.activeElement
+                el.onblur = _ => {
+                    this.$router.replace({path, query})
+                    el.onblur = null
+                }
             } else {
-                this.modalNextStatus = true;
+                this.$router.replace({path, query})
+            }
+
+        },
+        templateSelected: function(val) {
+            if(this.templateForkedName) return
+            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(val.title)
+            else this.templateForkedName = ''
+
+        },
+        environmentsAreReady(newState, _oldState) {
+            if (newState && this.yourDeployments.length) {
+                this.populateDeploymentItems(this.yourDeployments)
+            }
+        },
+        defaultEnvironmentName: {
+            immediate: true,
+            handler(val) {
+                if(!this.selectedEnvironment) this.selectedEnvironment = val
             }
         }
     },
+
     created() {
-        bus.$on('setTemplate', (template) => {
+        this.syncGlobalVars(this.$projectGlobal);
+        bus.$on('deployTemplate', (template) => {
+            this.instantiateAs = 'deployment-draft'
             this.templateSelected = {...template};
-            this.projectSlugName = template.slug;
+            this.projectSlugName = template.name;
         });
 
         bus.$on('editTemplate', (template) => {
             this.templateSelected = {...template};
-            this.redirectToTemplate();
+            this.redirectToTemplateEditor();
         });
     },
+    beforeDestroy() {
+        // breaks without iife ;)
+        // also works with setTimeout and console.log
+        (function() {
+            bus.$off('deployTemplate')
+            bus.$off('editTemplate')
+        })()
+    },
+    beforeMount () {
+        if(this.$route.hash) {
+            this.currentTab = 1
+        }
+    },
+    async mounted() {
+        this.initUserSettings({ username: this.getUsername })
+        await Promise.all([
+            this.populateJobsList(),
+            this.loadPrimaryDeploymentBlueprint()
+        ])
+        if (this.environmentsAreReady && this.yourDeployments.length && !this.triedPopulatingDeploymentItems) {
+            this.triedPopulatingDeploymentItems = true
+            this.populateDeploymentItems(this.yourDeployments)
+        }
+        this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
+        this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
+        /*
+        const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
+
+        delete sessionStorage['instantiate_env']
+        delete sessionStorage['instantiate_provider']
+
+        if(expectsCloudProvider && !(this.selectedEnvironment && this.newEnvironmentProvider)) {
+            // TODO find a way to merge this implementation with dashboard
+
+            createFlash({
+                message: `Creation of environment "${expectsCloudProvider}" cancelled.`,
+                type: FLASH_TYPES.WARNING
+            })
+
+            await deleteEnvironmentByName(this.getHomeProjectPath, expectsCloudProvider)
+            this.discardEnvironment(expectsCloudProvider)
+        }
+
+        delete sessionStorage['expect_cloud_provider_for']
+
+        // add environment to environments.json
+        // TODO break this off into a function
+        const envName = this.selectedEnvironment
+        if(envName) {
+            const primary_provider = this.newEnvironmentProvider? {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}: null
+
+            await this.updateEnvironment({
+                envName: this.selectedEnvironment,
+                patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
+            })
+        }
+        //
+
+         */
+
+        const templateSelected = this.$route.query?.ts?
+            this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null 
+        
+        if(templateSelected) {
+            bus.$emit('deployTemplate', templateSelected)
+            this.templateForkedName = this.$route.query?.fn
+        }
+    },
     methods: {
-        redirectToTemplate() {
-            this.$router.push({ name: 'templatePage', params: { slug: this.templateSelected.slug}});
+        redirectToTemplateEditor(page='templatePage') {
+            const query = this.$route.query || {}
+            if(Object.keys(query).length != 0) this.$router.replace({query: {}})
+            this.$router.push({ query, name: page, params: { environment: this.templateSelected.environment, slug: this.templateSelected.name}});
         },
 
-        clearModalTemplate() {
-            this.dropdownText = __("Select");
-            this.modalNextStatus = false;
+        clearModalTemplate(e) {
+            if(this.submitting) return
             this.templateForkedName = null;
+            this.templateSelected = null
+            this.selectedEnvironment = null
+            this.creatingEnvironment = false
         },
 
-        setTemplateBase() {
-            this.templateSelected = {...this.templatesList[0]};
+        instantiatePrimaryDeploymentTemplate() {
+            this.instantiateAs = 'template'
+            this.templateSelected = {...this.getTemplatesList[0]};
             this.projectSlugName = '';
         },
 
-        onSubmitModal() {
+        async onSubmitModal(e) {
+            // not implemented
+            if(this.creatingEnvironment) {
+                e.preventDefault()
+                this.redirectToNewEnvironment()
+                return
+            }
             if (this.projectSlugName !== null) {
+                this.submitting = true
                 this.prepareTemplateNew();
-                this.$store.dispatch('setTemplateSelected', this.templateSelected);
-                this.$store.dispatch('createTemplate', { projectPath: this.$projectGlobal.projectPath});
-                this.redirectToTemplate();
+
+                if(this.instantiateAs == 'deployment-draft') {
+                    // NOTE doesn't use this.prepareTemplateNew atm
+                    /*
+                    //<envname>/<blueprintname>/<deploymentname>/deployment-blueprint.json
+                    this.setUpdateObjectPath(
+                        `${this.templateSelected.environment}/${this.getProjectInfo.name}/${this.templateForkedName}/deployment-blueprint.json`
+                    )
+                    this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`)
+                    */
+                } else {
+
+                    const args = {...this.templateSelected, blueprintName: this.getProjectInfo.name}
+                    this.pushPreparedMutation(createDeploymentTemplate(args))
+                }
+
+                if(this.instantiateAs == 'deployment-draft'){
+                    // store the environment in local storage
+                    const lastUsedEnvironment = { 
+                        cloud: this.templateSelected.cloud, 
+                        environmentName: this.templateSelected.environment 
+                    }
+                    this.updateLastUsedEnvironment({ 
+                        lastUsedEnvironment,
+                        username: this.getUsername
+                    })
+
+                    this.redirectToTemplateEditor('deploymentDraftPage');
+                } else {
+                    await this.commitPreparedMutations()
+                    this.redirectToTemplateEditor();
+                }
+                this.submitting = false
+                this.clearModalTemplate()
             }
 
         },
-
+        async loadPrimaryDeploymentBlueprint() {
+            const projectPath = this.$projectGlobal.projectPath
+            const templateSlug = this.getProjectInfo.primaryDeploymentBlueprint
+            if(!templateSlug) return
+            await this.fetchProject({projectPath});
+            return await this.populateTemplateResources({
+                projectPath, 
+                templateSlug, 
+            })
+        },
+        onCancelModal(e) {
+            if(this.creatingEnvironment) {
+                this.creatingEnvironment = false
+                this.createEnvironmentName = ''
+                this.createEnvironmentProvider = ''
+                e.preventDefault()
+            }
+        },
         prepareTemplateNew() {
+            this.templateSelected.primary = this.templateSelected.title
             this.templateSelected.title = this.templateForkedName;
-            this.templateSelected.slug = this.slugify(this.templateForkedName);
+            this.templateSelected.name = slugify(this.templateForkedName);
             this.templateSelected.totalDeployments = 0;
-            this.templateSelected.environment = this.dropdownText;
-            this.templateSelected.type = "deployment";
+            this.templateSelected.environment = this.selectedEnvironment || this.defaultEnvironmentName
+            this.templateSelected.primaryType = this.getProjectInfo.primary
         },
 
-        setEnvironmentName(envName) {
-            this.dropdownText =  envName;
+        createNewEnvironment() {
+            this.creatingEnvironment = true
         },
 
         redirectToNewEnvironment() {
-            const url = `${window.origin}${window.location.pathname.split("/").slice(0, -1).join("/")}/environments/new`;
+            this.$refs.environmentDialog.beginEnvironmentCreation()
+            /*
+            const redirectTarget = `${window.location.pathname}${window.location.search}`
+            const pathComponents = window.location.pathname.split("/").slice(0, -2)
+            pathComponents[1] = this.getUsername
+            pathComponents[2] = USER_HOME_PROJECT
+            const url = `${window.origin}${pathComponents.join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
             window.location = url;
-        },
-
-        slugify(text) {
-            return text
-                .toString() 
-                .toLowerCase()
-                .normalize('NFD')
-                .trim()
-                .replace(/\s+/g, '-')
-                // eslint-disable-next-line no-useless-escape
-                .replace(/[^\w\-]+/g, '')
-                // eslint-disable-next-line no-useless-escape
-                .replace(/\-\-+/g, '-');
+            */
         },
 
         handleClose() {
             this.showBannerIntro = false;
         },
+
+        ...mapActions([
+            'syncGlobalVars',
+            'fetchProjectInfo',
+            'commitPreparedMutations',
+            'updateEnvironment',
+            'populateDeploymentItems',
+            'populateJobsList',
+            'populateTemplateResources',
+            'fetchProject',
+            'updateLastUsedEnvironment'
+        ]),
+        ...mapMutations([
+            'pushPreparedMutation',
+            'setUpdateObjectPath',
+            'setUpdateObjectProjectPath',
+            'discardEnvironment',
+            'initUserSettings'
+        ])
     }
 }
 </script>
 <template>
     <div>
-        <!-- Banner Intro -->
-        <gl-banner
-            v-if="showBannerIntro"
-            :title="bannerInfo.title"
-            button-text="Learn More"
-            button-link="https://www.onecommons.org/unfurl-cloud"
-            variant="introduction"
-            @close="handleClose">
-            <p>
-                You can view this project’s requirements, deployment templates, source or view a live preview of the app.
-                <br>
-                You can also create a new deployment template and edit or deploy this project using any of its templates.
-            </p>
-        </gl-banner>
 
         <!-- Header of project view -->
-        <HeaderProjectView :project-info="projectInfo" />
+        <HeaderProjectView :project-info="getProjectInfo" />
 
-        <div v-if="projectInfo.id">
+        <div v-if="getProjectInfo.name">
             <!-- Project Description -->
             <ProjectDescriptionBox 
-                    :requirements="projectInfo.requirements" 
-                    :inputs="projectInfo.inputs" 
-                    :outputs="projectInfo.outputs"
-                    :project-description="projectInfo.description"
-                    :project-image="projectInfo.image"
-                    :live-url="projectInfo.livePreview"
-                    :project-name="projectInfo.name"
-                    :project-title="projectInfo.title"
-                    :code-source-url="projectInfo.sourceCodeUrl"
+                    :project-info="getProjectInfo"
+                    :requirements="getProjectInfo.primary.requirements" 
+                    :inputs="inputProperties"
+                    :outputs="outputProperties"
+                    :project-description="getProjectDescription"
+                    :project-image="getProjectInfo.image"
+                    :live-url="getProjectInfo.livePreview"
+                    :project-name="getProjectInfo.name"
+                    :project-title="getProjectInfo.title"
+                    :code-source-url="getProjectInfo.sourceCodeUrl"
                     />
 
-            <!-- Create new template part -->
-            <div class="row gl-mt-6 gl-mb-6">
-                <div class="col-md-12 col-lg-6 d-flex">
-                    <h2 class="oc-title-section">{{ s__('OcDeployments|Deployment Templates') }}</h2>
-                </div>
-                <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end">
-                    <div class="d-inline-flex">
-                        <div class="form-group inline gl-mt-4">
-                            <gl-button
-                                v-gl-modal.oc-templates-deploy
-                                :title="$options.i18n.buttonLabel"
-                                :aria-label="$options.i18n.buttonLabel"
-                                category="primary"
-                                variant="confirm"
-                                class="btn-uf-teal"
-                                type="button"
-                                @click="setTemplateBase"
-                                >
-                                {{ $options.i18n.buttonLabel}}
-                            </gl-button>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <!-- Table -->
-            <TableWithoutHeader :data-rows="templatesList" />
+            <!-- TODO this will probably get removed -->
+            <deployed-blueprints v-if="false"/>
+
+            <gl-tabs v-model="currentTab">
+                <oc-tab title="Available Blueprints">
+                    <div class="">
+                        <gl-card>
+                            <template #header>
+                                <div class="d-flex align-items-center">
+                                    <gl-icon name="archive" class="mr-2"/>
+                                    <h5 class="mb-0 mt-0">
+                                        {{__('Available Deployment Blueprints')}}
+                                    </h5>
+                                </div>
+                            </template>
+                            <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
+                        </gl-card>
+                    </div>
+                </oc-tab>
+                <oc-tab v-if="this.environmentsAreReady && yourDeployments.length > 0" title="Your Deployments">
+                    <div class="">
+                        <your-deployments />
+                    </div>
+
+                </oc-tab>
+
+            </gl-tabs>
+
+            <gl-card v-if="$projectGlobal.readme">
+                <template #header>
+                    <div class="d-flex align-items-center">
+                        <gl-icon name="information-o" class="mr-2"/>
+                        <h5 class="mb-0 mt-0">
+                            {{__('README.md')}}
+                        </h5>
+                    </div>
+                </template>
+                <gl-markdown class="md" v-html="$projectGlobal.readme" />
+            </gl-card>
+
 
             <!-- Modal -->
             <gl-modal
+                ref="oc-templates-deploy"
                 modal-id="oc-templates-deploy"
-                :title="s__('OcDeployments|Create new deployment')"
+                :visible="!!$route.query.tn"
+
+                :title="modalTitle"
                 :action-primary="primaryProps"
                 :action-cancel="cancelProps"
                 no-fade
                 @primary="onSubmitModal"
-                @cancel="clearModalTemplate"
+                @cancel="onCancelModal"
+                @hidden="clearModalTemplate"
             >
-                <gl-form-group
-                    label="Name"
-                    class="col-md-4 align_left gl-pl-0"
-                >
-                    <gl-form-input
-                    id="input1"
-                    v-model="templateForkedName"
-                    name="input['template-name']"
-                    type="text"
+                <environment-creation-dialog 
+                    v-if="creatingEnvironment"
+                    ref="environmentDialog"
+                    @environmentNameChange="env => createEnvironmentName = env"
+                    @cloudProviderChange="provider => createEnvironmentProvider = provider"
+                    :cloud-provider="templateSelected && templateSelected.cloud"
                     />
-                </gl-form-group>
-                <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                <gl-dropdown :text="dropdownText">
-                    <div v-if="environmentsList.length > 0">
-                        <gl-dropdown-item v-for="(env , idx) in environmentsList" :key="idx" @click="setEnvironmentName(env.name)">{{ env.name }}</gl-dropdown-item>
-                        <gl-dropdown-divider />
+                <div v-else>
+                    <gl-form-group
+                        label="Name"
+                        class="col-md-4 align_left"
+                    >
+                        <gl-form-input
+                        id="input1"
+                        data-testid="deployment-name-input"
+                        v-model="templateForkedName"
+                        name="input['template-name']"
+                        type="text"
+                        />
+
+                    </gl-form-group>
+                    <div class="col-md-6" v-if="instantiateAs!='template'">
+                        <p>{{ __("Select an environment to deploy this template to:") }}</p>
+                        <environment-selection 
+                            v-model="selectedEnvironment"
+                            :provider="templateSelected && templateSelected.cloud"
+                            :error="deployDialogError"
+                            @createNewEnvironment="createNewEnvironment"
+                            environment-creation
+                        />
                     </div>
-                    <gl-dropdown-item class="disabled" @click="redirectToNewEnvironment">{{ __("Create new environment") }}</gl-dropdown-item>
-                </gl-dropdown>
+                </div>
             </gl-modal>
         </div>
     </div>
@@ -243,4 +527,6 @@ h2.oc-title-section {
     font-size: 19px;
     line-height: 24px;
 }
+
+.dropdown-parent >>> ul { width: unset; }
 </style>

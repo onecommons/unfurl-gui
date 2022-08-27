@@ -1,0 +1,33 @@
+# unfurl -v --home '' export --format environments > environments.json
++?include-local: local/unfurl.yaml
+apiVersion: unfurl/v1alpha1
+kind: Project
+
+# To create/update environments.json run:
+# unfurl --home '' export --format environments
+environments:
+  production-gcp:  
+    connections:
+      # declare the primary_provider as a connection to an Amazon Web Services account:
+      primary_provider:
+        type: unfurl.relationships.ConnectsTo.GoogleCloudProject
+
+  staging-aws:
+    connections:
+      # declare the primary_provider as a connection to an Amazon Web Services account:
+      primary_provider:
+        type: unfurl.relationships.ConnectsTo.AWSAccount
+
+  defaults: 
+    secrets:
+      vault_secrets:
+        default:
+    repositories:
+      types:
+        url: https://gitlab.com/onecommons/unfurl-types
+  +?include: environments.json#DeploymentEnvironment
+
+ensembles:
+- file: ensemble/ensemble.yaml
+  alias: ensemble
+  default: true

@@ -56,9 +56,14 @@ const pgettext = (keyOrContext, key) => {
   return translated[translated.length - 1];
 };
 
+// will not work for many, many languages
+function ngettext(singular, plural, n) {
+  return (n == 1) ? singular: plural
+}
+
 export { languageCode };
 export { gettext as __ };
-// export { ngettext as n__ };
+export { ngettext as n__ };
 export { pgettext as s__ };
 // export { sprintf };  
 export default locale;

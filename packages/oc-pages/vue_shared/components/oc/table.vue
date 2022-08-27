@@ -1,139 +1,161 @@
 <script>
 import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
-import { __ } from '~/locale';
+import { __, n__ } from '~/locale';
 
 function searchMatchingFunction(cellContent, searchKey) {
   if(!(cellContent && cellContent.toLowerCase)) return false;
   if(searchKey.length <= 2) {
     return cellContent.toLowerCase() == searchKey.toLowerCase();
   } else {
-    return cellContent.toLowerCase().startsWith(searchKey.toLowerCase());
+    return cellContent.toLowerCase().includes(searchKey.toLowerCase());
   }
 }
 
 function* expandRows(fields, children, _depth = 0, parent=null) {
   if(fields.length == 0) return;
-  const columnName = fields[0].key, remainingColumns = _.tail(fields);
-  const grouped = _.groupBy(children, fields[0].groupBy || columnName);
+  const field = fields[0]
+  const columnName = field.key, remainingColumns = _.tail(fields);
+  const grouped = _.groupBy(children, field.groupBy || field.textValue || columnName);
   for (const key in grouped) {
+
     const group = grouped[key];
-    let parentRow = { 
-      [columnName]: group[0][columnName],
-      tooltips: group[0].tooltips,
-      _children: [],
-      _childrenByGroup: {},
-      _totalChildren: 0,
-      _key: columnName,
-      _expanded: _depth == 0,
-      _depth,
-      _controlNodes: []
-    };
-    // add the child rows
-    for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
-      parentRow._totalChildren++;
-      parentRow._children.push(row);
-    }
+    const columnTarget = field.textValue?
+    field.textValue(group[0]) :
+      group[0][columnName]
 
-    let span = 1;
-    const childGroups = _.groupBy(parentRow._children, (child) => child._key);
-    for(const key in childGroups){
-      const childGroup = childGroups[key];
-      if(childGroup.length == 1) {
-        const child = childGroup[0];
-        parentRow  = {...child, ...parentRow};
-        if(parentRow._children.length == 1) {
-          parentRow._controlNodes = [child._key];
-          parentRow._children = child._children;
-          delete child._children;
-        } else {
-          span += 1;
-          parentRow._children.splice(parentRow._children.indexOf(child), 1);
-        }
-      } else {
-        parentRow._controlNodes.push(childGroup[0]._key);
+      let parentRow = { 
+        [columnName]: columnTarget,
+        tooltips: group[0].tooltips,
+        context: group[0].context,
+        _shallow: field.shallow,
+        _children: [],
+        _childrenByGroup: {},
+        _totalChildren: 0,
+        _key: columnName,
+        _expanded: _depth == 0,
+        _depth,
+        _controlNodes: []
+      };
+      // add the child rows
+      let span = 1;
+
+      while(remainingColumns[0]?.shallow) {
+        const field = remainingColumns[0]
+        const columnName = field.key
+        parentRow[columnName] = field.textValue?
+        field.textValue(group[0]) :
+          group[0][columnName]
+
+          span++
+            remainingColumns.shift()
       }
-    }
-
-    parentRow.childrenOfGroup = function(group) {
-      if (parentRow[group]) return 1;
-      let result = 0;
-      /*
-       * caching
-      if(!(result = parentRow._childrenByGroup[group])) {
-        parentRow._childrenByGroup[group] = result = parentRow._children
-          .map(child => child.childrenOfGroup(group))
-          .reduce((a,b) => a + b, 0)
-      }
-       */
-      // not caching
-      result = parentRow._children
-        .map(child => child.childrenOfGroup(group))
-        .reduce((a,b) => a + b, 0);
-      //
-
-      return result;
-    };
-
-    parentRow.childrenToDepth = function*(n) {
-      for(const child of parentRow._children) {
-        if(!child) break;
-        if(n == -1 || child._depth <= n + span) {
-          yield child;
+      for (const row of expandRows(remainingColumns, group, _depth + 1, parentRow)) {
+        if(! row._parent) {
+          parentRow._totalChildren++;
+          parentRow._children.push(row);
         }
-        if((_depth + span) != n) {
-          for(const descendent of child.childrenToDepth(n)) {
-            yield descendent;
+      }
+
+      const childGroups = _.groupBy(parentRow._children, (child) => child._key);
+      for(const key in childGroups){
+        const childGroup = childGroups[key];
+        if(childGroup.length == 1) {
+          const child = childGroup[0];
+          Object.assign(parentRow, {...child, ...parentRow});
+          if(parentRow._children.length == 1) {
+            parentRow._children = child._children;
+            if(parentRow._children.length && ! parentRow._children[0]._shallow) {
+              parentRow._controlNodes = [parentRow._children[0]._key];
+            }
+            delete child._children;
+          } else {
+            span += 1;
+            parentRow._children.splice(parentRow._children.indexOf(child), 1);
           }
+        } else {
+          parentRow._controlNodes.push(childGroup[0]._key);
+          span +=1;
         }
-        
       }
-    };
 
-    parentRow.expose = function() {
-      parentRow._expanded = true;
-      if(parentRow._parent) parentRow._parent.expose();
-    };
+      parentRow.childrenOfGroup = function(group) {
+        let result = 0;
+        result = this._children
+          .map(child => child.childrenOfGroup(group))
+          .reduce((a,b) => a + b, 0);
+          if (this[group]) result ++;
 
-    parentRow.setChildrenToDepth = function(n, state) {
-      for(const child of parentRow.childrenToDepth(n)) {
-        child._expanded = state;
+          return result;
+      };
+
+      parentRow.childrenToDepth = function*(n) {
+        for(const child of this._children) {
+          if(!child) break;
+          if(n == -1 || child._depth <= n) {
+            yield child;
+          }
+          if(n == -1 || (this._depth + this._span) <= n) {
+            for(const descendent of child.childrenToDepth(n)) {
+              yield descendent;
+            }
+          }
+
+        }
+      };
+
+      parentRow.expose = function() {
+        this._expanded = true;
+        if(this._parent) this._parent.expose();
+      };
+
+      parentRow.setChildrenToDepth = function(n, state) {
+        for(const child of this.childrenToDepth(n)) {
+          child._expanded = state;
+        }
+      };
+
+      parentRow.shouldDisplay = function() {
+        if(this._depth == 0) return true;
+        return parentRow._expanded && ((!parentRow._parent) || parentRow._parent.shouldDisplay());
+      };
+
+      parentRow.isChild = function() {
+        return this._depth != 0;
+      };
+
+
+      if(parentRow.isChild()) {
+        parentRow._rowVariant = 'expanded';
+      } else {
+        delete parentRow._rowVariant;
       }
-    };
-
-    parentRow.shouldDisplay = function() {
-      if(_depth == 0) return true;
-      return parentRow._expanded && ((!parentRow._parent) || parentRow._parent.shouldDisplay());
-    };
-
-    parentRow.isChild = function() {
-      return _depth != 0;
-    };
 
 
-    if(parentRow.isChild()) {
-      parentRow._rowVariant = 'expanded';
-    } else {
-      delete parentRow._rowVariant;
-    }
 
-    
+      parentRow._span = span;
+      for(const child of parentRow._children){
+        child._parent = parentRow;
+      }
 
-    yield parentRow;
-    for(const child of parentRow._children) {
-      yield child;
-    }
-    parentRow._children = parentRow._children.filter(row => row._depth - parentRow._depth <= span);
-    parentRow._span = span;
-    for(const child of parentRow._children){
-      child._parent = parentRow;
-    }
+      yield parentRow
+      for(const child of parentRow.childrenToDepth(-1)) yield child
   }
 }
 
 export default {
   name: 'TableComponent',
-  props: ['items', 'fields'],
+  props: {
+    items: Array,
+    fields: Array,
+    useCollapseAll: {
+      type: Boolean,
+      default: true
+    },
+    hideFilter: { type: Boolean, default: false },
+    noMargin: { type: Boolean, default: false },
+    rowClass: [Object, Function]
+  },
   directives: {
     GlTooltip: GlTooltipDirective,
   },
@@ -153,16 +175,18 @@ export default {
         row.index = i++;
         result.push(row);
       }
+      window.items = result
       return result;
     },
     _fields() {
-      const result = [{key: "selected", label: "", thStyle: {width: '0px'}}];
+      const result = this.useCollapseAll? [{key: "selected", label: "", thStyle: {width: '0px'}}] : [];
       let i = 0;
       for(const field of this.fields) {
-        const label = field.label.trim() + '  ';  // dirty trick to keep THs from touching each other
+        const label = field.label.trim()
         result.push({index: i++, ...field, label});
       }
-      result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
+      // balance table gutters
+      if(this.useCollapseAll) result.push({ key: "$menu", label: "", thStyle: {width: '0px'}});
       return result;
     },
     keys() {
@@ -190,19 +214,16 @@ export default {
     }
   },
   methods: {
-    // we could use something like this https://www.npmjs.com/package/pluralize
     pluralize(scope) {
-      const count = scope.item[scope.field.key]._children.length;
-      
-      const result = `${count} ${scope.field.label}`;
-
-      if (count == 0) {
-        
-      } else if (count > 1) {
-
-      } else if (count == 1) {
-
+      const count = scope.item.childrenOfGroup(scope.field.key) || 0
+      if(scope.field.pluralize) {
+        const result = scope.field.pluralize(count, scope.item)
+        if(typeof result == 'string') {
+          return result
+        }
       }
+      if(!scope.field.s) return ''
+      const result = `${count} ${n__(scope.field.s, scope.field.label, count)}`;
       return result;
     },
     filterFn(row, filterState) {
@@ -236,7 +257,7 @@ export default {
     allExpanded() {
       for(const row of this._items) {
         if(row._depth == 0 && !this.expandedAt(row.index, -1))
-          return false;
+        return false;
       }
       return true;
 
@@ -274,112 +295,109 @@ export default {
 };
 </script>
 <template>
-  <div class="container-fluid">
-    <div class="row fluid filter-searchbox">
+  <div class="p-0" :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
+    <div v-if="!hideFilter && _items.length > 1" class="row fluid no-gutters filter-searchbox" >
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
       <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
         <div class="filter-container">
-          <gl-icon name="filter" style="width: 24px; height: 24px; color: #595959"/>
-          <span style="padding: 0 5px">Filter: </span>
           <div class="filter-input-container">
             <gl-form-input
               id="filter-input"
               debounce="500"
               type="search"
+              placeholder="Search"
               v-model="filter"
-              />
-              <div style="display: flex; position: absolute; height: 100%; top: 0; right: 4px; align-items: center;">
-                <gl-icon name="chevron-down" class="s24" style="color: #4A5053"/>
-              </div>
+            />
+            <div style="display: flex; position: absolute; height: 100%; top: 0; right: 4px; align-items: center;">
+              <gl-icon name="search" class="s24" style="color: #4A5053AA"/>
+            </div>
           </div>
         </div>
       </div>
     </div>
-    <div class="row-fluid">
+    <div class="row-fluid no-gutters">
       <div class="col-md-12">
         <div v-if="$apollo.loading" class="loading apollo">{{ __("Loading...") }}</div>
         <!--div v-else-if="error" class="error apollo">{{ __("An error occured") }}</div-->
 
-        <div class="oc-table" v-else>
-          <!-- Table -->
-          <gl-table
-            :filter-function="filterFn"
-            filter="{}"
-            id="accounts-table"
-            ref="selectableTable"
-            tbody-tr-class="oc-table-row"
-            responsive="lg"
-            layout
-            :items="_items"
-            :fields="_fields"
-            primary-key="id"
-            show-empty
-          >
+      <div class="oc-table" :class="{'secondary-is-primary': !useCollapseAll}" v-else>
+        <!-- Table -->
+        <gl-table
+          :filter-function="filterFn"
+          filter="{}"
+          id="accounts-table"
+          ref="selectableTable"
+          :tbody-tr-class="rowClass"
+          :responsive="true"
+          :items="_items"
+          :fields="_fields"
+          primary-key="id"
+          :thead-class="{'no-collapse-all': !useCollapseAll}"
+          show-empty
+        >
+
+          <template #emptyfiltered>
+            <slot name="empty" />
+          </template>
           <template #head(selected)>
             <span @click="toggleAll" class="control-cell primary-toggle">
-                <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
-                <gl-icon v-else title="Expand All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
+              <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
+              <gl-icon v-else title="Expand All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
             </span>
           </template>
 
-          <template #head($menu)>
-            <span class="control-cell" @click="toast()">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"> <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/> </svg>
-            </span>
-          </template>
+          <!--template #head($menu)>
+          <span class="control-cell">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"> <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/> </svg>
+          </span>
+        </template-->
+
+        <template #head()=scope>
+          <slot :name="scope.field.key + '$head'" v-bind="scope">
+            {{scope.field.label}}
+          </slot>
+        </template>
 
 
-          <template #cell(selected)>
-            <div class="control-cell left" />
-          </template>
+        <template #cell(selected)>
+          <div class="control-cell left" />
+        </template>
 
-          <template #cell($menu)>
-            <div class="control-cell right" />
-          </template>
+        <template #cell($menu)>
+          <div class="control-cell right" />
+        </template>
 
-          <template #cell()=scope>
-            <div class="table-body" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
-              <span class="collapsable" v-if="scope.item._controlNodes.includes(scope.field.key) && scope.item._children.length > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
+        <template #cell()=scope>
+          <div class="table-body" :style="scope.field.tableBodyStyles" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
+            <slot :name="scope.field.key + '$all'" v-bind="scope">
+              <span class="collapsable" v-if="scope.item.childrenOfGroup(scope.field.key) > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
                 <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
-                  <span v-if="scope.field.index != 0">
-                    <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
-                    <gl-icon v-else name="chevron-right" class="accordion-cell" />
-                  </span>
-                  <span v-else style="margin-left: 0.5em;" />
+                <span v-if="scope.field.index != 0">
+                  <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
+                  <gl-icon v-else name="chevron-right" class="accordion-cell" />
+                </span>
+                <span v-else style="margin-left: 0.5em;" />
                 <slot v-if="scope.field.key == scope.item._key" :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
-                <span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span>
-              </span>
-              <span v-else-if="scope.item[scope.field.key]"> 
-                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
-                <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
-              </span>
-              <span v-else-if="false">
-                <slot :name="scope.field.key + '$count'">
-                {{pluralize(scope)}}
-                </slot>
-              </span>
-              <span v-else>
-                <slot :name="scope.field.key + '$empty'"></slot>
-              </span>
-            </div>
-          </template>
-          </gl-table>
+                <!--span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span-->
+              <span v-else>{{pluralize(scope)}}</span>
+            </span>
+            <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}"> 
+              <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
+              <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
+            </span>
+            <span v-else>
+              <slot :name="scope.field.key + '$empty'" v-bind="scope">
+                <span v-if="scope.item._depth + scope.item._span <= scope.field.index">
+                  {{pluralize(scope)}}
+                </span>
+              </slot>
+            </span>
+          </slot>
         </div>
-      </div>
-    </div>
-    <div class="row justify-content-end gl-mt-4">
-      <div class="col">
-        <!--gl-pagination
-          v-model="page"
-          :per-page="perPage"
-          :total-items="totalRows"
-          first-text="First"
-          prev-text="Prev"
-          next-text="Next"
-          last-text="Last"
-          aria-controls="accounts-table"
-        /-->
-      </div>
+      </template>
+    </gl-table>
+  </div>
+</div>
     </div>
   </div>
 </template>
@@ -391,11 +409,15 @@ export default {
   border-style: solid;
   border-radius: 4px;
   border-width: 1px;
-  font-size: 1em;
+  font-size: 1.15em;
 }
 
 
-.oc-table >>> .oc-table-row {
+.oc-table >>> .table-responsive {
+  margin-bottom: 0;
+}
+
+.oc-table >>> tbody tr {
   height: 4.25em;
 }
 
@@ -403,23 +425,26 @@ export default {
   margin-top: -1px;
   border-bottom-style: solid;
   border-bottom-color: white;
-  border-bottom-width: 40px; /*fix scrollbar position*/
+}
+
+.oc-table >>> tr:last-child .table-body {
+  border-bottom-style: none;
 }
 
 .oc-table >>> th {
-  padding: 0.25em 0;
-  font-family: 'Open Sans';
+  padding: 0.25em;
+  white-space: nowrap;
+  font-family: 'Noto Sans';
   font-size: 0.95em;
   font-weight: bold;
   color: #4A5053;
-  background-color: #F4F4F4;
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #DBDBDB;
 }
 
 .oc-table >>> td {
-  font-family: 'Open Sans';
+  font-family: 'Noto Sans';
   white-space: nowrap;
   font-size: 0.8125em;
   border-style: none;
@@ -429,19 +454,23 @@ export default {
 
 .table-body {
   display: flex;
-  align-items: end;
-  padding: 0.4rem 0;
+  align-items: center;
+  padding: 0.4rem 0.25em;
   border-style: none;
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #EEEEEE;
   width: 100%;
   height: 100%;
-  line-height: 1.35;
 }
+
 
 .table-body >>> * {
   position: relative;
+}
+
+.table-body > span {
+  width: 100%;
 }
 
 .table-body.expanded-row {
@@ -460,10 +489,6 @@ export default {
 
 .table-body .collapsable {
   display: flex; align-items: center;
-}
-
-.table-aside {
-  padding: 0.4rem 0px;
 }
 
 .filter-container {
@@ -499,14 +524,10 @@ export default {
 
 .oc-table >>> tr.table-expanded {
   border-color: #D1CFD7;
-  height: 3rem;
+  height: 0;
 }
 .oc-table >>> tr.table-expanded > td {
-  height: 3rem;
-}
-
-.oc-table >>> th {
-  white-space: pre;
+  height: 3em;
 }
 
 
@@ -527,7 +548,7 @@ th .control-cell {
   margin-left: -0.5em;
 }
 
-.oc-table >>> td:nth-child(2) {
+.oc-table.second-is-primary >>> td:nth-child(2) {
   color: #0099FF;
   font-weight: bold;
   font-size: 0.88em;
@@ -550,8 +571,21 @@ th .control-cell {
 }
 
 .primary-toggle >>> svg {
- box-sizing: content-box; color:#00D2D9; height: 1.875em; width: 1.875em;
- cursor: pointer;
+  box-sizing: content-box; color:#00D2D9; height: 1.875em; width: 1.875em;
+  cursor: pointer;
 }
 
+.indent-to-widget {
+  margin-left: 1.25em;
+}
+
+.no-margin { margin: -1px; }
+.no-margin >>> table { border-bottom-width: 0; }
+.no-margin >>> .gl-table { margin-bottom: -1px; }
+
+</style>
+
+<style>
+.oc-table thead * { line-height: 0!important }
+.oc-table thead.no-collapse-all * { line-height: 2!important }
 </style>

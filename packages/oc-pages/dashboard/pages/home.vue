@@ -1,0 +1,156 @@
+<script>
+import TableComponent from 'oc_vue_shared/components/oc/table.vue';
+
+import QuantityCard from '../components/quantity-card.vue'
+import ApplicationCell from '../components/cells/application-cell.vue'
+import EnvironmentCell from '../components/cells/environment-cell.vue'
+import DeploymentCell from '../components/cells/deployment-cell.vue'
+import ResourceCell from '../components/cells/resource-cell.vue'
+
+import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
+import DashboardWelcome from '../components/dashboard-welcome.vue'
+import {textValueFromKeys} from '../dashboard-utils'
+import {mapGetters} from 'vuex';
+import _ from 'lodash';
+import { __ } from '~/locale';
+import * as routes from '../router/constants'
+
+
+function pluralizeResourceType(count) {
+  if(count == 0) return ''
+}
+
+function pluralizeResources(count) {
+  if(count == 0) return 'No resources'
+}
+const fields = [
+    {key: 'application', textValue: textValueFromKeys('application.title', 'application.projectPath'), label: 'Applications', s: 'Application'},
+    {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
+    {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
+    {key: 'type', groupBy(item) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type', pluralize: pluralizeResourceType},
+    {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource', pluralize: pluralizeResources},
+];
+
+export default {
+    name: 'TableComponentContainer',
+    components: {
+        TableComponent,
+        QuantityCard,
+        DashboardBreadcrumbs,
+        ApplicationCell,
+        EnvironmentCell,
+        DeploymentCell,
+        ResourceCell,
+        DashboardWelcome
+    },
+    data() {
+        return { 
+            routes,
+            //fields,
+            //items: [],
+            loaded: false,
+        };
+    },
+
+    computed: {
+        ...mapGetters([
+            'getDashboardItems',
+            'runningDeploymentsCount',
+            'totalDeploymentsCount',
+            'environmentsCount',
+            'applicationsCount',
+        ]),
+        tableFields() {
+            if(this.environmentsCount > 0 && this.applicationsCount == 0) {
+                return fields.slice(1)
+            } else {
+                return fields
+            }
+        },
+        tableItems() {
+            let result = this.getDashboardItems
+            if(this.totalDeploymentsCount > 0) {
+                result = this.getDashboardItems.filter(item => !!item.context?.deployment)
+            }
+            return result
+        }
+    },
+};
+
+</script>
+<template>
+<div>
+    <dashboard-breadcrumbs />
+    <div style="width: fit-content; margin: auto;">
+        <dashboard-welcome v-if="totalDeploymentsCount == 0" />
+        <div class="quantity-cards">
+            <div class="d-flex flex-wrap justify-content-center">
+                <quantity-card 
+                    :to="{name: routes.OC_DASHBOARD_HOME}" 
+                    :count="applicationsCount" 
+                    s="Application" 
+                    p="Applications" 
+                    class="qcard1"
+                    create-link="/explore" />
+                <quantity-card 
+                    :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
+                    :count="environmentsCount"
+                    s="Environment"
+                    p="Environments"
+                    class="qcard2"
+                    :create-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
+            </div>
+            <div class="d-flex flex-wrap justify-content-center">
+                <quantity-card
+                    :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'running'}}"
+                    :count="runningDeploymentsCount"
+                    s="Running Deployment"
+                    p="Running Deployments"
+                    class="qcard3"
+                    create-link="/explore" />
+                <!-- TODO figure out a better way to show stopped deployments -->
+                <quantity-card
+                    :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
+                    :count="totalDeploymentsCount"
+                    s="Total Deployment"
+                    p="Total Deployments"
+                    class="qcard4" />
+            </div>
+        </div>
+    </div>
+    <TableComponent v-if="totalDeploymentsCount > 0" :items="tableItems" :fields="tableFields">
+    <template #empty>
+      <center class="my-5" style="font-size: 1.3em;">
+        You haven't deployed anything yet. Browse our <a href="/explore" target="_blank">Starter Application Blueprints</a> to get started!
+      </center>
+    </template>
+    <template #application="scope">
+        <application-cell :application="scope.item.context.application" />
+    </template>
+    <template #environment="scope">
+        <environment-cell :environment="scope.item.context.environment" />
+    </template>
+    <template #deployment="scope">
+        <deployment-cell :scope="scope" :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" />
+    </template>
+    <template #resource="scope">
+        <resource-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" :resource="scope.item.context.resource" />
+    </template>
+    </TableComponent> 
+</div>
+</template>
+
+<style scoped>
+.status-item {
+  display: flex;
+  align-items: flex-end;
+}
+
+.quantity-cards {
+  display: flex;
+  justify-content: center;
+  margin: 2em -0.5em 4em -0.5em;
+  flex-wrap: wrap;
+}
+
+</style>

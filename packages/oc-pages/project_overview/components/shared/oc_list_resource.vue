@@ -1,37 +1,42 @@
 <script>
 import {  GlFormRadio, GlIcon } from '@gitlab/ui';
+import OcListResourceIcon from './oc_list_resource/icon.vue';
 import { __ } from '~/locale';
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {mapGetters} from 'vuex';
+
+const CLOUD_PROVIDER_NAMES = {
+    [lookupCloudProviderAlias('gcp')]: __('Google Cloud Platform'),
+    [lookupCloudProviderAlias('aws')]: __('Amazon Web Services'),
+    [lookupCloudProviderAlias('azure')]: __('Azure'),
+    [lookupCloudProviderAlias('k8s')]: __('Kubernetes')
+}
+
 export default {
     name: 'OcListResource',
     components: {
         GlFormRadio,
-        GlIcon
+        GlIcon,
+        OcListResourceIcon
     },
 
     data() {
-      return {
-        value: {}
-      };
+        return {}
     },
 
     props: {
-        filteredResourceByType: {
-            type: Array,
-            required: true,
+        validResourceTypes: {
+          type: Array,
+          required: true
         },
-        /*
         value: {
             type: [Object, String],
-            required: true,
+            required: false,
+            default: () => ''
         },
-        */
-        nameOfResource: {
+        resourceType: {
             type: String,
-            required: true,
-        },
-        cloud: {
-            type: String,
-            required: true,
+            required: false
         }
     },
 
@@ -43,78 +48,82 @@ export default {
             set(val) {
                 this.$emit("input", val); 
             }
+        },
+
+        ...mapGetters([
+            'isMobileLayout',
+            'resolveResourceTypeFromAny'
+        ]),
+        cloudProviderMappings() {
+            const result = []
+            for(const type of this.validResourceTypes) {
+                let cloud = ''
+                if(type.implementation_requirements) {
+                    for(const implRequirement of type.implementation_requirements) {
+                        cloud = CLOUD_PROVIDER_NAMES[lookupCloudProviderAlias(implRequirement)] || ''
+                        if(cloud) break
+                    }
+                }
+                result.push(cloud)
+            }
+            return result
         }
     },
-
     methods: {
-        checkCompatibility(itemPlatform) {
-            return itemPlatform === this.cloud ||
-                    itemPlatform === __("SaaS Service") ||
-                    itemPlatform === __("Self-Hosted");
+        description(resource) {
+            return resource.description || this.resolveResourceTypeFromAny(resource?.type)?.description
+        },
+        iconProps(resource) {
+            const type = resource?.type ? this.resolveResourceTypeFromAny(resource?.type) : resource
+            return {
+                type,
+                badge: type.badge,
+                alt: resource.name
+            }
+
         }
+
     }
 };
 </script>
 <template>
-    <div>
-        <p>
-        {{
-            filteredResourceByType.length > 0
-            ? __('Choose one of these options')
-            : __('Does not exist template for')
-        }}
-        {{ nameOfResource }}
-        </p>
-        <div class="ci-table" role="grid">
+    <div class="ci-table" role="grid">
         <div
-            v-for="(resource, idx) in filteredResourceByType"
-            :key="resource + idx"
+            v-for="(resource) in validResourceTypes"
+            :key="resource.name"
             class="gl-responsive-table-row oc_table_row"
         >
-            <div  v-if="!checkCompatibility(resource.platform)" class="uf-faded-row"></div>
-            <div
-            class="table-section oc-table-section section-wrap text-truncate section-40 align_left gl-display-flex gl-pl-2"
-            >
-            <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" :disabled="!checkCompatibility(resource.platform)"  />
-            <div class="oc_resource_icon gl-mr-3">
-                <img v-if="resource.avatar !== null" :src="resource.avatar" :alt="resource.name" />
-            </div>
-            <div>
-                <span class="text-break-word title">{{ resource.name }}</span>
-                <div class="oc_resource_description gl-mb-2">
-                {{ resource.description }}
+            <div class="table-section oc-table-section section-wrap text-truncate section-30 align_left gl-display-flex gl-pl-2">
+                <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
+                <div :data-testid="`resource-selection-${resource.name}`" @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
+                    <div class="d-flex">
+                        <oc-list-resource-icon v-bind="iconProps(resource)"/>
+                        <span class=" title">{{ resource.title }}</span>
+                    </div>
                 </div>
             </div>
+            <!--div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
+            <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div-->
+            <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-display-flex gl-pl-2">
+              <span class=" oc_resource-type">{{ description(resource) }}</span>
             </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-20">
-            <span class="text-break-word oc_resource-type">{{ resource.platform }}</span>
+            <div v-if="resource.details_url" class="table-section oc-table-section section-wrap text-truncate section-10 text-center">
+                <span  class=" oc_resource-details">
+                    <a :href="resource.details_url" rel="noopener noreferrer" target="_blank">
+                        {{ __('Details') }}
+                        <gl-icon :size="14" name="external-link" />
+                    </a>
+                </span>
             </div>
-            <div class="table-section oc-table-section section-wrap text-truncate section-20">
-            <span class="text-break-word oc_resource-type">{{ resource.type }}</span>
-            </div>
-
-            <div
-            class="table-section oc-table-section section-wrap text-truncate section-20 text-center"
-            >
-            <span class="text-break-word oc_resource-details">
-                <a href="javascript:void();"
-                >{{ __('Details') }}
-                <gl-icon :size="12" name="external-link" />
-                </a>
-            </span>
-            </div>
-        </div>
         </div>
     </div>
 </template>
 <style scoped>
-.oc_resource_icon {
-    width: 36px;
-    height: 36px;
-    background-color: #ffffff;
+.modal-label {
+    cursor: pointer
 }
-.oc_resource_icon img {
-    width: 100%;
-    height: 100%;
+span {
+    display: flex;
+    align-items: center;
 }
 </style>

@@ -1,0 +1,17 @@
+fragment ResourceTypes on ResourceType{
+  __typename
+  name #analogous to requirement.type?
+  title
+  description
+  badge
+  inputsSchema
+  outputsSchema
+  
+  # TODO add back properties
+  #properties {
+  #  title
+  #  required
+  #  type
+  #}
+}
+

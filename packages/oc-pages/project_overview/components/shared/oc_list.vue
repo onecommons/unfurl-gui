@@ -1,31 +1,37 @@
 <script>
-import { GlTabs, GlTab, GlIcon, GlButton } from '@gitlab/ui';
-import { bus } from '../../bus';
+import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
+import {DetectIcon, OcPropertiesList} from 'oc_vue_shared/oc-components'
+import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
+import OcInputs from './oc_inputs.vue'
+import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'
+import Dependency from './dependency.vue'
+import {getCustomInputComponent} from './oc_inputs'
+
 
 export default {
     name: 'OcList',
     components: {
         GlTabs,
-        GlTab,
-        GlIcon,
-        GlButton
+        OcTab,
+        OcPropertiesList,
+        OcInputs,
+        Dependency
     },
 
     mixins: [commonMethods],
 
     props: {
+        validResourceTypesByRequirement: {
+            type: Object,
+            default: () => {}
+        },
         tabsTitle: {
             type: String,
             required: false,
             default: __('List')
-        },
-        templateRequirements: {
-            type: Array,
-            required: true,
-            default: () => []
         },
         showTypeFirst: {
             type: Boolean,
@@ -43,6 +49,43 @@ export default {
             required: false,
             default: null
         },
+
+        card: {
+            type: Object,
+            required: true
+        },
+        cloud: {
+            type: String,
+            required: false,
+        },
+        deploymentTemplate: {
+            type: Object,
+            required: true
+        },
+        displayValidation: {
+            type: Boolean,
+            default: true,
+        },
+        displayStatus: {
+            type: Boolean,
+            default: false,
+        },
+        renderInputs: {
+            type: Boolean,
+            default: true
+        },
+        renderInputTabs: {
+            type: Boolean,
+            default: true
+        },
+        renderOutputs: {
+            type: Boolean,
+            default: true
+        },
+        readonly: {
+            type: Boolean,
+            default: null
+        }
     },
     data() {
         return {
@@ -51,168 +94,224 @@ export default {
     },
 
     computed: {
-        ...mapGetters({
-            resources: 'getResources',
-            servicesToConnect: 'getServicesToConnect',
-        }),
-        checkRequirements() {
-            const flag = this.templateRequirements.filter((r) => r.status === true).length === this.templateRequirements.length;
-            bus.$emit('completeRequirements', this.level, flag);
-            return flag;
+        ...mapGetters([
+            'getCurrentEnvironment',
+            'getValidConnections',
+            'cardDependenciesAreValid',
+            'getDisplayableDependenciesByCard',
+            'getCardProperties',
+            'resolveResourceType',
+            'cardStatus',
+            'lookupEnvironmentVariable'
+        ]),
+        hasRequirementsSetter() {
+            return Array.isArray(this.$store._actions.setRequirementSelected)
+        },
+        // TODO reuse code between attributes and properties
+        properties() {
+            let properties = this.card.properties
+            const titleMap = {}
+            const sensitiveMap = {}
+            const resourceType = this.resolveResourceType(this.card.type)
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
+
+            properties = properties.map(property => {
+              const name = titleMap[property.name] || property.name
+              const sensitive = sensitiveMap[property.name]
+              let value = property.value
+              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+              return {...property, name, value, sensitive}
+            })
+
+            return properties
+        },
+        attributes() {
+            let attributes = [].concat(this.card.attributes || [], this.card.computedProperties || [])
+            const titleMap = {}
+            const sensitiveMap = {}
+            const resourceType = this.resolveResourceType(this.card.type)
+
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
+            Object.entries(resourceType?.inputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
+
+            Object.entries(resourceType?.outputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
+            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    titleMap[name] = value?.title
+                })
+
+            Object.entries(resourceType?.outputsSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
+
+            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
+                .forEach(([name, value]) => {
+                    sensitiveMap[name] = value.sensitive
+              })
+
+            const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
+            if(consoleURLIndex != -1) {
+                const consoleURL = attributes[consoleURLIndex]
+                attributes.splice(consoleURLIndex, 1)
+
+                let outboundLink, outboundLinkText
+                if(this.card.status != 5) {
+                    outboundLink = consoleURL.value,
+                    outboundLinkText = `View ${this.card.title}`
+                }
+
+                attributes.unshift({
+                    name: 'Status',
+                    status: this.card.status,
+                    outboundLink,
+                    outboundLinkText
+                })
+            }
+            attributes = attributes.map(attribute => {
+              const name = titleMap[attribute.name] || attribute.name
+              const sensitive = sensitiveMap[attribute.name]
+              let value = attribute.value
+              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+              return {...attribute, name, value, sensitive}
+            })
+
+            //attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
+            return attributes
+        },
+        propertiesStyle() {
+            if(this.card.dependentName) {
+                return {width: 'max(75%, 400px)'}
+            }
+            return {}
+        },
+        shouldRenderOutputs() {
+            return this.renderOutputs && this.card.outputs?.length
+        },
+        shouldRenderInputs() {
+            return this.renderInputs && this.card.properties?.length
+        },
+        shouldRenderAttributes() {
+            return (
+                // TODO fix these names
+                !this.shouldRenderInputs &&
+                this.renderInputs && 
+                this.attributes.length
+            )
+        },
+        requirements() {
+            const requirements = this.getDisplayableDependenciesByCard(this.card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+            return requirements
+        },
+        extras() {
+            const extras = this.getDisplayableDependenciesByCard(this.card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+            return extras
+        },
+        shouldRenderRequirements() { return this.requirements?.length },
+        shouldRenderExtras() {return this.extras?.length},
+        shouldRenderTabs() {
+            return this.shouldRenderRequirements || (this.shouldRenderInputs && !this.customInputComponent) || this.shouldRenderExtras || this.shouldRenderAttributes || this.shouldRenderOutputs
+        },
+        _readonly() {
+            return this.readonly ?? this.card.name.startsWith('__')
+        },
+        customInputComponent() {
+            return !this._readonly && getCustomInputComponent(this.card.type)
+        },
+        cardType() {
+            return this.resolveResourceType(this.card.type)
+        },
+       inputTabs() {
+           if(!this.renderInputTabs || this._readonly) return []
+           const result = []
+           for(const [name, value] of Object.entries(this.cardType.inputsSchema.properties)) {
+               if(value.tab_title) {
+                   const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
+                   result.push({name, tab_title: value.tab_title, value, count})
+               }
+           }
+           return result
         }
     },
-
-    methods: {
-        ...mapActions([
-            'setRequirementSelected',
-        ]),
-
-        findElementToScroll({requirement}) {
-            bus.$emit('moveToElement', {elId: requirement.fullfilled_by});
-        },
-
-        connectToResource({requirement}) {
-            this.setRequirementSelected({requirement, titleKey: this.titleKey});
-            bus.$emit('launchModalToConnect');
-        },
-
-        sendRequirement(requirement) {
-            this.setRequirementSelected({requirement, titleKey: this.titleKey});
-            bus.$emit('placeTempRequirement');
-        },
-
-        openDeleteModal(title, action=__("Remove")) {
-            bus.$emit('deleteNode', {title, level: this.level, titleKey: this.titleKey, action});
-        },
-
-        getRemoveOrDisconnectLabel(requirement) {
-            if(!requirement.connectedOrCreated) return '';
-            return requirement.connectedOrCreated === "connected" ? __('Disconnect') : __("Remove")
-        },
-
-        hasTemplateResources({type}) {
-            const result = this.resources.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
-            if(result.length > 0) return true;
-            return false;
-        },
-
-        hasResourcesToConnect({type}) {
-            const result = this.servicesToConnect.filter(r => r.type.toLowerCase().includes(type.toLowerCase()));
-            if(result.length > 0) return true;
-            return false;
-        },
-    }
 }
 </script>
 <template>
-    <div v-if="templateRequirements.length > 0">
-        <gl-tabs class="gl-mt-6">
-            <gl-tab class="gl-mt-6">
-                <template slot="title">
-                    <span>{{ tabsTitle }}</span>
-                    <gl-icon
-                        :size="14"
-                        :class="{
-                            'icon-green': checkRequirements,
-                            'icon-red': !checkRequirements,
-                            'gl-ml-4 gl-mt-1': true
-                        }"
-                        :name="checkRequirements ? 'check-circle-filled' : 'warning-solid'"
-                        />
-                </template>
+    <div>
+        <component :is="customInputComponent" v-if="customInputComponent" :card="card"/>
+        <gl-tabs v-if="shouldRenderTabs" class="">
+            <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
-                        <div
-                            v-for="(requirement, idx) in templateRequirements"
-                            :key="requirement + idx + '-template'"
-                            class="gl-responsive-table-row oc_table_row">
-                            <div
-                                class="table-section oc-table-section section-wrap text-truncate section-40 align_left">
-                                <gl-icon :size="16" class="gl-mr-2 icon-gray" :name="detectIcon(requirement.title)" />
-                                <span class="text-break-word title">{{  showTypeFirst ? requirement.type : requirement.title }}</span>
-                                <div class="oc_requirement_description gl-mb-2">
-                                {{ requirement.description }}
-                                </div>
-                            </div>
-                            <div class="table-section oc-table-section section-wrap text-truncate section-10 align_left"></div>
-                            <div
-                                class="table-section oc-table-section section-wrap text-truncate section-20 align_left">
-                                <gl-icon
-                                :size="14"
-                                :class="{
-                                    'icon-green': requirement.status,
-                                    'icon-red': !requirement.status,
-                                }"
-                                :name="requirement.status ? 'check-circle-filled' : 'warning-solid'"
-                                />
-                                <span
-                                v-if="requirement.fullfilled_by !== null"
-                                class="text-break-word oc_resource-details"
-                                >
-                                <a
-                                    href="#"
-                                    @click.prevent="
-                                    findElementToScroll({requirement})
-                                    "
-                                >
-                                    {{ requirement.fullfilled_by }}
-                                    </a
-                                >
-                                </span>
-                            </div>
-
-                            <div
-                                v-if="requirement.fullfilled_by !== null"
-                                class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
-                                <gl-button
-                                v-if="getRemoveOrDisconnectLabel(requirement) !== 'Disconnect'"
-                                    title="edit"
-                                    :aria-label="__(`edit`)"
-                                    type="button"
-                                    class="oc_requirements_actions"
-                                    @click.prevent="findElementToScroll({requirement})"
-                                    >{{ __('Edit') }}</gl-button>
-                                <gl-button
-                                    title="edit"
-                                    :aria-label="__(`edit`)"
-                                    type="button"
-                                    class="gl-ml-3 oc_requirements_actions"
-                                    @click.prevent="openDeleteModal(requirement.fullfilled_by, getRemoveOrDisconnectLabel(requirement))">
-                                    {{
-                                        getRemoveOrDisconnectLabel(requirement) 
-                                    }}</gl-button>
-                            </div>
-                            <div
-                                v-else
-                                class="table-section oc-table-section section-wrap text-truncate section-30 d-inline-flex flex-wrap justify-content-lg-end">
-                                <gl-button
-                                    title="connect"
-                                    :aria-label="__(`connect`)"
-                                    type="button"
-                                    class="oc_requirements_actions"
-                                    :disabled="!hasResourcesToConnect(requirement)"
-                                    @click.prevent="connectToResource({requirement})"
-                                >{{ __('Connect') }}</gl-button>
-
-                                <gl-button
-                                    title="create"
-                                    :aria-label="__(`create`)"
-                                    type="button"
-                                    class="gl-ml-3 oc_requirements_actions"
-                                    :disabled="!hasTemplateResources(requirement)"
-                                    @click="sendRequirement(requirement)">{{ __('Create') }}</gl-button>
-                            </div>
-                        </div>
+                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name + '-template'"/>
                     </div>
                 </div>
-            </gl-tab>
+            </oc-tab>
+            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${card.name}`" :titleCount="properties.length">
+                <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties" />
+                <oc-inputs v-else :card="card" />
+            </oc-tab>
+            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
+                <oc-inputs :card="card" :tab="tab.tab_title"/>
+            </oc-tab>
+            <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
+                <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
+            </oc-tab>
+            <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="card.outputs.length">
+                <oc-properties-list :container-style="propertiesStyle" :card="card" property="outputs" />
+            </oc-tab>
+            <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${card.name}`" :titleCount="extras.length">
+                <div class="row-fluid">
+                    <div class="ci-table" role="grid">
+                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name + '-template'"/>
+                    </div>
+                </div>
+            </oc-tab>
         </gl-tabs>
     </div>
 </template>
 <style scoped>
+/* this is currently also defined elsewhere */
+
+@media only screen and (max-width: 768px) {
+    .oc_table_row {
+        display: flex;
+        flex-direction: column;
+    }
+    div.ci-table {
+        grid-template-columns: repeat(1, auto);
+        grid-auto-rows: unset;
+    }
+}
+/**/
+
+
 .oc_requirements_actions {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.ci-table {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    grid-auto-rows: 4em;
 }
 </style>

@@ -1,8 +1,14 @@
-extend type ApplicationBlueprint {
-        """
-        Oc Project Overview
-        """
+extend type ApplicationBlueprintProject {
         overview: Overview! @client
+        applicationBlueprint: ApplicationBlueprint! @client
+}
+
+extend type Environment {
+  deploymentEnvironment: DeploymentEnvironment @client
+}
+
+extend type ResourceTemplates {
+  resourceTemplates: [ResourceTemplate!] @client
 }
 
 type Overview {
@@ -22,11 +28,6 @@ type Overview {
   descriptionHtml: String
 
   """
-  OneCommons general Environments
-  """
-  environments: [OcEnvironment!]
-
-  """
   Full path of the project.
   """
   fullPath: ID!
@@ -42,7 +43,7 @@ type Overview {
   image: String
 
   """
-  OneCommons general Inputs
+  General properties
   """
   inputs: [Input!]
 
@@ -64,12 +65,12 @@ type Overview {
   """
   OneCommons general requirements
   """
-  requirements: [Requirement!]
+  requirements: [OldRequirement!]
 
   """
   OneCommons general resources
   """
-  resources: [Resource!]
+  resources: [OldResource!]
 
   """
   OneCommons Services to connect
@@ -113,30 +114,16 @@ type Overview {
 }
 
 type Input {
-  """
-  Description of input
-  """
-  instructions: String
 
   """
-  Title of input
+  Name of the property
   """
-  title: String!
+  name: String!
 
   """
   Value of input
   """
-  value: String
-
-  """
-  Value of input
-  """
-  default: JSON
-
-  """
-  Value of input
-  """
-  required: Boolean
+  value: JSON
 }
 
 type Output {
@@ -151,7 +138,7 @@ type Output {
   title: String!
 }
 
-type Requirement {
+type OldRequirement {
   """
   Badge of  requirement
   """
@@ -183,11 +170,6 @@ type Requirement {
   outputs: [Output!]
 
   """
-  Template requirements
-  """
-  requirements: [Requirement!]
-
-  """
   status of requirement
   """
   status: Boolean
@@ -203,7 +185,7 @@ type Requirement {
   type: String
 }
 
-type Resource {
+type OldResource {
   """
   Avatar or image of resource
   """
@@ -282,4 +264,257 @@ type ServiceToConnect {
   value: String
 }
 
+###############################
+######## new schema ###########
+###############################
 
+type ApplicationBlueprint {
+  
+  primary: ResourceType!
+
+  """
+  Public deployment templates
+  """
+  deploymentTemplates(
+    """
+    If we want to search template by slug.
+    """
+    searchBySlug: String
+
+    """
+    If we want to search template by title.
+    """
+    searchByTitle: String
+  ): [DeploymentTemplate!]
+
+  name: String!
+  title: String!
+
+  """
+  Short description of the project.
+  """
+  description: String
+
+  """
+  Live preview url from unfurl file
+  """
+  livePreview: String
+
+  """
+  Source code url
+  """
+  sourceCodeUrl: String
+
+  """
+  Image from unfurl file
+  """
+  image: String
+}
+
+type DeploymentTemplate {
+  """
+  Description of template
+  """
+  description: String
+
+  blueprint: ApplicationBlueprint!
+
+  """
+  Required cloud provider
+
+  TODO: should be ResourceType
+  """
+  cloud: String
+
+  """
+  Slug of template
+  """
+  slug: String!
+
+  name: String!
+  """
+  Title of template
+  """
+  title: String!
+
+  primary: ResourceTemplate!
+
+  resourceTemplates: [ResourceTemplate!]
+}
+
+type ResourceType {
+  name: String!
+  title: String
+  extends: [ResourceType!]
+  description: String
+  badge: String
+  details_url: String
+
+  """
+  json-schema for inputs, will have a "properties" object that enumerates inputs  
+  """
+  inputsSchema: JSON
+  outputsSchema: JSON
+  requirements: [RequirementConstraint!]
+  implementations: [String!]
+  implementation_requirements: [String!]
+}
+
+type RequirementConstraint {
+    name: String!
+
+    description: String
+
+    """
+    Node type need to fulfill this requirement
+    """
+    resourceType: ResourceType!
+
+    """
+    minimum number of the requirement needed (0 means this is optional)
+    """
+    min: Int
+
+    """
+    maximum number of this requirements allowed (default: 1)
+    """
+    max: Int
+
+    visibility: String
+}
+
+type ResourceTemplate {
+  name: String!
+  title: String
+
+  type: ResourceType!
+
+  description: String
+  
+  """
+  Maps to an object that conforms to type.inputsSchema
+  """
+  properties: [Input!]
+  outputs: [Output!] # TODO check if this is still a thing
+  dependencies: [Dependency]
+}
+
+type Requirement {
+  name: String
+  constraint: RequirementConstraint!
+  match: ResourceTemplate
+  target: Resource
+}
+
+type Dependency {
+  name: String
+  constraint: RequirementConstraint!
+  match: ResourceTemplate
+  target: Resource
+}
+
+type DeploymentEnvironment {
+  name: String!
+
+  connections: [ResourceTemplate!]
+  instances: [ResourceTemplate!]
+
+  primary_provider: ResourceTemplate
+  deployments: [Deployment!]
+}
+
+type Deployment {
+  """
+  Title of template
+  """
+  title: String!
+
+  """
+  Environment
+  """
+  environment: DeploymentEnvironment
+
+  primary: Resource
+
+  resources: [Resource!]
+
+  job: Job
+  ready: Boolean
+
+  deploymentTemplate: DeploymentTemplate!
+  sourceDeploymentTemplateName: String
+
+  """
+  Live preview url from unfurl file
+  """
+  url: String
+}
+
+# TODO
+type Job {
+  ranOn: Time 
+}
+
+type Resource {
+  name: String!
+  title: String!
+  url: String
+  template: ResourceTemplate!
+  status: Status
+  state: State
+  attributes: [Input!]
+  dependencies: [Requirement!]
+}
+
+enum Status {
+  Unknown
+  Ok
+  Degraded
+  Error
+  Pending
+  Absent
+}
+
+enum State {
+  Initial
+  Creating
+  Created
+  Configuring
+  Configured
+  Starting
+  Started
+  Stopping
+  Stopped
+  Deleting
+  Deleted
+  Error  
+}
+
+extend type Template {
+  resourceTemplates: [ResourceTemplate!]
+}
+
+
+#extend type Query {
+  #newApplicationBlueprint(
+  #  """
+  #  The full path of the project, group or namespace, e.g., `gitlab-org/gitlab-foss`.
+  #  """
+  #  fullPath: ID!
+  #): ApplicationBlueprint
+
+  
+  #unfurlRootJSON(fullPath: ID!): JSON
+
+  #applicationBlueprint(fullPath: ID!): JSON
+  #unfurlRoot(fullPath: ID!):  ApplicationBlueprintProject
+  #blueprintRaw(fullPath: ID!, name: String): JSON
+  #deploymentTemplateRaw(fullPath: ID!, name: String): JSON
+  #resourceTemplateRaw(fullPath: ID!, name: String): JSON
+  #overview(fullPath: ID!): Overview
+  #resourceType(name: String): ResourceType
+  #resourceTemplate(name: String): ResourceTemplate
+  #deploymentTemplates(deploymentTemplates: [String], fullPath: ID!): [DeploymentTemplate]
+
+  #servicesToConnect: [ServiceToConnect!]
+#}

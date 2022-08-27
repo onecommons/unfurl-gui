@@ -1,5 +1,5 @@
 #import "../fragments/input_item.fragment.graphql"
-fragment ResourceItem on Resource {
+fragment ResourceItem on OldResource {
     name
     avatar
     description

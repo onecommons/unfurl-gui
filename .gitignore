@@ -1,7 +1,27 @@
 .DS_Store
 node_modules
+envs
 /dist
-
+**/local
+Thumbs.db
+.vscode
+.idea/
+__pycache__
+**/local
+**/tmp
+*.tmp.*
+*.log
+**/.terraform/*
+*.tfstate
+*.tfstate.json
+*.backup
+**/jobs
+*.local.*
+*.lock
+**/pending
+**/tasks
+**/failed.*
+**/secrets/**
 
 # local env files
 .env.local
@@ -28,3 +48,7 @@ pnpm-debug.log*
 *.sw?
 
 /live/
+
+# because I'm an idiot - Andrew
+./lsync.lua
+**/lsync.lua

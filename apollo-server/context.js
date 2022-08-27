@@ -1,6 +1,5 @@
-import { db } from './utils/db'
 import { processUpload } from './utils/upload'
-
+const db = {};
 
 // Context passed to all resolvers (third argument)
 // req => Query

@@ -3,22 +3,23 @@ import apolloProvider from './graphql';
 import MainComponent from './components/main.vue';
 import createRouter from './router';
 import store from './store';
+import {GlTooltipDirective} from '@gitlab/ui';
 import __ from '~/locale';
+import ElementUI from 'element-ui'
+import {setupTheme} from 'oc_vue_shared/theme'
 
 import './assets/global.css';
 
-//export {bus} from 'oc/bus-shim';
+Vue.use(ElementUI)
+Vue.directive('gl-tooltip', GlTooltipDirective)
 
-export default () => {
-  const element = document.getElementById('js-oc-project-overview');
+setupTheme(Vue)
+
+export default (elemId='js-oc-project-overview') => {
+  const element = document.getElementById(elemId);
 
   const {
     projectPath,
-    treePath,
-    ref,
-    projectIcon,
-    projectName,
-    buttonId,
     buttonStarText,
     buttonStarLink,
     buttonStarIcon,
@@ -27,18 +28,16 @@ export default () => {
     buttonForkPath,
     buttonForkLink,
     buttonForkCount,
-    linkDeployment,
   } = element.dataset;
 
-  const router = createRouter(projectPath);
+
+  const base = window.location.pathname.includes('/-/overview') ?
+    `${projectPath}/-/overview` : projectPath
+
+  const router = createRouter(base);
 
   Vue.prototype.$projectGlobal = {
     projectPath,
-    projectIcon,
-    buttonId,
-    treePath,
-    projectName,
-    ref,
     buttonStar : {
       text: buttonStarText,
       link: buttonStarLink,
@@ -51,10 +50,10 @@ export default () => {
       link: buttonForkLink,
       count: buttonForkCount
     },
-    linkDeployment,
+    ...element.dataset
   };
 
-  return new Vue({
+  const vm =  new Vue({
     el: element,
     apolloProvider,
     store,
@@ -63,4 +62,11 @@ export default () => {
       return createElement(MainComponent);
     },
   });
+
+  if(window.Cypress || sessionStorage['debug']) {
+    window.$store = vm.$store
+  }
+
+  return vm
+
 };

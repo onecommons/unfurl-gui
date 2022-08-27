@@ -1,24 +1,23 @@
 <script>
-import { GlIcon, GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
+import { GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
+import {mapGetters, mapState} from 'vuex'
+import {OcTab, DetectIcon} from 'oc_vue_shared/oc-components'
 
 export default {
     name: 'ProjectDescriptionBox',
     components: {
-        GlIcon,
         GlTabs,
-        GlTab,
-        GlBadge
+        OcTab,
+        GlBadge,
+        DetectIcon
     },
     mixins: [commonMethods],
     props: {
-        requirements: {
-            type: Array,
-            required: false,
-            default: () => {
-                return [];
-            }
+        projectInfo: {
+            type: Object,
+            required: false
         },
         inputs: {
             type: Array,
@@ -78,6 +77,56 @@ export default {
         capitalizeFirstLetter(str) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         },
+    },
+
+    computed: {
+        ...mapGetters(['getProjectInfo', 'getDisplayableDependenciesByCard', 'getPrimaryCard', 'resolveResourceTypeFromAny']),
+        ...mapState(['project']),
+
+
+
+        // requirements and extras here use the same method for following buried constraints as in the deployment editor
+        // (see oc_list)
+        // if there is no primaryDeploymentBlueprint here, primaryCard will not be loaded
+        // as a result the old, fallback method will be used
+
+        requirements() {
+            const self = this
+            const primaryCard = this.getPrimaryCard
+            if(!primaryCard?.name) {
+                return this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
+            }
+
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+            
+            return requirements.map(r => {
+                const constraint = r.dependency.constraint
+                const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
+                return {...constraint, resourceType}
+            })
+        },
+        extras() {
+            const self = this
+            const primaryCard = this.getPrimaryCard
+            if(!primaryCard?.name) {
+                return this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
+            }
+
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+            
+            return requirements.map(r => {
+                const constraint = r.dependency.constraint
+                const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
+                return {...constraint, resourceType}
+            })
+        },
+        previewImage() {
+            return this.project.globalVars.projectIcon || this.projectImage
+        },
+
+
+        shouldRenderRequirements() { return this.requirements?.length },
+        shouldRenderExtras() {return this.extras?.length},
     }
 }
 </script>
@@ -85,10 +134,10 @@ export default {
     <div class="row oc-project-description-box gl-pt-5 gl-pb-5 gl-pl-5 gl-pr-5 gl-mb-6">
         <div class="col-lg-4">
             <div class="row">
-                <div v-if="!projectImage || projectImage === ''" class="image-placeholder-default">
+                <div v-if="!previewImage" class="image-placeholder-default">
                     {{ __("Screenshot")}}
                 </div>
-                <img v-else :src="projectImage" :alt="projectName" class="image-project" />
+                <img v-else :src="previewImage" :alt="projectInfo.title" class="image-project" />
             </div>
         </div>
         <div class="col-lg-8 right-description">
@@ -96,15 +145,16 @@ export default {
                 <div class="col-lg-12">
                     <div class="gl-display-flex">
                         <h4 class="project-title gl-display-flex">
-                            {{ projectTitle }}
+                            {{ getProjectInfo.title || getProjectInfo.name }}
                         </h4>
                         <div class="gl-display-flex">
-                            <a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
+                            <!--a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
                                         <gl-icon
                                                 name="link"
                                                 class="options-expanded-icon gl-ml-1"/>
-                            </a>
-                            <a class="gl-ml-4" :href="liveUrl ? liveUrl : 'javascript:void(0);'" target="_blank">{{ __("Live preview") }} <gl-icon :size="12" name="external-link" /></a>
+                            </a-->
+                            <!--a class="gl-ml-4" :href="liveUrl ? liveUrl : 'javascript:void(0);'" target="_blank">{{ __("Live preview") }} <gl-icon :size="12" name="external-link" /></a-->
+                            <!--gl-button variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button-->
                         </div>
                     </div> 
                     <div class="subtitle-description gl-mb-4">
@@ -118,71 +168,82 @@ export default {
             <div class="row">
                 <div class="col-lg-12">
                     <gl-tabs>
-                        <gl-tab class="gl-mt-3">
-                            <template slot="title">
-                                <span>{{__("Requirements")}}</span>
-                                <gl-badge size="sm" class="gl-tab-counter-badge">
-                                    {{ requirements.length }}
-                                </gl-badge>
-                            </template>
-                            <ul v-if="requirements.length > 0" class="oc-list-ordered" >
+                        <oc-tab title="Components" :titleCount="requirements.length" v-if="shouldRenderRequirements">
+                            <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
                                     <div class="gl-display-flex gl-justify-content-space-between">
                                         <div class="gl-display-flex">
-                                            <div class="gl-display-flex">
-                                                <gl-icon :size="12" :name="detectIcon(requirement.title)" class="gl-mt-1" />
+                                            <div class="gl-display-flex align-items-center">
+                                                <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-display-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
-                                            <gl-badge size="sm" class="gl-tab-counter-badge">{{ requirement.badge? capitalizeFirstLetter(requirement.badge) : 'Lorem Ipsum'  }}</gl-badge> 
-                                            <!-- <div class="live-preview gl-ml-2"><a href="javascript:void(0);">{{ __("More info") }}</a></div> -->
+                                            <gl-badge v-if="requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge> 
                                         </div>
                                     </div>
-                                    <div class="gl-mt-4 light-gray">
+                                    <div style="margin-left: calc(0.25rem + 12px)" class="gl-mt-2 light-gray">
                                         {{ requirement.description }}
                                     </div>
                                 </li>
                             </ul>
-                            <div v-else>{{ notRecordsFound }}</div>
-                        </gl-tab>
-                        <gl-tab class="gl-mt-3">
-                            <template slot="title">
-                                <span>{{ __('Inputs')}}</span>
-                                <gl-badge size="sm" class="gl-tab-counter-badge">
-                                    {{ inputs.length }}
-                                </gl-badge>
-                            </template>
-                            <ul v-if="inputs.length > 0" class="oc-list-ordered">
-                                <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-4">
-                                    {{input.title}}
-                                    <div class="light-gray gl-mt-2">
-                                        {{ input.instructions }}
-                                    </div>
-                                </li>
-                            </ul>
-                            <div v-else>{{ notRecordsFound }}</div>
-                        </gl-tab>
 
-                        <gl-tab class="gl-mt-3">
-                            <template slot="title">
-                                <span>{{ __('Outputs')}}</span>
-                                <gl-badge size="sm" class="gl-tab-counter-badge">
-                                    {{ outputs.length }}
-                                </gl-badge>
-                            </template>
-                            <ul v-if="outputs.length > 0" class="oc-list-ordered">
-                                <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-4">
-                                    {{output.title}}
-                                    <div class="light-gray gl-mt-2">
-                                        {{ output.instructions }}
+                        </oc-tab>
+                        <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderRequirements && shouldRenderExtras">
+                            <ul class="oc-list-ordered" >
+                                <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
+                                    <div class="gl-display-flex gl-justify-content-space-between">
+                                        <div class="gl-display-flex">
+                                            <div class="gl-display-flex align-items-center">
+                                                <detect-icon :size="12" :type="requirement.resourceType" />
+                                            </div>
+                                            <div class="gl-display-flex">
+                                                <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
+                                            </div>
+                                        </div>
+                                        <div class="gl-display-flex">
+                                            <gl-badge v-if="requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge> 
+                                        </div>
+                                    </div>
+                                    <div style="margin-left: calc(0.25rem + 12px)" class="gl-mt-2 light-gray">
+                                        {{ requirement.description }}
                                     </div>
                                 </li>
                             </ul>
-                            <div v-else>{{ notRecordsFound }}</div>
-                        </gl-tab>
+
+                        </oc-tab>
+                        <oc-tab v-if="shouldRenderRequirements && outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
+                            <div v-if="inputs.length">
+                                <div class="detail-heading">Inputs</div>
+                                <ul class="pl-4" v-if="inputs.length > 0">
+                                    <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-3">
+                                        <div class="li-inner">
+                                            {{input.title}}
+                                            <div v-if="input.description" class="light-gray gl-mt-2">
+                                                {{ input.description }}
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                            <div v-if="outputs.length">
+                                <div class="detail-heading">Outputs</div>
+                                <ul class="pl-4" v-if="outputs.length > 0">
+                                    <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-3">
+                                        <div class="li-inner">
+                                            {{output.title}}
+                                            <div v-if="output.description" class="light-gray gl-mt-2">
+                                                {{ output.description }}
+                                            </div>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+
+
+                        </oc-tab>
                     </gl-tabs>
                 </div>
             </div>
@@ -192,6 +253,17 @@ export default {
 
 
 <style scope>
+.li-inner {
+    margin-left: -0.25em;
+    color: #4A5053;
+}
+.detail-heading {
+    color: #404040;
+    font-weight: 600;
+    font-size: 1.14em;
+    line-height: 20px;
+    margin-bottom: 0.4em;
+}
 .oc-project-description-box {
     box-sizing: border-box;
     flex-grow: 0;
@@ -226,16 +298,14 @@ export default {
 }
 
 .text-description {
-    font-size: 14px;
+    font-size: 1rem;
     margin-bottom: 0.5em;
     font-weight: 400;
-    font-size: 14px;
 }
 .oc-list-ordered {
     margin: 0px;
     padding: 0px;
     font-weight: 400;
-    font-size: 14px;
     list-style-type: none;
 }
 

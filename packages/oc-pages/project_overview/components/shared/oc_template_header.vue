@@ -1,49 +1,43 @@
 <script>
-import { GlIcon } from "@gitlab/ui";
 import { __ } from '~/locale';
-import LogosCloud from '../../components/shared/logos_cloud.vue';
+import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {mapGetters} from 'vuex'
+import {ProjectIcon} from 'oc_vue_shared/oc-components'
 
 export default {
     name: 'OcTemplateHeader',
     components: {
-        GlIcon,
-        LogosCloud
+        DetectIcon,
+        ProjectIcon
     },
-    props: {
-        headerInfo: {
-            type: Object,
-            required: true,
+    computed: {
+      ...mapGetters([
+          'getPrimaryCard',
+          'getApplicationBlueprint',
+          'getCurrentEnvironmentType',
+          'getCurrentEnvironmentName'
+      ]),
+      cloud() {
+        if(!this.getCurrentEnvironmentType && this.getCurrentEnvironmentName) {
+          return 'local dev'
         }
+        return this.getCurrentEnvironmentType
+      }
     },
     methods: {
-        checkPlatform() {
-            switch (this.headerInfo.cloud) {
-                case __('Google Cloud Platform'):
-                    return 'GPC'
-                case __('Amazon Web Services'):
-                    return 'AWS'
-                default:
-                    return ''
-            }
-        }
+      returnHome() {
+        this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
+      }
     }
 }
 </script>
 <template>
-    <div class="row gl-mt-4 gl-mb-4">
-        <div class="col-md-12 col-lg-6 d-flex">
-            <h1 class="gl-mt-3 gl-mb-0 template-title">{{ headerInfo.title }}</h1>
-        </div>
-        <div class="col-md-12 col-lg-6 d-inline-flex flex-wrap justify-content-lg-end gl-pt-4">
-            <LogosCloud :cloud="checkPlatform()" :class="['gl-mr-1', 'logo-mt']" />
-            <span v-if="checkPlatform() !== ''">/</span>
-            <span class="gl-pl-2 oc_environment_name">{{ headerInfo.environment }}</span> 
-            <gl-icon
-                :size="12"
-                :class="['gl-ml-2', 'gl-mt-2', 'icon-blue']"
-                :name="'information-o'"
-                />
-        </div>
+    <div class="m-2 d-flex flex-wrap justify-content-between align-items-center">
+        <h1 @click="returnHome" class="template-title m-0"> <project-icon style="font-size: 0.83em; margin-right: 0.5em;" :project-icon="getApplicationBlueprint.projectIcon" /> {{ getApplicationBlueprint.title }}</h1>
+        <a class="d-inline-flex align-items-center" :href="`/dashboard/environments/${getCurrentEnvironmentName}`" target="_blank">
+            <span class="gl-pl-2 oc_environment_name mr-2">{{ getCurrentEnvironmentName }}</span> 
+            <detect-icon :size="18" :type="cloud" />
+        </a>
     </div>
 </template>
 <style>
@@ -51,12 +45,16 @@ export default {
     color: #1F75CB;;
 }
 .template-title {
-  font-size: 21px !important;
+  font-size: 1.5rem;
   color: #303030;
   font-style: normal;
   line-height: 24px;
+  align-items: center;
+  display: flex;
 }
 .logo-mt {
     margin-top: 1px;
 }
+
+h1 { cursor: pointer; }
 </style>
