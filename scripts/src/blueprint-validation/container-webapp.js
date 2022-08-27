@@ -1,24 +1,44 @@
 #!/usr/bin/env node
-
+const expect = require('expect')
 const {GITHUB_ACCESS_TOKEN, GITHUB_USERNAME} = process.env
 const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const {execSync} = require('child_process')
+process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+const {HttpsCookieAgent} = require('http-cookie-agent')
+const axios = require('axios')
+axios.defaults.timeout = 40000
+axios.defaults.withCredentials = true
+const validateStatus = axios.defaults.validateStatus = () => true
+const { CookieJar } = require('tough-cookie')
+const jar = new CookieJar()
 
-async function main({repository, identifier}) {
+axios.defaults.httpsAgent = new HttpsCookieAgent({
+  jar,
+  keepAlive: true,
+  rejectUnauthorized: false,
+})
+
+
+async function main({repository, identifier, liveURL}) {
+  execSync(`./no-http-error.js --base-url ${liveURL}`, {stdio: 'inherit', cwd: __dirname})
+  
   const tmpDir = path.join(os.tmpdir(), identifier)
+  console.log({repository, identifier, liveURL, tmpDir})
 
   /*
   try {
     fs.rmSync(tmpDir, {recursive: true, force: true})
   } catch(e) {}
-  fs.mkdirSync(tmpDir)
   */
+  try {
+    fs.mkdirSync(tmpDir)
+  } catch(e) {}
 
   try{
     execSync(`git clone https://${GITHUB_USERNAME}:${GITHUB_ACCESS_TOKEN}@github.com/${GITHUB_USERNAME}/${repository}`, {stdio: 'inherit', cwd: tmpDir})
-  } catch(e){}
+  } catch(e){ console.error('e')}
 
   const indexView = path.join(tmpDir, repository, 'views', 'index.pug')
 
@@ -38,6 +58,10 @@ async function main({repository, identifier}) {
 
 
   // TODO verify incremental deployment here
+
+  const index = (await(axios.get(liveURL))).data
+  console.log(index)
+  expect(index).toContain(identifier)
 }
 
 async function tryMain() {
@@ -45,8 +69,9 @@ async function tryMain() {
 
   try {
     await main({
+      liveURL: args['live-url'] || args['base-url'],
       repository: args['repository'] || args['repo'],
-      registerName: args['identifier'] || args['id'],
+      identifier: args['identifier'] || args['id'],
       ...args
     })
   } catch(e) {

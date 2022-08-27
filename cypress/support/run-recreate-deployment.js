@@ -242,7 +242,7 @@ Cypress.Commands.add('recreateDeployment', options => {
           cy.expectSuccessfulJob(job)
         })
         cy.assertDeploymentRunning(dt.title)
-        cy.verifyDeployment(deployment, env, dnsZone, subdomain)
+        cy.verifyDeployment(deployment, env, dnsZone, subdomain, options.verificationArgs || {})
         if(TEARDOWN) {
           cy.undeploy(dt.title)
         }
