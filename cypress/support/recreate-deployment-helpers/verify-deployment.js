@@ -110,16 +110,32 @@ const verificationRoutines = {
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
     }, {timeout: BASE_TIMEOUT * 20,  interval: BASE_TIMEOUT * 2})
-  }
+  },
 
+  'container-webapp': function(deployment, env, dnsZone, sub, {repository}) {
+    const dt = _dt(deployment)
+    const ab = _ab(deployment)
+    const primary = _primary(deployment)
+    const subdomain = sub || primary.properties.find(prop => prop.name == 'subdomain').value
+
+    const identifier = Date.now().toString(36) 
+    const command = `./scripts/src/blueprint-validation/container-webapp.js --live-url https://${subdomain}.${dnsZone} --repository ${repository} --identifier ${identifier}`
+    console.log(command)
+    cy.waitUntil(() => {
+      return cy.exec(
+        command, 
+        {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
+      ).then(result => {console.log(result); return result.code == 0})
+    }, {timeout: BASE_TIMEOUT * 50,  interval: BASE_TIMEOUT * 5})
+  }
 }
 
-function verifyDeployment(deployment, env, dnsZone, sub) {
+function verifyDeployment(deployment, env, dnsZone, sub, verificationArgs) {
   console.log(deployment)
   if(MOCK_DEPLOY) return
   const ab = Object.values(deployment.ApplicationBlueprint)[0] 
   const routine = verificationRoutines[ab.name]
-  routine && routine(deployment, env, dnsZone, sub)
+  routine && routine(deployment, env, dnsZone, sub, verificationArgs)
 }
 
 Cypress.Commands.add('verifyDeployment', verifyDeployment)
