@@ -71,7 +71,7 @@ export default {
                     <td :style="property.valueStyle" class="value-column">
                         <div style="display: flex; justify-content: space-between;">
                             <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
-                                <Status :status="property.status" :size="14" display-text />
+                                <Status :status="property.status" :state="property.state" :size="14" display-text />
                             </div>
                             <div v-else style="width: 100%">
                                 <div v-if="property.icon" class="icon-container">

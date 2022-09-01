@@ -182,6 +182,7 @@ export default {
                 attributes.unshift({
                     name: 'Status',
                     status: this.card.status,
+                    state: this.card.state,
                     outboundLink,
                     outboundLinkText
                 })

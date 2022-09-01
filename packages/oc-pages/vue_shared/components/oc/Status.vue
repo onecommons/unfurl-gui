@@ -116,6 +116,7 @@ export default {
     _text() {
       if(!this.status) return null
       const result = StatusIndicators[this.status][2]
+      if(result == 'Absent' && ['Deleting', 'Deleted', 'Error'].includes(StateNames[this.state])) return 'Deleted'
       if(this.isProtected) {
         return `Protected (${result})`
       }
