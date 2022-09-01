@@ -694,6 +694,10 @@ const getters = {
     resourceCardIsHidden(state, getters) {
         return function(card) {
             // TODO duplicated logic from table_data
+
+            return getters.templateCardIsHidden(card)
+            // below implements hiding cards when they don't appear on the deployment table
+            /*
             const isVisible = card.visibility != 'hidden' && (
                 card.visibility == 'visible' ||
                 card.attributes?.find(a => a.name == 'id') ||
@@ -702,6 +706,7 @@ const getters = {
                 card.computedProperties?.find(a => a.name == 'console_url')
             )
             return !isVisible
+            */
         }
     },
     templateCardIsHidden(state, getters) {
@@ -726,7 +731,7 @@ const getters = {
 
         const result = cards.filter((rt) => {
             if(!rootGetters.REVEAL_HIDDEN_TEMPLATES && getters.cardIsHidden(rt.name)) return false
-            if(isDeployment) return true
+            if(isDeployment) return !_state.deploymentTemplate?.primary || rt.name != _state.deploymentTemplate.primary
             const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
             if(!parentDependencies) return false;
 
