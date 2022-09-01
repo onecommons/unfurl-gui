@@ -76,6 +76,7 @@ export default {
             if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
                 result.push('view-artifacts')
             } 
+            result.push('local-deploy')
 
             result.push('delete')
             return result
@@ -119,6 +120,9 @@ export default {
         cloneDeployment() {
           this.$emit('cloneDeployment', this.deployment, this.environment)
         },
+        localDeploy() {
+          this.$emit('localDeploy', this.deployment, this.environment)
+        },
         async cancelJob() {
             await this.deploymentItem.cancelJob()
             window.location.reload()
@@ -156,6 +160,7 @@ export default {
          @startDeployment="startDeployment"
          @cloneDeployment="cloneDeployment"
          @cancelJob="cancelJob"
+         @localDeploy="localDeploy"
         />
         <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
             <template #button-content>
@@ -176,6 +181,7 @@ export default {
              @startDeployment="startDeployment"
              @cloneDeployment="cloneDeployment"
              @cancelJob="cancelJob"
+             @localDeploy="localDeploy"
              />
         </gl-dropdown>
     </div>

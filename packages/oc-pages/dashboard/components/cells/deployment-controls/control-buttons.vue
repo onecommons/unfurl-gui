@@ -37,6 +37,9 @@ export default {
         showPreviousJobs() {
             this.$emit('showPreviousJobs')
         },
+        localDeploy() {
+            this.$emit('localDeploy')
+        },
         async openIssue() {
             const link = await generateIssueLink(...this.issuesLinkArgs)
             window.open(link, '_blank')
@@ -86,6 +89,7 @@ export default {
         <gl-icon :size="16" name="archive"/> 
         {{__('View Artifacts')}}
     </component>
+    <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>
