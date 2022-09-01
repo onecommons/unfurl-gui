@@ -118,7 +118,7 @@ export default {
 
             const size = this.isPrimary? 24: 16
             const className = ['gl-ml-3']
-            if(isValid) className.push('icon-green')
+            if(isValid && this.displayValidation) className.push('icon-green')
             let title
             if (this.displayValidation) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
             const name = isValid? 'check-circle-filled': 'error-filled'

@@ -12,6 +12,7 @@ export {default as ErrorSmall} from './components/oc/ErrorSmall.vue'
 export {default as EmptyStateJob} from './components/oc/empty-state-job.vue'
 export {default as EnvironmentSelection} from './components/oc/environment-selection.vue'
 export {default as DeploymentScheduler} from './components/oc/deployment-scheduler.vue'
+export {default as LocalDeploy} from './components/oc/local-deploy.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error'

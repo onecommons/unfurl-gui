@@ -35,7 +35,7 @@ export default {
         <div class="d-flex">
             <detect-icon size="24" name="expire" />
             <div class="ml-5">
-                <el-checkbox v-model="incrementalDeploymentEnabled" label="Redeploy every time upstream upstream dependencies are updated"/>
+                <el-checkbox v-model="incrementalDeploymentEnabled" label="Redeploy every time upstream dependencies are updated"/>
             </div>
         </div>
     </gl-card>

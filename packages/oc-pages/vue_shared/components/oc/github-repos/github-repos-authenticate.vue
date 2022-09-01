@@ -48,7 +48,7 @@ export default {
 <template>
     <div>
         <h3>Authenticate with GitHub</h3>
-        <p>To connect GitHub repositories, you first need to authorize GitLab to access the list of your GitHub repositories.</p>
+        <p>To connect GitHub repositories, you first need to authorize Unfurl.cloud to access the list of your GitHub repositories.</p>
         <gl-button @click="openStatus" href="/import/github/status" variant="confirm"><gl-icon class="mr-2" :size="16" name="github"/>Authenticate with GitHub</gl-button>
     </div>
 </template>

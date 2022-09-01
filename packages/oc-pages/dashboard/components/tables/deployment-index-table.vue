@@ -1,6 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
-import {OcTab, EnvironmentSelection} from 'oc_vue_shared/oc-components'
+import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc_vue_shared/oc-components'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
@@ -75,6 +75,7 @@ export default {
         GlTabs,
         OcTab,
         EnvironmentSelection,
+        LocalDeploy,
         GlFormInput,
         GlFormGroup,
         DeploymentStatusIcon,
@@ -260,6 +261,10 @@ export default {
             this.cloneTargetEnvironment = environment.name
             this.newDeploymentTitle = deployment.title
         },
+        onIntentToLocalDeploy(deployment, environment) {
+            this.intent = 'localDeploy'
+            this.target = {deployment, environment}
+        },
         hasDeployPath(scope) {
             return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
         },
@@ -352,6 +357,8 @@ export default {
                     return `Deploy ${targetTitle}?`
                 case 'clone':
                     return `Clone ${targetTitle}?`
+                case 'localDeploy':
+                    return `Deploy ${targetTitle} locally with Unfurl`
                 default: return ''
             }
         },
@@ -413,6 +420,19 @@ export default {
         },
         provider() {
             return this.target?.environment?.primary_provider?.type ?? null
+        },
+        actionPrimary() {
+            return {
+                text: this.deleteWarning? 'Delete Anyway':
+                    this.intent == 'localDeploy' ? 'OK': 'Confirm'
+            }
+        },
+        actionCancel() {
+            if(this.intent == 'localDeploy') return null
+            return {text: 'Cancel'}
+        },
+        modalSize() {
+            return this.intent == 'localDeploy'? 'lg': 'sm'
         }
     },
     watch: {
@@ -451,9 +471,9 @@ export default {
             modalId="deployment-index-table"
             :title="modalTitle"
             v-model="modal"
-            size="sm"
-            :actionPrimary="{text: deleteWarning? 'Delete Anyway': 'Confirm'}"
-            :actionCancel="{text: 'Cancel'}"
+            :size="modalSize"
+            :actionPrimary="actionPrimary"
+            :actionCancel="actionCancel"
             @primary="onModalConfirmed"
             >
             <div 
@@ -476,6 +496,9 @@ export default {
                         :provider="target.environment.primary_provider.type"
                     />
                 </gl-form-group>
+            </div>
+            <div class="m-3" v-if="intent == 'localDeploy'">
+                <local-deploy :environment="target.environment" :deployment="target.deployment" />
             </div>
         </gl-modal>
         <gl-tabs v-model="currentTab" v-if="useTabs">
@@ -519,7 +542,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>
