@@ -3,7 +3,7 @@ import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
-import {mapActions, mapMutations} from 'vuex'
+import {mapGetters, mapActions, mapMutations} from 'vuex'
 
 const query = gql`
 query getContainerRepositories($fullPath: ID!) {
@@ -65,6 +65,9 @@ export default {
             data.repository_tag = 'latest'
         }
         return data
+    },
+    computed: {
+        ...mapGetters(['cardIsValid'])
     },
     watch: {
         project_id(val) {
