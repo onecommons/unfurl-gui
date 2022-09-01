@@ -70,5 +70,6 @@ export default {
             Deploy your application:
             <code-clipboard class="mt-1">{{localDeployInvocation}}</code-clipboard>
         </p>
+        <p>Learn more at <a href="https://github.com/onecommons/unfurl" target="_blank">https://github.com/onecommons/unfurl</a>.</p>
     </div>
 </template>
