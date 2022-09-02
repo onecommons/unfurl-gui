@@ -253,7 +253,7 @@ export default {
                     const id = this.projectInfo.id
                     const branch = this.branch || this.projectInfo.default_branch
                     try {
-                      const commits = (await(`/api/v4/projects/${id}/repository/commits?ref=${branch}`)).data
+                      const commits = (await axios.get(`/api/v4/projects/${id}/repository/commits?ref=${branch}`)).data
                       this.setUpstreamCommit(commits[0].id)
                     } catch(e) {
                       console.error("couldn't find upstream commit")

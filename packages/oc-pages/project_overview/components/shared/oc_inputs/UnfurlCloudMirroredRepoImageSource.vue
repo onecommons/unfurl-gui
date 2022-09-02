@@ -1,0 +1,162 @@
+<script>
+// remote_git_url* git_user git_password branch* project_id* repository_id* repository_tag* regitry_url* username password repository url credential{protocol, token, keys, user}
+import axios from '~/lib/utils/axios_utils'
+import {mapActions, mapMutations, mapGetters} from 'vuex'
+import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
+import {fetchRepositoryBranches,  fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+
+function callbackFilter(query, items) {
+    if(!query || items.some(item => item.value == query)) return items
+    return items.filter(item => item.value.includes(query))
+}
+
+export default {
+    name: 'UnfurlCloudMirroredRepoImageSource',
+    props: {
+        card: Object
+    },
+    data() {
+        const data = {
+            userProjectSuggestionsPromise: fetchUserProjects(),
+            repositoryBranchesPromise: null,
+            project_id: null,
+            branch: null,
+            repository_tag: null,
+            projectInfo: null,
+            gitlabProjectId: -1
+        }
+
+        for(const {name, value} of this.card.properties) {
+            if(data.hasOwnProperty(name)) {
+                data[name] = value
+            }
+        }
+
+        return data
+    },
+    methods: {
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapMutations(['onSaveEnvironment', 'setUpstreamProject', 'setUpstreamBranch', 'setUpstreamCommit']),
+        async getUserProjectSuggestions(queryString, callback) {
+            const projects = await this.userProjectSuggestionsPromise
+            callback(
+                callbackFilter(
+                    queryString,
+                    projects
+                        .map(project => ({value: project.fullPath}))
+                )
+            )
+        },
+        async getBranchSuggestions(queryString, callback) {
+            const branches = await this.repositoryBranchesPromise
+            callback(
+                callbackFilter(
+                    queryString,
+                    branches
+                        .map(branch => ({value: branch.name}))
+                )
+            )
+        },
+        async setupRegistryCredentials(gitlabProjectId) {
+            const {key} = await this.generateProjectTokenIfNeeded({projectId: gitlabProjectId})
+            this.username = 'DashboardProjectAccessToken'
+            this.password = {get_env: key}
+            this.updateValue('username')
+            this.updateValue('password')
+        },
+        updateValue(propertyName) {
+            const status = this.username && this.password && this.project_id && this.repository_id && this.repository_tag && this.registry_url && this.remote_git_url ?
+                'valid': 'missing'
+            this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
+
+            if(propertyName) {
+                this.updateProperty({
+                    deploymentName: this.$route.params.slug,
+                    templateName: this.card.name,
+                    propertyName,
+                    propertyValue: this[propertyName],
+                    debounce: 300,
+                    sensitive: false,
+                })
+            }
+        },
+    },
+    computed: {
+        ...mapGetters(['cardIsValid']),
+        repository_id() {
+            if(!(this.project_id && this.branch)) return null
+            return `${this.project_id}/${this.branch}`
+        },
+        registry_url() {
+            if(this.projectInfo && this.project_id) {
+                return this.projectInfo.container_registry_image_prefix
+                    .slice(0, 0 - this.project_id.length)
+                    .split('/')
+                    .filter(pathComponent => pathComponent)
+                    .join('/') // I don't know if the registry_url can include a path
+            }
+            return null
+        },
+
+        remote_git_url() {
+            return this.projectInfo?.web_url
+        }
+    },
+    watch: {
+        project_id: {
+            immediate: true,
+            async handler(val) {
+                if(!val) {
+                    this.branch = null
+                    return
+                }
+                this.updateValue('project_id')
+                const projects = await this.userProjectSuggestionsPromise
+                const project = projects.find(p => p.fullPath == val)
+
+                this.gitlabProjectId = project.id
+                this.setupRegistryCredentials(project.id)
+                this.repositoryBranchesPromise = fetchRepositoryBranches(project.id)
+                this.projectInfo = await fetchProjectInfo(project.id)
+            }
+        },
+        branch(val) { this.updateValue('branch') },
+        repository_id(val) { this.updateValue('repository_id') },
+        repository_tag(val) { this.updateValue('repository_tag') },
+        registry_url(val) { this.updateValue('registry_url') },
+        remote_git_url(val) { this.updateValue('remote_git_url') },
+    },
+    async mounted() {
+        this.repository_tag = 'latest' // trigger watcher and prepare commit
+        this.updateValue()
+
+        this.onSaveEnvironment(async () => {
+            if(this.cardIsValid(this.card)) {
+                const id = this.projectInfo.id
+                const branch = this.branch || this.projectInfo.default_branch
+                try {
+                  const commits = (await axios.get(`/api/v4/projects/${id}/repository/commits?ref=${branch}`)).data
+                  this.setUpstreamCommit(commits[0].id)
+                } catch(e) {
+                  console.error("couldn't find upstream commit")
+                  console.error(e.message)
+                }
+                this.setUpstreamProject(id)
+                this.setUpstreamBranch(branch)
+            }
+        })
+
+    }
+}
+</script>
+<template>
+    <el-card class="d-flex flex-column">
+        <el-autocomplete label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions">
+            <template #prepend>Local Project</template>
+        </el-autocomplete>
+        <el-autocomplete label="Branch" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="branch" :fetch-suggestions="getBranchSuggestions">
+            <template #prepend>Branch</template>
+        </el-autocomplete> 
+    </el-card>
+
+</template>
