@@ -364,6 +364,7 @@ export default {
         this.triedFetching = true
         const projectGlobal = this.project.globalVars
         const projectPath = projectGlobal?.projectPath
+        if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
