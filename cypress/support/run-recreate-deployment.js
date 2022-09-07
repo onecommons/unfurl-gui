@@ -2,6 +2,7 @@ import './recreate-deployment-helpers'
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const K8S_ENVIRONMENT_NAME = Cypress.env('K8S_ENVIRONMENT_NAME')
 const DO_ENVIRONMENT_NAME = Cypress.env('DO_ENVIRONMENT_NAME')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
@@ -76,6 +77,16 @@ Cypress.Commands.add('recreateDeployment', options => {
           shouldCreateExternalResource: true,
         })
       })
+    } else if(K8S_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
+      env = K8S_ENVIRONMENT_NAME
+      dnsZone = AWS_ENVIRONMENT_NAME
+      cy.whenEnvironmentAbsent(env, () => {
+        cy.createK8SEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+        })
+      })
+
     }
 
     let projectPath = dt.projectPath

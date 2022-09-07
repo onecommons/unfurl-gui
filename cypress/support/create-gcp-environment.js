@@ -23,7 +23,8 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
 }
 
 function validateGCPEnvironment(filePath=GOOGLE_APPLICATION_CREDENTIALS) {
-  cy.fixture(GOOGLE_APPLICATION_CREDENTIALS).then(credentials => {
+  cy.fixture(filePath).then(credentials => {
+    cy.log(credentials.project_id)
     const {project_id} = credentials
     cy.contains(project_id, {timeout: BASE_TIMEOUT * 2.4}).should('be.visible')
     cy.contains(GCP_ZONE).should('be.visible')
