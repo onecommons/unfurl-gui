@@ -27,7 +27,8 @@ export default {
             'lookupDeployPath',
             'getHomeProjectPath',
             'deploymentItemDirect',
-            'jobByPipelineId'
+            'jobByPipelineId',
+            'userCanEdit'
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
@@ -62,14 +63,15 @@ export default {
             const result = []
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
-            if(this.deploymentItem?.isDraft) result.push('edit-draft')
-            else {
-                if(this.deploymentItem?.isEditable) result.push('edit-deployment')
-                if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
-                result.push('clone-deployment')
+            if(this.deploymentItem?.isDraft) {
+                if(this.userCanEdit) result.push('edit-draft')
             }
-            //if(this.isUndeployed) result.push('deploy')
-            if(this.deploymentItem?.isDeployed) result.push('teardown')
+            else {
+                if(this.deploymentItem?.isEditable && this.userCanEdit) result.push('edit-deployment')
+                if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
+            }
+            result.push('clone-deployment')
+            if(this.deploymentItem?.isDeployed && this.userCanEdit) result.push('teardown')
             if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
 
             const pipeline = this.deploymentItem?.pipeline
@@ -78,7 +80,7 @@ export default {
             } 
             result.push('local-deploy')
 
-            result.push('delete')
+            if(this.userCanEdit) result.push('delete')
             return result
         },
         primaryControlButtons() {

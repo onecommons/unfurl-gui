@@ -339,9 +339,15 @@ const actions = {
         commit('setProjectEnvironments', environments)
     },
     async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
-        const envvars = await fetchEnvironmentVariables(fullPath)
+        let envvars = []
+        try {
+            envvars = await fetchEnvironmentVariables(fullPath)
+        } catch(e) {
+            console.warn(`Failed to fetch environment variables for ${fullPath}`, e.message)
+        }
+
         const variablesByEnvironment = {'*': {}}
-        for(const variable of envvars || []) {
+        for(const variable of envvars) {
             if(!variable.environment_scope) continue
             const varsForEnv = variablesByEnvironment[variable.environment_scope] || {}
             varsForEnv[variable.key] = variable.value
@@ -353,8 +359,12 @@ const actions = {
     async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
-            await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD: {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}})
-            await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
+            try {
+                await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD: {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}})
+                await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
+            } catch(e) {
+                console.warn(`Failed to set vault password for ${fullPath}`, e.message)
+            }
         }
     },
     async createAccessTokenIfNeeded({getters, dispatch}) {
@@ -546,6 +556,10 @@ const getters = {
             }
         }
         return result
+    },
+    userCanEdit(_, getters) {
+        // we can't read or set UNFURL_VAULT_DEFAULT_PASSWORD if we're not a maintainer
+        return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     }
 };
 
