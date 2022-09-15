@@ -246,10 +246,10 @@ export default {
   },
 
   created() {
+    this.syncGlobalVars(this.$projectGlobal);
     if(this.environmentsAreReady && !this.triedFetching) {
       this.fetchItems()
     }
-    this.syncGlobalVars(this.$projectGlobal);
     bus.$on('moveToElement', (obj) => {
       const { elId } = obj;
       this.scrollDown(elId, 500);
@@ -362,8 +362,7 @@ export default {
     async fetchItems(n=1) {
       try {
         this.triedFetching = true
-        const projectGlobal = this.project.globalVars
-        const projectPath = projectGlobal?.projectPath
+        const projectPath = this.$projectGlobal.projectPath
         if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
@@ -375,7 +374,7 @@ export default {
           this.setEnvironmentScope(environmentName)
         }
         // TODO see if we can get rid of this, since it's probably already loaded
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal});
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 

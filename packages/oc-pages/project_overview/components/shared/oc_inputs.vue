@@ -397,6 +397,10 @@ export default {
 </el-card>
 </template>
 <style scoped>
+.oc-inputs >>> .formily-element-array-items-card {
+  border: unset;
+  background: unset;
+}
 .gl-dark >>> input::placeholder {
     opacity: 0.7;
 }
