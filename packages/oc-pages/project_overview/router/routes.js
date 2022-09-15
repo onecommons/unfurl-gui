@@ -17,13 +17,13 @@ export default [
   },
   {
     name: OC_PROJECT_VIEW_EDIT_DEPLOYMENT,
-    path: '/deployments/:environment/:slug',
+    path: '/deployments/:dashboard/:environment/:slug',
     component: TemplatesPage,
     public: false,
   },
   {
     name: OC_PROJECT_VIEW_DRAFT_DEPLOYMENT,
-    path: '/deployment-drafts/:environment/:slug',
+    path: '/deployment-drafts/:dashboard/:environment/:slug',
     component: TemplatesPage,
     public: false
   },
