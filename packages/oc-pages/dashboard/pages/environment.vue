@@ -49,7 +49,8 @@ export default {
             'hasPreparedMutations',
             'isMobileLayout',
             'getCardsStacked',
-            'cardIsValid'
+            'cardIsValid',
+            'userCanEdit'
         ]),
         breadcrumbItems() {
             return [
@@ -80,6 +81,7 @@ export default {
             return primaryProviderType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primaryProviderType)
         },
         saveStatus() {
+            if(!this.userCanEdit) return 'hidden'
             for(const card of this.getCardsStacked) {
                 if(!this.cardIsValid(card)) return 'disabled'
             }
@@ -87,6 +89,10 @@ export default {
                 return 'disabled'
             }
             return 'display'
+        },
+        deleteStatus() {
+            if(!this.userCanEdit) return 'hidden'
+            else return 'display'
         },
         providerType() {
             return this.environment?.primary_provider?.type
@@ -109,7 +115,6 @@ export default {
             } else {
                 return (resource) => resource.name != 'primary_provider'
             }
-
         }
     },
     methods: {
@@ -225,7 +230,7 @@ export default {
                             External resources are a convenient way to reuse configurations across many deployments.
                         </p>
                     </div>
-                    <div>
+                    <div v-if="userCanEdit">
                         <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                             <div>
                                 <gl-icon name="plus"/>
@@ -235,17 +240,17 @@ export default {
                     </div>
                 </div>
             </oc-tab>
-            <oc-tab title="Variables">
+            <oc-tab title="Variables" v-if="userCanEdit">
                 <ci-variable-settings v-if="!unfurl_gui"/>
             </oc-tab>
         </gl-tabs>
-        <div v-if="!(showDeploymentResources || showingProviderTab)" class="form-actions d-flex justify-content-end">
+        <div v-if="(!(showDeploymentResources || showingProviderTab)) && userCanEdit" class="form-actions d-flex justify-content-end">
             <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
                 <gl-icon name="remove"/>
                 Delete Environment
             </gl-button>
         </div>
-        <deployment-resources v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" delete-status="display" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
+        <deployment-resources :readonly="!userCanEdit" v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
             <template v-if="!showingProviderTab" #header>
                 <!-- potentially tricky to translate -->
                 <div class="d-flex align-items-center">
@@ -253,7 +258,7 @@ export default {
                 </div>
             </template>
             <template #primary-controls>
-                <div v-if="!showingProviderTab && !isMobileLayout" class="confirm-container">
+                <div v-if="!showingProviderTab && !isMobileLayout && userCanEdit" class="confirm-container">
                     <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                         <div>
                             <gl-icon name="plus"/>

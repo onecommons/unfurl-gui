@@ -107,7 +107,7 @@ export default class DeploymentItem {
     }
     
     get readonlyLink() { return `/home/${this.namespace}/-/deployments/${this.environment.name}/${this.deployment.name}`}
-    get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
+    get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
     get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
     get viewableTo() {
         return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}}

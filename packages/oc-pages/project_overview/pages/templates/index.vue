@@ -19,6 +19,7 @@ import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {getJobsData, redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
+import * as routes from '../../router/constants'
 
 
 export default {
@@ -120,19 +121,19 @@ export default {
     },
     saveStatus() {
       switch(this.$route.name) {
-        case 'deploymentDraftPage':
+        case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
         default: 
           return this.hasPreparedMutations? 'enabled': 'disabled';
       }
     },
     saveDraftStatus() {
-      return this.$route.name == 'deploymentDraftPage'?
+      return this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT?
         (this.hasPreparedMutations? 'enabled': 'disabled') : 'hidden'
     },
     deleteStatus() {
       switch(this.$route.name) {
-        case 'deploymentDraftPage':
+        case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
         default: 
           return 'enabled';
@@ -140,7 +141,7 @@ export default {
     },
     mergeStatus() {
       switch(this.$route.name) {
-        case 'deploymentDraftPage':
+        case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
         default: 
           return 'enabled';
@@ -148,11 +149,11 @@ export default {
     },
     deployStatus() {
       if(this.triggeredDeployment) return 'disabled'
-      if(this.$route.name != 'deploymentDraftPage') return 'hidden'
+      if(this.$route.name != routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT) return 'hidden'
       return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
     },
     cancelStatus() {
-      return this.$route.name == 'deploymentDraftPage'? 'enabled': 'hidden';
+      return this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT? 'enabled': 'hidden';
     },
 
     shouldRenderTemplates() {
@@ -368,9 +369,9 @@ export default {
         const renamePrimary = this.$route.query.rtn;
         const renameDeploymentTemplate = this.$route.query.fn;
         const environmentName = this.$route.params.environment
-        if(this.$route.name != 'templatePage') {
+        if(this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
           this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
-          this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`);
+          this.setUpdateObjectProjectPath(this.getHomeProjectPath);
           this.setEnvironmentScope(environmentName)
         }
         // TODO see if we can get rid of this, since it's probably already loaded
@@ -381,7 +382,7 @@ export default {
           renamePrimary, 
           renameDeploymentTemplate,
           environmentName: this.$route.params.environment,
-          syncState: this.$route.name == 'deploymentDraftPage'
+          syncState: this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT
         })
         const environment = this.lookupEnvironment(environmentName)
         this.setAvailableResourceTypes(this.lookupConfigurableTypes(environment))
@@ -451,7 +452,7 @@ export default {
 
         const router = this.$router
         function beforeRedirect() {
-          const {href} = router.resolve({name: 'projectHome', query: {}})
+          const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
           window.history.replaceState({}, null, href)
         }
 
@@ -480,7 +481,7 @@ export default {
 
         await this.commitPreparedMutations()
         this.activeSkeleton = false;
-        this.$router.push({ name: 'projectHome' }); // NOTE can we do this on failure too?
+        this.$router.push({ name: routes.OC_PROJECT_VIEW_HOME }); // NOTE can we do this on failure too?
       }catch (e) {
         this.activeSkeleton = false;
         console.error(e);

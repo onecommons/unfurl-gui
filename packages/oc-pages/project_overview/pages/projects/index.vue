@@ -15,6 +15,7 @@ import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
+import * as routes from '../../router/constants'
 
 export default {
     name: 'ProjectPageHome',
@@ -273,10 +274,10 @@ export default {
         }
     },
     methods: {
-        redirectToTemplateEditor(page='templatePage') {
+        redirectToTemplateEditor(page=routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
-            this.$router.push({ query, name: page, params: { environment: this.templateSelected.environment, slug: this.templateSelected.name}});
+            this.$router.push({ query, name: page, params: { dashboard: encodeURIComponent(this.getHomeProjectPath),environment: this.templateSelected.environment, slug: this.templateSelected.name}});
         },
 
         clearModalTemplate(e) {
@@ -330,7 +331,7 @@ export default {
                         username: this.getUsername
                     })
 
-                    this.redirectToTemplateEditor('deploymentDraftPage');
+                    this.redirectToTemplateEditor(routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT);
                 } else {
                     await this.commitPreparedMutations()
                     this.redirectToTemplateEditor();

@@ -18,6 +18,10 @@ export default {
 
         this.$store.dispatch('populateCurrentUser').catch(() => {})
 
+        if(this.$route.params.dashboard) {
+          this.$store.commit('setCurrentNamespace', this.$route.params.dashboard.split('/').slice(0, -1).join('/'))
+        }
+
         errorContext = 'ocFetchEnvironments'
         this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
             .catch((err) => {
