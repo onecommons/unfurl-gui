@@ -11,6 +11,7 @@ export function hideLastFlash() {
 }
 
 export default function createFlash(options) {
+    console.log('createFlash', options)
     let message = options.message || ''
     let type = options.type
     if(options.issue) {
@@ -25,6 +26,7 @@ export default function createFlash(options) {
             const linkContainer = document.createElement('DIV')
             link.textContent = options.linkText
             link.href = options.linkTo
+            link.target = '_blank'
             linkContainer.appendChild(link)
             flashText.appendChild(linkContainer)
         })
@@ -38,6 +40,7 @@ export default function createFlash(options) {
             issueContext.textContent = options.issue
 
             createIssueLink.href = await generateIssueLink(options.projectPath, {title: options.issue, description: message, context: options.issueContext})
+            createIssueLink.target = '_blank'
             createIssueLink.textContent = options.issue? 'Click to create an issue: ': 'Click to create an issue.'
             createIssueLink.appendChild(issueContext)
 

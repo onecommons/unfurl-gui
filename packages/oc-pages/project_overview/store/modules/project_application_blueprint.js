@@ -81,6 +81,7 @@ const actions = {
         commit('loaded', true)
     },
     useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
+        if(!projectPath) {console.warn('projectPath is not set')}
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')

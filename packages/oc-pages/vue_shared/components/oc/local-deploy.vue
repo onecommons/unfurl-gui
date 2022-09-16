@@ -25,7 +25,7 @@ export default {
             const username = this.getUsername
             const token = this.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')
             let server  = window.location.hostname
-            if(!['80', '443'].includes(window.location.port)) {
+            if(window.location.port) {
                 server = server + ':' + window.location.port
             }
             const projectPath = this.getHomeProjectPath
@@ -34,7 +34,7 @@ export default {
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
             const blueprint = this.deployment.blueprint
-            const blueprintUrl = `${protocol}//${server}/${this.deployment.projectPath}`
+            const blueprintUrl = `${protocol}//${username}:${token}@${server}/${this.deployment.projectPath}`
 
             const options = {protocol, username, token, server, projectPath, projectId, environmentName, deploymentName, deployPath, blueprint, blueprintUrl}
             if(this.deployment.__typename == 'DeploymentTemplate') {

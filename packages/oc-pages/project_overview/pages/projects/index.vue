@@ -343,6 +343,7 @@ export default {
         },
         async loadPrimaryDeploymentBlueprint() {
             const projectPath = this.$projectGlobal.projectPath
+            if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
             const templateSlug = this.getProjectInfo.primaryDeploymentBlueprint
             if(!templateSlug) return
             await this.fetchProject({projectPath});

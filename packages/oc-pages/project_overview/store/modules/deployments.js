@@ -187,13 +187,17 @@ const getters = {
         return function(environmentName, filter) {
             const result = []
             getters.getDeploymentsByEnvironment(environmentName).forEach(deployment => {
-                const dictionary = getters.getDeploymentDictionary(deployment.name, environmentName)
-                const primary = dictionary.Resource[deployment.primary]
-                const template = dictionary.ResourceTemplate[primary.template]
-                const type = dictionary.ResourceType[template.type]
+                try {
+                    const dictionary = getters.getDeploymentDictionary(deployment.name, environmentName)
+                    const primary = dictionary.Resource[deployment.primary]
+                    const template = dictionary.ResourceTemplate[primary.template]
+                    const type = dictionary.ResourceType[template.type]
 
-                if(filter(primary, {dictionary, type, deployment, template})) {
-                    result.push({...primary, _deployment: deployment.name, _type: type})
+                    if(filter(primary, {dictionary, type, deployment, template})) {
+                        result.push({...primary, _deployment: deployment.name, _type: type})
+                    }
+                } catch(e) {
+                    console.error(`Could not get primary as connection for ${deployment.name}`, e.message)
                 }
             })
             return result
