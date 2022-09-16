@@ -21,7 +21,8 @@ const state = {
     mainRequirement: {},
     globalVars: {},
     resourceTemplates: [],
-    servicesToConnect: []
+    servicesToConnect: [],
+    openCloudDeployments: []
 };
 
 const deletePropertyFromArray = (arrg) => {
@@ -191,9 +192,49 @@ const mutations = {
     DELETE_REQUIREMENT_NODE_DEEP(_state, {nodeTitle, nodeParentTitle}) {
         deleteRequirementDeep(_state.template.requirements, "title", nodeTitle, "requirements", nodeParentTitle, null);
     },
+
+    setOpenCloudDeployments(state, openCloudDeployments) {
+        state.openCloudDeployments = openCloudDeployments
+    }
 };
 
 const actions = {
+
+    async fetchCloudmap( {state, commit} ) {
+        const cloudmapURL = state.globalVars.cloudmap
+
+        const primaryType = state.projectInfo.primary.name
+
+        function prepareApp(app, testbed) {
+            const item = {...app, testbed: {...testbed}}
+            delete item.children
+            delete item.testbed.children
+            return item
+        }
+
+        function* matchingApps(d, parent) {
+            if(d.type == 'app') {
+                if(d.children.some(c => c.resourceType == primaryType)) {
+                    yield prepareApp(d, parent)
+                }
+            } else {
+                for(const child of d.children) {
+                    for(const app of matchingApps(child, d)) {
+                        yield app
+                    }
+                }
+            }
+        }
+        console.log({primaryType,cloudmapURL})
+
+        const cloudmap = await fetch(cloudmapURL).then(res => res.json())
+        const openCloudDeployments = []
+        for(const app of matchingApps(cloudmap)) {
+            openCloudDeployments.push(app)
+        }
+
+        commit('setOpenCloudDeployments', openCloudDeployments)
+    },
 
     async fetchProjectInfo({ commit }, { projectPath, defaultBranch }) {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
@@ -399,6 +440,9 @@ const getters = {
         }
         return result
 
+    },
+    openCloudDeployments(state) {
+        return state.openCloudDeployments
     }
 };
 
