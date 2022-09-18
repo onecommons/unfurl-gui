@@ -2,7 +2,7 @@
 import {mapGetters} from 'vuex'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {DetectIcon} from 'oc_vue_shared/oc-components'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias, cloudProviderFriendlyName} from 'oc_vue_shared/util.mjs'
 
 export default {
     name: 'OpenCloudDeployments',
@@ -12,6 +12,7 @@ export default {
         {key: 'testbed', label: 'Testbed', groupBy: i => i.testbed.url}
     ],
     components: {TableComponent, DetectIcon},
+    methods: {cloudProviderFriendlyName},
     computed: {
         ...mapGetters(['openCloudDeployments']),
         items() {
@@ -49,13 +50,19 @@ export default {
 </script>
 <template>
     <table-component no-margin hide-filter :use-collapse-all="false" :fields="$options.fields" :items="items">
+        <template #deployment$head>
+            <span class="ml-4">Deployment</span>
+        </template>
         <template #deployment="scope">
-            <div>
+            <div class="ml-4">
                 <a target="blank" :href="scope.item.deployment.url">{{scope.item.deployment.name}}</a>
             </div>
         </template>
         <template #cloud="scope">
-            <detect-icon :name="scope.item.cloud" />
+            <div class="d-flex align-items-center">
+                <detect-icon :size="20" :name="scope.item.cloud" />
+                <div class="ml-1"> {{cloudProviderFriendlyName(scope.item.cloud)}} </div>
+            </div>
         </template>
         <template #testbed="scope">
             <div>

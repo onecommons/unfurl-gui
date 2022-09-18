@@ -426,7 +426,7 @@ export default {
                     </div>
 
                 </oc-tab>
-                <oc-tab v-if="environmentsAreReady && openCloudDeployments.length > 0" title="Open Cloud Deployments">
+                <oc-tab v-if="openCloudDeployments.length > 0" title="Open Cloud Deployments">
                     <open-cloud-deployments />
                 </oc-tab>
 

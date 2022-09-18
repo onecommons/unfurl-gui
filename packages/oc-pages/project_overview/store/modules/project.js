@@ -203,6 +203,8 @@ const actions = {
     async fetchCloudmap( {state, commit} ) {
         const cloudmapURL = state.globalVars.cloudmap
 
+        if(!cloudmapURL) return
+
         const primaryType = state.projectInfo.primary.name
 
         function prepareApp(app, testbed) {
@@ -225,7 +227,6 @@ const actions = {
                 }
             }
         }
-        console.log({primaryType,cloudmapURL})
 
         const cloudmap = await fetch(cloudmapURL).then(res => res.json())
         const openCloudDeployments = []
