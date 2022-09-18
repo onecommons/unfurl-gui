@@ -3,9 +3,10 @@ import { redirectTo } from '~/lib/utils/url_utility';
 import {generateAccessToken} from './user'
 
 const MASK_VARIABLES = ['UNFURL_ACCESS_TOKEN']
-function toGlVariablesAttributes(variables) {
+function toGlVariablesAttributes(variables, variable_type='unencrypted_var') {
     const result = []
-    Object.entries(variables).forEach(([key, secret_value]) => {
+    Object.entries(variables).forEach(([key, _secret_value]) => {
+        let secret_value = typeof _secret_value == 'number'? _secret_value.toString(): _secret_value
         if(typeof secret_value != 'string') {
             if(secret_value) {
                 console.warn({key, secret_value}, 'expected a string for secret_value')
@@ -16,7 +17,7 @@ function toGlVariablesAttributes(variables) {
             key,
             masked: MASK_VARIABLES.includes(key),
             secret_value,
-            variable_type: 'unencrypted_var'
+            variable_type
         })
     })
 
@@ -59,6 +60,18 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
         UNFURL_VALIDATION_MODE,
         DEPLOY_IMAGE
     })
+}
+
+export async function triggerIncrementalDeployment(pipelinesPath, {upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}) {
+    const variablesDict = {
+        UPSTREAM_BRANCH: upstreamBranch, UPSTREAM_REF: upstreamBranch,
+        UPSTREAM_COMMIT: upstreamCommit,
+        UPSTREAM_PIPELINE_ID: upstreamPipeline, UPSTREAM_PIPELINE: upstreamPipeline,
+        UPSTREAM_PROJECT: upstreamProject
+    }
+    const variables = toGlVariablesAttributes(variablesDict, 'env_var')
+
+    return triggerPipeline(pipelinesPath, variables)
 }
 
 export async function deploy(pipelinesPath, parameters, options) {
