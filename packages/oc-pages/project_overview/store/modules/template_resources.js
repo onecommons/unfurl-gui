@@ -925,7 +925,7 @@ const getters = {
     },
 
     hasIncrementalDeployOption(state, getters) {
-        return getters.getCardsStacked.some(card => getters.getCardExtends(card)?.includes('ContainerImageSource'))
+        return Object.values(state.resourceTemplates).some(card => getters.getCardExtends(card)?.includes('ContainerImageSource'))
     }
 };
 
