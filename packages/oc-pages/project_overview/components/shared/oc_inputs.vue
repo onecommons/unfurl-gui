@@ -325,6 +325,7 @@ export default {
             next.default = next.minimum
           }
           */
+
           next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
             if(Array.isArray(value) && value.length > 0 && !isMap) {
               return value.map(input => ({input}))
@@ -333,17 +334,18 @@ export default {
               overrideValue = true
               return self.lookupEnvironmentVariable(value.get_env) || ''
             }
+          })
+
+          // quick fix with redundant copy
+          // get_env directive resolving to empty string causes default to be used by formily which might be a _generate directive
+          next.value = _.cloneDeepWith(next.value || next.default, function(value) {
             let resolvedDirective
             if(resolvedDirective = tryResolveDirective(value)) {
-                next.dirty = true
-                return resolvedDirective
+              next.dirty = true
+              return resolvedDirective
             }
           })
-          /*
-          if(overrideValue) {
-            next.value = next.initialValue
-          }
-           */
+
           result.push(next)
         } catch (e) {
           console.error(e)
@@ -372,7 +374,7 @@ export default {
     this.form = form
     for(const input of this.mainInputs) {
       if(input.dirty) {
-        this.triggerSave(input, input.value || input.initialValue, true)
+        this.triggerSave(input, input.value ?? input.initialValue, true)
       }
     }
     
