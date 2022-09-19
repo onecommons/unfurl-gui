@@ -4,6 +4,7 @@ import { __ } from '~/locale';
 import _ from 'lodash'
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider, GlFormCheckbox} from '@gitlab/ui'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/oc-components'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
@@ -16,9 +17,16 @@ const LOCAL_DEV = 'Local Dev'
 const CLUSTER_PROVIDER_NAMES = {
     'Google Cloud Platform': 'gcp',
     'Amazon Web Services': 'aws',
-    'Digital Ocean': '',
-    'Kubernetes': '',
+    'Digital Ocean': 'DigitalOcean',
+    'Kubernetes': 'k8s',
     [LOCAL_DEV]: ''
+}
+
+// using this for the environments POST
+// if provider is set while creating an environment, it tries to redirect to the cluster page and fails
+const PROVIDER_INPUT_MAPPING = {
+    'Google Cloud Platform': 'gcp',
+    'Amazon Web Services': 'aws',
 }
 
 export default {
@@ -57,7 +65,7 @@ export default {
         ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders']),
         environmentsList() {
             const result = Object.keys(CLUSTER_PROVIDER_NAMES)
-
+            
             if(this.allowAny) return result
 
             const cloudProviderName = lookupCloudProviderAlias(this.cloudProvider)
@@ -90,6 +98,9 @@ export default {
         },
         currentText() {
             return this.displayProvider(this.selectedCloudProvider) || this.selectedCloudProvider || __('Select')
+        },
+        providerInput() {
+          return PROVIDER_INPUT_MAPPING[this.selectedCloudProvider]
         }
     },
     watch: {
@@ -109,9 +120,6 @@ export default {
     methods: {
         ...mapActions(['environmentFromProvider']),
         async createLocalDevEnvironment() {
-          // this is an ugly hack, refactor to just submit the form
-          sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
-          sessionStorage['environmentFormAction'] = this.action
           await postGitlabEnvironmentForm();
           const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
               name: 'primary_provider', 
@@ -138,14 +146,15 @@ export default {
             sessionStorage['environmentFormAction'] = this.action
 
             if(typeof this.selectedCloudProvider != 'string') {
-                sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
-                sessionStorage['environmentFormAction'] = this.action
                 await postGitlabEnvironmentForm();
                 await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: this.selectedCloudProvider})
                 window.location.href = redirectTarget;
-            } else if(! CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]) {
+            } else if(! ['gcp', 'aws'].includes(CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider])) {
               await this.createLocalDevEnvironment()
-              window.location.href = redirectTarget;
+
+              //TODO don't hard code our redirect
+              //window.location.href = redirectTarget;
+              window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
             } else {
               const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
               sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
@@ -219,7 +228,7 @@ export default {
         <form class="d-none" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
             <input name="environment[name]" :value="slugify(environmentName)">
-            <input name="provider" :value="CLUSTER_PROVIDER_NAMES[selectedCloudProvider]">
+            <input name="provider" :value="providerInput">
         </form>
     </div>
 </template>
