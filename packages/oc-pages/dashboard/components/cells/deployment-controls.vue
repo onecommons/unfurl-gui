@@ -72,7 +72,9 @@ export default {
             }
             result.push('clone-deployment')
             if(this.deploymentItem?.isDeployed && this.userCanEdit) result.push('teardown')
-            if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
+
+            //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
+            result.push('job-history')
 
             const pipeline = this.deploymentItem?.pipeline
             if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
@@ -81,7 +83,17 @@ export default {
             result.push('local-deploy')
             result.push('view-in-repository')
 
+            // TODO probably want to check that it's deployed
+            if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
+
             if(this.userCanEdit) result.push('delete')
+            return result
+        },
+        disabledButtons() {
+            const result = []
+
+            if(!this.deploymentItem?.pipelines?.length) result.push('job-history')
+
             return result
         },
         primaryControlButtons() {
@@ -129,6 +141,9 @@ export default {
         localDeploy() {
           this.$emit('localDeploy', this.deployment, this.environment)
         },
+        incRedeploy() {
+          this.$emit('incRedeploy', this.deployment, this.environment)
+        },
         async cancelJob() {
             await this.deploymentItem.cancelJob()
             window.location.reload()
@@ -162,10 +177,12 @@ export default {
          :view-artifacts-link="deploymentItem.artifactsLink"
          :control-buttons="primaryControlButtons"
          :view-in-repository-link="viewInRepositoryLink"
+         :disabled-buttons="disabledButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
          @cloneDeployment="cloneDeployment"
+         @incRedeploy="incRedeploy"
          @cancelJob="cancelJob"
          @localDeploy="localDeploy"
         />
@@ -182,6 +199,7 @@ export default {
              :view-artifacts-link="deploymentItem.artifactsLink"
              :control-buttons="contextMenuControlButtons"
              :view-in-repository-link="viewInRepositoryLink"
+             :disabled-buttons="disabledButtons"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
              @deleteDeployment="deleteDeployment"
@@ -189,6 +207,7 @@ export default {
              @startDeployment="startDeployment"
              @cloneDeployment="cloneDeployment"
              @cancelJob="cancelJob"
+             @incRedeploy="incRedeploy"
              @localDeploy="localDeploy"
              />
         </gl-dropdown>
