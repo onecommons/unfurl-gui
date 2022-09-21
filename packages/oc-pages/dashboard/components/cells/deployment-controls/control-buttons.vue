@@ -11,6 +11,7 @@ export default {
         viewArtifactsLink: String,
         issuesLinkArgs: Array,
         controlButtons: Array,
+        disabledButtons: Array,
         component: {
             type: [String, Object],
             default: () => 'gl-button'
@@ -19,6 +20,7 @@ export default {
     components: {GlIcon, GlButton, GlDropdown, GlDropdownItem},
     methods: {
         hasButton(id) { return this.controlButtons.includes(id) },
+        hasDisabledButton(id) { return this.disabledButtons.includes(id) },
         deleteDeployment() {
             this.$emit('deleteDeployment')
         },
@@ -84,9 +86,9 @@ export default {
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
     <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
-    <component :is='component' v-if="hasButton('job-history')" :href="viewJobsLink">
+    <component :is='component' v-if="hasButton('job-history')" :disabled="hasDisabledButton('job-history')" :href="viewJobsLink">
         <gl-icon :size="16" name="history"/> 
-        {{__('Previous Jobs')}}
+        {{__('View Deployment History')}}
     </component>
     <component :is='component' v-if="hasButton('view-artifacts')" :href="viewArtifactsLink">
         <gl-icon :size="16" name="archive"/> 
@@ -107,4 +109,5 @@ export default {
 .control-button-container >>> .gl-button { width: 10em; padding: 0.2em 0;}
 .control-button-container >>> .gl-new-dropdown-item-text-primary { display: flex; align-items: center; }
 .control-button-container >>> .gl-icon { margin-right: 0.25em; }
+.control-button-container >>> .disabled { opacity: 0.7; }
 </style>

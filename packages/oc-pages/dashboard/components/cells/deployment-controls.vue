@@ -72,7 +72,9 @@ export default {
             }
             result.push('clone-deployment')
             if(this.deploymentItem?.isDeployed && this.userCanEdit) result.push('teardown')
-            if(this.deploymentItem?.pipelines?.length > 1) result.push('job-history')
+
+            //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
+            result.push('job-history')
 
             const pipeline = this.deploymentItem?.pipeline
             if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
@@ -84,6 +86,13 @@ export default {
             if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
             if(this.userCanEdit) result.push('delete')
+            return result
+        },
+        disabledButtons() {
+            const result = []
+
+            if(!this.deploymentItem?.pipelines?.length) result.push('job-history')
+
             return result
         },
         primaryControlButtons() {
@@ -163,6 +172,7 @@ export default {
          :view-jobs-link="viewJobsLink"
          :view-artifacts-link="deploymentItem.artifactsLink"
          :control-buttons="primaryControlButtons"
+         :disabled-buttons="disabledButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
@@ -183,6 +193,7 @@ export default {
              :view-deployment-target="viewDeploymentTarget"
              :view-artifacts-link="deploymentItem.artifactsLink"
              :control-buttons="contextMenuControlButtons"
+             :disabled-buttons="disabledButtons"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
              @deleteDeployment="deleteDeployment"
