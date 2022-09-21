@@ -79,6 +79,7 @@ export default {
                 result.push('view-artifacts')
             } 
             result.push('local-deploy')
+            result.push('view-in-repository')
 
             if(this.userCanEdit) result.push('delete')
             return result
@@ -97,6 +98,9 @@ export default {
         },
         viewJobsLink() {
             return this.deployPath? `/${this.getHomeProjectPath}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
+        },
+        viewInRepositoryLink() {
+            return `/${this.getHomeProjectPath}/-/tree/main/${this.deployPath.name}`
         },
         issuesLinkArgs() {
             return [
@@ -157,6 +161,7 @@ export default {
          :view-jobs-link="viewJobsLink"
          :view-artifacts-link="deploymentItem.artifactsLink"
          :control-buttons="primaryControlButtons"
+         :view-in-repository-link="viewInRepositoryLink"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
@@ -176,6 +181,7 @@ export default {
              :view-deployment-target="viewDeploymentTarget"
              :view-artifacts-link="deploymentItem.artifactsLink"
              :control-buttons="contextMenuControlButtons"
+             :view-in-repository-link="viewInRepositoryLink"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
              @deleteDeployment="deleteDeployment"

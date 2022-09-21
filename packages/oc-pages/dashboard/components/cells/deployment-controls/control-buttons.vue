@@ -10,6 +10,7 @@ export default {
         viewJobsLink: String,
         viewArtifactsLink: String,
         issuesLinkArgs: Array,
+        viewInRepositoryLink: String,
         controlButtons: Array,
         component: {
             type: [String, Object],
@@ -90,6 +91,7 @@ export default {
         {{__('View Artifacts')}}
     </component>
     <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
+    <component :is='component' v-if="hasButton('view-in-repository')" :href="viewInRepositoryLink" target="_blank"><gl-icon :size="16" name="file-tree" /> {{__('View in Repository')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>
