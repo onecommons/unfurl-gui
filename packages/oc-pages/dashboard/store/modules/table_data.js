@@ -1,4 +1,6 @@
 import {USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
+
 import _ from 'lodash'
 const state = {
     loaded: false,
@@ -32,29 +34,35 @@ const actions = {
         function pushContext(iterationCounter, i) {
             if(i == iterationCounter) {
                 const item = {...context, context: {...context}} 
+                Object.freeze(item.context)
+                Object.freeze(item)
                 items.push(item)
             }
         }
         let iterationCounter = 0
 
         for(const environment of rootGetters.getEnvironments) {
-            Object.freeze(environment)
+            deepFreeze(environment)
             context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
             environments += 1
             const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
-            for(const deploymentDict of environment.deployments) {
+            for(const frozenDeploymentDict of environment.deployments) {
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 let deployment
-                dispatch('useProjectState', {root: _.cloneDeep(deploymentDict)})
-                if(deploymentDict.Deployment) {
+                const clonedDeploymentDict = _.cloneDeep(frozenDeploymentDict)
+                //clonedDeploymentDict.ResourceType = frozenDeploymentDict.ResourceType
+                //dispatch('useProjectState', {root: _.cloneDeep(frozenDeploymentDict)})
+                dispatch('useProjectState', {root: clonedDeploymentDict})
+                //dispatch('useProjectState', {root: frozenDeploymentDict})
+                if(clonedDeploymentDict.Deployment) {
                     deployment = {...rootGetters.getDeployment}
-                    const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(deploymentDict.DeploymentTemplate)[0]
+                    const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
                     deployment.projectPath = dt?.projectPath
                 } else {
-                    deployment = Object.values(deploymentDict.DeploymentTemplate)[0]
+                    deployment = Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
                 }
                 const i = ++iterationCounter
                 deployment.resources = deployment.resources?.map(r => {
@@ -86,6 +94,8 @@ const actions = {
                     )
                 })
 
+                deepFreeze(deployment)
+
                 if(deployment.__typename == 'Deployment' && deployment.status == 1) {
                     deployments++
                 }
@@ -95,9 +105,12 @@ const actions = {
                 // handle an export issue
                 if(!application.projectIcon) {
                     try {
-                        application.projectIcon = deploymentDict.Overview[application.name].projectIcon
+                        application.projectIcon = clonedDeploymentDict.Overview[application.name].projectIcon
                     } catch(e) {}
                 }
+
+                deepFreeze(application) 
+
                 applicationNames[application.name] = true
                 context.application = application
                 context.deployment = deployment

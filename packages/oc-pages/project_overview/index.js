@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import apolloProvider from './graphql';
+import apolloProvider from 'oc_vue_shared/graphql-client';
 import MainComponent from './components/main.vue';
 import createRouter from './router';
 import store from './store';

@@ -6,6 +6,7 @@ import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {GlLoadingIcon} from '@gitlab/ui'
 import * as routes from './router/constants'
+import {cachePersistor} from './graphql.js'
 const USER_TOURED_EXPLORE_PAGE = 'USER_TOURED_EXPLORE_PAGE'
 export default {
     name: 'Dashboard',
@@ -50,14 +51,16 @@ export default {
         this.setCurrentNamespace(currentNamespace);
         this.populateCurrentUser()
 
+        await cachePersistor.restore()
         try {
-          await Promise.all([this.loadDashboard(), this.populateJobsList()])
+            await Promise.all([this.loadDashboard(), this.populateJobsList()])
         } catch(e) {
-          if(currentNamespace != this.getUsername) {
-            notFoundError()
-          } else {
-            throw(e)
-          }
+            if(currentNamespace != this.getUsername) {
+                console.error(e)
+                notFoundError()
+            } else {
+                throw(e)
+            }
         }
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()

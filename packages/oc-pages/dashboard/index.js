@@ -1,7 +1,7 @@
 import Vue from 'vue';
 //import TableComponentContainer from './components/table.vue';
 import Dashboard from './dashboard.vue';
-import apolloProvider from './graphql';
+import apolloProvider from 'oc_vue_shared/graphql-client';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router';

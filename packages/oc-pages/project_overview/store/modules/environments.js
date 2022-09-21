@@ -293,7 +293,7 @@ const actions = {
         try {
             const {data, errors} = await graphqlClient.clients.defaultClient.query({
                 query,
-                fetchPolicy,
+                fetchPolicy: fetchPolicy || 'cache-first',
                 errorPolicy: 'all',
                 variables: {fullPath}
             })
