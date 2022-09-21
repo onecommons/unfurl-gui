@@ -81,6 +81,7 @@ export default {
                 result.push('view-artifacts')
             } 
             result.push('local-deploy')
+            result.push('view-in-repository')
 
             // TODO probably want to check that it's deployed
             if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
@@ -109,6 +110,9 @@ export default {
         },
         viewJobsLink() {
             return this.deployPath? `/${this.getHomeProjectPath}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
+        },
+        viewInRepositoryLink() {
+            return `/${this.getHomeProjectPath}/-/tree/main/${this.deployPath.name}`
         },
         issuesLinkArgs() {
             return [
@@ -172,6 +176,7 @@ export default {
          :view-jobs-link="viewJobsLink"
          :view-artifacts-link="deploymentItem.artifactsLink"
          :control-buttons="primaryControlButtons"
+         :view-in-repository-link="viewInRepositoryLink"
          :disabled-buttons="disabledButtons"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
@@ -193,6 +198,7 @@ export default {
              :view-deployment-target="viewDeploymentTarget"
              :view-artifacts-link="deploymentItem.artifactsLink"
              :control-buttons="contextMenuControlButtons"
+             :view-in-repository-link="viewInRepositoryLink"
              :disabled-buttons="disabledButtons"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
