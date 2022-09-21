@@ -40,6 +40,9 @@ export default {
         localDeploy() {
             this.$emit('localDeploy')
         },
+        incRedeploy() {
+            this.$emit('incRedeploy')
+        },
         async openIssue() {
             const link = await generateIssueLink(...this.issuesLinkArgs)
             window.open(link, '_blank')
@@ -90,6 +93,7 @@ export default {
         {{__('View Artifacts')}}
     </component>
     <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
+    <component :is='component' v-if="hasButton('inc-redeploy')" @click="incRedeploy"><gl-icon :size="16" name="repeat" /> {{__('Incremental Redeploy')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>

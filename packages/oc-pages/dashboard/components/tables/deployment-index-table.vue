@@ -8,7 +8,7 @@ import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
-import {redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
+import {redirectToJobConsole, triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import Vue from 'vue'
@@ -238,6 +238,19 @@ export default {
                     })
                     const redirectLocation = `/home/${this.getCurrentNamespace}/-/deployments/${this.cloneTargetEnvironment}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
+                    return
+                case 'incRedeploy':
+                    const deploymentItem = this.deploymentItemDirect({deployment, environment})
+                    const upstreamBranch = deploymentItem.pipeline.upstream_branch
+                    const upstreamCommit = deploymentItem.pipeline.upstream_commit_id
+                    const upstreamPipeline = deploymentItem.pipeline.upstream_pipeline_id
+                    const upstreamProject = deploymentItem.pipeline.upstream_project_id
+                    const result = await triggerIncrementalDeployment(
+                        this.pipelinesPath,
+                        {upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}
+                    )
+                    console.log(result)
+                    return
                 default:
                     return
 
@@ -263,6 +276,10 @@ export default {
         },
         onIntentToLocalDeploy(deployment, environment) {
             this.intent = 'localDeploy'
+            this.target = {deployment, environment}
+        },
+        onIntentToRedeploy(deployment, environment) {
+            this.intent = 'incRedeploy'
             this.target = {deployment, environment}
         },
         hasDeployPath(scope) {
@@ -359,6 +376,8 @@ export default {
                     return `Clone ${targetTitle}?`
                 case 'localDeploy':
                     return `Deploy ${targetTitle} locally with Unfurl`
+                case 'incRedeploy':
+                    return `Force an update of ${targetTitle}?`
                 default: return ''
             }
         },
@@ -542,7 +561,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>

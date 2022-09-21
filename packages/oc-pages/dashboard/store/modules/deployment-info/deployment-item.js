@@ -132,6 +132,9 @@ export default class DeploymentItem {
     get isDeployed() {
         return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)
     }
+    get isIncremental() {
+        return this.deployPath?.incremental_deploy ?? false
+    }
     get isJobCancelable() {
         return this.job?.cancelable ?? false
     }

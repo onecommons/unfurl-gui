@@ -80,6 +80,9 @@ export default {
             } 
             result.push('local-deploy')
 
+            // TODO probably want to check that it's deployed
+            if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
+
             if(this.userCanEdit) result.push('delete')
             return result
         },
@@ -125,6 +128,9 @@ export default {
         localDeploy() {
           this.$emit('localDeploy', this.deployment, this.environment)
         },
+        incRedeploy() {
+          this.$emit('incRedeploy', this.deployment, this.environment)
+        },
         async cancelJob() {
             await this.deploymentItem.cancelJob()
             window.location.reload()
@@ -161,6 +167,7 @@ export default {
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
          @cloneDeployment="cloneDeployment"
+         @incRedeploy="incRedeploy"
          @cancelJob="cancelJob"
          @localDeploy="localDeploy"
         />
@@ -183,6 +190,7 @@ export default {
              @startDeployment="startDeployment"
              @cloneDeployment="cloneDeployment"
              @cancelJob="cancelJob"
+             @incRedeploy="incRedeploy"
              @localDeploy="localDeploy"
              />
         </gl-dropdown>
