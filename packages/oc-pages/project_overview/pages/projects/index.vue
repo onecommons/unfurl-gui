@@ -10,6 +10,7 @@ import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
+import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/oc-components'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
@@ -35,6 +36,7 @@ export default {
         ProjectDescriptionBox,
         DeployedBlueprints,
         YourDeployments,
+        OpenCloudDeployments,
         GlMarkdown
     },
     directives: {
@@ -96,6 +98,7 @@ export default {
         },
         ...mapGetters([
             'yourDeployments',
+            'openCloudDeployments',
             'getProjectInfo',
             'getProjectDescription',
             'getTemplatesList',
@@ -220,6 +223,7 @@ export default {
     },
     async mounted() {
         this.initUserSettings({ username: this.getUsername })
+        this.fetchCloudmap()
         await Promise.all([
             this.populateJobsList(),
             this.loadPrimaryDeploymentBlueprint()
@@ -230,40 +234,6 @@ export default {
         }
         this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
-        /*
-        const expectsCloudProvider = sessionStorage['expect_cloud_provider_for']
-
-        delete sessionStorage['instantiate_env']
-        delete sessionStorage['instantiate_provider']
-
-        if(expectsCloudProvider && !(this.selectedEnvironment && this.newEnvironmentProvider)) {
-            // TODO find a way to merge this implementation with dashboard
-
-            createFlash({
-                message: `Creation of environment "${expectsCloudProvider}" cancelled.`,
-                type: FLASH_TYPES.WARNING
-            })
-
-            await deleteEnvironmentByName(this.getHomeProjectPath, expectsCloudProvider)
-            this.discardEnvironment(expectsCloudProvider)
-        }
-
-        delete sessionStorage['expect_cloud_provider_for']
-
-        // add environment to environments.json
-        // TODO break this off into a function
-        const envName = this.selectedEnvironment
-        if(envName) {
-            const primary_provider = this.newEnvironmentProvider? {name: 'primary_provider', type: lookupCloudProviderAlias(this.newEnvironmentProvider), __typename: 'ResourceTemplate'}: null
-
-            await this.updateEnvironment({
-                envName: this.selectedEnvironment,
-                patch: primary_provider? {primary_provider, connections: {primary_provider}}: {}
-            })
-        }
-        //
-
-         */
 
         const templateSelected = this.$route.query?.ts?
             this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null 
@@ -398,7 +368,8 @@ export default {
             'populateJobsList',
             'populateTemplateResources',
             'fetchProject',
-            'updateLastUsedEnvironment'
+            'updateLastUsedEnvironment',
+            'fetchCloudmap'
         ]),
         ...mapMutations([
             'pushPreparedMutation',
@@ -451,11 +422,14 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab v-if="this.environmentsAreReady && yourDeployments.length > 0" title="Your Deployments">
+                <oc-tab v-if="environmentsAreReady && yourDeployments.length > 0" title="Your Deployments">
                     <div class="">
                         <your-deployments />
                     </div>
 
+                </oc-tab>
+                <oc-tab v-if="openCloudDeployments.length > 0" title="Open Cloud Deployments">
+                    <open-cloud-deployments />
                 </oc-tab>
 
             </gl-tabs>
