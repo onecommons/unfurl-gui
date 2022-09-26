@@ -248,7 +248,10 @@ export default {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
             const dashboard = encodeURIComponent(this.selectedEnvironment._dashboard || this.getHomeProjectPath)
-            this.$router.push({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}});
+            // TODO re-enable this when we're able to update the current namespace 
+            // https://github.com/onecommons/gitlab-oc/issues/867
+            // this.$router.push({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}});
+            window.location.href = this.$router.resolve({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}}).href
         },
 
         clearModalTemplate(e) {
