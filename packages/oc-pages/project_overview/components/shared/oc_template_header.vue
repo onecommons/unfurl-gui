@@ -31,7 +31,10 @@ export default {
     },
     methods: {
       returnHome() {
-        this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
+        // TODO re-enable this when we're able to update the current namespace 
+        // https://github.com/onecommons/gitlab-oc/issues/867
+        // this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
+        window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug}).href
       }
     }
 }

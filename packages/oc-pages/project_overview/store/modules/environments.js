@@ -444,6 +444,11 @@ const getters = {
         if(!type) return null
         return getters.getMatchingEnvironments(type).find(env => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
     },
+    
+    getAdditionalDashboards(state) {
+        return state.additionalDashboards
+    },
+
     lookupConnection: (_, getters) => function(environmentName, connectedResource) {
         const environment = getters.lookupEnvironment(environmentName)
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}

@@ -161,7 +161,7 @@ const getters = {
         }
         return result
     },
-    getDeploymentsOrDrafts() {
+    getDeploymentsOrDrafts(state, _a, _b, rootGetters) {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
@@ -170,6 +170,13 @@ const getters = {
             Object.values(deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
             })
+        }
+        for(const dashboard of rootGetters.getAdditionalDashboards) {
+            for(const dict of dashboard.deployments) {
+                const deployment = _.isObject(dict.Deployment)? dict.Deployment: dict.DeploymentTemplate
+                if(!deployment) continue
+                result.push(Object.values(deployment)[0])
+            }
         }
         return result
 
