@@ -1,4 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
+import gql from 'graphql-tag'
+import {cloneDeep} from 'lodash'
 import graphqlClient from 'oc_pages/project_overview/graphql';
 import {UpdateDeploymentObject} from 'oc_pages/project_overview/graphql/mutations/update_deployment_object.graphql'
 import {postFormDataWithEntries} from './forms'
@@ -109,4 +111,92 @@ export async function postGitlabEnvironmentForm() {
     } catch(e) {
         throw new Error(`Failed to create dashboard environment: ${e.message}`)
     }
+}
+
+export function connectionsToArray(environment) {
+    if(Array.isArray(environment)) return environment
+    if(environment.connections) {
+        for(const key in environment.connections) { 
+            if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
+                delete environment.connections[key]
+            }
+        }
+        environment.connections = Object.values(environment.connections)
+    }
+    if(environment.instances) {
+        for(const key in environment.instances) { 
+            if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
+                delete environment.instances[key]
+            }
+        }
+        environment.instances = Object.values(environment.instances)
+    }
+
+    return environment
+}
+
+export async function fetchEnvironments({fullPath, fetchPolicy}) {
+    const query = gql`
+        query getProjectEnvironments($fullPath: ID!) {
+            project(fullPath: $fullPath) {
+                environments {
+                    nodes {
+                        deploymentEnvironment @client {
+                            connections
+                            instances
+                            primary_provider
+                        }
+                        ResourceType @client
+                        deployments
+                        clientPayload
+                        name
+                        state
+                    }
+                }
+            }
+        }`
+
+    let environments
+    let deployments = []
+    let deploymentPaths = []
+    let resourceTypeDictionary
+
+    const {data, errors} = await graphqlClient.clients.defaultClient.query({
+        query,
+        fetchPolicy,
+        errorPolicy: 'all',
+        variables: {fullPath}
+    })
+    if(errors) {throw new Error(errors)}
+
+    // cloning in the resolver can't be relied on unless we use a different fetchPolicy
+    // there's probably a better way of getting vuex to stop watching environments when we call this action
+    // alternatively we could check if it's cached
+    environments = cloneDeep(data.project.environments).nodes.map(environment => {
+        Object.assign(environment, environment.deploymentEnvironment)
+        // alternative to adding a graphql type?
+        environment.external = environment.clientPayload.DeploymentEnvironment.external || {}
+        deploymentPaths = deploymentPaths.concat(Object.values(environment.clientPayload.DeploymentPath || {}))
+        //commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
+        //commit('setDeploymentPaths', deploymentPaths)
+        //delete environment.ResourceType
+        for(const deployment of environment.deployments) {
+            if(!deployment._environment) deployment._environment = environment.name
+            for(const dep of Object.values(deployment.Deployment || {})) {
+                dep.__typename = 'Deployment'
+            }
+            deployments.push(deployment)
+        }
+        delete environment.deploymentEnvironment
+        delete environment.clientPayload
+        environment._dashboard = fullPath
+        environment.__typename = 'DeploymentEnvironment' // just documenting this to avoid confusion with __typename Environment
+
+        connectionsToArray(environment)
+
+        return environment
+    })
+
+    return {environments, deployments, deploymentPaths, fullPath}
+
 }

@@ -190,7 +190,7 @@ export default {
         defaultEnvironmentName: {
             immediate: true,
             handler(val) {
-                if(!this.selectedEnvironment) this.selectedEnvironment = val
+                if(!this.selectedEnvironment) this.selectedEnvironment = this.lookupEnvironment(val)
             }
         }
     },
@@ -232,7 +232,7 @@ export default {
             this.triedPopulatingDeploymentItems = true
             this.populateDeploymentItems(this.yourDeployments)
         }
-        this.selectedEnvironment = this.$route.query?.env || sessionStorage['instantiate_env']
+        this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
 
         const templateSelected = this.$route.query?.ts?
@@ -247,7 +247,8 @@ export default {
         redirectToTemplateEditor(page=routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
-            this.$router.push({ query, name: page, params: { dashboard: encodeURIComponent(this.getHomeProjectPath),environment: this.templateSelected.environment, slug: this.templateSelected.name}});
+            const dashboard = encodeURIComponent(this.selectedEnvironment._dashboard || this.getHomeProjectPath)
+            this.$router.push({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}});
         },
 
         clearModalTemplate(e) {
@@ -335,7 +336,7 @@ export default {
             this.templateSelected.title = this.templateForkedName;
             this.templateSelected.name = slugify(this.templateForkedName);
             this.templateSelected.totalDeployments = 0;
-            this.templateSelected.environment = this.selectedEnvironment || this.defaultEnvironmentName
+            this.templateSelected.environment = this.selectedEnvironment?.name || this.defaultEnvironmentName
             this.templateSelected.primaryType = this.getProjectInfo.primary
         },
 
