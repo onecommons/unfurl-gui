@@ -2,6 +2,7 @@
 import {mapGetters, mapActions} from 'vuex'
 import DeploymentResources from 'oc_vue_shared/components/oc/deployment-resources.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
+import ShareResourceToggle from '../components/share-resource-toggle.vue'
 import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
@@ -15,7 +16,7 @@ import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
 
 export default {
-    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable},
+    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle},
     data() {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
@@ -151,7 +152,11 @@ export default {
             <oc-tab title="Deployment" />
             <oc-tab v-show="jobsData" title="Console" />
         </gl-tabs>
-        <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus" />
+        <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
+            <template #controls="card">
+                <share-resource-toggle :card="card" />
+            </template>
+        </deployment-resources>
         <console-wrapper v-show="currentTab == 1" ref="consoleWrapper" @active-deployment="setTabToConsoleIfNeeded" v-if="jobsData" :jobs-data="jobsData" />
     </div>
 </template>

@@ -180,7 +180,7 @@ export default {
                 </div>
 
                 <div class="d-flex align-items-center">
-                    <slot name="controls">
+                    <slot name="controls" v-bind="card">
                         <gl-button v-if="card && !isPrimary && !readonly && !card._permanent" @click="openDeletemodal" class="controls">
                             <div class="d-flex align-items-center">
                                 <gl-icon name="remove" />
@@ -255,6 +255,7 @@ export default {
 
 .card-toggle {
     margin-left: 0.5em;
+    display: inline-flex;
 }
 
 @media only screen and (max-width: 768px) {

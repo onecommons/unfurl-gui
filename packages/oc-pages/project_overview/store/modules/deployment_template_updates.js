@@ -75,7 +75,7 @@ function normalizeEnvName(_name) {
 let Serializers
 Serializers = {
     DeploymentEnvironment(env) {
-        allowFields(env, 'connections', 'instances', 'external')
+        allowFields(env, 'connections', 'instances', 'external', 'repositories')
         fieldsToDictionary(env, 'connections', 'instances')
         if(env.instances.primary_provider) {
             env.connections.primary_provider = env.instances.primary_provider
@@ -563,6 +563,7 @@ const state = {
     accumulator: {},
     patches: {},
     committedNames: [],
+    commitMessage: null,
     env: {},
     isCommitting: false,
     useBaseState: false
@@ -598,6 +599,9 @@ const mutations = {
             state.preparedMutation = []
         }
         state.projectPath = projectPath
+    },
+    setCommitMessage(state, commitMessage) {
+        state.commitMessage = commitMessage
     },
     setEnvironmentScope(state, environmentScope) {
         state.environmentScope = environmentScope
@@ -642,6 +646,7 @@ const mutations = {
             state.path = undefined
             state.projectPath = undefined
             state.environmentScope = undefined
+            state.commitMessage = null
             state.preparedMutations = []
         }
     },
@@ -731,6 +736,10 @@ const actions = {
             fullPath: state.projectPath || rootState.project?.globalVars?.projectPath, 
             patch, 
             path: state.path || userDefaultPath()
+        }
+
+        if(state.commitMessage) {
+            variables.commitMessage = state.commitMessage
         }
 
         if(o?.dryRun) {

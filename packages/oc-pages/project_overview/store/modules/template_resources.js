@@ -486,11 +486,13 @@ const actions = {
                 )
             } 
 
+            /*
             commit('onSaveEnvironment', () => {
                 if(getters.cardIsValid(resource.name)) {
                     setManifestIfNeeded()
                 }
             })
+            */
 
             commit(
                 'pushPreparedMutation',
