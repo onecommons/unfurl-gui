@@ -678,7 +678,6 @@ const getters = {
         return function(cardName) {
             const card = state.resourceTemplates[cardName?.name || cardName]
             if(!card) return false
-            if(card.directives?.includes('select')) return true
 
             if(card.__typename == 'Resource') {
                 return getters.resourceCardIsHidden(card)

@@ -446,7 +446,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement}) {
+export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported}) {
     return function(accumulator) {
         const result = []
 
@@ -487,6 +487,7 @@ export function createResourceTemplate({type, name, title, description, properti
             name,
             title,
             description,
+            imported,
             __typename: "ResourceTemplate",
             properties: _properties,
             dependencies: _dependencies

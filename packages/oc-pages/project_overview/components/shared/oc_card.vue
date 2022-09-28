@@ -126,6 +126,10 @@ export default {
             return {name, size, 'class': className, title, isProtected}
         },
 
+        _readonly() {
+            return this.readonly || this.card?.imported
+        }
+
     },
     methods: {
 
@@ -181,7 +185,7 @@ export default {
 
                 <div class="d-flex align-items-center">
                     <slot name="controls" v-bind="card">
-                        <gl-button v-if="card && !isPrimary && !readonly && !card._permanent" @click="openDeletemodal" class="controls">
+                        <gl-button v-if="card && !isPrimary && !_readonly && !card._permanent" @click="openDeletemodal" class="controls">
                             <div class="d-flex align-items-center">
                                 <gl-icon name="remove" />
                                 <div> {{__('Remove')}} </div>

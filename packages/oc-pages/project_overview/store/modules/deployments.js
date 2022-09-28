@@ -300,6 +300,7 @@ const getters = {
     getDeploymentDictionaries(state) {
         return state.deployments
     },
+    // TODO use getDeploymentsOrDrafts internally
     getDeployments(state) {
         if(!state.deployments) return []
         const result = []
