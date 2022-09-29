@@ -18,8 +18,13 @@ export default {
 
         this.$store.dispatch('populateCurrentUser').catch(() => {})
 
-        if(this.$route.params.dashboard) {
-          this.$store.commit('setCurrentNamespace', this.$route.params.dashboard.split('/').slice(0, -1).join('/'))
+        let dashboard
+        if(dashboard = this.$route.params.dashboard) {
+          dashboard = decodeURIComponent(dashboard)
+
+          const namespace = dashboard.split('/').slice(0, -1).join('/')
+          console.log({namespace})
+          this.$store.commit('setCurrentNamespace', namespace)
         }
 
         errorContext = 'ocFetchEnvironments'
@@ -33,6 +38,8 @@ export default {
                     projectPath: this.$projectGlobal?.projectPath
                 });
             })
+
+        this.$store.dispatch('loadAdditionalDashboards')
 
         try {
             const {projectPath} = this.$projectGlobal

@@ -25,6 +25,7 @@ const CLOUD_PROVIDER_ALIASES = {
   GoogleCloudProject: GCP,
   gcp: GCP,
   [GCP]: GCP,
+  'Google Cloud': GCP,
   GCP,
   AzureAccount: Azure,
   [Azure]: Azure,

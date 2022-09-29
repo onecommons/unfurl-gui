@@ -7,7 +7,7 @@ export default {
     props: {
         provider: String,
         error: String,
-        value: String,
+        value: Object,
         environmentCreation: Boolean,
     },
     components: {
@@ -18,12 +18,18 @@ export default {
         DetectIcon,
     },
     computed: {
-        ...mapGetters([ 'lookupEnvironment', 'getMatchingEnvironments' ]),
+        ...mapGetters([ 'lookupEnvironment', 'getMatchingEnvironments', 'getAdditionalMatchingEnvironments', 'getHomeProjectPath' ]),
         matchingEnvironments() {
-            return this.getMatchingEnvironments(this.provider)
+            return this.getMatchingEnvironments(this.provider).filter(env => env._dashboard == this.getHomeProjectPath)
+        },
+        externalEnvironments() {
+            return this.getMatchingEnvironments(this.provider).filter(env => env._dashboard != this.getHomeProjectPath)
         },
         env() {
-            return this.lookupEnvironment(this.value || this.defaultEnvironmentName)
+            if(typeof this.value == 'string') {
+                return this.lookupEnvironment(this.value || this.defaultEnvironmentName)
+            }
+            return this.value
         }
     }
 }
@@ -33,13 +39,17 @@ export default {
     <div class="dropdown-parent">
         <gl-dropdown v-if="environmentCreation || matchingEnvironments.length > 0" data-testid="deployment-environment-select" ref="dropdown">
             <template #button-text>
-                <span class="d-flex" style="line-height: 1"><detect-icon v-if="value" class="mr-2" no-default :env="value"/>{{value || __("Select")}}</span>
+                <span class="d-flex" style="line-height: 1"><detect-icon v-if="value" class="mr-2" no-default :env="value"/>{{(env && env.name) || __("Select")}}</span>
             </template>
 
-            <div v-if="matchingEnvironments.length > 0">
-                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="$emit('input', env.name)" :key="env.name">
+            <div v-if="matchingEnvironments.length + this.externalEnvironments.length > 0">
+                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="$emit('input', env)" :key="env.name">
                     <div class="d-flex align-items-center"><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
                 </gl-dropdown-item>
+                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env._dashboard}/${env.name}`" v-for="env in externalEnvironments" @click="$emit('input', env)" :key="env._dashboard + '/' + env.name">
+                    <div class="d-flex align-items-center"><detect-icon class="mr-2" :env="env" />{{ env._dashboard }} <br> {{ env.name }}</div>
+                </gl-dropdown-item>
+
                 <gl-dropdown-divider v-if="environmentCreation"/>
             </div>
             <gl-dropdown-item class="disabled" v-if="environmentCreation" @click="$emit('createNewEnvironment')"><div style="white-space: pre">{{ __("Create new environment") }}</div></gl-dropdown-item>
