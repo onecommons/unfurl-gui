@@ -209,7 +209,7 @@ export default {
             return this.renderOutputs && this._card.outputs?.length
         },
         shouldRenderInputs() {
-            return !this._readonly && this.renderInputs && this._card.properties?.length
+            return this.renderInputs && this._card.properties?.length
         },
         shouldRenderAttributes() {
             return (
