@@ -1,22 +1,32 @@
 <script>
 import { mapGetters, mapActions } from 'vuex'
-import { Checkbox as ElCheckbox} from 'element-ui'
-import { DetectIcon } from 'oc_vue_shared/oc-components'
+import { GlToggle } from '@gitlab/ui'
 
 const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
 
 export default {
-    name: 'DeploymentScheduler',
+    name: 'IncrementalDeploymentSwitch',
     components: {
-        DetectIcon
+        GlToggle
     },
     props: {
-        resourceName: String,
-        upstreamProject: String,
-        label: String
+        card: Object
+        //resourceName: String,
+        //upstreamProject: String,
+    },
+    watch: {
+        async incrementalDeploymentEnabled(val) {
+            console.log('watcher')
+            await this.updateProjectSubscription({
+                projectPath: this.upstreamProject,
+                op: val? 'inc': 'dec'
+            })
+            
+        }
     },
     methods: {
-        ...mapActions(['setEnvironmentVariable']),
+        //async updateProjectSubscription({rootGetters}, {projectPath, op}) {
+        ...mapActions(['setEnvironmentVariable', 'updateProjectSubscription']),
     },
     computed: {
         ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment']),
@@ -28,23 +38,26 @@ export default {
             }
 
         },
+        resourceName() {
+            return this.card.name
+        },
         deploymentName() {
             return this.getDeploymentTemplate.name
         },
         environmentName() {
             return this.getCurrentEnvironment.name
         },
-        _label() {
-            return this.label || 'Redeploy every time upstream dependencies are updated'
+        upstreamProject() {
+            return this.card.properties.find(prop => prop.name == 'project_id')?.value
         },
         incrementalDeploymentEnabled: {
             get() {
                 const dict = this.subscriptionsDict
-                const queued = dict?.queued
+                const subscriptions = dict?.subscriptions
 
-                if(!(queued && queued[this.upstreamProject])) return false
+                if(!(subscriptions && subscriptions[this.upstreamProject])) return false
 
-                return queued[this.upstreamProject]
+                return subscriptions[this.upstreamProject]
                     .some(({deploymentName, resourceName, environmentName}) => (
                         deploymentName == this.deploymentName &&
                         resourceName == this.resourceName &&
@@ -54,14 +67,14 @@ export default {
 
             set(enabled) {
                 const dict = this.subscriptionsDict
-                const queued = dict?.queued || {}
-                if (!queued[this.upstreamProject]) queued[this.upstreamProject] = []
+                const subscriptions = dict?.subscriptions || {}
+                if (!subscriptions[this.upstreamProject]) subscriptions[this.upstreamProject] = []
 
                 if(enabled) {
                     const {deploymentName, resourceName, environmentName} = this
-                    queued[this.upstreamProject].push({deploymentName, resourceName, environmentName})
+                    subscriptions[this.upstreamProject].push({deploymentName, resourceName, environmentName})
                 } else {
-                    queued[this.upstreamProject] = queued[this.upstreamProject]
+                    subscriptions[this.upstreamProject] = subscriptions[this.upstreamProject]
                         .filter(({deploymentName, resourceName, environmentName}) => !(
                             deploymentName == this.deploymentName &&
                             resourceName == this.resourceName &&
@@ -69,7 +82,7 @@ export default {
                         ))
                 }
 
-                dict.queued = queued
+                dict.subscriptions = subscriptions
                 this.setEnvironmentVariable({
                     environmentName: '*',
                     variableName: UNFURL_PROJECT_SUBSCRIPTIONS,
@@ -81,11 +94,5 @@ export default {
 }
 </script>
 <template>
-        <div class="d-flex mt-5 p align-items-center">
-            <detect-icon size="24" name="expire" />
-            <div class="ml-5">
-                <el-checkbox v-model="incrementalDeploymentEnabled" :label="_label"/>
-            </div>
-        </div>
-
+    <gl-toggle labelPosition="hidden" help="Automatically sync this resource with upstream" label="Automatically update this resource with upstream" v-model="incrementalDeploymentEnabled" />
 </template>

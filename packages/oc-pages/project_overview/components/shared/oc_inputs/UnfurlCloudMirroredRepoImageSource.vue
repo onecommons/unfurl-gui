@@ -4,6 +4,7 @@ import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
 import {fetchRepositoryBranches,  fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
@@ -14,6 +15,9 @@ export default {
     name: 'UnfurlCloudMirroredRepoImageSource',
     props: {
         card: Object
+    },
+    components: {
+        DeploymentScheduler
     },
     data() {
         const data = {
@@ -82,7 +86,7 @@ export default {
         },
     },
     computed: {
-        ...mapGetters(['cardIsValid']),
+        ...mapGetters(['cardIsValid', 'getDeploymentTemplate']),
         repository_id() {
             if(!(this.project_id && this.branch)) return null
             return `${this.project_id}/${this.branch}`
@@ -157,6 +161,7 @@ export default {
         <el-autocomplete label="Branch" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="branch" :fetch-suggestions="getBranchSuggestions">
             <template #prepend>Branch</template>
         </el-autocomplete> 
+        <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
     </el-card>
 
 </template>

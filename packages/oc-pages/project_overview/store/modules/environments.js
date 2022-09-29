@@ -13,6 +13,7 @@ import {generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {prefixEnvironmentVariables, environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import Vue from 'vue'
 
 
 const state = {
@@ -23,7 +24,10 @@ const state = {
     saveEnvironmentHooks: [],
     projectPath: null,
     ready: false,
-    upstreamCommit: null, upstreamProject: null, upstreamId: null, incrementalDeploymentEnabled: false,
+    upstreamCommit: null, upstreamProject: null, upstreamId: null,
+
+    // leave always true while until the dispatch script is updated
+    incrementalDeploymentEnabled: true,
 };
 
 function connectionsToArray(environment) {
@@ -98,7 +102,7 @@ const mutations = {
     },
 
     setIncrementalDeployment(state, incrementalDeploymentEnabled) {
-        state.incrementalDeploymentEnabled = incrementalDeploymentEnabled
+        //state.incrementalDeploymentEnabled = incrementalDeploymentEnabled
     },
 
     clearUpstream(state) {
@@ -106,7 +110,7 @@ const mutations = {
         state.upstreamProject = null
         state.upstreamBranch = null
         state.upstreamId = null
-        state.incrementalDeploymentEnabled = false
+        //state.incrementalDeploymentEnabled = false
     },
 
     setReady(state, readyStatus) {
@@ -140,6 +144,12 @@ const mutations = {
 
     setVariablesByEnvironment(state, variablesByEnvironment) {
         state.variablesByEnvironment = variablesByEnvironment
+    },
+
+    setVariableByEnvironment(state, {environmentName, variableName, variableValue}) {
+        const variables = state.variablesByEnvironment[environmentName] || {}
+        variables[variableName] = variableValue
+        Vue.set(state.variablesByEnvironment, environmentName, variables)
     }
 
 };
@@ -356,16 +366,27 @@ const actions = {
         variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = rootGetters.getCurrentNamespace + '.u.opencloudservices.net'
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
-    async generateVaultPasswordIfNeeded({getters, dispatch}, {fullPath}) {
+    async generateVaultPasswordIfNeeded({getters, dispatch, rootGetters}, {fullPath}) {
+        const patchObj = {}
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
+            patchObj['UNFURL_VAULT_DEFAULT_PASSWORD'] = {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true} 
+        }
+
+        // issues with reactivity if this isn't set
+        if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*')) {
+            patchObj['UNFURL_PROJECT_SUBSCRIPTIONS'] = {value: "{}", masked: false} 
+        }
+
+        if(Object.keys(patchObj).length > 0) {
             try {
-                await patchEnv({UNFURL_VAULT_DEFAULT_PASSWORD: {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}})
+                await patchEnv(patchObj, '*', rootGetters.getHomeProjectPath)
                 await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
             } catch(e) {
                 console.warn(`Failed to set vault password for ${fullPath}`, e.message)
             }
         }
+
     },
     async createAccessTokenIfNeeded({getters, dispatch}) {
         if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
@@ -427,6 +448,11 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
+    },
+
+    async setEnvironmentVariable({commit, rootGetters}, {environmentName, variableName, variableValue, masked}) {
+        commit('setVariableByEnvironment', {environmentName, variableName, variableValue})
+        await patchEnv({[variableName]: {value: variableValue, masked: !!masked}}, '*', rootGetters.getHomeProjectPath)
     }
 
 };
