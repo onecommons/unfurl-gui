@@ -1,3 +1,4 @@
+import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
 import gql from 'graphql-tag'
@@ -10,7 +11,7 @@ import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipe
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
 import {generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
-import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {prefixEnvironmentVariables, environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 
@@ -21,32 +22,13 @@ const state = {
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
+    additionalDashboards: [],
     projectPath: null,
     ready: false,
     upstreamCommit: null, upstreamProject: null, upstreamId: null, incrementalDeploymentEnabled: false,
 };
 
-function connectionsToArray(environment) {
-    if(Array.isArray(environment)) return environment
-    if(environment.connections) {
-        for(const key in environment.connections) { 
-            if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
-                delete environment.connections[key]
-            }
-        }
-        environment.connections = Object.values(environment.connections)
-    }
-    if(environment.instances) {
-        for(const key in environment.instances) { 
-            if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
-                delete environment.instances[key]
-            }
-        }
-        environment.instances = Object.values(environment.instances)
-    }
 
-    return environment
-}
 
 function toProjectTokenEnvKey(projectId) {
     return `_project_token__${projectId}`
@@ -140,6 +122,10 @@ const mutations = {
 
     setVariablesByEnvironment(state, variablesByEnvironment) {
         state.variablesByEnvironment = variablesByEnvironment
+    },
+
+    setAdditionalDashboards(state, additionalDashboards) {
+        state.additionalDashboards = additionalDashboards
     }
 
 };
@@ -269,63 +255,16 @@ const actions = {
 
 
     async fetchProjectEnvironments({commit}, {fullPath, fetchPolicy}) {
-        const query = gql`
-        query getProjectEnvironments($fullPath: ID!) {
-            project(fullPath: $fullPath) {
-                environments {
-                    nodes {
-                        deploymentEnvironment @client {
-                            connections
-                            instances
-                            primary_provider
-                        }
-                        ResourceType @client
-                        deployments
-                        clientPayload
-                        name
-                        state
-                    }
-                }
-            }
-        }`
-        let environments
-        let deployments = []
+        let environments, deployments = []
         try {
-            const {data, errors} = await graphqlClient.clients.defaultClient.query({
-                query,
-                fetchPolicy,
-                errorPolicy: 'all',
-                variables: {fullPath}
-            })
-            if(errors) {throw new Error(errors)}
-
-            // cloning in the resolver can't be relied on unless we use a different fetchPolicy
-            // there's probably a better way of getting vuex to stop watching environments when we call this action
-            // alternatively we could check if it's cached
-            environments = cloneDeep(data.project.environments).nodes.map(environment => {
-                Object.assign(environment, environment.deploymentEnvironment)
-                // alternative to adding a graphql type?
-                environment.external = environment.clientPayload.DeploymentEnvironment.external || {}
-                const deploymentPaths = Object.values(environment.clientPayload.DeploymentPath || {})
+            const result = await fetchEnvironments({fullPath, fetchPolicy})
+            environments = result.environments
+            deployments = result.deployments
+            for(const environment of environments) {
                 commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
-                commit('setDeploymentPaths', deploymentPaths)
                 delete environment.ResourceType
-                for(const deployment of environment.deployments) {
-                    if(!deployment._environment) deployment._environment = environment.name
-                    for(const dep of Object.values(deployment.Deployment || {})) {
-                        dep.__typename = 'Deployment'
-                    }
-                    deployments.push(deployment)
-                }
-                delete environment.deploymentEnvironment
-                delete environment.clientPayload
-                environment.__typename = 'DeploymentEnvironment' // just documenting this to avoid confusion with __typename Environment
-
-                connectionsToArray(environment)
-
-                return environment
-            })
-
+            }
+            commit('setDeploymentPaths', result.deploymentPaths)
         }
         catch(e){
             console.error('Could not fetch project environments', e)
@@ -374,12 +313,13 @@ const actions = {
         }
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
-        commit('setProjectPath', fullPath || projectPath)
+        const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
+        commit('setProjectPath', _projectPath)
         await Promise.all([
-            dispatch('fetchProjectEnvironments', {fullPath: fullPath || projectPath, fetchPolicy}),
-            dispatch('fetchEnvironmentVariables', {fullPath: fullPath || projectPath})
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy}),
+            dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
         ])
-        dispatch('generateVaultPasswordIfNeeded', {fullPath: fullPath || projectPath}).then(() => commit('setReady', true))
+        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}).then(() => commit('setReady', true))
         dispatch('createAccessTokenIfNeeded')
     },
     async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
@@ -427,6 +367,15 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
+    },
+
+    async loadAdditionalDashboards({rootGetters, commit}) {
+        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=40`))?.data
+            ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
+            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace}))
+
+
+        commit('setAdditionalDashboards', await Promise.all(dashboards))
     }
 
 };
@@ -435,7 +384,9 @@ function envFilter(name){
 } 
 
 const getters = {
-    getEnvironments: state => Object.freeze(state.projectEnvironments),
+    getEnvironments: state => state.projectEnvironments
+        .concat(Object.values(state.additionalDashboards.map(db => db.environments)))
+        .flat(),
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
     getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         let constraintType
@@ -459,6 +410,8 @@ const getters = {
 
         return result
     },
+
+    // TODO merge these implementations
     getMatchingEnvironments: (_, getters) => function(type) {
         // uncomment to make local dev agnostic
         //if(!type) { return getters.getEnvironments }
@@ -469,10 +422,33 @@ const getters = {
         })
         return result
     },
+    getAdditionalMatchingEnvironments(state, getters) {
+        return function(type) {
+            const result = state.additionalDashboards.map(dashboard => {
+                const result = []
+                const {environments} = dashboard
+                for(const environment of environments) {
+                    if(lookupCloudProviderAlias(environment.primary_provider?.type) == lookupCloudProviderAlias(type)) {
+                        result.push(environment)
+                    }
+                }
+                return result
+            }).flat()
+
+            return result
+        }
+    },
+    //
+
     getDefaultEnvironmentName: (_, getters) => function(type) {
         if(!type) return null
         return getters.getMatchingEnvironments(type).find(env => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
     },
+    
+    getAdditionalDashboards(state) {
+        return state.additionalDashboards
+    },
+
     lookupConnection: (_, getters) => function(environmentName, connectedResource) {
         const environment = getters.lookupEnvironment(environmentName)
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
