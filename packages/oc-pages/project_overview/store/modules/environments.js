@@ -23,6 +23,7 @@ const state = {
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
     additionalDashboards: [],
+    defaults: null,
     projectPath: null,
     ready: false,
     upstreamCommit: null, upstreamProject: null, upstreamId: null, incrementalDeploymentEnabled: false,
@@ -126,6 +127,10 @@ const mutations = {
 
     setAdditionalDashboards(state, additionalDashboards) {
         state.additionalDashboards = additionalDashboards
+    },
+
+    setDefaults(state, defaults) {
+        state.defaults = defaults
     }
 
 };
@@ -264,6 +269,7 @@ const actions = {
                 commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
                 delete environment.ResourceType
             }
+            commit('setDefaults', result.defaults)
             commit('setDeploymentPaths', result.deploymentPaths)
         }
         catch(e){
@@ -536,7 +542,9 @@ const getters = {
     userCanEdit(_, getters) {
         // we can't read or set UNFURL_VAULT_DEFAULT_PASSWORD if we're not a maintainer
         return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
-    }
+    },
+
+    getEnvironmentDefaults(state) { return state.defaults || null }
 };
 
 export default {

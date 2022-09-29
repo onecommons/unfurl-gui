@@ -126,6 +126,10 @@ export default {
             return {name, size, 'class': className, title, isProtected}
         },
 
+        _readonly() {
+            return this.readonly || this.card?.imported
+        }
+
     },
     methods: {
 
@@ -180,8 +184,8 @@ export default {
                 </div>
 
                 <div class="d-flex align-items-center">
-                    <slot name="controls">
-                        <gl-button v-if="card && !isPrimary && !readonly && !card._permanent" @click="openDeletemodal" class="controls">
+                    <slot name="controls" v-bind="card">
+                        <gl-button v-if="card && !isPrimary && !_readonly && !card._permanent" @click="openDeletemodal" class="controls">
                             <div class="d-flex align-items-center">
                                 <gl-icon name="remove" />
                                 <div> {{__('Remove')}} </div>
@@ -255,6 +259,7 @@ export default {
 
 .card-toggle {
     margin-left: 0.5em;
+    display: inline-flex;
 }
 
 @media only screen and (max-width: 768px) {

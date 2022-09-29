@@ -169,6 +169,7 @@ export async function fetchEnvironments({fullPath, fetchPolicy}) {
     })
     if(errors) {throw new Error(errors)}
 
+    let defaults
     // cloning in the resolver can't be relied on unless we use a different fetchPolicy
     // there's probably a better way of getting vuex to stop watching environments when we call this action
     // alternatively we could check if it's cached
@@ -176,6 +177,7 @@ export async function fetchEnvironments({fullPath, fetchPolicy}) {
         Object.assign(environment, environment.deploymentEnvironment)
         // alternative to adding a graphql type?
         environment.external = environment.clientPayload.DeploymentEnvironment.external || {}
+        if(environment.clientPayload.defaults) defaults = environment.clientPayload.defaults
         deploymentPaths = deploymentPaths.concat(Object.values(environment.clientPayload.DeploymentPath || {}))
         //commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
         //commit('setDeploymentPaths', deploymentPaths)
@@ -197,6 +199,6 @@ export async function fetchEnvironments({fullPath, fetchPolicy}) {
         return environment
     })
 
-    return {environments, deployments, deploymentPaths, fullPath}
+    return {environments, deployments, deploymentPaths, fullPath, defaults}
 
 }

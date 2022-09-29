@@ -3,9 +3,10 @@ import graphqlClient from '../../graphql';
 import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import Vue from 'vue'
 import _ from 'lodash'
 
-const state = {loaded: false, callbacks: [], deployments: {}, deploymentHooks: []};
+const state = {loaded: false, callbacks: [], deployments: {}, deploymentHooks: [], shareStates: {}};
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;
@@ -19,6 +20,10 @@ const mutations = {
 
     clearDeploymentHooks(state) {
         state.deploymentHooks = []
+    },
+
+    setShareState(state, {shareState, name}) {
+        Vue.set(state.shareStates, name, shareState)
     }
 };
 const actions = {
@@ -131,6 +136,151 @@ const actions = {
             if(result === false) { return false }
         }
         return true
+    },
+
+    unshareResourceFromEnvironment({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        commit(
+            'pushPreparedMutation',
+            (acc) => {
+                const environment = rootGetters.lookupEnvironment(environmentName)
+                const instances = environment.instances.filter(instance => instance.name != `__${environmentName}__${deploymentName}__${resourceName}`)
+                const patch = _.cloneDeep({...environment, instances})
+                return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
+            },
+            {root: true}
+        )
+    },
+
+    unshareResourceFromDefaults({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        const name = `__${environmentName}__${deploymentName}__${resourceName}`
+        commit(
+            'pushPreparedMutation',
+            (acc) => {
+                const environment = rootGetters.getEnvironmentDefaults
+                // instances is initially an object for defaults
+                const instances = Object.values(environment.instances).filter(instance => instance.name != name)
+                const patch = _.cloneDeep({...environment, instances})
+                return [{target: 'defaults', patch, typename: 'DeploymentEnvironment'}];
+            },
+            {root: true}
+        )
+    },
+
+    async unshareResource({getters, commit, dispatch, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        const currentShareState = getters.getResourceSharedState(environmentName, deploymentName, resourceName)
+        if(!currentShareState) return
+
+        commit('setShareState', {shareState: null, name: `__${environmentName}__${deploymentName}__${resourceName}` })
+
+        commit('useBaseState', {}, {root: true})
+        commit('setCommitMessage', `Unshare ${resourceName}`, {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+
+
+        if(currentShareState == 'environment') {
+            dispatch('unshareResourceFromEnvironment', {environmentName, deploymentName, resourceName})
+        } else if (currentShareState == 'dashboard') {
+            dispatch('unshareResourceFromDefaults', {environmentName, deploymentName, resourceName})
+        }
+
+        await dispatch('commitPreparedMutations')
+    },
+
+    shareResourceIntoEnvironment({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        // TODO not sure we want to couple with template_resources in here
+        const resource = rootGetters.getCardsStacked.find(card => card.name == resourceName)
+
+        const newObject = {
+            name: `__${environmentName}__${deploymentName}__${resourceName}`,
+            title: resource.title,
+            directives: ['select'],
+            imported: `${deploymentName}:${resource.name}`,
+            type: resource.type,
+            __typename: 'ResourceTemplate'
+        }
+
+        commit(
+            'pushPreparedMutation',
+            (acc) => {
+                // we can use acc here because updateResourceSharedState populated the state
+                //const patch = acc.DeploymentEnvironment[environmentName]
+                const patch = _.cloneDeep(rootGetters.lookupEnvironment(environmentName))
+                patch.instances.push(newObject)
+                return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
+            },
+            {root: true}
+        )
+    },
+
+    shareResourcesIntoDefaults({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        const resource = rootGetters.getCardsStacked.find(card => card.name == resourceName)
+
+        const name = `__${environmentName}__${deploymentName}__${resourceName}`
+        const newObject = {
+            name,
+            title: resource.title,
+            directives: ['select'],
+            imported: `${deploymentName}:${resource.name}`,
+            type: resource.type,
+            __typename: 'ResourceTemplate'
+        }
+
+        commit(
+            'pushPreparedMutation',
+            (acc) => {
+                const patch = _.cloneDeep(rootGetters.getEnvironmentDefaults)
+                patch.instances[name] = newObject
+                return [{target: 'defaults', patch, typename: 'DeploymentEnvironment'}];
+            },
+            {root: true}
+        )
+    },
+
+    async updateResourceSharedState({getters, commit, dispatch, rootGetters}, {environmentName, deploymentName, resourceName, shareState}) {
+
+        const currentShareState = getters.getResourceSharedState(environmentName, deploymentName, resourceName)
+        if(!shareState || shareState == currentShareState) return
+
+        if(currentShareState) {
+            await dispatch('unshareResource', {environmentName, deploymentName, resourceName})
+        }
+
+        commit('setShareState', {shareState, name: `__${environmentName}__${deploymentName}__${resourceName}` })
+
+        commit('useBaseState', {}, {root: true})
+        commit('setCommitMessage', `Share ${resourceName} with ${shareState}`, {root: true})
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
+        commit('setUpdateObjectPath', 'environments.json', {root: true})
+
+
+        // It's more difficult to clean this up, because we add the manifest per deployment
+        // removing it on removal of the shared resource could break the use of other shared resources
+        /*
+        commit(
+            'pushPreparedMutation',
+            (acc) => {
+                const patch = _.cloneDeep(rootGetters.lookupEnvironment(environmentName))
+                const external = patch.external || {}
+                const manifest = rootGetters.lookupDeployPath(deploymentName, environmentName)?.name
+                external[deploymentName] = {
+                    manifest,
+                    instance: "*"
+                }
+                patch.external = external
+                return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
+            },
+            {root: true}
+        )
+        */
+
+        if(shareState == 'environment') {
+            dispatch('shareResourceIntoEnvironment', {environmentName, deploymentName, resourceName})
+        } else if (shareState == 'dashboard') {
+            dispatch('shareResourcesIntoDefaults', {environmentName, deploymentName, resourceName})
+        }
+
+        await dispatch('commitPreparedMutations')
     }
 };
 const getters = {
@@ -150,6 +300,7 @@ const getters = {
     getDeploymentDictionaries(state) {
         return state.deployments
     },
+    // TODO use getDeploymentsOrDrafts internally
     getDeployments(state) {
         if(!state.deployments) return []
         const result = []
@@ -208,6 +359,25 @@ const getters = {
                 }
             })
             return result
+        }
+    },
+
+    getResourceSharedState(state, _a, _b, rootGetters) {
+        return function(environmentName, deploymentName, resourceName) {
+            const name = `__${environmentName}__${deploymentName}__${resourceName}`
+            if(state.shareStates.hasOwnProperty(name)) {
+                return state.shareStates[name]
+            }
+
+            let environmentDefaults
+            if(environmentDefaults = rootGetters.getEnvironmentDefaults) {
+                // instances is not an array here
+                try {
+                    if(environmentDefaults.instances[name]) return 'dashboard'
+                } catch(e) {}
+            }
+            if(rootGetters.lookupConnection(environmentName, name)) return 'environment'
+            return null
         }
     },
 

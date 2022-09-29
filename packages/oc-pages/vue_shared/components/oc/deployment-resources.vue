@@ -560,8 +560,8 @@ export default {
                             class="gl-mb-6"
                             @deleteNode="onDeleteNode"
                             >
-                            <template #controls>
-                                <slot name="controls"></slot>
+                            <template #controls="card">
+                                <slot name="controls" v-bind="card"></slot>
                             </template>
                             <template #content>
                                 <!--oc-inputs :card="card" :main-inputs="getCardProperties(card.name)" :component-key="2" /-->
