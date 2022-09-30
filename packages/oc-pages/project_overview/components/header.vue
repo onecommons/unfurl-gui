@@ -62,7 +62,7 @@ export default {
             'project'
         ]),
         visitProject() {
-            return `/${this.getProjectInfo.fullPath}/-/project`
+            return `/${this.$projectGlobal.projectPath}/-/project`
         },
         livePreview() {
             return this.$projectGlobal.livePreview || this.getProjectInfo.livePreview

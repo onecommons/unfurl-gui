@@ -325,7 +325,7 @@ const actions = {
 
         if(Object.keys(patchObj).length > 0) {
             try {
-                await patchEnv(patchObj, '*', rootGetters.getHomeProjectPath)
+                await patchEnv(patchObj, '*', fullPath)
                 await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
             } catch(e) {
                 console.warn(`Failed to set vault password for ${fullPath}`, e.message)
@@ -333,10 +333,10 @@ const actions = {
         }
 
     },
-    async createAccessTokenIfNeeded({getters, dispatch}) {
+    async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
         if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
             const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
-            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}) // can't currently be masked due to mask limitations
+            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath) // can't currently be masked due to mask limitations
         }
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
@@ -347,7 +347,7 @@ const actions = {
             dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
         ])
         dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}).then(() => commit('setReady', true))
-        dispatch('createAccessTokenIfNeeded')
+        dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
     },
     async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
         const key = toProjectTokenEnvKey(projectId)

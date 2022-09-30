@@ -34,8 +34,16 @@ export async function fetchUserProjects(_options) {
 
     const nodes = response.data?.currentUser?.projectMemberships?.nodes || []
 
+    let dashboards
+    try {
+        dashboards = (await axios.get('/api/v4/dashboards?min_access_level=40')).data
+            .map(dashboardProject => dashboardProject.name)
+    } catch(e) {
+        dashboards = []
+    }
+
     return nodes
-        .filter(node => node.accessLevel.integerValue >= options.minimumAccessLevel && node.project.name.toLowerCase() != 'dashboard')
+        .filter(node => node.accessLevel.integerValue >= options.minimumAccessLevel && !dashboards.includes(node.project.name))
         .map(node => {
             const project = node.project
             project.id = parseInt(project.id.split('/').pop())

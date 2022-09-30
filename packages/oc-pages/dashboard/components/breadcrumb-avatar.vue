@@ -10,7 +10,10 @@ export default {
         },
     },
     data() {
-        return {src: window.gon.current_user_avatar_url}
+        // we want to always use the dashboard for the current project
+        // return {src: window.gon.current_user_avatar_url}
+
+        return {src: document.querySelector('.project-avatar').src}
     }
 }
 

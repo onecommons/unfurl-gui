@@ -2,12 +2,12 @@ import axios from '~/lib/utils/axios_utils'
 
 import {USER_HOME_PROJECT} from '../util.mjs'
 
-// TODO this won't work for groups
-const variablesEndpoint = `/${window.gon.current_username}/${USER_HOME_PROJECT}/-/variables`
 
 export async function patchEnv(env, environmentScope, fullPath) {
-    if(!fullPath) { console.warn('TODO use fullPath for patchEnv') }
-    const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint
+    if(!fullPath) {
+        throw new Error('Need a path to update environment variables')
+    }
+    const endpoint = `/${fullPath}/-/variables`
     const envPatch = []
     for(const _key in env) {
         let key = _key.startsWith('$')? _key.slice(1) : _key
@@ -69,8 +69,14 @@ export async function deleteEnvironmentVariables(environmentScope, fullPath) {
 }
 
 export async function fetchEnvironmentVariables(fullPath) {
-    if(!fullPath) { console.warn('TODO use fullPath for fetchEnvironmentVariables') }
-    const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint
-    const data = (await axios.get(endpoint)).data
-    return data.variables
+    if(!fullPath) {
+        throw new Error('Need a path to update environment variables')
+    }
+    const endpoint = `/${fullPath}/-/variables`
+    try {
+        const data = (await axios.get(endpoint)).data
+        return data.variables || []
+    } catch(e) {
+        return []
+    }
 }

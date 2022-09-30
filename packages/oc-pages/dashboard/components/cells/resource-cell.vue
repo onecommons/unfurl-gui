@@ -20,13 +20,13 @@ export default {
         //return {routes}
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace']),
+        ...mapGetters(['getHomeProjectPath']),
         id() {
             return generateCardId(this.resource.name)
         },
         to() {
             const href = this.noRouter?
-            `/home/${this.getCurrentNamespace}/-/${this.environment.name}/${this.deployment.name}#${this.id}`: // TODO use from routes.js
+            `/${this.getHomeProjectPath}/-/${this.environment.name}/${this.deployment.name}#${this.id}`: // TODO use from routes.js
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}, hash: `#${this.id}`}
             return this.noRouter ? href : {to: href}
         },

@@ -23,6 +23,7 @@ export default {
         ]),
         ...mapMutations([
             'setCurrentNamespace',
+            'setDashboardName',
             'initUserSettings',
         ])
     },
@@ -44,10 +45,9 @@ export default {
     async mounted() {
         const pathComponents = this.$router.options.base.split('/');
         while(pathComponents.length > 0 && pathComponents[0] == '') pathComponents.shift();
-        const currentNamespace = pathComponents.includes('dashboard')? 
-            pathComponents.slice(0, Math.max(0, pathComponents.lastIndexOf('dashboard'))).join('/'):
-            pathComponents.slice(1).join('/');
+        const currentNamespace = pathComponents.slice(0, -1).join('/')
         this.setCurrentNamespace(currentNamespace);
+        this.setDashboardName(pathComponents[pathComponents.lastIndex])
         this.populateCurrentUser()
 
         try {
@@ -94,28 +94,3 @@ export default {
         <router-view v-else-if="!doNotRender"/>
     </div>
 </template>
-<style>
-
-@media (min-width: 768px) {
-    .layout-page.hide-when-top-nav-responsive-open.page-with-contextual-sidebar.page-with-icon-sidebar {
-        padding-left: 3em;
-    }
-}
-
-.container-fluid.limit-container-width .flash-container.sticky, .limit-container-width.container-sm .flash-container.sticky, .limit-container-width.container-md .flash-container.sticky, .limit-container-width.container-lg .flash-container.sticky, .limit-container-width.container-xl .flash-container.sticky {
-    max-width: 100%;
-}
-
-.container-limited.limit-container-width:not(.gl-banner-content) {
-    max-width: min(100vw, max(80%, 990px));
-    display: flex;
-    justify-content: center;
-}
-.container-limited.limit-container-width:not(.gl-banner-content) > * {
-    width: 100%;
-}
-main {
-    min-width: min(990px, 100%);
-    max-width: 100vw;
-}
-</style>

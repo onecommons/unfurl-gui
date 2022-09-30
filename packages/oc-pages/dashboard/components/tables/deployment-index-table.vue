@@ -236,7 +236,7 @@ export default {
                         newDeploymentTitle: this.newDeploymentTitle,
                         targetEnvironment,
                     })
-                    const redirectLocation = `/home/${this.getCurrentNamespace}/-/deployments/${this.cloneTargetEnvironment}/${clonedDeploymentName}`
+                    const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
                 case 'incRedeploy':

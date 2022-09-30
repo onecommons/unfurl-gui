@@ -12,6 +12,7 @@ export default [
     path: '/',
     component: DashboardHome,
   },
+    // redundant
   {
     //name: constants.OC_DASHBOARD_HOME,
     path: '/home',

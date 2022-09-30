@@ -16,15 +16,25 @@ export default {
     async beforeCreate() {
         let errorContext
 
+        /*
+        if(!gon.current_user_id) {
+            this.fetchingComplete = true
+            return
+        }
+         */
+
         this.$store.dispatch('populateCurrentUser').catch(() => {})
 
         let dashboard
         if(dashboard = this.$route.params.dashboard) {
           dashboard = decodeURIComponent(dashboard)
 
-          const namespace = dashboard.split('/').slice(0, -1).join('/')
+          const pathComponents = dashboard.split('/')
+          const namespace = pathComponents.slice(0, -1).join('/')
+          const dashboardName = pathComponents[pathComponents.lastIndex]
           console.log({namespace})
           this.$store.commit('setCurrentNamespace', namespace)
+          this.$store.commit('setDashboardName', dashboardName)
         }
 
         errorContext = 'ocFetchEnvironments'
@@ -40,6 +50,7 @@ export default {
             })
 
         this.$store.dispatch('loadAdditionalDashboards')
+            .catch(() => {})
 
         try {
             const {projectPath} = this.$projectGlobal
