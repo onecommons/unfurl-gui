@@ -12,7 +12,11 @@ import {generateIssueLinkSync} from 'oc_vue_shared/client_utils/issues'
 import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
+
+import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 import {OcPropertiesList} from 'oc_vue_shared/oc-components'
+// webpack can't figure this out
+// import {OcPropertiesList, DeploymentScheduler} from 'oc_vue_shared/oc-components'
 
 const {AUTHENTICATED, UNAUTHENTICATED} = oauthStatus
 const {IMPORTED} = importStatus
@@ -24,7 +28,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'GithubMirroredRepoImageSource',
-    components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox, OcPropertiesList},
+    components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox, OcPropertiesList, DeploymentScheduler},
     props: {
         card: Object
     },
@@ -57,7 +61,7 @@ export default {
         return data
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace', 'registryURL', 'cardIsValid']),
+        ...mapGetters(['getDeploymentTemplate', 'getCurrentNamespace', 'registryURL', 'cardIsValid']),
         ...mapState({
             isExternalUser(state) {return state.misc.user?.external}, // intentionally defaulting to false
             userEmail(state) {const user = state.misc.user; return user?.public_email || user?.email}
@@ -285,31 +289,42 @@ export default {
             <h4>Existing properties:</h4>
             <oc-properties-list :properties="displayableCardProperties"/>
         </template>
-        <div class="d-flex flex-wrap justify-content-between">
-            <div style="flex-grow: 1;" class="d-flex flex-column">
-                <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
-                    <template #prepend>Github Project</template>
-                </el-autocomplete>
-                <div class="mt-4">
-                    <el-autocomplete :disabled="useDefaultBranch" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
-                        <template #prepend>Branch</template>
-                        <template #append> <el-checkbox class="mb-0" v-model="useDefaultBranch">Default Branch</el-checkbox> </template>
-                    </el-autocomplete> 
-                    <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
-                        <span v-if="!useDefaultBranch && branchError" style="color: red;">
-                            The {{branch}} branch doesn't exist or wasn't imported successfully.
-                        </span>
-                        <span v-else-if="searchableBranchesTip">
-                            Your branches will be searchable above when the import process is finished.
-                        </span>
+        <div>
+            <div class="d-flex flex-wrap justify-content-between">
+                <div style="flex-grow: 1;" class="d-flex flex-column">
+                    <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions">
+                        <template #prepend>Github Project</template>
+                    </el-autocomplete>
+                    <div class="mt-4">
+                        <el-autocomplete :disabled="useDefaultBranch" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
+                            <template #prepend>Branch</template>
+                            <template #append> <el-checkbox class="mb-0" v-model="useDefaultBranch">Default Branch</el-checkbox> </template>
+                        </el-autocomplete> 
+                        <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
+                            <span v-if="!useDefaultBranch && branchError" style="color: red;">
+                                The {{branch}} branch doesn't exist or wasn't imported successfully.
+                            </span>
+                            <span v-else-if="searchableBranchesTip">
+                                Your branches will be searchable above when the import process is finished.
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="d-flex align-items-end">
+                    <div>
+                        <import-button @importFinished="onImportFinished" :repoImport="repoImport"/>
                     </div>
                 </div>
             </div>
-            <div class="d-flex align-items-end">
-                <div>
-                    <import-button @importFinished="onImportFinished" :repoImport="repoImport"/>
-                </div>
-            </div>
+            <!--
+        deploymentName: String,
+        resourceName: String,
+        upstreamProject: String,
+        label: String
+
+            -->
+
+            <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </div>
     </github-auth> 
     </el-card>

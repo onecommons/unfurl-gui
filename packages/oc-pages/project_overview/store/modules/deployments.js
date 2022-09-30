@@ -5,6 +5,7 @@ import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vu
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import Vue from 'vue'
 import _ from 'lodash'
+import axios from '~/lib/utils/axios_utils'
 
 const state = {loaded: false, callbacks: [], deployments: {}, deploymentHooks: [], shareStates: {}};
 const mutations = {
@@ -125,8 +126,86 @@ const actions = {
         await dispatch('createDeploymentPathPointer', {environment: targetEnvironmentName, deploymentDir, dryRun})
         return newDeploymentName
     },
+
+        /*
+         [
+            {
+            "id": 387,
+            "name": "buildpack-test-app",
+            "full_path": "/user-2022-09-28T21-36-42/buildpack-test-app",
+            "full_name": "user-2022-09-28T21-36-42 / buildpack-test-app"
+            }
+        ]
+
+        axios.post(`/user-2022-09-28T21-36-42/dashboard/-/subscriptions?upstream=${encodeURIComponent('user-2022-09-28T21-36-42/buildpack-test-app')}`)
+    */
+    async updateProjectSubscription({rootGetters}, {projectPath, op}) {
+        const dict = JSON.parse(rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*') || '{}')
+
+        const items = dict.subscriptions[projectPath]
+
+        const url = `/${rootGetters.getHomeProjectPath}/-/subscriptions?upstream=${encodeURIComponent(projectPath)}`
+
+        if(op == 'inc' && items?.length == 1) {
+            console.log(`POST ${url}`)
+            await axios.post(url)
+        } else if(op == 'dec' && items?.length == 0) {
+            console.log(`DELETE ${url}`)
+            await axios.delete(url)
+        }
+
+    },
+
+    async postQueuedProjectSubscriptions({rootGetters, dispatch}) {
+        const dict = JSON.parse(rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*'))
+        const queued = dict?.queued
+        if(!(dict && queued)) return 
+        if(!dict.subscriptions) dict.subscriptions = {}
+        const subscriptions = dict.subscriptions
+        
+        const projectPathsNeedUpdate = []
+        
+        Object.entries(queued).forEach(([projectPath, items]) => {
+            let i = 0
+            if(!subscriptions[projectPath]) subscriptions[projectPath] = [] 
+            for(const record of items) {
+                const {resourceName, deploymentName, environmentName} = record
+
+                if(environmentName != rootGetters.getCurrentEnvironment.name || deploymentName != rootGetters.getDeploymentTemplate.name) {
+                    continue
+                }
+
+                const card = rootGetters.getCardsStacked.find(card => card.name == resourceName)
+                const hasCorrectProjectId = card.properties.some(prop => prop.name == 'project_id' && prop.value == projectPath)
+                if(card && hasCorrectProjectId) {
+                    subscriptions[projectPath].push(record)
+                    i++
+                }
+            }
+            if(i > 0) {
+                projectPathsNeedUpdate.push(projectPath)
+            }
+        })
+
+        delete dict.queued
+
+        await dispatch(
+            'setEnvironmentVariable',
+            {
+                environmentName: '*',
+                variableName: 'UNFURL_PROJECT_SUBSCRIPTIONS',
+                variableValue: JSON.stringify(dict)
+            },
+            {root: true}
+        )
+
+        for(const projectPath of projectPathsNeedUpdate) {
+            await dispatch('updateProjectSubscription', {projectPath, op: 'inc'})
+        }
+
+    },
     
-    async runDeploymentHooks({state, commit}) {
+    async runDeploymentHooks({state, commit, rootGetters, dispatch}) {
         const promises = []
         for(const hook of state.deploymentHooks) {
             let result = hook()
@@ -135,6 +214,7 @@ const actions = {
             }
             if(result === false) { return false }
         }
+        await dispatch('postQueuedProjectSubscriptions')
         return true
     },
 
@@ -282,6 +362,7 @@ const actions = {
 
         await dispatch('commitPreparedMutations')
     }
+
 };
 const getters = {
     getDeploymentDictionary(state) {

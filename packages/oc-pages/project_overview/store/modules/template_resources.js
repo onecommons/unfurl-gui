@@ -928,6 +928,12 @@ const getters = {
         return state.resourceTemplates[state.deploymentTemplate.primary]
     },
 
+    cardCanIncrementalDeploy(state, getters) {
+        return function(card) {
+            return getters.getCardExtends(card)?.includes('ContainerImageSource')
+        }
+    },
+
     hasIncrementalDeployOption(state, getters) {
         return Object.values(state.resourceTemplates).some(card => getters.getCardExtends(card)?.includes('ContainerImageSource'))
     }

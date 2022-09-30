@@ -70,34 +70,36 @@ export default {
                     <td class="name-column">{{ property.name.replaceAll('_', ' ') }}</td>
                     <td :style="property.valueStyle" class="value-column">
                         <div style="display: flex; justify-content: space-between;">
-                            <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
-                                <Status :status="property.status" :state="property.state" :size="14" display-text />
-                            </div>
-                            <div v-else style="width: 100%">
-                                <div v-if="property.icon" class="icon-container">
-                                    <detect-icon :size="14" :name="property.icon" />
+                            <slot :name="property.name" v-bind="property.value">
+                                <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
+                                    <Status :status="property.status" :state="property.state" :size="14" display-text />
                                 </div>
-                                <json-view
-                                v-if="property.value && typeof property.value == 'object'"
-                                :data="property.value"
-                                :rootKey="property.name"
-                                />
-                                <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
-                                <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
+                                <div v-else style="width: 100%">
+                                    <div v-if="property.icon" class="icon-container">
+                                        <detect-icon :size="14" :name="property.icon" />
+                                    </div>
+                                    <json-view
+                                        v-if="property.value && typeof property.value == 'object'"
+                                        :data="property.value"
+                                        :rootKey="property.name"
+                                    />
+                                    <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
+                                    <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
 
-                                <Redacted v-else-if="property.sensitive" :value="property.value" />
+                                    <Redacted v-else-if="property.sensitive" :value="property.value" />
 
-                                <span v-else>
-                                {{property.value}}
-                                </span>
-                            </div>
-                            <div v-if="property.outboundLink" class="outbound-link-container d-flex">
-                                <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
-                                    <detect-icon class="mr-1" :size="14" name="external-link"/>
-                                    {{__(property.outboundLinkText)}}
-                                </a>
-                            </div>
-                        </div>
+                                    <span v-else>
+                                        {{property.value}}
+                                    </span>
+                                </div>
+                                <div v-if="property.outboundLink" class="outbound-link-container d-flex">
+                                    <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
+                                        <detect-icon class="mr-1" :size="14" name="external-link"/>
+                                        {{__(property.outboundLinkText)}}
+                                    </a>
+                                </div>
+                            </slot>
+                    </div>
                     </td>
                 </tr>
             </table>

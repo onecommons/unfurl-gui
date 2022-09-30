@@ -4,6 +4,7 @@ import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
 import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
+import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
 const query = gql`
 query getContainerRepositories($fullPath: ID!) {
@@ -44,7 +45,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'LocalImageRepoSource',
-    components: {ElAutocomplete, ElInput, ElCard},
+    components: {ElAutocomplete, ElInput, ElCard, DeploymentScheduler},
     props: {
         card: Object
     },
@@ -67,7 +68,7 @@ export default {
         return data
     },
     computed: {
-        ...mapGetters(['cardIsValid'])
+        ...mapGetters(['cardIsValid', 'getDeploymentTemplate'])
     },
     watch: {
         project_id(val) {
@@ -182,6 +183,8 @@ export default {
         <el-input label="Tag" clearable class="mt-4" style="width: min(300px, 100%)" v-if="project_id" v-model="repository_tag" :fetch-suggestions="getRepositoryIdSuggestions">
             <template #prepend>Tag</template>
         </el-input> 
+
+            <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
     </el-card>
 </template>
 <style scoped>

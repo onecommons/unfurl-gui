@@ -13,9 +13,8 @@ import OcInputs from '../../components/shared/oc_inputs.vue'
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
-import {DeploymentScheduler} from 'oc_vue_shared/oc-components'
 import { bus } from 'oc_vue_shared/bus';
-import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import { slugify } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {getJobsData, redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
@@ -36,7 +35,6 @@ export default {
     OcTemplateHeader,
     TemplateButtons,
     ConsoleWrapper,
-    DeploymentScheduler
   },
 
 
@@ -643,7 +641,6 @@ export default {
 
       </div>
       <!-- End Content -->
-      <deployment-scheduler />
 
       <!-- Buttons -->
       <template-buttons 

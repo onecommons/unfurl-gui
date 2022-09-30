@@ -1,7 +1,12 @@
 <script>
 import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
 import {DetectIcon, OcPropertiesList} from 'oc_vue_shared/oc-components'
+
+// webpack gets confused with these two
 import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
+import IncrementalDeploymentSwitch from 'oc_vue_shared/components/oc/incremental-deployment-switch.vue'
+//
+
 import OcInputs from './oc_inputs.vue'
 import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
@@ -10,7 +15,6 @@ import { mapGetters, mapActions } from 'vuex'
 import Dependency from './dependency.vue'
 import {getCustomInputComponent} from './oc_inputs'
 
-
 export default {
     name: 'OcList',
     components: {
@@ -18,7 +22,8 @@ export default {
         OcTab,
         OcPropertiesList,
         OcInputs,
-        Dependency
+        Dependency,
+        IncrementalDeploymentSwitch
     },
 
     mixins: [commonMethods],
@@ -103,6 +108,7 @@ export default {
             'resolveResourceType',
             'cardStatus',
             'lookupEnvironmentVariable',
+            'cardCanIncrementalDeploy',
             'getDeployments', 'getDeploymentDictionary'
         ]),
         hasRequirementsSetter() {
@@ -130,6 +136,13 @@ export default {
               value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
               return {...property, name, value, sensitive}
             })
+
+            if(this.cardCanIncrementalDeploy(this.card)) {
+                properties.push({
+                    name: 'Incremental_Deploy',
+                    value: this.card
+                })
+            }
 
             return properties
         },
@@ -195,6 +208,13 @@ export default {
               value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
               return {...attribute, name, value, sensitive}
             })
+
+            if(this.cardCanIncrementalDeploy(this.card)) {
+                attributes.push({
+                    name: 'Incremental_Deploy',
+                    value: this.card
+                })
+            }
 
             //attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
             return attributes
@@ -292,17 +312,25 @@ export default {
                 </div>
             </oc-tab>
             <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="properties.length">
-                <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties" />
+                <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties">
+                    <template #Incremental_Deploy> <incremental-deployment-switch :card="_card" /> </template>
+                </oc-properties-list>
+
                 <oc-inputs v-else :card="_card" />
             </oc-tab>
             <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
                 <oc-inputs :card="_card" :tab="tab.tab_title"/>
             </oc-tab>
             <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
-                <oc-properties-list :container-style="propertiesStyle" :properties="attributes" />
+                <oc-properties-list :container-style="propertiesStyle" :properties="attributes">
+                    <template #Incremental_Deploy> <incremental-deployment-switch :card="card" /> </template>
+                </oc-properties-list>
             </oc-tab>
             <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="_card.outputs.length">
-                <oc-properties-list :container-style="propertiesStyle" :card="_card" property="outputs" />
+                <oc-properties-list :container-style="propertiesStyle" :card="_card" property="outputs">
+                    <!-- not sure this template would ever be reached -->
+                    <template #Incremental_Deploy> <incremental-deployment-switch :card="card" /> </template>
+                </oc-properties-list>
             </oc-tab>
             <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
                 <div class="row-fluid">
