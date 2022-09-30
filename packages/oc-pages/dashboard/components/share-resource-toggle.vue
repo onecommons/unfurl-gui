@@ -10,7 +10,11 @@ export default {
     computed: {
         ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath']),
         canShareResource() {
-            return this.card?.name && !this.card.name.startsWith('__')
+            return (
+                this.card?.name &&
+                !this.card.name.startsWith('__') &&
+                this.card.status == 1
+            )
         },
         sharedStatus() {
             return this.getResourceSharedState(this.getCurrentEnvironment.name,  this.getDeploymentTemplate.name, this.card.name)
