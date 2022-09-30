@@ -12,10 +12,10 @@ export default {
         return {routes}
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace']),
+        ...mapGetters(['getHomeProjectPath']),
         destination() {
             return this.noRouter ?
-                {href: `/home/${this.getCurrentNamespace}/-/environments/${this.$props?.environment?.name}`} :
+                {href: `/${this.getHomeProjectPath}/-/environments/${this.$props?.environment?.name}`} :
                 this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
         }
     }

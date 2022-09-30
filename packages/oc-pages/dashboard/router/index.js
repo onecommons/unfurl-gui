@@ -10,7 +10,10 @@ Vue.use(VueRouter);
 routes.push({ path: "*", component: PageNotFound })
 
 const base = baseRouteNaive(window.location.pathname);
-const delimiter = base.includes('dashboard')? '': '/-'
+
+// no longer relevant?
+const delimiter = /*base.includes('dashboard')? '': */'/-'
+
 
 const navigationElements = {
     dashboard:  document.querySelector(`aside.nav-sidebar li a[href$="${base}"]`)?.parentElement,

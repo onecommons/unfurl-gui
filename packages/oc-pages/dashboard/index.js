@@ -27,6 +27,7 @@ Vue.config.errorHandler = function(err, vm, info) {
 }
 
 export default (elemId='js-table-component') => {
+    import('./layout-fix.css')
     const element = document.getElementById(elemId);
     window.gon = {...window.gon, ...element.dataset}
 

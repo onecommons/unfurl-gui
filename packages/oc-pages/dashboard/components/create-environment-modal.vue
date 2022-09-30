@@ -22,7 +22,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace']),
+        ...mapGetters(['getHomeProjectPath']),
         disablePrimary() {
             return !(this.cp && this.env && this.env != __('Select'))
         }
@@ -30,7 +30,7 @@ export default {
     methods: {
         async redirectToNewEnvironment(e) {
             e.preventDefault()
-            await this.$refs.environmentDialog.beginEnvironmentCreation(`/home/${this.getCurrentNamespace}/-/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
+            await this.$refs.environmentDialog.beginEnvironmentCreation(`/${this.getHomeProjectPath}/-/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
         },
     }
 }

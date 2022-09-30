@@ -455,7 +455,7 @@ export default {
         }
 
         beforeRedirect() // this is weird, the logic around here has just changed a lot recently
-        window.location.href = `/home/${this.getCurrentNamespace}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
+        window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];

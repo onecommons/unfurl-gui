@@ -61,7 +61,7 @@ export default {
         return data
     },
     computed: {
-        ...mapGetters(['getDeploymentTemplate', 'getCurrentNamespace', 'registryURL', 'cardIsValid']),
+        ...mapGetters(['getDeploymentTemplate', 'getCurrentNamespace', 'getHomeProjectPath', 'registryURL', 'cardIsValid']),
         ...mapState({
             isExternalUser(state) {return state.misc.user?.external}, // intentionally defaulting to false
             userEmail(state) {const user = state.misc.user; return user?.public_email || user?.email}
@@ -282,7 +282,7 @@ export default {
     <el-card v-if="isExternalUser">
         <h3>You must be registered as a developer to deploy with GitHub...</h3>
         Contact us to help test the free and open cloud.
-        <a target="_blank" :href="generateIssueLinkSync(`${getCurrentNamespace}/dashboard`, {title: 'Make me a developer!', email: userEmail})">Make me a developer!</a>
+        <a target="_blank" :href="generateIssueLinkSync(`${getHomeProjectPath}`, {title: 'Make me a developer!', email: userEmail})">Make me a developer!</a>
     </el-card>
     <github-auth v-else :importHandler="importHandler">
         <template v-if="cardIsValid(card)" #unauthenticated>

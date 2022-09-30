@@ -84,7 +84,13 @@ export default {
             result.push('view-in-repository')
 
             // TODO probably want to check that it's deployed
-            if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
+
+            // these checks are inadequate
+            //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
+
+
+            // temporary solution -- hide behind developer setting
+            if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
             if(this.userCanEdit) result.push('delete')
             return result
