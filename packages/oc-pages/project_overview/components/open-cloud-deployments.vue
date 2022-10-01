@@ -27,7 +27,7 @@ export default {
 
                 {
                     const dashboardPath = dashboardURL.pathname.split('.git')[0]
-                    const url = dashboardURL.origin + dashboardPath + '/-/deployments' // TODO assumptions about dashboard name
+                    const url = dashboardURL.origin + dashboardPath + '/-/deployments'
                     testbed = {name, url}
                 }
 

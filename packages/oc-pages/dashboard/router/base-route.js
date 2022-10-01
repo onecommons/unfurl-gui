@@ -1,6 +1,6 @@
 export function baseRoute(location) {
     try {
-        return location.split('/-/')[0]
+        return location.split('/-/')[0].replace(/\/$/, '')
     } catch(e) {
         return null
     }
