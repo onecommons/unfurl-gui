@@ -9,7 +9,7 @@ import {userDefaultPath} from 'oc_vue_shared/util.mjs'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 
 
-const state = {
+const state = () => ({
     projectInfo: {},
     environmentList: [],
     templateList: [],
@@ -23,7 +23,7 @@ const state = {
     resourceTemplates: [],
     servicesToConnect: [],
     openCloudDeployments: []
-};
+});
 
 const deletePropertyFromArray = (arrg) => {
     return arrg.map((arr) => {

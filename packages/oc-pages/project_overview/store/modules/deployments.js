@@ -7,7 +7,7 @@ import Vue from 'vue'
 import _ from 'lodash'
 import axios from '~/lib/utils/axios_utils'
 
-const state = {loaded: false, callbacks: [], deployments: {}, deploymentHooks: [], shareStates: {}};
+const state = () => ({loaded: false, callbacks: [], deployments: {}, deploymentHooks: [], shareStates: {}});
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;

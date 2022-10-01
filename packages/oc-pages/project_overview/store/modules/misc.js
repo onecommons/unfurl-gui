@@ -8,13 +8,13 @@ function isMobileLayout() {
     return window.innerWidth <= 768
 }
 
-const state = {
+const state = () => ({
     routerHook: DEFAULT_ROUTER_HOOK,
     isMobileLayout: isMobileLayout(),
     namespace: null,
     dashboard: null,
     user: null
-}
+})
 
 const mutations = {
     setRouterHook(state, hook) {

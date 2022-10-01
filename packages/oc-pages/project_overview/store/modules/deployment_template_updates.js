@@ -559,7 +559,7 @@ function readCommittedNames(accumulator) {
     return committedNames
 }
 
-const state = {
+const state = () => ({
     preparedMutations: [],
     accumulator: {},
     patches: {},
@@ -568,7 +568,7 @@ const state = {
     env: {},
     isCommitting: false,
     useBaseState: false
-}
+})
 
 const getters = {
     getPreparedMutations(state) { return state.preparedMutations },

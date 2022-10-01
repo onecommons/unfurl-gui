@@ -17,7 +17,7 @@ import {prefixEnvironmentVariables, environmentVariableDependencies} from 'oc_vu
 import Vue from 'vue'
 
 
-const state = {
+const state = () => ({
     environments: [],
     projectEnvironments: [],
     resourceTypeDictionaries: {},
@@ -31,7 +31,7 @@ const state = {
 
     // leave always true while until the dispatch script is updated
     incrementalDeploymentEnabled: true,
-};
+});
 
 
 
@@ -548,6 +548,7 @@ const getters = {
         const result = []
         function isValidProvider(environment, template) {
             const type = getters.environmentResolveResourceType(environment, template.type) 
+            if(!Array.isArray(type?.extends)) return false
             return type.extends.includes('unfurl.relationships.ConnectsTo.CloudAccount') || type.extends.includes('unfurl.relationships.ConnectsTo.K8sCluster')
         }
         for(const environment of getters.getEnvironments) {

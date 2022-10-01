@@ -6,7 +6,7 @@ import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import _ from 'lodash'
 import Vue from 'vue'
 
-const state = {loaded: false, callbacks: [], clean: true}
+const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
         Vue.set(state, key, value)
