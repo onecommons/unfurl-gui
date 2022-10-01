@@ -31,6 +31,7 @@ import './run-recreate-deployment'
 import './create-aws-environment'
 import './create-gcp-environment'
 import './create-digitalocean-environment'
+import './create-kubernetes-environment'
 import './environments'
 import './github'
 import './ci-jobs'
@@ -70,7 +71,16 @@ function getInputOrTextarea(selector) {
   return cy.get(`input${selector}, textarea${selector}`)
 }
 
+function execLoud(...args) {
+  return cy.exec(...args).then(async result => {
+    console.log(result)
+    cy.task('log', `[${args[0]}][stdout]\n${result.stdout}`)
+    cy.task('error', `[${args[0]}][stderr]\n${result.stderr}`)
+    return cy.wrap(result)
+  })
+}
 Cypress.Commands.add('whenGitlab', whenGitlab)
 Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
 Cypress.Commands.add('withStore', withStore)
 Cypress.Commands.add('getInputOrTextarea', getInputOrTextarea)
+Cypress.Commands.add('execLoud', execLoud)

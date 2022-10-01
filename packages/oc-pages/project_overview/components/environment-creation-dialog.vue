@@ -151,10 +151,9 @@ export default {
                 window.location.href = redirectTarget;
             } else if(! ['gcp', 'aws'].includes(CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider])) {
               await this.createLocalDevEnvironment()
-
               //TODO don't hard code our redirect
               //window.location.href = redirectTarget;
-              window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+              window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
             } else {
               const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
               sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)

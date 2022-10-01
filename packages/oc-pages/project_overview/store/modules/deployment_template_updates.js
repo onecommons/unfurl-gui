@@ -559,7 +559,7 @@ function readCommittedNames(accumulator) {
     return committedNames
 }
 
-const state = {
+const state = () => ({
     preparedMutations: [],
     accumulator: {},
     patches: {},
@@ -568,7 +568,7 @@ const state = {
     env: {},
     isCommitting: false,
     useBaseState: false
-}
+})
 
 const getters = {
     getPreparedMutations(state) { return state.preparedMutations },
@@ -755,7 +755,7 @@ const actions = {
             variables
         })
         
-        await patchEnv(state.env, state.environmentScope)
+        await patchEnv(state.env, state.environmentScope, state.projectPath)
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {

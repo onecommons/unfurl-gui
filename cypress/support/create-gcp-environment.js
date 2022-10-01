@@ -4,12 +4,13 @@ const GCP_ZONE = Cypress.env('CLOUDSDK_COMPUTE_ZONE') || 'us-central1-a'
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
 const GCP_DNS_TYPE = Cypress.env('GCP_DNS_TYPE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+const USERNAME = Cypress.env('OC_IMPERSONATE')
 
 function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
-  cy.visit(`${BASE_URL}/dashboard/environments`)
+  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments`)
   cy.clickCreateEnvironmentButton()
   cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
-  cy.url().should('not.include', '/dashboard/environments')
+  cy.url().should('include', environmentName)
   authenticateGCP()
 
   validateGCPEnvironment()
@@ -23,7 +24,8 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
 }
 
 function validateGCPEnvironment(filePath=GOOGLE_APPLICATION_CREDENTIALS) {
-  cy.fixture(GOOGLE_APPLICATION_CREDENTIALS).then(credentials => {
+  cy.fixture(filePath).then(credentials => {
+    cy.log(credentials.project_id)
     const {project_id} = credentials
     cy.contains(project_id, {timeout: BASE_TIMEOUT * 2.4}).should('be.visible')
     cy.contains(GCP_ZONE).should('be.visible')

@@ -2,11 +2,12 @@ import {USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
 
 import _ from 'lodash'
-const state = {
+const state = () => ({
     loaded: false,
     counters: {deployments: 0, applications: 0, environments: 0, totalDeployments: 0},
     items: []
-}
+})
+
 const mutations = {
     setDashboardLoaded(state, loaded) {
         state.loaded = loaded

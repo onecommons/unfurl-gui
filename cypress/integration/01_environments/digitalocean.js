@@ -10,7 +10,7 @@ describe('Digital Ocean environments', () => {
   })
 
   afterEach(() => {
-    cy.visit(`${BASE_URL}/dashboard/environments`)
+    cy.visit(`${BASE_URL}/{USERNAME}/dashboard/-/environments`)
     cy.environmentShouldExist(ENVIRONMENT_NAME)
     cy.contains('Local Development', {matchCase: false}).should('not.exist')
   })

@@ -23,7 +23,7 @@ const verificationRoutines = {
       const command = `./scripts/src/blueprint-validation/minecraft.js --host ${address} --port 25565`
       console.log(command)
       cy.waitUntil(() => {
-        return cy.exec(
+        return cy.execLoud(
           command, 
           {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
         ).then(result => {console.log(result); return result.code == 0})
@@ -38,7 +38,7 @@ const verificationRoutines = {
     const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.${dnsZone}`
     console.log(command)
     cy.waitUntil(() => {
-      return cy.exec(
+      return cy.execLoud(
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
@@ -55,7 +55,7 @@ const verificationRoutines = {
     const command = `./scripts/src/blueprint-validation/nextcloud.js --base-url https://${subdomain}.${dnsZone} --register-name ${username} --register-password ${password}`
     console.log(command)
     cy.waitUntil(() => {
-      return cy.exec(
+      return cy.execLoud(
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
@@ -70,7 +70,7 @@ const verificationRoutines = {
     const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.${dnsZone}`
     console.log(command)
     cy.waitUntil(() => {
-      return cy.exec(
+      return cy.execLoud(
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
@@ -87,7 +87,7 @@ const verificationRoutines = {
     const command = `./scripts/src/blueprint-validation/baserow.js --base-url https://${subdomain}.${dnsZone} --register-email ${phoneyUserEmail} --register-password ${password}`
     console.log(command)
     cy.waitUntil(() => {
-      return cy.exec(
+      return cy.execLoud(
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
@@ -105,7 +105,7 @@ const verificationRoutines = {
     const command = `./scripts/src/blueprint-validation/ghost.js --base-url https://${subdomain}.${dnsZone} --admin-email ${email} --admin-password ${password} --register-email ${phoneyUserEmail} --register-name "John Denne"`
     console.log(command)
     cy.waitUntil(() => {
-      return cy.exec(
+      return cy.execLoud(
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})
@@ -122,7 +122,7 @@ const verificationRoutines = {
     const command = `./scripts/src/blueprint-validation/container-webapp.js --live-url https://${subdomain}.${dnsZone} --repository ${repository} --identifier ${identifier}`
     console.log(command)
     cy.waitUntil(() => {
-      return cy.exec(
+      return cy.execLoud(
         command, 
         {failOnNonZeroExit: false, env: {FORCE_COLOR: 0}}
       ).then(result => {console.log(result); return result.code == 0})

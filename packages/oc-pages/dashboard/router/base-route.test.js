@@ -5,6 +5,12 @@ test('basic dashboard route', () => {
     expect(baseRouteNaive('/jdenne/dashboard')).toEqual('/jdenne/dashboard');
 });
 
+test('basic dashboard route, trailing slash', () => {
+    expect(baseRouteNaive('/jdenne/dashboard/')).toEqual('/jdenne/dashboard');
+});
+
+
+
 test('basic dashboard route arriving at environment', () => {
     expect(baseRouteNaive('/jdenne/dashboard/-/environments')).toEqual('/jdenne/dashboard');
 });

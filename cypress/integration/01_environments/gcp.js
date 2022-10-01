@@ -9,7 +9,7 @@ const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
 
 function authenticateWithInvalidJSON() {
-  cy.url().should('not.include', '/dashboard/environments')
+  cy.url().should('not.include', '/{USERNAME}/dashboard/-/environments')
   cy.authenticateGCP('malformed-service-account-key.json.txt', false) // txt extension to keep cypress from parsing
   cy.get('.flash-alert').should('be.visible')
   cy.contains('invalid JSON').should('be.visible')
@@ -26,18 +26,18 @@ describe('GCP environments', () => {
   })
 
   afterEach(() => {
-    cy.visit(`${BASE_URL}/dashboard/environments`)
+    cy.visit(`${BASE_URL}/{USERNAME}/dashboard/-/environments`)
     cy.environmentShouldExist(ENVIRONMENT_NAME)
     cy.contains('Local Development', {matchCase: false}).should('not.exist')
   })
 
   it('Can gracefully handle invalid JSON', () => {
-    cy.visit(`${BASE_URL}/dashboard/environments`)
+    cy.visit(`${BASE_URL}/{USERNAME}/dashboard/-/environments`)
     cy.clickCreateEnvironmentButton()
     cy.completeEnvironmentDialog({environmentName: ENVIRONMENT_NAME, provider: 'gcp'})
     authenticateWithInvalidJSON()
 
-    cy.visit(`${BASE_URL}/dashboard/environments`)
+    cy.visit(`${BASE_URL}/{USERNAME}/dashboard/-/environments`)
     cy.environmentShouldNotExist(ENVIRONMENT_NAME)
 
     cy.clickCreateEnvironmentButton()

@@ -2,9 +2,9 @@ import Vue from 'vue'
 
 const LOCALSTORAGE_KEY = 'us'
 
-const state = {
+const state = () => ({
   lastUsedEnvironmentList: [], // { cloud, environmentName }
-}
+})
 
 const mutations = {
   initUserSettings(state, { username }) {

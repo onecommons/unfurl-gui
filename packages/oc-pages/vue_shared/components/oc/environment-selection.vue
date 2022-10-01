@@ -17,6 +17,14 @@ export default {
         ErrorSmall,
         DetectIcon,
     },
+    watch: {
+        env: {
+            immediate: true,
+            handler(env) {
+                this.$emit('input', env)
+            }
+        }
+    },
     computed: {
         ...mapGetters([ 'lookupEnvironment', 'getMatchingEnvironments', 'getAdditionalMatchingEnvironments', 'getHomeProjectPath' ]),
         matchingEnvironments() {
@@ -26,10 +34,18 @@ export default {
             return this.getMatchingEnvironments(this.provider).filter(env => env._dashboard != this.getHomeProjectPath)
         },
         env() {
+            let result
             if(typeof this.value == 'string') {
-                return this.lookupEnvironment(this.value || this.defaultEnvironmentName)
+                result = this.lookupEnvironment(this.value || this.defaultEnvironmentName)
+            } else {
+                result = this.value
             }
-            return this.value
+
+            if(result?.name && this.matchingEnvironments.concat(this.externalEnvironments).some(env => env.name == result.name)) {
+                return result
+            }
+
+            return null
         }
     }
 }
@@ -39,7 +55,7 @@ export default {
     <div class="dropdown-parent">
         <gl-dropdown v-if="environmentCreation || matchingEnvironments.length > 0" data-testid="deployment-environment-select" ref="dropdown">
             <template #button-text>
-                <span class="d-flex" style="line-height: 1"><detect-icon v-if="value" class="mr-2" no-default :env="value"/>{{(env && env.name) || __("Select")}}</span>
+                <span class="d-flex" style="line-height: 1"><detect-icon v-if="env" class="mr-2" no-default :env="env"/>{{(env && env.name) || __("Select")}}</span>
             </template>
 
             <div v-if="matchingEnvironments.length + this.externalEnvironments.length > 0">

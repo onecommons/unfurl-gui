@@ -42,6 +42,13 @@ module.exports = (on, config) => {
   config.env.SIMPLE_BLUEPRINT = config.env.SIMPLE_BLUEPRINT || 'simple-blueprint'
   config.env.BASE_TIMEOUT = config.defaultCommandTimeout || 5000
 
+  config.env.K8S_CLUSTER_NAME = config.env.K8S_CLUSTER_NAME || config.env.KUBE_CTX_CLUSTER
+  config.env.K8S_CONTEXT = config.env.K8S_CONTEXT || config.env.KUBE_CTX
+  config.env.K8S_CA_CERT = config.env.K8S_CA_CERT || config.env.KUBE_CLUSTER_CA_CERT_DATA
+  config.env.K8S_INSECURE = config.env.K8S_INSECURE || config.env.KUBE_INSECURE
+  config.env.K8S_AUTH_TOKEN = config.env.K8S_AUTH_TOKEN || config.env.KUBE_TOKEN
+  config.env.K8S_BASE_URL = config.env.K8S_BASE_URL || config.env.KUBE_HOST
+
   const 
     DIGITALOCEAN_DNS_ZONE = config.env.DIGITALOCEAN_DNS_ZONE || 'untrusted.me',
     GCP_DNS_ZONE = config.env.GCP_DNS_ZONE,
@@ -71,10 +78,14 @@ module.exports = (on, config) => {
   config.env.GENERATE_SUBDOMAINS = ['1', 'true', 'yes', true].includes(GENERATE_SUBDOMAINS)
     
 
-  console.log(config.env)
+  console.log({...config.env, OC_PASSWORD: '[MASKED]'})
   on('task', {
     log (message) {
       console.log(message)
+      return null
+    },
+    error (message) {
+      console.error(message)
       return null
     }
   })

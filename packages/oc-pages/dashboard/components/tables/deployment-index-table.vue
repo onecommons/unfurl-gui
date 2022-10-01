@@ -229,14 +229,14 @@ export default {
                     this.$router.replace({hash: '#_'})
                     this.handleDeleteRedirect()
                 case 'clone':
-                    const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment)
+                    const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment?.name)
                     const clonedDeploymentName = await this.cloneDeployment({
                         deployment,
                         environment,
                         newDeploymentTitle: this.newDeploymentTitle,
                         targetEnvironment,
                     })
-                    const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment}/${clonedDeploymentName}`
+                    const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
                 case 'incRedeploy':

@@ -25,10 +25,11 @@ const LOOKUP_JOBS = gql`
 `
 
 
-const state = {
+const state = () => ({
     deploymentItems: {},
     jobsByPipelineId: {}
-}
+})
+
 const getters = {
     deploymentItemDirect(state) {
         return function({environment, deployment}, method, ...args) {

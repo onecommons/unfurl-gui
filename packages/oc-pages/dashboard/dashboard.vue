@@ -43,8 +43,7 @@ export default {
          */
     },
     async mounted() {
-        const pathComponents = this.$router.options.base.split('/');
-        while(pathComponents.length > 0 && pathComponents[0] == '') pathComponents.shift();
+        const pathComponents = this.$router.options.base.split('/').filter(s => s);
         const currentNamespace = pathComponents.slice(0, -1).join('/')
         this.setCurrentNamespace(currentNamespace);
         this.setDashboardName(pathComponents[pathComponents.lastIndex])

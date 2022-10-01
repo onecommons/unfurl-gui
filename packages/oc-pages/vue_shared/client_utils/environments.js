@@ -4,7 +4,7 @@ import {cloneDeep} from 'lodash'
 import graphqlClient from 'oc_pages/project_overview/graphql';
 import {UpdateDeploymentObject} from 'oc_pages/project_overview/graphql/mutations/update_deployment_object.graphql'
 import {postFormDataWithEntries} from './forms'
-import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars.js'
+import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
