@@ -26,7 +26,7 @@ export default {
       },
       environmentURL() {
           const homePath = projectPathToHomeRoute(decodeURIComponent(this.$route.params.dashboard))
-          return `${homePath}/-/environments/${this.getCurrentEnvironmentName}`
+          return `/${homePath}/-/environments/${this.getCurrentEnvironmentName}`
       }
     },
     methods: {

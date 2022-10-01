@@ -755,7 +755,7 @@ const actions = {
             variables
         })
         
-        await patchEnv(state.env, state.environmentScope)
+        await patchEnv(state.env, state.environmentScope, state.projectPath)
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {
