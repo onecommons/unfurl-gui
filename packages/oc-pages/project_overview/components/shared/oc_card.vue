@@ -127,7 +127,7 @@ export default {
         },
 
         _readonly() {
-            return this.readonly || this.card?.imported
+            return this.readonly || this.card?.imported || this.card?.readonly
         }
 
     },

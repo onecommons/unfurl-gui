@@ -263,8 +263,7 @@ export default {
             return this.shouldRenderRequirements || (this.shouldRenderInputs && !this.customInputComponent) || this.shouldRenderExtras || this.shouldRenderAttributes || this.shouldRenderOutputs
         },
         _readonly() {
-
-            return this.card.name.startsWith('__') || this.readonly
+            return this.card.name.startsWith('__') || this.readonly || this.card.readonly
         },
         customInputComponent() {
             return !this._readonly && getCustomInputComponent(this._card.type)
