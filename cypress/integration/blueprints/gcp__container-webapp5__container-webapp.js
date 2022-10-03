@@ -47,7 +47,9 @@ describe('_env-test-gcp-2022-09-07t04-37-10__container-webapp5__container-webapp
           cy.contains('button', 'Add').click()
           cy.get('input.el-input__inner').type('5000:5000')
         })
-        cy.contains('button', 'Imported', {timeout: BASE_TIMEOUT * 2})
+
+        cy.contains('Redeploy every time').click()
+        cy.contains('button', 'Imported', {timeout: BASE_TIMEOUT * 3})
         cy.wait(500)
       }
     })

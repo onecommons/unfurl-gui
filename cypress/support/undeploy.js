@@ -1,4 +1,5 @@
 const BASE_URL = Cypress.env('OC_URL')
+const USERNAME = Cypress.env('OC_IMPERSONATE')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 function undeploy(deploymentTitle) {
   cy.assertDeploymentRunning(deploymentTitle)
@@ -11,7 +12,7 @@ function undeploy(deploymentTitle) {
   cy.withJob(job => {
     cy.expectSuccessfulJob(job)
     cy.withCompletedJob(job, () => {
-      cy.visit(`${BASE_URL}/dashboard/deployments?show=destroyed`)
+      cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/deployments?show=destroyed`)
       cy.contains('td', deploymentTitle).should('exist')
     })
   })
