@@ -424,14 +424,14 @@ const getters = {
             }
 
             resources = resources.filter(r => {
-                return r.visibility != 'hidden' && (
-                    r.visibility == 'visible' ||
-                    r.attributes?.find(a => a.name == 'id') ||
-                    r.attributes?.find(a => a.name == 'console_url')
-                )
+                return r.visibility != 'hidden'
             })
 
-
+            if(resources.length == 0) {
+                const context = {...obj, resource}
+                result.push({context, ...context})
+                continue
+            }
 
             for(const resource of resources) {
                 const context = {...obj, resource}
