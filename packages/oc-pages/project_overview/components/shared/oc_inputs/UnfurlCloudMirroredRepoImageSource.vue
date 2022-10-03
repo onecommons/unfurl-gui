@@ -2,8 +2,7 @@
 // remote_git_url* git_user git_password branch* project_id* repository_id* repository_tag* regitry_url* username password repository url credential{protocol, token, keys, user}
 import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
-import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
-import {fetchRepositoryBranches,  fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjects, fetchRepositoryBranches,  fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
 function callbackFilter(query, items) {
@@ -20,8 +19,10 @@ export default {
         DeploymentScheduler
     },
     data() {
+        const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
-            userProjectSuggestionsPromise: fetchUserProjects(),
+            userProjectSuggestionsPromise: fetchProjects({accessToken}),
+            accessToken,
             repositoryBranchesPromise: null,
             project_id: null,
             branch: null,
@@ -47,7 +48,7 @@ export default {
                 callbackFilter(
                     queryString,
                     projects
-                        .map(project => ({value: project.fullPath}))
+                        .map(project => ({value: project.path_with_namespace}))
                 )
             )
         },
@@ -116,11 +117,11 @@ export default {
                 }
                 this.updateValue('project_id')
                 const projects = await this.userProjectSuggestionsPromise
-                const project = projects.find(p => p.fullPath == val)
+                const project = projects.find(p => p.path_with_namespace == val)
 
                 this.gitlabProjectId = project.id
                 this.setupRegistryCredentials(project.id)
-                this.repositoryBranchesPromise = fetchRepositoryBranches(project.id)
+                this.repositoryBranchesPromise = fetchRepositoryBranches(project.id, {accessToken: this.accessToken})
                 this.projectInfo = await fetchProjectInfo(project.id)
             }
         },

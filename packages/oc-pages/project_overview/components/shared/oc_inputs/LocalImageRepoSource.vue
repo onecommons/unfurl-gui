@@ -2,10 +2,11 @@
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
-import {fetchUserProjects} from 'oc_vue_shared/client_utils/user'
+import {fetchProjects, fetchRegistryRepositories} from 'oc_vue_shared/client_utils/projects'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
+/*
 const query = gql`
 query getContainerRepositories($fullPath: ID!) {
     project(fullPath: $fullPath) {
@@ -37,6 +38,7 @@ async function fetchContainerRepositories(fullPath) {
     return nodes
 }
 
+*/
 
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
@@ -50,9 +52,12 @@ export default {
         card: Object
     },
     data() {
+
+        const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
             containerRepositories: null,
-            userProjectSuggestionsPromise: fetchUserProjects(),
+            userProjectSuggestionsPromise: fetchProjects({accessToken}),
+            accessToken,
             containerRepositoriesPromise: null,
             username: null,
             password: null,
@@ -144,7 +149,7 @@ export default {
         },
         async getRepositoryIdSuggestions(queryString, callback) {
             if(!this.containerRepositoriesPromise) {
-                this.containerRepositoriesPromise = fetchContainerRepositories(this.repository_id)
+                this.containerRepositoriesPromise = fetchRegistryRepositories(this.repository_id)
             }
             const containerRepositories = this.containerRepositories = await this.containerRepositoriesPromise
             callback(

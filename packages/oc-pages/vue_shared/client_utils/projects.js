@@ -2,16 +2,38 @@ import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
 
-export async function fetchRepositoryBranches(projectId) {
-    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`))?.data
+function generateConfig(options) {
+    if(options?.accessToken) {
+        return {headers: {
+            'PRIVATE-TOKEN': options.accessToken
+        }}
+    }
 }
 
-export async function fetchProjectInfo(projectId) {
-    return (await axios.get(`/api/v4/projects/${projectId}`))?.data
+export async function fetchProjects(options) {
+    // TODO this probably doesn't need access level 40
+    let result = (await axios.get(`/api/v4/projects?min_access_level=40`, generateConfig(options)))?.data
+    const dashboards = (await axios.get('/api/v4/dashboards?min_access_level=40', generateConfig(options))).data
+        .map(dashboardProject => dashboardProject.path_with_namespace)
+
+    result = result.filter(project => !dashboards.includes(project.path_with_namespace))
+    return result
 }
 
-export async function fetchProjectPipelines(projectId) {
-    return (await axios.get(`/api/v4/projects/${projectId}/pipelines`))?.data
+export async function fetchRegistryRepositories(projectId, options) {
+    return (await axios.get(`/api/v4/projects/${projectId}/registry/repositories?per_page=99999`, generateConfig(options)))?.data
+}
+
+export async function fetchRepositoryBranches(projectId, options) {
+    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
+}
+
+export async function fetchProjectInfo(projectId, options) {
+    return (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+}
+
+export async function fetchProjectPipelines(projectId, options) {
+    return (await axios.get(`/api/v4/projects/${projectId}/pipelines`, generateConfig(options)))?.data
 }
 
 export async function fetchProjectAccessTokens(projectId) {
