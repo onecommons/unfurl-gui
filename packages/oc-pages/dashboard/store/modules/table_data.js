@@ -88,11 +88,7 @@ const actions = {
 
                 // TODO share this logic
                 deployment.resources = deployment.resources.filter(r => {
-                    return r.visibility != 'hidden' && (
-                        r.visibility == 'visible' ||
-                        r.attributes?.find(a => a.name == 'id') ||
-                        r.attributes?.find(a => a.name == 'console_url')
-                    )
+                    return r.visibility != 'hidden' 
                 })
 
                 deepFreeze(deployment)
