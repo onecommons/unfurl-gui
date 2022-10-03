@@ -134,7 +134,7 @@ async function main() {
 
     console.log(`Created user ${username}`)  
   }
-  console.log(`${process.env.OC_URL}/home/${username}/-/deployments`)
+  console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)
 
   const GCP_ENVIRONMENT_NAME = identifierFromCurrentTime('gcp').toLowerCase()
   const AWS_ENVIRONMENT_NAME = identifierFromCurrentTime('aws').toLowerCase()
