@@ -715,6 +715,7 @@ const getters = {
     },
     templateCardIsHidden(state, getters) {
         return function(card) {
+
             switch(card.visibility) {
                 case 'hidden':
                     return true
@@ -746,6 +747,15 @@ const getters = {
             )
                 
         });
+
+        for(const card of cards) {
+            if(result.some(c => c.name == card.name)) continue
+            if(getters.getCardExtends(card).includes('ContainerImageSource')) {
+                result.push(card)
+                //result.push({...card, readonly: true})
+            }
+        }
+
         return result
     },
     getDependencies: (_state) => {

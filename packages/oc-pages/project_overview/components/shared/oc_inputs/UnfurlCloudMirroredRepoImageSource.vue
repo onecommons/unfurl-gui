@@ -21,12 +21,14 @@ export default {
     data() {
         const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
-            userProjectSuggestionsPromise: fetchProjects({accessToken}),
+            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0, accessToken}),
             accessToken,
             repositoryBranchesPromise: null,
             project_id: null,
             branch: null,
             repository_tag: null,
+            username: null,
+            password: null,
             projectInfo: null,
             gitlabProjectId: -1
         }
@@ -116,13 +118,15 @@ export default {
                     return
                 }
                 this.updateValue('project_id')
-                const projects = await this.userProjectSuggestionsPromise
-                const project = projects.find(p => p.path_with_namespace == val)
 
-                this.gitlabProjectId = project.id
-                this.setupRegistryCredentials(project.id)
-                this.repositoryBranchesPromise = fetchRepositoryBranches(project.id, {accessToken: this.accessToken})
-                this.projectInfo = await fetchProjectInfo(project.id)
+                this.repositoryBranchesPromise = fetchRepositoryBranches(encodeURIComponent(this.project_id), {accessToken: this.accessToken})
+                this.projectInfo = await fetchProjectInfo(encodeURIComponent(this.project_id))
+                const id = this.projectInfo.id
+                this.gitlabProjectId = id
+                try {
+                    this.setupRegistryCredentials(id)
+                } catch(e) { }
+
             }
         },
         branch(val) { this.updateValue('branch') },
