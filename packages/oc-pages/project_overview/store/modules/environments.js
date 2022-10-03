@@ -10,7 +10,8 @@ import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
-import {generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {generateGroupAccessToken} from 'oc_vue_shared/client_utils/group'
+import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {prefixEnvironmentVariables, environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
@@ -334,9 +335,22 @@ const actions = {
 
     },
     async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
+        const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath)) 
+        const namespace = projectInfo?.namespace
+
+        if(!namespace) return
         if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
-            const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
-            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath) // can't currently be masked due to mask limitations
+            let UNFURL_ACCESS_TOKEN
+
+            if(namespace.kind == 'group') {
+                UNFURL_ACCESS_TOKEN = await generateGroupAccessToken('UNFURL_ACCESS_TOKEN', namespace.full_path)
+            } else {
+                UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
+            }
+
+            if(!UNFURL_ACCESS_TOKEN) return
+
+            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath)
         }
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
