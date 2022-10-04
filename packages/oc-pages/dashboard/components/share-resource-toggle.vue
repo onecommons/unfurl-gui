@@ -1,10 +1,16 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 export default {
     props: {
         card: Object
+    },
+    data () {
+        try {
+            return {openCloudPublish: JSON.parse(gon.openCloudPublish)}
+        } catch(e) { return {openCloudPublish: null} }
     },
     components: {DetectIcon, GlDropdown, GlDropdownItem, GlDropdownDivider},
     computed: {
@@ -62,6 +68,32 @@ export default {
                 resourceName = this.card.name
 
             this.unshareResource({environmentName, deploymentName, resourceName})
+        },
+        sharePublic() {
+            const {projectPath, title, description} = this.openCloudPublish
+
+
+            const TEMPLATE_VARS = {
+                'RESOURCE': this.card.title || this.card.name,
+                'ENVIRONMENT': this.getCurrentEnvironment.name,
+                'DEPLOYMENT': this.getDeploymentTemplate.name,
+                'DASHBOARD': this.getHomeProjectPath,
+            }
+
+            function interpolateVars(s) {
+                let result = s
+                for(const [key, value] of Object.entries(TEMPLATE_VARS)) {
+                    const regexpTemplate = `\\$${key}`
+                    result = result.replace(new RegExp(regexpTemplate, 'g'), value)
+                }
+
+                return result
+            }
+
+            const issueLink = generateGitLabIssueSync(projectPath, {title: interpolateVars(title), description: interpolateVars(description)})
+
+            window.open(issueLink, '_blank')
+
         }
     }
 }
@@ -85,6 +117,7 @@ export default {
             <div class="d-inline-flex">Share with deployments in only the current environment</div>
         </gl-dropdown-item>
         <gl-dropdown-item v-if="sharedStatus != 'dashboard'" @click="shareWithDashboard">Share with all environments in the current dashboard</gl-dropdown-item>
+        <gl-dropdown-item v-if="openCloudPublish" @click="sharePublic">Share this resource with our open cloud</gl-dropdown-item>
         <gl-dropdown-item v-if="sharedStatus" @click="stopSharing">Stop sharing <b>{{card.title}}</b></gl-dropdown-item>
     </gl-dropdown>
 </template>
