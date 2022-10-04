@@ -21,6 +21,13 @@ const navigationElements = {
     deployments: document.querySelector('aside.nav-sidebar li a[href$="deployments"]')?.parentElement
 }
 
+const navigationElementRouteMapping = {
+    dashboard: ROUTES.OC_DASHBOARD_HOME,
+    environments: ROUTES.OC_DASHBOARD_ENVIRONMENTS_INDEX,
+    deployments: ROUTES.OC_DASHBOARD_DEPLOYMENTS_INDEX
+}
+
+
 export default function createRouter() {
     /*
     if(!base)
@@ -36,6 +43,14 @@ export default function createRouter() {
         base: base,
         routes: routes.map(route => ({...route, path: route.path.replace('$DELIMITER', delimiter)})),
     });
+
+
+    for(const [key, navigationElement] of Object.entries(navigationElements)) {
+        navigationElement.onclick = e => {
+            e.preventDefault()
+            router.push({name: navigationElementRouteMapping[key]})
+        }
+    }
 
 
     router.name = 'dashboard'
