@@ -94,6 +94,9 @@ export default {
             }, time)
         }
     },
+    async beforeCreate() {
+        await import('./console-wrapper.css')
+    },
     async mounted() {
         const url = this.jobsData[0]?.web_url
 
@@ -131,23 +134,5 @@ export default {
 
 #console-container >>> a {
     pointer-events: none;
-}
-</style>
-<style>
-aside[data-testid="job-sidebar"] {
-    display: none;
-}
-[data-testid="job-content"] > :is(header, .js-environment-container) {
-    display: none;
-}
-[data-testid="job-content"] .top-bar {
-    display: none;
-    /*
-    top: 0px !important;
-    margin-top: -10px;
-     */
-}
-[title="Scroll to top"], [title="Scroll to bottom"] {
-    display: none;
 }
 </style>
