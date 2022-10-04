@@ -105,7 +105,7 @@ export default {
             'cardDependenciesAreValid',
             'getDisplayableDependenciesByCard',
             'getCardProperties',
-            'resolveResourceType',
+            'resolveResourceTypeFromAny',
             'cardStatus',
             'lookupEnvironmentVariable',
             'cardCanIncrementalDeploy',
@@ -119,7 +119,7 @@ export default {
             let properties = this._card.properties
             const titleMap = {}
             const sensitiveMap = {}
-            const resourceType = this.resolveResourceType(this._card.type)
+            const resourceType = this.resolveResourceTypeFromAny(this._card.type)
             Object.entries(resourceType?.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
@@ -150,7 +150,7 @@ export default {
             let attributes = [].concat(this._card.attributes || [], this._card.computedProperties || [])
             const titleMap = {}
             const sensitiveMap = {}
-            const resourceType = this.resolveResourceType(this._card.type)
+            const resourceType = this.resolveResourceTypeFromAny(this._card.type)
 
             Object.entries(resourceType?.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
@@ -229,7 +229,7 @@ export default {
             return this.renderOutputs && this._card.outputs?.length
         },
         shouldRenderInputs() {
-            return this.renderInputs && this._card.properties?.length
+            return !this.importedResource && this.renderInputs && this._card.properties?.length
         },
         shouldRenderAttributes() {
             return (
@@ -269,7 +269,7 @@ export default {
             return !this._readonly && getCustomInputComponent(this._card.type)
         },
         cardType() {
-            return this.resolveResourceType(this._card.type)
+            return this.resolveResourceTypeFromAny(this._card.type)
         },
         inputTabs() {
             if(!this.renderInputTabs || this._readonly) return []
