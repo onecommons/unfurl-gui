@@ -428,7 +428,7 @@ const getters = {
             })
 
             if(resources.length == 0) {
-                const context = {...obj, resource}
+                const context = {...obj}
                 result.push({context, ...context})
                 continue
             }
