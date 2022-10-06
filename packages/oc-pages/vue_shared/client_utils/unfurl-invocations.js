@@ -1,7 +1,7 @@
 export function cloneAlreadyDeployed({
     protocol, username, token, server, projectPath, projectId, environmentName, deployPath
 }) {
-  const vars_url = unfurl_cloud_vars_url(protocol, token, server, projectId);
+  const vars_url = unfurl_cloud_vars_url({protocol, token, server, projectId});
   return (
 `unfurl clone '${protocol}//${username}:${token}@${server}/${projectPath}#:${deployPath}' --var UNFURL_CLOUD_VARS_URL '${vars_url}' --use-environment ${environmentName}`
     )
