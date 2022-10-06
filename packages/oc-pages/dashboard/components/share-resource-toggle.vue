@@ -14,8 +14,10 @@ export default {
     },
     components: {DetectIcon, GlDropdown, GlDropdownItem, GlDropdownDivider},
     computed: {
-        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath']),
+        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny']),
         canShareResource() {
+            const type = this.resolveResourceTypeFromAny(this.card?.type)
+            if(type?.implementations?.includes('create')) return false
             return (
                 this.card?.name &&
                 !this.card.name.startsWith('__') &&
