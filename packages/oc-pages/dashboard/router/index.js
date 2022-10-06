@@ -45,11 +45,15 @@ export default function createRouter() {
     });
 
 
-    for(const [key, navigationElement] of Object.entries(navigationElements)) {
-        navigationElement.onclick = e => {
-            e.preventDefault()
-            router.push({name: navigationElementRouteMapping[key]})
+    try {
+        for(const [key, navigationElement] of Object.entries(navigationElements)) {
+            navigationElement.onclick = e => {
+                e.preventDefault()
+                router.push({name: navigationElementRouteMapping[key]})
+            }
         }
+    } catch(e) {
+        console.error('Could not create router links on side navigation;', e.message)
     }
 
 
@@ -81,7 +85,7 @@ export default function createRouter() {
                 }
             })
         } catch(e) {
-            console.error("couldn't set class on side nav", e)
+            console.error("Couldn't set class on side navigation;", e.message)
         }
         next()
     })
