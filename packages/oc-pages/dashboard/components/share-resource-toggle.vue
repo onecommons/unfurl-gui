@@ -17,8 +17,8 @@ export default {
         ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny']),
         canShareResource() {
             const type = this.resolveResourceTypeFromAny(this.card?.type)
-            if(type?.implementations?.includes('create')) return false
             return (
+                type?.implementations?.includes('connect') &&
                 this.card?.name &&
                 !this.card.name.startsWith('__') &&
                 this.card.status == 1
