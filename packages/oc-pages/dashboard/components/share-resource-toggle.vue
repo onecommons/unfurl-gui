@@ -35,10 +35,10 @@ export default {
         },
         sharedWithText() {
             if(this.sharedStatus == 'dashboard') {
-                return `Currently shared with deployments in all dashboard environments.`
+                return `Shared in all environments.`
             }
             else if(this.sharedStatus == 'environment') {
-                return `Currently shared with deployments in <b>${this.getCurrentEnvironment.name}</b>.`
+                return `Shared in <b>${this.getCurrentEnvironment.name}</b>.`
             }
             return ''
         }
@@ -116,10 +116,10 @@ export default {
             </div>
         </template>
         <gl-dropdown-item v-if="sharedStatus != 'environment'" @click="shareWithEnvironment">
-            <div class="d-inline-flex">Share with deployments in only the current environment</div>
+            <div class="d-inline-flex">Share in current environment</div>
         </gl-dropdown-item>
-        <gl-dropdown-item v-if="sharedStatus != 'dashboard'" @click="shareWithDashboard">Share with all environments in the current dashboard</gl-dropdown-item>
-        <gl-dropdown-item v-if="openCloudPublish" @click="sharePublic">Share this resource with our open cloud</gl-dropdown-item>
+        <gl-dropdown-item v-if="sharedStatus != 'dashboard'" @click="shareWithDashboard">Share with all environments</gl-dropdown-item>
+        <gl-dropdown-item v-if="openCloudPublish" @click="sharePublic">Share publically</gl-dropdown-item>
         <gl-dropdown-item v-if="sharedStatus" @click="stopSharing">Stop sharing <b>{{card.title}}</b></gl-dropdown-item>
     </gl-dropdown>
 </template>

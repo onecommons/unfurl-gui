@@ -29,7 +29,6 @@ export default {
                 server = server + ':' + window.location.port
             }
             const projectPath = this.getHomeProjectPath
-            const projectId = window.gon.projectId // TODO fix gon.projectId hack
             const deploymentName = this.deployment.name
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
@@ -44,12 +43,14 @@ export default {
             }
         },
         localDeployInvocation() {
+            const projectId = window.gon.projectId // TODO fix gon.projectId hack
             const projectName = this.getHomeProjectPath.split('/').pop()
             const deploymentName = this.deployment.name
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
-
-            return `unfurl deploy ${projectName}/${deployPath} \\\n--use-environment ${environmentName} --commit`
+            const protocol = window.location.protocol
+            const token = this.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')            
+            return `cd ${projectName}; unfurl deploy ${deployPath} --use-environment ${environmentName} --commit`
         }
     }
 }
