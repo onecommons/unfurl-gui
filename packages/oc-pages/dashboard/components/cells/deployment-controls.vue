@@ -92,7 +92,8 @@ export default {
             // temporary solution -- hide behind developer setting
             if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
-            if(this.userCanEdit) result.push('delete')
+            // hide delete as a temporary workaround for https://github.com/onecommons/gitlab-oc/issues/1115
+            // if(this.userCanEdit) result.push('delete')
             return result
         },
         disabledButtons() {
