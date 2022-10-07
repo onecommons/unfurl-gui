@@ -223,7 +223,7 @@ export default {
               return {...attribute, name, value, sensitive}
             })
 
-            if(this.cardCanIncrementalDeploy(this.card)) {
+            if(this.cardCanIncrementalDeploy(this.card) && this._readonly) {
                 attributes.push({
                     name: 'Incremental_Deploy',
                     value: this.card
