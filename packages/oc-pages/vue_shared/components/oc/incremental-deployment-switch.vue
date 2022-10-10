@@ -29,7 +29,7 @@ export default {
         ...mapActions(['setEnvironmentVariable', 'updateProjectSubscription']),
     },
     computed: {
-        ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment']),
+        ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment', 'resolveResourceTemplate']),
         subscriptionsDict() {
             try {
                 return JSON.parse(this.lookupVariableByEnvironment(UNFURL_PROJECT_SUBSCRIPTIONS, '*')) || {}
@@ -48,7 +48,16 @@ export default {
             return this.getCurrentEnvironment.name
         },
         upstreamProject() {
-            return this.card.properties.find(prop => prop.name == 'project_id')?.value
+            let template
+            if(this.card.__typename == 'ResourceTemplate') {
+                template = this.card
+            } else if(typeof this.card.template == 'string') {
+                template = this.resolveResourceTemplate(this.card.template)
+            } else if(this.card.template) {
+                template = this.card.template
+            }
+
+            return template?.properties?.find(prop => prop.name == 'project_id')?.value
         },
         incrementalDeploymentEnabled: {
             get() {
