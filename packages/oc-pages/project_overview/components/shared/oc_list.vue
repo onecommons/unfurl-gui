@@ -117,7 +117,7 @@ export default {
         },
         // TODO reuse code between attributes and properties
         properties() {
-            let properties = this._card.properties
+            let properties = this._card.imported? null: this._card.properties
             if(!properties && this._card.template) {
                 if(typeof this._card.template == 'string') {
                     properties = this.resolveResourceTemplate(this._card.template)?.properties
@@ -308,7 +308,7 @@ export default {
 
         _card() {
             if(this.importedResource) {
-                return {...this.card, ...this.importedResource}
+                return {...this.card, ...this.importedResource, imported: this.card.imported}
             }
             return this.card
         }
