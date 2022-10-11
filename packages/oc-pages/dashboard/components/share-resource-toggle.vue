@@ -16,11 +16,16 @@ export default {
     computed: {
         ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny']),
         canShareResource() {
-            const type = this.resolveResourceTypeFromAny(this.card?.type)
+            /*
+             * don't require connect implementation, handled by Unfurl
+             * https://github.com/onecommons/gitlab-oc/issues/1167
+            */
+            // const type = this.resolveResourceTypeFromAny(this.card?.type)
+
             return (
-                type?.implementations?.includes('connect') &&
+                // type?.implementations?.includes('connect') &&
                 this.card?.name &&
-                !this.card.name.startsWith('__') &&
+                !this.card.name.startsWith('__') && // __ prefix is a hack for unfurl-gui to track external resources
                 this.card.status == 1
             )
         },
