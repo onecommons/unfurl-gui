@@ -91,7 +91,7 @@ export default {
                     s="Application" 
                     p="Applications" 
                     class="qcard1"
-                    create-link="/explore" />
+                    create-link="/explore/blueprints" />
                 <quantity-card 
                     :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                     :count="environmentsCount"
@@ -107,7 +107,7 @@ export default {
                     s="Running Deployment"
                     p="Running Deployments"
                     class="qcard3"
-                    create-link="/explore" />
+                    create-link="/explore/blueprints" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
@@ -121,7 +121,7 @@ export default {
     <TableComponent v-if="totalDeploymentsCount > 0" :items="tableItems" :fields="tableFields">
     <template #empty>
       <center class="my-5" style="font-size: 1.3em;">
-        You haven't deployed anything yet. Browse our <a href="/explore" target="_blank">Starter Application Blueprints</a> to get started!
+        You haven't deployed anything yet. Browse our <a href="/explore/blueprints" target="_blank">Starter Application Blueprints</a> to get started!
       </center>
     </template>
     <template #application="scope">
