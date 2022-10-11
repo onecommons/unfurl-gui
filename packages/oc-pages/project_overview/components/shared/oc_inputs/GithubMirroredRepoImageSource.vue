@@ -250,6 +250,10 @@ export default {
 
         this.onSaveEnvironment(async () => {
             if(this.cardIsValid(this.card)) {
+                if(!this.projectInfo) {
+                    await this.updateProjectInfo(encodeURIComponent(this.project_id))
+                }
+
                 if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
                     console.log('image already exists')
                     // this.setUpstreamId we need to look up the last pipeline that has the given branch and project
