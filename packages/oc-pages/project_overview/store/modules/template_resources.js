@@ -880,13 +880,13 @@ const getters = {
     getCurrentEnvironmentType(_, getters) {
         return getters.getCurrentEnvironment?.primary_provider?.type
     },
-    currentAvailableResourceTypes(state) {
-        return state.availableResourceTypes
+    instantiableResourceTypes(state) {
+        return state.availableResourceTypes.filter(rt => rt.visibility != 'hidden')
     },
     availableResourceTypesForRequirement(_, getters) {
         return function(requirement) {
             if(!requirement) return []
-            return getters.currentAvailableResourceTypes.filter(type => {
+            return getters.instantiableResourceTypes.filter(type => {
                 const isValidImplementation =  type.extends?.includes(requirement.constraint?.resourceType)
                 return isValidImplementation
             })
@@ -894,7 +894,7 @@ const getters = {
     },
     resolveResourceTypeFromAvailable(_, getters) {
         return function(typeName) {
-            return getters.currentAvailableResourceTypes.find(rt => rt.name == typeName)
+            return getters.instantiableResourceTypes.find(rt => rt.name == typeName)
         }
     },
     resolveResourceTypeFromAny(state, _a, _b, rootGetters) {
