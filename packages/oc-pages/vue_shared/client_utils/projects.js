@@ -49,9 +49,6 @@ export async function fetchCommit(projectId, commitHash) {
 }
 
 export async function generateProjectAccessToken(projectId, options) {
-    if(isNaN(parseInt(projectId))) {
-        throw new Error('Project id must be a number')
-    }
     console.log(`Generating a project token for ${projectId}`)
     const _options = Object.assign({
         name: 'DashboardProjectAccessToken',
