@@ -644,11 +644,11 @@ const getters = {
             }
         }
     },
-    getCardType(state) {
+    getCardType(state, _a, _b, rootGetters) {
         return function(card) {
             const result = state.resourceTemplates[card?.name || card]
             switch(result?.__typename) {
-                case 'Resource': return result.template.type
+                case 'Resource': return (typeof result.template == 'string'? rootGetters.resolveResourceTemplate(result.template): result.template)?.type
                 case 'ResourceTemplate': return result.type
                 default: return result
             }
