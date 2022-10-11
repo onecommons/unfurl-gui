@@ -20,7 +20,7 @@ export function unfurl_cloud_vars_url({
 export function cloneForDraft({
     protocol, username, token, server, projectPath, projectId, environmentName, deploymentName, deployPath, blueprintUrl, blueprint
 }) {
-    const vars_url = unfurl_cloud_vars_url(protocol, token, server, projectId);
+    const vars_url = unfurl_cloud_vars_url({protocol, token, server, projectId});
     return (
 `unfurl clone '${protocol}//${username}:${token}@${server}/${projectPath}' 
     --existing --overwrite --var UNFURL_CLOUD_VARS_URL '${vars_url}' --mono --use-environment ${environmentName} --use-deployment-blueprint ${blueprint} --skeleton dashboard ${blueprintUrl} ${deployPath}`
