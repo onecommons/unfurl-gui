@@ -124,7 +124,7 @@ export default {
             'getValidConnections',
             'getHomeProjectPath',
             'getApplicationBlueprint',
-            'currentAvailableResourceTypes',
+            'instantiableResourceTypes',
             'resolveResourceTypeFromAny',
             'getCurrentEnvironment'
         ]),
@@ -209,7 +209,7 @@ export default {
 
         mappedAvailableTypes() {
             const mapping = {}
-            for(const type of this.currentAvailableResourceTypes) {
+            for(const type of this.instantiableResourceTypes) {
                 const directSuperClass = type.extends[1]
                 const children = mapping[directSuperClass] || []
                 children.push(type)
