@@ -7,9 +7,9 @@ import {lookupCloudProviderAlias, cloudProviderFriendlyName} from 'oc_vue_shared
 export default {
     name: 'OpenCloudDeployments',
     fields: [
-        {key: 'deployment', label: 'Deployment', groupBy: i => i.deployment.url},
         {key: 'cloud',  label: 'Cloud'},
-        {key: 'testbed', label: 'Testbed', groupBy: i => i.testbed.url}
+        {key: 'testbed', label: 'Testbed Projects', s: 'Testbed', groupBy: i => i.testbed.url},
+        {key: 'deployment', label: 'Deployments', s: 'Deployment', groupBy: i => i.deployment.url},
     ],
     components: {TableComponent, DetectIcon},
     methods: {cloudProviderFriendlyName},
@@ -26,7 +26,9 @@ export default {
                 let testbed, deployment
 
                 {
+                    //const name = openCloudDeployment.testbed.name
                     const dashboardPath = dashboardURL.pathname.split('.git')[0]
+                    const name = dashboardPath.slice(1)
                     const url = dashboardURL.origin + dashboardPath + '/-/deployments'
                     testbed = {name, url}
                 }
@@ -59,7 +61,7 @@ export default {
             </div>
         </template>
         <template #cloud="scope">
-            <div class="d-flex align-items-center">
+            <div class="d-flex align-items-center ml-4">
                 <detect-icon :size="20" :name="scope.item.cloud" />
                 <div class="ml-1"> {{cloudProviderFriendlyName(scope.item.cloud)}} </div>
             </div>
