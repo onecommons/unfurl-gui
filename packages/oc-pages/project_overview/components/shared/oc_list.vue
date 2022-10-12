@@ -106,6 +106,7 @@ export default {
             'getDisplayableDependenciesByCard',
             'getCardProperties',
             'resolveResourceTypeFromAny',
+            'resolveResourceTemplate',
             'cardStatus',
             'lookupEnvironmentVariable',
             'cardCanIncrementalDeploy',
@@ -116,7 +117,20 @@ export default {
         },
         // TODO reuse code between attributes and properties
         properties() {
-            let properties = this._card.properties
+            let properties = this._card.imported? null: this._card.properties
+            if(!properties && this._card.template) {
+                if(typeof this._card.template == 'string') {
+                    properties = this.resolveResourceTemplate(this._card.template)?.properties
+                } else {
+                    properties = this._card.template?.properties
+                }
+            } else if(!properties) { console.warn('Something has gone wrong here') }
+
+            if(!properties) {
+                properties = []
+            }
+
+
             const titleMap = {}
             const sensitiveMap = {}
             const resourceType = this.resolveResourceTypeFromAny(this._card.type)
@@ -209,7 +223,7 @@ export default {
               return {...attribute, name, value, sensitive}
             })
 
-            if(this.cardCanIncrementalDeploy(this.card)) {
+            if(this.cardCanIncrementalDeploy(this.card) && this._readonly) {
                 attributes.push({
                     name: 'Incremental_Deploy',
                     value: this.card
@@ -229,12 +243,11 @@ export default {
             return this.renderOutputs && this._card.outputs?.length
         },
         shouldRenderInputs() {
-            return !this.importedResource && this.renderInputs && this._card.properties?.length
+            return this.renderInputs && this.properties.length
         },
         shouldRenderAttributes() {
             return (
                 // TODO fix these names
-                !this.shouldRenderInputs &&
                 this.renderInputs && 
                 this.attributes.length
             )
@@ -287,12 +300,15 @@ export default {
             const [deploymentName, resourceName] = this.card.imported.split(':')
             const deployment = this.getDeployments.find(dep => dep.name == deploymentName)
             const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
-            return dict['Resource'][resourceName]
+            const resource = dict['Resource'][resourceName]
+
+            // resolve the template here, since it's not in our other dictionary
+            return {...resource, template: dict['ResourceTemplate'][resource.template]}
         },
 
         _card() {
             if(this.importedResource) {
-                return {...this.card, ...this.importedResource}
+                return {...this.card, ...this.importedResource, imported: this.card.imported}
             }
             return this.card
         }

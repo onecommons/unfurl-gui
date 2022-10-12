@@ -249,11 +249,12 @@ export default {
             componentType = 'enum';
           } else if (currentValue.sensitive) {
             componentType = 'password';
-          }
-          if (currentValue.const === 'readonly') {
-            currentValue['x-read-only'] = true;
           } else if (currentValue.const) {
-            currentValue['x-hidden'] = true;
+            if (name[0] == "$") {  // internal properties like $toscatype
+              currentValue['x-hidden'] = true;
+            } else {
+              currentValue['x-read-only'] = true;
+            }
           }
         }
         currentValue['x-component'] = ComponentMap[componentType]

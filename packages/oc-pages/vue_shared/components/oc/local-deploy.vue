@@ -48,8 +48,9 @@ export default {
             const deploymentName = this.deployment.name
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
-
-            return `unfurl deploy ${projectName}/${deployPath} \\\n--use-environment ${environmentName} --commit`
+            const protocol = window.location.protocol
+            const token = this.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')
+            return `cd ${projectName}; unfurl deploy ${deployPath} --use-environment ${environmentName} --commit`
         }
     }
 }

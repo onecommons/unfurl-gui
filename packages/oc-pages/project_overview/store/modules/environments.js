@@ -352,6 +352,13 @@ const actions = {
 
             await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath)
         }
+        if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')) {
+            const scopes = ['api', 'read_api', 'read_registry', 'write_registry', 'read_repository', 'write_repository']
+            const UNFURL_PROJECT_TOKEN = await generateProjectAccessToken(encodeURIComponent(fullPath), {name: 'UNFURL_PROJECT_TOKEN', scopes})
+
+            if(! UNFURL_PROJECT_TOKEN) return
+            await patchEnv({UNFURL_PROJECT_TOKEN: {value: UNFURL_PROJECT_TOKEN, masked: true}}, '*', fullPath)
+        }
     },
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
