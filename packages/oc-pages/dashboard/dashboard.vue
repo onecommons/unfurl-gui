@@ -77,7 +77,7 @@ export default {
         )
         if(shouldRedirectToExplore) {
             createFlash({message: 'Redirecting to our blueprints catalog...', type: FLASH_TYPES.NOTICE})
-            window.location.href = '/explore'
+            window.location.href = '/explore/blueprints'
 
             this.applyUserSetting({key: USER_TOURED_EXPLORE_PAGE, value: true})
         }
