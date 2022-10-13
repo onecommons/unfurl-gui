@@ -1,6 +1,7 @@
 import _ from 'lodash'
 import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import { fetchUser } from 'oc_vue_shared/client_utils/user'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
 function isMobileLayout() {
@@ -13,6 +14,7 @@ const state = () => ({
     isMobileLayout: isMobileLayout(),
     namespace: null,
     dashboard: null,
+    dashboardProjectInfo: null,
     user: null
 })
 
@@ -36,6 +38,10 @@ const mutations = {
 
     setUser(state, user) {
         state.user = user
+    },
+
+    setDashboardProjectInfo(state, projectInfo) {
+        state.dashboardProjectInfo = projectInfo
     }
 }
 
@@ -43,6 +49,7 @@ const getters = {
     getRouterHook(state) {return state.routerHook},
     getCurrentNamespace(state, getters) {return state.namespace || getters.getUsername},
     getHomeProjectPath(state, getters)  {return `${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`},
+    getHomeProjectName(state) { return state.dashboardProjectInfo?.name || 'Dashboard' },
     getUsername() {return window.gon.current_username},
     getUser(state) {
         return state.user
@@ -90,7 +97,12 @@ const actions = {
 
     async populateCurrentUser({commit}) {
         commit('setUser', await fetchUser())
-    } 
+    },
+
+    async populateDashboardProject({commit, getters}) {
+        const projectInfo = await fetchProjectInfo(encodeURIComponent(getters.getHomeProjectPath))
+        commit('setDashboardProjectInfo', projectInfo)
+    }
 }
 
 export default {state, mutations, getters, actions}
