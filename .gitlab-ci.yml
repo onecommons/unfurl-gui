@@ -59,77 +59,77 @@ build:
 nextcloud_aws:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/aws*nextcloud*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/aws*nextcloud*.js'
   rules:
     - if: $TEST == "nextcloud" || $TEST == "nextcloud_aws" || $TEST == "all"
 
 nextcloud_gcp:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/gcp*nextcloud*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/gcp*nextcloud*.js'
   rules:
     - if: $TEST == "nextcloud" || $TEST == "nextcloud_gcp" || $TEST == "all"
 
 nextcloud_do:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/do*nextcloud*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/do*nextcloud*.js'
   rules:
     - if: $TEST == "nextcloud" || $TEST == "nextcloud_do" || $TEST == "all"
 
 baserow:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/*baserow*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*baserow*.js'
   rules:
     - if: $TEST == "baserow" || $TEST == "all"
 
 minecraft:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/*minecraft*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*minecraft*.js'
   rules:
     - if: $TEST == "minecraft" || $TEST == "all"
 
 container_webapp:
   extends: .tests
   script:
-    - EXTERNAL=0 yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/*container-webapp*.js'
+    - EXTERNAL=0 yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*container-webapp*.js'
   rules:
     - if: $TEST == "container_webapp" || $TEST == "all"
 
 container_webapp_gcp:
   extends: .tests
   script:
-    - EXTERNAL=0 yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/gcp__container-webapp*.js'
+    - EXTERNAL=0 yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/gcp__container-webapp*.js'
   rules:
     - if: $TEST == "container_webapp_gcp"
 
 container_webapp_aws:
   extends: .tests
   script:
-    - EXTERNAL=0 yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/aws__container-webapp*.js'
+    - EXTERNAL=0 yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/aws__container-webapp*.js'
   rules:
     - if: $TEST == "container_webapp_aws"
 
 ghost:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/*ghost*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*ghost*.js'
   rules:
     - if: $TEST == "ghost" || $TEST == "all"
 
 mediawiki:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/*mediawiki*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*mediawiki*.js'
   rules:
     - if: $TEST == "mediawiki" || $TEST == "all"
 
 wordpress:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/*wordpress*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*wordpress*.js'
   rules:
     - if: $TEST == "wordpress" || $TEST == "all"
 
@@ -137,7 +137,7 @@ wordpress:
 kubernetes:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s './cypress/integration/blueprints/k8s*.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/k8s*.js'
   rules:
     - if: $TEST == "k8s" || $TEST == "all"
 
@@ -146,6 +146,6 @@ kubernetes:
 cloud_redis:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace blueprints -- --browser chrome -s cypress/integration/blueprints/gcp__nextcloud__memorystore.js,cypress/integration/blueprints/aws__nextcloud__memorydb.js
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/integration/blueprints/gcp__nextcloud__memorystore.js,cypress/integration/blueprints/aws__nextcloud__memorydb.js
   rules:
     - if: $TEST == "cloud_redis"

@@ -78,7 +78,8 @@ module.exports = (on, config) => {
   config.env.GENERATE_SUBDOMAINS = ['1', 'true', 'yes', true].includes(GENERATE_SUBDOMAINS)
     
 
-  console.log({...config.env, OC_PASSWORD: '[MASKED]'})
+  //console.log({...config.env, OC_PASSWORD: '[MASKED]'})
+
   on('task', {
     log (message) {
       console.log(message)

@@ -92,7 +92,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     let projectPath = dt.projectPath
     if (REPOS_NAMESPACE) {
       projectPath = projectPath.split('/')
-      projectPath[0] = REPOS_NAMESPACE
+      projectPath = [REPOS_NAMESPACE, projectPath[projectPath.length - 1]]
       projectPath = projectPath.join('/')
     }
 
@@ -200,7 +200,7 @@ Cypress.Commands.add('recreateDeployment', options => {
                   .prev()
                   .click()
 
-                cy.get(`[data-testid^="resource-selection-"]`).click()
+                cy.get(`[data-testid^="resource-selection-"]`).last().click()
 
                 cy.contains('button', 'Next').click()
               } else {
