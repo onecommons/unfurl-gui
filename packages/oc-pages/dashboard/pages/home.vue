@@ -15,6 +15,8 @@ import _ from 'lodash';
 import { __ } from '~/locale';
 import * as routes from '../router/constants'
 
+import { GlMarkdown, GlCard, GlIcon } from '@gitlab/ui'
+
 
 function pluralizeResourceType(count) {
   if(count == 0) return ''
@@ -41,13 +43,15 @@ export default {
         EnvironmentCell,
         DeploymentCell,
         ResourceCell,
-        DashboardWelcome
+        DashboardWelcome,
+        GlMarkdown, GlCard, GlIcon
     },
     data() {
         return { 
             routes,
             //fields,
             //items: [],
+            readme: gon.readme,
             loaded: false,
         };
     },
@@ -118,25 +122,42 @@ export default {
             </div>
         </div>
     </div>
+
     <TableComponent v-if="totalDeploymentsCount > 0" :items="tableItems" :fields="tableFields">
-    <template #empty>
-      <center class="my-5" style="font-size: 1.3em;">
-        You haven't deployed anything yet. Browse our <a href="/explore/blueprints" target="_blank">Starter Application Blueprints</a> to get started!
-      </center>
-    </template>
-    <template #application="scope">
+      <template #empty>
+        <center class="my-5" style="font-size: 1.3em;">
+          You haven't deployed anything yet. Browse our <a href="/explore/blueprints" target="_blank">Starter Application Blueprints</a> to get started!
+        </center>
+      </template>
+      <template #application="scope">
         <application-cell :application="scope.item.context.application" />
-    </template>
-    <template #environment="scope">
+      </template>
+      <template #environment="scope">
         <environment-cell :environment="scope.item.context.environment" />
-    </template>
-    <template #deployment="scope">
+      </template>
+      <template #deployment="scope">
         <deployment-cell :scope="scope" :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" />
-    </template>
-    <template #resource="scope">
+      </template>
+      <template #resource="scope">
         <resource-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" :resource="scope.item.context.resource" />
-    </template>
+      </template>
     </TableComponent> 
+
+    <!-- card like on bluperint page -->
+    <gl-card v-if="readme" class="mt-6 consistent-card">
+        <template #header>
+            <div class="d-flex align-items-center">
+                <gl-icon name="information-o" class="mr-2"/>
+                <h5 class="mb-0 mt-0">
+                    {{__('README.md')}}
+                </h5>
+            </div>
+        </template>
+        <gl-markdown class="md" v-html="readme" />
+    </gl-card>
+
+
+    <!--gl-markdown class="mt-6" v-html="readme" /-->
 </div>
 </template>
 
@@ -144,6 +165,24 @@ export default {
 .status-item {
   display: flex;
   align-items: flex-end;
+}
+
+
+/* currently unused */
+.gl-dark .consistent-card >>> .gl-card-header {
+  background-color: #2F3030;
+}
+
+.consistent-card >>> .gl-card-header {
+  background-color: #E3F7FF;
+}
+
+.gl-dark .consistent-card >>> .gl-card-body {
+  background-color: rgb(18, 18, 18);
+}
+
+.consistent-card >>> .gl-card-body {
+  background-color: white;
 }
 
 .quantity-cards {
