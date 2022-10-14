@@ -1,9 +1,20 @@
 <script>
+import {mapGetters} from 'vuex'
 export default {
     name: 'DashboardWelcome',
     data() {
         return {
             greetingName: window.gon.greetingName || window.gon.current_user_fullname
+        }
+    },
+    computed: {
+        ...mapGetters(['getCurrentNamespace', 'getHomeProjectName', 'getUsername', 'getHomeProjectPath']),
+        message() {
+            if(this.getCurrentNamespace == this.getUsername && this.getHomeProjectName.toLowerCase() == 'dashboard') {
+                return 'You haven’t deployed anything yet.'
+            }
+            return `You haven't deployed anything to ${this.getHomeProjectPath} yet.`
+
         }
     }
 }
@@ -17,7 +28,7 @@ export default {
 
         <div class="wcard">
             <div class="instructions">
-                You haven’t deployed anything yet. <br>
+                {{message}} <br>
                 Browse our <a href="/explore/blueprints">Starter Application Blueprints</a> and refer to our <a href="/help">help guides</a> to get started.
             </div>
         </div>
