@@ -45,7 +45,6 @@ export default {
   data() {
     return {
       uiTimeout: null,
-      triedFetching: false,
       createNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
@@ -224,6 +223,16 @@ export default {
       }
     },
 
+    environmentsAreReady: {
+      immediate: true,
+      handler(val) {
+        if(val) {
+          this.fetchItems()
+        }
+      }
+    },
+
+
     resourceName: function(val) {
       this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     },
@@ -247,10 +256,6 @@ export default {
   },
 
   created() {
-    this.syncGlobalVars(this.$projectGlobal);
-    if(this.environmentsAreReady && !this.triedFetching) {
-      this.fetchItems()
-    }
     bus.$on('moveToElement', (obj) => {
       const { elId } = obj;
       this.scrollDown(elId, 500);
@@ -362,7 +367,6 @@ export default {
 
     async fetchItems(n=1) {
       try {
-        this.triedFetching = true
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
         const projectPath = this.project.globalVars.projectPath

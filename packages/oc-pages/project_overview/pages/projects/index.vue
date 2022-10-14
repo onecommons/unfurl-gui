@@ -196,7 +196,6 @@ export default {
     },
 
     created() {
-        this.syncGlobalVars(this.$projectGlobal);
         bus.$on('deployTemplate', (template) => {
             this.instantiateAs = 'deployment-draft'
             this.templateSelected = {...template};
