@@ -50,10 +50,13 @@ export default {
             const link = await generateIssueLink(...this.issuesLinkArgs)
             window.open(link, '_blank')
         },
-        beforeResumeEdit() {
+        beforeResumeEdit(e) {
             // TODO move this into user_settings store
+            // used for cancel deployment
             sessionStorage['editing-draft-from'] = window.location.href
             sessionStorage['editing-target'] = this.resumeEditingTarget
+            e.preventDefault()
+            this.$emit('edit')
         }
     }
 }
