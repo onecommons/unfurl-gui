@@ -67,7 +67,7 @@ export default {
                 if(this.userCanEdit) result.push('edit-draft')
             }
             else {
-                if(this.deploymentItem?.isEditable && this.userCanEdit) result.push('edit-deployment')
+                if(this.userCanEdit) result.push('edit-deployment')
                 if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
             }
             result.push('clone-deployment')
@@ -169,6 +169,10 @@ export default {
             return result
         },
 
+        edit() {
+            this.$emit('edit', this.deployment, this.environment)
+        }
+
     },
 }
 </script>
@@ -192,6 +196,7 @@ export default {
          @incRedeploy="incRedeploy"
          @cancelJob="cancelJob"
          @localDeploy="localDeploy"
+         @edit="edit"
         />
         <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
             <template #button-content>
@@ -216,6 +221,7 @@ export default {
              @cancelJob="cancelJob"
              @incRedeploy="incRedeploy"
              @localDeploy="localDeploy"
+             @edit="edit"
              />
         </gl-dropdown>
     </div>
