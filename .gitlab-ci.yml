@@ -145,7 +145,7 @@ kubernetes:
 unfurl_cloud_dns:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s -e USE_UNFURL_DNS=opencloudservices.net './cypress/integration/blueprints/aws__nextcloud__mail-and-pg.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -e USE_UNFURL_DNS=opencloudservices.net -s './cypress/integration/blueprints/aws__nextcloud__only-mail.js'
   rules:
     - if: $TEST == "uc_dns" || $TEST == "all"
 
