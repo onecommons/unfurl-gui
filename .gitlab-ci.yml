@@ -142,6 +142,13 @@ kubernetes:
     - if: $TEST == "k8s" || $TEST == "all"
 
 
+unfurl_cloud_dns:
+  extends: .tests
+  script:
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s -e USE_UNFURL_DNS=opencloudservices.net './cypress/integration/blueprints/aws__nextcloud__mail-and-pg.js'
+  rules:
+    - if: $TEST == "uc_dns" || $TEST == "all"
+
 # These tests normally run with their respective blueprints
 cloud_redis:
   extends: .tests
