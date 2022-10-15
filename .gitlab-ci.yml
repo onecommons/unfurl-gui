@@ -82,14 +82,14 @@ baserow:
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*baserow*.js'
   rules:
-    - if: $TEST == "baserow" || $TEST == "all"
+    - if: $TEST =~ /baserow/ || $TEST == "all"
 
 minecraft:
   extends: .tests
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*minecraft*.js'
   rules:
-    - if: $TEST == "minecraft" || $TEST == "all"
+    - if: $TEST =~ /minecraft/ || $TEST == "all"
 
 container_webapp:
   extends: .tests
@@ -117,37 +117,35 @@ ghost:
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*ghost*.js'
   rules:
-    - if: $TEST == "ghost" || $TEST == "all"
+    - if: $TEST =~ /ghost/ || $TEST == "all"
 
 mediawiki:
   extends: .tests
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*mediawiki*.js'
   rules:
-    - if: $TEST == "mediawiki" || $TEST == "all"
+    - if: $TEST =~ /mediawiki/ || $TEST == "all"
 
 wordpress:
   extends: .tests
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/*wordpress*.js'
   rules:
-    - if: $TEST == "wordpress" || $TEST == "all"
-
+    - if: $TEST =~ /wordpress/ || $TEST == "all"
 
 kubernetes:
   extends: .tests
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s './cypress/integration/blueprints/k8s*.js'
   rules:
-    - if: $TEST == "k8s" || $TEST == "all"
-
+    - if: $TEST =~ /k8s/ || ($TEST == "all" && $SKIP !~ /k8s/)
 
 unfurl_cloud_dns:
   extends: .tests
   script:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -e USE_UNFURL_DNS=opencloudservices.net -s './cypress/integration/blueprints/aws__nextcloud__only-mail.js'
   rules:
-    - if: $TEST == "uc_dns" || $TEST == "all"
+    - if: $TEST =~ /uc_dns/ || $TEST == "all"
 
 # These tests normally run with their respective blueprints
 cloud_redis:
