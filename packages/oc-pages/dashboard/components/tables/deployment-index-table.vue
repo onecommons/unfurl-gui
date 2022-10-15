@@ -288,7 +288,6 @@ export default {
         onIntentToEdit(deployment, environment) {
             this.target = {deployment, environment}
             const deploymentItem = this.deploymentItemDirect({environment, deployment})
-            debugger
             if(deploymentItem?.isEditable) {
                 window.location.href = sessionStorage['editing-target']
             } else {

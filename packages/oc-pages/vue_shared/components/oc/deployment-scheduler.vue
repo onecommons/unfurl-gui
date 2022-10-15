@@ -19,7 +19,7 @@ export default {
         ...mapActions(['setEnvironmentVariable']),
     },
     computed: {
-        ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment']),
+        ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment', 'getCurrentContext']),
         subscriptionsDict() {
             try {
                 return JSON.parse(this.lookupVariableByEnvironment(UNFURL_PROJECT_SUBSCRIPTIONS, '*')) || {}
@@ -81,7 +81,7 @@ export default {
 }
 </script>
 <template>
-        <div class="d-flex mt-5 p align-items-center">
+        <div v-if="this.getCurrentContext != 'environment'" class="d-flex mt-5 p align-items-center">
             <detect-icon size="24" name="expire" />
             <div class="ml-5">
                 <el-checkbox v-model="incrementalDeploymentEnabled" :label="_label"/>

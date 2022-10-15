@@ -110,7 +110,8 @@ export default {
             'cardStatus',
             'lookupEnvironmentVariable',
             'cardCanIncrementalDeploy',
-            'getDeployments', 'getDeploymentDictionary'
+            'getDeployments', 'getDeploymentDictionary',
+            'getCurrentContext'
         ]),
         hasRequirementsSetter() {
             return Array.isArray(this.$store._actions.setRequirementSelected)
@@ -248,6 +249,7 @@ export default {
         shouldRenderAttributes() {
             return (
                 // TODO fix these names
+                !this.customInputComponent && 
                 this.renderInputs && 
                 this.attributes.length
             )
@@ -279,7 +281,7 @@ export default {
             return this.card.name.startsWith('__') || this.readonly || this.card.readonly
         },
         customInputComponent() {
-            return !this._readonly && getCustomInputComponent(this._card.type)
+            return (!this._readonly || this.getCurrentContext === false) && getCustomInputComponent(this._card.type)
         },
         cardType() {
             return this.resolveResourceTypeFromAny(this._card.type)
@@ -317,7 +319,7 @@ export default {
 </script>
 <template>
     <div>
-        <component :is="customInputComponent" v-if="customInputComponent" :card="_card"/>
+        <component :is="customInputComponent" :readonly="_readonly" v-if="customInputComponent" :card="_card"/>
         <gl-tabs v-if="shouldRenderTabs" class="">
             <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
