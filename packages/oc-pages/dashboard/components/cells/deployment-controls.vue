@@ -71,7 +71,7 @@ export default {
                 if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
             }
             result.push('clone-deployment')
-            if(this.deploymentItem?.isDeployed && this.userCanEdit) result.push('teardown')
+            if(!this.deploymentItem?.isDraft && this.userCanEdit) result.push('teardown')
 
             //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
             result.push('job-history')

@@ -288,7 +288,7 @@ export default {
         onIntentToEdit(deployment, environment) {
             this.target = {deployment, environment}
             const deploymentItem = this.deploymentItemDirect({environment, deployment})
-            if(deploymentItem?.isEditable) {
+            if(deploymentItem?.isDraft) {
                 window.location.href = sessionStorage['editing-target']
             } else {
                 this.intent = 'edit'
