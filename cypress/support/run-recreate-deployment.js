@@ -22,7 +22,7 @@ function pseudorandomPassword() {
 }
 
 Cypress.Commands.add('recreateDeployment', options => {
-  let fixture, shouldDeploy, shouldSave
+  let fixture, shouldDeploy, shouldSave, title
   if (typeof options == 'string') {
     fixture = options
     shouldDeploy = true
@@ -34,8 +34,9 @@ Cypress.Commands.add('recreateDeployment', options => {
   cy.fixture(fixture).then(deployment => {
     const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
     const dt = Object.values(DeploymentTemplate)[0]
-    dt.title = `Cy ${dt.title} ${Date.now().toString(36)}`
-    dt.name = slugify(dt.title)
+    title = options.title || `Cy ${dt.title} ${Date.now().toString(36)}`
+    dt.title = title
+    dt.name = slugify(title)
     const primary = ResourceTemplate[dt.primary]
 
     for(const key in DefaultTemplate) {
@@ -269,7 +270,8 @@ Cypress.Commands.add('recreateDeployment', options => {
       })
     } else if(shouldSave) {
       cy.get('[data-testid="save-draft-btn"]').click()
-      cy.url().should('not.contain', 'deployment-drafts')
+      cy.wait(BASE_TIMEOUT / 2)
+      cy.contains('Draft saved!').should('exist')
     }
   })
 })
