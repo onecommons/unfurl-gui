@@ -23,6 +23,7 @@ export default {
         }
          */
 
+        this.$store.dispatch('syncGlobalVars', this.$projectGlobal)
         this.$store.dispatch('populateCurrentUser').catch(() => {})
 
         let dashboard
@@ -32,7 +33,6 @@ export default {
           const pathComponents = dashboard.split('/')
           const namespace = pathComponents.slice(0, -1).join('/')
           const dashboardName = pathComponents[pathComponents.lastIndex]
-          console.log({namespace})
           this.$store.commit('setCurrentNamespace', namespace)
           this.$store.commit('setDashboardName', dashboardName)
         }

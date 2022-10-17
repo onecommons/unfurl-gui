@@ -19,6 +19,7 @@ export default {
             'populateJobsList',
             'populateDeploymentItems',
             'populateCurrentUser',
+            'populateDashboardProject'
             //'applyUserSetting'
         ]),
         ...mapMutations([
@@ -48,6 +49,7 @@ export default {
         this.setCurrentNamespace(currentNamespace);
         this.setDashboardName(pathComponents[pathComponents.lastIndex])
         this.populateCurrentUser()
+        this.populateDashboardProject()
 
         try {
           await Promise.all([this.loadDashboard(), this.populateJobsList()])

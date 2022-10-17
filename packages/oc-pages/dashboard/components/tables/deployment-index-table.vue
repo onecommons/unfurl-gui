@@ -251,6 +251,9 @@ export default {
                     )
                     console.log(result)
                     return
+                case 'edit':
+                    window.location.href = sessionStorage['editing-target']
+                    return
                 default:
                     return
 
@@ -282,6 +285,16 @@ export default {
             this.intent = 'incRedeploy'
             this.target = {deployment, environment}
         },
+        onIntentToEdit(deployment, environment) {
+            this.target = {deployment, environment}
+            const deploymentItem = this.deploymentItemDirect({environment, deployment})
+            if(deploymentItem?.isDraft) {
+                window.location.href = sessionStorage['editing-target']
+            } else {
+                this.intent = 'edit'
+            }
+        },
+
         hasDeployPath(scope) {
             return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
         },
@@ -378,6 +391,8 @@ export default {
                     return `Deploy ${targetTitle} locally with Unfurl`
                 case 'incRedeploy':
                     return `Force an update of ${targetTitle}?`
+                case 'edit':
+                    return `Edit deployment '${targetTitle}'?`
                 default: return ''
             }
         },
@@ -516,6 +531,14 @@ export default {
                     />
                 </gl-form-group>
             </div>
+            <div class="m-3" v-if="intent == 'edit'">
+                <p>
+                    Some resources may have already been created for <b>{{target.deployment.title}}</b>.
+                </p>
+                <p>
+                    Updates to this deployment may be applied differently than expected.
+                </p>
+            </div>
             <div class="m-3" v-if="intent == 'localDeploy'">
                 <local-deploy :environment="target.environment" :deployment="target.deployment" />
             </div>
@@ -561,7 +584,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" @edit="onIntentToEdit" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>

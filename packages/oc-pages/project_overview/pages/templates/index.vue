@@ -45,7 +45,6 @@ export default {
   data() {
     return {
       uiTimeout: null,
-      triedFetching: false,
       createNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
@@ -224,15 +223,27 @@ export default {
       }
     },
 
+    environmentsAreReady: {
+      immediate: true,
+      handler(val) {
+        if(val) {
+          this.fetchItems()
+        }
+      }
+    },
+
+
     resourceName: function(val) {
       this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     },
 
+    /*
     environmentsAreReady(newState, _oldState) {
       if (newState) {
         this.fetchItems()
       }
     }
+    */
   },
 
   serverPrefetch() {
@@ -245,10 +256,6 @@ export default {
   },
 
   created() {
-    this.syncGlobalVars(this.$projectGlobal);
-    if(this.environmentsAreReady && !this.triedFetching) {
-      this.fetchItems()
-    }
     bus.$on('moveToElement', (obj) => {
       const { elId } = obj;
       this.scrollDown(elId, 500);
@@ -360,8 +367,9 @@ export default {
 
     async fetchItems(n=1) {
       try {
-        this.triedFetching = true
-        const projectPath = this.$projectGlobal.projectPath
+        // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
+        // we are currently populating the image in this.project.globalVars in a mutation
+        const projectPath = this.project.globalVars.projectPath
         if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;
@@ -373,7 +381,7 @@ export default {
           this.setEnvironmentScope(environmentName)
         }
         // TODO see if we can get rid of this, since it's probably already loaded
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.$projectGlobal});
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 
