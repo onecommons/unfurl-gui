@@ -8,7 +8,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getCurrentNamespace', 'getHomeProjectName', 'getUsername', 'getHomeProjectPath']),
+        ...mapGetters(['getCurrentNamespace', 'getHomeProjectName', 'getUsername', 'getHomeProjectPath', 'userCanEdit']),
         message() {
             if(this.getCurrentNamespace == this.getUsername && this.getHomeProjectName.toLowerCase() == 'dashboard') {
                 return 'You haven’t deployed anything yet.'
@@ -20,7 +20,7 @@ export default {
 }
 </script>
 <template>
-    <div class="greeting">
+    <div v-if="userCanEdit" class="greeting">
 
         <div class="greeting-text">
             Hi, {{greetingName}}
