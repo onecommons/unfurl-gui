@@ -52,11 +52,11 @@ export default {
 </script>
 <template>
     <table-component no-margin hide-filter :use-collapse-all="false" :fields="$options.fields" :items="items">
-        <template #deployment$head>
-            <span class="ml-4">Deployment</span>
+        <template #cloud$head>
+            <span class="ml-4">Cloud</span>
         </template>
         <template #deployment="scope">
-            <div class="ml-4">
+            <div>
                 <a target="blank" :href="scope.item.deployment.url">{{scope.item.deployment.name}}</a>
             </div>
         </template>

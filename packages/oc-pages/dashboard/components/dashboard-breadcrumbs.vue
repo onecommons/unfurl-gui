@@ -1,8 +1,8 @@
 <script>
+import {mapGetters} from 'vuex'
 import {GlIcon, GlBreadcrumb} from '@gitlab/ui'
 import BreadcrumbAvatar from './breadcrumb-avatar.vue'
 import * as routes from '../router/constants'
-import {__} from '~/locale'
 
 export default {
     name: 'DashboardBreadcrumbs',
@@ -14,9 +14,10 @@ export default {
         }
     },
     computed: {
+        ...mapGetters(['getHomeProjectName']),
         _items() {
             return [
-                {text: __('Dashboard'), to: {name: routes.OC_DASHBOARD_HOME, query: {}}},
+                {text: this.getHomeProjectName, to: {name: routes.OC_DASHBOARD_HOME, query: {}}},
                 ...this.items
             ]
         }

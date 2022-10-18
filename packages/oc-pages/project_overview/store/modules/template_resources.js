@@ -162,6 +162,7 @@ const actions = {
 
     // used by deploy and blueprint editing
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+        // TODO this doesn't make any sense to people reading this
         commit('setContext', false)
         if(!templateSlug) return false;
 
@@ -818,6 +819,7 @@ const getters = {
         // TODO figure out how to handle resources of a service
         return state.context != 'environment' && rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
     },
+
     resolveRequirementMatchChildren: (_state, getters) => function (requirement) {
         const match = typeof requirement == 'string'? requirement:
             state.context == 'deployment' ? requirement.target : requirement.match
@@ -845,6 +847,7 @@ const getters = {
             return (state.inputValidationStatus[card.name] || 'valid') == 'valid'
         };
     },
+
     cardDependenciesAreValid(state, getters) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
@@ -856,17 +859,20 @@ const getters = {
         };
 
     },
+
     cardIsValid(state, getters) {
         return function(card) {
             return getters.cardInputsAreValid(card) && getters.cardDependenciesAreValid(card);
         };
     },
+
     lookupCardPropertyValue(state) {
         // TODO support attributes
         return function(card, property) {
             return state.resourceTemplates[card]?.properties?.find(prop => prop.name == property)?.value
         }
     },
+
     getCurrentEnvironment(state, _getters, _, rootGetters) {
       try {
         return rootGetters.lookupEnvironment(state.lastFetchedFrom.environmentName)
@@ -874,15 +880,19 @@ const getters = {
         return null
       }
     },
+
     getCurrentEnvironmentName(state) {
         return state.lastFetchedFrom.environmentName
     },
+
     getCurrentEnvironmentType(_, getters) {
         return getters.getCurrentEnvironment?.primary_provider?.type
     },
+
     instantiableResourceTypes(state) {
         return state.availableResourceTypes.filter(rt => rt.visibility != 'hidden')
     },
+
     availableResourceTypesForRequirement(_, getters) {
         return function(requirement) {
             if(!requirement) return []
@@ -892,11 +902,13 @@ const getters = {
             })
         }
     },
+  
     resolveResourceTypeFromAvailable(_, getters) {
         return function(typeName) {
             return getters.instantiableResourceTypes.find(rt => rt.name == typeName)
         }
     },
+
     resolveResourceTypeFromAny(state, _a, _b, rootGetters) {
         return function(typeName) {
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
@@ -904,6 +916,7 @@ const getters = {
             return rootGetters?.environmentResolveResourceType(state.lastFetchedFrom?.environmentName, typeName) || null
         }
     },
+
     lookupResourceTemplate(state, _a, _b, rootGetters) {
         return function(resourceTemplate) {
             let result, sourceDt
@@ -916,6 +929,7 @@ const getters = {
             return result
         }
     },
+  
     lookupEnvironmentVariable(state, _a, _b, rootGetters) {
         return function(variableName) {
             return (
@@ -924,6 +938,7 @@ const getters = {
             )
         }
     },
+
     getParentDependency(state, getters) {
         return function(dependencyName) {
             let primaryName = state.deploymentTemplate.primary 
@@ -934,6 +949,7 @@ const getters = {
             return dependent
         }
     },
+
     getPrimary(state) {
         return state.resourceTemplates[state.deploymentTemplate.primary]
     },
@@ -946,6 +962,10 @@ const getters = {
 
     hasIncrementalDeployOption(state, getters) {
         return Object.values(state.resourceTemplates).some(card => getters.getCardExtends(card)?.includes('ContainerImageSource'))
+    },
+
+    getCurrentContext(state) {
+        return state.context
     }
 };
 

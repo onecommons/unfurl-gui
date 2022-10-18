@@ -154,3 +154,11 @@ cloud_redis:
     - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/integration/blueprints/gcp__nextcloud__memorystore.js,cypress/integration/blueprints/aws__nextcloud__memorydb.js
   rules:
     - if: $TEST == "cloud_redis"
+
+multiple_workflows:
+  extends: .tests
+  script:
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/integration/deployments/multiple-workflows.js
+  rules:
+    - if: $TEST == "multiple_workflows"
+

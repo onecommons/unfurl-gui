@@ -1,10 +1,8 @@
 import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
-import gql from 'graphql-tag'
-import graphqlClient from '../../graphql';
 import {cloneDeep} from 'lodash'
-import { USER_HOME_PROJECT, lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
@@ -14,7 +12,7 @@ import {generateGroupAccessToken} from 'oc_vue_shared/client_utils/group'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
-import {prefixEnvironmentVariables, environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import Vue from 'vue'
 
 
@@ -344,7 +342,7 @@ const actions = {
 
             if(namespace.kind == 'group') {
                 UNFURL_ACCESS_TOKEN = await generateGroupAccessToken('UNFURL_ACCESS_TOKEN', namespace.full_path)
-            } else {
+            } else if(projectInfo.owner.id == gon.current_user_id) {
                 UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
             }
 
