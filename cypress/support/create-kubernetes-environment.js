@@ -40,7 +40,7 @@ Cypress.Commands.add('k8sCompleteEnvironmentDialog', options => {
 })
 
 Cypress.Commands.add('createK8SEnvironment', (options) => {
-  const { environmentName, shouldCreateExternalResource } = Object.assign(
+  const { environmentName, shouldCreateExternalResource, shouldCreateDNS } = Object.assign(
     {
       environmentName: ENVIRONMENT_NAME,
     },
@@ -83,7 +83,9 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
   // create external resource
   if (shouldCreateExternalResource) {
-    cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+    if(shouldCreateDNS) {
+      cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+    }
     cy.uncheckedCreateMail();
     cy.saveExternalResources()
   }

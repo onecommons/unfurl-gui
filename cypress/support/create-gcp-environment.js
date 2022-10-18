@@ -6,7 +6,7 @@ const GCP_DNS_TYPE = Cypress.env('GCP_DNS_TYPE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 
-function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
+function createGCPEnvironment({environmentName, shouldCreateExternalResource, shouldCreateDNS}) {
   cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments`)
   cy.clickCreateEnvironmentButton()
   cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
@@ -17,7 +17,9 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource}) {
 
   // create external resource
   if (shouldCreateExternalResource) {
-    cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
+    if(shouldCreateDNS) {
+      cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
+    }
     cy.uncheckedCreateMail();
     cy.saveExternalResources()
   }
