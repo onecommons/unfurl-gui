@@ -85,7 +85,7 @@ export default {
             } 
 
             // invocation doesn't currently work
-            if(!this.deploymentItem?.isDraft) result.push('local-deploy')
+            if(!this.deploymentItem?.isDraft && !this.deploymentItem?.isUndeployed) result.push('local-deploy')
             result.push('view-in-repository')
 
             // these checks are inadequate

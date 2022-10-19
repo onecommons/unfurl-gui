@@ -533,12 +533,20 @@ export default {
                 </gl-form-group>
             </div>
             <div class="m-3" v-if="intent == 'edit'">
-                <p>
-                    Some resources may have already been created for <b>{{target.deployment.title}}</b>.
-                </p>
-                <p>
-                    Updates to this deployment may be applied differently than expected.
-                </p>
+                <div v-if="deploymentItemDirect({deployment: target.deployment, environment: target.environment}, 'isUndeployed')">
+                    <p>
+                        <b>Warning</b>: Re-deploying after you've torn down a deployment is not supported
+                    </p>
+                </div>
+                <div v-else>
+                    <p>
+                        Some resources may have already been created for <b>{{target.deployment.title}}</b>.
+                    </p>
+                    <p>
+                        Updates to this deployment may be applied differently than expected.
+                    </p>
+
+                </div>
                 <!-- 
                 TODO if teared down state
                 Warning: Re-deploying after you've torn down a deployment is not supported
