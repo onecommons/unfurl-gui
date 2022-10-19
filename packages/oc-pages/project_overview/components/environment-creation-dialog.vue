@@ -127,7 +127,7 @@ export default {
               __typename: 'ResourceTemplate'
           } : undefined
 
-          initUnfurlEnvironment(
+          await initUnfurlEnvironment(
             this.getHomeProjectPath,
             {
               name: slugify(this.environmentName),
