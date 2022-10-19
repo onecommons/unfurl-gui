@@ -35,26 +35,15 @@ export default {
         },
 
         cancelDeployment() {
-            const editingTarget = sessionStorage['editing-target']
-            const editingDraftFrom = sessionStorage['editing-draft-from']
-            // these don't need to be deleted because they will be overwritten by all current methods of editing a deployment
-            //delete sessionStorage['editing-target']
-            //delete sessionStorage['editing-draft-from']
-            if(decodeURIComponent(location.href.slice(location.origin.length)) == editingTarget) {
-                window.location.href = editingDraftFrom
-            } else {
-                // TODO re-enable this when we're able to update the current namespace 
-                // https://github.com/onecommons/gitlab-oc/issues/867
-                // this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
-                window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug}).href
-            }
+            this.$emit('cancelDeployment')
         }
     },
     computed: {
         ...mapGetters([
             'hasPreparedMutations',
             'environmentHasActiveDeployments',
-            'getCurrentEnvironment'
+            'getCurrentEnvironment',
+            'editingDeployed'
         ]),
         disableDelete() {
             if(this.deleteStatus == 'disabled') return true
@@ -98,7 +87,7 @@ export default {
                 >{{ __(`Delete ${target}`) }}</gl-button
             >
             <gl-button
-                v-show="cancelStatus != 'hidden'"
+                v-show="cancelStatus != 'hidden' && !editingDeployed"
                 title="Cancel Deployment"
                 :aria-label="__('Cancel Deployment')"
                 type="button"
@@ -130,13 +119,13 @@ export default {
                 :disabled="saveDraftStatus == 'disabled'"
                 
                 @click.prevent="saveDraft"
-                >{{ __('Save as Draft') }}</gl-button
+                >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}</gl-button
             >
 
         </div>
         <div class="d-flex">
             <gl-button
-                v-show="deployStatus != 'hidden'"
+                v-show="deployStatus != 'hidden' && !editingDeployed"
                 title="Deploy"
                 :aria-label="__('Deploy')"
                 data-testid="deploy-button"

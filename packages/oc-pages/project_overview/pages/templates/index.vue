@@ -106,6 +106,7 @@ export default {
       'getParentDependency',
       'getPrimary',
       'environmentsAreReady',
+      'editingDeployed'
     ]),
     
     deploymentDir() {
@@ -409,7 +410,7 @@ export default {
         if(type == 'draft'){
           await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
           sessionStorage['oc_flash'] = JSON.stringify({
-            message: __('Draft saved!'),
+            message: this.editingDeployed? __('Deployment saved!'): __('Draft saved!'),
             type: FLASH_TYPES.SUCCESS,
             duration: this.durationOfAlerts,
             linkText: 'Return to overview',
@@ -417,7 +418,16 @@ export default {
           });
           const query = {...this.$route.query}
           delete query.ts
-          window.location.href = this.$router.resolve({...this.$route, query}).href
+
+
+          if(this.editingDeployed) {
+              this.returnToReferrer()
+              return
+          }
+
+          if(this.edit) {
+              window.location.href = this.$router.resolve({...this.$route, query}).href
+          }
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           createFlash({
@@ -567,6 +577,23 @@ export default {
       return `Are you sure you want to delete <b>${this.getDeploymentTemplate.title}</b> template ?`;
     },
 
+    returnToReferrer() {
+        const editingTarget = sessionStorage['editing-target']
+        const editingDraftFrom = sessionStorage['editing-draft-from']
+        // these don't need to be deleted because they will be overwritten by all current methods of editing a deployment
+        //delete sessionStorage['editing-target']
+        //delete sessionStorage['editing-draft-from']
+
+        if(window.location.pathname + decodeURIComponent(window.location.search) == editingTarget) {
+            window.location.href = editingDraftFrom
+        } else {
+            // TODO re-enable this when we're able to update the current namespace 
+            // https://github.com/onecommons/gitlab-oc/issues/867
+            // this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
+            window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug}).href
+        }
+    }
+
   },
 };
 </script>
@@ -662,6 +689,7 @@ export default {
             @saveDraft="debouncedTriggerSave('draft')"
             @saveTemplate="debouncedTriggerSave()"
             @triggerDeploy="triggerDeployment()"
+            @cancelDeployment="returnToReferrer()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"
             />
 
