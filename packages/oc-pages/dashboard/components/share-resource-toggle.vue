@@ -25,8 +25,9 @@ export default {
             return (
                 // type?.implementations?.includes('connect') &&
                 this.card?.name &&
-                !this.card.name.startsWith('__') && // __ prefix is a hack for unfurl-gui to track external resources
-                this.card.status == 1
+                this.card?.__typename != 'ResourceTemplate' &&
+                !this.card.name.startsWith('__') // __ prefix is a hack for unfurl-gui to track external resources
+                // && this.card.status == 1 // require OK status
             )
         },
         sharedStatus() {
