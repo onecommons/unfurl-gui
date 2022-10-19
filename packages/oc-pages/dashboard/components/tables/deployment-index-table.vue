@@ -228,6 +228,7 @@ export default {
                     await this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
                     this.$router.replace({hash: '#_'})
                     this.handleDeleteRedirect()
+                    return
                 case 'clone':
                     const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment?.name)
                     const clonedDeploymentName = await this.cloneDeployment({
@@ -538,6 +539,10 @@ export default {
                 <p>
                     Updates to this deployment may be applied differently than expected.
                 </p>
+                <!-- 
+                TODO if teared down state
+                Warning: Re-deploying after you've torn down a deployment is not supported
+                -->
             </div>
             <div class="m-3" v-if="intent == 'localDeploy'">
                 <local-deploy :environment="target.environment" :deployment="target.deployment" />

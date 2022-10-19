@@ -13,6 +13,7 @@ import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import Vue from 'vue'
 
 
@@ -240,6 +241,58 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
+
+        const draftFiles = ['deployment.json'].map(file => `${deployPath.name}/${file}`) // I don't think it's important to delete this on it's own
+        const deploymentFiles = draftFiles.concat(
+            ['ensemble.json', 'ensemble.yaml', 'jobs.tsv'].map(file => `${deployPath.name}/${file}`)
+        )
+
+        // not able to get a proper error from this call, so let's just try both
+
+        try {
+            const response = await deleteFiles(
+                encodeURIComponent(rootGetters.getHomeProjectPath),
+                deploymentFiles,
+                {
+                    commitMessage: `Delete deployment records for ${deploymentName}`,
+                    accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+                }
+            )
+            /*
+            if(!response) {
+                throw new Error('Error occured while deleting files')
+            }
+            return
+            */
+        } catch(e) {
+            /*
+            console.log(`Could not delete ensemble records for ${deploymentName}.  This should be OK for drafts.`)
+            console.error(e.message)
+            */
+        }
+
+        try {
+            const response = await deleteFiles(
+                encodeURIComponent(rootGetters.getHomeProjectPath),
+                // try a second time with just draft files
+                draftFiles,
+                {
+                    commitMessage: `Delete deployment records for ${deploymentName}`,
+                    accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+                }
+            )
+            /*
+            if(!response) {
+                throw new Error('Error occured while deleting files')
+            }
+            return
+            */
+        } catch(e) {
+            /*
+            console.log(`Could not delete deployment records for ${deploymentName}`)
+            console.error(e.message)
+            */
+        }
     },
 
     setEnvironmentName({ commit }, envName) {

@@ -63,15 +63,18 @@ export default {
             const result = []
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
-            if(this.deploymentItem?.isDraft) {
-                if(this.userCanEdit) result.push('edit-draft')
-            }
-            else {
-                if(this.userCanEdit) result.push('edit-deployment')
-                if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
+                if(!this.deploymentItem?.isJobCancelable) {
+
+                if(this.deploymentItem?.isDraft) {
+                    if(this.userCanEdit) result.push('edit-draft')
+                }
+                else {
+                    if(this.userCanEdit) result.push('edit-deployment')
+                    if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
+                }
             }
             result.push('clone-deployment')
-            if(!this.deploymentItem?.isDraft && this.userCanEdit) result.push('teardown')
+            if(!this.deploymentItem?.isDraft && this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('teardown')
 
             //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
             result.push('job-history')
@@ -92,8 +95,7 @@ export default {
             // temporary solution -- hide behind developer setting
             if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
-            // hide delete as a temporary workaround for https://github.com/onecommons/gitlab-oc/issues/1115
-            // if(this.userCanEdit) result.push('delete')
+            if(this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('delete')
             return result
         },
         disabledButtons() {
