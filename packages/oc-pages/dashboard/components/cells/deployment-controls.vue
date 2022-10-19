@@ -83,15 +83,13 @@ export default {
             if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
                 result.push('view-artifacts')
             } 
-            result.push('local-deploy')
-            result.push('view-in-repository')
 
-            // TODO probably want to check that it's deployed
+            // invocation doesn't currently work
+            if(!this.deploymentItem?.isDraft) result.push('local-deploy')
+            result.push('view-in-repository')
 
             // these checks are inadequate
             //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
-
-
             // temporary solution -- hide behind developer setting
             if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
