@@ -48,13 +48,13 @@ export default {
       createNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
-      triggeredDeployment: false,
+      startedTriggeringDeployment: false,
+      dataWritten: false,
       requirementTemp: {},
       resourceName: '',
       userEditedResourceName: false,
       alertNameExists: null,
       titleKey: '',
-      dataUnsaved: false,
       completedRequirements: false,
       completedMainInputs: false,
       activeSkeleton: true,
@@ -146,19 +146,24 @@ export default {
       }
     },
     deployStatus() {
-      if(this.triggeredDeployment) return 'disabled'
+      if(this.startedTriggeringDeployment) return 'disabled'
       if(this.$route.name != routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT) return 'hidden'
       return this.cardIsValid(this.getPrimaryCard)? 'enabled': 'disabled';
     },
     cancelStatus() {
-      return this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT? 'enabled': 'hidden';
+      if(this.$route.name != routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT) {
+        return 'hidden'
+      }
+
+      if(this.startedTriggeringDeployment) {
+        return 'disabled'
+      }
+
+      return 'enabled'
     },
 
     shouldRenderTemplates() {
         return !this.activeSkeleton && !this.failedToLoad;
-    },
-    getMainInputs() {
-      return cloneDeep(this.$store.getters.getProjectInfo.inputs);
     },
 
     primaryPropsDelete() {
@@ -173,11 +178,13 @@ export default {
               ? this.getRequirementSelected.requirement.name 
               : __('Resource');
     },
+
     getRequirementResourceType() {
       const resourceTypeName = this.getRequirementSelected?.requirement?.constraint?.resourceType
       const resourceType =  this.resolveResourceTypeFromAny(resourceTypeName)
       return resourceType?.title || resourceTypeName
     },
+
     ocTemplateResourcePrimary() {
         return {
             text: __("Next"),
@@ -190,6 +197,7 @@ export default {
             attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: Object.keys(this.selectedServiceToConnect).length === 0 }]
         };
     },
+
     cancelProps() {
         return {
             text: __('Cancel'),
@@ -237,14 +245,6 @@ export default {
     resourceName: function(val) {
       this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     },
-
-    /*
-    environmentsAreReady(newState, _oldState) {
-      if (newState) {
-        this.fetchItems()
-      }
-    }
-    */
   },
 
   serverPrefetch() {
@@ -289,7 +289,7 @@ export default {
     // NOTE this doesn't work without https
     window.addEventListener('beforeunload', this.unloadHandler);
     this.setRouterHook((to, from, next) => {
-      if(!this.safeToNavigateAway) {
+      if(!this.safeToNavigateAway || (this.startedTriggeringDeployment && !this.dataWritten)) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
       }
@@ -337,7 +337,7 @@ export default {
     ]),
 
     unloadHandler(e) {
-      if(this.hasPreparedMutations) {
+      if(!(this.safeToNavigateAway && !(this.startedTriggeringDeployment && !this.dataWritten))){
         // NOTE most users will not see this message because browsers can override it
         e.returnValue = "You have unsaved changes.";
       }
@@ -447,7 +447,7 @@ export default {
 
     triggerDeployment: _.debounce(async function() {
       try {
-        this.triggeredDeployment = true;
+        this.startedTriggeringDeployment = true;
         await this.triggerSave();
         const result = await this.deployInto({
           environmentName: this.$route.params.environment,
@@ -467,17 +467,17 @@ export default {
         if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
         const router = this.$router
-        function beforeRedirect() {
-          const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-          window.history.replaceState({}, null, href)
-        }
 
-        beforeRedirect() // this is weird, the logic around here has just changed a lot recently
+        const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
+        window.history.replaceState({}, null, href)
+
+        this.dataWritten = true
         window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
       } catch (err) {
         console.error(err)
         const errors = err?.response?.data?.errors || [];
         const [error] = errors;
+        this.dataWritten = true
         return createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
       }
     }, 250),
@@ -520,7 +520,6 @@ export default {
         if(created){
           this.cleanModalResource();
           this.scrollDown(this.createNodeResourceData.name, 500);
-          this.dataUnsaved = true;
         }
       }catch (e) {
         console.error(e);
@@ -547,8 +546,6 @@ export default {
       try {
         //this.clearPreparedMutations()
         const deleted = await this.deleteNode(this.deleteNodeData);
-
-        if(deleted) this.dataUnsaved = true;
       } catch (e) {
         console.error(e);
         createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
@@ -679,7 +676,7 @@ export default {
 
       <!-- Buttons -->
       <template-buttons 
-            :loading-deployment="triggeredDeployment"
+            :loading-deployment="startedTriggeringDeployment"
             :save-status="saveStatus"
             :save-draft-status="saveDraftStatus"
             :delete-status="deleteStatus"
