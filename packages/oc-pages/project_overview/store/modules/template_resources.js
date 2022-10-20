@@ -305,7 +305,7 @@ const actions = {
         
         commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
-        commit('createTemplateResource', primary)
+        commit('createTemplateResource', {...primary, _deployed: getters.editingDeployed})
         return true;
     },
 

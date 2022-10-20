@@ -188,7 +188,7 @@ export default {
             class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
             <div style="height: 32px;">
                 <gl-button
-                    v-if="getCurrentActionLabel(dependency) !== 'Disconnect'"
+                    v-if="getCurrentActionLabel(dependency) !== 'Disconnect' || card._deployed"
                     title="edit"
                     :aria-label="__(`edit`)"
                     type="button"
@@ -214,7 +214,7 @@ export default {
             class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
             <div style="height: 32px;">
                 <gl-button
-                    v-if="canConnectServices"
+                    v-if="canConnectServices && !card._deployed"
                     title="connect"
                     :aria-label="__(`connect`)"
                     type="button"
@@ -224,6 +224,7 @@ export default {
                 >{{ __('Connect') }}</gl-button>
 
                 <gl-button
+                    v-if="!card._deployed"
                     title="create"
                     :aria-label="__(`create`)"
                     type="button"
