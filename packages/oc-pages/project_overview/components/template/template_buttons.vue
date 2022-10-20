@@ -92,6 +92,7 @@ export default {
                 :aria-label="__('Cancel Deployment')"
                 type="button"
                 icon="cancel"
+                :disabled="cancelStatus == 'disabled'"
                 class=""
                 @click.prevent="cancelDeployment"
                 >{{ __('Cancel Deployment') }}

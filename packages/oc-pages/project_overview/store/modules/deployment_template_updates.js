@@ -2,11 +2,9 @@ import { __ } from "~/locale";
 import _ from 'lodash'
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
-import axios from '~/lib/utils/axios_utils'
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
 import {userDefaultPath} from 'oc_vue_shared/util.mjs'
-import {USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 
 
