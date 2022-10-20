@@ -29,7 +29,7 @@ export default {
         <div class="wcard">
             <div class="instructions">
                 {{message}} <br>
-                Browse our <a href="/explore/blueprints">Starter Application Blueprints</a> and refer to our <a href="/help">help guides</a> to get started.
+                Browse our <a href="/explore/blueprints">Cloud Blueprints</a> and refer to our <a href="/help">help guides</a> to get started.
             </div>
         </div>
     </div>
