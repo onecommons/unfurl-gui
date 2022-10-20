@@ -210,17 +210,10 @@ export default {
         mappedAvailableTypes() {
             const mapping = {}
             for(const type of this.instantiableResourceTypes) {
-                const directSuperClass = type.extends[1]
-                const children = mapping[directSuperClass] || []
+                const badge = type.badge || 'Other'
+                const children = mapping[badge] || []
                 children.push(type)
-                mapping[directSuperClass] = children
-            }
-            for(const key in mapping) {
-                const typeTitle = this.resolveResourceTypeFromAny(key)?.title
-                if(typeTitle) {
-                    mapping[typeTitle] = mapping[key]
-                    delete mapping[key]
-                }
+                mapping[badge] = children
             }
 
             return mapping
