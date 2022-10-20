@@ -547,10 +547,6 @@ export default {
                     </p>
 
                 </div>
-                <!-- 
-                TODO if teared down state
-                Warning: Re-deploying after you've torn down a deployment is not supported
-                -->
             </div>
             <div class="m-3" v-if="intent == 'localDeploy'">
                 <local-deploy :environment="target.environment" :deployment="target.deployment" />

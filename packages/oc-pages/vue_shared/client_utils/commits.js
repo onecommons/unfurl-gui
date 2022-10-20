@@ -4,9 +4,12 @@ const DEFAULT_DELETE_MESSAGE = 'Delete deployment records'
 
 function generateConfig(options) {
     if(options?.accessToken) {
-        return {headers: {
-            'PRIVATE-TOKEN': options.accessToken
-        }}
+        return {
+            headers: { 'PRIVATE-TOKEN': options.accessToken, },
+            validateStatus(status) {
+                return true
+            }
+        }
     }
 }
 export async function deleteFiles(projectId, files, options) {
@@ -21,5 +24,11 @@ export async function deleteFiles(projectId, files, options) {
 
     const config = generateConfig(options)
 
-    return await axios.post(`/api/v4/projects/${projectId}/repository/commits`, payload, config)?.data
+    const response = await axios.post(`/api/v4/projects/${projectId}/repository/commits`, payload, config)
+
+    if(response.status >= 400) {
+        throw(new Error(response?.data?.message))
+    }
+
+    return response?.data
 }

@@ -247,8 +247,6 @@ const actions = {
             ['ensemble.json', 'ensemble.yaml', 'jobs.tsv'].map(file => `${deployPath.name}/${file}`)
         )
 
-        // not able to get a proper error from this call, so let's just try both
-
         try {
             const response = await deleteFiles(
                 encodeURIComponent(rootGetters.getHomeProjectPath),
@@ -258,41 +256,24 @@ const actions = {
                     accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
                 }
             )
-            /*
-            if(!response) {
-                throw new Error('Error occured while deleting files')
-            }
             return
-            */
         } catch(e) {
-            /*
-            console.log(`Could not delete ensemble records for ${deploymentName}.  This should be OK for drafts.`)
-            console.error(e.message)
-            */
+            // expected error
+            if(e.message != "A file with this name doesn't exist") {
+                console.error(e)
+                throw(e)
+            }
         }
 
-        try {
-            const response = await deleteFiles(
-                encodeURIComponent(rootGetters.getHomeProjectPath),
-                // try a second time with just draft files
-                draftFiles,
-                {
-                    commitMessage: `Delete deployment records for ${deploymentName}`,
-                    accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
-                }
-            )
-            /*
-            if(!response) {
-                throw new Error('Error occured while deleting files')
+        const response = await deleteFiles(
+            encodeURIComponent(rootGetters.getHomeProjectPath),
+            // try a second time with just draft files
+            draftFiles,
+            {
+                commitMessage: `Delete deployment records for ${deploymentName}`,
+                accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             }
-            return
-            */
-        } catch(e) {
-            /*
-            console.log(`Could not delete deployment records for ${deploymentName}`)
-            console.error(e.message)
-            */
-        }
+        )
     },
 
     setEnvironmentName({ commit }, envName) {
