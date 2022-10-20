@@ -196,7 +196,7 @@ export default {
                     @click.prevent="findElementToScroll({requirement: dependency})"
                 >{{ __('Edit') }}</gl-button>
                 <gl-button
-                    v-if="getCurrentActionLabel(dependency)"
+                    v-if="getCurrentActionLabel(dependency) && !card._deployed"
                     :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                     :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
                     type="button"

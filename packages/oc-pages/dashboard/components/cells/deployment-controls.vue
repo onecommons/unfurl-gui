@@ -63,15 +63,18 @@ export default {
             const result = []
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
-            if(this.deploymentItem?.isDraft) {
-                if(this.userCanEdit) result.push('edit-draft')
-            }
-            else {
-                if(this.userCanEdit) result.push('edit-deployment')
-                if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
+                if(!this.deploymentItem?.isJobCancelable) {
+
+                if(this.deploymentItem?.isDraft) {
+                    if(this.userCanEdit) result.push('edit-draft')
+                }
+                else {
+                    if(this.userCanEdit) result.push('edit-deployment')
+                    if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
+                }
             }
             result.push('clone-deployment')
-            if(!this.deploymentItem?.isDraft && this.userCanEdit) result.push('teardown')
+            if(!this.deploymentItem?.isDraft && this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('teardown')
 
             //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
             result.push('job-history')
@@ -80,20 +83,17 @@ export default {
             if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
                 result.push('view-artifacts')
             } 
-            result.push('local-deploy')
-            result.push('view-in-repository')
 
-            // TODO probably want to check that it's deployed
+            // invocation doesn't currently work
+            if(!this.deploymentItem?.isDraft && !this.deploymentItem?.isUndeployed) result.push('local-deploy')
+            result.push('view-in-repository')
 
             // these checks are inadequate
             //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
-
-
             // temporary solution -- hide behind developer setting
             if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
-            // hide delete as a temporary workaround for https://github.com/onecommons/gitlab-oc/issues/1115
-            // if(this.userCanEdit) result.push('delete')
+            if(this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('delete')
             return result
         },
         disabledButtons() {

@@ -293,7 +293,7 @@ const actions = {
 
                 const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '');
 
-                commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name});
+                commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name, _deployed: getters.editingDeployed});
 
                 if(resolvedDependencyMatch) {
                     createMatchedTemplateResources(resolvedDependencyMatch);
@@ -966,6 +966,16 @@ const getters = {
 
     getCurrentContext(state) {
         return state.context
+    },
+
+    editingDeployed(state, _a, _b, rootGetters) {
+        try {
+            rootGetters.resolveDeployment(state.deploymentTemplate.name)
+        }
+        catch(e) {
+            return false
+        }
+        return state.context === false
     }
 };
 

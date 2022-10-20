@@ -13,6 +13,7 @@ import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import Vue from 'vue'
 
 
@@ -240,6 +241,39 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
+
+        const draftFiles = ['deployment.json'].map(file => `${deployPath.name}/${file}`) // I don't think it's important to delete this on it's own
+        const deploymentFiles = draftFiles.concat(
+            ['ensemble.json', 'ensemble.yaml', 'jobs.tsv'].map(file => `${deployPath.name}/${file}`)
+        )
+
+        try {
+            const response = await deleteFiles(
+                encodeURIComponent(rootGetters.getHomeProjectPath),
+                deploymentFiles,
+                {
+                    commitMessage: `Delete deployment records for ${deploymentName}`,
+                    accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+                }
+            )
+            return
+        } catch(e) {
+            // expected error
+            if(e.message != "A file with this name doesn't exist") {
+                console.error(e)
+                throw(e)
+            }
+        }
+
+        const response = await deleteFiles(
+            encodeURIComponent(rootGetters.getHomeProjectPath),
+            // try a second time with just draft files
+            draftFiles,
+            {
+                commitMessage: `Delete deployment records for ${deploymentName}`,
+                accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+            }
+        )
     },
 
     setEnvironmentName({ commit }, envName) {
