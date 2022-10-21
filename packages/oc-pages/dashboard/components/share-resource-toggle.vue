@@ -14,7 +14,7 @@ export default {
     },
     components: {DetectIcon, GlDropdown, GlDropdownItem, GlDropdownDivider},
     computed: {
-        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny']),
+        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny', 'getUser']),
         canShareResource() {
             /*
              * don't require connect implementation, handled by Unfurl
@@ -47,6 +47,9 @@ export default {
                 return `Shared in <b>${this.getCurrentEnvironment.name}</b>.`
             }
             return ''
+        },
+        canPublish() {
+            return this.openCloudPublish && this.getUser?.external === false
         }
     },
     methods: {
@@ -125,7 +128,7 @@ export default {
             <div class="d-inline-flex">Share in current environment</div>
         </gl-dropdown-item>
         <gl-dropdown-item v-if="sharedStatus != 'dashboard'" @click="shareWithDashboard">Share with all environments</gl-dropdown-item>
-        <gl-dropdown-item v-if="openCloudPublish" @click="sharePublic">Share publically</gl-dropdown-item>
+        <gl-dropdown-item v-if="canPublish" @click="sharePublic">Share publically</gl-dropdown-item>
         <gl-dropdown-item v-if="sharedStatus" @click="stopSharing">Stop sharing <b>{{card.title}}</b></gl-dropdown-item>
     </gl-dropdown>
 </template>
