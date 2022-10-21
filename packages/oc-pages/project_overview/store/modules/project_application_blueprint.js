@@ -343,10 +343,11 @@ const getters = {
             const groups = {properties: [], computedProperties: []}
 
             for(const property of resourceTemplate.properties || []) {
-                if(type?.inputsSchema?.properties?.hasOwnProperty(property.name)) {
-                    groups.properties.push(property)
-                } else if(type?.computedPropertiesSchema?.properties?.hasOwnProperty(property.name)) {
+                if(type?.computedPropertiesSchema?.properties?.hasOwnProperty(property.name)) {
                     groups.computedProperties.push(property)
+                } else {
+                    // preserve arbitrary properties
+                    groups.properties.push(property)
                 }
             }
             return groups
