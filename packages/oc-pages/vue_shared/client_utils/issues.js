@@ -13,7 +13,7 @@ export function generateIssueLinkSync(projectPath, {title, description, context,
     const _context = {
         ...context,
         'Dashboard Project': projectPath,
-        'Referring URL': window.location.pathname + window.location.search + window.location.hash,
+        'Referring URL': window.location.href,
     }
     if(!_context['Dashboard Project']) delete _context['Dashboard Project']
     const result = [BASE_URL]

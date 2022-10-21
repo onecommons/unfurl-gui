@@ -11,7 +11,7 @@ export function generateGitLabIssueSync(projectPath, {title, description, contex
     console.log({title, description})
     const _context = {
         ...context,
-        'Referring URL': window.location.pathname + window.location.search + window.location.hash,
+        'Referring URL': window.location.href,
     }
     if(!_context['Dashboard Project']) delete _context['Dashboard Project']
     const result = [`${BASE_URL}/${projectPath}/-/issues/new?`]
