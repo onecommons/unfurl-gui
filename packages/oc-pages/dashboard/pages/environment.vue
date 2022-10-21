@@ -4,6 +4,7 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
+import {Tooltip as ElTooltip} from 'element-ui'
 import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from 'oc_vue_shared/oc-components'
 import _ from 'lodash'
 import { __ } from '~/locale'
@@ -35,7 +36,7 @@ function mapCloudProviderProps(ci_variables) {
 
 export default {
     name: 'Environment',
-    components: {OcTab, GlTabs, CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources, DetectIcon},
+    components: {OcTab, GlTabs, CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources, DetectIcon, ElTooltip},
     data() {
         const width = {width: 'max(500px, 50%)'}
         return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0}
@@ -254,7 +255,23 @@ export default {
             <template v-if="!showingProviderTab" #header>
                 <!-- potentially tricky to translate -->
                 <div class="d-flex align-items-center">
-                    <h2 style="margin: 0 1.25em">{{__('External Resources used by')}} <span style="font-weight: 400">{{environment.name}}</span></h2>
+                    <h2 style="margin: 0 1.25em">
+                        {{__('External Resources used by')}}
+                        <span style="font-weight: 400">{{environment.name}}</span>
+                        <el-tooltip v-if="showDeploymentResources">
+                            <template #content>
+                                <div style="max-width: 300px;">
+                                    <p>
+                                        External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
+                                    </p>
+                                    <p>
+                                        External resources are a convenient way to reuse configurations across many deployments.
+                                    </p>
+                                </div>
+                            </template>
+                            <i class="el-icon-info"></i>
+                        </el-tooltip>
+                    </h2>
                 </div>
             </template>
             <template #primary-controls>
