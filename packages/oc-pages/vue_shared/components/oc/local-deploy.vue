@@ -66,6 +66,7 @@ export default {
         <p >
             Clone this Unfurl project if you haven't already:
             <code-clipboard class="mt-1">{{localCloneInvocation}}</code-clipboard>
+            (Or if you have, run "git pull" to get latest.)
         </p>
         <p v-if="!deploymentExists"> 
             Create the deployment from the blueprint.
