@@ -293,7 +293,7 @@ const actions = {
         commit('setUpdateObjectPath', `environments.json`, {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit(
-            'pushPreparedMutation', 
+            'pushPreparedMutation',
             _ => {
                 // I thought awaiting commit prepared mutations would make it so I don't have to clone env
                 // apparently not
@@ -346,19 +346,20 @@ const actions = {
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
-        variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = rootGetters.getCurrentNamespace + '.u.opencloudservices.net'
+        namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
+        variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
     async generateVaultPasswordIfNeeded({getters, dispatch, rootGetters}, {fullPath}) {
         const patchObj = {}
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
-            patchObj['UNFURL_VAULT_DEFAULT_PASSWORD'] = {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true} 
+            patchObj['UNFURL_VAULT_DEFAULT_PASSWORD'] = {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}
         }
 
         // issues with reactivity if this isn't set
         if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*')) {
-            patchObj['UNFURL_PROJECT_SUBSCRIPTIONS'] = {value: "{}", masked: false} 
+            patchObj['UNFURL_PROJECT_SUBSCRIPTIONS'] = {value: "{}", masked: false}
         }
 
         if(Object.keys(patchObj).length > 0) {
@@ -372,7 +373,7 @@ const actions = {
 
     },
     async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
-        const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath)) 
+        const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath))
         const namespace = projectInfo?.namespace
 
         if(!namespace) return
@@ -470,7 +471,7 @@ const actions = {
 };
 function envFilter(name){
     return env => env.name == name
-} 
+}
 
 const getters = {
     getEnvironments: state => state.projectEnvironments
@@ -479,7 +480,7 @@ const getters = {
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
     getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         let constraintType
-        if(typeof requirement != 'string') { constraintType = requirement?.constraint?.resourceType 
+        if(typeof requirement != 'string') { constraintType = requirement?.constraint?.resourceType
         } else { constraintType  = requirement }
         const filter = envFilter(environmentName)
         const environment = state.environments.find(filter) || state.projectEnvironments.find(filter)
@@ -505,7 +506,7 @@ const getters = {
         // uncomment to make local dev agnostic
         //if(!type) { return getters.getEnvironments }
         const result = getters.getEnvironments.filter(env => {
-            //if(env?.primary_provider) 
+            //if(env?.primary_provider)
             return lookupCloudProviderAlias(env.primary_provider?.type) == lookupCloudProviderAlias(type)
             //else return false
         })
@@ -533,7 +534,7 @@ const getters = {
         if(!type) return null
         return getters.getMatchingEnvironments(type).find(env => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
     },
-    
+
     getAdditionalDashboards(state) {
         return state.additionalDashboards
     },
@@ -605,7 +606,7 @@ const getters = {
     availableProviders(_, getters) {
         const result = []
         function isValidProvider(environment, template) {
-            const type = getters.environmentResolveResourceType(environment, template.type) 
+            const type = getters.environmentResolveResourceType(environment, template.type)
             if(!Array.isArray(type?.extends)) return false
             return type.extends.includes('unfurl.relationships.ConnectsTo.CloudAccount') || type.extends.includes('unfurl.relationships.ConnectsTo.K8sCluster')
         }
