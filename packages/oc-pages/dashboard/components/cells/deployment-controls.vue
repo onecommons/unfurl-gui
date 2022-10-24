@@ -84,8 +84,7 @@ export default {
                 result.push('view-artifacts')
             } 
 
-            // invocation doesn't currently work
-            if(!this.deploymentItem?.isDraft && !this.deploymentItem?.isUndeployed) result.push('local-deploy')
+            if(!this.deploymentItem?.isUndeployed) result.push('local-deploy')
             result.push('view-in-repository')
 
             // these checks are inadequate
