@@ -1,5 +1,5 @@
 <script>
-import {mapActions, mapGetters} from 'vuex'
+import {mapMutations, mapActions, mapGetters} from 'vuex'
 import {compatibilityMountJobConsole} from 'oc_vue_shared/compat'
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
 export default {
@@ -23,6 +23,7 @@ export default {
     },
     methods: {
         ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
+        ...mapMutations(['clearPreparedMutations']),
         async mountJobsConsole() {
             this.consoleApp = compatibilityMountJobConsole()
         },
@@ -33,6 +34,10 @@ export default {
             ])
 
             await this.populateDeploymentItems(this.$store.getters.getDashboardItems)
+
+            // strange behavior with some state not getting cleaned up before clone
+            // https://github.com/onecommons/gitlab-oc/issues/1231
+            this.clearPreparedMutations()
         },
         visitJobLogSection(jobLogSection, highestLineNumber=0) {
             if(jobLogSection.content && jobLogSection.lineNumber > highestLineNumber) {
