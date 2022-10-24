@@ -204,6 +204,11 @@ const actions = {
 
         commit('setUpdateObjectPath', 'environments.json', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
+        const commitMessage = parameters.workflow == 'undeploy'?
+            `Undeploy ${parameters.deploymentName} from ${parameters.environmentName}`:
+            `Deploy ${parameters.deploymentName} into ${parameters.environmentName}`
+
+        commit('setCommitMessage', commitMessage)
         commit('pushPreparedMutation', () => {
             return [{
                 typename: 'DeploymentPath',

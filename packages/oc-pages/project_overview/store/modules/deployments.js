@@ -34,6 +34,7 @@ const actions = {
     },
 
     async createDeploymentPathPointer({commit, dispatch, rootGetters}, {projectPath, environment, deploymentDir, dryRun, environmentName}) {
+        commit('setCommitMessage', `Record deployment path for ${deploymentDir}`)
         commit('setUpdateObjectPath', 'environments.json')
         commit('setUpdateObjectProjectPath', projectPath || rootGetters.getHomeProjectPath)
         const _environmentName = environmentName || environment?.name || environment
@@ -108,6 +109,7 @@ const actions = {
         const objectPath = `${deploymentDir}/deployment.json`
 
         commit('useBaseState', {}, {root: true})
+        commit('setCommitMessage', `Clone into ${newDeploymentName}`)
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
         commit('setUpdateObjectPath', objectPath, {root: true})
         for(const [typename, dictionary] of Object.entries(deploymentObj)) {
