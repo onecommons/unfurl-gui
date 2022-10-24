@@ -43,7 +43,8 @@ export default {
             'hasPreparedMutations',
             'environmentHasActiveDeployments',
             'getCurrentEnvironment',
-            'editingDeployed'
+            'editingDeployed',
+            'editingTorndown'
         ]),
         disableDelete() {
             if(this.deleteStatus == 'disabled') return true
@@ -87,15 +88,15 @@ export default {
                 >{{ __(`Delete ${target}`) }}</gl-button
             >
             <gl-button
-                v-show="cancelStatus != 'hidden' && !editingDeployed"
-                title="Cancel Deployment"
+                v-show="cancelStatus != 'hidden'"
+                :title="editingDeployed? 'Cancel': 'Cancel Deployment'"
                 :aria-label="__('Cancel Deployment')"
                 type="button"
                 icon="cancel"
                 :disabled="cancelStatus == 'disabled'"
                 class=""
                 @click.prevent="cancelDeployment"
-                >{{ __('Cancel Deployment') }}
+                >{{ __(editingDeployed? 'Cancel': 'Cancel Deployment') }}
             </gl-button>
             <gl-button
                 v-show="saveStatus != 'hidden'"
@@ -126,7 +127,7 @@ export default {
         </div>
         <div class="d-flex">
             <gl-button
-                v-show="deployStatus != 'hidden' && !editingDeployed"
+                v-show="deployStatus != 'hidden' && !editingTorndown"
                 title="Deploy"
                 :aria-label="__('Deploy')"
                 data-testid="deploy-button"
