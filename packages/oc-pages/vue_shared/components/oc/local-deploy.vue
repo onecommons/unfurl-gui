@@ -23,7 +23,7 @@ export default {
         _localCloneOptions() {
             const protocol = window.location.protocol
             const username = this.getUsername
-            const token = this.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')
+            const token = this.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             let server  = window.location.hostname
             if(window.location.port) {
                 server = server + ':' + window.location.port
@@ -39,19 +39,19 @@ export default {
             return { protocol, username, token, server, projectName, projectPath, projectId, environmentName, deploymentName, deployPath, blueprint, blueprintUrl }
         },
         localCreateDeploymentInvocation() {
-            return cloneBlueprint(this._localCloneOptions())
+            return cloneBlueprint(this._localCloneOptions)
         },
         localCloneInvocation() {
-            return cloneProject(this._localCloneOptions())
+            return cloneProject(this._localCloneOptions)
         },
         localDeployInvocation() {
             const projectName = this.getHomeProjectPath.split('/').pop()
             const deploymentName = this.deployment.name
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
-            return `cd ${projectName}; unfurl deploy ${deployPath} --use-environment ${environmentName} --commit`
+            return `unfurl deploy --commit ${deployPath} --use-environment ${environmentName}`
         },
-        deploymentExists() { return deployment.__typename != 'DeploymentTemplate' }
+        deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' }
     }
 }
 
