@@ -317,7 +317,8 @@ export default {
       'setUpdateObjectPath',
       'setUpdateObjectProjectPath',
       'setEnvironmentScope',
-      'pushPreparedMutation'
+      'pushPreparedMutation',
+      'setCommitMessage'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -406,8 +407,10 @@ export default {
     debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
     async triggerSave(type) {
       try {
-        await this.commitPreparedMutations();
         if(type == 'draft'){
+          const name = this.$route.query.fn;
+          this.setCommitMessage(`Save draft of ${name}`)
+          await this.commitPreparedMutations();
           await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
           sessionStorage['oc_flash'] = JSON.stringify({
             message: this.editingDeployed? __('Deployment saved!'): __('Draft saved!'),
@@ -425,11 +428,10 @@ export default {
               return
           }
 
-          if(this.edit) {
-              window.location.href = this.$router.resolve({...this.$route, query}).href
-          }
+          window.location.href = this.$router.resolve({...this.$route, query}).href
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
+          await this.commitPreparedMutations();
           createFlash({
             // TODO this doesn't make sense if it's a template
             message: __('Starting deployment...'),
@@ -448,6 +450,8 @@ export default {
     triggerDeployment: _.debounce(async function() {
       try {
         this.startedTriggeringDeployment = true;
+        const name = this.$route.query.fn;
+        this.setCommitMessage(`Trigger deployment of ${name}`)
         await this.triggerSave();
         const result = await this.deployInto({
           environmentName: this.$route.params.environment,
