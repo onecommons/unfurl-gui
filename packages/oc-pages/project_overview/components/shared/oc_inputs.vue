@@ -438,7 +438,7 @@ export default {
 .oc-inputs >>> .formily-element-form-item-extra {
   left: calc(100% - 300px);
   position: absolute;
-  font-size: 0.9em;
+  font-size: 0.8em;
   line-height: 1.1;
   max-height: 2.2em;
   overflow: hidden;
