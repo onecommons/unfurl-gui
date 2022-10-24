@@ -1,7 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 export async function generateGroupAccessToken(tokenName, groupId, options) {
     const {scopes, expiresAt} = Object.assign({
-        scopes: ['read_api', 'read_registry', 'write_registry', 'read_repository', 'write_repository'],
+        scopes: ['read_registry', 'read_repository'],
         expiresAt: ''
     }, options)
 

@@ -70,7 +70,7 @@ export async function fetchUserPublicEmail() {
 
 export async function generateAccessToken(tokenName, options) {
     const {scopes, expiresAt} = Object.assign({
-        scopes: ['read_user', 'read_api', 'read_repository', 'read_registry'],
+        scopes: ['read_repository', 'read_registry'],
         expiresAt: ''
     }, options)
 
