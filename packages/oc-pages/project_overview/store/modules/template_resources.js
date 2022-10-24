@@ -976,7 +976,15 @@ const getters = {
             return false
         }
         return state.context === false
+    },
+
+    editingTorndown(_a, getters, _b, rootGetters) {
+        return getters.editingDeployed && rootGetters.lookupDeployPath(
+            rootGetters.getDeployment.name,
+            getters.getCurrentEnvironmentName
+        )?.pipeline?.variables?.WORKFLOW == 'undeploy'
     }
+
 };
 
 export default {
