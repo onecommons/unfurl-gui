@@ -81,9 +81,8 @@ const actions = {
             const prevDeploymentName = getPreviousDeploymentName(deployPathName)
             const newDeploymentName = getNewDeploymentName(newDeploymentTitle, targetEnvironmentName)
 
-            deploymentObj.DeploymentTemplate[newDeploymentName] = deploymentObj.DeploymentTemplate[prevDeploymentName]
+            deploymentObj.DeploymentTemplate = { [newDeploymentName]: deploymentObj.DeploymentTemplate[prevDeploymentName] }
             renameDeploymentTemplate(deploymentObj.DeploymentTemplate[newDeploymentName], newDeploymentName, newDeploymentTitle)
-            delete deploymentObj.DeploymentTemplate[prevDeploymentName]
 
             if(targetEnvironmentName != environmentName) {
                 const variables = environmentVariableDependencies(deploymentObj)
