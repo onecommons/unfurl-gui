@@ -172,6 +172,7 @@ const actions = {
             upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
             upstreamBranch: state.upstreamBranch,
             upstreamProject: state.upstreamProject,
+            projectDnsZone: getters.lookupVariableByEnvironment('PROJECT_DNS_ZONE', '*'),
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
