@@ -346,7 +346,7 @@ const actions = {
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
-        namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
+        const namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
         variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
         commit('setVariablesByEnvironment', variablesByEnvironment)
     },
