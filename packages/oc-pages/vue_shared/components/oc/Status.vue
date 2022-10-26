@@ -26,6 +26,7 @@
       />
     </div>
     <detect-icon v-gl-tooltip.hover class="gl-ml-1" v-if="isProtected" title="Protected" name="protected" :size="size" />
+    <import-link v-if="card" :card="card"/>
     <div v-if="text || displayText" class="ml-1">{{_text}}</div>
     <!-- ignoring state for now -->
     <!--div v-if="state == 5">
@@ -41,7 +42,11 @@
 </template>
 <script>
 import { GlIcon } from '@gitlab/ui';
-import { DetectIcon } from 'oc_vue_shared/oc-components'
+import DetectIcon from './detect-icon.vue'
+import ImportLink from './import-link.vue'
+
+
+
 
 const StatusIndicators = [
   // Unknown
@@ -98,8 +103,8 @@ export default {
       type: Number,
       default: -1
     },
-    noTooltip: Boolean
-
+    noTooltip: Boolean,
+    card: Object
   },
   data() {
     return { StatusIndicators, StateNames};
@@ -122,9 +127,11 @@ export default {
       }
       return result
     },
+    
   },
   components: {
     DetectIcon,
+    ImportLink
   }
 };
 </script>
