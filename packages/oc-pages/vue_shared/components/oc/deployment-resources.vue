@@ -337,10 +337,10 @@ export default {
 
         scrollDown(elId, timeOut=500) {
             clearTimeout(this.uiTimeout);  
-            const anchorId = btoa(elId).replace(/=/g, '');
+            const anchorId = btoa(elId.replace('#', '')).replace(/=/g, '');
             this.uiTimeout = setTimeout(
                 () => {
-                    let anchor = document.querySelector(anchorId.startsWith('#') ? anchorId : `#${anchorId}`);
+                    let anchor = document.querySelector(`#${anchorId}`);
                     anchor = anchor || document.querySelector(elId.startsWith('#') ? elId  : `#${elId}`)
                     anchor?.scrollIntoView({behavior: "smooth", block: "start", inline: "start"});
                 },

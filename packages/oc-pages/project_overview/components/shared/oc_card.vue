@@ -118,9 +118,9 @@ export default {
 
             const size = this.isPrimary? 24: 16
             const className = ['gl-ml-3']
-            if(isValid && this.displayValidation) className.push('icon-green')
+            if(isValid && this._displayValidation) className.push('icon-green')
             let title
-            if (this.displayValidation) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
+            if (this._displayValidation) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
             const name = isValid? 'check-circle-filled': 'error-filled'
             const isProtected = this.card['protected']
             return {name, size, 'class': className, title, isProtected}
@@ -128,6 +128,14 @@ export default {
 
         _readonly() {
             return this.readonly || this.card?.imported || this.card?.readonly
+        },
+
+        _displayValidation() {
+            return this.displayValidation && ! this._readonly
+        },
+
+        _displayStatus() {
+            return this.displayStatus || this._readonly
         }
 
     },
@@ -174,11 +182,11 @@ export default {
                         <div v-if="card" class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                             <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
-                            <detect-icon v-if="displayValidation" v-bind="statusIconProps" />
+                            <detect-icon v-if="_displayValidation" v-bind="statusIconProps" />
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
-                        <div class="d-flex m-1" v-if="card && displayStatus">
-                            <status-icon :size="16" :state="card.state" :status="status" display-text v-bind="statusIconProps" />
+                        <div class="d-flex m-1" v-if="card && _displayStatus">
+                            <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
                         </div>
                     </slot>
                 </div>
