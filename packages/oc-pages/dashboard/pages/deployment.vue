@@ -153,6 +153,10 @@ export default {
             <oc-tab v-show="jobsData" title="Console" />
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
+            <template #primary-controls="card">
+                <share-resource-toggle class="mr-1" :card="card" />
+            </template>
+
             <template #controls="card">
                 <share-resource-toggle :card="card" />
             </template>

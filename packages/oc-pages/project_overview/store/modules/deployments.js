@@ -271,7 +271,11 @@ const actions = {
 
     shareResourceIntoEnvironment({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
         // TODO not sure we want to couple with template_resources in here
-        const resource = rootGetters.getCardsStacked.find(card => card.name == resourceName)
+        let resource = rootGetters.getCardsStacked.find(card => card.name == resourceName)
+
+        if(!resource && resourceName == rootGetters.getPrimaryCard.name) {
+            resource = rootGetters.getPrimaryCard
+        }
 
         const newObject = {
             name: `__${environmentName}__${deploymentName}__${resourceName}`,
