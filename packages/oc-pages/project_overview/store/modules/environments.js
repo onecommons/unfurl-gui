@@ -347,9 +347,14 @@ const actions = {
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
-        const namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
-        variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
-        commit('setVariablesByEnvironment', variablesByEnvironment)
+      
+        try {
+            const namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
+            variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
+            commit('setVariablesByEnvironment', variablesByEnvironment)
+        } catch(e) {
+            console.warn('Unable to set PROJECT_DNS_ZONE', e)
+        }
     },
     async generateVaultPasswordIfNeeded({getters, dispatch, rootGetters}, {fullPath}) {
         const patchObj = {}
