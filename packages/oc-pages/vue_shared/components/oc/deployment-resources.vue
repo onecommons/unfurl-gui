@@ -514,8 +514,8 @@ export default {
                 <template v-if="this.$slots.header" #header>
                     <slot name="header"></slot>
                 </template>
-                <template #controls>
-                    <slot name="primary-controls"></slot>
+                <template #controls="card">
+                    <slot name="primary-controls" v-bind="card"></slot>
                 </template>
                 <template #footer-controls>
                     <slot name="primary-controls-footer"></slot>

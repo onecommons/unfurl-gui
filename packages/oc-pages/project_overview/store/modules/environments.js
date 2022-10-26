@@ -434,7 +434,7 @@ const actions = {
         const variables = []
         let instances = []
         const primary_provider = _.cloneDeep(provider.template)
-        environmentVariableDependencies(provider.template).forEach(v => variables.push(v))
+        environmentVariableDependencies(primary_provider).forEach(v => variables.push(v))
         if(provider.source == 'connection') {
             instances = _.cloneDeep(provider.environment.instances)
             for(const instance of instances) {
@@ -452,7 +452,7 @@ const actions = {
                     __typename: 'DeploymentEnvironment',
                     instances,
                     connections: {
-                        primary_provider: provider.template
+                        primary_provider
                     }
                 },
                 target: newEnvironmentName
@@ -497,12 +497,16 @@ const getters = {
             const cextends = rootGetters.resolveResourceType(conn.type)?.extends
             return cextends && cextends.includes(constraintType)
         })
+
+        /*
+         * primaries by default
         rootGetters.filteredPrimariesByEnvironment(environmentName, (primary, {type}) => type?.extends?.includes(constraintType))
             .forEach(primary => {
                 const name = `__${primary._deployment}`
                 const title = rootGetters.lookupDeployment(primary._deployment, environmentName)?.title || name
                 result.push({...primary, name, title})
             })
+        */
 
         return result
     },
