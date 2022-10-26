@@ -53,6 +53,23 @@ export default {
             'cardIsValid',
             'userCanEdit'
         ]),
+        providerTabIndex() {
+            if(this.hasProviderTab) return 0
+            else return -1
+        },
+        resourcesTabIndex() {
+            return this.providerTabIndex + 1
+        },
+        publicCloudTabIndex() {
+            if(this.publicCloudResources.length > 0) {
+                return this.resourcesTabIndex + 1
+            }
+            return -1
+        },
+        variablesTabIndex() {
+            if(!this.userCanEdit) return -1
+            else return Math.max(this.resourcesTabIndex, this.publicCloudTabIndex) + 1
+        },
         breadcrumbItems() {
             return [
                 {to: {name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}, text: 'Environments'},
@@ -82,7 +99,7 @@ export default {
             return primaryProviderType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primaryProviderType)
         },
         saveStatus() {
-            if(!this.userCanEdit) return 'hidden'
+            if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
             for(const card of this.getCardsStacked) {
                 if(!this.cardIsValid(card)) return 'disabled'
             }
@@ -99,22 +116,30 @@ export default {
             return this.environment?.primary_provider?.type
         },
         showDeploymentResources() {
-            return this.getCardsStacked.length > 0 || this.hasPreparedMutations
+            return (this.getCardsStacked.filter(this.resourceFilter)).length > 0 || this.hasPreparedMutations
         },
         showingDeploymentResourceTab() {
-            if(this.hasProviderTab) {
-                return this.currentTab < 2
-            }
-            return this.currentTab == 0
+            return this.currentTab != this.variablesTabIndex && this.currentTab != this.providerTabIndex
         },
         showingProviderTab() {
-            return this.hasProviderTab && this.currentTab == 0
+            return this.currentTab == this.providerTabIndex
+        },
+        showingResourcesTab() {
+            return this.currentTab == this.resourcesTabIndex
+        },
+        publicCloudResources() {
+            return this.getCardsStacked.filter(card => card.type == 'UnfurlUserDNSZone')
+        },
+        showingPublicCloudTab() {
+            return this.currentTab == this.publicCloudTabIndex
         },
         resourceFilter() {
             if(this.showingProviderTab) {
                 return (resource) => resource.name == 'primary_provider'
+            } else if(this.showingPublicCloudTab){
+                return (resource) => resource.name != 'primary_provider' && this.publicCloudResources.includes(resource)
             } else {
-                return (resource) => resource.name != 'primary_provider'
+                return (resource) => resource.name != 'primary_provider' && !this.publicCloudResources.includes(resource)
             }
         }
     },
@@ -241,6 +266,7 @@ export default {
                     </div>
                 </div>
             </oc-tab>
+            <oc-tab title="Public Cloud" v-if="publicCloudResources.length > 0"></oc-tab>
             <oc-tab title="Variables" v-if="userCanEdit">
                 <ci-variable-settings v-if="!unfurl_gui"/>
             </oc-tab>
@@ -251,10 +277,10 @@ export default {
                 Delete Environment
             </gl-button>
         </div>
-        <deployment-resources :readonly="!userCanEdit" v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
+        <deployment-resources :readonly="!userCanEdit || showingPublicCloudTab" v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
             <template v-if="!showingProviderTab" #header>
                 <!-- potentially tricky to translate -->
-                <div class="d-flex align-items-center">
+                <div v-if="showingResourcesTab" class="d-flex align-items-center">
                     <h2 style="margin: 0 1.25em">
                         {{__('External Resources used by')}}
                         <span style="font-weight: 400">{{environment.name}}</span>
@@ -273,9 +299,13 @@ export default {
                         </el-tooltip>
                     </h2>
                 </div>
+                <div v-else-if="showingPublicCloudTab">
+                    <h2 style="margin: 0 1.25em">Public Cloud Resources</h2>
+                </div>
+                <div></div>
             </template>
             <template #primary-controls>
-                <div v-if="!showingProviderTab && !isMobileLayout && userCanEdit" class="confirm-container">
+                <div v-if="!showingProviderTab && !isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
                     <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                         <div>
                             <gl-icon name="plus"/>
