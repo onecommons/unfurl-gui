@@ -16,15 +16,7 @@ export default {
     async beforeCreate() {
         let errorContext
 
-        /*
-        if(!gon.current_user_id) {
-            this.fetchingComplete = true
-            return
-        }
-         */
-
         this.$store.dispatch('syncGlobalVars', this.$projectGlobal)
-        this.$store.dispatch('populateCurrentUser').catch(() => {})
 
         let dashboard
         if(dashboard = this.$route.params.dashboard) {
@@ -37,21 +29,23 @@ export default {
           this.$store.commit('setDashboardName', dashboardName)
         }
 
-        errorContext = 'ocFetchEnvironments'
-        this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
-            .catch((err) => {
-                console.error('@main.vue', err)
-                return createFlash({
-                    message: err.message,
-                    type: FLASH_TYPES.ALERT,
-                    issue: ERROR_CONTEXT[errorContext] || errorContext,
-                    projectPath: this.$projectGlobal?.projectPath
-                });
-            })
+        if(gon.current_user_id) {
+            this.$store.dispatch('populateCurrentUser').catch(() => {})
+            errorContext = 'ocFetchEnvironments'
+            this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
+                .catch((err) => {
+                    console.error('@main.vue', err)
+                    return createFlash({
+                        message: err.message,
+                        type: FLASH_TYPES.ALERT,
+                        issue: ERROR_CONTEXT[errorContext] || errorContext,
+                        projectPath: this.$projectGlobal?.projectPath
+                    });
+                })
 
-        this.$store.dispatch('loadAdditionalDashboards')
-            .catch(() => {})
-
+                this.$store.dispatch('loadAdditionalDashboards')
+                    .catch(() => {})
+        }
         try {
             const {projectPath} = this.$projectGlobal
             // TODO do everything in one query?
