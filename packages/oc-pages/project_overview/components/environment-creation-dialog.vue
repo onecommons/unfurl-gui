@@ -119,7 +119,7 @@ export default {
     },
     methods: {
         ...mapActions(['environmentFromProvider']),
-        async createLocalDevEnvironment() {
+        async createLocalDevEnvironment(instances={}) {
           await postGitlabEnvironmentForm();
           const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
               name: 'primary_provider', 
@@ -131,7 +131,8 @@ export default {
             this.getHomeProjectPath,
             {
               name: slugify(this.environmentName),
-              primary_provider
+              primary_provider,
+              instances
             }
           )
         },
@@ -145,21 +146,39 @@ export default {
             sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
             sessionStorage['environmentFormAction'] = this.action
 
+            const provider = CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]
+
             if(typeof this.selectedCloudProvider != 'string') {
                 await postGitlabEnvironmentForm();
                 await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: this.selectedCloudProvider})
                 window.location.href = redirectTarget;
-            } else if(! ['gcp', 'aws'].includes(CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider])) {
-              await this.createLocalDevEnvironment()
-              //TODO don't hard code our redirect
-              //window.location.href = redirectTarget;
-              window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+            } else if(! ['gcp', 'aws'].includes(provider)) {
+                let instances
+                if(provider == 'k8s') {
+                    instances = {
+                        "k8sDefaultIngressController": {
+                            "type": "KubernetesIngressController",
+                            "name": "k8sDefaultIngressController",
+                            "title": "KubernetesIngressController",
+                            "__typename": "ResourceTemplate",
+                            "properties": [
+                                {
+                                    "name": "annotations",
+                                    "value": {}
+                                }
+                            ],
+                            "dependencies": []
+                        }
+                    }
+                }
+                await this.createLocalDevEnvironment(instances)
+                window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
             } else {
-              const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
-              sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
-              await axios.get(url); // set redirect
+                const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+                sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
+                await axios.get(url); // set redirect
 
-              window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]}`
+                window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${provider}`
             }
         },
         displayProvider(provider) {

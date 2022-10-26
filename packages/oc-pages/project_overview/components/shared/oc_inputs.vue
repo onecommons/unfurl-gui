@@ -115,9 +115,24 @@ export default {
     async validate() {
       let status = 'valid'
       try {
-        await this.form.validate()
+        // was using this because without the onMount => validate() setup validating individual fields did nothing
+        // await this.form.validate()
+
         for(const key of Object.keys(this.formValues)) {
-          await this.form.fields[key]?.validate()
+          let formField
+          try { formField = this.form.fields[key] }
+          catch(e) {}
+          if (formField) {
+            const {data, value} = formField
+            if(value?.length === 0 && data.required && data.type == 'object' && data.additionalProperties?.required) {
+              // skip validating empty required object
+            } else {
+              await formField.validate()
+            }
+            if(formField.invalid) {
+              status = 'error'
+            }
+          }
         }
       } catch(e) {
         status = 'error'
@@ -368,6 +383,7 @@ export default {
           this.validate()
           const name = field.path.segments[0]
           const value = form.values[name]
+
           this.triggerSave({...field.data, name}, value);
         })
       }
@@ -379,7 +395,9 @@ export default {
       }
     }
     
-    this.validate()
+    form.onMount = () => {
+      this.validate()
+    }
   }
 }
 </script>
