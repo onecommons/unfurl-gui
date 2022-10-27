@@ -36,11 +36,13 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
 
 
     const patch = {}
+    const transferredVariables = []
     for(const environmentVariable of await fetchEnvironmentVariables(projectPath)) {
         if(environmentVariable.environment_scope != sourceEnvironment) continue
         if(!variables.includes(environmentVariable.key)) continue
         delete environmentVariable.id
         environmentVariable.environment_scope = targetEnvironment
+        transferredVariables.push(environmentVariable.key)
         environmentVariable.key = _prefix? `${_prefix}__${environmentVariable.key}`: environmentVariable.key
 
         patch[environmentVariable.key] = environmentVariable
@@ -48,6 +50,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
 
     return {
         prefix: _prefix,
+        transferredVariables,
         patch: await patchEnv(patch, targetEnvironment, projectPath)
     }
 }

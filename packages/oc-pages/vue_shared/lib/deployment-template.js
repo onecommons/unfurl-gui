@@ -46,11 +46,12 @@ export function environmentVariableDependencies(deploymentObject) {
     return _.uniq(result)
 }
 
-export function prefixEnvironmentVariables(deploymentObject, prefix) {
+export function prefixEnvironmentVariables(deploymentObject, prefix, variableNames) {
     function deepIterateReferences(prop) {
         for(const value of Object.values(prop)){
             if(value && typeof value == 'object') {
-                if(value?.get_env) {
+                // only limit to variables in the variableNames list if it is provided
+                if(value?.get_env && (!Array.isArray(variableNames) || variableNames.includes(value.get_env))) {
                     value.get_env = `${prefix}__${value.get_env}`
                 }
             }
