@@ -22,7 +22,7 @@ export default {
     data() {
         const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
-            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0, accessToken}),
+            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0}),
             accessToken,
             repositoryBranchesPromise: null,
             project_id: null,
@@ -120,7 +120,7 @@ export default {
                 }
                 this.updateValue('project_id')
 
-                this.repositoryBranchesPromise = fetchRepositoryBranches(encodeURIComponent(this.project_id), {accessToken: this.accessToken})
+                this.repositoryBranchesPromise = fetchRepositoryBranches(encodeURIComponent(this.project_id))
                 this.projectInfo = await fetchProjectInfo(encodeURIComponent(this.project_id))
                 const id = this.projectInfo.id
                 this.gitlabProjectId = id

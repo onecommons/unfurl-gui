@@ -56,7 +56,7 @@ export default {
         const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
             containerRepositories: null,
-            userProjectSuggestionsPromise: fetchProjects({accessToken}),
+            userProjectSuggestionsPromise: fetchProjects(),
             accessToken,
             containerRepositoriesPromise: null,
             username: null,
