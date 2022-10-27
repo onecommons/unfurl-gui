@@ -14,6 +14,7 @@ import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from '
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
+import {slugify} from 'oc_vue_shared/util.mjs'
 import Vue from 'vue'
 
 
@@ -431,6 +432,7 @@ const actions = {
          * If the provider is an instance, we'll copy only the instance and assume there are no dependencies.
          * In this case we'll copy only environment variables associated with the instance itself.
         */
+        const cloneTarget = slugify(newEnvironmentName)
         const variables = []
         let instances = []
         const primary_provider = _.cloneDeep(provider.template)
@@ -441,7 +443,7 @@ const actions = {
                 environmentVariableDependencies(instance).forEach(v => variables.push(v))
             }
         }
-        await shareEnvironmentVariables(state.projectPath, provider.environment.name, newEnvironmentName, variables, '')
+        await shareEnvironmentVariables(state.projectPath, provider.environment.name, cloneTarget, variables, '')
 
         commit('setUpdateObjectPath', 'environments.json', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
@@ -455,7 +457,7 @@ const actions = {
                         primary_provider
                     }
                 },
-                target: newEnvironmentName
+                target: cloneTarget
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
