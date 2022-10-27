@@ -10,7 +10,7 @@ function generateConfig(options) {
     }
 }
 
-export async function fetchProjects(options) {
+export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
     const {minAccessLevel} = options
 
