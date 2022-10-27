@@ -24,7 +24,8 @@ export default class DeploymentItem {
     }
 
     async getCommit(n=-1) {
-        const i = n == -1 ? this.pipelines.lastIndex: n
+        const i = n == -1 ? this.pipelines?.lastIndex ?? -1: n
+        if(i == -1) return null
 
         let commitPromise
         if(!(commitPromise = this.commitPromises[i])) {

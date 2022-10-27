@@ -86,8 +86,8 @@ const actions = {
 
             if(targetEnvironmentName != environmentName) {
                 const variables = environmentVariableDependencies(deploymentObj)
-                const {patch, prefix} = await shareEnvironmentVariables(rootGetters.getHomeProjectPath, environmentName, targetEnvironmentName, variables)
-                prefixEnvironmentVariables(deploymentObj, prefix)
+                const {prefix, transferredVariables} = await shareEnvironmentVariables(rootGetters.getHomeProjectPath, environmentName, targetEnvironmentName, variables)
+                prefixEnvironmentVariables(deploymentObj, prefix, transferredVariables)
             }
 
             return await dispatch('commitClonedDeployment', {deploymentObj, deployPathName, newDeploymentName, environmentName, targetEnvironmentName, dryRun})

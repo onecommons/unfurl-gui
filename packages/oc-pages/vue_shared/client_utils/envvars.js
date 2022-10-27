@@ -46,9 +46,11 @@ export async function patchEnv(env, environmentScope, fullPath) {
                 existingVar.id = currentVar.id
             }
         }
-        await axios.patch(endpoint, {variables_attributes: envPatch})
+        const response = await axios.patch(endpoint, {variables_attributes: envPatch})
+        return response?.data
     }
 
+    return null
 }
 
 export async function deleteEnvironmentVariables(environmentScope, fullPath) {
