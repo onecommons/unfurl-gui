@@ -130,8 +130,9 @@ const actions = {
 
     async updateProjectSubscription({rootGetters}, {projectPath, op}) {
         const dict = JSON.parse(rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*') || '{}')
+        const _projectPath = projectPath.toLowerCase()
 
-        const items = dict.subscriptions[projectPath]
+        const items = dict.subscriptions[_projectPath]
 
         const url = `/${rootGetters.getHomeProjectPath}/-/subscriptions?upstream=${encodeURIComponent(projectPath)}`
 
@@ -156,7 +157,8 @@ const actions = {
         
         Object.entries(queued).forEach(([projectPath, items]) => {
             let i = 0
-            if(!subscriptions[projectPath]) subscriptions[projectPath] = [] 
+            const _projectPath = projectPath.toLowerCase()
+            if(!subscriptions[_projectPath]) subscriptions[_projectPath] = []
             for(const record of items) {
                 const {resourceName, deploymentName, environmentName} = record
 
@@ -166,14 +168,14 @@ const actions = {
 
                 const card = rootGetters.getCardsStacked.find(card => card.name == resourceName)
                 if(!card) continue
-                const hasCorrectProjectId = card.properties.some(prop => prop.name == 'project_id' && prop.value == projectPath)
+                const hasCorrectProjectId = card.properties.some(prop => prop.name == 'project_id' && prop.value == _projectPath)
                 if(card && hasCorrectProjectId) {
-                    subscriptions[projectPath].push(record)
+                    subscriptions[_projectPath].push(record)
                     i++
                 }
             }
             if(i > 0) {
-                projectPathsNeedUpdate.push(projectPath)
+                projectPathsNeedUpdate.push(_projectPath)
             }
         })
 
