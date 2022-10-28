@@ -128,18 +128,6 @@ const actions = {
         return newDeploymentName
     },
 
-        /*
-         [
-            {
-            "id": 387,
-            "name": "buildpack-test-app",
-            "full_path": "/user-2022-09-28T21-36-42/buildpack-test-app",
-            "full_name": "user-2022-09-28T21-36-42 / buildpack-test-app"
-            }
-        ]
-
-        axios.post(`/user-2022-09-28T21-36-42/dashboard/-/subscriptions?upstream=${encodeURIComponent('user-2022-09-28T21-36-42/buildpack-test-app')}`)
-    */
     async updateProjectSubscription({rootGetters}, {projectPath, op}) {
         const dict = JSON.parse(rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*') || '{}')
 

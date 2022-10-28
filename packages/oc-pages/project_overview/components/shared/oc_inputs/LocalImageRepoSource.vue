@@ -6,40 +6,6 @@ import {fetchProjects, fetchRegistryRepositories} from 'oc_vue_shared/client_uti
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
-/*
-const query = gql`
-query getContainerRepositories($fullPath: ID!) {
-    project(fullPath: $fullPath) {
-        __typename
-        id
-        containerRepositoriesCount
-        containerRepositories {
-          __typename
-          nodes {
-            id
-            name
-            path
-            status
-            location
-            __typename
-          }
-        }
-    }
-}
-`
-
-async function fetchContainerRepositories(fullPath) {
-    const response = await graphqlClient.clients.defaultClient.query({
-        query,
-        variables: {fullPath}
-    })
-
-    const nodes = response.data?.project?.containerRepositories?.nodes || []
-    return nodes
-}
-
-*/
-
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
     return items.filter(item => item.value.includes(query))
@@ -113,7 +79,7 @@ export default {
         ...mapMutations(['onDeploy', 'setUpstreamProject']),
         async setupRegistryCredentials() {
             const projects = await this.userProjectSuggestionsPromise
-            const projectId = projects.find(project => project.fullPath == this.project_id)?.id
+            const projectId = projects.find(project => project.path_with_namespace == this.project_id)?.id
             if(!projectId) return
             const {key} = await this.generateProjectTokenIfNeeded({projectId})
             this.username = 'DashboardProjectAccessToken'
@@ -143,7 +109,7 @@ export default {
                 callbackFilter(
                     queryString,
                     projects
-                        .map(project => ({value: project.fullPath}))
+                        .map(project => ({value: project.path_with_namespace}))
                 )
             )
         },
@@ -168,7 +134,7 @@ export default {
         this.onDeploy(async () => {
             if(this.cardIsValid(this.card)) {
                 const projects = await this.userProjectSuggestionsPromise
-                const projectId = projects.find(project => project.fullPath == this.project_id)?.id
+                const projectId = projects.find(project => project.path_with_namespace == this.project_id)?.id
                 if(projectId) {
                     this.setUpstreamProject(projectId)
                 }
