@@ -1,8 +1,7 @@
 <script>
-// remote_git_url* git_user git_password branch* project_id* repository_id* repository_tag* regitry_url* username password repository url credential{protocol, token, keys, user}
 import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
-import {fetchProjects, fetchRepositoryBranches,  fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
 function callbackFilter(query, items) {
