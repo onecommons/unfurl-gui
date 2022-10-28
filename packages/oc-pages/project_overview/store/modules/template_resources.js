@@ -449,55 +449,14 @@ const actions = {
         let resourceTemplateNode
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
-            resourceTemplateNode = {...resourceTemplate, name: `__${externalResource}`, dependentName, dependentRequirement, deploymentTemplateName}
+            const name = `__${externalResource}`
+            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName}
             commit(
                 'pushPreparedMutation',
-                createResourceTemplate(resourceTemplateNode),
+                () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
             )
+            commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName}))
         } else if(resource) {
-
-            function setManifestIfNeeded() {
-                const environment = rootGetters.lookupEnvironment(environmentName)
-                if(environment.external?.hasOwnProperty(resource._deployment)) return
-
-                commit(
-                    'pushPreparedMutation',
-                    (acc) => {
-                        let patch 
-                        try {
-                            patch = acc['DeploymentEnvironment'][environmentName]
-                        } catch(e) {
-                            patch = rootGetters.lookupEnvironment(environmentName)
-                        }
-                        const external = patch.external || {}
-
-                        /*
-                             <DEPLOYMENTNAME>:
-                                 manifest: <DEPLOYMENTPATH>
-                                 instance: "*"
-                        */
-
-                        const manifest = rootGetters.lookupDeployPath(resource._deployment, environmentName)?.name
-                        external[resource._deployment] = {
-                            manifest,
-                            instance: "*"
-                        }
-
-                        patch.external = external
-                        return [{typename: 'DeploymentEnvironment', patch, target: environmentName}]
-                    },
-                    {root: true}
-                )
-            } 
-
-            /*
-            commit('onSaveEnvironment', () => {
-                if(getters.cardIsValid(resource.name)) {
-                    setManifestIfNeeded()
-                }
-            })
-            */
-
             commit(
                 'pushPreparedMutation',
                 () => [{typename: 'ResourceTemplate', patch: resource, target: resource.name}]
