@@ -2,7 +2,7 @@
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
-import {fetchProjects, fetchRegistryRepositories} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjects, fetchRegistryRepositories, fetchContainerRepositories} from 'oc_vue_shared/client_utils/projects'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
