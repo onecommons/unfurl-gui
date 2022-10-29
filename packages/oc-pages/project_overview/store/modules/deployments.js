@@ -1,6 +1,4 @@
-import gql from 'graphql-tag';
-import graphqlClient from '../../graphql';
-import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import {slugify} from 'oc_vue_shared/util.mjs'
 import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import Vue from 'vue'

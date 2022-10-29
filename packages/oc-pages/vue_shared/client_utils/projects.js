@@ -17,7 +17,7 @@ export async function fetchProjects(options={}) {
     let _minAccessLevel = minAccessLevel || 40
 
     let result = (await axios.get(`/api/v4/projects?min_access_level=${_minAccessLevel}`, generateConfig(options)))?.data
-    const dashboards = (await axios.get('/api/v4/dashboards?min_access_level=40', generateConfig(options))).data
+    const dashboards = (await axios.get('/api/v4/dashboards?min_access_level=10', generateConfig(options))).data
         .map(dashboardProject => dashboardProject.path_with_namespace)
 
     result = result.filter(project => !dashboards.includes(project.path_with_namespace))
