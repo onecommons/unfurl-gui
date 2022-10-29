@@ -16,7 +16,6 @@ export default {
     },
     watch: {
         async incrementalDeploymentEnabled(val) {
-            console.log('watcher')
             await this.updateProjectSubscription({
                 projectPath: this.upstreamProject,
                 op: val? 'inc': 'dec'
@@ -25,7 +24,6 @@ export default {
         }
     },
     methods: {
-        //async updateProjectSubscription({rootGetters}, {projectPath, op}) {
         ...mapActions(['setEnvironmentVariable', 'updateProjectSubscription']),
     },
     computed: {
@@ -57,7 +55,7 @@ export default {
                 template = this.card.template
             }
 
-            return template?.properties?.find(prop => prop.name == 'project_id')?.value
+            return template?.properties?.find(prop => prop.name == 'project_id')?.value?.toLowerCase()
         },
         incrementalDeploymentEnabled: {
             get() {
