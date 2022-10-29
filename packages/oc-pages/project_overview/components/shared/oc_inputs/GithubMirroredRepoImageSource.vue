@@ -292,6 +292,7 @@ export default {
         <template v-if="cardIsValid(card)" #unauthenticated>
             <h4>Existing properties:</h4>
             <oc-properties-list :properties="displayableCardProperties"/>
+            <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </template>
         <div>
             <div class="d-flex flex-wrap justify-content-between">
@@ -320,14 +321,6 @@ export default {
                     </div>
                 </div>
             </div>
-            <!--
-        deploymentName: String,
-        resourceName: String,
-        upstreamProject: String,
-        label: String
-
-            -->
-
             <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </div>
     </github-auth> 

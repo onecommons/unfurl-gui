@@ -20,6 +20,10 @@ export default {
     },
     computed: {
         ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment', 'getCurrentContext']),
+        _upstreamProject() {
+            return this.upstreamProject.toLowerCase()
+
+        },
         subscriptionsDict() {
             try {
                 return JSON.parse(this.lookupVariableByEnvironment(UNFURL_PROJECT_SUBSCRIPTIONS, '*')) || {}
@@ -42,9 +46,9 @@ export default {
                 const dict = this.subscriptionsDict
                 const queued = dict?.queued
 
-                if(!(queued && queued[this.upstreamProject])) return false
+                if(!(queued && queued[this._upstreamProject])) return false
 
-                return queued[this.upstreamProject]
+                return queued[this._upstreamProject]
                     .some(({deploymentName, resourceName, environmentName}) => (
                         deploymentName == this.deploymentName &&
                         resourceName == this.resourceName &&
@@ -55,13 +59,13 @@ export default {
             set(enabled) {
                 const dict = this.subscriptionsDict
                 const queued = dict?.queued || {}
-                if (!queued[this.upstreamProject]) queued[this.upstreamProject] = []
+                if (!queued[this._upstreamProject]) queued[this._upstreamProject] = []
 
                 if(enabled) {
                     const {deploymentName, resourceName, environmentName} = this
-                    queued[this.upstreamProject].push({deploymentName, resourceName, environmentName})
+                    queued[this._upstreamProject].push({deploymentName, resourceName, environmentName})
                 } else {
-                    queued[this.upstreamProject] = queued[this.upstreamProject]
+                    queued[this._upstreamProject] = queued[this._upstreamProject]
                         .filter(({deploymentName, resourceName, environmentName}) => !(
                             deploymentName == this.deploymentName &&
                             resourceName == this.resourceName &&
