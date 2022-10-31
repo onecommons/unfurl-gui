@@ -81,6 +81,16 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
   cy.contains('a', 'Resources').click()
 
+  for(const {key, value} of [
+    {key: 'cert-manager.io/issuer', value: 'gitlab-issuer'},
+    {key: 'kubernetes.io/ingress.class', value: 'gitlab-nginx'},
+    {key: 'kubernetes.io/ingress.provider', value: 'nginx'},
+  ]) {
+    cy.contains('button.formily-element-array-base-addition', 'Add').click()
+    cy.get('[placeholder="key"]').last().type(key)
+    cy.get('[placeholder="value"]').last().type(value)
+  }
+
   // create external resource
   if (shouldCreateExternalResource) {
     if(shouldCreateDNS) {
