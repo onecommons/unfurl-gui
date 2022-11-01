@@ -22,7 +22,7 @@ function pseudorandomPassword() {
 }
 
 Cypress.Commands.add('recreateDeployment', options => {
-  let fixture, shouldDeploy, shouldSave, title
+  let fixture, shouldDeploy, shouldSave, title, skipTeardown
   if (typeof options == 'string') {
     fixture = options
     shouldDeploy = true
@@ -30,6 +30,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     fixture = options.fixture
     shouldSave = options.shouldSave ?? false
     shouldDeploy = options.shouldDeploy ?? !shouldSave
+    skipTeardown = options.skipTeardown
   }
   cy.fixture(fixture).then(deployment => {
     const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
@@ -264,7 +265,7 @@ Cypress.Commands.add('recreateDeployment', options => {
         })
         cy.assertDeploymentRunning(dt.title)
         cy.verifyDeployment(deployment, env, dnsZone, subdomain, options.verificationArgs || {})
-        if(TEARDOWN) {
+        if(TEARDOWN && !skipTeardown) {
           cy.undeploy(dt.title)
         }
       })
