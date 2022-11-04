@@ -15,7 +15,7 @@ export default {
         }
     },
     data() {
-        return { shouldDisplay: this.condition && this.message }
+        return { shouldDisplay: this.condition && (this.message || this.message === null) }
     },
     methods: {
         calculateShouldDisplay() {
