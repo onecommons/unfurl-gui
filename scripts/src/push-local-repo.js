@@ -19,21 +19,31 @@ function constructTargetURL(projectPath) {
 function pushLocalRepo(localRepoPath, projectPath, options) {
   const {
     force,
-    skipCI
+    skipCI,
+    branch
   } = Object.assign({
     force: false,
     skipCI: true,
+    branch: null
   }, options)
   const url = constructTargetURL(projectPath)
   const args = []
 
-  args.push('push')
   if(force) args.push('-f')
+
+  args.push('push')
+  args.push('--set-upstream')
+  args.push(url)
+
+  if(branch) {
+    args.push(branch)
+  }
+
   if(skipCI) {
     args.push('-o')
     args.push('ci.skip')
   }
-  args.push(url)
+
   const {status} = spawnSync('git', args, {cwd: localRepoPath, stdio: 'inherit'})
   return status === 0
 }
