@@ -3,11 +3,15 @@ import { GlButton } from '@gitlab/ui';
 import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
+import {Tooltip as ElTooltip} from 'element-ui'
+import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 
 export default {
     name: 'TemplateButtons',
     components: {
-        GlButton
+        GlButton,
+        ElTooltip,
+        ErrorSmall
     },
     props: {
         deployStatus: {type: String, default: () => 'disabled'},
@@ -44,7 +48,10 @@ export default {
             'environmentHasActiveDeployments',
             'getCurrentEnvironment',
             'editingDeployed',
-            'editingTorndown'
+            'editingTorndown',
+            'getValidationStatuses',
+            'cardIsValid',
+            'getPrimaryCard'
         ]),
         disableDelete() {
             if(this.deleteStatus == 'disabled') return true
@@ -58,7 +65,24 @@ export default {
                 return __(`Environment cannot be deleted - you have active deployments.`)
             }
             return __(`Delete ${this.target}`)
+        },
+        canDeploy() {
+            return this.cardIsValid(this.getPrimaryCard)
+        },
+        deployTooltip() {
+            if(this.canDeploy) return null
 
+            const statuses = Object.values(this.getValidationStatuses)
+
+            if(statuses.includes('error')) {
+                return 'Some components have missing or invalid values'
+            }
+
+            if(statuses.includes('missing')) {
+                return 'Some components are missing inputs'
+            }
+
+            return 'Not all required components have been created or connected'
         }
     }
 }
@@ -125,21 +149,30 @@ export default {
             >
 
         </div>
-        <div class="d-flex">
-            <gl-button
-                v-show="deployStatus != 'hidden' && !editingTorndown"
-                title="Deploy"
-                :aria-label="__('Deploy')"
-                data-testid="deploy-button"
-                type="button"
-                icon="upload"
-                class="deploy-action"
-                :disabled="deployStatus == 'disabled'"
-                @click.prevent="triggerDeploy"
-                >{{ __('Deploy') }}</gl-button
-            >
-            <!--gl-button v-else type="button" class="deploy-action" loading>{{ __('Deploying...') }}</gl-button-->
+        <el-tooltip :disabled="!deployTooltip">
+            <template #content>
+                <div>
+                    {{deployTooltip}}
+                </div>
+            </template>
+            <div class="d-flex flex-column position-relative">
+                <gl-button
+                    v-show="deployStatus != 'hidden' && !editingTorndown"
+                    :aria-label="__('Deploy')"
+                    data-testid="deploy-button"
+                    :title="!deployTooltip? 'Deploy': null"
+                    type="button"
+                    icon="upload"
+                    class="deploy-action"
+                    :disabled="deployStatus == 'disabled'"
+                    @click.prevent="triggerDeploy"
+                >
+                    {{ __('Deploy') }}
+                </gl-button>
+                <error-small class="position-absolute" style="top: 2em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">Deployment is invalid</error-small>
+                <!--gl-button v-else type="button" class="deploy-action" loading>{{ __('Deploying...') }}</gl-button-->
         </div>
+    </el-tooltip>
     </div>
 </template>
 <style scoped>

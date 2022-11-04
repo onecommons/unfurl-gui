@@ -942,8 +942,11 @@ const getters = {
             rootGetters.getDeployment.name,
             getters.getCurrentEnvironmentName
         )?.pipeline?.variables?.WORKFLOW == 'undeploy'
-    }
+    },
 
+    getValidationStatuses(state) {
+        return state.inputValidationStatus
+    }
 };
 
 export default {
