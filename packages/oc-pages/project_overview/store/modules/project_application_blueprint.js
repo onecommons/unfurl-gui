@@ -67,7 +67,7 @@ const actions = {
 
         // normalize messy data in here
         const {data, errors} = result
-        const root = data.applicationBlueprintProject
+        const root = Object.isFrozen(data.applicationBlueprintProject)? _.cloneDeep(data.applicationBlueprintProject): data.applicationBlueprintProject
         root.projectGlobal = projectGlobal
         if(errors?.length) {
             for(const error of errors) {
@@ -79,6 +79,8 @@ const actions = {
 
 
         commit('loaded', true)
+
+
     },
     useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
         if(!projectPath) {console.warn('projectPath is not set')}
@@ -193,9 +195,16 @@ const actions = {
 
         for(const key of ordering) {
             const value = root[key]
+
+            // delete __typename: JSON in case it exists
+            try {
+                delete value.__typename
+            } catch(e) {}
+
             if(!value || typeof value != 'object') continue
             if(!Object.isFrozen(value) && typeof transforms[key] == 'function')
                 Object.values(value).forEach(entry => {if(typeof entry == 'object' && !Object.isFrozen(entry)) {transforms[key](entry, root)}})
+
             commit('setProjectState', {key, value})
         }
         if(root.ApplicationBlueprint) {
