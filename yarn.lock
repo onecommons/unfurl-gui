@@ -2068,6 +2068,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@formily/core@npm:2.0.20, @formily/core@npm:~2.0.7":
+  version: 2.0.20
+  resolution: "@formily/core@npm:2.0.20"
+  dependencies:
+    "@formily/reactive": 2.0.20
+    "@formily/shared": 2.0.20
+    "@formily/validator": 2.0.20
+  checksum: 6140bbbbc859d005823dfd2e69029f5014c1e694523b6147ddf20535fcb1a3eef0da5c46a72b629de379acbb88877ef568478683b5eb1a516a4e83320359e053
+  languageName: node
+  linkType: hard
+
 "@formily/core@npm:2.0.7, @formily/core@npm:^2.0.7":
   version: 2.0.7
   resolution: "@formily/core@npm:2.0.7"
@@ -2100,6 +2111,39 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@formily/element@npm:~2.0.7":
+  version: 2.0.20
+  resolution: "@formily/element@npm:2.0.20"
+  dependencies:
+    "@formily/core": 2.0.20
+    "@formily/grid": 2.0.20
+    "@formily/json-schema": 2.0.20
+    "@formily/reactive": 2.0.20
+    "@formily/reactive-vue": 2.0.20
+    "@formily/shared": 2.0.20
+    "@formily/vue": 2.0.20
+    portal-vue: ^2.1.7
+    vue-slicksort: ^1.2.0
+  peerDependencies:
+    "@vue/composition-api": ^1.0.0-beta.1
+    element-ui: ^2.14.0
+    vue: ^2.6.0
+  checksum: f601f1d9adbc6a8f7193f29bd3b4336ecd4dc303df7efd8d435814f50f3a41291ed2dd23552eb8d9840c49f2fc7807036ba444fd65712c9bb3fe322303dfa470
+  languageName: node
+  linkType: hard
+
+"@formily/grid@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/grid@npm:2.0.20"
+  dependencies:
+    "@formily/reactive": 2.0.20
+    "@juggle/resize-observer": ^3.3.1
+  peerDependencies:
+    typescript: ^4.1.0
+  checksum: 7fcf67484782866e6f7812b8e41d067154eee12ba714fb6aface3e8a19838b4666f6b3b4902b533ff168cf0ee4f2dee2870f83080cb7d0e146d63881e5aedaa7
+  languageName: node
+  linkType: hard
+
 "@formily/grid@npm:2.0.7":
   version: 2.0.7
   resolution: "@formily/grid@npm:2.0.7"
@@ -2109,6 +2153,19 @@ __metadata:
   peerDependencies:
     typescript: ^4.1.0
   checksum: 226862de9776ed674bea8c419eeac75a3f6495a0b9907b450cee4028593cf5c4626641b0c8c827f39387e8206ab7c1a9eb78158b60f08aff89049beb58288820
+  languageName: node
+  linkType: hard
+
+"@formily/json-schema@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/json-schema@npm:2.0.20"
+  dependencies:
+    "@formily/core": 2.0.20
+    "@formily/reactive": 2.0.20
+    "@formily/shared": 2.0.20
+  peerDependencies:
+    typescript: ^4.1.5
+  checksum: 4b2ba55c91e04eb37d84afb2b34310379c1f9b9a178a35014b15f09ad04c39f651aa22b6c749acc2535c87d96111d9172bcf61055ab6134ca558b77159afa26c
   languageName: node
   linkType: hard
 
@@ -2125,10 +2182,33 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@formily/path@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/path@npm:2.0.20"
+  checksum: 60d99b41f9e42f8e170d4b8de5adcf572d87d44d765c3a7f074b8791464d0e00133604987fd25b4b5f4d54fa2070cc33b979e14e85a69d1e2db1214a5ba174cc
+  languageName: node
+  linkType: hard
+
 "@formily/path@npm:2.0.7":
   version: 2.0.7
   resolution: "@formily/path@npm:2.0.7"
   checksum: 1e75057075eb4804cc12a543f2df2239e6caaf2930e5cbbb235cf81bba70e0061df3022a2f8ccc87fb7f068db4b8d1b33c8deb42d98b795e2fe3ead32001a615
+  languageName: node
+  linkType: hard
+
+"@formily/reactive-vue@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/reactive-vue@npm:2.0.20"
+  dependencies:
+    "@formily/reactive": 2.0.20
+    vue-demi: ^0.9.0
+  peerDependencies:
+    "@vue/composition-api": ^1.0.0-beta.1
+    vue: ^2.6.0 || >=3.0.0-rc.0
+  peerDependenciesMeta:
+    "@vue/composition-api":
+      optional: true
+  checksum: 8bfc77e5df429171787e335ad6730a5552767aebcb5fc42f97000c06637eeb7bd640e9e09154d06b9f0da31e59d07d0d03caa3e3a49724c106886a738045edb2
   languageName: node
   linkType: hard
 
@@ -2148,10 +2228,32 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@formily/reactive@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/reactive@npm:2.0.20"
+  checksum: d28ead43d50b3fc75c31d636a028fc2aadf81477a6f25494de84d12df5448a704c36f8e86a9325b626fc3de96e49c11241265ffc35123a7b3a21702427ec8adf
+  languageName: node
+  linkType: hard
+
 "@formily/reactive@npm:2.0.7":
   version: 2.0.7
   resolution: "@formily/reactive@npm:2.0.7"
   checksum: 6a4e823aaf43d6438b6a22cc877e52fe41c40fa166fc000ea94d456e18e5af42d28e0a892f21f77d6106fe3562326f2cd37a37b3126276347a9758ba0d613c84
+  languageName: node
+  linkType: hard
+
+"@formily/shared@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/shared@npm:2.0.20"
+  dependencies:
+    "@formily/path": 2.0.20
+    camel-case: ^4.1.1
+    lower-case: ^2.0.1
+    no-case: ^3.0.4
+    param-case: ^3.0.4
+    pascal-case: ^3.1.1
+    upper-case: ^2.0.1
+  checksum: 72ec18761eff6013803c0994ff760fee53d0ea4151a436065f0f60c9bdec5519ca3ee2867ad24accadff4f45e9778a75ca5df64c63db3093515aee7193c3c8f2
   languageName: node
   linkType: hard
 
@@ -2170,12 +2272,47 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@formily/validator@npm:2.0.20":
+  version: 2.0.20
+  resolution: "@formily/validator@npm:2.0.20"
+  dependencies:
+    "@formily/shared": 2.0.20
+  checksum: 772bc5decdb69834d584fb3b95bf095c9b05a759fd7e44bf07e94009a79056a85b2216901e8324e3e81e372b45508f1c63f46d3fd0f8e7fbade7e968a1fdd401
+  languageName: node
+  linkType: hard
+
 "@formily/validator@npm:2.0.7":
   version: 2.0.7
   resolution: "@formily/validator@npm:2.0.7"
   dependencies:
     "@formily/shared": 2.0.7
   checksum: 602e370474ed2daea9e255444613e81ae9b3af7165825b8b9ad9816fc4043f8b9bf0f067e7eb20c6c8f52247570dd8a31b1b36171925afef2f6924255fca8604
+  languageName: node
+  linkType: hard
+
+"@formily/vue@npm:2.0.20, @formily/vue@npm:~2.0.7":
+  version: 2.0.20
+  resolution: "@formily/vue@npm:2.0.20"
+  dependencies:
+    "@formily/core": 2.0.20
+    "@formily/json-schema": 2.0.20
+    "@formily/reactive": 2.0.20
+    "@formily/reactive-vue": 2.0.20
+    "@formily/shared": 2.0.20
+    "@formily/validator": 2.0.20
+    fs-extra: ^10.0.0
+    vue-demi: ^0.9.0
+    vue-frag: ^1.1.4
+  peerDependencies:
+    "@vue/composition-api": ^1.0.0-beta.1
+    vue: ^2.6.0 || >=3.0.0-rc.0
+  peerDependenciesMeta:
+    "@vue/composition-api":
+      optional: true
+  bin:
+    formily-vue-fix: bin/formily-vue-fix.js
+    formily-vue-switch: bin/formily-vue-switch.js
+  checksum: 8f1fa99ed39e5a8c230ae75caacfa52261801fc7eda7e9a56da25f16bf9a755a9a14096be387e38e63205bd35db908c2e5df6de98ed1196391d6802abac5cdad
   languageName: node
   linkType: hard
 
@@ -9182,6 +9319,22 @@ __metadata:
   languageName: node
   linkType: hard
 
+"element-ui@npm:~2.15.6":
+  version: 2.15.10
+  resolution: "element-ui@npm:2.15.10"
+  dependencies:
+    async-validator: ~1.8.1
+    babel-helper-vue-jsx-merge-props: ^2.0.0
+    deepmerge: ^1.2.0
+    normalize-wheel: ^1.0.1
+    resize-observer-polyfill: ^1.5.0
+    throttle-debounce: ^1.0.1
+  peerDependencies:
+    vue: ^2.5.17
+  checksum: 3e970b59ba97f34958232844b8ed23f373f0c92003c265278312e9170f11491613a3e53740d7e0f7f8c8ef3be875620967171e2adf0907f293dd84611979acc1
+  languageName: node
+  linkType: hard
+
 "elliptic@npm:^6.5.3":
   version: 6.5.3
   resolution: "elliptic@npm:6.5.3"
@@ -15767,17 +15920,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "oc-pages@workspace:packages/oc-pages"
   dependencies:
-    "@formily/core": ^2.0.7
-    "@formily/element": ^2.0.7
-    "@formily/vue": ^2.0.7
+    "@formily/core": ~2.0.7
+    "@formily/element": ~2.0.7
+    "@formily/vue": ~2.0.7
     "@gitlab/eslint-plugin": 9.4.0
     "@typescript-eslint/eslint-plugin": ^2.33.0
     "@typescript-eslint/parser": ^2.33.0
     "@vue/cli-plugin-eslint": ~4.5.0
-    "@vue/composition-api": ^1.4.3
     "@vue/eslint-config-prettier": ^6.0.0
     "@vue/eslint-config-typescript": ^5.0.2
-    element-ui: ^2.15.6
+    element-ui: ~2.15.6
     eslint: ^6.7.2
     eslint-plugin-graphql: ^2.1.1
     eslint-plugin-prettier: ^3.1.3
