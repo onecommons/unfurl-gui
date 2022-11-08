@@ -95,6 +95,7 @@ export default {
                     self.linesRead = newConsoleLength
                 }
 
+
                 self.pollLogState()
             }, time)
         }
@@ -106,9 +107,9 @@ export default {
         const url = this.jobsData[0]?.web_url
 
         const documentContents = await fetch(url).then(res => res.text())
-        const elementMarkup = documentContents.match(/.*js-job-vue-app.*/)[0]
+        const elementMarkup = documentContents.match(/.*js-job-page.*/)[0]
         const tempDocument = (new DOMParser()).parseFromString(elementMarkup, TEXT_HTML)
-        const element = tempDocument.querySelector('#js-job-vue-app')
+        const element = tempDocument.querySelector('#js-job-page')
         const dataset = element.dataset
         const consoleContainer = document.querySelector('#console-container')
         consoleContainer.appendChild(element)
@@ -120,6 +121,7 @@ export default {
 
         this.mountJobsConsole()
         this.pollLogState()
+
     },
     beforeUnmount() {
         this.consoleApp.$destory()
