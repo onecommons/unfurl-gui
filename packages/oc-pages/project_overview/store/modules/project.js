@@ -421,6 +421,8 @@ const getters = {
                 obj.deployment = Object.values(dict.DeploymentTemplate)[0]
             }
 
+            obj.deployment.projectPath = deploymentTemplate.projectPath
+
             resources = resources.filter(r => {
                 return r.visibility != 'hidden'
             })
