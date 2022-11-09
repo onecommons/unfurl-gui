@@ -486,7 +486,7 @@ const actions = {
                 commit('deleteReference', {
                     dependentName,
                     dependentRequirement,
-                    deleteFromDeploymentTemplate: actionLowerCase == 'delete' || actionLowerCase == 'remove'
+                    deleteFromDeploymentTemplate: true
                 });
             } else {
                 commit('removeCard', {templateName: name})
