@@ -21,7 +21,8 @@
     "apollo:start": "vue-cli-service apollo:start",
     "create-user": "./scripts/create-user",
     "set-repo-visibility": "./scripts/set-repo-visibility",
-    "push-local-repo": "./scripts/push-local-repo"
+    "push-local-repo": "./scripts/push-local-repo",
+    "membership-test": "./scripts/src/membership-test.js"
   },
   "dependencies": {
     "@formily/core": "^2.0.7",
