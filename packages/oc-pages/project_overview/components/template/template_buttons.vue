@@ -52,7 +52,8 @@ export default {
             'getValidationStatuses',
             'cardIsValid',
             'getPrimaryCard',
-            'deployTooltip'
+            'deployTooltip',
+            'getPrimaryCard'
         ]),
         disableDelete() {
             if(this.deleteStatus == 'disabled') return true
