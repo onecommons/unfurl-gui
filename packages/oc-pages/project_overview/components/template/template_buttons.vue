@@ -51,7 +51,8 @@ export default {
             'editingTorndown',
             'getValidationStatuses',
             'cardIsValid',
-            'getPrimaryCard'
+            'getPrimaryCard',
+            'deployTooltip'
         ]),
         disableDelete() {
             if(this.deleteStatus == 'disabled') return true
@@ -68,21 +69,6 @@ export default {
         },
         canDeploy() {
             return this.cardIsValid(this.getPrimaryCard)
-        },
-        deployTooltip() {
-            if(this.canDeploy) return null
-
-            const statuses = Object.values(this.getValidationStatuses)
-
-            if(statuses.includes('error')) {
-                return 'Some components have missing or invalid values'
-            }
-
-            if(statuses.includes('missing')) {
-                return 'Some components are missing inputs'
-            }
-
-            return 'Not all required components have been created or connected'
         }
     }
 }
@@ -169,7 +155,11 @@ export default {
                 >
                     {{ __('Deploy') }}
                 </gl-button>
-                <error-small class="position-absolute" style="top: 2em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">Deployment is invalid</error-small>
+                <error-small class="position-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span style="line-height: 1;">Deployment is incomplete</span><i style="font-size: 1.25em;" class="el-icon-info ml-1"/>
+                    </div>
+                </error-small>
                 <!--gl-button v-else type="button" class="deploy-action" loading>{{ __('Deploying...') }}</gl-button-->
         </div>
     </el-tooltip>
