@@ -5,7 +5,7 @@ import {cloneDeep} from 'lodash'
 import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
+import {prepareVariables, triggerPipeline, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
 import {generateGroupAccessToken} from 'oc_vue_shared/client_utils/group'
@@ -25,6 +25,7 @@ const state = () => ({
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
     additionalDashboards: [],
+    repositoryDependencies: [],
     defaults: null,
     projectPath: null,
     ready: false,
@@ -43,6 +44,14 @@ function toProjectTokenEnvKey(projectId) {
 const mutations = {
     setProjectPath(state, projectPath) {
         state.projectPath = projectPath
+    },
+
+    addRepositoryDependencies(state, dependencies) {
+        state.repositoryDependencies = state.repositoryDependencies.concat(dependencies)
+    },
+
+    clearRepositoryDependencies(state) {
+        state.repositoryDependencies = []
     },
 
     onSaveEnvironment(state, cb) {
@@ -78,7 +87,7 @@ const mutations = {
     },
 
     setUpstreamProject(state, upstreamProject) {
-        state.upstreamProject = upstreamProject
+        state.upstreamProject = upstreamProject?.id || upstreamProject
     },
 
     setUpstreamBranch(state, upstreamBranch) {
@@ -168,20 +177,59 @@ const actions = {
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
 
+        // if upstreamProject is set as an ID, look up the upstream path
+        const upstreamProjectPath = (
+            !isNaN(parseInt(state.upstreamProject))? 
+                await fetchProjectInfo(state.upstreamProject):
+                null
+        )?.path_with_namespace
+
         const deployVariables = await prepareVariables({
             ...parameters,
             upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
             upstreamBranch: state.upstreamBranch,
             upstreamProject: state.upstreamProject,
+            upstreamProjectPath,
             projectDnsZone: getters.lookupVariableByEnvironment('PROJECT_DNS_ZONE', '*'),
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
+
         let data, error
-        data = await triggerPipeline(
-            rootGetters.pipelinesPath,
-            deployVariables,
-        )
+
+        if(parameters.workflow == 'undeploy') {
+            data = await triggerPipeline(
+                rootGetters.pipelinesPath,
+                deployVariables,
+            )
+        } else {
+
+            if(upstreamProjectPath) {
+                commit('addRepositoryDependencies', [upstreamProjectPath])
+            }
+                
+            const projectIds = await Promise.all(
+                state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)).then(project => project.id))
+            )
+
+            const dependencies = state.repositoryDependencies
+                .reduce(
+                    (acc, v, i) => {acc[v] = `_dep_${projectIds[i]}`; return acc},
+                    {}
+                )
+
+            console.log({projectIds, dependencies})
+
+            data = await triggerAtomicDeployment(
+                rootGetters.getHomeProjectPath,
+                {
+                    variables: deployVariables,
+                    dependencies
+                }
+            )
+        }
+
+
         if(error = data?.errors) {
             return {pipelineData: data, error}
         }
@@ -197,6 +245,7 @@ const actions = {
                 'upstream_commit_id': state.upstreamCommit?.id || state.upstreamCommit,
                 'upstream_pipeline_id': state.upstreamId,
                 'upstream_project_id': state.upstreamProject?.id || state.upstreamProject,
+                'upstream_project_path': state.upstreamProjectPath,
                 'upstream_branch': state.upstreamBranch
             } :
             null
@@ -227,6 +276,7 @@ const actions = {
 
         await dispatch('commitPreparedMutations', {}, {root: true})
         commit('clearUpstream')
+        commit('clearRepositoryDependencies', null)
         return {pipelineData: data}
     },
     deployInto({dispatch}, parameters) {
@@ -384,6 +434,7 @@ const actions = {
         const namespace = projectInfo?.namespace
 
         if(!namespace) return
+        /*
         if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
             let UNFURL_ACCESS_TOKEN
 
@@ -397,6 +448,7 @@ const actions = {
 
             await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath)
         }
+        */
         if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')) {
             const scopes = ['api', 'read_api', 'read_registry', 'write_registry', 'read_repository', 'write_repository']
             const UNFURL_PROJECT_TOKEN = await generateProjectAccessToken(encodeURIComponent(fullPath), {name: 'UNFURL_PROJECT_TOKEN', scopes})

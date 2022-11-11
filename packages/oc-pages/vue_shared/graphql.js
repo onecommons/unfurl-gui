@@ -236,6 +236,8 @@ export const resolvers = {
         ApplicationBlueprint: makeClientResolver('ApplicationBlueprint', 'json'),
         ResourceTemplate: makeClientResolver('ResourceTemplate', 'json', null, {targetIsDictionary: true}),
         DeploymentTemplate: makeClientResolver('DeploymentTemplate', 'json'),
+        
+        repositories: o => o.json.repositories || {}
     },
   
     Environment: {
