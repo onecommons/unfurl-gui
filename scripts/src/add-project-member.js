@@ -15,30 +15,49 @@ async function addProjectMember(o) {
   const page = (await axios.get(url)).data
   const authenticity_token = extractCsrf(page)
 
-  const form = new FormData()
+  let response, status 
+  if(true) {
+  // I think this always works?
+  //if(process.env.GITLAB_VERSION == '14.9') {
+    response = await axios.post(
+      `${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(project)}/members`,
+      {
+        user_id,
+        access_level: accessLevel || 30 
+      },
+      {
+        headers: {
+          'X-CSRF-Token': authenticity_token
+        }
+      }
+    )
+  }
+  else {
+    const form = new FormData()
 
-  form.append('authenticity_token', authenticity_token)
-  form.append('user_ids', user_id)
-  form.append('access_level', accessLevel || 10)
+    form.append('authenticity_token', authenticity_token)
+    form.append('user_ids', user_id)
+    form.append('access_level', accessLevel || 30)
 
-  const headers = {
-    ...form.getHeaders(),
-    "Content-Length": form.getLengthSync()
+    const headers = {
+      ...form.getHeaders(),
+      "Content-Length": form.getLengthSync()
+    }
+
+    const response = (await axios.post(url, form, {headers}))
+    const {status} = response
   }
 
-  const status = (await axios.post(url, form, {headers})).status
+  status = response.status
 
-  return status < 400 && status >= 200
+  if(status < 400 && status >= 200) { return true }
+  else {
+    console.error(response)
+    throw new Error(`Could not add ${username} to ${project}`)
+  }
 
-  /*
-  const result = await axios.post(
-    `${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(project)}/members`,
-    {
-      user_id,
-      access_level: accessLevel || 10
-    }
-  )
-  */
+
+
 } 
 
 module.exports = addProjectMember
