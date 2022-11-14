@@ -182,7 +182,7 @@ const actions = {
                 try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
                 if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
 
-                dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true, projectPath})
+                dispatch('useProjectState', {root: _.cloneDeep({...dict, ResourceType: undefined}), shouldMerge: true, projectPath})
                 _syncState = false // override sync state if we just loaded this
                 /*
                 deploymentTemplate = _.cloneDeep(dt)
@@ -486,7 +486,7 @@ const actions = {
                 commit('deleteReference', {
                     dependentName,
                     dependentRequirement,
-                    deleteFromDeploymentTemplate: actionLowerCase == 'delete' || actionLowerCase == 'remove'
+                    deleteFromDeploymentTemplate: true
                 });
             } else {
                 commit('removeCard', {templateName: name})
@@ -942,8 +942,27 @@ const getters = {
             rootGetters.getDeployment.name,
             getters.getCurrentEnvironmentName
         )?.pipeline?.variables?.WORKFLOW == 'undeploy'
-    }
+    },
 
+    getValidationStatuses(state) {
+        return state.inputValidationStatus
+    },
+
+    deployTooltip(state, getters) {
+        if(getters.cardIsValid(getters.getPrimaryCard)) return null
+
+        const statuses = Object.values(getters.getValidationStatuses)
+
+        if(statuses.includes('error')) {
+            return 'Some components have missing or invalid values'
+        }
+
+        if(statuses.includes('missing')) {
+            return 'Some components are missing inputs'
+        }
+
+        return 'Not all required components have been created or connected'
+    }
 };
 
 export default {
