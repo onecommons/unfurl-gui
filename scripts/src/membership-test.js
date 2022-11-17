@@ -11,6 +11,7 @@ const createUser = require('./create-user')
 const pushLocalRepo = require('./push-local-repo')
 const addProjectMember = require('./add-project-member')
 const createProjectToken = require('./create-project-token')
+const {extractCsrf} = require("./shared/util.js")
 
 const tmpdirName = path.join('/', os.tmpdir(), `unfurl-gui-${Date.now()}`)
 
@@ -20,7 +21,6 @@ console.log({tmpdirName})
 
 async function main() {
   await login()
-  fs.mkdirSync(tmpdirName)
   const fixtures = ['buildpack-test-app.tar', 'container-webapp.tar', 'dashboard.tar']
 
   const tarPromises = fixtures.map(f => 
@@ -62,11 +62,6 @@ async function main() {
     )
   } catch(e){console.error(e)}
   
-
-  await createProjectToken({project: dashboardProject})
-  
-  const res = await axios.get(`${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(dashboardProject)}/members`)
-  const bot_id = res.data.find(member => member.name == 'UNFURL_PROJECT_TOKEN').id
   try {
     await pushLocalRepo(
       path.join(tmpdirName, 'dashboard'),
@@ -75,17 +70,19 @@ async function main() {
     )
   } catch(e) {console.error(e)}
 
+  await createProjectToken({project: dashboardProject})
+  
+  const res = await axios.get(`${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(dashboardProject)}/members`)
+  const bot_id = res.data.find(member => member.name == 'UNFURL_PROJECT_TOKEN').id
+
 
   try {
-    await addProjectMember({username: downstreamUsername, project: `${upstreamUsername}/container-webapp`})
-    await addProjectMember({username: downstreamUsername, project: `${upstreamUsername}/buildpack-test-app`})
+    await addProjectMember({accessLevel: 30, username: downstreamUsername, project: `${upstreamUsername}/container-webapp`})
+    await addProjectMember({accessLevel: 30, username: downstreamUsername, project: `${upstreamUsername}/buildpack-test-app`})
   } catch(e) {
     console.error(e)
   }
 
-  /*
-   * "variables_attributes":[{"key":"WORKFLOW","masked":false,"secret_value":"deploy","variable_type":"unencrypted_var"},{"key":"DEPLOY_ENVIRONMENT","masked":false,"secret_value":"gcp","variable_type":"unencrypted_var"},{"key":"BLUEPRINT_PROJECT_URL","masked":false,"secret_value":"http://tunnel.abreidenbach.com:3000/andrewnov1b/nextcloud.git","variable_type":"unencrypted_var"},{"key":"DEPLOY_PATH","masked":false,"secret_value":"environments/gcp/andrewnov1b/nextcloud/google-cloud-platform---compute-engine-1","variable_type":"unencrypted_var"},{"key":"DEPLOYMENT","masked":false,"secret_value":"google-cloud-platform---compute-engine-1","variable_type":"unencrypted_var"},{"key":"PROJECT_DNS_ZONE","masked":false,"secret_value":"andrewnov1b.u.opencloudservices.net","variable_type":"unencrypted_var"}]
-*/
 
   const variables = {
     WORKFLOW: 'deploy',
@@ -97,41 +94,63 @@ async function main() {
   }
 
   const apiTarget = `${process.env.OC_URL}/${downstreamUsername}/dashboard/-/deployments/new`
+
   const requestBody = {
-    bot_id,
-    deploy: 'now',
-    variables_attributes: Object.entries(variables).map(([key, secret_value]) => ({key, secret_value, masked: false, variable_type: 'unencrypted_var'})),
-    deploy_tokens: {
-      _project_foo: `${upstreamUsername}/buildpack-test-app`
+    pipeline: {
+      ref: 'main',
+      variables_attributes: Object.entries(variables).map(([key, secret_value]) => ({key, secret_value, masked: false, variable_type: 'unencrypted_var'})),
     },
-    project_dependencies: ['onecommons/unfurl-types', `${upstreamUsername}/container-webapp`]
+    deployment: {
+      bot_id,
+      schedule: 'now',
+      project_dependencies: {
+        [`${upstreamUsername}/container-webapp`]: '_dep_foo',
+        [`${upstreamUsername}/buildpack-test-app`]: '_dep_bar',
+      }
+    }
   }
+
 
   console.log(`POST ${apiTarget}`)
   console.log(requestBody)
 
   await login(null, null, null, downstreamUsername, true)
 
+
+  const page = (await axios.get(apiTarget.replace('/new', ''))).data
+  const authenticity_token = extractCsrf(page)
+
   const {status, data} = await axios.post(
     apiTarget,
-    requestBody
+    requestBody,
+    {
+      headers: {
+        'X-CSRF-Token': authenticity_token
+      }
+    }
   )
 
-  console.log({status, data})
+  console.log({data, status})
+  if(status >= 200 && status <= 400) {} 
+  else {
+    throw new Error(`Membership test failed: pipeline returned ${status}`)
+  }
+
 
 }
 
 
 async function tryMain() {
   try {
+    fs.mkdirSync(tmpdirName)
     await main()
+    fs.rmdirSync(tmpdirName, {recursive: true})
   } catch(e) {
     console.error(e)
+    process.exit(1)
   }
 }
 
 
 tryMain()
-/*
-fs.rmdirSync(tmpdirName, {recursive: true})
-*/
+

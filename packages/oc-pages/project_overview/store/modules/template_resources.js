@@ -196,9 +196,9 @@ const actions = {
         deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
         blueprint = {...blueprint, projectPath} // maybe we want to do it here
 
-        const sourceDeploymentTemplate = deploymentTemplate.name
+        const sourceDeploymentTemplate = deploymentTemplate.source || deploymentTemplate.name
 
-        if(renameDeploymentTemplate) {
+        if(!deploymentTemplate.source && renameDeploymentTemplate) {
             deploymentTemplate.source = sourceDeploymentTemplate
             deploymentTemplate.title = renameDeploymentTemplate;
             deploymentTemplate.name = slugify(renameDeploymentTemplate);

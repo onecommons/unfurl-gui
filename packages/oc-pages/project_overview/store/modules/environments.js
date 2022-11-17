@@ -184,8 +184,43 @@ const actions = {
                 null
         )?.path_with_namespace
 
+        if(upstreamProjectPath) {
+            commit('addRepositoryDependencies', [upstreamProjectPath])
+        }
+            
+        const projectIds = await Promise.all(
+            state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)).then(project => project.id))
+        )
+
+        let writableBlueprintProjectUrl
+        const dependencies = state.repositoryDependencies
+            .reduce(
+                (acc, v, i) => {
+                    const variableName = `_dep_${projectIds[i]}`
+
+                    // TODO move this side effect out of a reduce
+                    if(parameters.projectUrl.includes(`${v}.git`)) {
+                        writableBlueprintProjectUrl = new URL(parameters.projectUrl)
+                        writableBlueprintProjectUrl.username = variableName.replace('_dep', 'UNFURL_DEPLOY_TOKEN')
+                        writableBlueprintProjectUrl.password = '$' + variableName
+                        writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
+                    }
+
+                    if(!getters.lookupVariableByEnvironment(variableName, '*')) {
+                        acc[v] = variableName
+                    }
+
+                    return acc
+                },
+                {}
+            )
+
+        // will be verifying some cloning cases
+        console.log({projectIds, dependencies, parameters})
+
         const deployVariables = await prepareVariables({
             ...parameters,
+            writableBlueprintProjectUrl,
             upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
             upstreamBranch: state.upstreamBranch,
             upstreamProject: state.upstreamProject,
@@ -197,37 +232,13 @@ const actions = {
 
         let data, error
 
-        if(parameters.workflow == 'undeploy') {
-            data = await triggerPipeline(
-                rootGetters.pipelinesPath,
-                deployVariables,
-            )
-        } else {
-
-            if(upstreamProjectPath) {
-                commit('addRepositoryDependencies', [upstreamProjectPath])
+        data = await triggerAtomicDeployment(
+            rootGetters.getHomeProjectPath,
+            {
+                variables: deployVariables,
+                dependencies
             }
-                
-            const projectIds = await Promise.all(
-                state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)).then(project => project.id))
-            )
-
-            const dependencies = state.repositoryDependencies
-                .reduce(
-                    (acc, v, i) => {acc[v] = `_dep_${projectIds[i]}`; return acc},
-                    {}
-                )
-
-            console.log({projectIds, dependencies})
-
-            data = await triggerAtomicDeployment(
-                rootGetters.getHomeProjectPath,
-                {
-                    variables: deployVariables,
-                    dependencies
-                }
-            )
-        }
+        )
 
 
         if(error = data?.errors) {
@@ -260,6 +271,7 @@ const actions = {
             `Deploy ${parameters.deploymentName} into ${parameters.environmentName}`
 
         commit('setCommitMessage', commitMessage)
+
         commit('pushPreparedMutation', () => {
             return [{
                 typename: 'DeploymentPath',
@@ -693,7 +705,15 @@ const getters = {
         return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     },
 
-    getEnvironmentDefaults(state) { return state.defaults || null }
+    getEnvironmentDefaults(state) { return state.defaults || null },
+
+    getVariables(state) {
+        return function(environment) {
+            const environmentName = environment?.name || environment
+
+            return {...state.variablesByEnvironment['*'], ...state.variablesByEnvironment[environmentName]}
+        }
+    }
 };
 
 export default {
