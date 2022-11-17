@@ -106,7 +106,8 @@ export default {
       'getParentDependency',
       'getPrimary',
       'environmentsAreReady',
-      'editingDeployed'
+      'editingDeployed',
+      'deployTooltip'
     ]),
     
     deploymentDir() {
@@ -617,6 +618,7 @@ export default {
           :custom-title="getDeploymentTemplate.title"
           :main-card-class="'primary-card'"
           :card="getPrimaryCard"
+          :tooltip="deployTooltip"
           :icon-title="true"
           :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
           :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"

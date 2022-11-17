@@ -946,6 +946,22 @@ const getters = {
 
     getValidationStatuses(state) {
         return state.inputValidationStatus
+    },
+
+    deployTooltip(state, getters) {
+        if(getters.cardIsValid(getters.getPrimaryCard)) return null
+
+        const statuses = Object.values(getters.getValidationStatuses)
+
+        if(statuses.includes('error')) {
+            return 'Some components have missing or invalid values'
+        }
+
+        if(statuses.includes('missing')) {
+            return 'Some components are missing inputs'
+        }
+
+        return 'Not all required components have been created or connected'
     }
 };
 
