@@ -19,8 +19,8 @@ export default {
             'populateJobsList',
             'populateDeploymentItems',
             'populateCurrentUser',
-            'populateDashboardProject'
-            //'applyUserSetting'
+            'populateDashboardProject',
+            'deployInto'
         ]),
         ...mapMutations([
             'setCurrentNamespace',
@@ -34,14 +34,7 @@ export default {
             'getDashboardItems',
             'getHomeProjectPath',
             'getUsername',
-            //'totalDeploymentsCount',
-            //'environmentsCount',
         ]),
-        /*
-        ...mapState([
-            'user_settings'
-        ])
-         */
     },
     async mounted() {
         const pathComponents = this.$router.options.base.split('/').filter(s => s);
@@ -71,19 +64,10 @@ export default {
 
         this.initUserSettings({username: this.getUsername})
 
-        /*
-        const shouldRedirectToExplore = (
-            this.totalDeploymentsCount + this.environmentsCount == 0 &&
-            !this.user_settings[USER_TOURED_EXPLORE_PAGE] &&
-            !window.gon.unfurl_gui
-        )
-        if(shouldRedirectToExplore) {
-            createFlash({message: 'Redirecting to our blueprints catalog...', type: FLASH_TYPES.NOTICE})
-            window.location.href = '/explore/blueprints'
-
-            this.applyUserSetting({key: USER_TOURED_EXPLORE_PAGE, value: true})
+        if(sessionStorage['trigger-deployment']) {
+          this.deployInto(JSON.parse(sessionStorage['trigger-deployment']))
+          delete sessionStorage['trigger-deployment']
         }
-         */
 
         this.isLoaded = true
     }

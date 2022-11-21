@@ -83,7 +83,7 @@ export default {
                                         :data="property.value"
                                         :rootKey="property.name"
                                     />
-                                    <a v-else-if="isUrl(property.value)" :href="property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
+                                    <a v-else-if="property.url || isUrl(property.value)" :href="property.url || property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
                                     <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
 
                                     <Redacted v-else-if="property.sensitive" :value="property.value" />
