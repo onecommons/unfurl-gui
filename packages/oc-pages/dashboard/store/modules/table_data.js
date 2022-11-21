@@ -54,10 +54,15 @@ const actions = {
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 let deployment
                 const clonedDeploymentDict = _.cloneDeep(frozenDeploymentDict)
-                //clonedDeploymentDict.ResourceType = frozenDeploymentDict.ResourceType
-                //dispatch('useProjectState', {root: _.cloneDeep(frozenDeploymentDict)})
-                dispatch('useProjectState', {root: clonedDeploymentDict})
-                //dispatch('useProjectState', {root: frozenDeploymentDict})
+
+                let projectPath
+                try {
+                    projectPath = Object.values(frozenDeploymentDict.DeploymentTemplate)[0].projectPath
+                } catch(e) {
+                    console.error(e)
+                }
+
+                dispatch('useProjectState', {root: clonedDeploymentDict, projectPath})
                 if(clonedDeploymentDict.Deployment) {
                     deployment = {...rootGetters.getDeployment}
                     const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(clonedDeploymentDict.DeploymentTemplate)[0]

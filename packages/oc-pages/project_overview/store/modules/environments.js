@@ -192,6 +192,8 @@ const actions = {
             state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)).then(project => project.id))
         )
 
+        const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
+
         let writableBlueprintProjectUrl
         const dependencies = state.repositoryDependencies
             .reduce(
@@ -201,7 +203,7 @@ const actions = {
                     // TODO move this side effect out of a reduce
                     if(parameters.projectUrl.includes(`${v}.git`)) {
                         writableBlueprintProjectUrl = new URL(parameters.projectUrl)
-                        writableBlueprintProjectUrl.username = variableName.replace('_dep', 'UNFURL_DEPLOY_TOKEN')
+                        writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
                         writableBlueprintProjectUrl.password = '$' + variableName
                         writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
                     }

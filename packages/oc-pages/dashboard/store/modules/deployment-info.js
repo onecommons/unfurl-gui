@@ -75,6 +75,9 @@ const actions = {
                 context.deployment = item.context.deployment
                 context.application = item.context.application
                 context.deployPath = rootGetters.lookupDeployPath(context.deployment.name, context.environment.name)
+
+                if(!context.deployPath) throw new Error(`Couldn't look up deploy path for ${context.deployment.name} in ${context.environment.name}`)
+
                 context.job = getters.jobByPipelineId(context.deployPath?.pipeline?.id)
                 context.projectPath = rootGetters.getHomeProjectPath
                 context.namespace = rootGetters.getCurrentNamespace
