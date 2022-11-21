@@ -21,7 +21,7 @@ export default {
     data() {
         const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
-            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0}),
+            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
             accessToken,
             repositoryBranchesPromise: null,
             project_id: null,
@@ -65,9 +65,9 @@ export default {
             )
         },
         async setupRegistryCredentials(gitlabProjectId) {
-            const {key} = await this.generateProjectTokenIfNeeded({projectId: gitlabProjectId})
+            //const {key} = await this.generateProjectTokenIfNeeded({projectId: gitlabProjectId})
             this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: key}
+            this.password = {get_env: `_dep_${gitlabProjectId}`}
             this.updateValue('username')
             this.updateValue('password')
         },
