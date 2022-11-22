@@ -35,7 +35,8 @@ export default {
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
             const blueprint = this.deployment.blueprint
-            const blueprintUrl = `${protocol}//${username}:${token}@${server}/${this.deployment.projectPath}`
+            // XXX if (blueprint token) add ${blueprint_deploy_bot}:${blueprint token}@ to blueprintUrl
+            const blueprintUrl = `${protocol}//${server}/${this.deployment.projectPath}`
             return { protocol, username, token, server, projectName, projectPath, projectId, environmentName, deploymentName, deployPath, blueprint, blueprintUrl }
         },
         localCreateDeploymentInvocation() {
