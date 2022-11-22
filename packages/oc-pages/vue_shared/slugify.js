@@ -6,5 +6,6 @@ export default function slugify(text) {
         .trim()
         .replace(/(\-\-+|_|\s+)/g, '-')
         .replace(/[^\w\-]+/g, '')
+        .replace(/(\-\-+|_|\s+)/g, '-')
         .replace(/^\d+/, '')
 }

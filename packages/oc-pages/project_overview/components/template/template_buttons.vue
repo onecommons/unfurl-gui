@@ -142,9 +142,8 @@ export default {
                     {{deployTooltip}}
                 </div>
             </template>
-            <div class="d-flex flex-column position-relative">
+            <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex flex-column position-relative">
                 <gl-button
-                    v-show="deployStatus != 'hidden' && !editingTorndown"
                     :aria-label="__('Deploy')"
                     data-testid="deploy-button"
                     :title="!deployTooltip? 'Deploy': null"
@@ -161,7 +160,6 @@ export default {
                         <span style="line-height: 1;">Deployment is incomplete</span><i style="font-size: 1.25em;" class="el-icon-info ml-1"/>
                     </div>
                 </error-small>
-                <!--gl-button v-else type="button" class="deploy-action" loading>{{ __('Deploying...') }}</gl-button-->
         </div>
     </el-tooltip>
     </div>

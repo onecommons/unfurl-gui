@@ -1,6 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
 import { redirectTo } from '~/lib/utils/url_utility';
-import {generateAccessToken} from './user'
 
 const MASK_VARIABLES = ['UNFURL_ACCESS_TOKEN']
 function toGlVariablesAttributes(variables, variable_type='unencrypted_var') {
@@ -33,9 +32,29 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
     return data
 }
 
+
+export async function triggerAtomicDeployment(projectPath, {ref='main', schedule='now', variables=[], dependencies={}}) {
+    const members = (await axios.get(`/api/v4/projects/${encodeURIComponent(projectPath)}/members`))?.data || []
+    const bot_id = members.find(m => m.name == 'UNFURL_PROJECT_TOKEN')?.id
+
+    if(!bot_id) throw new Error('Could not get bot ID of UNFURL_PROJECT_TOKEN for atomic deployment')
+
+    return (await axios.post(
+        `/${projectPath}/-/deployments/new`,
+        {
+            pipeline: {ref, variables_attributes: variables},
+            deployment: {
+                bot_id,
+                schedule,
+                project_dependencies: dependencies
+            },
+        }
+    ))?.data
+}
+
 // this doens't need to be async if generateAccessToken is done upon first sign-in with the vault token, but I think it's a good contract to enforce
 // it's possible we'll want to make async calls here in the future
-export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, mockDeploy, upstreamCommit, upstreamBranch, upstreamProject, projectDnsZone}) {
+export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, writableBlueprintProjectUrl, blueprintToken, mockDeploy, upstreamCommit, upstreamBranch, upstreamProject, upstreamProjectPath, projectDnsZone}) {
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
     const DEPLOY_IMAGE = sessionStorage['deploy-image']
@@ -53,6 +72,7 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
         DEPLOYMENT_BLUEPRINT: deploymentBlueprint,
         UPSTREAM_COMMIT: upstreamCommit ?? null,
         UPSTREAM_PROJECT: upstreamProject ?? null,
+        UPSTREAM_PROJECT_PATH: upstreamProjectPath ?? null,
         UPSTREAM_REF: upstreamBranch ?? null,
         UPSTREAM_BRANCH: upstreamBranch ?? null,
         UNFURL_MOCK_DEPLOY: mockDeploy && 'true',
@@ -60,7 +80,13 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
         UNFURL_VALIDATION_MODE,
         DEPLOY_IMAGE,
         PROJECT_DNS_ZONE: projectDnsZone,
-    })
+        USE_DEPLOYMENT_BLUEPRINT: deploymentBlueprint? null : "--use-deployment-blueprint ''"
+    }).concat(
+        toGlVariablesAttributes({
+            WRITABLE_BLUEPRINT_PROJECT_URL: writableBlueprintProjectUrl ?? null,
+            BLUEPRINT_TOKEN_VAR: blueprintToken ?? null,
+        }, 'env_var')
+    )
 }
 
 export async function triggerIncrementalDeployment(pipelinesPath, {upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}) {

@@ -1,6 +1,7 @@
 <script>
 import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
+import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
@@ -19,10 +20,8 @@ export default {
         DeploymentScheduler
     },
     data() {
-        const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
-            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0}),
-            accessToken,
+            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
             repositoryBranchesPromise: null,
             project_id: null,
             branch: null,
@@ -65,9 +64,8 @@ export default {
             )
         },
         async setupRegistryCredentials(gitlabProjectId) {
-            const {key} = await this.generateProjectTokenIfNeeded({projectId: gitlabProjectId})
             this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: key}
+            this.password = {get_env: toDepTokenEnvKey(gitlabProjectId)}
             this.updateValue('username')
             this.updateValue('password')
         },

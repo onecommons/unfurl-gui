@@ -718,6 +718,13 @@ const actions = {
 
     async sendUpdateSubrequests({state, getters, commit, rootState}, o){
 
+        // send environment variables before trying to commit changes
+        if(o?.dryRun) {
+            console.log(state.env, state.environmentScope, state.projectPath)
+        } else {
+            await patchEnv(state.env, state.environmentScope, state.projectPath)
+        }
+
         const patch = []
         for(let key in getters.getPatches) {
             const patchesByTypename = getters.getPatches[key]
@@ -753,8 +760,6 @@ const actions = {
             mutation: UpdateDeploymentObject,
             variables
         })
-        
-        await patchEnv(state.env, state.environmentScope, state.projectPath)
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {

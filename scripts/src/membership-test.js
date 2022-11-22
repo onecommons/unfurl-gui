@@ -96,15 +96,17 @@ async function main() {
   const apiTarget = `${process.env.OC_URL}/${downstreamUsername}/dashboard/-/deployments/new`
 
   const requestBody = {
-    bot_id,
-    deploy: 'now',
     pipeline: {
       ref: 'main',
       variables_attributes: Object.entries(variables).map(([key, secret_value]) => ({key, secret_value, masked: false, variable_type: 'unencrypted_var'})),
     },
-    project_dependencies: {
-      [`${upstreamUsername}/container-webapp`]: '_dep_foo',
-      [`${upstreamUsername}/buildpack-test-app`]: '_dep_bar',
+    deployment: {
+      bot_id,
+      schedule: 'now',
+      project_dependencies: {
+        [`${upstreamUsername}/container-webapp`]: '_dep_foo',
+        [`${upstreamUsername}/buildpack-test-app`]: '_dep_bar',
+      }
     }
   }
 

@@ -14,7 +14,7 @@ export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
     const {minAccessLevel} = options
 
-    let _minAccessLevel = minAccessLevel || 40
+    let _minAccessLevel = minAccessLevel ?? 40
 
     let result = (await axios.get(`/api/v4/projects?min_access_level=${_minAccessLevel}`, generateConfig(options)))?.data
     const dashboards = (await axios.get('/api/v4/dashboards?min_access_level=10', generateConfig(options))).data

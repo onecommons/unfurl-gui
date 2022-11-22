@@ -19,6 +19,8 @@ const PROP_MAP = {
     primaryProviderGcpZone(value) { return {name: 'Zone', value} },
     primaryProviderAwsRoleArn(value) { return {name: 'Role ARN', value}},
     primaryProviderAwsDefaultRegion(value) { return {name: 'Default region', value}},
+    AWS_DEFAULT_REGION(value) { return {name: 'Default region', value}},
+    AWS_ACCESS_KEY_ID(value) { return {name: 'Access key', value}}
 }
 
 function mapCloudProviderProps(ci_variables) {
@@ -31,6 +33,20 @@ function mapCloudProviderProps(ci_variables) {
             if(newProp) result.push(newProp)
         }
     }
+
+    const deployPath = this.lookupDeployPath('primary_provider', this.environmentName)
+    if(deployPath) {
+        const jobId = this.jobByPipelineId(deployPath.pipeline.id)?.id
+        console.log({jobId})
+        if(jobId) {
+            result.push({
+                name: 'Created in',
+                value: `Job #${jobId}`,
+                url: `/${this.getHomeProjectPath}/-/jobs/${jobId}`,
+            })
+        }
+    }
+
     return result
 }
 
@@ -51,7 +67,10 @@ export default {
             'isMobileLayout',
             'getCardsStacked',
             'cardIsValid',
-            'userCanEdit'
+            'userCanEdit',
+            'getVariables',
+            'lookupDeployPath',
+            'jobByPipelineId'
         ]),
         providerTabIndex() {
             if(this.hasProviderTab) return 0
@@ -77,7 +96,10 @@ export default {
             ]
         },
         propviderProps() {
-            return mapCloudProviderProps(this.$store.state.ci_variables)
+            return mapCloudProviderProps.bind(this)({
+                ...this.$store.state.ci_variables,
+                ...this.getVariables(this.environment)
+            })
         },
         cloudProviderDisplayName() {
             switch(this.environment?.primary_provider?.type) {
@@ -141,6 +163,9 @@ export default {
             } else {
                 return (resource) => resource.name != 'primary_provider' && !this.publicCloudResources.includes(resource)
             }
+        },
+        environmentName() {
+            return this.$route.params.name
         }
     },
     methods: {
@@ -209,7 +234,7 @@ export default {
     },
 
     beforeMount() {
-        const environmentName = this.$route.params.name
+        const environmentName = this.environmentName
         const environment = this.lookupEnvironment(environmentName)
         if(!environment) {
             notFoundError()
@@ -244,6 +269,16 @@ export default {
                 </div>
             </template>
         </oc-properties-list>
+        <!-- this isn't hooked up yet, add back when ready -->
+        <!--div v-if="userCanEdit" class="mt-3">
+            <gl-button variant="confirm">
+                <div>
+                    <gl-icon name="plus"/>
+                    {{__('Add a Provider')}}
+                </div>
+            </gl-button>
+        </div-->
+
         <gl-tabs v-model="currentTab" class="mt-4">
             <oc-tab title="Provider" v-if="hasProviderTab"></oc-tab>
             <oc-tab title="Resources">

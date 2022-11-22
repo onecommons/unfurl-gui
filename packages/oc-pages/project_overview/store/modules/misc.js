@@ -57,6 +57,7 @@ const getters = {
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
     pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },
+    //deployTriggerPath(_, getters) { return `/${getters.getHomeProjectPath}/-/deployments/new` },
     UNFURL_MOCK_DEPLOY() {
         if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true
         let key = Object.keys(sessionStorage).find(key => (/(unfurl(-|_))?mock(_|-)deploy/i).test(key))

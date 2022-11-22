@@ -459,7 +459,7 @@ export default {
           projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
           deployPath: this.deploymentDir,
           deploymentName: this.$route.params.slug,
-          deploymentBlueprint: this.$route.query.ts
+          deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
         })
         if(result === false) return
 

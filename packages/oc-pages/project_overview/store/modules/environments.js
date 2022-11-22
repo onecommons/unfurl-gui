@@ -5,10 +5,8 @@ import {cloneDeep} from 'lodash'
 import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import {prepareVariables, triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
-import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
-import {generateGroupAccessToken} from 'oc_vue_shared/client_utils/group'
+import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
@@ -25,6 +23,7 @@ const state = () => ({
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
     additionalDashboards: [],
+    repositoryDependencies: [],
     defaults: null,
     projectPath: null,
     ready: false,
@@ -36,13 +35,17 @@ const state = () => ({
 
 
 
-function toProjectTokenEnvKey(projectId) {
-    return `_project_token__${projectId}`
-}
-
 const mutations = {
     setProjectPath(state, projectPath) {
         state.projectPath = projectPath
+    },
+
+    addRepositoryDependencies(state, dependencies) {
+        state.repositoryDependencies = state.repositoryDependencies.concat(dependencies)
+    },
+
+    clearRepositoryDependencies(state) {
+        state.repositoryDependencies = []
     },
 
     onSaveEnvironment(state, cb) {
@@ -78,7 +81,7 @@ const mutations = {
     },
 
     setUpstreamProject(state, upstreamProject) {
-        state.upstreamProject = upstreamProject
+        state.upstreamProject = upstreamProject?.id || upstreamProject
     },
 
     setUpstreamBranch(state, upstreamBranch) {
@@ -168,20 +171,73 @@ const actions = {
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
 
+        // if upstreamProject is set as an ID, look up the upstream path
+        const upstreamProjectPath = (
+            !isNaN(parseInt(state.upstreamProject))? 
+                await fetchProjectInfo(state.upstreamProject):
+                null
+        )?.path_with_namespace
+
+        if(upstreamProjectPath) {
+            commit('addRepositoryDependencies', [upstreamProjectPath])
+        }
+
+        const projects = await Promise.all(
+            state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)))
+        )
+
+        const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
+
+        let writableBlueprintProjectUrl, blueprintToken
+        const dependencies = state.repositoryDependencies
+            .reduce(
+                (acc, v, i) => {
+                    const project = projects[i]
+                    if(project.visibility == 'public') return acc
+                    const variableName = toDepTokenEnvKey(project.id)
+
+                    // TODO move this side effect out of a reduce
+                    if(parameters.projectUrl.includes(`${v}.git`)) {
+                        writableBlueprintProjectUrl = new URL(parameters.projectUrl)
+                        writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
+                        writableBlueprintProjectUrl.password = '$' + variableName
+                        writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
+                        blueprintToken = variableName
+                    }
+
+                    if(!getters.lookupVariableByEnvironment(variableName, '*')) {
+                        acc[v] = variableName
+                    }
+
+                    return acc
+                },
+                {}
+            )
+
         const deployVariables = await prepareVariables({
             ...parameters,
+            writableBlueprintProjectUrl,
+            blueprintToken,
             upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
             upstreamBranch: state.upstreamBranch,
             upstreamProject: state.upstreamProject,
+            upstreamProjectPath,
             projectDnsZone: getters.lookupVariableByEnvironment('PROJECT_DNS_ZONE', '*'),
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
+
         let data, error
-        data = await triggerPipeline(
-            rootGetters.pipelinesPath,
-            deployVariables,
+
+        data = await triggerAtomicDeployment(
+            rootGetters.getHomeProjectPath,
+            {
+                variables: deployVariables,
+                dependencies
+            }
         )
+
+
         if(error = data?.errors) {
             return {pipelineData: data, error}
         }
@@ -197,6 +253,7 @@ const actions = {
                 'upstream_commit_id': state.upstreamCommit?.id || state.upstreamCommit,
                 'upstream_pipeline_id': state.upstreamId,
                 'upstream_project_id': state.upstreamProject?.id || state.upstreamProject,
+                'upstream_project_path': state.upstreamProjectPath,
                 'upstream_branch': state.upstreamBranch
             } :
             null
@@ -211,6 +268,7 @@ const actions = {
             `Deploy ${parameters.deploymentName} into ${parameters.environmentName}`
 
         commit('setCommitMessage', commitMessage)
+
         commit('pushPreparedMutation', () => {
             return [{
                 typename: 'DeploymentPath',
@@ -227,6 +285,7 @@ const actions = {
 
         await dispatch('commitPreparedMutations', {}, {root: true})
         commit('clearUpstream')
+        commit('clearRepositoryDependencies', null)
         return {pipelineData: data}
     },
     deployInto({dispatch}, parameters) {
@@ -384,19 +443,7 @@ const actions = {
         const namespace = projectInfo?.namespace
 
         if(!namespace) return
-        if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
-            let UNFURL_ACCESS_TOKEN
 
-            if(namespace.kind == 'group') {
-                UNFURL_ACCESS_TOKEN = await generateGroupAccessToken('UNFURL_ACCESS_TOKEN', namespace.full_path)
-            } else if(projectInfo.owner.id == gon.current_user_id) {
-                UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
-            }
-
-            if(!UNFURL_ACCESS_TOKEN) return
-
-            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath)
-        }
         if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')) {
             const scopes = ['api', 'read_api', 'read_registry', 'write_registry', 'read_repository', 'write_repository']
             const UNFURL_PROJECT_TOKEN = await generateProjectAccessToken(encodeURIComponent(fullPath), {name: 'UNFURL_PROJECT_TOKEN', scopes})
@@ -416,7 +463,7 @@ const actions = {
         dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
     },
     async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
-        const key = toProjectTokenEnvKey(projectId)
+        const key = toDepTokenEnvKey(projectId)
         let token
         if(!(token = getters.lookupProjectToken(projectId))) {
             const token = await generateProjectAccessToken(projectId)
@@ -608,7 +655,7 @@ const getters = {
     },
     lookupProjectToken(state, getters) {
         return function(projectId) {
-            const key = toProjectTokenEnvKey(projectId)
+            const key = toDepTokenEnvKey(projectId)
             return getters.lookupVariableByEnvironment(key, '*')
         }
     },
@@ -641,7 +688,15 @@ const getters = {
         return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     },
 
-    getEnvironmentDefaults(state) { return state.defaults || null }
+    getEnvironmentDefaults(state) { return state.defaults || null },
+
+    getVariables(state) {
+        return function(environment) {
+            const environmentName = environment?.name || environment
+
+            return {...state.variablesByEnvironment['*'], ...state.variablesByEnvironment[environmentName]}
+        }
+    }
 };
 
 export default {

@@ -48,6 +48,7 @@ const actions = {
                   ApplicationBlueprint
                   ResourceTemplate
                   DeploymentTemplate
+                  repositories
               }
           }
         `
@@ -87,7 +88,13 @@ const actions = {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
+            commit('clearRepositoryDependencies', null, {root: true})
         }
+
+        if(state.clean && projectPath) {
+            commit('addRepositoryDependencies', [projectPath], {root: true})
+        }
+        
         let transforms
         transforms = {
             // This is for templates that are hidden from unfurl, but are necessary for drafts to function
@@ -186,6 +193,14 @@ const actions = {
                 if(providerType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(providerType)) {
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
                     root.ResourceTemplate['primary_provider'] = _.cloneDeep(de.primary_provider)
+                }
+            },
+            repositories(entry) {
+                const url = new URL(entry.url)
+                const origin = url.origin
+
+                if(window.location.origin == origin) {
+                    commit('addRepositoryDependencies', [url.pathname.slice(1).replace('.git', '')], {root: true})
                 }
             }
         }
