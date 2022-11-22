@@ -269,14 +269,15 @@ export default {
                 </div>
             </template>
         </oc-properties-list>
-        <div v-if="userCanEdit" class="mt-3">
+        <!-- this isn't hooked up yet, add back when ready -->
+        <!--div v-if="userCanEdit" class="mt-3">
             <gl-button variant="confirm">
                 <div>
                     <gl-icon name="plus"/>
                     {{__('Add a Provider')}}
                 </div>
             </gl-button>
-        </div>
+        </div-->
 
         <gl-tabs v-model="currentTab" class="mt-4">
             <oc-tab title="Provider" v-if="hasProviderTab"></oc-tab>

@@ -54,7 +54,7 @@ export async function triggerAtomicDeployment(projectPath, {ref='main', schedule
 
 // this doens't need to be async if generateAccessToken is done upon first sign-in with the vault token, but I think it's a good contract to enforce
 // it's possible we'll want to make async calls here in the future
-export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, writableBlueprintProjectUrl, mockDeploy, upstreamCommit, upstreamBranch, upstreamProject, upstreamProjectPath, projectDnsZone}) {
+export async function prepareVariables({workflow, projectUrl, environmentName, deployPath, deploymentName, deploymentBlueprint, writableBlueprintProjectUrl, blueprintToken, mockDeploy, upstreamCommit, upstreamBranch, upstreamProject, upstreamProjectPath, projectDnsZone}) {
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
     const DEPLOY_IMAGE = sessionStorage['deploy-image']
@@ -84,6 +84,7 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
     }).concat(
         toGlVariablesAttributes({
             WRITABLE_BLUEPRINT_PROJECT_URL: writableBlueprintProjectUrl ?? null,
+            BLUEPRINT_TOKEN_VAR: blueprintToken ?? null,
         }, 'env_var')
     )
 }

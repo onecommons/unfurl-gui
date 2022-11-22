@@ -3,6 +3,7 @@ import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
 import {fetchProjects, fetchRegistryRepositories, fetchContainerRepositories, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
@@ -18,12 +19,9 @@ export default {
         card: Object
     },
     data() {
-
-        const accessToken = this.$store.getters.lookupEnvironmentVariable('UNFURL_ACCESS_TOKEN')
         const data = {
             containerRepositories: null,
             userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0}),
-            accessToken,
             containerRepositoriesPromise: null,
             username: null,
             password: null,
@@ -80,9 +78,8 @@ export default {
         async setupRegistryCredentials() {
             if(!this.project_id) return
             const projectId = (await fetchProjectInfo(encodeURIComponent(this.project_id))).id
-            const {key} = await this.generateProjectTokenIfNeeded({projectId})
             this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: key}
+            this.password = {get_env: toDepTokenEnvKey(projectId)}
             this.updateValue('username')
             this.updateValue('password')
         },

@@ -2,6 +2,9 @@ import axios from '~/lib/utils/axios_utils'
 
 import {USER_HOME_PROJECT} from '../util.mjs'
 
+export function toDepTokenEnvKey(projectId) {
+    return `_dep_${projectId}`
+}
 
 export async function patchEnv(env, environmentScope, fullPath) {
     if(!fullPath) {

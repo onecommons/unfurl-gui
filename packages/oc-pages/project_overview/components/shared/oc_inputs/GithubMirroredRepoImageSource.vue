@@ -8,6 +8,7 @@ import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} f
 import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
 import {generateIssueLinkSync} from 'oc_vue_shared/client_utils/issues'
+import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
@@ -158,9 +159,8 @@ export default {
             this.projectInfo = await fetchProjectInfo(projectId)
         },
         async setupRegistryCredentials(projectId) {
-            const {key} = await this.generateProjectTokenIfNeeded({projectId})
             this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: key}
+            this.password = {get_env: toDepTokenEnvKey(projectId)}
             this.updateValue('username')
             this.updateValue('password')
         },
