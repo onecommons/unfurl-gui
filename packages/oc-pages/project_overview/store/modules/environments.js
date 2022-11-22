@@ -5,10 +5,8 @@ import {cloneDeep} from 'lodash'
 import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import {prepareVariables, triggerPipeline, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
-import {patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
-import {generateGroupAccessToken} from 'oc_vue_shared/client_utils/group'
+import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
@@ -36,10 +34,6 @@ const state = () => ({
 });
 
 
-
-function toProjectTokenEnvKey(projectId) {
-    return `_project_token__${projectId}`
-}
 
 const mutations = {
     setProjectPath(state, projectPath) {
@@ -187,18 +181,20 @@ const actions = {
         if(upstreamProjectPath) {
             commit('addRepositoryDependencies', [upstreamProjectPath])
         }
-            
-        const projectIds = await Promise.all(
-            state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)).then(project => project.id))
+
+        const projects = await Promise.all(
+            state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)))
         )
 
         const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
 
-        let writableBlueprintProjectUrl
+        let writableBlueprintProjectUrl, blueprintToken
         const dependencies = state.repositoryDependencies
             .reduce(
                 (acc, v, i) => {
-                    const variableName = `_dep_${projectIds[i]}`
+                    const project = projects[i]
+                    if(project.visibility == 'public') return acc
+                    const variableName = toDepTokenEnvKey(project.id)
 
                     // TODO move this side effect out of a reduce
                     if(parameters.projectUrl.includes(`${v}.git`)) {
@@ -206,6 +202,7 @@ const actions = {
                         writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
                         writableBlueprintProjectUrl.password = '$' + variableName
                         writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
+                        blueprintToken = variableName
                     }
 
                     if(!getters.lookupVariableByEnvironment(variableName, '*')) {
@@ -217,12 +214,10 @@ const actions = {
                 {}
             )
 
-        // will be verifying some cloning cases
-        console.log({projectIds, dependencies, parameters})
-
         const deployVariables = await prepareVariables({
             ...parameters,
             writableBlueprintProjectUrl,
+            blueprintToken,
             upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
             upstreamBranch: state.upstreamBranch,
             upstreamProject: state.upstreamProject,
@@ -468,7 +463,7 @@ const actions = {
         dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
     },
     async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
-        const key = toProjectTokenEnvKey(projectId)
+        const key = toDepTokenEnvKey(projectId)
         let token
         if(!(token = getters.lookupProjectToken(projectId))) {
             const token = await generateProjectAccessToken(projectId)
@@ -660,7 +655,7 @@ const getters = {
     },
     lookupProjectToken(state, getters) {
         return function(projectId) {
-            const key = toProjectTokenEnvKey(projectId)
+            const key = toDepTokenEnvKey(projectId)
             return getters.lookupVariableByEnvironment(key, '*')
         }
     },
