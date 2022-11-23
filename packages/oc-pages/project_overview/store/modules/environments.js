@@ -443,21 +443,7 @@ const actions = {
         const namespace = projectInfo?.namespace
 
         if(!namespace) return
-        /*
-        if(!getters.lookupVariableByEnvironment('UNFURL_ACCESS_TOKEN', '*')) {
-            let UNFURL_ACCESS_TOKEN
 
-            if(namespace.kind == 'group') {
-                UNFURL_ACCESS_TOKEN = await generateGroupAccessToken('UNFURL_ACCESS_TOKEN', namespace.full_path)
-            } else if(projectInfo.owner.id == gon.current_user_id) {
-                UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN')
-            }
-
-            if(!UNFURL_ACCESS_TOKEN) return
-
-            await patchEnv({UNFURL_ACCESS_TOKEN: {value: UNFURL_ACCESS_TOKEN, masked: true}}, '*', fullPath)
-        }
-        */
         if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')) {
             const scopes = ['api', 'read_api', 'read_registry', 'write_registry', 'read_repository', 'write_repository']
             const UNFURL_PROJECT_TOKEN = await generateProjectAccessToken(encodeURIComponent(fullPath), {name: 'UNFURL_PROJECT_TOKEN', scopes})
