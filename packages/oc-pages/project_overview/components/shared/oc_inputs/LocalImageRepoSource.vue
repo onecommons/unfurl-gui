@@ -7,6 +7,8 @@ import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
+import {connectedRepo} from './mixins'
+
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
     return items.filter(item => item.value.includes(query))
@@ -18,13 +20,13 @@ export default {
     props: {
         card: Object
     },
+    mixins: [connectedRepo],
     data() {
         const data = {
             containerRepositories: null,
-            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 0}),
+            userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
+            projectInfo: null,
             containerRepositoriesPromise: null,
-            username: null,
-            password: null,
             containerRepositories: [],
         }
         for(const prop of this.card.properties) {
@@ -37,16 +39,16 @@ export default {
         return data
     },
     computed: {
-        ...mapGetters(['cardIsValid', 'getDeploymentTemplate'])
+        ...mapGetters(['cardIsValid', 'getDeploymentTemplate', 'getHomeProjectPath'])
     },
     watch: {
-        project_id(val) {
+        async project_id(val) {
             this.containerRepositoriesPromise = fetchContainerRepositories(val)
             if(!val) {
                 this.repository_id = null
             }
             this.updateValue('project_id')
-            this.setupRegistryCredentials()
+            this.projectInfo = await fetchProjectInfo(encodeURIComponent(val))
         },
         repository_id(val) {
             if(!val) {
@@ -70,36 +72,21 @@ export default {
         },
         repository_tag() {
             this.updateValue('repository_tag')
+        },
+        projectInfo() {
+            this.setupRegistryCredentials()
         }
     },
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
         ...mapMutations(['onDeploy', 'setUpstreamProject']),
-        async setupRegistryCredentials() {
-            if(!this.project_id) return
-            const projectId = (await fetchProjectInfo(encodeURIComponent(this.project_id))).id
-            const depToken = toDepTokenEnvKey(gitlabProjectId)
-            this.username = `{%if ({'get_env': ['${depToken}']} | eval) %} UNFURL_DEPLOY_TOKEN_{{ {'get_env': ['CI_PROJECT_ID']} | eval }} {% endif %}`
-            this.password = {get_env: depToken}
-            this.updateValue('username')
-            this.updateValue('password')
-        },
-        updateValue(propertyName) {
+
+        getStatus() {
             const status = this.username && this.password && this.project_id && this.repository_id && this.repository_tag ?
                 'valid': 'missing'
-            this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
-
-            if(propertyName) {
-                this.updateProperty({
-                    deploymentName: this.$route.params.slug,
-                    templateName: this.card.name,
-                    propertyName,
-                    propertyValue: this[propertyName],
-                    debounce: 300,
-                    sensitive: false,
-                })
-            }
+            return status
         },
+
         async getUserProjectSuggestions(queryString, callback) {
             const projects = await this.userProjectSuggestionsPromise
             callback(
@@ -112,7 +99,7 @@ export default {
         },
         async getRepositoryIdSuggestions(queryString, callback) {
             if(!this.containerRepositoriesPromise) {
-                this.containerRepositoriesPromise = fetchRegistryRepositories(this.repository_id)
+                this.containerRepositoriesPromise = fetchRegistryRepositories(this.project_id)
             }
             const containerRepositories = this.containerRepositories = await this.containerRepositoriesPromise
             callback(
@@ -122,11 +109,10 @@ export default {
                         .map(repo => ({value: repo.path}))
                 )
             )
-        }
+        },
     },
-    mounted() {
+    async mounted() {
         this.updateValue()
-        this.setupRegistryCredentials()
 
         this.onDeploy(async () => {
             if(this.cardIsValid(this.card)) {
@@ -137,6 +123,10 @@ export default {
                 }
             }
         })
+
+        if(this.project_id) {
+            this.projectInfo = await fetchProjectInfo(encodeURIComponent(this.project_id))
+        }
     }
 }
 </script>
