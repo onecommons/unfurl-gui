@@ -197,7 +197,7 @@ const actions = {
                     const variableName = toDepTokenEnvKey(project.id)
 
                     // TODO move this side effect out of a reduce
-                    if(parameters.projectUrl.includes(`${v}.git`)) {
+                    if((new URL(parameters.projectUrl)).pathname == (`/${v}.git`)) {
                         writableBlueprintProjectUrl = new URL(parameters.projectUrl)
                         writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
                         writableBlueprintProjectUrl.password = '$' + variableName

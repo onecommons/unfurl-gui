@@ -78,8 +78,9 @@ export default {
         async setupRegistryCredentials() {
             if(!this.project_id) return
             const projectId = (await fetchProjectInfo(encodeURIComponent(this.project_id))).id
-            this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: toDepTokenEnvKey(projectId)}
+            const depToken = toDepTokenEnvKey(gitlabProjectId)
+            this.username = `{%if ({'get_env': ['${depToken}']} | eval) %} UNFURL_DEPLOY_TOKEN_{{ {'get_env': ['CI_PROJECT_ID']} | eval }} {% endif %}`
+            this.password = {get_env: depToken}
             this.updateValue('username')
             this.updateValue('password')
         },
