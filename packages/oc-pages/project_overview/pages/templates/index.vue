@@ -100,7 +100,6 @@ export default {
       'getCurrentEnvironment',
       'availableResourceTypesForRequirement',
       'getValidConnections',
-      'getProjectInfo',
       'lookupConfigurableTypes',
       'lookupEnvironment',
       'getParentDependency',
@@ -345,10 +344,6 @@ export default {
       }
     },
 
-    forceRerender() {
-      this.componentKey += 1;
-    },
-
     scrollDown(elId, timeOut=0) {
       clearTimeout(this.uiTimeout);  
       const anchorId = btoa(elId).replace(/=/g, '');
@@ -433,12 +428,6 @@ export default {
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           await this.commitPreparedMutations();
-          createFlash({
-            // TODO this doesn't make sense if it's a template
-            message: __('Starting deployment...'),
-            type: FLASH_TYPES.SUCCESS,
-            duration: this.durationOfAlerts,
-          });
           return true;
         }
       } catch (e) {
@@ -448,8 +437,64 @@ export default {
       }
     },
 
+    triggerLocalDeploy: _.debounce(async function() {
+      // TODO consolodate implementation with triggerDeployment
+
+      try {
+        createFlash({
+          message: __('Preparing deployment...'),
+          type: FLASH_TYPES.SUCCESS,
+          duration: this.durationOfAlerts,
+        });
+
+        this.startedTriggeringDeployment = true;
+        const name = this.$route.query.fn;
+        this.setCommitMessage(`Trigger deployment of ${name}`)
+        await this.triggerSave();
+        const result = await this.deployInto({
+          environmentName: this.$route.params.environment,
+          projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
+          deployPath: this.deploymentDir,
+          deploymentName: this.$route.params.slug,
+          deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+          deployOptions: {
+              schedule: 'defer'
+          }
+        })
+        if(result === false) return
+
+        const {pipelineData, error} = result
+
+        if(error) {
+          throw new Error(error)
+        }
+
+        if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+
+        const router = this.$router
+
+        const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
+        window.history.replaceState({}, null, href)
+
+        this.dataWritten = true
+        window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
+      } catch (err) {
+        console.error(err)
+        const errors = err?.response?.data?.errors || [];
+        const [error] = errors;
+        this.dataWritten = true
+        return createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
+      }
+    }, 250),
+
     triggerDeployment: _.debounce(async function() {
       try {
+        createFlash({
+          message: __('Starting deployment...'),
+          type: FLASH_TYPES.SUCCESS,
+          duration: this.durationOfAlerts,
+        });
+
         this.startedTriggeringDeployment = true;
         const name = this.$route.query.fn;
         this.setCommitMessage(`Trigger deployment of ${name}`)
@@ -692,6 +737,7 @@ export default {
             @saveDraft="debouncedTriggerSave('draft')"
             @saveTemplate="debouncedTriggerSave()"
             @triggerDeploy="triggerDeployment()"
+            @triggerLocalDeploy="triggerLocalDeploy()"
             @cancelDeployment="returnToReferrer()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"
             />

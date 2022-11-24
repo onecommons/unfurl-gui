@@ -3,15 +3,13 @@ import { GlButton } from '@gitlab/ui';
 import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
-import {Tooltip as ElTooltip} from 'element-ui'
-import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
+import DeployButton from './deploy_button.vue'
 
 export default {
     name: 'TemplateButtons',
     components: {
         GlButton,
-        ElTooltip,
-        ErrorSmall
+        DeployButton
     },
     props: {
         deployStatus: {type: String, default: () => 'disabled'},
@@ -24,14 +22,22 @@ export default {
     },
 
     methods: {
+        // TODO these should just all be disabled after an interaction
+
         saveTemplate() {
             this.$emit('saveTemplate');
         },
+
         saveDraft() {
             this.$emit('saveDraft');
         },
+
         triggerDeploy: _.throttle(function () {
             this.$emit('triggerDeploy');
+        }, 3000),
+
+        triggerLocalDeploy: _.throttle(function () {
+            this.$emit('triggerLocalDeploy');
         }, 3000),
 
         launchModalDeleteTemplate() {
@@ -46,14 +52,8 @@ export default {
         ...mapGetters([
             'hasPreparedMutations',
             'environmentHasActiveDeployments',
-            'getCurrentEnvironment',
             'editingDeployed',
-            'editingTorndown',
-            'getValidationStatuses',
-            'cardIsValid',
-            'getPrimaryCard',
-            'deployTooltip',
-            'getPrimaryCard'
+            'getCurrentEnvironment',
         ]),
         disableDelete() {
             if(this.deleteStatus == 'disabled') return true
@@ -68,9 +68,6 @@ export default {
             }
             return __(`Delete ${this.target}`)
         },
-        canDeploy() {
-            return this.cardIsValid(this.getPrimaryCard)
-        }
     }
 }
 </script>
@@ -136,32 +133,7 @@ export default {
             >
 
         </div>
-        <el-tooltip :disabled="!deployTooltip">
-            <template #content>
-                <div>
-                    {{deployTooltip}}
-                </div>
-            </template>
-            <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex flex-column position-relative">
-                <gl-button
-                    :aria-label="__('Deploy')"
-                    data-testid="deploy-button"
-                    :title="!deployTooltip? 'Deploy': null"
-                    type="button"
-                    icon="upload"
-                    class="deploy-action"
-                    :disabled="deployStatus == 'disabled'"
-                    @click.prevent="triggerDeploy"
-                >
-                    {{ __('Deploy') }}
-                </gl-button>
-                <error-small class="position-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
-                    <div class="d-flex align-items-center justify-content-end">
-                        <span style="line-height: 1;">Deployment is incomplete</span><i style="font-size: 1.25em;" class="el-icon-info ml-1"/>
-                    </div>
-                </error-small>
-        </div>
-    </el-tooltip>
+        <DeployButton :deploy-status="deployStatus" @triggerDeploy="triggerDeploy" @triggerLocalDeploy="triggerLocalDeploy"/>
     </div>
 </template>
 <style scoped>
