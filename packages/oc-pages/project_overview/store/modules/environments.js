@@ -233,7 +233,8 @@ const actions = {
             rootGetters.getHomeProjectPath,
             {
                 variables: deployVariables,
-                dependencies
+                dependencies,
+                ...parameters.deployOptions
             }
         )
 

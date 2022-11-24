@@ -152,7 +152,7 @@ export default {
         <deployment-index-table :items="tableItems" hide-filter />
         <gl-tabs class="mt-4" v-model="currentTab">
             <oc-tab title="Deployment" />
-            <oc-tab v-show="jobsData" title="Console" />
+            <oc-tab v-if="jobsData" title="Console" />
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
             <template #primary-controls="card">
