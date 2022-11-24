@@ -28,7 +28,7 @@ export default class DeploymentItem {
         if(i == -1) return null
 
         let commitPromise
-        if(!(commitPromise = this.commitPromises[i])) {
+        if(!(commitPromise = this.commitPromises[i]) && this.projectId && this.commitId) {
             commitPromise = this.commitPromises[i] = fetchCommit(this.projectId, this.commitId)
         }
         try {

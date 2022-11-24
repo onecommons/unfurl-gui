@@ -84,8 +84,13 @@ export default {
                 result.push('view-artifacts')
             } 
 
-            if(!this.deploymentItem?.isUndeployed) result.push('local-deploy')
-            result.push('view-in-repository')
+            if(window.gon.projectId) {
+                //temporary limitation (restrict to dashboard app)
+
+                if(!this.deploymentItem?.isUndeployed) result.push('local-deploy')
+                result.push('view-in-repository')
+
+            }
 
             // these checks are inadequate
             //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')

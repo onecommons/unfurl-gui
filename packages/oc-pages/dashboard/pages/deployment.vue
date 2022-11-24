@@ -13,6 +13,7 @@ import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
 import {FLASH_TYPES, default as createFlash} from 'oc_vue_shared/client_utils/oc-flash'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
+import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
 
 export default {
@@ -99,6 +100,9 @@ export default {
                     this.acknowledge(acknowledgement)
                 }
             }
+        },
+        jobsData(val) {
+            this.setTabToConsoleIfNeeded()
         }
     },
     methods: {
@@ -126,24 +130,27 @@ export default {
             this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },
-        setTabToConsoleIfNeeded() {
-            if(this.$route.query?.show == 'console') {
-                this.currentTab = 1
+        async setTabToConsoleIfNeeded() {
+            if(this.$route.query?.show == 'console' && this.jobsData) {
+                if(document.querySelector('#ensure-console-tab-mounted')) {
+                    this.currentTab = 1
+                } else {
+                    await sleep(100)
+                    this.setTabToConsoleIfNeeded()
+                }
             }
         }
     },
-    created() {
+    async created() {
         if(!this.viewReady) this.prepareView()
-    },
-    async mounted() {
         if(!(this.environment && this.deployment)) {
             notFoundError()
         }
         if(!window.gon.unfurl_gui && this.projectId && this.pipelineId) {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
-        this.setTabToConsoleIfNeeded()
-    }
+
+    },
 }
 </script>
 <template>
@@ -152,7 +159,9 @@ export default {
         <deployment-index-table :items="tableItems" hide-filter />
         <gl-tabs class="mt-4" v-model="currentTab">
             <oc-tab title="Deployment" />
-            <oc-tab v-show="jobsData" title="Console" />
+            <oc-tab ref="consoleTab" v-if="jobsData" title="Console">
+                <div id="ensure-console-tab-mounted" />
+            </oc-tab>
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
             <template #primary-controls="card">
