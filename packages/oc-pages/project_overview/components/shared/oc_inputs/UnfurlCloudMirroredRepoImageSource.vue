@@ -5,6 +5,8 @@ import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 
+import {connectedRepo} from './mixins'
+
 function callbackFilter(query, items) {
     if(!query || items.some(item => item.value == query)) return items
     return items.filter(item => item.value.includes(query))
@@ -19,6 +21,7 @@ export default {
     components: {
         DeploymentScheduler
     },
+    mixins: [connectedRepo],
     data() {
         const data = {
             userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
@@ -26,8 +29,6 @@ export default {
             project_id: null,
             branch: null,
             repository_tag: null,
-            username: null,
-            password: null,
             projectInfo: null,
             gitlabProjectId: -1
         }
@@ -63,31 +64,15 @@ export default {
                 )
             )
         },
-        async setupRegistryCredentials(gitlabProjectId) {
-            this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: toDepTokenEnvKey(gitlabProjectId)}
-            this.updateValue('username')
-            this.updateValue('password')
-        },
-        updateValue(propertyName) {
+
+        getStatus() {
             const status = this.username && this.password && this.project_id && this.repository_id && this.repository_tag && this.registry_url && this.remote_git_url ?
                 'valid': 'missing'
-            this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
-
-            if(propertyName) {
-                this.updateProperty({
-                    deploymentName: this.$route.params.slug,
-                    templateName: this.card.name,
-                    propertyName,
-                    propertyValue: this[propertyName],
-                    debounce: 300,
-                    sensitive: false,
-                })
-            }
-        },
+            return status
+        }
     },
     computed: {
-        ...mapGetters(['cardIsValid', 'getDeploymentTemplate']),
+        ...mapGetters(['cardIsValid', 'getDeploymentTemplate', 'getHomeProjectPath']),
         repository_id() {
             if(!(this.project_id && this.branch)) return null
             return `${this.project_id}/${this.branch}`

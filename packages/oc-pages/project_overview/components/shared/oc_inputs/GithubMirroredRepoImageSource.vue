@@ -8,7 +8,6 @@ import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} f
 import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
 import {generateIssueLinkSync} from 'oc_vue_shared/client_utils/issues'
-import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
@@ -17,6 +16,10 @@ import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment
 import {OcPropertiesList} from 'oc_vue_shared/oc-components'
 // webpack can't figure this out
 // import {OcPropertiesList, DeploymentScheduler} from 'oc_vue_shared/oc-components'
+
+
+import {connectedRepo} from './mixins'
+
 
 const {AUTHENTICATED, UNAUTHENTICATED} = oauthStatus
 const {IMPORTED} = importStatus
@@ -29,6 +32,7 @@ function callbackFilter(query, items) {
 export default {
     name: 'GithubMirroredRepoImageSource',
     components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox, OcPropertiesList, DeploymentScheduler},
+    mixins: [connectedRepo],
     props: {
         card: Object,
         readonly: Boolean
@@ -42,8 +46,6 @@ export default {
             github_project: null,
             branchesPromise: null,
             projectInfo: null,
-            username: null,
-            password: null,
             branchError: null, // couldn't get this working in the element ui componenet
             useDefaultBranch: false,
             AUTHENTICATED,
@@ -145,7 +147,6 @@ export default {
             if(val?.importStatus > 1) {
                 this.branchesPromise = fetchRepositoryBranches(val.id)
                 this.updateProjectInfo(val.id)
-                this.setupRegistryCredentials(val.id)
             } else {
                 this.branchesPromise = null
             }
@@ -157,12 +158,7 @@ export default {
         generateIssueLinkSync,
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
-        },
-        async setupRegistryCredentials(projectId) {
-            this.username = 'DashboardProjectAccessToken'
-            this.password = {get_env: toDepTokenEnvKey(projectId)}
-            this.updateValue('username')
-            this.updateValue('password')
+            await this.setupRegistryCredentials(this.projectInfo)
         },
         async getRepoSuggestions(queryString, callback) {
             const repos = await this.importHandler.listRepos()
@@ -182,26 +178,13 @@ export default {
                 )
             )
         },
-        async updateValue(propertyName) {
-            console.log(
-                propertyName,
-                this
-            )
-            let status = (
-                this.github_project &&
-                this.branch &&
-                this.project_id &&
-                this.remote_git_url &&
-                this.registry_url &&
-                this.username &&
-                this.password
-            ) ? 'valid': 'missing'
 
-
+        async onUpdateValue() {
+            let result
             if(this.repoImport?.importStatus == IMPORTED) {
                 const branches = (await this.branchesPromise) || []
                 if(!branches.some(branch => branch.name == this.branch)) {
-                    status = 'error'
+                    result = 'error'
                     if(this.branch) {
                         this.branchError = true
                     } else {
@@ -211,24 +194,27 @@ export default {
                     this.branchError = null
                 }
             }
-            this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
-
-            if(propertyName) {
-                this.updateProperty({
-                    deploymentName: this.$route.params.slug,
-                    templateName: this.card.name,
-                    propertyName,
-                    propertyValue: this[propertyName],
-                    debounce: 300,
-                    sensitive: false,
-                })
-            }
+            return result
         },
+
+        async getStatus() {
+            return (
+                this.github_project &&
+                this.branch &&
+                this.project_id &&
+                this.remote_git_url &&
+                this.registry_url &&
+                this.username !== undefined &&
+                this.password !== undefined
+            ) ? 'valid': 'missing'
+        },
+
         onImportFinished() {
             this.branchesPromise = fetchRepositoryBranches(this.repoImport.id)
             this.updateProjectInfo(this.repoImport.id)
             this.setupRegistryCredentials(this.repoImport.id)
         },
+
         setDefaultBranchIfPossible() {
             if(this.projectInfo && this.useDefaultBranch) {
                 this.branch = this.projectInfo.default_branch
@@ -278,7 +264,6 @@ export default {
                 }
             }
         })
-        
     }
 }
 </script>
@@ -304,7 +289,7 @@ export default {
                         <el-autocomplete :disabled="useDefaultBranch || readonly" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
                             <template #prepend>Branch</template>
                             <template #append> <el-checkbox :disabled="readonly" class="mb-0" v-model="useDefaultBranch">Default Branch</el-checkbox> </template>
-                        </el-autocomplete> 
+                        </el-autocomplete>
                         <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
                             <span v-if="!useDefaultBranch && branchError" style="color: red;">
                                 The {{branch}} branch doesn't exist or wasn't imported successfully.
@@ -323,7 +308,7 @@ export default {
             </div>
             <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </div>
-    </github-auth> 
+    </github-auth>
     </el-card>
 </template>
 <style scoped>
