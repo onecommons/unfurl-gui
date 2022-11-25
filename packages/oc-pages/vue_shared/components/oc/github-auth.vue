@@ -19,6 +19,9 @@ export default {
 </script>
 <template>
     <el-card class="auth-container" v-loading="!importHandler.status">
+        <div v-if="importHandler.status == oauthStatus.UNAUTHENTICATED" class="mb-5">
+          <slot name="unauthenticated-pre"></slot>
+        </div>
         <github-repos-authenticate @authenticated="$emit('authenticated')" :importHandler="importHandler" v-if="importHandler.status == oauthStatus.UNAUTHENTICATED"/>
         <div v-if="importHandler.status == oauthStatus.UNAUTHENTICATED" class="mt-5">
           <slot name="unauthenticated"></slot>
