@@ -337,6 +337,8 @@ export default {
             'getDeploymentDictionary',
             'getHomeProjectPath',
             'getCurrentNamespace',
+            'getCurrentEnvironment',
+            'getDeploymentTemplate',
             'deploymentItemDirect'
         ]),
         projectPath() {
@@ -413,7 +415,7 @@ export default {
                 if(createdAtB == 0) createdAtB = createdAtA + 1
 
                 return createdAtB - createdAtA
-                
+
             })
             return result
         },
@@ -468,14 +470,36 @@ export default {
         },
         modalSize() {
             return this.intent == 'localDeploy'? 'lg': 'sm'
+        },
+        inferredLocalDeployIntent() {
+            const matchingParams = this.$route.query?.show == 'local-deploy' && this.$route.params.name && this.$route.params.environment
+            const loaded = this.getDeploymentTemplate?.name && this.getCurrentEnvironment?.name
+
+            return matchingParams && loaded
         }
     },
     watch: {
-        currentTab(value) {
+        currentTab(val) {
             const path = this.$route.path
-            const show = value == 0? undefined : tabFilters[value]?.title?.toLowerCase()
+            const show = val == 0? undefined : tabFilters[val]?.title?.toLowerCase()
             const query = {show}
             this.$router.replace({path, query})
+        },
+        inferredLocalDeployIntent: {
+            immediate: true,
+            handler(val) {
+                if(val) {
+                    this.onIntentToLocalDeploy(this.getDeploymentTemplate, this.getCurrentEnvironment)
+                }
+            }
+        },
+        modal(val) {
+            if(!val && this.$route.query.show) {
+                const newRoute = {...this.$route}
+                newRoute.query = {...newRoute.query, show: undefined}
+
+                this.$router.replace(newRoute)
+            }
         }
     },
     async mounted() {
