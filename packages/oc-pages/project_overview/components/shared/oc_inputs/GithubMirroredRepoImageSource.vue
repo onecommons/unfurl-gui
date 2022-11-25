@@ -268,17 +268,24 @@ export default {
 }
 </script>
 <template>
-    <el-card v-if="isExternalUser">
-        <h3>You must be registered as a developer to deploy with GitHub...</h3>
-        Contact us to help test the free and open cloud.
-        <a target="_blank" :href="generateIssueLinkSync(`${getHomeProjectPath}`, {title: 'Make me a developer!', email: userEmail})">Make me a developer!</a>
-    </el-card>
-    <github-auth v-else :importHandler="importHandler">
+    <github-auth :importHandler="importHandler">
+        <template v-if="isExternalUser" #unauthenticated-pre>
+            <h3>Your profile must be set to developer mode to deploy with GitHub...</h3>
+            Visit your <a target="_blank" href="/-/profile/account#user-mode">profile settings page</a> and select <b>"I want to develop applications"</b> for the <b>"User Interface"</b> setting.
+            <hr class="mb-5">
+        </template>
+
         <template v-if="cardIsValid(card)" #unauthenticated>
             <h4>Existing properties:</h4>
+
             <oc-properties-list :properties="displayableCardProperties"/>
             <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </template>
+        <div v-if="isExternalUser">
+            <h3>Your profile must be set to developer mode to deploy with GitHub...</h3>
+            Visit your <a target="_blank" href="/-/profile/account#user-mode">profile settings page</a> and select <b>"I want to develop applications"</b> for the <b>"User Interface"</b> setting.
+            <hr class="mb-5 mt-5">
+        </div>
         <div>
             <div class="d-flex flex-wrap justify-content-between">
                 <div style="flex-grow: 1;" class="d-flex flex-column">
