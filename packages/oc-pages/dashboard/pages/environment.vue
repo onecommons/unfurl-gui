@@ -70,7 +70,7 @@ export default {
             'userCanEdit',
             'getVariables',
             'lookupDeployPath',
-            'jobByPipelineId'
+            'jobByPipelineId',
         ]),
         providerTabIndex() {
             if(this.hasProviderTab) return 0
@@ -118,7 +118,11 @@ export default {
         },
         hasProviderTab() {
             const primaryProviderType = this?.environment?.primary_provider?.type
-            return primaryProviderType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primaryProviderType)
+            const displayForProviderType = primaryProviderType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primaryProviderType)
+
+            const displayForOtherProvider = this.getCardsStacked.some(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card.type))
+
+            return displayForProviderType || displayForOtherProvider
         },
         saveStatus() {
             if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
@@ -156,12 +160,13 @@ export default {
             return this.currentTab == this.publicCloudTabIndex
         },
         resourceFilter() {
+            const isProvider = (resource) => resource.name == 'primary_provider' || lookupCloudProviderAlias(resource.type)
             if(this.showingProviderTab) {
-                return (resource) => resource.name == 'primary_provider'
+               return isProvider
             } else if(this.showingPublicCloudTab){
-                return (resource) => resource.name != 'primary_provider' && this.publicCloudResources.includes(resource)
+                return (resource) => !isProvider(resource) && this.publicCloudResources.includes(resource)
             } else {
-                return (resource) => resource.name != 'primary_provider' && !this.publicCloudResources.includes(resource)
+                return (resource) => !isProvider(resource) && !this.publicCloudResources.includes(resource)
             }
         },
         environmentName() {
@@ -191,6 +196,19 @@ export default {
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
             this.$refs.deploymentResources.cleanModalResource()
             this.$refs.deploymentResources.scrollDown(slugify(title))
+        },
+        onProviderAdded({selection, title}) {
+            this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+            this.$refs.deploymentResources.cleanModalResource()
+
+            // hoping this works in the vast majority of cases
+            // the alternative seems to be to poll the DOM until this tab shows up
+            setTimeout(
+                () => {
+                    this.currentTab = this.providerTabIndex
+                    this.$refs.deploymentResources.scrollDown(slugify(title))
+                }, 100
+            )
         },
         onSaveTemplate(reload=true) {
             const environment = this.environment
@@ -269,15 +287,14 @@ export default {
                 </div>
             </template>
         </oc-properties-list>
-        <!-- this isn't hooked up yet, add back when ready -->
-        <!--div v-if="userCanEdit" class="mt-3">
-            <gl-button variant="confirm">
+        <div v-if="userCanEdit" class="mt-3">
+            <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddProvider()">
                 <div>
                     <gl-icon name="plus"/>
                     {{__('Add a Provider')}}
                 </div>
             </gl-button>
-        </div-->
+        </div>
 
         <gl-tabs v-model="currentTab" class="mt-4">
             <oc-tab title="Provider" v-if="hasProviderTab"></oc-tab>
@@ -312,7 +329,7 @@ export default {
                 Delete Environment
             </gl-button>
         </div>
-        <deployment-resources :readonly="!userCanEdit || showingPublicCloudTab" v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" ref="deploymentResources" external-status-indicator display-validation>
+        <deployment-resources :readonly="!userCanEdit || showingPublicCloudTab" v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" @addProvider="onProviderAdded" ref="deploymentResources" external-status-indicator display-validation>
             <template v-if="!showingProviderTab" #header>
                 <!-- potentially tricky to translate -->
                 <div v-if="showingResourcesTab" class="d-flex align-items-center">
@@ -380,9 +397,4 @@ h2 {
 .confirm-container >>> button {
     padding: 0.5em;
 }
-/*
-input fill FAFAFA
-input stroke DBDBDB
-line width 1
-*/
 </style>

@@ -4,7 +4,7 @@ import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
-import {userDefaultPath} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias, userDefaultPath} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 
 
@@ -78,6 +78,12 @@ Serializers = {
         if(env.instances.primary_provider) {
             env.connections.primary_provider = env.instances.primary_provider
             delete env.instances.primary_provider
+        }
+        for(const [name, instance] of Object.entries(env.instances)) {
+            if(lookupCloudProviderAlias(instance.type)) {
+                env.connections[name] = env.instances[name]
+                delete env.instances[name]
+            }
         }
         return Object.values(env.instances || {}).concat(Object.values(env.connections))
     },
