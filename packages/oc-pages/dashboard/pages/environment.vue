@@ -162,7 +162,7 @@ export default {
         resourceFilter() {
             const isProvider = (resource) => resource.name == 'primary_provider' || lookupCloudProviderAlias(resource.type)
             if(this.showingProviderTab) {
-               return isProvider
+                return isProvider
             } else if(this.showingPublicCloudTab){
                 return (resource) => !isProvider(resource) && this.publicCloudResources.includes(resource)
             } else {
@@ -264,7 +264,7 @@ export default {
         )
 
         this.onSaveTemplate(false)
-        this.populateTemplateResources2({resourceTemplates: environment.instances, environmentName, context: 'environment'})
+        this.populateTemplateResources2({resourceTemplates: [...environment.instances, ...environment.connections], environmentName, context: 'environment'})
 
 
     }

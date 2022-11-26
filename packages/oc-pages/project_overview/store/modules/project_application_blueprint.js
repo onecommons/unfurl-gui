@@ -187,10 +187,10 @@ const actions = {
                 deployment.projectPath = dt?.projectPath
             },
             DeploymentEnvironment(de, root) {
-                const providerType = de.primary_provider?.type
-                if(providerType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(providerType)) {
+                for(const connection of de.connections) {
+                    const providerType = connection?.type
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
-                    root.ResourceTemplate['primary_provider'] = _.cloneDeep(de.primary_provider)
+                    root.ResourceTemplate[connection.name] = _.cloneDeep(connection)
                 }
             },
             repositories(entry) {

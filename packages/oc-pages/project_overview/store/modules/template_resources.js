@@ -1,7 +1,7 @@
-import { cloneDeep } from 'lodash';
+import { cloneDeep, create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { slugify } from 'oc_vue_shared/util.mjs';
+import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 
@@ -313,30 +313,19 @@ const actions = {
     // used by /dashboard/environment/<environment-name> TODO merge these actions
     populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
         for(const resource of resourceTemplates) {
-            commit('createTemplateResource', {...resource})
+            if(resource.name == 'primary_provider') continue
+            commit('createTemplateResource', {...(rootGetters.resolveResourceTemplate(resource.name) || resource)})
         }
         let primary_provider
-        if(primary_provider = getters.lookupResourceTemplate('primary_provider')) {
-            primary_provider = _.cloneDeep(primary_provider)
-            commit('pushPreparedMutation', (accumulator) => {
-                const patch = accumulator['DeploymentEnvironment'][environmentName]
-                if(Array.isArray(patch.instances)) {
-                    const instance = patch.instances.find(instance => instance.name == 'primary_provider')
-                    if(instance) {
-                        Object.assign(instance, primary_provider)
-                    } else {
-                        patch.instances.push(primary_provider)
-                    }
-                } else {
-                    console.warn('untested code path')
-                    patch.instances['primary_provider'] = primary_provider
-                }
-                return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
-            }, {root: true});
-
+        if(primary_provider = rootGetters.resolveResourceTemplate('primary_provider')) {
             commit('clientDisregardUncommitted', null, {root: true})
 
-            commit('createTemplateResource', {...primary_provider, title: 'Primary Provider', _permanent: true})
+            const createWith = {...primary_provider, title: 'Primary Provider', _permanent: true}
+            if([lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primary_provider.type)) {
+                commit('createTemplateResource', {...createWith, properties: []})
+            } else {
+                commit('createTemplateResource', createWith)
+            }
 
             commit('setDeploymentTemplate', {primary: 'primary_provider'})
         }
