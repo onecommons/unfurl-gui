@@ -235,8 +235,8 @@ export default {
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
 
         const templateSelected = this.$route.query?.ts?
-            this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null 
-        
+            this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null
+
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
             this.templateForkedName = this.$route.query?.fn
@@ -247,7 +247,7 @@ export default {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({query: {}})
             const dashboard = encodeURIComponent(this.selectedEnvironment._dashboard || this.getHomeProjectPath)
-            // TODO re-enable this when we're able to update the current namespace 
+            // TODO re-enable this when we're able to update the current namespace
             // https://github.com/onecommons/gitlab-oc/issues/867
             // this.$router.push({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}});
             window.location.href = this.$router.resolve({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}}).href
@@ -295,11 +295,11 @@ export default {
 
                 if(this.instantiateAs == 'deployment-draft'){
                     // store the environment in local storage
-                    const lastUsedEnvironment = { 
-                        cloud: this.templateSelected.cloud, 
-                        environmentName: this.templateSelected.environment 
+                    const lastUsedEnvironment = {
+                        cloud: this.templateSelected.cloud,
+                        environmentName: this.templateSelected.environment
                     }
-                    this.updateLastUsedEnvironment({ 
+                    this.updateLastUsedEnvironment({
                         lastUsedEnvironment,
                         username: this.getUsername
                     })
@@ -321,8 +321,8 @@ export default {
             if(!templateSlug) return
             await this.fetchProject({projectPath});
             return await this.populateTemplateResources({
-                projectPath, 
-                templateSlug, 
+                projectPath,
+                templateSlug,
             })
         },
         onCancelModal(e) {
@@ -392,9 +392,9 @@ export default {
 
         <div v-if="getProjectInfo.name">
             <!-- Project Description -->
-            <ProjectDescriptionBox 
+            <ProjectDescriptionBox
                     :project-info="getProjectInfo"
-                    :requirements="getProjectInfo.primary.requirements" 
+                    :requirements="getProjectInfo.primary.requirements"
                     :inputs="inputProperties"
                     :outputs="outputProperties"
                     :project-description="getProjectDescription"
@@ -464,7 +464,7 @@ export default {
                 @cancel="onCancelModal"
                 @hidden="clearModalTemplate"
             >
-                <environment-creation-dialog 
+                <environment-creation-dialog
                     v-if="creatingEnvironment"
                     ref="environmentDialog"
                     @environmentNameChange="env => createEnvironmentName = env"
@@ -487,7 +487,7 @@ export default {
                     </gl-form-group>
                     <div class="col-md-6" v-if="instantiateAs!='template'">
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                        <environment-selection 
+                        <environment-selection
                             v-model="selectedEnvironment"
                             :provider="templateSelected && templateSelected.cloud"
                             :error="deployDialogError"

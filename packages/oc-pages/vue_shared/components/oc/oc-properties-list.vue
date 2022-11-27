@@ -93,7 +93,7 @@ export default {
                     <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
                 </div>
             </div>
-            <table ref="transitionTarget" class="properties-list-inner" style="display: table;">
+            <table ref="transitionTarget" class="properties-list-inner" style="display: table; width: 100%;">
                 <tr style="display: table-row" class="properties-list-item" v-for="property in _properties" :key="property.name">
                     <td class="name-column">{{formatName(property)}}</td>
                     <td :style="property.valueStyle" class="value-column">
@@ -160,7 +160,7 @@ export default {
 }
 .properties-list-item {
     margin: -1px;
-    min-width: 22em;
+    min-width: min(100%, 22em);
 }
 .name-column, .value-column {
     padding: 0.75em;
