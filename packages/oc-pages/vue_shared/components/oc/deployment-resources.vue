@@ -172,10 +172,21 @@ export default {
             };
         },
 
+        alertProviderExists() {
+            if(!this.providerSelection) return false
+            const env = this.getCurrentEnvironment
+            const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
+
+            return connections.some(conn => conn.type == this.providerSelection.name)
+        },
+
         ocProviderPrimary() {
+
+            const nameIssue = !Object.keys(this.providerSelection).length || !this.resourceName.length || this.alertNameExists
+            const disabled = nameIssue || this.alertProviderExists
             return {
                 text: __("Next"),
-                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (!Object.keys(this.providerSelection).length || !this.resourceName.length || this.alertNameExists) }]
+                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled }]
             };
         },
 
@@ -433,6 +444,7 @@ export default {
             this.selected = {};
             this.userEditedResourceName = false;
             this.topLevelSelection = {}
+            this.providerSelection = {}
         },
 
         async onSubmitDeleteTemplateModal() {
@@ -654,7 +666,8 @@ export default {
             </gl-tabs>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                <small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
             </gl-form-group>
 
 
@@ -673,7 +686,9 @@ export default {
             <oc-list-resource v-model="providerSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="availableProviderTypes"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                <small v-if="alertProviderExists" class="alert-input">{{ __("Your environment already has this type of provider.") }}</small>
+                <small v-else-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
             </gl-form-group>
 
         </gl-modal>
