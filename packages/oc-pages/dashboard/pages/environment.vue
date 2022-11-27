@@ -104,7 +104,7 @@ export default {
             })
         },
         cloudProviderDisplayName() {
-            return `Primary Provider (${cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')})`
+            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')
         },
         hasProviderTab() {
             const primaryProviderType = this?.environment?.primary_provider?.type
@@ -255,6 +255,14 @@ export default {
             return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         },
 
+        headerTitle(provider) {
+            return provider.name == 'primary_provider'? this.cloudProviderDisplayName : provider.title
+        },
+
+        schema(provider) {
+            return this.resolveResourceType(provider.type)?.inputsSchema
+        },
+
         lookupCloudProviderAlias
     },
 
@@ -286,29 +294,29 @@ export default {
         </div>
         <h2>{{n__('Cloud Provider', 'Cloud Providers', 1 + additionalProviders.length)}}</h2>
         <oc-properties-list
-            :header="cloudProviderDisplayName"
+            :header="headerTitle(p)"
             :containerStyle="{'font-size': '0.9em', ...width}"
             :properties="propviderProps"
             v-if="[lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :env="environment" class="mr-1"/> {{cloudProviderDisplayName}}
+                    <detect-icon :size="20" :env="environment" class="mr-1"/> {{headerTitle(p)}}
                 </div>
             </template>
         </oc-properties-list>
         <oc-properties-list
             v-for="p in editableProviders"
             :key="p.name"
-            :header="p.title"
+            :header="headerTitle(p)"
             :containerStyle="{'font-size': '0.9em', ...width}"
             :properties="p.properties"
-            :schema="resolveResourceType(p.type).inputsSchema"
+            :schema="schema(p)"
             class="mt-3"
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :type="p.type" class="mr-1"/> {{p.title}}
+                    <detect-icon :size="20" :type="p.type" class="mr-1"/> {{headerTitle(p)}}
                 </div>
             </template>
             <template v-if="userCanEdit" #header-controls>

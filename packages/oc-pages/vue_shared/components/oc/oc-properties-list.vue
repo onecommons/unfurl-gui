@@ -82,8 +82,9 @@ export default {
             // TODO use CSS grid instead
             this.$nextTick(() => {
                 try {
-                    const headerWidth = this.$refs.header.clientWidth
-                    const nameColumnWdith = this.$refs.transitionTarget.querySelector('td.name-column').clientWidth
+                    const headerWidth = this.$refs.header?.clientWidth
+                    const nameColumnWdith = this.$refs.transitionTarget.querySelector('td.name-column')?.clientWidth
+                    if(!(headerWidth && nameColumnWdith)) return
                     this.$refs.transitionTarget.style.width = headerWidth + 'px'
                     this.$refs.transitionTarget.querySelectorAll('td.value-column').forEach(cell => {
                         cell.style.width = (headerWidth - nameColumnWdith - 30) + 'px'
