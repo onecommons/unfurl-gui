@@ -7,8 +7,8 @@ import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
 import {Tooltip as ElTooltip} from 'element-ui'
 import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from 'oc_vue_shared/oc-components'
 import _ from 'lodash'
-import { __ } from '~/locale'
-import {lookupCloudProviderAlias, slugify} from 'oc_vue_shared/util.mjs'
+import { __, n__ } from '~/locale'
+import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util.mjs'
 import {deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { redirectTo } from '~/lib/utils/url_utility';
@@ -66,11 +66,13 @@ export default {
             'hasPreparedMutations',
             'isMobileLayout',
             'getCardsStacked',
+            'getPrimaryCard',
             'cardIsValid',
             'userCanEdit',
             'getVariables',
             'lookupDeployPath',
             'jobByPipelineId',
+            'resolveResourceType'
         ]),
         providerTabIndex() {
             if(this.hasProviderTab) return 0
@@ -102,19 +104,7 @@ export default {
             })
         },
         cloudProviderDisplayName() {
-            switch(this.environment?.primary_provider?.type) {
-                case lookupCloudProviderAlias('gcp'):
-                    return __('Google Cloud Platform')
-                case lookupCloudProviderAlias('aws'):
-                    return __('Amazon Web Services')
-                case lookupCloudProviderAlias('azure'):
-                    return __('Azure')
-                case lookupCloudProviderAlias('k8s'):
-                    return __('Kubernetes')
-                case lookupCloudProviderAlias('DigitalOcean'):
-                    return __('Digital Ocean')
-                default: return __('Local development')
-            }
+            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')
         },
         hasProviderTab() {
             const primaryProviderType = this?.environment?.primary_provider?.type
@@ -171,6 +161,17 @@ export default {
         },
         environmentName() {
             return this.$route.params.name
+        },
+        additionalProviders() {
+            return this.getCardsStacked.filter(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card.type))
+        },
+        editableProviders() {
+            const primary = this.getPrimaryCard
+
+            if(!primary || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primary.type)) {
+                return this.additionalProviders
+            }
+            else return [primary, ...this.additionalProviders]
         }
     },
     methods: {
@@ -197,18 +198,22 @@ export default {
             this.$refs.deploymentResources.cleanModalResource()
             this.$refs.deploymentResources.scrollDown(slugify(title))
         },
-        onProviderAdded({selection, title}) {
-            this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
-            this.$refs.deploymentResources.cleanModalResource()
-
+        scrollToProvider(name) {
             // hoping this works in the vast majority of cases
             // the alternative seems to be to poll the DOM until this tab shows up
             setTimeout(
                 () => {
                     this.currentTab = this.providerTabIndex
-                    this.$refs.deploymentResources.scrollDown(slugify(title))
+                    this.$refs.deploymentResources.scrollDown(name)
                 }, 100
             )
+
+        },
+        onProviderAdded({selection, title}) {
+            this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+            this.$refs.deploymentResources.cleanModalResource()
+
+            this.scrollToProvider(slugify(title))
         },
         onSaveTemplate(reload=true) {
             const environment = this.environment
@@ -248,7 +253,9 @@ export default {
             await this.commitPreparedMutations()
             sessionStorage['oc_flash'] = JSON.stringify({type: FLASH_TYPES.SUCCESS, message: `${environment.name} was deleted successfully.`})
             return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
-        }
+        },
+
+        lookupCloudProviderAlias
     },
 
     beforeMount() {
@@ -279,12 +286,39 @@ export default {
                 <gl-form-input style="width: max(500px, 50%);" :value="environment.name" disabled/>
             </div>
         </div>
-        <h2>{{__('Cloud Provider')}}</h2>
-        <oc-properties-list :header="cloudProviderDisplayName" :containerStyle="{'font-size': '0.9em', ...width}" :properties="propviderProps">
+        <h2>{{n__('Cloud Provider', 'Cloud Providers', 1 + additionalProviders.length)}}</h2>
+        <oc-properties-list
+            :header="cloudProviderDisplayName"
+            :containerStyle="{'font-size': '0.9em', ...width}"
+            :properties="propviderProps"
+            v-if="[lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
+        >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
                     <detect-icon :size="20" :env="environment" class="mr-1"/> {{cloudProviderDisplayName}}
                 </div>
+            </template>
+        </oc-properties-list>
+        <oc-properties-list
+            v-for="p in editableProviders"
+            :key="p.name"
+            :header="p.title"
+            :containerStyle="{'font-size': '0.9em', ...width}"
+            :properties="p.properties"
+            :schema="resolveResourceType(p.type).inputsSchema"
+            class="mt-3"
+        >
+            <template #header-text>
+                <div class="d-flex align-items-center" style="line-height: 20px;">
+                    <detect-icon :size="20" :type="p.type" class="mr-1"/> {{p.title}}
+                </div>
+            </template>
+            <template v-if="userCanEdit" #header-controls>
+                <gl-button @click.stop="scrollToProvider(p.name)">
+                    <div class="d-flex">
+                        <detect-icon name="pencil" :size="18" /> <span>Edit</span>
+                    </div>
+                </gl-button>
             </template>
         </oc-properties-list>
         <div v-if="userCanEdit" class="mt-3">

@@ -21,16 +21,24 @@ export default {
             required: false,
             default() {return []}
         },
+        schema: {
+            type: Object
+        },
         header: String,
         property: String,
         containerStyle: Object
     },
     computed: {
         ...mapGetters([
+            'lookupEnvironmentVariable'
         ]),
         _properties() {
+            // TODO handle this gracefully when we don't have an environment loaded
             const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
-            return properties
+            return properties.map(prop => {
+                if (prop.value?.get_env) return {...prop, value: this.lookupEnvironmentVariable(prop.value?.get_env)}
+                return prop
+            })
         },
     },
     methods: {
@@ -50,6 +58,23 @@ export default {
         isEmail(value) {
             const regex = new RegExp(/[a-z0-9]+@[a-z]+\.[a-z]{2,3}/)
             return regex.test(value)
+        },
+        formatName(property) {
+            if(this.schema?.properties) {
+                const title = this.schema.properties[property.name]?.title
+                if(title) return title
+            }
+
+            return property.name.replaceAll('_', ' ')
+        },
+        isSensitive(property) {
+            if(this.schema?.properties) {
+                const sensitive = this.schema.properties[property.name]?.sensitive ?? null
+
+                if(sensitive !== null) return sensitive
+            }
+
+            return property.sensitive
         }
     }
 }
@@ -63,11 +88,14 @@ export default {
                 <slot name="header-text">
                     <div>{{header}}</div>
                 </slot>
-                <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
+                <div>
+                    <slot name="header-controls"></slot>
+                    <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
+                </div>
             </div>
             <table ref="transitionTarget" class="properties-list-inner" style="display: table;">
                 <tr style="display: table-row" class="properties-list-item" v-for="property in _properties" :key="property.name">
-                    <td class="name-column">{{ property.name.replaceAll('_', ' ') }}</td>
+                    <td class="name-column">{{formatName(property)}}</td>
                     <td :style="property.valueStyle" class="value-column">
                         <div style="display: flex; justify-content: space-between;">
                             <slot :name="property.name" v-bind="property.value">
@@ -86,7 +114,7 @@ export default {
                                     <a v-else-if="property.url || isUrl(property.value)" :href="property.url || property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
                                     <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
 
-                                    <Redacted v-else-if="property.sensitive" :value="property.value" />
+                                    <Redacted v-else-if="isSensitive(property)" :value="property.value" />
 
                                     <span v-else>
                                         {{property.value}}
