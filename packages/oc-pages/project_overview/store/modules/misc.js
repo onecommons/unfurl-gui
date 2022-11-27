@@ -15,7 +15,8 @@ const state = () => ({
     namespace: null,
     dashboard: null,
     dashboardProjectInfo: null,
-    user: null
+    user: null,
+    windowWidth: window.innerWidth
 })
 
 const mutations = {
@@ -42,6 +43,10 @@ const mutations = {
 
     setDashboardProjectInfo(state, projectInfo) {
         state.dashboardProjectInfo = projectInfo
+    },
+
+    setWindowWidth(state, windowWidth) {
+        state.windowWidth = windowWidth
     }
 }
 
@@ -75,7 +80,8 @@ const getters = {
     },
     registryURL() {
         return sessionStorage['registry-url']
-    }
+    },
+    windowWidth(state) {return state.windowWidth}
     /*
     DEPLOY_TAG() {
         return sessionStorage['deploy-tag'] || 'latest'
@@ -91,6 +97,7 @@ const actions = {
                 if(_isMobileLayout != state.isMobileLayout) {
                     commit('setMobileLayout', _isMobileLayout)
                 }
+                commit('setWindowWidth', window.innerWidth)
             }, 
             30
         ))
