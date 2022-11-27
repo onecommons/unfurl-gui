@@ -276,7 +276,7 @@ export default {
 }
 </script>
 <template>
-    <div>
+    <div class="environment">
         <dashboard-breadcrumbs :items="breadcrumbItems" />
         <div class="mt-6 row">
             <div class="col">
@@ -429,4 +429,13 @@ h2 {
 .confirm-container >>> button {
     padding: 0.5em;
 }
+
+.environment >>> td.name-column {
+    width: 11em;
+}
+
+.environment >>> td.value-column {
+    width: calc(max(500px, 50%) - 11em);
+}
+
 </style>

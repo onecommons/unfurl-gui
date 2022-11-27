@@ -30,7 +30,8 @@ export default {
     },
     computed: {
         ...mapGetters([
-            'lookupEnvironmentVariable'
+            'lookupEnvironmentVariable',
+            'windowWidth'
         ]),
         _properties() {
             // TODO handle this gracefully when we don't have an environment loaded
@@ -60,12 +61,13 @@ export default {
             return regex.test(value)
         },
         formatName(property) {
+            let result  = property.name
             if(this.schema?.properties) {
                 const title = this.schema.properties[property.name]?.title
-                if(title) return title
+                if(title) result = title
             }
 
-            return property.name.replaceAll('_', ' ')
+            return result.replaceAll('_', ' ')
         },
         isSensitive(property) {
             if(this.schema?.properties) {
@@ -75,16 +77,38 @@ export default {
             }
 
             return property.sensitive
+        },
+        tableSizingHack() {
+            // TODO use CSS grid instead
+            this.$nextTick(() => {
+                try {
+                    const headerWidth = this.$refs.header.clientWidth
+                    const nameColumnWdith = this.$refs.transitionTarget.querySelector('td.name-column').clientWidth
+                    this.$refs.transitionTarget.style.width = headerWidth + 'px'
+                    this.$refs.transitionTarget.querySelectorAll('td.value-column').forEach(cell => {
+                        cell.style.width = (headerWidth - nameColumnWdith - 30) + 'px'
+                    })
+                    this.$refs.transitionTarget.style.tableLayout = 'fixed'
+                } catch(e) {console.error(e)}
+            })
+
         }
+    },
+    watch: {
+        windowWidth() { this.tableSizingHack() },
+        properties() { this.tableSizingHack() },
+
+    },
+    mounted() {
+        this.tableSizingHack()
     }
 }
 
 </script>
 <template>
-
     <div style="max-width: 100%; overflow-x: auto;">
         <div :style="containerStyle" class="properties-list-container">
-            <div @click="toggleExpanded" v-if="header" class="header">
+            <div @click="toggleExpanded" v-if="header" class="header" ref="header">
                 <slot name="header-text">
                     <div>{{header}}</div>
                 </slot>
