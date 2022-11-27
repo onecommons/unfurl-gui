@@ -18,10 +18,9 @@ const state = baseState();
 
 const mutations = {
     resetTemplateResourceState(state) {
-        state.deploymentTemplate = {};
-        state.resourceTemplates = {};
-        state.inputValidationStatus = {};
-        state.context = ''
+        for(const [key, value] of Object.entries(baseState())){
+            Vue.set(state, key, value)
+        }
     },
 
     setInputValidStatus(state, {card, input, status}) {

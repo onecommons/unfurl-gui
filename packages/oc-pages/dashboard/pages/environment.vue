@@ -3,7 +3,7 @@ import * as routes from '../router/constants'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
-import {GlFormInput, GlButton, GlIcon, GlTabs} from '@gitlab/ui'
+import {GlFormInput, GlButton, GlIcon, GlTabs, GlModal} from '@gitlab/ui'
 import {Tooltip as ElTooltip} from 'element-ui'
 import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from 'oc_vue_shared/oc-components'
 import _ from 'lodash'
@@ -37,7 +37,6 @@ function mapCloudProviderProps(ci_variables) {
     const deployPath = this.lookupDeployPath('primary_provider', this.environmentName)
     if(deployPath) {
         const jobId = this.jobByPipelineId(deployPath.pipeline.id)?.id
-        console.log({jobId})
         if(jobId) {
             result.push({
                 name: 'Created in',
@@ -52,7 +51,16 @@ function mapCloudProviderProps(ci_variables) {
 
 export default {
     name: 'Environment',
-    components: {OcTab, GlTabs, CiVariableSettings, DashboardBreadcrumbs, OcPropertiesList, GlFormInput, GlButton, GlIcon, DeploymentResources, DetectIcon, ElTooltip},
+    components: {
+        OcTab,
+        CiVariableSettings,
+        DashboardBreadcrumbs,
+        OcPropertiesList,
+        GlTabs, GlFormInput, GlButton, GlIcon, GlModal,
+        DeploymentResources,
+        DetectIcon,
+        ElTooltip
+    },
     data() {
         const width = {width: 'max(500px, 50%)'}
         return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0}
@@ -72,14 +80,10 @@ export default {
             'getVariables',
             'lookupDeployPath',
             'jobByPipelineId',
-            'resolveResourceType'
+            'resolveResourceType',
         ]),
-        providerTabIndex() {
-            if(this.hasProviderTab) return 0
-            else return -1
-        },
         resourcesTabIndex() {
-            return this.providerTabIndex + 1
+            return 0
         },
         publicCloudTabIndex() {
             if(this.publicCloudResources.length > 0) {
@@ -106,14 +110,6 @@ export default {
         cloudProviderDisplayName() {
             return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')
         },
-        hasProviderTab() {
-            const primaryProviderType = this?.environment?.primary_provider?.type
-            const displayForProviderType = primaryProviderType && ![lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primaryProviderType)
-
-            const displayForOtherProvider = this.getCardsStacked.some(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card.type))
-
-            return displayForProviderType || displayForOtherProvider
-        },
         saveStatus() {
             if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
             for(const card of this.getCardsStacked) {
@@ -135,10 +131,19 @@ export default {
             return (this.getCardsStacked.filter(this.resourceFilter)).length > 0 || this.hasPreparedMutations
         },
         showingDeploymentResourceTab() {
-            return this.currentTab != this.variablesTabIndex && this.currentTab != this.providerTabIndex
+            return this.showingResourcesTab || this.showingPublicCloudTab
         },
-        showingProviderTab() {
-            return this.currentTab == this.providerTabIndex
+        showingProviderModal: {
+            get() { return this.$route.query.hasOwnProperty('provider') },
+            set(val) {
+                const query = {...this.$route.query}
+                if(val) { query.provider = null }
+                else { delete query.provider }
+
+                if(! _.isEqual(query, this.$route.query)) {
+                    this.$router.push({...this.$route, query})
+                }
+            }
         },
         showingResourcesTab() {
             return this.currentTab == this.resourcesTabIndex
@@ -150,13 +155,10 @@ export default {
             return this.currentTab == this.publicCloudTabIndex
         },
         resourceFilter() {
-            const isProvider = (resource) => resource.name == 'primary_provider' || lookupCloudProviderAlias(resource.type)
-            if(this.showingProviderTab) {
-                return isProvider
-            } else if(this.showingPublicCloudTab){
-                return (resource) => !isProvider(resource) && this.publicCloudResources.includes(resource)
+            if(this.showingPublicCloudTab){
+                return (resource) => !this.isProvider(resource) && this.publicCloudResources.includes(resource)
             } else {
-                return (resource) => !isProvider(resource) && !this.publicCloudResources.includes(resource)
+                return (resource) => !this.isProvider(resource) && !this.publicCloudResources.includes(resource)
             }
         },
         environmentName() {
@@ -190,6 +192,9 @@ export default {
             'setUpdateObjectProjectPath',
             'useBaseState',
             'pushPreparedMutation',
+            'setRouterHook',
+            'clearPreparedMutations',
+            'resetTemplateResourceState',
             'setUpdateObjectPath',
             'setUpdateObjectProjectPath'
         ]),
@@ -201,19 +206,24 @@ export default {
         scrollToProvider(name) {
             // hoping this works in the vast majority of cases
             // the alternative seems to be to poll the DOM until this tab shows up
+            this.showingProviderModal = true
             setTimeout(
                 () => {
-                    this.currentTab = this.providerTabIndex
                     this.$refs.deploymentResources.scrollDown(name)
                 }, 100
             )
 
         },
         onProviderAdded({selection, title}) {
+            this.freshState()
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
             this.$refs.deploymentResources.cleanModalResource()
 
             this.scrollToProvider(slugify(title))
+        },
+        onSaveProviderTemplate(...args) {
+            this.showingProviderModal = false
+            this.onSaveTemplate(...args)
         },
         onSaveTemplate(reload=true) {
             const environment = this.environment
@@ -256,30 +266,62 @@ export default {
         },
 
         headerTitle(provider) {
+            if(!provider) return null
             return provider.name == 'primary_provider'? this.cloudProviderDisplayName : provider.title
         },
 
         schema(provider) {
+            if(!provider) return null
             return this.resolveResourceType(provider.type)?.inputsSchema
         },
 
-        lookupCloudProviderAlias
+        isProvider(resource) {
+            return resource.name == 'primary_provider' || lookupCloudProviderAlias(resource.type)
+        },
+
+        lookupCloudProviderAlias,
+
+        freshState() {
+            this.setRouterHook()
+
+            this.clearPreparedMutations()
+            this.resetTemplateResourceState()
+
+            const environmentName = this.environmentName
+            const environment = this.lookupEnvironment(environmentName)
+            if(!environment) {
+                notFoundError()
+                return
+            }
+            this.environment = environment
+            this.setAvailableResourceTypes(
+                this.environmentLookupDiscoverable(environment)
+            )
+
+
+            this.onSaveTemplate(false)
+            this.populateTemplateResources2({resourceTemplates: [...environment.instances, ...environment.connections], environmentName, context: 'environment'})
+        },
+
+        onHide(e) {
+            if(this.showingProviderModal) {
+                e.preventDefault()
+            }
+            this.showingProviderModal = false
+        }
+
+    },
+    watch: {
+        showingProviderModal(val) {
+            if(!val) {
+                this.freshState()
+                this.$refs.providerModal.close()
+            }
+        }
     },
 
-    beforeMount() {
-        const environmentName = this.environmentName
-        const environment = this.lookupEnvironment(environmentName)
-        if(!environment) {
-            notFoundError()
-            return
-        }
-        this.environment = environment
-        this.setAvailableResourceTypes(
-            this.environmentLookupDiscoverable(environment)
-        )
-
-        this.onSaveTemplate(false)
-        this.populateTemplateResources2({resourceTemplates: [...environment.instances, ...environment.connections], environmentName, context: 'environment'})
+    created() {
+        this.freshState()
     }
 }
 </script>
@@ -294,14 +336,14 @@ export default {
         </div>
         <h2>{{n__('Cloud Provider', 'Cloud Providers', 1 + additionalProviders.length)}}</h2>
         <oc-properties-list
-            :header="headerTitle(p)"
+            :header="cloudProviderDisplayName"
             :containerStyle="{'font-size': '0.9em', ...width}"
             :properties="propviderProps"
             v-if="[lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :env="environment" class="mr-1"/> {{headerTitle(p)}}
+                    <detect-icon :size="20" :env="environment" class="mr-1"/> {{cloudProviderDisplayName}}
                 </div>
             </template>
         </oc-properties-list>
@@ -337,7 +379,6 @@ export default {
         </div>
 
         <gl-tabs v-model="currentTab" class="mt-4">
-            <oc-tab title="Provider" v-if="hasProviderTab"></oc-tab>
             <oc-tab title="Resources">
                 <div class="d-flex" v-if="!showDeploymentResources">
                     <div class="mr-4">
@@ -363,14 +404,14 @@ export default {
                 <ci-variable-settings v-if="!unfurl_gui"/>
             </oc-tab>
         </gl-tabs>
-        <div v-if="(!(showDeploymentResources || showingProviderTab)) && userCanEdit" class="form-actions d-flex justify-content-end">
+        <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions d-flex justify-content-end">
             <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
                 <gl-icon name="remove"/>
                 Delete Environment
             </gl-button>
         </div>
-        <deployment-resources :readonly="!userCanEdit || showingPublicCloudTab" v-show="(showingDeploymentResourceTab && showDeploymentResources) || showingProviderTab" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" @addProvider="onProviderAdded" ref="deploymentResources" external-status-indicator display-validation>
-            <template v-if="!showingProviderTab" #header>
+        <deployment-resources :readonly="!userCanEdit || showingPublicCloudTab" v-show="(showingDeploymentResourceTab && showDeploymentResources)" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" @addProvider="onProviderAdded" ref="deploymentResources" external-status-indicator display-validation>
+            <template #header>
                 <!-- potentially tricky to translate -->
                 <div v-if="showingResourcesTab" class="d-flex align-items-center">
                     <h2 style="margin: 0 1.25em">
@@ -397,7 +438,7 @@ export default {
                 <div></div>
             </template>
             <template #primary-controls>
-                <div v-if="!showingProviderTab && !isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
+                <div v-if="!isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
                     <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                         <div>
                             <gl-icon name="plus"/>
@@ -407,7 +448,7 @@ export default {
                 </div>
             </template>
             <template #primary-controls-footer>
-                <div v-if="!showingProviderTab && isMobileLayout" class="confirm-container">
+                <div v-if="isMobileLayout" class="confirm-container">
                     <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
                         <div>
                             <gl-icon name="plus"/>
@@ -418,6 +459,14 @@ export default {
             </template>
         </deployment-resources>
 
+        <!-- v-model doesn't work on this stupid component -->
+        <gl-modal :visible="showingProviderModal" @hide="onHide" modalId="providerModal" ref="providerModal" size="lg">
+            <template #modal-footer><div></div></template>
+
+            <deployment-resources style="margin-bottom: -3em;" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
+
+
+        </gl-modal>
     </div>
 </template>
 <style scoped>
