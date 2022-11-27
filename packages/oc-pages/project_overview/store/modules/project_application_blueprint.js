@@ -192,7 +192,10 @@ const actions = {
                 for(const connection of de.connections) {
                     const providerType = connection?.type
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
-                    root.ResourceTemplate[connection.name] = _.cloneDeep(connection)
+
+                    // intentionally not cloning
+                    // we want to normalize this record in both places
+                    root.ResourceTemplate[connection.name] = connection
                 }
             },
             repositories(entry) {
@@ -220,10 +223,20 @@ const actions = {
             if(!Object.isFrozen(value) && typeof transforms[key] == 'function')
                 Object.values(value).forEach(entry => {if(typeof entry == 'object' && !Object.isFrozen(entry)) {transforms[key](entry, root)}})
 
-            commit('setProjectState', {key, value})
+            // commit so we can use our resolvers while normalizing
+            if(key == 'ResourceType') {
+                commit('setProjectState', {key, value})
+            }
         }
         if(root.ApplicationBlueprint) {
             commit('setProjectState', {key: 'applicationBlueprint', value: Object.values(root.ApplicationBlueprint)[0]})
+        }
+
+        // second iteration to avoid mutating committed
+        for(const key of ordering) {
+            if(key == 'ResourceType') continue
+            const value = root[key]
+            commit('setProjectState', {key, value})
         }
     }
     
