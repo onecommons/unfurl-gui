@@ -104,7 +104,7 @@ export default {
             })
         },
         cloudProviderDisplayName() {
-            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')
+            return `Primary Provider (${cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')})`
         },
         hasProviderTab() {
             const primaryProviderType = this?.environment?.primary_provider?.type
@@ -272,8 +272,6 @@ export default {
 
         this.onSaveTemplate(false)
         this.populateTemplateResources2({resourceTemplates: [...environment.instances, ...environment.connections], environmentName, context: 'environment'})
-
-
     }
 }
 </script>
