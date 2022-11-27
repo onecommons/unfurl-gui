@@ -1,6 +1,6 @@
 <script>
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox, GlTabs} from '@gitlab/ui';
-import { cloneDeep } from 'lodash';
+import _, { cloneDeep } from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
@@ -101,7 +101,6 @@ export default {
             checkedNode: true,
             selectedServiceToConnect: '',
             selectingTopLevel: false,
-            selectingProvider: false,
             topLevelSelection: {},
             providerSelection: {}
         };
@@ -238,7 +237,21 @@ export default {
             } else {
                 return this.getCardsStacked.filter(this.filter)
             }
-        }
+        },
+
+        selectingProvider: {
+            get() { return this.$route.query.hasOwnProperty('newProvider') },
+            set(val) {
+                const query = {...this.$route.query}
+                if(val) { query.newProvider = null }
+                else { delete query.newProvider }
+
+                if(! _.isEqual(query, this.$route.query)) {
+                    this.$router.push({...this.$route, query})
+                }
+            }
+        },
+
     },
 
     watch: {
@@ -291,7 +304,6 @@ export default {
             this.launchModal('oc-connect-resource', 250);
         });
 
-        bus.$on('deleteNode', (obj) => { this.onDeleteNode(obj) });
     },
 
     beforeMount() {
@@ -317,8 +329,7 @@ export default {
 
     beforeDestroy() {
         window.removeEventListener('beforeunload', this.unloadHandler);
-        this.resetTemplateResourceState();
-        this.setRouterHook();
+        this.setRouterHook(null);
     },
 
     methods: {
@@ -652,7 +663,7 @@ export default {
         <gl-modal
             modal-id="provider-selection"
             size="lg"
-            title="Add an external resource"
+            title="Add a provider connection"
             :action-primary="ocProviderPrimary"
             :action-cancel="cancelProps"
             @primary="$emit('addProvider', {selection: providerSelection, title: resourceName})"
@@ -689,7 +700,7 @@ export default {
             <!-- Modal to delete -->
         <gl-modal
             ref="oc-delete-node"
-            :modal-id="__('oc-delete-node')"
+            :modal-id="`delete-modal-${_uid}`"
             size="md"
             :title="`${nodeAction} ${nodeTitle}`"
             :action-primary="primaryPropsDelete"
