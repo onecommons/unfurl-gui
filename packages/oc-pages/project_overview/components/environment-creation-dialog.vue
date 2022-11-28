@@ -84,10 +84,17 @@ export default {
         },
         filteredAvailableProviders() {
             return this.availableProviders.filter(provider => {
+                /*
+                 * allow everything outside of gcp and aws
                 if(provider.source == 'instance') return true
                 if([lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(provider.template.type)) return false
 
                 return true
+                */
+
+                if([lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(provider.template.type)) return false
+
+                return provider.template.name == 'primary_provider'
             })
         },
         showExistingProviders() {
