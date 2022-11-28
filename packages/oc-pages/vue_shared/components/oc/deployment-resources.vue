@@ -1,6 +1,6 @@
 <script>
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox, GlTabs} from '@gitlab/ui';
-import { cloneDeep } from 'lodash';
+import _, { cloneDeep } from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
@@ -12,7 +12,7 @@ import OcListResource from '../../../project_overview/components/shared/oc_list_
 import OcTemplateHeader from '../../../project_overview/components/shared/oc_template_header.vue';
 import TemplateButtons from '../../../project_overview/components/template/template_buttons.vue';
 import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
-import { slugify } from '../../util.mjs'
+import { cloudProviderFriendlyName, slugify } from '../../util.mjs'
 import { deleteDeploymentTemplate } from '../../../project_overview/store/modules/deployment_template_updates'
 import {bus} from 'oc_vue_shared/bus'
 
@@ -101,7 +101,8 @@ export default {
             checkedNode: true,
             selectedServiceToConnect: '',
             selectingTopLevel: false,
-            topLevelSelection: {}
+            topLevelSelection: {},
+            providerSelection: {}
         };
     },
 
@@ -171,6 +172,24 @@ export default {
             };
         },
 
+        alertProviderExists() {
+            if(!this.providerSelection) return false
+            const env = this.getCurrentEnvironment
+            const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
+
+            return connections.some(conn => conn.type == this.providerSelection.name)
+        },
+
+        ocProviderPrimary() {
+
+            const nameIssue = !Object.keys(this.providerSelection).length || !this.resourceName.length || this.alertNameExists
+            const disabled = nameIssue || this.alertProviderExists
+            return {
+                text: __("Next"),
+                attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled }]
+            };
+        },
+
         ocResourceToConnectPrimary() {
             return {
                 text: __("Next"),
@@ -219,13 +238,31 @@ export default {
             return mapping
         },
 
+        availableProviderTypes() {
+            return ['unfurl.relationships.ConnectsTo.K8sCluster', 'unfurl.relationships.ConnectsTo.DigitalOcean'].map(this.resolveResourceTypeFromAny)
+        },
+
         presentableCards() {
             if(typeof this.filter != 'function') {
                 return this.getCardsStacked
             } else {
                 return this.getCardsStacked.filter(this.filter)
             }
-        }
+        },
+
+        selectingProvider: {
+            get() { return this.$route.query.hasOwnProperty('newProvider') },
+            set(val) {
+                const query = {...this.$route.query}
+                if(val) { query.newProvider = null }
+                else { delete query.newProvider }
+
+                if(! _.isEqual(query, this.$route.query)) {
+                    this.$router.push({...this.$route, query})
+                }
+            }
+        },
+
     },
 
     watch: {
@@ -236,10 +273,19 @@ export default {
                 }
             }
         },
+
         topLevelSelection: function(val) {
             if(Object.keys(val).length > 0) {
                 if(!this.userEditedResourceName) {
                     this.resourceName = val.name;
+                }
+            }
+        },
+
+        providerSelection: function(val) {
+            if(Object.keys(val).length > 0) {
+                if(!this.userEditedResourceName) {
+                    this.resourceName = cloudProviderFriendlyName(val.name) || val.name;
                 }
             }
         },
@@ -269,7 +315,6 @@ export default {
             this.launchModal('oc-connect-resource', 250);
         });
 
-        bus.$on('deleteNode', (obj) => { this.onDeleteNode(obj) });
     },
 
     beforeMount() {
@@ -295,8 +340,7 @@ export default {
 
     beforeDestroy() {
         window.removeEventListener('beforeunload', this.unloadHandler);
-        this.resetTemplateResourceState();
-        this.setRouterHook();
+        this.setRouterHook(null);
     },
 
     methods: {
@@ -326,6 +370,10 @@ export default {
 
         promptAddExternalResource() {
             this.selectingTopLevel = true
+        },
+
+        promptAddProvider() {
+            this.selectingProvider = true
         },
 
         unloadHandler(e) {
@@ -396,6 +444,7 @@ export default {
             this.selected = {};
             this.userEditedResourceName = false;
             this.topLevelSelection = {}
+            this.providerSelection = {}
         },
 
         async onSubmitDeleteTemplateModal() {
@@ -599,7 +648,7 @@ export default {
 
 
         <gl-modal
-            modal-id="oc-template-resource-2"
+            modal-id="toplevel-selection"
             size="lg"
             title="Add an external resource"
             :action-primary="ocTopLevelPrimary"
@@ -617,13 +666,31 @@ export default {
             </gl-tabs>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                <small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
             </gl-form-group>
 
 
-            <!--gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
-            </gl-form-group-->
+        </gl-modal>
+
+        <gl-modal
+            modal-id="provider-selection"
+            size="lg"
+            title="Add a provider connection"
+            :action-primary="ocProviderPrimary"
+            :action-cancel="cancelProps"
+            @primary="$emit('addProvider', {selection: providerSelection, title: resourceName})"
+            @cancel="cleanModalResource"
+            v-model="selectingProvider"
+        >
+            <oc-list-resource v-model="providerSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="availableProviderTypes"/>
+
+            <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
+                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                <small v-if="alertProviderExists" class="alert-input">{{ __("Your environment already has this type of provider.") }}</small>
+                <small v-else-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+            </gl-form-group>
+
         </gl-modal>
 
             <!-- Modal Resource Template -->
@@ -648,7 +715,7 @@ export default {
             <!-- Modal to delete -->
         <gl-modal
             ref="oc-delete-node"
-            :modal-id="__('oc-delete-node')"
+            :modal-id="`delete-modal-${_uid}`"
             size="md"
             :title="`${nodeAction} ${nodeTitle}`"
             :action-primary="primaryPropsDelete"

@@ -4,7 +4,7 @@ import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
-import {userDefaultPath} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias, userDefaultPath} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 
 
@@ -75,10 +75,19 @@ Serializers = {
     DeploymentEnvironment(env) {
         allowFields(env, 'connections', 'instances', 'external', 'repositories')
         fieldsToDictionary(env, 'connections', 'instances')
+
         if(env.instances.primary_provider) {
             env.connections.primary_provider = env.instances.primary_provider
             delete env.instances.primary_provider
         }
+
+        for(const [name, instance] of Object.entries(env.instances)) {
+            if(lookupCloudProviderAlias(instance.type)) {
+                env.connections[name] = env.instances[name]
+                delete env.instances[name]
+            }
+        }
+
         return Object.values(env.instances || {}).concat(Object.values(env.connections))
     },
     DeploymentTemplate(dt, state) {
@@ -218,10 +227,15 @@ export function updatePropertyInInstance({environmentName, templateName, propert
             _propertyValue = {[SECRET_DIRECTIVE]: envname}
         }
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        const instance = Array.isArray(patch.instances) ?
+        let instance = Array.isArray(patch.instances) ?
             patch.instances.find(i => i.name == templateName) :
             patch.instances[templateName]
         
+        if(!instance) {
+            instance = Array.isArray(patch.connections) ?
+                patch.connections.find(i => i.name == templateName) :
+                patch.connections[templateName]
+        }
         const property = instance.properties.find(p => p.name == propertyName)
         property.value = _propertyValue
         return [ {typename: 'DeploymentEnvironment', target: templateName, patch, env} ]
@@ -278,17 +292,21 @@ export function createEnvironmentInstance({type, name, title, description, depen
 export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-
         const index = patch.instances.findIndex(instance => instance.name == templateName)
         if(index != -1) {
             patch.instances.splice(index, 1)
-        }
 
-        if(dependentName) {
-            const dependent = patch.instances.find(rt => rt.name == dependentName)
-            const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
-            if(dependency) {
-                dependency.match = null
+            if(dependentName) {
+                const dependent = patch.instances.find(rt => rt.name == dependentName)
+                const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+                if(dependency) {
+                    dependency.match = null
+                }
+            }
+        } else {
+            const index = patch.connections.findIndex(connection => connection.name == templateName)
+            if(index != -1) {
+                patch.connections.splice(index, 1)
             }
         }
 

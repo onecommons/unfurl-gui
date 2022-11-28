@@ -87,7 +87,11 @@ export default function createRouter() {
         } catch(e) {
             console.error("Couldn't set class on side navigation;", e.message)
         }
-        next()
+        if(router.app.$store) {
+            router.app.$store.getters.getRouterHook(to, from, next)
+        }
+        else next()
+
     })
     
     // #!endif
