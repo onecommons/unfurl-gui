@@ -173,7 +173,7 @@ const actions = {
 
         // if upstreamProject is set as an ID, look up the upstream path
         const upstreamProjectPath = (
-            !isNaN(parseInt(state.upstreamProject))? 
+            !isNaN(parseInt(state.upstreamProject))?
                 await fetchProjectInfo(state.upstreamProject):
                 null
         )?.path_with_namespace
@@ -408,7 +408,7 @@ const actions = {
             varsForEnv[variable.key] = variable.value
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
-      
+
         try {
             const namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
             variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
@@ -566,9 +566,13 @@ const getters = {
         // uncomment to make local dev agnostic
         //if(!type) { return getters.getEnvironments }
         const result = getters.getEnvironments.filter(env => {
-            //if(env?.primary_provider)
-            return lookupCloudProviderAlias(env.primary_provider?.type) == lookupCloudProviderAlias(type)
-            //else return false
+            const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
+
+            for(const connection of connections) {
+                if(lookupCloudProviderAlias(connection?.type) == lookupCloudProviderAlias(type)) { return true }
+            }
+
+            return false
         })
         return result
     },

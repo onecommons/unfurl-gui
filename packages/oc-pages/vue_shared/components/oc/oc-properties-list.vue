@@ -21,16 +21,25 @@ export default {
             required: false,
             default() {return []}
         },
+        schema: {
+            type: Object
+        },
         header: String,
         property: String,
         containerStyle: Object
     },
     computed: {
         ...mapGetters([
+            'lookupEnvironmentVariable',
+            'windowWidth'
         ]),
         _properties() {
+            // TODO handle this gracefully when we don't have an environment loaded
             const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
-            return properties
+            return properties.map(prop => {
+                if (prop.value?.get_env) return {...prop, value: this.lookupEnvironmentVariable(prop.value?.get_env)}
+                return prop
+            })
         },
     },
     methods: {
@@ -50,24 +59,68 @@ export default {
         isEmail(value) {
             const regex = new RegExp(/[a-z0-9]+@[a-z]+\.[a-z]{2,3}/)
             return regex.test(value)
+        },
+        formatName(property) {
+            let result  = property.name
+            if(this.schema?.properties) {
+                const title = this.schema.properties[property.name]?.title
+                if(title) result = title
+            }
+
+            return result.replaceAll('_', ' ')
+        },
+        isSensitive(property) {
+            if(this.schema?.properties) {
+                const sensitive = this.schema.properties[property.name]?.sensitive ?? null
+
+                if(sensitive !== null) return sensitive
+            }
+
+            return property.sensitive
+        },
+        tableSizingHack() {
+            // TODO use CSS grid instead
+            this.$nextTick(() => {
+                try {
+                    const headerWidth = this.$refs.header?.clientWidth
+                    const nameColumnWdith = this.$refs.transitionTarget.querySelector('td.name-column')?.clientWidth
+                    if(!(headerWidth && nameColumnWdith)) return
+                    this.$refs.transitionTarget.style.width = headerWidth + 'px'
+                    this.$refs.transitionTarget.querySelectorAll('td.value-column').forEach(cell => {
+                        cell.style.width = (headerWidth - nameColumnWdith - 30) + 'px'
+                    })
+                    this.$refs.transitionTarget.style.tableLayout = 'fixed'
+                } catch(e) {console.error(e)}
+            })
+
         }
+    },
+    watch: {
+        windowWidth() { this.tableSizingHack() },
+        properties() { this.tableSizingHack() },
+
+    },
+    mounted() {
+        this.tableSizingHack()
     }
 }
 
 </script>
 <template>
-
     <div style="max-width: 100%; overflow-x: auto;">
         <div :style="containerStyle" class="properties-list-container">
-            <div @click="toggleExpanded" v-if="header" class="header">
+            <div @click="toggleExpanded" v-if="header" class="header" ref="header">
                 <slot name="header-text">
                     <div>{{header}}</div>
                 </slot>
-                <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
+                <div>
+                    <slot name="header-controls"></slot>
+                    <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
+                </div>
             </div>
-            <table ref="transitionTarget" class="properties-list-inner" style="display: table;">
+            <table ref="transitionTarget" class="properties-list-inner" style="display: table; width: 100%;">
                 <tr style="display: table-row" class="properties-list-item" v-for="property in _properties" :key="property.name">
-                    <td class="name-column">{{ property.name.replaceAll('_', ' ') }}</td>
+                    <td class="name-column">{{formatName(property)}}</td>
                     <td :style="property.valueStyle" class="value-column">
                         <div style="display: flex; justify-content: space-between;">
                             <slot :name="property.name" v-bind="property.value">
@@ -86,7 +139,7 @@ export default {
                                     <a v-else-if="property.url || isUrl(property.value)" :href="property.url || property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
                                     <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
 
-                                    <Redacted v-else-if="property.sensitive" :value="property.value" />
+                                    <Redacted v-else-if="isSensitive(property)" :value="property.value" />
 
                                     <span v-else>
                                         {{property.value}}
@@ -132,7 +185,7 @@ export default {
 }
 .properties-list-item {
     margin: -1px;
-    min-width: 22em;
+    min-width: min(100%, 22em);
 }
 .name-column, .value-column {
     padding: 0.75em;
