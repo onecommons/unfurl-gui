@@ -91,7 +91,7 @@ export default {
             if(this.instantiateAs == 'deployment-draft') {
                 const environment = this.selectedEnvironment ?? null
                 if(environment && this.lookupDeploymentOrDraft(slugify(this.templateForkedName), environment)) {
-                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment}'`
+                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment?.name || environment}'`
                 }
             }
             return null
