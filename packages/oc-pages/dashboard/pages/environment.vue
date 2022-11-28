@@ -223,7 +223,14 @@ export default {
         },
         onSaveProviderTemplate(...args) {
             this.showingProviderModal = false
-            this.onSaveTemplate(...args)
+            let redirect
+            if(redirect = sessionStorage['redirectOnProviderSaved']) {
+                delete sessionStorage['redirectOnProviderSaved']
+                window.location.href = redirect
+            }
+            else {
+                this.onSaveTemplate(...args)
+            }
         },
         onSaveTemplate(reload=true) {
             const environment = this.environment
