@@ -51,11 +51,19 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
 
   cy.wait(BASE_TIMEOUT / 2)
 
+  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments/${environmentName}?provider`)
+
   cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
 
   if(DO_DEFAULT_REGION) {
     cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-default_region"]').type(DO_DEFAULT_REGION)
   }
+
+  cy.get('#providerModal').within(() => {
+    cy.contains('button', 'Save Changes').click()
+  })
+
+  cy.wait(5000)
 
   cy.contains('a', 'Resources').click()
 

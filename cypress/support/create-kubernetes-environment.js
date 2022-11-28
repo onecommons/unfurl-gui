@@ -56,6 +56,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
   cy.wait(BASE_TIMEOUT / 2)
 
+  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments/${environmentName}?provider`)
 
   if(K8S_CLUSTER_NAME) {
     cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-name"]').type(K8S_CLUSTER_NAME)
@@ -78,6 +79,12 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
   if(K8S_BASE_URL) {
     cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-api_server"]').type(K8S_BASE_URL)
   }
+
+  cy.get('#providerModal').within(() => {
+    cy.contains('button', 'Save Changes').click()
+  })
+
+  cy.wait(5000)
 
   cy.contains('a', 'Resources').click()
 
