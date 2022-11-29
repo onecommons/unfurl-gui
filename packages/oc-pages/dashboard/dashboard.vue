@@ -1,5 +1,5 @@
 <script>
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {mapActions, mapMutations, mapGetters, mapState} from 'vuex'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
@@ -20,7 +20,8 @@ export default {
             'populateDeploymentItems',
             'populateCurrentUser',
             'populateDashboardProject',
-            'deployInto'
+            'deployInto',
+            'createFlash'
         ]),
         ...mapMutations([
             'setCurrentNamespace',
@@ -58,7 +59,7 @@ export default {
         
         const flash = sessionStorage['oc_flash']
         if(flash) {
-            createFlash(JSON.parse(flash))
+            this.createFlash(JSON.parse(flash))
             delete sessionStorage['oc_flash']
         }
 

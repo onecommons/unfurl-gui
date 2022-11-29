@@ -28,7 +28,8 @@ export default {
             'getHomeProjectPath',
             'deploymentItemDirect',
             'jobByPipelineId',
-            'userCanEdit'
+            'userCanEdit',
+            'serviceDesk'
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
@@ -130,7 +131,9 @@ export default {
                 this.getHomeProjectPath,
                 {
                     title: `Issue with deployment "${this.deployment.title}"`,
-                    description: 'Please describe the issue you are experiencing:'
+                    description: 'Please describe the issue you are experiencing:',
+                    serviceDesk: this.serviceDesk,
+                    confidential: true
                 }
             ]
         }

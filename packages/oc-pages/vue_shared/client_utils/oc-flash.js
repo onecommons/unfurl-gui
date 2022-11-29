@@ -1,6 +1,6 @@
 import glCreateFlash, { FLASH_TYPES, hideFlash } from '~/flash';
 export { hideFlash, FLASH_TYPES } from '~/flash'
-import {generateIssueLink} from './issues'
+import {generateGitLabIssueSync} from './gitlab-issues'
 
 let lastOCFlash
 
@@ -10,8 +10,7 @@ export function hideLastFlash() {
     }
 }
 
-export default function createFlash(options) {
-    console.log('createFlash', options)
+export function createFlash(options) {
     let message = options.message || ''
     let type = options.type
     if(options.issue) {
@@ -39,7 +38,7 @@ export default function createFlash(options) {
 
             issueContext.textContent = options.issue
 
-            createIssueLink.href = await generateIssueLink(options.projectPath, {title: options.issue, description: message, context: options.issueContext})
+            createIssueLink.href = await generateGitLabIssueSync(options.projectPath, {confidential: options.confidential, title: options.issue, description: message, context: options.issueContext, serviceDesk: options.serviceDesk})
             createIssueLink.target = '_blank'
             createIssueLink.textContent = options.issue? 'Click to create an issue: ': 'Click to create an issue.'
             createIssueLink.appendChild(issueContext)
