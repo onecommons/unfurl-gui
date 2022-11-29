@@ -1,6 +1,7 @@
 import { templateElement } from "@babel/types";
 import _ from 'lodash';
 import { __ } from "~/locale";
+import axios from '~/lib/utils/axios_utils'
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag'
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
@@ -11,6 +12,7 @@ import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 
 const state = () => ({
     projectInfo: {},
+    commentsIssueUrl: null,
     environmentList: [],
     templateList: [],
     template: {},
@@ -195,6 +197,10 @@ const mutations = {
 
     setOpenCloudDeployments(state, openCloudDeployments) {
         state.openCloudDeployments = openCloudDeployments
+    },
+
+    setCommentsIssueUrl(state, url) {
+        state.commentsIssueUrl = url
     }
 };
 
@@ -307,6 +313,16 @@ const actions = {
         return services;
 
         */
+    },
+
+    async fetchCommentsIssue({ getters, commit }) {
+        if(!getters.getProjectInfo) {throw new Error('Comments loaded before blueprint!')}
+        const issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(getters.getProjectInfo.fullPath)}/issues?state=opened&label=general+discussion`))?.data
+
+
+        if(issues && issues.length > 0) {
+            commit('setCommentsIssueUrl', issues[0].web_url)
+        }
     },
 
     completeRequirement({ commit }, { requirementTitle }) {
@@ -444,6 +460,9 @@ const getters = {
     },
     openCloudDeployments(state) {
         return state.openCloudDeployments
+    },
+    commentsIssueUrl(state) {
+        return state.commentsIssueUrl
     }
 };
 
