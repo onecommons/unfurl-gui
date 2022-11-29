@@ -402,7 +402,7 @@ export default {
 }
 </script>
 <template>
-<el-card class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+<el-card v-if="!card.properties.length == 0" class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
   <FormProvider v-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
