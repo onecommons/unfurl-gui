@@ -8,11 +8,13 @@ import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
 import {userDefaultPath} from 'oc_vue_shared/util.mjs'
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
+import {lookupNumberOfComments} from 'oc_vue_shared/client_utils/comments'
 
 
 const state = () => ({
     projectInfo: {},
     commentsIssueUrl: null,
+    commentsCount: null,
     environmentList: [],
     templateList: [],
     template: {},
@@ -201,6 +203,10 @@ const mutations = {
 
     setCommentsIssueUrl(state, url) {
         state.commentsIssueUrl = url
+    },
+
+    setCommentsCount(state, count) {
+        state.commentsCount = count
     }
 };
 
@@ -321,7 +327,10 @@ const actions = {
 
 
         if(issues && issues.length > 0) {
-            commit('setCommentsIssueUrl', issues[0].web_url)
+            const commentsIssueUrl = issues[0].web_url
+            commit('setCommentsIssueUrl', commentsIssueUrl)
+
+            commit('setCommentsCount', await lookupNumberOfComments(commentsIssueUrl))
         }
     },
 
@@ -463,7 +472,10 @@ const getters = {
     },
     commentsIssueUrl(state) {
         return state.commentsIssueUrl
-    }
+    },
+    commentsCount(state) {
+        return state.commentsCount
+    },
 };
 
 export default {
