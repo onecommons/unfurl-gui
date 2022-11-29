@@ -6,7 +6,7 @@ import gql from 'graphql-tag'
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
 import {userDefaultPath} from 'oc_vue_shared/util.mjs'
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 
 
 const state = () => ({
@@ -237,7 +237,7 @@ const actions = {
         commit('setOpenCloudDeployments', openCloudDeployments)
     },
 
-    async fetchProjectInfo({ commit }, { projectPath, defaultBranch }) {
+    async fetchProjectInfo({ commit, dispatch }, { projectPath, defaultBranch }) {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getProjectInfo,
             errorPolicy: 'all',
@@ -246,15 +246,19 @@ const actions = {
         });
 
         if(!data?.applicationBlueprintProject?.applicationBlueprint) {
-            createFlash({
-                projectPath,
-                type: FLASH_TYPES.ALERT,
-                message: 'Could not load overview - please check whether the application unfurl.json is valid and up to date.' ,
-                issue: `Could not load overview for ${projectPath}`,
-                issueContext: {
-                    'Data received from graphql endpoint': JSON.stringify(data)
-                }
-            })
+            dispatch(
+                'createFlash',
+                {
+                    projectPath,
+                    type: FLASH_TYPES.ALERT,
+                    message: 'Could not load overview - please check whether the application unfurl.json is valid and up to date.' ,
+                    issue: `Could not load overview for ${projectPath}`,
+                    issueContext: {
+                        'Data received from graphql endpoint': JSON.stringify(data)
+                    }
+                },
+                {root: true}
+            )
         }
 
         async function fetchProjectPermissions(projectPath) {

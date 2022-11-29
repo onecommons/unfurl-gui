@@ -7,7 +7,6 @@ import {Autocomplete as ElAutocomplete, Card as ElCard, Checkbox as ElCheckbox} 
 import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
-import {generateIssueLinkSync} from 'oc_vue_shared/client_utils/issues'
 import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
@@ -155,7 +154,6 @@ export default {
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
         ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject', 'setUpstreamBranch']),
-        generateIssueLinkSync,
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
             await this.setupRegistryCredentials(this.projectInfo)
