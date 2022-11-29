@@ -86,7 +86,7 @@ const getters = {
     windowWidth(state) {return state.windowWidth},
     serviceDesk() {
         // TODO make this configurable
-        return 'onecommons/tickets'
+        return 'onecommons/support'
     }
 }
 
