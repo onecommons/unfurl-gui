@@ -2,6 +2,8 @@ import _ from 'lodash'
 import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import { fetchUser } from 'oc_vue_shared/client_utils/user'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
+
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
 function isMobileLayout() {
@@ -81,12 +83,11 @@ const getters = {
     registryURL() {
         return sessionStorage['registry-url']
     },
-    windowWidth(state) {return state.windowWidth}
-    /*
-    DEPLOY_TAG() {
-        return sessionStorage['deploy-tag'] || 'latest'
+    windowWidth(state) {return state.windowWidth},
+    serviceDesk() {
+        // TODO make this configurable
+        return 'onecommons/support'
     }
-    */
 }
 
 const actions = {
@@ -110,6 +111,15 @@ const actions = {
     async populateDashboardProject({commit, getters}) {
         const projectInfo = await fetchProjectInfo(encodeURIComponent(getters.getHomeProjectPath))
         commit('setDashboardProjectInfo', projectInfo)
+    },
+
+    createFlash({getters}, options) {
+        return createFlash({
+            projectPath: getters.getHomeProjectPath,
+            serviceDesk: getters.serviceDesk,
+            confidential: true,
+            ...options
+        })
     }
 }
 

@@ -1,16 +1,19 @@
 import { templateElement } from "@babel/types";
 import _ from 'lodash';
 import { __ } from "~/locale";
+import axios from '~/lib/utils/axios_utils'
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag'
 import getProjectInfo from '../../graphql/queries/get_project_info.query.graphql';
 import UpdateDeploymentObject from '../../graphql/mutations/update_deployment_object.graphql'
 import {userDefaultPath} from 'oc_vue_shared/util.mjs'
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
-
+import {lookupNumberOfComments} from 'oc_vue_shared/client_utils/comments'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 
 const state = () => ({
     projectInfo: {},
+    commentsIssueUrl: null,
+    commentsCount: null,
     environmentList: [],
     templateList: [],
     template: {},
@@ -195,6 +198,14 @@ const mutations = {
 
     setOpenCloudDeployments(state, openCloudDeployments) {
         state.openCloudDeployments = openCloudDeployments
+    },
+
+    setCommentsIssueUrl(state, url) {
+        state.commentsIssueUrl = url
+    },
+
+    setCommentsCount(state, count) {
+        state.commentsCount = count
     }
 };
 
@@ -237,7 +248,7 @@ const actions = {
         commit('setOpenCloudDeployments', openCloudDeployments)
     },
 
-    async fetchProjectInfo({ commit }, { projectPath, defaultBranch }) {
+    async fetchProjectInfo({ commit, dispatch }, { projectPath, defaultBranch }) {
         const {errors, data} = await graphqlClient.clients.defaultClient.query({
             query: getProjectInfo,
             errorPolicy: 'all',
@@ -246,15 +257,19 @@ const actions = {
         });
 
         if(!data?.applicationBlueprintProject?.applicationBlueprint) {
-            createFlash({
-                projectPath,
-                type: FLASH_TYPES.ALERT,
-                message: 'Could not load overview - please check whether the application unfurl.json is valid and up to date.' ,
-                issue: `Could not load overview for ${projectPath}`,
-                issueContext: {
-                    'Data received from graphql endpoint': JSON.stringify(data)
-                }
-            })
+            dispatch(
+                'createFlash',
+                {
+                    projectPath,
+                    type: FLASH_TYPES.ALERT,
+                    message: 'Could not load overview - please check whether the application unfurl.json is valid and up to date.' ,
+                    issue: `Could not load overview for ${projectPath}`,
+                    issueContext: {
+                        'Data received from graphql endpoint': JSON.stringify(data)
+                    }
+                },
+                {root: true}
+            )
         }
 
         async function fetchProjectPermissions(projectPath) {
@@ -307,6 +322,19 @@ const actions = {
         return services;
 
         */
+    },
+
+    async fetchCommentsIssue({ getters, commit }) {
+        if(!getters.getProjectInfo) {throw new Error('Comments loaded before blueprint!')}
+        const issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(getters.getProjectInfo.fullPath)}/issues?state=opened&label=general+discussion`))?.data
+
+
+        if(issues && issues.length > 0) {
+            const commentsIssueUrl = issues[0].web_url
+            commit('setCommentsIssueUrl', commentsIssueUrl)
+
+            commit('setCommentsCount', await lookupNumberOfComments(commentsIssueUrl))
+        }
     },
 
     completeRequirement({ commit }, { requirementTitle }) {
@@ -444,7 +472,13 @@ const getters = {
     },
     openCloudDeployments(state) {
         return state.openCloudDeployments
-    }
+    },
+    commentsIssueUrl(state) {
+        return state.commentsIssueUrl
+    },
+    commentsCount(state) {
+        return state.commentsCount
+    },
 };
 
 export default {

@@ -84,10 +84,17 @@ export default {
         },
         filteredAvailableProviders() {
             return this.availableProviders.filter(provider => {
+                /*
+                 * allow everything outside of gcp and aws
                 if(provider.source == 'instance') return true
                 if([lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(provider.template.type)) return false
 
                 return true
+                */
+
+                if([lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(provider.template.type)) return false
+
+                return provider.template.name == 'primary_provider'
             })
         },
         showExistingProviders() {
@@ -119,7 +126,8 @@ export default {
     },
     methods: {
         ...mapActions(['environmentFromProvider']),
-        async createLocalDevEnvironment(instances={}) {
+
+        async createEnvironmentWithoutCluster(instances={}) {
           await postGitlabEnvironmentForm();
           const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
               name: 'primary_provider', 
@@ -171,8 +179,9 @@ export default {
                         }
                     }
                 }
-                await this.createLocalDevEnvironment(instances)
-                window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+                await this.createEnvironmentWithoutCluster(instances)
+                sessionStorage['redirectOnProviderSaved'] = redirectTarget
+                window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
             } else {
                 const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
                 sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)

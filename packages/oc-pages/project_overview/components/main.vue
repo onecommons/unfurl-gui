@@ -1,5 +1,5 @@
 <script>
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
@@ -35,12 +35,16 @@ export default {
             this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
                 .catch((err) => {
                     console.error('@main.vue', err)
-                    return createFlash({
-                        message: err.message,
-                        type: FLASH_TYPES.ALERT,
-                        issue: ERROR_CONTEXT[errorContext] || errorContext,
-                        projectPath: this.$projectGlobal?.projectPath
-                    });
+                    this.$store.dispatch(
+                        'createFlash',
+                        {
+                            message: err.message,
+                            type: FLASH_TYPES.ALERT,
+                            issue: ERROR_CONTEXT[errorContext] || errorContext,
+                            projectPath: this.$projectGlobal?.projectPath
+                        },
+                        {root: true}
+                    );
                 })
 
                 this.$store.dispatch('loadAdditionalDashboards')

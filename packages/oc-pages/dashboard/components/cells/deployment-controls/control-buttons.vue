@@ -1,6 +1,6 @@
 <script>
 import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
-import {generateIssueLink} from 'oc_vue_shared/client_utils/issues'
+import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 export default {
     props: {
         deployment: Object,
@@ -47,7 +47,7 @@ export default {
             this.$emit('incRedeploy')
         },
         async openIssue() {
-            const link = await generateIssueLink(...this.issuesLinkArgs)
+            const link = generateGitLabIssueSync(...this.issuesLinkArgs)
             window.open(link, '_blank')
         },
         beforeResumeEdit(e) {

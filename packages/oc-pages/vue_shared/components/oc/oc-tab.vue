@@ -13,11 +13,16 @@ export default {
             type: String,
             default: () => null
         }
+    },
+    computed: {
+        active() {
+            return this.$refs.tab.$children[0]?.localActive
+        }
     }
 }
 </script>
 <template>
-    <gl-tab class="gl-mt-3" >
+    <gl-tab ref="tab" class="gl-mt-3" >
         <template slot="title">
             <span :data-testid="titleTestid">{{ __(title)}}</span>
             <gl-badge v-if="!(isNaN(parseInt(titleCount)))" size="sm" class="gl-tab-counter-badge">

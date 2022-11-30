@@ -11,6 +11,7 @@ import EnvironmentCreationDialog from '../../components/environment-creation-dia
 import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
+import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
 import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/oc-components'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
@@ -37,7 +38,8 @@ export default {
         DeployedBlueprints,
         YourDeployments,
         OpenCloudDeployments,
-        GlMarkdown
+        GlMarkdown,
+        NotesWrapper
     },
     directives: {
         GlModal: GlModalDirective,
@@ -91,7 +93,7 @@ export default {
             if(this.instantiateAs == 'deployment-draft') {
                 const environment = this.selectedEnvironment ?? null
                 if(environment && this.lookupDeploymentOrDraft(slugify(this.templateForkedName), environment)) {
-                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment}'`
+                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment?.name || environment}'`
                 }
             }
             return null
@@ -111,7 +113,9 @@ export default {
             'lookupEnvironment',
             'getHomeProjectPath',
             'getLastUsedEnvironment',
-            'environmentsAreReady'
+            'environmentsAreReady',
+            'commentsCount',
+            'commentsIssueUrl'
         ]),
         primaryProps() {
             return {
@@ -157,7 +161,17 @@ export default {
                 return []
             }
 
-        }
+        },
+
+        activeTab() {
+            const {availableBlueprintsTab, openCloudDeploymentsTab, yourDeploymentsTab, commentsTab} = this.$refs
+            if(availableBlueprintsTab?.active) return 'availableBlueprintsTab'
+            if(openCloudDeploymentsTab?.active) return 'openCloudDeploymentsTab'
+            if(yourDeploymentsTab?.active) return 'yourDeploymentsTab'
+            if(commentsTab?.active) return 'commentsTab'
+            return null
+        },
+
     },
     watch: {
         querySpec: function(query, oldQuery) {
@@ -222,7 +236,12 @@ export default {
     },
     async mounted() {
         this.initUserSettings({ username: this.getUsername })
+
+        // async, not awaiting
         this.fetchCloudmap()
+        this.fetchCommentsIssue()
+        //
+
         await Promise.all([
             this.populateJobsList(),
             this.loadPrimaryDeploymentBlueprint()
@@ -372,7 +391,8 @@ export default {
             'populateTemplateResources',
             'fetchProject',
             'updateLastUsedEnvironment',
-            'fetchCloudmap'
+            'fetchCloudmap',
+            'fetchCommentsIssue'
         ]),
         ...mapMutations([
             'pushPreparedMutation',
@@ -410,7 +430,7 @@ export default {
             <deployed-blueprints v-if="false"/>
 
             <gl-tabs v-model="currentTab">
-                <oc-tab title="Available Blueprints">
+                <oc-tab ref="availableBlueprintsTab" title="Available Blueprints">
                     <div class="">
                         <gl-card>
                             <template #header>
@@ -425,14 +445,28 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab v-if="environmentsAreReady && yourDeployments.length > 0" title="Your Deployments">
+                <oc-tab v-if="environmentsAreReady && yourDeployments.length > 0" ref="yourDeploymentsTab" title="Your Deployments">
                     <div class="">
                         <your-deployments />
                     </div>
 
                 </oc-tab>
-                <oc-tab v-if="openCloudDeployments.length > 0" title="Open Cloud Deployments">
+                <oc-tab v-if="openCloudDeployments.length > 0" ref="openCloudDeploymentsTab" title="Open Cloud Deployments">
                     <open-cloud-deployments />
+                </oc-tab>
+                <oc-tab v-if="commentsIssueUrl" ref="commentsTab" title="Comments" :title-count="commentsCount">
+                    <gl-card>
+                        <template #header>
+                            <div class="d-flex align-items-center">
+                                <gl-icon name="comments" class="mr-2"/>
+                                <h5 class="mb-0 mt-0">
+                                    {{__('General Comments')}}
+                                </h5>
+                            </div>
+                        </template>
+
+                        <notes-wrapper :poll="activeTab == 'commentsTab'"/>
+                    </gl-card>
                 </oc-tab>
 
             </gl-tabs>

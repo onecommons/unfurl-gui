@@ -2,7 +2,7 @@
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput } from '@gitlab/ui';
 import { cloneDeep } from 'lodash';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
 import _ from 'lodash'
@@ -334,7 +334,8 @@ export default {
       'populateTemplateResources',
       'fetchProject',
       'deployInto',
-      'createDeploymentPathPointer'
+      'createDeploymentPathPointer',
+      'createFlash'
     ]),
 
     unloadHandler(e) {
@@ -394,7 +395,7 @@ export default {
 
       } catch (e) {
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT});
+        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT});
         this.failedToLoad = true;
       } finally {
         this.activeSkeleton = false;
@@ -432,7 +433,7 @@ export default {
         }
       } catch (e) {
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
         return false;
       }
     },
@@ -441,7 +442,7 @@ export default {
       // TODO consolodate implementation with triggerDeployment
 
       try {
-        createFlash({
+        this.createFlash({
           message: __('Preparing deployment...'),
           type: FLASH_TYPES.SUCCESS,
           duration: this.durationOfAlerts,
@@ -469,7 +470,7 @@ export default {
           throw new Error(error)
         }
 
-        if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+        if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
         const router = this.$router
 
@@ -483,13 +484,13 @@ export default {
         const errors = err?.response?.data?.errors || [];
         const [error] = errors;
         this.dataWritten = true
-        return createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
+        return this.createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
       }
     }, 250),
 
     triggerDeployment: _.debounce(async function() {
       try {
-        createFlash({
+        this.createFlash({
           message: __('Starting deployment...'),
           type: FLASH_TYPES.SUCCESS,
           duration: this.durationOfAlerts,
@@ -514,7 +515,7 @@ export default {
           throw new Error(error)
         }
 
-        if(pipelineData) createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+        if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
         const router = this.$router
 
@@ -528,7 +529,7 @@ export default {
         const errors = err?.response?.data?.errors || [];
         const [error] = errors;
         this.dataWritten = true
-        return createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
+        return this.createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
       }
     }, 250),
 
@@ -551,7 +552,7 @@ export default {
       }catch (e) {
         this.activeSkeleton = false;
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
 
@@ -573,7 +574,7 @@ export default {
         }
       }catch (e) {
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
 
@@ -588,7 +589,7 @@ export default {
         }
       }catch(e) {
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
 
@@ -598,7 +599,7 @@ export default {
         const deleted = await this.deleteNode(this.deleteNodeData);
       } catch (e) {
         console.error(e);
-        createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
       }
     },
 
