@@ -114,6 +114,7 @@ export default {
             'getHomeProjectPath',
             'getLastUsedEnvironment',
             'environmentsAreReady',
+            'commentsCount',
             'commentsIssueUrl'
         ]),
         primaryProps() {
@@ -160,7 +161,17 @@ export default {
                 return []
             }
 
-        }
+        },
+
+        activeTab() {
+            const {availableBlueprintsTab, openCloudDeploymentsTab, yourDeploymentsTab, commentsTab} = this.$refs
+            if(availableBlueprintsTab?.active) return 'availableBlueprintsTab'
+            if(openCloudDeploymentsTab?.active) return 'openCloudDeploymentsTab'
+            if(yourDeploymentsTab?.active) return 'yourDeploymentsTab'
+            if(commentsTab?.active) return 'commentsTab'
+            return null
+        },
+
     },
     watch: {
         querySpec: function(query, oldQuery) {
@@ -419,7 +430,7 @@ export default {
             <deployed-blueprints v-if="false"/>
 
             <gl-tabs v-model="currentTab">
-                <oc-tab title="Available Blueprints">
+                <oc-tab ref="availableBlueprintsTab" title="Available Blueprints">
                     <div class="">
                         <gl-card>
                             <template #header>
@@ -434,17 +445,16 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab v-if="environmentsAreReady && yourDeployments.length > 0" title="Your Deployments">
+                <oc-tab v-if="environmentsAreReady && yourDeployments.length > 0" ref="yourDeploymentsTab" title="Your Deployments">
                     <div class="">
                         <your-deployments />
                     </div>
 
                 </oc-tab>
-                <oc-tab v-if="openCloudDeployments.length > 0" title="Open Cloud Deployments">
-
+                <oc-tab v-if="openCloudDeployments.length > 0" ref="openCloudDeploymentsTab" title="Open Cloud Deployments">
                     <open-cloud-deployments />
                 </oc-tab>
-                <oc-tab v-if="commentsIssueUrl" title="Comments">
+                <oc-tab v-if="commentsIssueUrl" ref="commentsTab" title="Comments" :title-count="commentsCount">
                     <gl-card>
                         <template #header>
                             <div class="d-flex align-items-center">
@@ -455,7 +465,7 @@ export default {
                             </div>
                         </template>
 
-                        <notes-wrapper :issueURL="commentsIssueUrl" />
+                        <notes-wrapper :poll="activeTab == 'commentsTab'"/>
                     </gl-card>
                 </oc-tab>
 
