@@ -4,7 +4,7 @@ import _ from 'lodash'
 import {cloneDeep} from 'lodash'
 import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
@@ -369,7 +369,7 @@ const actions = {
     },
 
 
-    async fetchProjectEnvironments({commit}, {fullPath, fetchPolicy}) {
+    async fetchProjectEnvironments({commit, dispatch}, {fullPath, fetchPolicy}) {
         let environments, deployments = []
         try {
             const result = await fetchEnvironments({fullPath, fetchPolicy})
@@ -385,7 +385,7 @@ const actions = {
         catch(e){
             console.error('Could not fetch project environments', e)
             if(window.gon.current_username) {
-                createFlash({ projectPath: fullPath, message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment'});
+                dispatch('createFlash', { projectPath: fullPath, message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment' }, {root: true})
             }
             environments = []
 

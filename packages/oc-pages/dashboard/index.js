@@ -5,7 +5,7 @@ import apolloProvider from './graphql';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router';
-import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {setupTheme} from 'oc_vue_shared/theme'
 import ElementUI, {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
 import '../project_overview/assets/global.css' // TODO move this somewhere better
@@ -22,7 +22,7 @@ const router = createRouter()
 Vue.config.errorHandler = function(err, vm, info) {
     console.error(err)
     if(err.flash) {
-        return createFlash({ message: err.message, type: FLASH_TYPES.ALERT, projectPath: store.getters.getHomeProjectPath});
+        return $store.dispatch('createFlash', { message: err.message, type: FLASH_TYPES.ALERT })
     }
 }
 

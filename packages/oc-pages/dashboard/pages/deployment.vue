@@ -11,7 +11,7 @@ import {GlTabs} from '@gitlab/ui'
 import {OcTab} from 'oc_vue_shared/oc-components'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
-import {FLASH_TYPES, default as createFlash} from 'oc_vue_shared/client_utils/oc-flash'
+import {FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
@@ -96,7 +96,7 @@ export default {
                 const acknowledgement = `upstream-failure-${upstreamPipeline.id}`
                 if(upstreamPipeline?.status == 'failed' && !this.isAcknowledged(acknowledgement)) {
                     const message = 'An error occurred in an upstream pipeline.'
-                    createFlash({type: FLASH_TYPES.ALERT, message, linkTo: upstreamPipeline.web_url, linkText: 'View failed pipeline'})
+                    this.createFlash({type: FLASH_TYPES.ALERT, message, linkTo: upstreamPipeline.web_url, linkText: 'View failed pipeline'})
                     this.acknowledge(acknowledgement)
                 }
             }
@@ -106,7 +106,7 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge']),
+        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge', 'createFlash']),
         async prepareView() {
             this.viewReady = false
 
