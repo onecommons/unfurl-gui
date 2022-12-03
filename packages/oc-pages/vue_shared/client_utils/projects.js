@@ -48,6 +48,25 @@ export async function fetchCommit(projectId, commitHash) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/commits/${commitHash}`))?.data
 }
 
+export async function fetchBranches(projectId) {
+    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+}
+
+export async function fetchBranch(projectId, branch) {
+    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
+}
+
+export async function createBranch(projectId, branch) {
+    const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref: 'main'}, {validateStatus() {return true}})
+
+    if(response.status >= 400) {
+        console.error(response.data)
+        throw new Error(`Couldn't create branch '${branch}'`)
+    }
+
+    return response.data
+}
+
 export async function generateProjectAccessToken(projectId, options) {
     console.log(`Generating a project token for ${projectId}`)
     const _options = Object.assign({

@@ -9,7 +9,7 @@ import Vue from 'vue'
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
-        Vue.set(state, key, value)
+        Vue.set(state, key, {...state[key], ...value})
         state.clean = false
     },
 
@@ -95,17 +95,6 @@ const actions = {
         
         let transforms
         transforms = {
-            // This is for templates that are hidden from unfurl, but are necessary for drafts to function
-            DefaultTemplate(defaultTemplate, root) {
-                // Do not override existing templates with defaults
-                if(!root.ResourceTemplate[defaultTemplate.name]) {
-                    root.ResourceTemplate[defaultTemplate.name] = {...defaultTemplate}
-                }
-
-                for(const key in defaultTemplate) {
-                    delete defaultTemplate[key]
-                }
-            },
             ResourceTemplate(resourceTemplate) {
                 resourceTemplate.dependencies = resourceTemplate.dependencies || []
                 resourceTemplate.properties = resourceTemplate.properties || []
@@ -134,7 +123,7 @@ const actions = {
                 })
                 resourceTemplate.__typename = 'ResourceTemplate'
             },
-            DeploymentTemplate(deploymentTemplate) {
+            DeploymentTemplate(deploymentTemplate, root) {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
                 }
@@ -144,6 +133,7 @@ const actions = {
                 if(projectPath && !deploymentTemplate.projectPath) {
                     deploymentTemplate.projectPath = projectPath
                 }
+
                 deploymentTemplate.__typename = 'DeploymentTemplate'
             },
             ApplicationBlueprint(applicationBlueprint) {

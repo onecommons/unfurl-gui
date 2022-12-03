@@ -517,7 +517,8 @@ const actions = {
     },
 
     async loadAdditionalDashboards({rootGetters, commit}) {
-        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=40`))?.data
+        // include developer access for deploy requests, etc.
+        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=30`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
             ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace}))
 

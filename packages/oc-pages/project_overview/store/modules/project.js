@@ -440,7 +440,13 @@ const getters = {
             // TODO get status from deployment
 
             let resources = []
-            obj.application = Object.values(dict.ApplicationBlueprint)[0]
+            try {
+                obj.application = Object.values(dict.ApplicationBlueprint)[0]
+            } catch(e) {
+                // no obj.application
+                console.error(e)
+                continue
+            }
             if(dict.Deployment) {
                 obj.deployment = Object.values(dict.Deployment)[0]
                 resources = Object.values(dict.Resource)

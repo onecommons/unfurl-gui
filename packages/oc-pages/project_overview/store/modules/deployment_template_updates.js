@@ -582,6 +582,7 @@ const state = () => ({
     patches: {},
     committedNames: [],
     commitMessage: null,
+    branch: null,
     env: {},
     isCommitting: false,
     useBaseState: false
@@ -624,6 +625,9 @@ const mutations = {
     setEnvironmentScope(state, environmentScope) {
         state.environmentScope = environmentScope
     },
+    setCommitBranch(state, branch) {
+        state.branch = branch
+    },
     pushPreparedMutation(state, preparedMutation) {
         state.preparedMutations.push(preparedMutation)
     },
@@ -665,6 +669,7 @@ const mutations = {
             state.projectPath = undefined
             state.environmentScope = undefined
             state.commitMessage = null
+            state.branch = null
             state.preparedMutations = []
         }
     },
@@ -683,9 +688,15 @@ const mutations = {
         state.preparedMutations = []
     },
     normalizePatches(state) {
+        delete state.patches.DefaultTemplate
         for(const typename of Object.keys(state.patches)){
             for(const record of Object.values(state.patches[typename])) {
                 if(record && typeof record == 'object') {
+
+                    // not sure we should be committing things that are frozen to begin with
+                    // currently happens while creating a deployment with developer access
+                    if(Object.isFrozen(record)) continue 
+
                     if(Serializers[typename]) {
                         const nestedPatches = Serializers[typename](record, state.accumulator)
                         if(Array.isArray(nestedPatches)) {
@@ -695,6 +706,7 @@ const mutations = {
                             }
                         }
                     }
+
                     Serializers['*'](record, state.accumulator)
                 }
             }
