@@ -165,6 +165,7 @@ const actions = {
         commit('setContext', false)
         if(!templateSlug) return false;
 
+
         let _syncState = syncState
         let blueprint = rootGetters.getApplicationBlueprint;
         let deploymentTemplate
@@ -180,7 +181,6 @@ const actions = {
                 let dt
                 try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
                 if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
-
                 dispatch('useProjectState', {root: _.cloneDeep({...dict, ResourceType: undefined}), shouldMerge: true, projectPath})
                 _syncState = false // override sync state if we just loaded this
                 /*
@@ -222,7 +222,9 @@ const actions = {
             primary.title = renamePrimary;
         }
 
-         
+        if(!rootGetters.userCanEdit) {
+            commit('setCommitBranch', deploymentTemplate.name)
+        } 
 
         if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
@@ -264,11 +266,6 @@ const actions = {
                     return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
                 });
             }
-            /*
-            for(const property of resourceTemplate.properties) {
-                commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
-            }
-            */
 
             for(let dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
@@ -280,7 +277,6 @@ const actions = {
 
                 completionStatus = valid? 'created': null;
                 if(!completionStatus && environmentName) {
-                    // TODO wrap this in a getter
                     let connected = rootGetters.lookupConnection(environmentName, dependency.match)
                     if(connected) {
                         valid = true
@@ -866,14 +862,17 @@ const getters = {
 
     lookupResourceTemplate(state, _a, _b, rootGetters) {
         return function(resourceTemplate) {
-            let result, sourceDt
+            let sourceDt, templateFromSource
             if(sourceDt = state.lastFetchedFrom?.sourceDeploymentTemplate) {
-                result = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
+                templateFromSource = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
             }
-            if(!result){
-                result = rootGetters.resolveResourceTemplate(resourceTemplate)
+            const templateFromStore = rootGetters.resolveResourceTemplate(resourceTemplate)
+
+            if(templateFromStore && !templateFromStore.directives?.includes('default')) {
+                return templateFromStore
             }
-            return result
+
+            return templateFromSource
         }
     },
   
@@ -917,17 +916,17 @@ const getters = {
 
     editingDeployed(state, _a, _b, rootGetters) {
         try {
-            rootGetters.resolveDeployment(state.deploymentTemplate.name)
+            return rootGetters.resolveDeployment(state.deploymentTemplate.name).__typename == 'Deployment' && state.context === false
         }
         catch(e) {
             return false
         }
-        return state.context === false
     },
 
     editingTorndown(_a, getters, _b, rootGetters) {
+        // TODO use deployment status
         return getters.editingDeployed && rootGetters.lookupDeployPath(
-            rootGetters.getDeployment.name,
+            rootGetters.getDeployment?.name,
             getters.getCurrentEnvironmentName
         )?.pipeline?.variables?.WORKFLOW == 'undeploy'
     },

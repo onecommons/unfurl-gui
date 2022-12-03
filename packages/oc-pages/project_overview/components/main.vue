@@ -59,12 +59,15 @@ export default {
             await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch})
         } catch(err) {
             console.error('@main.vue', err)
-            return createFlash({
+            return this.$store.dispatch(
+              'createFlash',
+              {
                 message: err.message,
                 type: FLASH_TYPES.ALERT,
                 issue: ERROR_CONTEXT[errorContext] || errorContext,
                 projectPath: this.$projectGlobal?.projectPath
-            });
+              }
+            );
         } finally { 
             this.fetchingComplete = true 
         }
@@ -84,7 +87,7 @@ export default {
     mounted() {
         const flash = sessionStorage['oc_flash']
         if(flash) {
-            createFlash(JSON.parse(flash))
+            this.$store.dispatch('createFlash', JSON.parse(flash))
             delete sessionStorage['oc_flash']
         }
     }

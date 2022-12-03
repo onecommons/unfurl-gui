@@ -145,7 +145,9 @@ const actions = {
     },
 
     async postQueuedProjectSubscriptions({rootGetters, dispatch}) {
-        const dict = JSON.parse(rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*'))
+        const subscriptionsStore = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*')
+        if(!subscriptionsStore) return
+        const dict = JSON.parse(subscriptionsStore)
         const queued = dict?.queued
         if(!(dict && queued)) return 
         if(!dict.subscriptions) dict.subscriptions = {}
