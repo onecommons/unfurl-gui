@@ -1,15 +1,15 @@
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import Vue from 'vue'
 import _ from 'lodash'
 import axios from '~/lib/utils/axios_utils'
 
-const state = () => ({loaded: false, callbacks: [], deployments: {}, deploymentHooks: [], shareStates: {}});
+const state = () => ({deployments: [], deploymentHooks: [], shareStates: {}});
 const mutations = {
     setDeployments(state, deployments) {
         state.deployments = deployments;
-        state.loaded = true
     },
 
     onDeploy(state, cb) {
@@ -215,8 +215,8 @@ const actions = {
             'pushPreparedMutation',
             (acc) => {
                 const environment = rootGetters.lookupEnvironment(environmentName)
-                const instances = environment.instances.filter(instance => instance.name != `__${environmentName}__${deploymentName}__${resourceName}`)
-                const patch = _.cloneDeep({...environment, instances})
+                // TODO check if this needs to be cloned
+                const patch = _.cloneDeep({...environment, instances: {...instances, [instance.name]: undefined}})
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -329,27 +329,6 @@ const actions = {
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
         commit('setUpdateObjectPath', 'environments.json', {root: true})
 
-
-        // It's more difficult to clean this up, because we add the manifest per deployment
-        // removing it on removal of the shared resource could break the use of other shared resources
-        /*
-        commit(
-            'pushPreparedMutation',
-            (acc) => {
-                const patch = _.cloneDeep(rootGetters.lookupEnvironment(environmentName))
-                const external = patch.external || {}
-                const manifest = rootGetters.lookupDeployPath(deploymentName, environmentName)?.name
-                external[deploymentName] = {
-                    manifest,
-                    instance: "*"
-                }
-                patch.external = external
-                return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
-            },
-            {root: true}
-        )
-        */
-
         if(shareState == 'environment') {
             dispatch('shareResourceIntoEnvironment', {environmentName, deploymentName, resourceName})
         } else if (shareState == 'dashboard') {
@@ -357,8 +336,36 @@ const actions = {
         }
 
         await dispatch('commitPreparedMutations')
-    }
+    },
 
+    // TODO move fetch logic into client_utils
+    async fetchDeployment({state, commit}, {deployPath, fullPath, token, projectId}) {
+        const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
+        dashboardUrl.username = 'UNFURL_PROJECT_TOKEN'
+        dashboardUrl.password = token
+        let deploymentUrl = '/services/unfurl/export?format=deployment'
+        deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
+        deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
+        deploymentUrl += `&environment=${deployPath.environment}`
+
+        if(token) {
+            const cloudVarsUrl = unfurl_cloud_vars_url({
+                protocol: window.location.protocol,
+                server: window.location.hostname + ':' + window.location.port,
+                projectId: projectId || encodeURIComponent(fullPath),
+                token
+            })
+
+            deploymentUrl += '&cloud_vars_url=' + encodeURIComponent(cloudVarsUrl)
+        }
+
+
+        const {data} = await axios.get(deploymentUrl)
+
+        data._environment = deployPath.environment
+
+        commit('setDeployments', [...state.deployments, data])
+    }
 };
 const getters = {
     getDeploymentDictionary(state) {

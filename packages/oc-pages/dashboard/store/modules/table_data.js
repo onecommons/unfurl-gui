@@ -50,7 +50,8 @@ const actions = {
             const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
-            for(const frozenDeploymentDict of environment.deployments) {
+            for(const frozenDeploymentDict of rootGetters.getDeploymentDictionaries.filter(dep => dep._environment == environmentName)) {
+                console.log(frozenDeploymentDict)
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 let deployment
                 const clonedDeploymentDict = _.cloneDeep(frozenDeploymentDict)

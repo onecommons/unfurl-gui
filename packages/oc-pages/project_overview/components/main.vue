@@ -12,6 +12,7 @@ const ERROR_CONTEXT = {
 
 export default {
     name: 'MainComponent',
+    // TODO move this into page level components
     components: {GlLoadingIcon},
     async beforeCreate() {
         let errorContext
@@ -55,8 +56,6 @@ export default {
             // TODO do everything in one query?
             errorContext = 'handleResize'
             this.$store.dispatch('handleResize')
-            errorContext = 'fetchProjectInfo'
-            await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch})
         } catch(err) {
             console.error('@main.vue', err)
             return this.$store.dispatch(
@@ -70,12 +69,6 @@ export default {
             );
         } finally { 
             this.fetchingComplete = true 
-        }
-    },
-
-    computed: {
-        shouldTestQueries() {
-            return location.search == '?test-queries'
         }
     },
 
@@ -94,8 +87,8 @@ export default {
 }
 </script>
 <template>
-    <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" />
-    <div v-else-if="!shouldTestQueries" id="OcAppDeployments">
+    <!-- <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" /> -->
+    <div id="OcAppDeployments">
         <router-view />
     </div>
 </template>

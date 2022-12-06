@@ -369,18 +369,31 @@ const actions = {
     },
 
 
-    async fetchProjectEnvironments({commit, dispatch}, {fullPath, fetchPolicy}) {
+    async fetchProjectEnvironments({commit, getters, dispatch}, {fullPath, fetchPolicy}) {
         let environments, deployments = []
         try {
-            const result = await fetchEnvironments({fullPath, fetchPolicy})
+            const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+            const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
+            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId})
             environments = result.environments
-            deployments = result.deployments
+
+            // TODO figure out if we might need ResourceType dictionary per environment
             for(const environment of environments) {
-                commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
-                delete environment.ResourceType
+                commit('setResourceTypeDictionary', {environment, dict: result.ResourceType})
             }
+
             commit('setDefaults', result.defaults)
             commit('setDeploymentPaths', result.deploymentPaths)
+
+            const deploymentFetches = []
+            for(const deployPath of result.deploymentPaths) {
+                deploymentFetches.push(
+                    dispatch('fetchDeployment', {deployPath, fullPath, token, projectId})
+                )
+            }
+
+            await Promise.all(deploymentFetches)
+            
         }
         catch(e){
             console.error('Could not fetch project environments', e)
@@ -390,7 +403,6 @@ const actions = {
             environments = []
 
         }
-        commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
     },
     async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
@@ -432,7 +444,6 @@ const actions = {
         if(Object.keys(patchObj).length > 0) {
             try {
                 await patchEnv(patchObj, '*', fullPath)
-                await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
             } catch(e) {
                 console.warn(`Failed to set vault password for ${fullPath}`, e.message)
             }
@@ -456,12 +467,16 @@ const actions = {
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
-        await Promise.all([
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy}),
-            dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
-        ])
-        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}).then(() => commit('setReady', true))
-        dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+        await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
+        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath})
+        await dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+
+        // TODO replace this with new patchEnv impl
+        await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
+
+        await dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy})
+
+        commit('setReady', true)
     },
     async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
         const key = toDepTokenEnvKey(projectId)
@@ -544,7 +559,7 @@ const getters = {
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return []
         let result = []
-        if(environment.instances) result = environment.instances.filter(conn => {
+        if(environment.instances) result = Object.values(environment.instances).filter(conn => {
             const cextends = rootGetters.resolveResourceType(conn.type)?.extends
             return cextends && cextends.includes(constraintType)
         })

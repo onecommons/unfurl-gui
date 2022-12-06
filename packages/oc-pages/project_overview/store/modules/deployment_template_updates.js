@@ -530,7 +530,7 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
     return function(accumulator) {
         const result = []
 
-        const type = primaryType//getters.getProjectInfo.primary.name
+        const type = primaryType
 
         const _slug = slug || name
         const _name = name || slug

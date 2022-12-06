@@ -1,6 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
-import gql from 'graphql-tag'
-import {cloneDeep} from 'lodash'
+import {unfurl_cloud_vars_url} from './unfurl-invocations'
 import graphqlClient from 'oc_pages/project_overview/graphql';
 import {UpdateDeploymentObject} from 'oc_pages/project_overview/graphql/mutations/update_deployment_object.graphql'
 import {postFormDataWithEntries} from './forms'
@@ -138,70 +137,33 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, fetchPolicy}) {
-    const query = gql`
-        query getProjectEnvironments($fullPath: ID!) {
-            project(fullPath: $fullPath) {
-                environments {
-                    nodes {
-                        deploymentEnvironment @client {
-                            connections
-                            instances
-                            primary_provider
-                        }
-                        ResourceType @client
-                        deployments
-                        clientPayload
-                        name
-                        state
-                    }
-                }
-            }
-        }`
+export async function fetchEnvironments({fullPath, token, projectId}) {
+    const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
+    dashboardUrl.username = 'UNFURL_PROJECT_TOKEN'
+    dashboardUrl.password = token
+    let environmentUrl = `/services/unfurl/export?format=environments&url=${encodeURIComponent(dashboardUrl.toString())}`
 
-    let environments
-    let deployments = []
-    let deploymentPaths = []
-    let resourceTypeDictionary
+    if(token) {
+        const cloudVarsUrl = unfurl_cloud_vars_url({
+            protocol: window.location.protocol,
+            server: window.location.hostname + ':' + window.location.port,
+            projectId: projectId || encodeURIComponent(fullPath),
+            token
+        })
 
-    const {data, errors} = await graphqlClient.clients.defaultClient.query({
-        query,
-        fetchPolicy,
-        errorPolicy: 'all',
-        variables: {fullPath}
-    })
-    if(errors) {throw new Error(errors)}
+        environmentUrl += '&cloud_vars_url=' + encodeURIComponent(cloudVarsUrl)
+    }
 
-    let defaults
-    // cloning in the resolver can't be relied on unless we use a different fetchPolicy
-    // there's probably a better way of getting vuex to stop watching environments when we call this action
-    // alternatively we could check if it's cached
-    environments = cloneDeep(data.project.environments).nodes.map(environment => {
-        Object.assign(environment, environment.deploymentEnvironment)
-        // alternative to adding a graphql type?
-        environment.external = environment.clientPayload.DeploymentEnvironment.external || {}
-        if(environment.clientPayload.defaults) defaults = environment.clientPayload.defaults
-        deploymentPaths = deploymentPaths.concat(Object.values(environment.clientPayload.DeploymentPath || {}))
-        //commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
-        //commit('setDeploymentPaths', deploymentPaths)
-        //delete environment.ResourceType
-        for(const deployment of environment.deployments) {
-            if(!deployment._environment) deployment._environment = environment.name
-            for(const dep of Object.values(deployment.Deployment || {})) {
-                dep.__typename = 'Deployment'
-            }
-            deployments.push(deployment)
-        }
-        delete environment.deploymentEnvironment
-        delete environment.clientPayload
-        environment._dashboard = fullPath
-        environment.__typename = 'DeploymentEnvironment' // just documenting this to avoid confusion with __typename Environment
+    const {data} = await axios.get(environmentUrl)
 
-        connectionsToArray(environment)
+    const environments = Object.values(data.DeploymentEnvironment)
+        .filter(env => env.name != 'defaults')
 
-        return environment
-    })
+    for(const env of environments) { env._dashbaord = fullPath }
 
-    return {environments, deployments, deploymentPaths, fullPath, defaults}
+    const deploymentPaths = Object.values(data.DeploymentPath)
 
+    const  defaults = data.DeploymentEnvironment.defaults
+
+    return {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
 }

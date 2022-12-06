@@ -8,7 +8,6 @@ import { s__, __ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
-import DeployedBlueprints from '../../components/deployed-blueprints.vue'
 import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
@@ -16,6 +15,7 @@ import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/oc-componen
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
+import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 
@@ -35,7 +35,6 @@ export default {
         TableWithoutHeader,
         EnvironmentCreationDialog,
         ProjectDescriptionBox,
-        DeployedBlueprints,
         YourDeployments,
         OpenCloudDeployments,
         GlMarkdown,
@@ -54,6 +53,7 @@ export default {
             templateSelected: {},
             selectedEnvironment: null,
             newEnvironmentProvider: null,
+            hasEditPermissions: false,
             creatingEnvironment: false,
             createEnvironmentName: '',
             createEnvironmentProvider: '',
@@ -100,11 +100,10 @@ export default {
         },
         ...mapGetters([
             'yourDeployments',
+            'getApplicationBlueprint',
             'openCloudDeployments',
-            'getProjectInfo',
             'getProjectDescription',
             'getTemplatesList',
-            'hasEditPermissions',
             'getUsername',
             'getNextDefaultDeploymentName',
             'getMatchingEnvironments',
@@ -146,21 +145,6 @@ export default {
             return (
                 this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud)
             )
-        },
-        inputProperties() {
-            try {
-                return Object.values(this.getProjectInfo.primary.inputsSchema.properties || {})
-            } catch(e) {
-                return []
-            }
-        },
-        outputProperties() {
-            try {
-                return Object.values(this.getProjectInfo.primary.outputsSchema.properties || {})
-            } catch(e) {
-                return []
-            }
-
         },
 
         activeTab() {
@@ -235,17 +219,18 @@ export default {
         }
     },
     async mounted() {
+        const projectPath = this.$projectGlobal.projectPath
         this.initUserSettings({ username: this.getUsername })
 
         // async, not awaiting
-        this.fetchCloudmap()
+        fetchProjectPermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
         this.fetchCommentsIssue()
+        this.populateJobsList()
         //
 
-        await Promise.all([
-            this.populateJobsList(),
-            this.loadPrimaryDeploymentBlueprint()
-        ])
+        await this.loadPrimaryDeploymentBlueprint()
+        this.fetchCloudmap() // async, not awaiting
+
         if (this.environmentsAreReady && this.yourDeployments.length && !this.triedPopulatingDeploymentItems) {
             this.triedPopulatingDeploymentItems = true
             this.populateDeploymentItems(this.yourDeployments)
@@ -254,7 +239,7 @@ export default {
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
 
         const templateSelected = this.$route.query?.ts?
-            this.$store.getters.getTemplatesList.find(template => template.name == this.$route.query.ts) : null
+            this.getTemplatesList.find(template => template.name == this.$route.query.ts) : null
 
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
@@ -297,21 +282,6 @@ export default {
                 this.submitting = true
                 this.prepareTemplateNew();
 
-                if(this.instantiateAs == 'deployment-draft') {
-                    // NOTE doesn't use this.prepareTemplateNew atm
-                    /*
-                    //<envname>/<blueprintname>/<deploymentname>/deployment-blueprint.json
-                    this.setUpdateObjectPath(
-                        `${this.templateSelected.environment}/${this.getProjectInfo.name}/${this.templateForkedName}/deployment-blueprint.json`
-                    )
-                    this.setUpdateObjectProjectPath(`${this.getUsername}/${USER_HOME_PROJECT}`)
-                    */
-                } else {
-
-                    const args = {...this.templateSelected, blueprintName: this.getProjectInfo.name}
-                    this.pushPreparedMutation(createDeploymentTemplate(args))
-                }
-
                 if(this.instantiateAs == 'deployment-draft'){
                     // store the environment in local storage
                     const lastUsedEnvironment = {
@@ -325,9 +295,13 @@ export default {
 
                     this.redirectToTemplateEditor(routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT);
                 } else {
+                    const args = {...this.templateSelected, blueprintName: this.getApplicationBlueprint.name}
+                    this.pushPreparedMutation(createDeploymentTemplate(args))
+
                     await this.commitPreparedMutations()
                     this.redirectToTemplateEditor();
                 }
+
                 this.submitting = false
                 this.clearModalTemplate()
             }
@@ -336,9 +310,9 @@ export default {
         async loadPrimaryDeploymentBlueprint() {
             const projectPath = this.$projectGlobal.projectPath
             if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
-            const templateSlug = this.getProjectInfo.primaryDeploymentBlueprint
-            if(!templateSlug) return
             await this.fetchProject({projectPath});
+            const templateSlug = this.getApplicationBlueprint?.primaryDeploymentBlueprint
+            if(!templateSlug) return
             return await this.populateTemplateResources({
                 projectPath,
                 templateSlug,
@@ -358,7 +332,7 @@ export default {
             this.templateSelected.name = slugify(this.templateForkedName);
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.selectedEnvironment?.name || this.defaultEnvironmentName
-            this.templateSelected.primaryType = this.getProjectInfo.primary
+            this.templateSelected.primaryType = this.getApplicationBlueprint.primary
         },
 
         createNewEnvironment() {
@@ -383,9 +357,7 @@ export default {
 
         ...mapActions([
             'syncGlobalVars',
-            'fetchProjectInfo',
             'commitPreparedMutations',
-            'updateEnvironment',
             'populateDeploymentItems',
             'populateJobsList',
             'populateTemplateResources',
@@ -408,26 +380,13 @@ export default {
     <div>
 
         <!-- Header of project view -->
-        <HeaderProjectView :project-info="getProjectInfo" />
+        <HeaderProjectView :project-info="getApplicationBlueprint" />
 
-        <div v-if="getProjectInfo.name">
+        <div v-if="getApplicationBlueprint && getApplicationBlueprint.name">
             <!-- Project Description -->
             <ProjectDescriptionBox
-                    :project-info="getProjectInfo"
-                    :requirements="getProjectInfo.primary.requirements"
-                    :inputs="inputProperties"
-                    :outputs="outputProperties"
-                    :project-description="getProjectDescription"
-                    :project-image="getProjectInfo.image"
-                    :live-url="getProjectInfo.livePreview"
-                    :project-name="getProjectInfo.name"
-                    :project-title="getProjectInfo.title"
-                    :code-source-url="getProjectInfo.sourceCodeUrl"
+                    :project-info="getApplicationBlueprint"
                     />
-
-            <!-- Table -->
-            <!-- TODO this will probably get removed -->
-            <deployed-blueprints v-if="false"/>
 
             <gl-tabs v-model="currentTab">
                 <oc-tab ref="availableBlueprintsTab" title="Available Blueprints">

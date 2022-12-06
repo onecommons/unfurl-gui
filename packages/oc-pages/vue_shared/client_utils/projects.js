@@ -107,3 +107,24 @@ export async function fetchContainerRepositories(fullPath) {
     const nodes = response.data?.project?.containerRepositories?.nodes || []
     return nodes
 }
+
+const getUserPermissions = gql`
+        query userPermissions($projectPath: ID!) {
+            project(fullPath: $projectPath) {
+                userPermissions {
+                    pushCode
+                    __typename
+                }
+            }
+        }`
+
+
+export async function fetchProjectPermissions(projectPath) {
+    const result = await graphqlClient.defaultClient.query({
+        query: getUserPermissions,
+        variables: {projectPath},
+        errorPolicy: 'all'
+    })
+
+    return result?.data?.project?.userPermissions?.pushCode ?? false
+}

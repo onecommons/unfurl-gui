@@ -1,7 +1,5 @@
-import gql from 'graphql-tag'
-import graphqlClient from '../../graphql';
+import axios from '~/lib/utils/axios_utils'
 import {uniq} from 'lodash'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import _ from 'lodash'
 import Vue from 'vue'
@@ -41,46 +39,19 @@ const actions = {
     async fetchProject({commit, dispatch}, params) {
         const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
         commit('loaded', false)
-        const query = gql`
-          query GetDeploymentTemplateDictionaries($fullPath: ID!) {
-              applicationBlueprintProject(fullPath: $fullPath, fetchPolicy: $fetchPolicy) @client {
-                  ResourceType
-                  ApplicationBlueprint
-                  ResourceTemplate
-                  DeploymentTemplate
-                  repositories
-              }
-          }
-        `
 
-        const result = await graphqlClient.defaultClient.query({
-            query,
-            variables: {
-                ...params,
-                fullPath: projectPath || fullPath,
-                dehydrated: true,
-                fetchPolicy,
-            },
-            fetchPolicy
+        const blueprintUrl = window.gon.gitlab_url + '/' + (fullPath || projectPath) + '.git'
+        const {data} = await axios.get(`/services/unfurl/export?format=blueprint&url=${encodeURIComponent(blueprintUrl)}`)
 
-        })
+        // TODO handle errors
 
-
-        // normalize messy data in here
-        const {data, errors} = result
-        const root = data.applicationBlueprintProject
+        const root = data
         root.projectGlobal = projectGlobal
-        if(errors?.length) {
-            for(const error of errors) {
-                console.error(error)
-                throw new Error('Could not fetch project blueprint')
-            }
-        }
+
         dispatch('useProjectState', {projectPath, root})
-
-
         commit('loaded', true)
     },
+
     useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
         if(!projectPath) {console.warn('projectPath is not set')}
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
@@ -177,7 +148,7 @@ const actions = {
                 deployment.projectPath = dt?.projectPath
             },
             DeploymentEnvironment(de, root) {
-                for(const connection of de.connections) {
+                for(const connection of Object.values(de.connections)) {
                     const providerType = connection?.type
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
 
@@ -383,6 +354,32 @@ const getters = {
             //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
             const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
+        }
+    },
+
+    getTemplatesList(state) {
+        return Object.values(state.DeploymentTemplate)
+            ?.filter(dt => dt && dt.visibility != 'hidden')
+    },
+
+    requirementsForType(_, getters) {
+        return function(_rt) {
+            const rt = getters.resolveResourceType(_rt?.name || _rt)
+            return rt.requirements
+        }
+    },
+
+    inputsSchemaForType(_, getters) {
+        return function(_rt) {
+            const rt = getters.resolveResourceType(_rt?.name || _rt)
+            return rt.inputsSchema
+        }
+    },
+
+    outputsSchemaForType(_, getters) {
+        return function(_rt) {
+            const rt = getters.resolveResourceType(_rt?.name || _rt)
+            return rt.outputsSchema
         }
     },
 }

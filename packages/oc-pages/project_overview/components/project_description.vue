@@ -19,52 +19,6 @@ export default {
             type: Object,
             required: false
         },
-        inputs: {
-            type: Array,
-            required: false,
-            default: () => {
-                return [];
-            }
-        },
-        outputs: {
-            type: Array,
-            required: false,
-            default: () => {
-                return [];
-            }
-        },
-        projectImage: {
-            type: String,
-            required: false,
-            default: ""
-        },
-        projectDescription: {
-            type: String,
-            required: false,
-            default: ""
-        },
-        liveUrl: {
-            type: String,
-            required: false,
-            default: ""
-        },
-
-        projectTitle: {
-            type: String,
-            required: false,
-            default: ""
-        },
-
-        projectName: {
-            type: String,
-            required:false,
-            default: __("Fiction Name")
-        },
-        codeSourceUrl: {
-            type: String,
-            required: false,
-            default: null
-        }
     },
 
     data() {
@@ -80,9 +34,31 @@ export default {
     },
 
     computed: {
-        ...mapGetters(['getProjectInfo', 'getDisplayableDependenciesByCard', 'getPrimaryCard', 'resolveResourceTypeFromAny']),
+        ...mapGetters([
+            'getDisplayableDependenciesByCard',
+            'getPrimaryCard',
+            'resolveResourceTypeFromAny',
+            'requirementsForType',
+            'getProjectDescription'
+        ]),
         ...mapState(['project']),
 
+        inputs() {
+            try {
+                return Object.values(this.inputsSchemaForType(this.projectInfo.primary).properties) || {}
+            } catch(e) {
+                return []
+            }
+        },
+
+        outputs() {
+            try {
+                return Object.values(this.outputsSchemaForType(this.projectInfo.primary).properties) || {}
+            } catch(e) {
+                return []
+            }
+
+        },
 
 
         // requirements and extras here use the same method for following buried constraints as in the deployment editor
@@ -94,7 +70,7 @@ export default {
             const self = this
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
+                return this.requirementsForType(this.projectInfo.primary).filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
             }
 
             const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
@@ -109,7 +85,7 @@ export default {
             const self = this
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.getProjectInfo.primary.requirements.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
+                return this.requirementsForType(this.projectInfo.primary).filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
             }
 
             const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
@@ -121,7 +97,7 @@ export default {
             })
         },
         previewImage() {
-            return this.project.globalVars.projectIcon || this.projectImage
+            return this.project.globalVars.projectIcon || this.projectInfo.image
         },
 
 
@@ -145,24 +121,15 @@ export default {
                 <div class="col-lg-12">
                     <div class="gl-display-flex">
                         <h4 class="project-title gl-display-flex">
-                            {{ getProjectInfo.title || getProjectInfo.name }}
+                            {{ projectInfo.title || projectInfo.name }}
                         </h4>
-                        <div class="gl-display-flex">
-                            <!--a :href="codeSourceUrl ? codeSourceUrl  : this.$projectGlobal.treePath" class="nav-link gl-align-items-center gl-button btn btn-default uf-button-source" style="height: 30px;">{{ __("Source Code") }}
-                                        <gl-icon
-                                                name="link"
-                                                class="options-expanded-icon gl-ml-1"/>
-                            </a-->
-                            <!--a class="gl-ml-4" :href="liveUrl ? liveUrl : 'javascript:void(0);'" target="_blank">{{ __("Live preview") }} <gl-icon :size="12" name="external-link" /></a-->
-                            <!--gl-button variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button-->
-                        </div>
                     </div> 
                     <div class="subtitle-description gl-mb-4">
                         <div class="subtitle"></div>
                         <div class="live-preview">
                         </div>
                     </div>
-                    <p class="text-description">{{ projectDescription }}</p>
+                    <p class="text-description">{{ getProjectDescription }}</p>
                 </div>
             </div>
             <div class="row">

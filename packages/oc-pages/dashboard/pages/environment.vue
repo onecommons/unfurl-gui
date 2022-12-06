@@ -307,7 +307,7 @@ export default {
 
 
             this.onSaveTemplate(false)
-            this.populateTemplateResources2({resourceTemplates: [...environment.instances, ...environment.connections], environmentName, context: 'environment'})
+            this.populateTemplateResources2({resourceTemplates: [...Object.values(environment.instances), ...Object.values(environment.connections)], environmentName, context: 'environment'})
         },
 
         onHide(e) {

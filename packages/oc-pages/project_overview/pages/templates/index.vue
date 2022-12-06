@@ -81,7 +81,6 @@ export default {
     ...mapGetters([
       'pipelinesPath',
       'resolveResourceTypeFromAny',
-      'getProjectInfo',
       'getRequirementSelected',
       'getTemplate',
       'getPrimaryCard',
@@ -115,7 +114,7 @@ export default {
 
         // params.slug is the blueprint unfortunately
         const deploymentSlug = this.$route.params.slug //slugify(this.$route.query.fn)
-        return `environments/${environment}/${this.getProjectInfo.fullPath}/${deploymentSlug}`
+        return `environments/${environment}/${this.project.globalVars.projectPath}/${deploymentSlug}`
     },
     saveStatus() {
       switch(this.$route.name) {
@@ -454,7 +453,7 @@ export default {
         await this.triggerSave();
         const result = await this.deployInto({
           environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
+          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
           deployPath: this.deploymentDir,
           deploymentName: this.$route.params.slug,
           deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
@@ -502,7 +501,7 @@ export default {
         await this.triggerSave();
         const result = await this.deployInto({
           environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
+          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
           deployPath: this.deploymentDir,
           deploymentName: this.$route.params.slug,
           deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
