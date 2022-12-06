@@ -111,7 +111,7 @@ export default {
             this.viewReady = false
 
             if(!this.state) {
-                const e = new Error(`Could not lookup deployment '${deploymentName}'.  It may contain errors or creation may have failed.`)
+                const e = new Error(`Could not lookup deployment '${this.deployment.name}'.  It may contain errors or creation may have failed.`)
                 e.flash = true
                 throw e
             }
@@ -120,6 +120,7 @@ export default {
                 await this.fetchProject({projectPath})
                 this.useProjectState({root: cloneDeep(this.state), shouldMerge: true, projectPath})
             } else {
+                console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')
                 let ResourceType =  this.state.ResourceType
                 if(!ResourceType) {
                     ResourceType = this.environmentResourceTypeDict(this.environment.name)

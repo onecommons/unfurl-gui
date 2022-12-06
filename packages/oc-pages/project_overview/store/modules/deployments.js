@@ -33,8 +33,8 @@ const actions = {
 
     async createDeploymentPathPointer({commit, dispatch, rootGetters}, {projectPath, environment, deploymentDir, dryRun, environmentName}) {
         commit('setCommitMessage', `Record deployment path for ${deploymentDir}`)
-        commit('setUpdateObjectPath', 'environments.json')
         commit('setUpdateObjectProjectPath', projectPath || rootGetters.getHomeProjectPath)
+        commit('setUpdateType', 'environment', {root: true})
         const _environmentName = environmentName || environment?.name || environment
         const mutation = () => [{
                 typename: 'DeploymentPath',
@@ -103,12 +103,12 @@ const actions = {
         }
 
         const deploymentDir = getDeploymentDir(deployPathName, newDeploymentName)
-        const objectPath = `${deploymentDir}/deployment.json`
 
         commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Clone into ${newDeploymentName}`)
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
-        commit('setUpdateObjectPath', objectPath, {root: true})
+        commit('setUpdateObjectPath', deploymentDir, {root: true})
+        commit('setUpdateType', 'deployment', {root: true})
         for(const [typename, dictionary] of Object.entries(deploymentObj)) {
             for(const [name, value] of Object.entries(dictionary)) {
                 commit(
@@ -247,7 +247,6 @@ const actions = {
         commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Unshare ${resourceName}`, {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
 
 
         if(currentShareState == 'environment') {
@@ -326,8 +325,8 @@ const actions = {
 
         commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Share ${resourceName} with ${shareState}`, {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
 
         if(shareState == 'environment') {
             dispatch('shareResourceIntoEnvironment', {environmentName, deploymentName, resourceName})
@@ -339,10 +338,11 @@ const actions = {
     },
 
     // TODO move fetch logic into client_utils
-    async fetchDeployment({state, commit}, {deployPath, fullPath, token, projectId}) {
+    async fetchDeployment({state, commit}, {deployPath, fullPath, token, projectId, credentials}) {
         const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
-        dashboardUrl.username = 'UNFURL_PROJECT_TOKEN'
-        dashboardUrl.password = token
+        dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
+        dashboardUrl.password = credentials.password || token
+
         let deploymentUrl = '/services/unfurl/export?format=deployment'
         deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
         deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`

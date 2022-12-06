@@ -188,14 +188,12 @@ export default {
         ...mapMutations([
             'setEnvironmentScope',
             'setAvailableResourceTypes',
-            'setUpdateObjectPath',
-            'setUpdateObjectProjectPath',
             'useBaseState',
             'pushPreparedMutation',
             'setRouterHook',
             'clearPreparedMutations',
             'resetTemplateResourceState',
-            'setUpdateObjectPath',
+            'setUpdateType',
             'setUpdateObjectProjectPath'
         ]),
         onExternalAdded({selection, title}) {
@@ -234,7 +232,7 @@ export default {
         },
         onSaveTemplate(reload=true) {
             const environment = this.environment
-            this.setUpdateObjectPath('environments.json')
+            this.setUpdateType('environment')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             this.setEnvironmentScope(environment.name)
 
@@ -261,7 +259,7 @@ export default {
             await deleteEnvironment(window.gon.projectPath, window.gon.projectId, environment.name, window.gon.environmentId)
 
             this.setUpdateObjectProjectPath(window.gon.projectPath)
-            this.setUpdateObjectPath('environments.json')
+            this.setUpdateType('environment')
 
             this.pushPreparedMutation(function(accumulator) {
                 return [ {typename: 'DeploymentEnvironment', target: environment.name, patch: null} ]

@@ -332,13 +332,9 @@ export default {
 
     methods: {
         ...mapMutations([
-            'resetTemplateResourceState',
             'setRouterHook',
             'clearPreparedMutations',
             'resetStagedChanges',
-            'onApplicationBlueprintLoaded',
-            'setUpdateObjectPath',
-            'setUpdateObjectProjectPath',
             'pushPreparedMutation'
         ]),
         ...mapActions([

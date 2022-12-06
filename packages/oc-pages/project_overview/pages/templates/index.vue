@@ -317,7 +317,8 @@ export default {
       'setUpdateObjectProjectPath',
       'setEnvironmentScope',
       'pushPreparedMutation',
-      'setCommitMessage'
+      'setCommitMessage',
+      'setUpdateType'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -374,7 +375,7 @@ export default {
         const renameDeploymentTemplate = this.$route.query.fn;
         const environmentName = this.$route.params.environment
         if(this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
-          this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
+          this.setUpdateObjectPath(this.deploymentDir);
           this.setUpdateObjectProjectPath(this.getHomeProjectPath);
           this.setEnvironmentScope(environmentName)
         }
@@ -406,6 +407,7 @@ export default {
         if(type == 'draft'){
           const name = this.$route.query.fn;
           this.setCommitMessage(`Save draft of ${name}`)
+          this.setUpdateType('deployment')
           await this.commitPreparedMutations();
           await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
           sessionStorage['oc_flash'] = JSON.stringify({
@@ -449,6 +451,7 @@ export default {
 
         this.startedTriggeringDeployment = true;
         const name = this.$route.query.fn;
+        this.setUpdateType('deployment')
         this.setCommitMessage(`Trigger deployment of ${name}`)
         await this.triggerSave();
         const result = await this.deployInto({
@@ -497,6 +500,7 @@ export default {
 
         this.startedTriggeringDeployment = true;
         const name = this.$route.query.fn;
+        this.setUpdateType('deployment')
         this.setCommitMessage(`Trigger deployment of ${name}`)
         await this.triggerSave();
         const result = await this.deployInto({

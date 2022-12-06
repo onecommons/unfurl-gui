@@ -3,10 +3,11 @@ import _ from 'lodash'
 import graphqlClient from '../../graphql';
 import gql from 'graphql-tag';
 import {slugify} from 'oc_vue_shared/util.mjs'
-import {UpdateDeploymentObject} from  '../../graphql/mutations/update_deployment_object.graphql'
-import {lookupCloudProviderAlias, userDefaultPath} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
+import axios from '~/lib/utils/axios_utils'
 
+export const UPDATE_TYPE = {deployment: 'deployment', DEPLOYMENT: 'deployment', environment: 'environment', ENVIRONMENT: 'environment', deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment'}
 
 const SECRET_DIRECTIVE = "get_env"
 /*
@@ -583,6 +584,7 @@ const state = () => ({
     committedNames: [],
     commitMessage: null,
     branch: null,
+    updateType: null,
     env: {},
     isCommitting: false,
     useBaseState: false
@@ -628,6 +630,9 @@ const mutations = {
     setCommitBranch(state, branch) {
         state.branch = branch
     },
+    setUpdateType(state, updateType) {
+        state.updateType = updateType
+    },
     pushPreparedMutation(state, preparedMutation) {
         state.preparedMutations.push(preparedMutation)
     },
@@ -670,6 +675,7 @@ const mutations = {
             state.environmentScope = undefined
             state.commitMessage = null
             state.branch = null
+            state.updateType = null
             state.preparedMutations = []
         }
     },
@@ -746,8 +752,7 @@ const actions = {
         commit('setBaseState', data?.applicationBlueprintProject?.json)
     },
 
-    async sendUpdateSubrequests({state, getters, commit, rootState}, o){
-
+    async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
         // send environment variables before trying to commit changes
         if(o?.dryRun) {
             console.log(state.env, state.environmentScope, state.projectPath)
@@ -769,14 +774,23 @@ const actions = {
                 }
             })
         }
+        let projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
+
+        const credentials = {username: rootGetters.getUsername, password: rootGetters.userToken}
+
+        projectPath = new URL(window.location.origin + '/' + projectPath)
+        projectPath.username = credentials.username
+        projectPath.password = credentials.password
+
         const variables = {
-            fullPath: state.projectPath || rootState.project?.globalVars?.projectPath, 
+            projectPath,
+            project_path: projectPath,
             patch, 
-            path: state.path || userDefaultPath()
+            path: state.path
         }
 
         if(state.commitMessage) {
-            variables.commitMessage = state.commitMessage
+            variables.commit_msg = state.commitMessage
         }
 
         if(o?.dryRun) {
@@ -786,13 +800,29 @@ const actions = {
             return
         }
 
-        await graphqlClient.clients.defaultClient.mutate({
-            mutation: UpdateDeploymentObject,
-            variables
-        })
+        let post
+        if(state.updateType == UPDATE_TYPE.deployment) {
+            if(!variables.path.includes('deployment.json')) {
+                variables.path += '/deployment.json'
+            }
+            post = axios.post(`/services/unfurl/update_deployment`, variables)
+        } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
+            post = axios.post(`/services/unfurl/delete_deployment`, variables)
+        } else if(state.updateType == UPDATE_TYPE.environment) {
+            if(!variables.path) {
+                variables.path = 'environments.json'
+            }
+            post = axios.post(`/services/unfurl/update_environment`, variables)
+        }
+
+        await post
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {
+        if(!UPDATE_TYPE[state.updateType]) {
+            throw new Error('@commitPreparedMutations: An update type must be specified before committing mutations')
+        }
+
         commit('setIsCommitting', true)
         let dryRun = o?.dryRun
         if(!state.useBaseState) {

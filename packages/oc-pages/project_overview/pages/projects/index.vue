@@ -220,7 +220,6 @@ export default {
     },
     async mounted() {
         const projectPath = this.$projectGlobal.projectPath
-        this.initUserSettings({ username: this.getUsername })
 
         // async, not awaiting
         fetchProjectPermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
@@ -356,7 +355,6 @@ export default {
         },
 
         ...mapActions([
-            'syncGlobalVars',
             'commitPreparedMutations',
             'populateDeploymentItems',
             'populateJobsList',
@@ -368,10 +366,6 @@ export default {
         ]),
         ...mapMutations([
             'pushPreparedMutation',
-            'setUpdateObjectPath',
-            'setUpdateObjectProjectPath',
-            'discardEnvironment',
-            'initUserSettings'
         ])
     }
 }

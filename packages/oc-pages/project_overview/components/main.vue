@@ -17,6 +17,8 @@ export default {
     async beforeCreate() {
         let errorContext
 
+        this.$store.commit('initUserSettings', {username: this.$store.getters.getUsername})
+
         this.$store.dispatch('syncGlobalVars', this.$projectGlobal)
 
         let dashboard

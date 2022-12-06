@@ -137,10 +137,10 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, token, projectId}) {
+export async function fetchEnvironments({fullPath, token, projectId, credentials}) {
     const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
-    dashboardUrl.username = 'UNFURL_PROJECT_TOKEN'
-    dashboardUrl.password = token
+    dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
+    dashboardUrl.password = credentials.password || token
     let environmentUrl = `/services/unfurl/export?format=environments&url=${encodeURIComponent(dashboardUrl.toString())}`
 
     if(token) {

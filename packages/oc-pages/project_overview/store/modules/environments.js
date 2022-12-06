@@ -9,6 +9,7 @@ import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_ut
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
@@ -167,7 +168,7 @@ const actions = {
         if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
 
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
 
@@ -262,7 +263,7 @@ const actions = {
 
         if(pipeline) {pipelines.push(pipeline)}
 
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
         const commitMessage = parameters.workflow == 'undeploy'?
             `Undeploy ${parameters.deploymentName} from ${parameters.environmentName}`:
@@ -298,7 +299,7 @@ const actions = {
     async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
         commit('useBaseState', {}, {root: true})
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'deleteDeployment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit('pushPreparedMutation', () => {
             return [{
@@ -352,7 +353,7 @@ const actions = {
         commit('patchEnvironment', {envName: _envName, patch})
         const _env = getters.lookupEnvironment(_envName)
 
-        commit('setUpdateObjectPath', `environments.json`, {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit(
             'pushPreparedMutation',
@@ -369,12 +370,13 @@ const actions = {
     },
 
 
-    async fetchProjectEnvironments({commit, getters, dispatch}, {fullPath, fetchPolicy}) {
-        let environments, deployments = []
+    async fetchProjectEnvironments({commit, getters, dispatch, rootGetters}, {fullPath, fetchPolicy}) {
+        let environments = []
         try {
             const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
-            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId})
+            const credentials = {username: rootGetters.getUsername, password: getters.userToken}
+            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials})
             environments = result.environments
 
             // TODO figure out if we might need ResourceType dictionary per environment
@@ -388,7 +390,7 @@ const actions = {
             const deploymentFetches = []
             for(const deployPath of result.deploymentPaths) {
                 deploymentFetches.push(
-                    dispatch('fetchDeployment', {deployPath, fullPath, token, projectId})
+                    dispatch('fetchDeployment', {deployPath, fullPath, token, projectId, credentials})
                 )
             }
 
@@ -464,12 +466,36 @@ const actions = {
             await patchEnv({UNFURL_PROJECT_TOKEN: {value: UNFURL_PROJECT_TOKEN, masked: true}}, '*', fullPath)
         }
     },
+    async createUserTokenIfNeeded({dispatch, rootGetters}) {
+        const userTokenRecord = rootGetters.userSettings.userTokenRecord
+
+        // TEMPORARY
+        async function generateUserTokenRecord() {
+            const token = await generateAccessToken(
+                'Unfurl Server Token',
+                {
+                    scopes: [
+                        'read_repository', 'write_repository'
+                    ]
+                }
+            )
+
+            dispatch('applyUserSetting', {key: 'userTokenRecord', value: token})
+        }
+
+        if(! userTokenRecord) {
+            await generateUserTokenRecord()
+        }
+
+    },
+    // TODO try to parallelize better
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
         await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
         dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath})
         await dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+        await dispatch('createUserTokenIfNeeded')
 
         // TODO replace this with new patchEnv impl
         await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
@@ -508,7 +534,7 @@ const actions = {
         }
         await shareEnvironmentVariables(state.projectPath, provider.environment.name, cloneTarget, variables, '')
 
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
         commit('pushPreparedMutation', () => {
             return [{
@@ -717,6 +743,10 @@ const getters = {
 
             return {...state.variablesByEnvironment['*'], ...state.variablesByEnvironment[environmentName]}
         }
+    },
+
+    userToken(_, _a, _b, rootGetters) {
+        return rootGetters.userSettings.userTokenRecord
     }
 };
 
