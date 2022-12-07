@@ -1,9 +1,0 @@
-fragment InputItems on Input {
-    name
-    value
-}
-
-fragment InputItems on Properties {
-    name
-    value
-}

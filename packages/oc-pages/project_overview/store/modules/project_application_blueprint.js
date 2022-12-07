@@ -65,10 +65,23 @@ const actions = {
         }
         
         let transforms
+
+        function normalizeProperties(properties) {
+            if(!properties || typeof properties != 'object') {
+                return []
+            } else if (Array.isArray(properties)) {
+                return properties
+            } else {
+                console.warn('@normalizeProperties: Converting properties into an array', properties)
+                return Object.entries(properties)
+                    .reduce((acc, [name, value])  => {acc.push({name, value}); return acc}, [])
+            }
+        }
+
         transforms = {
             ResourceTemplate(resourceTemplate) {
                 resourceTemplate.dependencies = resourceTemplate.dependencies || []
-                resourceTemplate.properties = resourceTemplate.properties || []
+                resourceTemplate.properties = normalizeProperties(resourceTemplate.properties)
 
                 const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
                 resourceTemplate.properties = properties

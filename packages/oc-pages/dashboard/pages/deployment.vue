@@ -32,7 +32,8 @@ export default {
             'lookupDeployPath',
             'getDashboardItems',
             'isAcknowledged',
-            'environmentResourceTypeDict'
+            'environmentResourceTypeDict',
+            'environmentsAreReady'
         ]),
         breadcrumbItems() {
             return  [
@@ -57,6 +58,7 @@ export default {
             return this.deploymentItemDirect({environment: this.environmentName, deployment: this.deploymentName})
         },
         state() {
+            if(! this.environmentsAreReady) return null
             return Object.freeze(this.getDeploymentDictionary(this.deploymentName, this.environmentName))
         },
         tableItems() {
@@ -70,7 +72,7 @@ export default {
     },
     watch: {
         state(val) {
-            this.prepareView()
+            if(this.deployment?.name && this?.environment.name) this.prepareView()
         },
         $route() {
             if(this.$route.hash) {
@@ -91,7 +93,7 @@ export default {
         deploymentItem: {
             immediate: true,
             async handler(val) {
-                if(!val.pipeline?.upstream_project_id) return
+                if(!val?.pipeline?.upstream_project_id) return
                 const upstreamPipeline = (await fetchProjectPipelines(val.pipeline.upstream_project_id)).shift()
                 const acknowledgement = `upstream-failure-${upstreamPipeline.id}`
                 if(upstreamPipeline?.status == 'failed' && !this.isAcknowledged(acknowledgement)) {

@@ -1,7 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
 import {unfurl_cloud_vars_url} from './unfurl-invocations'
-import graphqlClient from 'oc_pages/project_overview/graphql';
-import {UpdateDeploymentObject} from 'oc_pages/project_overview/graphql/mutations/update_deployment_object.graphql'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
 
@@ -87,20 +85,24 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
     // #!endif
 }
 
+// NOTE try to keep this in sync with commitPreparedMutations
+// TODO we need to get our user credentials in here
 export async function initUnfurlEnvironment(projectPath, environment) {
+    const patch = [{
+        ...environment,
+        connections: {primary_provider: environment.primary_provider},
+        __typename: 'DeploymentEnvironment'
+    }]
+
     const variables = {
-        patch: [{
-            ...environment,
-            connections: {primary_provider: environment.primary_provider},
-            __typename: 'DeploymentEnvironment'
-        }],
-        fullPath: projectPath,
+        commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
+        projectPath,
+        project_path: projectPath,
+        patch,
         path: 'environments.json'
     }
-    return await graphqlClient.clients.defaultClient.mutate({
-        mutation: UpdateDeploymentObject,
-        variables
-    })
+
+    return await axios.post(`/services/unfurl/update_environment`, variables)
 }
 
 export async function postGitlabEnvironmentForm() {

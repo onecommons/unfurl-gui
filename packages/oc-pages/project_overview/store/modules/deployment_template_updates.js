@@ -5,6 +5,8 @@ import gql from 'graphql-tag';
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import axios from '~/lib/utils/axios_utils'
 
 export const UPDATE_TYPE = {deployment: 'deployment', DEPLOYMENT: 'deployment', environment: 'environment', ENVIRONMENT: 'environment', deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment'}
@@ -802,10 +804,26 @@ const actions = {
 
         let post
         if(state.updateType == UPDATE_TYPE.deployment) {
+            /*
             if(!variables.path.includes('deployment.json')) {
                 variables.path += '/deployment.json'
             }
             post = axios.post(`/services/unfurl/update_deployment`, variables)
+            */
+
+            const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+
+            if(token) {
+                variables.cloud_vars_url = unfurl_cloud_vars_url({
+                    token,
+                    protocol: window.location.protocol,
+                    server: window.location.host,
+                    projectId: (await(fetchProjectInfo(encodeURIComponent(state.projectPath))))?.id // encoded project path is decoded wrong by unfurl server
+                })
+            }
+
+            variables.deployment_path = variables.path
+            post = axios.post(`/services/unfurl/update_ensemble`, variables)
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
             post = axios.post(`/services/unfurl/delete_deployment`, variables)
         } else if(state.updateType == UPDATE_TYPE.environment) {
