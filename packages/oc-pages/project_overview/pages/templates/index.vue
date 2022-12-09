@@ -409,7 +409,10 @@ export default {
           this.setCommitMessage(`Save draft of ${name}`)
           this.setUpdateType('deployment')
           await this.commitPreparedMutations();
-          await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
+
+          // will be handled by unfurl server
+          // await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
+
           sessionStorage['oc_flash'] = JSON.stringify({
             message: this.editingDeployed? __('Deployment saved!'): __('Draft saved!'),
             type: FLASH_TYPES.SUCCESS,
@@ -417,9 +420,9 @@ export default {
             linkText: 'Return to overview',
             linkTo: `/${this.project.globalVars.projectPath}#${this.$route.params.slug}` // TODO 
           });
+
           const query = {...this.$route.query}
           delete query.ts
-
 
           if(this.editingDeployed) {
               this.returnToReferrer()

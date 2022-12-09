@@ -949,7 +949,9 @@ const getters = {
         }
 
         return 'Not all required components have been created or connected'
-    }
+    },
+
+    lastFetchedFrom(state) { return state.lastFetchedFrom }
 };
 
 export default {

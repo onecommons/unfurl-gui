@@ -9,7 +9,7 @@ import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_ut
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
-import {generateAccessToken} from 'oc_vue_shared/client_utils/user'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
@@ -375,7 +375,7 @@ const actions = {
         try {
             const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
-            const credentials = {username: rootGetters.getUsername, password: getters.userToken}
+            const credentials = {username: rootGetters.getUsername, password: await fetchUserAccessToken()}
             const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials})
             environments = result.environments
 
@@ -466,28 +466,7 @@ const actions = {
             await patchEnv({UNFURL_PROJECT_TOKEN: {value: UNFURL_PROJECT_TOKEN, masked: true}}, '*', fullPath)
         }
     },
-    async createUserTokenIfNeeded({dispatch, rootGetters}) {
-        const userTokenRecord = rootGetters.userSettings.userTokenRecord
 
-        // TEMPORARY
-        async function generateUserTokenRecord() {
-            const token = await generateAccessToken(
-                'Unfurl Server Token',
-                {
-                    scopes: [
-                        'read_repository', 'write_repository'
-                    ]
-                }
-            )
-
-            dispatch('applyUserSetting', {key: 'userTokenRecord', value: token})
-        }
-
-        if(! userTokenRecord) {
-            await generateUserTokenRecord()
-        }
-
-    },
     // TODO try to parallelize better
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
@@ -495,7 +474,7 @@ const actions = {
         await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
         dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath})
         await dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
-        await dispatch('createUserTokenIfNeeded')
+        
 
         // TODO replace this with new patchEnv impl
         await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
@@ -647,9 +626,11 @@ const getters = {
 
     lookupConnection: (_, getters) => function(environmentName, connectedResource) {
         const environment = getters.lookupEnvironment(environmentName)
-        //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
-        if(! Array.isArray(environment?.instances) ) return null
-        return cloneDeep(environment.instances.find(conn => conn.name == connectedResource))
+        try {
+            return cloneDeep(environment.instances[connectedResource])
+        } catch(e) {
+            return null
+        }
     },
     environmentResourceTypeDict(state) {
         return function(environment) {
@@ -691,6 +672,11 @@ const getters = {
             return result
         }
     },
+    hasDeployPathKey(state) {
+        return function(key) {
+            return state.deploymentPaths.indexOf(key) != -1
+        }
+    },
     lookupVariableByEnvironment(state) {
         return function(variable, environmentName) {
             const name = environmentName?.name || environmentName
@@ -717,12 +703,12 @@ const getters = {
             return type.extends.includes('unfurl.relationships.ConnectsTo.CloudAccount') || type.extends.includes('unfurl.relationships.ConnectsTo.K8sCluster')
         }
         for(const environment of getters.getEnvironments) {
-            for(const connection of environment.connections) {
+            for(const connection of Object.values(environment.connections)) {
                 if(isValidProvider(environment, connection)) {
                     result.push({environment, template: connection, source: 'connection'})
                 }
             }
-            for(const instance of environment.instances) {
+            for(const instance of Object.values(environment.instances)) {
                 if(isValidProvider(environment, instance)) {
                     result.push({environment, template: instance, source: 'instance'})
                 }
@@ -743,10 +729,6 @@ const getters = {
 
             return {...state.variablesByEnvironment['*'], ...state.variablesByEnvironment[environmentName]}
         }
-    },
-
-    userToken(_, _a, _b, rootGetters) {
-        return rootGetters.userSettings.userTokenRecord
     }
 };
 

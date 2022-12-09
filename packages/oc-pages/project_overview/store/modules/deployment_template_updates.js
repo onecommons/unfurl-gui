@@ -6,6 +6,7 @@ import {slugify} from 'oc_vue_shared/util.mjs'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import axios from '~/lib/utils/axios_utils'
 
@@ -776,13 +777,16 @@ const actions = {
                 }
             })
         }
+
+        const username = rootGetters.getUsername
+        const password = await fetchUserAccessToken()
         let projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
-        const credentials = {username: rootGetters.getUsername, password: rootGetters.userToken}
-
         projectPath = new URL(window.location.origin + '/' + projectPath)
-        projectPath.username = credentials.username
-        projectPath.password = credentials.password
+        projectPath.username = username
+        projectPath.password = password
+
+        projectPath = projectPath.toString()
 
         const variables = {
             projectPath,
@@ -795,6 +799,18 @@ const actions = {
             variables.commit_msg = state.commitMessage
         }
 
+        const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+
+        if(token) {
+            variables.cloud_vars_url = unfurl_cloud_vars_url({
+                token,
+                protocol: window.location.protocol,
+                server: window.location.host,
+                projectId: (await(fetchProjectInfo(encodeURIComponent(state.projectPath))))?.id // encoded project path is decoded wrong by unfurl server
+            })
+        }
+
+
         if(o?.dryRun) {
             console.log(state.committedNames)
             console.log(variables)
@@ -804,26 +820,31 @@ const actions = {
 
         let post
         if(state.updateType == UPDATE_TYPE.deployment) {
-            /*
-            if(!variables.path.includes('deployment.json')) {
-                variables.path += '/deployment.json'
-            }
-            post = axios.post(`/services/unfurl/update_deployment`, variables)
-            */
-
-            const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
-
-            if(token) {
-                variables.cloud_vars_url = unfurl_cloud_vars_url({
-                    token,
-                    protocol: window.location.protocol,
-                    server: window.location.host,
-                    projectId: (await(fetchProjectInfo(encodeURIComponent(state.projectPath))))?.id // encoded project path is decoded wrong by unfurl server
-                })
-            }
-
             variables.deployment_path = variables.path
-            post = axios.post(`/services/unfurl/update_ensemble`, variables)
+            if(!rootGetters.hasDeployPathKey(variables.path)) {
+
+                // infer information from the deployment object path instead of our getters
+                // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
+
+                const pathSplits = variables.path.split('/')
+                pathSplits.shift()
+                const environmentName = pathSplits.shift()
+                const deploymentName = pathSplits.pop()
+                const blueprintProjectPath = pathSplits.join('/')
+
+                variables.environment = environmentName
+                variables.deployment_blueprint = deploymentName
+
+                variables.blueprint_url = new URL(window.location.origin + '/' + blueprintProjectPath + '.git')
+                variables.blueprint_url.username = username
+                variables.blueprint_url.password = password
+
+                variables.blueprint_url = variables.blueprint_url.toString()
+
+                post = axios.post('/services/unfurl/create_ensemble', variables)
+            } else {
+                post = axios.post(`/services/unfurl/update_ensemble`, variables)
+            }
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
             post = axios.post(`/services/unfurl/delete_deployment`, variables)
         } else if(state.updateType == UPDATE_TYPE.environment) {

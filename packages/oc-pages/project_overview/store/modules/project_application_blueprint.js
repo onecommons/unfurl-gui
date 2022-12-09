@@ -78,10 +78,22 @@ const actions = {
             }
         }
 
+        function normalizeDependencies(dependencies) {
+            if(!dependencies || typeof dependencies != 'object') {
+                return []
+            } else if (Array.isArray(dependencies)) {
+                return dependencies
+            } else {
+                console.warn('@normalizeDependencies: Converting dependencies into an array', dependencies)
+                return Object.entries(dependencies)
+                    .reduce((acc, [name, value])  => {acc.push({name, value}); return acc}, [])
+            }
+        }
+
         transforms = {
             ResourceTemplate(resourceTemplate) {
-                resourceTemplate.dependencies = resourceTemplate.dependencies || []
-                resourceTemplate.properties = normalizeProperties(resourceTemplate.properties)
+                resourceTemplate.dependencies = _.uniqBy(normalizeDependencies(resourceTemplate.dependencies), 'name')
+                resourceTemplate.properties = _.uniqBy(normalizeProperties(resourceTemplate.properties), 'name')
 
                 const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
                 resourceTemplate.properties = properties

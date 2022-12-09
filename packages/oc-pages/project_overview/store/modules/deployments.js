@@ -1,6 +1,7 @@
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import Vue from 'vue'
 import _ from 'lodash'
@@ -338,10 +339,10 @@ const actions = {
     },
 
     // TODO move fetch logic into client_utils
-    async fetchDeployment({state, commit}, {deployPath, fullPath, token, projectId, credentials}) {
+    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath, token, projectId}) {
         const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
-        dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
-        dashboardUrl.password = credentials.password || token
+        dashboardUrl.username = rootGetters.getUsername
+        dashboardUrl.password = await fetchUserAccessToken()
 
         let deploymentUrl = '/services/unfurl/export?format=deployment'
         deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
@@ -360,11 +361,16 @@ const actions = {
         }
 
 
-        const {data} = await axios.get(deploymentUrl)
+        try {
+            const {data} = await axios.get(deploymentUrl)
 
-        data._environment = deployPath.environment
+            data._environment = deployPath.environment
 
-        commit('setDeployments', [...state.deployments, data])
+            commit('setDeployments', [...state.deployments, data])
+        } catch(e) {
+            console.error(e)
+        }
+
     }
 };
 const getters = {

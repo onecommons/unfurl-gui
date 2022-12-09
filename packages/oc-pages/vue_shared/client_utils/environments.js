@@ -2,6 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import {unfurl_cloud_vars_url} from './unfurl-invocations'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
+import {fetchUserAccessToken} from './user'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -87,12 +88,20 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 // TODO we need to get our user credentials in here
-export async function initUnfurlEnvironment(projectPath, environment) {
+export async function initUnfurlEnvironment(_projectPath, environment, credentials={}) {
+    const {username, password} = credentials
     const patch = [{
         ...environment,
         connections: {primary_provider: environment.primary_provider},
         __typename: 'DeploymentEnvironment'
     }]
+
+    let projectPath = new URL(window.location.origin + '/' + _projectPath)
+
+    projectPath.username = username || window.gon.current_username
+    projectPath.password = password || await fetchUserAccessToken()
+
+    projectPath = projectPath.toString()
 
     const variables = {
         commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
