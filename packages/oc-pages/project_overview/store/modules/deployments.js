@@ -27,11 +27,6 @@ const mutations = {
     }
 };
 const actions = {
-    // NOTE this is done in the environments store
-    async fetchDeployments({commit}, params) {
-        console.warn('fetch deployments has no effect and will be removed')
-    },
-
     async createDeploymentPathPointer({commit, dispatch, rootGetters}, {projectPath, environment, deploymentDir, dryRun, environmentName}) {
         commit('setCommitMessage', `Record deployment path for ${deploymentDir}`)
         commit('setUpdateObjectProjectPath', projectPath || rootGetters.getHomeProjectPath)
@@ -366,8 +361,18 @@ const actions = {
 
             data._environment = deployPath.environment
 
-            commit('setDeployments', [...state.deployments, data])
-        } catch(e) {
+            const deployments = [...state.deployments]
+
+            let index = deployments.findIndex(dep => dep.name == data.name && dep._environment == deployPath.environment)
+
+            if(index != -1) {
+                deployments[index] = data
+            } else {
+                deployments.push(data)
+            }
+
+            commit('setDeployments',  deployments)
+        }catch(e) {
             console.error(e)
         }
 
@@ -406,7 +411,7 @@ const getters = {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
-            const deployment = _.isObject(dict.Deployment)? dict.Deployment: dict.DeploymentTemplate
+            const deployment = _.isObject(dict.Deployment) && dict.Resource[dict.Deployment.primary]? dict.Deployment: dict.DeploymentTemplate
             if(!deployment) continue
             Object.values(deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store

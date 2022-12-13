@@ -426,7 +426,6 @@ const actions = {
     },
 
     async connectNodeResource({getters, state, rootGetters, commit}, {dependentName, dependentRequirement, externalResource, resource}) {
-
         const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const deploymentTemplateName = state.lastFetchedFrom.templateSlug
@@ -434,7 +433,7 @@ const actions = {
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
             const name = `__${externalResource}`
-            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName}
+            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName, __typename: 'ResourceTemplate'}
             commit(
                 'pushPreparedMutation',
                 () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]

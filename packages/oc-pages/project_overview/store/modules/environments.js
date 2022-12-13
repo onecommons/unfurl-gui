@@ -674,7 +674,7 @@ const getters = {
     },
     hasDeployPathKey(state) {
         return function(key) {
-            return state.deploymentPaths.indexOf(key) != -1
+            return state.deploymentPaths.some(dp => dp.name == key)
         }
     },
     lookupVariableByEnvironment(state) {
