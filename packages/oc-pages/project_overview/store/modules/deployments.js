@@ -373,7 +373,7 @@ const actions = {
 
             const deployments = [...state.deployments]
 
-            let index = deployments.findIndex(dep => dep.name == data.name && dep._environment == deployPath.environment)
+            let index = deployments.findIndex(dep => Object.values(dep.Deployment)[0].name == Object.values(data.Deployment)[0].name && dep._environment == deployPath.environment)
 
             if(index != -1) {
                 deployments[index] = data

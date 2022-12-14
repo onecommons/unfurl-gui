@@ -117,6 +117,7 @@ const mutations = {
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
     populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
+        commit('resetTemplateResourceState')
         const isDeploymentTemplate = deployment.__typename == 'DeploymentTemplate'
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(
             isDeploymentTemplate? deployment.name: deployment.deploymentTemplate
@@ -161,6 +162,7 @@ const actions = {
 
     // used by deploy and blueprint editing
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+        commit('resetTemplateResourceState')
         // TODO this doesn't make any sense to people reading this
         commit('setContext', false)
         if(!templateSlug) return false;
@@ -307,6 +309,7 @@ const actions = {
 
     // used by /dashboard/environment/<environment-name> TODO merge these actions
     populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
+        commit('resetTemplateResourceState')
         for(const resource of resourceTemplates) {
             if(resource.name == 'primary_provider') continue
             commit('createTemplateResource', {...(rootGetters.resolveResourceTemplate(resource.name) || resource)})

@@ -64,7 +64,7 @@ const actions = {
                 }
 
                 dispatch('useProjectState', {root: clonedDeploymentDict, projectPath})
-                if(clonedDeploymentDict.Deployment) {
+                if(clonedDeploymentDict.Deployment && clonedDeploymentDict.Resource[Object.values(clonedDeploymentDict.Deployment)[0].primary]) {
                     deployment = {...rootGetters.getDeployment}
                     const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
                     deployment.projectPath = dt?.projectPath

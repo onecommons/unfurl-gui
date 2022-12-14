@@ -195,7 +195,8 @@ const getters = {
                 console.error(e)
                 continue
             }
-            if(dict.Deployment) {
+
+            if(dict.Deployment && dict.Resource[Object.values(dict.Deployment)[0].primary]) {
                 obj.deployment = Object.values(dict.Deployment)[0]
                 resources = Object.values(dict.Resource)
                 obj.deployment.statuses = [resources.find(resource => resource.name == obj.deployment.primary)]
