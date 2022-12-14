@@ -769,7 +769,7 @@ const actions = {
             Object.entries(patchesByTypename).forEach(([name, record]) => {
                 if(record == null) {
                     if(state.committedNames.length == 0 || getters.isCommittedName(key, name)) {
-                        patch.push({__deleted: name, __typename: key})
+                        patch.push({__deleted: true, name, __typename: key})
                     }
                 }
                 else if(!record?.directives?.includes('predefined')) {
@@ -782,6 +782,8 @@ const actions = {
         const password = await fetchUserAccessToken()
         let projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
+        const projectId = (await(fetchProjectInfo(encodeURIComponent(projectPath))))?.id
+
         projectPath = new URL(window.location.origin + '/' + projectPath)
         projectPath.username = username
         projectPath.password = password
@@ -792,6 +794,7 @@ const actions = {
             projectPath,
             project_path: projectPath,
             patch, 
+            project_id: projectId,
             path: state.path
         }
 
@@ -806,7 +809,7 @@ const actions = {
                 token,
                 protocol: window.location.protocol,
                 server: window.location.host,
-                projectId: (await(fetchProjectInfo(encodeURIComponent(state.projectPath))))?.id // encoded project path is decoded wrong by unfurl server
+                projectId
             })
         }
 

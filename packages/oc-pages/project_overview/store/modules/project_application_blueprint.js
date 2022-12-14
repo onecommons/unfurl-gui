@@ -3,6 +3,7 @@ import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import _ from 'lodash'
 import Vue from 'vue'
+import {fetchProjectInfo, fetchBranches} from '../../../vue_shared/client_utils/projects'
 
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
@@ -36,12 +37,25 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, dispatch}, params) {
+    async fetchProject({commit, dispatch, rootGetters}, params) {
         const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
         commit('loaded', false)
 
+        const project = await fetchProjectInfo(encodeURIComponent(projectPath))
+        const branch = project.default_branch
+
+        const latestCommit = (await fetchBranches(project.id))
+            ?.find(b => b.name == branch)
+            ?.commit?.id
+
         const blueprintUrl = window.gon.gitlab_url + '/' + (fullPath || projectPath) + '.git'
-        const {data} = await axios.get(`/services/unfurl/export?format=blueprint&url=${encodeURIComponent(blueprintUrl)}`)
+        let exportUrl = `/services/unfurl/export?format=blueprint`
+        exportUrl += `&url=${encodeURIComponent(blueprintUrl)}`
+        exportUrl += `&branch=${branch}`
+        exportUrl += `&project_id=${project.id}`
+        exportUrl += `&latest_commit=${latestCommit}`
+
+        const {data} = await axios.get(exportUrl)
 
         // TODO handle errors
 

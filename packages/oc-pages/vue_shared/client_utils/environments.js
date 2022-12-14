@@ -2,6 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import {unfurl_cloud_vars_url} from './unfurl-invocations'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
+import {fetchProjectInfo, fetchBranches} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from './user'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
@@ -96,6 +97,8 @@ export async function initUnfurlEnvironment(_projectPath, environment, credentia
         __typename: 'DeploymentEnvironment'
     }]
 
+    const projectId = (await(fetchProjectInfo(encodeURIComponent(_projectPath))))?.id
+
     let projectPath = new URL(window.location.origin + '/' + _projectPath)
 
     projectPath.username = username || window.gon.current_username
@@ -108,6 +111,7 @@ export async function initUnfurlEnvironment(_projectPath, environment, credentia
         projectPath,
         project_path: projectPath,
         patch,
+        project_id: projectId,
         path: 'environments.json'
     }
 
@@ -149,10 +153,26 @@ export function connectionsToArray(environment) {
 }
 
 export async function fetchEnvironments({fullPath, token, projectId, credentials}) {
+    // TODO don't hardcode main
+    const branch = 'main'
+
     const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
     dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
     dashboardUrl.password = credentials.password || token
-    let environmentUrl = `/services/unfurl/export?format=environments&url=${encodeURIComponent(dashboardUrl.toString())}`
+
+    const project = await fetchProjectInfo(encodeURIComponent(fullPath))
+
+    const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
+        ?.find(b => b.name == branch)
+        ?.commit?.id
+
+    // TODO get the branch passed into fetch environments
+    // TODO use ?include_deployments=true
+    let environmentUrl = `/services/unfurl/export?format=environments`
+    environmentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
+    environmentUrl += `&project_id=${project.id}`
+    environmentUrl += `&branch=${branch}`
+    environmentUrl += `&latest_commit=${latestCommit}`
 
     if(token) {
         const cloudVarsUrl = unfurl_cloud_vars_url({
@@ -169,6 +189,7 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
 
     const environments = Object.values(data.DeploymentEnvironment)
         .filter(env => env.name != 'defaults')
+        .map(env => {env._dashboard = fullPath; return env})
 
     for(const env of environments) { env._dashbaord = fullPath }
 

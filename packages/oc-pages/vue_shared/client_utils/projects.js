@@ -10,6 +10,10 @@ function generateConfig(options) {
     }
 }
 
+
+const projectInfos = {}
+const branchesData = {}
+
 export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
     const {minAccessLevel} = options
@@ -33,7 +37,13 @@ export async function fetchRepositoryBranches(projectId, options) {
 }
 
 export async function fetchProjectInfo(projectId, options) {
-    return (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+    let result
+    if(result = projectInfos[projectId]) {
+        return result
+    }
+    const data = (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+
+    return projectInfos[projectId] = projectInfos[data?.id] = data ?? null
 }
 
 export async function fetchProjectPipelines(projectId, options) {
@@ -48,8 +58,16 @@ export async function fetchCommit(projectId, commitHash) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/commits/${commitHash}`))?.data
 }
 
+
 export async function fetchBranches(projectId) {
-    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+    let result
+    if(result = branchesData[projectId]) {
+        return result
+    }
+    const data = (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+
+    setTimeout(() => delete branchesData[projectId], 1000)
+    return branchesData[projectId] = data ?? null
 }
 
 export async function fetchBranch(projectId, branch) {

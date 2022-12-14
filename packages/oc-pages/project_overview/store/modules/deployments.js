@@ -2,6 +2,7 @@ import {slugify} from 'oc_vue_shared/util.mjs'
 import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
+import {fetchBranches} from 'oc_vue_shared/client_utils/projects'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import Vue from 'vue'
 import _ from 'lodash'
@@ -339,10 +340,19 @@ const actions = {
         dashboardUrl.username = rootGetters.getUsername
         dashboardUrl.password = await fetchUserAccessToken()
 
+        const branch = 'main'
+
+        const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
+            ?.find(b => b.name == branch)
+            ?.commit?.id
+
         let deploymentUrl = '/services/unfurl/export?format=deployment'
         deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
         deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
         deploymentUrl += `&environment=${deployPath.environment}`
+        deploymentUrl += `&project_id=${projectId}`
+        deploymentUrl += `&branch=${branch}`
+        deploymentUrl += `&latest_commit=${latestCommit}`
 
         if(token) {
             const cloudVarsUrl = unfurl_cloud_vars_url({
