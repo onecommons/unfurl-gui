@@ -90,6 +90,8 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 // NOTE try to keep this in sync with commitPreparedMutations
 // TODO we need to get our user credentials in here
 export async function initUnfurlEnvironment(_projectPath, environment, credentials={}) {
+    const branch = 'main' // TODO don't hardcode main
+
     const {username, password} = credentials
     const patch = [{
         ...environment,
@@ -111,6 +113,7 @@ export async function initUnfurlEnvironment(_projectPath, environment, credentia
         projectPath,
         project_path: projectPath,
         patch,
+        branch,
         project_id: projectId,
         path: 'environments.json'
     }
@@ -191,7 +194,7 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
         .filter(env => env.name != 'defaults')
         .map(env => {env._dashboard = fullPath; return env})
 
-    for(const env of environments) { env._dashbaord = fullPath }
+    for(const env of environments) { env._dashboard = fullPath }
 
     const deploymentPaths = Object.values(data.DeploymentPath)
 

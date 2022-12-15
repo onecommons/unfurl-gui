@@ -782,7 +782,8 @@ const actions = {
         const password = await fetchUserAccessToken()
         let projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
-        const projectId = (await(fetchProjectInfo(encodeURIComponent(projectPath))))?.id
+        const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
+        const projectId = project.id
 
         projectPath = new URL(window.location.origin + '/' + projectPath)
         projectPath.username = username
@@ -795,6 +796,7 @@ const actions = {
             project_path: projectPath,
             patch, 
             project_id: projectId,
+            branch: state.branch || project.default_branch,
             path: state.path
         }
 
@@ -849,10 +851,13 @@ const actions = {
                 post = axios.post(`/services/unfurl/update_ensemble`, variables)
             }
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
+            if(!variables.path) {
+                variables.path = 'unfurl.yaml'
+            }
             post = axios.post(`/services/unfurl/delete_deployment`, variables)
         } else if(state.updateType == UPDATE_TYPE.environment) {
             if(!variables.path) {
-                variables.path = 'environments.json'
+                variables.path = 'unfurl.yaml'
             }
             post = axios.post(`/services/unfurl/update_environment`, variables)
         }

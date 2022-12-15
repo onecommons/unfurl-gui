@@ -290,7 +290,6 @@ export default {
             this.setRouterHook()
 
             this.clearPreparedMutations()
-            this.resetTemplateResourceState()
 
             const environmentName = this.environmentName
             const environment = this.lookupEnvironment(environmentName)
@@ -299,13 +298,13 @@ export default {
                 return
             }
             this.environment = environment
-            this.setAvailableResourceTypes(
-                this.environmentLookupDiscoverable(environment)
-            )
-
 
             this.onSaveTemplate(false)
             this.populateTemplateResources2({resourceTemplates: [...Object.values(environment.instances), ...Object.values(environment.connections)], environmentName, context: 'environment'})
+
+            this.setAvailableResourceTypes(
+                this.environmentLookupDiscoverable(environment)
+            )
         },
 
         onHide(e) {
