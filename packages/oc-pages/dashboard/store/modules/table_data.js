@@ -1,5 +1,5 @@
-import {USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 import _ from 'lodash'
 const state = () => ({
@@ -105,11 +105,9 @@ const actions = {
                 totalDeployments++
                 const application = {...rootGetters.getApplicationBlueprint};
                 application.projectPath = deployment.projectPath
-                // handle an export issue
+
                 if(!application.projectIcon) {
-                    try {
-                        application.projectIcon = clonedDeploymentDict.Overview[application.name].projectIcon
-                    } catch(e) {}
+                    application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
                 }
 
                 deepFreeze(application) 

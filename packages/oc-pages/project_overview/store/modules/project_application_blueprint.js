@@ -150,9 +150,6 @@ const actions = {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
-                if(!applicationBlueprint.projectIcon) {
-                    applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
-                }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             ResourceType(resourceType) {
