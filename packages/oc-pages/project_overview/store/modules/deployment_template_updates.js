@@ -10,7 +10,7 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import axios from '~/lib/utils/axios_utils'
 
-export const UPDATE_TYPE = {deployment: 'deployment', DEPLOYMENT: 'deployment', environment: 'environment', ENVIRONMENT: 'environment', deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment'}
+export const UPDATE_TYPE = {deployment: 'deployment', DEPLOYMENT: 'deployment', environment: 'environment', ENVIRONMENT: 'environment', deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment', 'delete-deployment': 'delete-deployment'}
 
 const SECRET_DIRECTIVE = "get_env"
 /*
