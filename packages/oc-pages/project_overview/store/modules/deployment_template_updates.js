@@ -10,7 +10,12 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import axios from '~/lib/utils/axios_utils'
 
-export const UPDATE_TYPE = {deployment: 'deployment', DEPLOYMENT: 'deployment', environment: 'environment', ENVIRONMENT: 'environment', deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment', 'delete-deployment': 'delete-deployment'}
+export const UPDATE_TYPE = {
+    deployment: 'deployment', DEPLOYMENT: 'deployment',
+    environment: 'environment', ENVIRONMENT: 'environment',
+    deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment', 'delete-deployment': 'delete-deployment',
+    deleteEnvironment: 'delete-environment', DELETE_ENVIRONMENT: 'delete-environment', 'delete-environment': 'delete-environment'
+}
 
 const SECRET_DIRECTIVE = "get_env"
 /*
@@ -855,6 +860,11 @@ const actions = {
                 variables.path = 'unfurl.yaml'
             }
             post = axios.post(`/services/unfurl/delete_deployment`, variables)
+        } else if(state.updateType == UPDATE_TYPE.deleteEnvironment) {
+            if(!variables.path) {
+                variables.path = 'unfurl.yaml'
+            }
+            post = axios.post(`/services/unfurl/delete_environment`, variables)
         } else if(state.updateType == UPDATE_TYPE.environment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'

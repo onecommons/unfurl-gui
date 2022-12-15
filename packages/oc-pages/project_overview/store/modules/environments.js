@@ -309,6 +309,16 @@ const actions = {
             }]
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
+
+        // TODO remove after switch to delete_ensemble
+        await deleteFiles(
+            encodeURIComponent(rootGetters.getHomeProjectPath),
+            [deployPath.name + '/ensemble.yaml'],
+            {
+                commitMessage: `Delete deployment records for ${deploymentName}`,
+                accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+            }
+        )
     },
 
     setEnvironmentName({ commit }, envName) {
