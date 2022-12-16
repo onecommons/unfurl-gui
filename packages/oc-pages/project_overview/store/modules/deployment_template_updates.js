@@ -800,7 +800,6 @@ const actions = {
             projectPath,
             project_path: projectPath,
             patch, 
-            project_id: projectId,
             branch: state.branch || project.default_branch,
             path: state.path
         }
@@ -851,25 +850,25 @@ const actions = {
 
                 variables.blueprint_url = variables.blueprint_url.toString()
 
-                post = axios.post('/services/unfurl/create_ensemble', variables)
+                post = axios.post(`/services/unfurl/create_ensemble?auth_project=${projectId}`, variables)
             } else {
-                post = axios.post(`/services/unfurl/update_ensemble`, variables)
+                post = axios.post(`/services/unfurl/update_ensemble?auth_project=${projectId}`, variables)
             }
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'
             }
-            post = axios.post(`/services/unfurl/delete_deployment`, variables)
+            post = axios.post(`/services/unfurl/delete_deployment?auth_project=${projectId}`, variables)
         } else if(state.updateType == UPDATE_TYPE.deleteEnvironment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'
             }
-            post = axios.post(`/services/unfurl/delete_environment`, variables)
+            post = axios.post(`/services/unfurl/delete_environment?auth_project=${projectId}`, variables)
         } else if(state.updateType == UPDATE_TYPE.environment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'
             }
-            post = axios.post(`/services/unfurl/update_environment`, variables)
+            post = axios.post(`/services/unfurl/update_environment?auth_project=${projectId}`, variables)
         }
 
         await post

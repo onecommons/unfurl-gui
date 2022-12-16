@@ -114,11 +114,10 @@ export async function initUnfurlEnvironment(_projectPath, environment, credentia
         project_path: projectPath,
         patch,
         branch,
-        project_id: projectId,
         path: 'environments.json'
     }
 
-    return await axios.post(`/services/unfurl/update_environment`, variables)
+    return await axios.post(`/services/unfurl/update_environment?auth_project=${projectId}`, variables)
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -173,7 +172,7 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     // TODO use ?include_deployments=true
     let environmentUrl = `/services/unfurl/export?format=environments`
     environmentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
-    environmentUrl += `&project_id=${project.id}`
+    environmentUrl += `&auth_project=${project.id}`
     environmentUrl += `&branch=${branch}`
     environmentUrl += `&latest_commit=${latestCommit}`
 

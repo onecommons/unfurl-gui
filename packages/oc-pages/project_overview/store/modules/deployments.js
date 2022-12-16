@@ -350,7 +350,7 @@ const actions = {
         deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
         deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
         deploymentUrl += `&environment=${deployPath.environment}`
-        deploymentUrl += `&project_id=${projectId}`
+        deploymentUrl += `&auth_project=${projectId}`
         deploymentUrl += `&branch=${branch}`
         deploymentUrl += `&latest_commit=${latestCommit}`
 
