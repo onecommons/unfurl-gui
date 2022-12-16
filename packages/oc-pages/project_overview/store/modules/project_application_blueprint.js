@@ -1,9 +1,10 @@
 import axios from '~/lib/utils/axios_utils'
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
+import {fetchProjectInfo, fetchBranches} from '../../../vue_shared/client_utils/projects'
 import _ from 'lodash'
 import Vue from 'vue'
-import {fetchProjectInfo, fetchBranches} from '../../../vue_shared/client_utils/projects'
 
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
@@ -48,7 +49,11 @@ const actions = {
             ?.find(b => b.name == branch)
             ?.commit?.id
 
-        const blueprintUrl = window.gon.gitlab_url + '/' + (fullPath || projectPath) + '.git'
+        let blueprintUrl = new URL(window.gon.gitlab_url + '/' + (fullPath || projectPath) + '.git')
+        blueprintUrl.username = rootGetters.getUsername
+        blueprintUrl.password = await fetchUserAccessToken()
+        blueprintUrl = blueprintUrl.toString()
+
         let exportUrl = `/services/unfurl/export?format=blueprint`
         exportUrl += `&url=${encodeURIComponent(blueprintUrl)}`
         exportUrl += `&branch=${branch}`
