@@ -54,7 +54,7 @@ const actions = {
         blueprintUrl.password = await fetchUserAccessToken()
         blueprintUrl = blueprintUrl.toString()
 
-        let exportUrl = `/services/unfurl/export?format=blueprint`
+        let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
         exportUrl += `&url=${encodeURIComponent(blueprintUrl)}`
         exportUrl += `&branch=${branch}`
         exportUrl += `&auth_project=${project.id}`

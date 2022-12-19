@@ -346,7 +346,7 @@ const actions = {
             ?.find(b => b.name == branch)
             ?.commit?.id
 
-        let deploymentUrl = '/services/unfurl/export?format=deployment'
+        let deploymentUrl = `${rootGetters.unfurlServicesUrl}/export?format=deployment`
         deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
         deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
         deploymentUrl += `&environment=${deployPath.environment}`

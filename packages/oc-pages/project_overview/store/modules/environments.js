@@ -353,7 +353,7 @@ const actions = {
             const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
             const credentials = {username: rootGetters.getUsername, password: await fetchUserAccessToken()}
-            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials})
+            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials, unfurlServicesUrl: rootGetters.unfurlServicesUrl})
             environments = result.environments
 
             // TODO figure out if we might need ResourceType dictionary per environment
@@ -517,7 +517,7 @@ const actions = {
         // include developer access for deploy requests, etc.
         const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=30`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace}))
+            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id, unfurlServicesUrl: rootGetters.unfurlServicesUrl}))
 
         commit('setAdditionalDashboards', await Promise.all(dashboards))
     }

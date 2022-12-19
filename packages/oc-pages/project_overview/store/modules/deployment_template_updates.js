@@ -827,6 +827,10 @@ const actions = {
             return
         }
 
+        function unfurlServiceMutation(method) {
+            return `${rootGetters.unfurlServicesUrl}/${method}?auth_project=${projectId}`
+        }
+
         let post
         if(state.updateType == UPDATE_TYPE.deployment) {
             variables.deployment_path = variables.path
@@ -850,25 +854,25 @@ const actions = {
 
                 variables.blueprint_url = variables.blueprint_url.toString()
 
-                post = axios.post(`/services/unfurl/create_ensemble?auth_project=${projectId}`, variables)
+                post = axios.post(unfurlServiceMutation('create_ensemble'), variables)
             } else {
-                post = axios.post(`/services/unfurl/update_ensemble?auth_project=${projectId}`, variables)
+                post = axios.post(unfurlServiceMutation('update_ensemble'), variables)
             }
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'
             }
-            post = axios.post(`/services/unfurl/delete_deployment?auth_project=${projectId}`, variables)
+            post = axios.post(unfurlServiceMutation('delete_deployment'), variables)
         } else if(state.updateType == UPDATE_TYPE.deleteEnvironment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'
             }
-            post = axios.post(`/services/unfurl/delete_environment?auth_project=${projectId}`, variables)
+            post = axios.post(unfurlServiceMutation('delete_environment'), variables)
         } else if(state.updateType == UPDATE_TYPE.environment) {
             if(!variables.path) {
                 variables.path = 'unfurl.yaml'
             }
-            post = axios.post(`/services/unfurl/update_environment?auth_project=${projectId}`, variables)
+            post = axios.post(unfurlServiceMutation('update_environment'), variables)
         }
 
         await post

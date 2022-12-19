@@ -88,8 +88,8 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 }
 
 // NOTE try to keep this in sync with commitPreparedMutations
-// TODO we need to get our user credentials in here
-export async function initUnfurlEnvironment(_projectPath, environment, credentials={}) {
+// NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
+export async function initUnfurlEnvironment(_projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
     const branch = 'main' // TODO don't hardcode main
 
     const {username, password} = credentials
@@ -117,7 +117,7 @@ export async function initUnfurlEnvironment(_projectPath, environment, credentia
         path: 'environments.json'
     }
 
-    return await axios.post(`/services/unfurl/update_environment?auth_project=${projectId}`, variables)
+    return await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${projectId}`, variables)
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -154,7 +154,7 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, token, projectId, credentials}) {
+export async function fetchEnvironments({fullPath, token, projectId, credentials, unfurlServicesUrl}) {
     // TODO don't hardcode main
     const branch = 'main'
 
@@ -170,7 +170,7 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
 
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
-    let environmentUrl = `/services/unfurl/export?format=environments`
+    let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
     environmentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
     environmentUrl += `&auth_project=${project.id}`
     environmentUrl += `&branch=${branch}`
