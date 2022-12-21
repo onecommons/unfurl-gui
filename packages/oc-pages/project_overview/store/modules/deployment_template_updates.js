@@ -785,20 +785,20 @@ const actions = {
 
         const username = rootGetters.getUsername
         const password = await fetchUserAccessToken()
-        let projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
+        const projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
         const projectId = project.id
 
-        projectPath = new URL(window.location.origin + '/' + projectPath)
-        projectPath.username = username
-        projectPath.password = password
+        let projectUrl = new URL(window.location.origin + '/' + projectPath)
+        projectUrl.username = username
+        projectUrl.password = password
 
-        projectPath = projectPath.toString()
+        projectUrl = projectUrl.toString()
 
         const variables = {
-            projectPath,
-            project_path: projectPath,
+            projectPath: projectUrl,
+            project_path: projectUrl,
             patch, 
             branch: state.branch || project.default_branch,
             path: state.path
@@ -828,7 +828,7 @@ const actions = {
         }
 
         function unfurlServiceMutation(method) {
-            return `${rootGetters.unfurlServicesUrl}/${method}?auth_project=${projectId}`
+            return `${rootGetters.unfurlServicesUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
         }
 
         let post

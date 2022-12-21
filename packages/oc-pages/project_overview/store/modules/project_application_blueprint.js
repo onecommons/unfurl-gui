@@ -57,7 +57,7 @@ const actions = {
         let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
         exportUrl += `&url=${encodeURIComponent(blueprintUrl)}`
         exportUrl += `&branch=${branch}`
-        exportUrl += `&auth_project=${project.id}`
+        exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
         exportUrl += `&latest_commit=${latestCommit}`
 
         const {data} = await axios.get(exportUrl)

@@ -89,7 +89,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 // NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
-export async function initUnfurlEnvironment(_projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
+export async function initUnfurlEnvironment(projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
     const branch = 'main' // TODO don't hardcode main
 
     const {username, password} = credentials
@@ -99,25 +99,23 @@ export async function initUnfurlEnvironment(_projectPath, environment, credentia
         __typename: 'DeploymentEnvironment'
     }]
 
-    const projectId = (await(fetchProjectInfo(encodeURIComponent(_projectPath))))?.id
+    let projectUrl = new URL(window.location.origin + '/' + projectPath)
 
-    let projectPath = new URL(window.location.origin + '/' + _projectPath)
+    projectUrl.username = username || window.gon.current_username
+    projectUrl.password = password || await fetchUserAccessToken()
 
-    projectPath.username = username || window.gon.current_username
-    projectPath.password = password || await fetchUserAccessToken()
-
-    projectPath = projectPath.toString()
+    projectUrl = projectUrl.toString()
 
     const variables = {
         commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
-        projectPath,
-        project_path: projectPath,
+        projectPath: projectUrl,
+        project_path: projectUrl,
         patch,
         branch,
         path: 'environments.json'
     }
 
-    return await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${projectId}`, variables)
+    return await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${encodeURIComponent(projectPath)}`, variables)
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -162,8 +160,6 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
     dashboardUrl.password = credentials.password || token
 
-    const project = await fetchProjectInfo(encodeURIComponent(fullPath))
-
     const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
         ?.find(b => b.name == branch)
         ?.commit?.id
@@ -172,7 +168,7 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     // TODO use ?include_deployments=true
     let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
     environmentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
-    environmentUrl += `&auth_project=${project.id}`
+    environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
     environmentUrl += `&branch=${branch}`
     environmentUrl += `&latest_commit=${latestCommit}`
 
