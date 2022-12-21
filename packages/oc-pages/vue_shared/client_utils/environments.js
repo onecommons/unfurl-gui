@@ -92,24 +92,19 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 export async function initUnfurlEnvironment(projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
     const branch = 'main' // TODO don't hardcode main
 
-    const {username, password} = credentials
     const patch = [{
         ...environment,
         connections: {primary_provider: environment.primary_provider},
         __typename: 'DeploymentEnvironment'
     }]
 
-    let projectUrl = new URL(window.location.origin + '/' + projectPath)
-
-    projectUrl.username = username || window.gon.current_username
-    projectUrl.password = password || await fetchUserAccessToken()
-
-    projectUrl = projectUrl.toString()
+    const username = credentials.username || window.gon.current_username
+    const password = credentials.password || await fetchUserAccessToken()
 
     const variables = {
         commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
-        projectPath: projectUrl,
-        project_path: projectUrl,
+        username,
+        password,
         patch,
         branch,
         path: 'environments.json'
@@ -156,9 +151,8 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     // TODO don't hardcode main
     const branch = 'main'
 
-    const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
-    dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
-    dashboardUrl.password = credentials.password || token
+    const username = credentials.username || 'UNFURL_PROJECT_TOKEN'
+    const password = credentials.password || token
 
     const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
         ?.find(b => b.name == branch)
@@ -167,7 +161,8 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
     let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
-    environmentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
+    environmentUrl += `&username=${username}`
+    environmentUrl += `&password=${password}`
     environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
     environmentUrl += `&branch=${branch}`
     environmentUrl += `&latest_commit=${latestCommit}`

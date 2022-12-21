@@ -336,10 +336,8 @@ const actions = {
 
     // TODO move fetch logic into client_utils
     async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath, token, projectId}) {
-        const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
-        dashboardUrl.username = rootGetters.getUsername
-        dashboardUrl.password = await fetchUserAccessToken()
-
+        const username = rootGetters.getUsername
+        const password = await fetchUserAccessToken()
         const branch = 'main'
 
         const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
@@ -347,7 +345,8 @@ const actions = {
             ?.commit?.id
 
         let deploymentUrl = `${rootGetters.unfurlServicesUrl}/export?format=deployment`
-        deploymentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
+        deploymentUrl += `&username=${username}`
+        deploymentUrl += `&password=${password}`
         deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
         deploymentUrl += `&environment=${deployPath.environment}`
         deploymentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
