@@ -3,7 +3,6 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
-import {GlLoadingIcon} from '@gitlab/ui'
 
 
 const ERROR_CONTEXT = {
@@ -13,7 +12,6 @@ const ERROR_CONTEXT = {
 export default {
     name: 'MainComponent',
     // TODO move this into page level components
-    components: {GlLoadingIcon},
     async beforeCreate() {
         let errorContext
 
