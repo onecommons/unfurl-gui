@@ -66,17 +66,13 @@ export default {
         },
 
         getStatus() {
-            const status = this.username && this.password && this.project_id && this.repository_id && this.repository_tag && this.registry_url && this.remote_git_url ?
+            const status = this.username && this.password && this.project_id && this.repository_tag && this.registry_url && this.remote_git_url ?
                 'valid': 'missing'
             return status
         }
     },
     computed: {
         ...mapGetters(['cardIsValid', 'getDeploymentTemplate', 'getHomeProjectPath']),
-        repository_id() {
-            if(!(this.project_id && this.branch)) return null
-            return `${this.project_id}/${this.branch}`
-        },
         registry_url() {
             if(this.projectInfo && this.project_id) {
                 return this.projectInfo.container_registry_image_prefix
@@ -113,7 +109,6 @@ export default {
             }
         },
         branch(val) { this.updateValue('branch') },
-        repository_id(val) { this.updateValue('repository_id') },
         repository_tag(val) { this.updateValue('repository_tag') },
         registry_url(val) { this.updateValue('registry_url') },
         remote_git_url(val) { this.updateValue('remote_git_url') },
