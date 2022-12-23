@@ -124,7 +124,7 @@ export default {
             },
             {
                 key: 'last-deploy',
-                label: 'Last Deploy',
+                label: 'Last Update',
                 textValue: () => '',
             },
             {

@@ -39,11 +39,10 @@ export default class DeploymentItem {
     }
 
     get createdAt() {
-        if(this.deployment?.deployTime) {
-            return new Date(Date.parse(this.deployment.deployTime))
+        let t
+        if(t = this.deployment?.deployTime || this.deployment?.commitTime) {
+            return new Date(Date.parse(t))
         }
-        // we could check with getCommit here, but it doesn't make any sense for what will only be drafts
-        // the commit gets added to the pipelines list which wouldn't be relevant for a draft
         return null
     }
 
