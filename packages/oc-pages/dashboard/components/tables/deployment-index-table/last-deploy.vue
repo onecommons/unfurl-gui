@@ -6,8 +6,12 @@ export default {
     },
     data() {
         return {
-            createdAtText: null,
             upstreamPipelineLink: null
+        }
+    },
+    computed: {
+        createdAtText() {
+            return this.deploymentItem?.createdAtText
         }
     },
     watch: {
@@ -15,7 +19,6 @@ export default {
             immediate: true,
             handler(item) {
                 item.getUpstreamPipelineLink().then(res => this.upstreamPipelineLink = res) // this doesn't fetch when there's no upstream pipeline reference
-                item.getCreatedAtText().then(res => this.createdAtText = res)
             }
         }
     }

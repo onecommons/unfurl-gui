@@ -5,7 +5,6 @@ export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
         this.commitPromises = []
-        this.getCreatedAt(this.commitId).then(createdAt => this.createdAt = createdAt)
     }
 
     get pipeline() {
@@ -39,12 +38,13 @@ export default class DeploymentItem {
         }
     }
 
-    async getCreatedAt(n=-1) {
+    get createdAt() {
         if(this.deployment?.deployTime) {
             return new Date(Date.parse(this.deployment.deployTime))
         }
-        const date = (await this.getCommit(n))?.created_at
-        return date && new Date(date)
+        // we could check with getCommit here, but it doesn't make any sense for what will only be drafts
+        // the commit gets added to the pipelines list which wouldn't be relevant for a draft
+        return null
     }
 
     get pipelineWorkflow() {
@@ -118,12 +118,11 @@ export default class DeploymentItem {
         return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}}
     }
 
-    async getCreatedAtDate(n=-1) { const createdAt = await this.getCreatedAt(n); return createdAt?.toLocaleDateString() }
-    async getCreatedAtTime(n=-1) { const createdAt = await this.getCreatedAt(n); return createdAt?.toLocaleTimeString() }
-    async getCreatedAtText(n=-1) {
-        const createdAtDate = await this.getCreatedAtDate(n), createdAtTime = await this.getCreatedAtTime(n)
-        if(!(createdAtDate && createdAtTime)) return ''
-        return `${createdAtDate} ${createdAtTime}`
+    get createdAtDate() { return this.createdAt?.toLocaleDateString() }
+    get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
+    get createdAtText() {
+        if(!(this.createdAtDate && this.createdAtTime)) return ''
+        return `${this.createdAtDate} ${this.createdAtTime}`
     }
     get isEditable() {
         return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
