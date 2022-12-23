@@ -409,10 +409,13 @@ export default {
                 const diA = self.deploymentItem({item: a})
                 const diB = self.deploymentItem({item: b})
 
+
                 let createdAtA = diA?.createdAt || 0
                 let createdAtB = diB?.createdAt || 0
-                if(createdAtA == 0) createdAtA = createdAtB + 1
-                if(createdAtB == 0) createdAtB = createdAtA + 1
+
+                // sort as int, maintain position when missing
+                if(createdAtA == 0) createdAtA = createdAtB - -1
+                if(createdAtB == 0) createdAtB = createdAtA - -1
 
                 return createdAtB - createdAtA
 

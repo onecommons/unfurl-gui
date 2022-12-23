@@ -5,6 +5,7 @@ export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)
         this.commitPromises = []
+        this.getCreatedAt(this.commitId).then(createdAt => this.createdAt = createdAt)
     }
 
     get pipeline() {
@@ -39,6 +40,9 @@ export default class DeploymentItem {
     }
 
     async getCreatedAt(n=-1) {
+        if(this.deployment?.deployTime) {
+            return new Date(Date.parse(this.deployment.deployTime))
+        }
         const date = (await this.getCommit(n))?.created_at
         return date && new Date(date)
     }
