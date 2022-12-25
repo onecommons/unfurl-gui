@@ -562,7 +562,7 @@ export default {
                         <b>Warning</b>: Re-deploying after you've torn down a deployment is not supported
                     </p>
                 </div>
-                <div v-else>
+                <div v-else-if="deploymentItemDirect({deployment: target.deployment, environment: target.environment}, 'isDeployed')">
                     <p>
                         Some resources may have already been created for <b>{{target.deployment.title}}</b>.
                     </p>

@@ -125,7 +125,7 @@ export default class DeploymentItem {
         return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
     }
     get isDraft() {
-        return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
+        return this.deployment.__typename == 'DeploymentTemplate'
     }
     get isUndeployed() {
         return this.deployment.__typename == 'Deployment' && !this.isDeployed && (this.deployment?.status != 3)
