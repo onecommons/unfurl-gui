@@ -1,5 +1,5 @@
-import {USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 import _ from 'lodash'
 const state = () => ({
@@ -50,7 +50,8 @@ const actions = {
             const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
-            for(const frozenDeploymentDict of environment.deployments) {
+            for(const frozenDeploymentDict of rootGetters.getDeploymentDictionaries.filter(dep => dep._environment == environmentName)) {
+                console.log(frozenDeploymentDict)
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 let deployment
                 const clonedDeploymentDict = _.cloneDeep(frozenDeploymentDict)
@@ -63,7 +64,7 @@ const actions = {
                 }
 
                 dispatch('useProjectState', {root: clonedDeploymentDict, projectPath})
-                if(clonedDeploymentDict.Deployment) {
+                if(clonedDeploymentDict.Deployment && clonedDeploymentDict.Resource[Object.values(clonedDeploymentDict.Deployment)[0].primary]) {
                     deployment = {...rootGetters.getDeployment}
                     const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
                     deployment.projectPath = dt?.projectPath
@@ -104,11 +105,9 @@ const actions = {
                 totalDeployments++
                 const application = {...rootGetters.getApplicationBlueprint};
                 application.projectPath = deployment.projectPath
-                // handle an export issue
+
                 if(!application.projectIcon) {
-                    try {
-                        application.projectIcon = clonedDeploymentDict.Overview[application.name].projectIcon
-                    } catch(e) {}
+                    application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
                 }
 
                 deepFreeze(application) 

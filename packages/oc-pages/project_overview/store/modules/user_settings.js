@@ -64,6 +64,9 @@ const getters = {
   getUserSettings(state) {
     return state
   },
+  userSettings(state) {
+    return state
+  },
   isAcknowledged(state) {
     return function(acknowledgement) {
       return state.acknowledged?.hasOwnProperty(acknowledgement)

@@ -3,7 +3,6 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
-import {GlLoadingIcon} from '@gitlab/ui'
 
 
 const ERROR_CONTEXT = {
@@ -12,9 +11,11 @@ const ERROR_CONTEXT = {
 
 export default {
     name: 'MainComponent',
-    components: {GlLoadingIcon},
+    // TODO move this into page level components
     async beforeCreate() {
         let errorContext
+
+        this.$store.commit('initUserSettings', {username: this.$store.getters.getUsername})
 
         this.$store.dispatch('syncGlobalVars', this.$projectGlobal)
 
@@ -55,24 +56,19 @@ export default {
             // TODO do everything in one query?
             errorContext = 'handleResize'
             this.$store.dispatch('handleResize')
-            errorContext = 'fetchProjectInfo'
-            await this.$store.dispatch('fetchProjectInfo', { projectPath, defaultBranch: this.$projectGlobal.defaultBranch})
         } catch(err) {
             console.error('@main.vue', err)
-            return createFlash({
+            return this.$store.dispatch(
+              'createFlash',
+              {
                 message: err.message,
                 type: FLASH_TYPES.ALERT,
                 issue: ERROR_CONTEXT[errorContext] || errorContext,
                 projectPath: this.$projectGlobal?.projectPath
-            });
+              }
+            );
         } finally { 
             this.fetchingComplete = true 
-        }
-    },
-
-    computed: {
-        shouldTestQueries() {
-            return location.search == '?test-queries'
         }
     },
 
@@ -84,15 +80,15 @@ export default {
     mounted() {
         const flash = sessionStorage['oc_flash']
         if(flash) {
-            createFlash(JSON.parse(flash))
+            this.$store.dispatch('createFlash', JSON.parse(flash))
             delete sessionStorage['oc_flash']
         }
     }
 }
 </script>
 <template>
-    <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" />
-    <div v-else-if="!shouldTestQueries" id="OcAppDeployments">
+    <!-- <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" /> -->
+    <div id="OcAppDeployments">
         <router-view />
     </div>
 </template>

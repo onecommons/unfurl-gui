@@ -1,15 +1,15 @@
-import gql from 'graphql-tag'
-import graphqlClient from '../../graphql';
+import axios from '~/lib/utils/axios_utils'
 import {uniq} from 'lodash'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
+import {fetchProjectInfo, fetchBranches} from '../../../vue_shared/client_utils/projects'
 import _ from 'lodash'
 import Vue from 'vue'
 
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
-        Vue.set(state, key, value)
+        Vue.set(state, key, {...state[key], ...value})
         state.clean = false
     },
 
@@ -38,49 +38,43 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, dispatch}, params) {
+    async fetchProject({commit, dispatch, rootGetters}, params) {
         const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
         commit('loaded', false)
-        const query = gql`
-          query GetDeploymentTemplateDictionaries($fullPath: ID!) {
-              applicationBlueprintProject(fullPath: $fullPath, fetchPolicy: $fetchPolicy) @client {
-                  ResourceType
-                  ApplicationBlueprint
-                  ResourceTemplate
-                  DeploymentTemplate
-                  repositories
-              }
-          }
-        `
 
-        const result = await graphqlClient.defaultClient.query({
-            query,
-            variables: {
-                ...params,
-                fullPath: projectPath || fullPath,
-                dehydrated: true,
-                fetchPolicy,
-            },
-            fetchPolicy
+        const project = await fetchProjectInfo(encodeURIComponent(projectPath))
+        const branch = project.default_branch
 
-        })
+        const latestCommit = (await fetchBranches(project.id))
+            ?.find(b => b.name == branch)
+            ?.commit?.id
 
-
-        // normalize messy data in here
-        const {data, errors} = result
-        const root = data.applicationBlueprintProject
-        root.projectGlobal = projectGlobal
-        if(errors?.length) {
-            for(const error of errors) {
-                console.error(error)
-                throw new Error('Could not fetch project blueprint')
-            }
+        let blueprintUrl = new URL(window.gon.gitlab_url + '/' + (fullPath || projectPath) + '.git')
+        try {
+            blueprintUrl.password = await fetchUserAccessToken()
+            blueprintUrl.username = rootGetters.getUsername
+        } catch(e) {
+            console.warn("@fetchProject: couldn't fetch user credentials for blueprint export")
         }
+        blueprintUrl = blueprintUrl.toString()
+
+        let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
+        exportUrl += `&url=${encodeURIComponent(blueprintUrl)}`
+        exportUrl += `&branch=${branch}`
+        exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
+        exportUrl += `&latest_commit=${latestCommit}`
+
+        const {data} = await axios.get(exportUrl)
+
+        // TODO handle errors
+
+        const root = data
+        root.projectGlobal = projectGlobal
+
         dispatch('useProjectState', {projectPath, root})
-
-
         commit('loaded', true)
     },
+
     useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
         if(!projectPath) {console.warn('projectPath is not set')}
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
@@ -94,21 +88,35 @@ const actions = {
         }
         
         let transforms
-        transforms = {
-            // This is for templates that are hidden from unfurl, but are necessary for drafts to function
-            DefaultTemplate(defaultTemplate, root) {
-                // Do not override existing templates with defaults
-                if(!root.ResourceTemplate[defaultTemplate.name]) {
-                    root.ResourceTemplate[defaultTemplate.name] = {...defaultTemplate}
-                }
 
-                for(const key in defaultTemplate) {
-                    delete defaultTemplate[key]
-                }
-            },
+        function normalizeProperties(properties) {
+            if(!properties || typeof properties != 'object') {
+                return []
+            } else if (Array.isArray(properties)) {
+                return properties
+            } else {
+                console.warn('@normalizeProperties: Converting properties into an array', properties)
+                return Object.entries(properties)
+                    .reduce((acc, [name, value])  => {acc.push({name, value}); return acc}, [])
+            }
+        }
+
+        function normalizeDependencies(dependencies) {
+            if(!dependencies || typeof dependencies != 'object') {
+                return []
+            } else if (Array.isArray(dependencies)) {
+                return dependencies
+            } else {
+                console.warn('@normalizeDependencies: Converting dependencies into an array', dependencies)
+                return Object.entries(dependencies)
+                    .reduce((acc, [name, value])  => {acc.push({name, value}); return acc}, [])
+            }
+        }
+
+        transforms = {
             ResourceTemplate(resourceTemplate) {
-                resourceTemplate.dependencies = resourceTemplate.dependencies || []
-                resourceTemplate.properties = resourceTemplate.properties || []
+                resourceTemplate.dependencies = _.uniqBy(normalizeDependencies(resourceTemplate.dependencies), 'name')
+                resourceTemplate.properties = _.uniqBy(normalizeProperties(resourceTemplate.properties), 'name')
 
                 const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
                 resourceTemplate.properties = properties
@@ -134,7 +142,7 @@ const actions = {
                 })
                 resourceTemplate.__typename = 'ResourceTemplate'
             },
-            DeploymentTemplate(deploymentTemplate) {
+            DeploymentTemplate(deploymentTemplate, root) {
                 if(!deploymentTemplate.resourceTemplates) {
                     deploymentTemplate.resourceTemplates = []
                 }
@@ -144,14 +152,12 @@ const actions = {
                 if(projectPath && !deploymentTemplate.projectPath) {
                     deploymentTemplate.projectPath = projectPath
                 }
+
                 deploymentTemplate.__typename = 'DeploymentTemplate'
             },
             ApplicationBlueprint(applicationBlueprint) {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
-                }
-                if(!applicationBlueprint.projectIcon) {
-                    applicationBlueprint.projectIcon = root?.projectGlobal?.projectIcon
                 }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
@@ -187,7 +193,7 @@ const actions = {
                 deployment.projectPath = dt?.projectPath
             },
             DeploymentEnvironment(de, root) {
-                for(const connection of de.connections) {
+                for(const connection of Object.values(de.connections)) {
                     const providerType = connection?.type
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
 
@@ -393,6 +399,32 @@ const getters = {
             //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
             const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
+        }
+    },
+
+    getTemplatesList(state) {
+        return Object.values(state.DeploymentTemplate)
+            ?.filter(dt => dt && dt.visibility != 'hidden')
+    },
+
+    requirementsForType(_, getters) {
+        return function(_rt) {
+            const rt = getters.resolveResourceType(_rt?.name || _rt)
+            return rt.requirements
+        }
+    },
+
+    inputsSchemaForType(_, getters) {
+        return function(_rt) {
+            const rt = getters.resolveResourceType(_rt?.name || _rt)
+            return rt.inputsSchema
+        }
+    },
+
+    outputsSchemaForType(_, getters) {
+        return function(_rt) {
+            const rt = getters.resolveResourceType(_rt?.name || _rt)
+            return rt.outputsSchema
         }
     },
 }

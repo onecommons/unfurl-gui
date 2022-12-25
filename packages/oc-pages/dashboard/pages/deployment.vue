@@ -32,7 +32,8 @@ export default {
             'lookupDeployPath',
             'getDashboardItems',
             'isAcknowledged',
-            'environmentResourceTypeDict'
+            'environmentResourceTypeDict',
+            'environmentsAreReady'
         ]),
         breadcrumbItems() {
             return  [
@@ -57,6 +58,7 @@ export default {
             return this.deploymentItemDirect({environment: this.environmentName, deployment: this.deploymentName})
         },
         state() {
+            if(! this.environmentsAreReady) return null
             return Object.freeze(this.getDeploymentDictionary(this.deploymentName, this.environmentName))
         },
         tableItems() {
@@ -70,7 +72,7 @@ export default {
     },
     watch: {
         state(val) {
-            this.prepareView()
+            if(this.deployment?.name && this?.environment.name) this.prepareView()
         },
         $route() {
             if(this.$route.hash) {
@@ -91,7 +93,7 @@ export default {
         deploymentItem: {
             immediate: true,
             async handler(val) {
-                if(!val.pipeline?.upstream_project_id) return
+                if(!val?.pipeline?.upstream_project_id) return
                 const upstreamPipeline = (await fetchProjectPipelines(val.pipeline.upstream_project_id)).shift()
                 const acknowledgement = `upstream-failure-${upstreamPipeline.id}`
                 if(upstreamPipeline?.status == 'failed' && !this.isAcknowledged(acknowledgement)) {
@@ -111,7 +113,7 @@ export default {
             this.viewReady = false
 
             if(!this.state) {
-                const e = new Error(`Could not lookup deployment '${deploymentName}'.  It may contain errors or creation may have failed.`)
+                const e = new Error(`Could not lookup deployment '${this.deployment.name}'.  It may contain errors or creation may have failed.`)
                 e.flash = true
                 throw e
             }
@@ -120,6 +122,7 @@ export default {
                 await this.fetchProject({projectPath})
                 this.useProjectState({root: cloneDeep(this.state), shouldMerge: true, projectPath})
             } else {
+                console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')
                 let ResourceType =  this.state.ResourceType
                 if(!ResourceType) {
                     ResourceType = this.environmentResourceTypeDict(this.environment.name)

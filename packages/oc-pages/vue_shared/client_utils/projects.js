@@ -10,6 +10,10 @@ function generateConfig(options) {
     }
 }
 
+
+const projectInfos = {}
+const branchesData = {}
+
 export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
     const {minAccessLevel} = options
@@ -33,7 +37,13 @@ export async function fetchRepositoryBranches(projectId, options) {
 }
 
 export async function fetchProjectInfo(projectId, options) {
-    return (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+    let result
+    if(result = projectInfos[projectId]) {
+        return result
+    }
+    const data = (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+
+    return projectInfos[projectId] = projectInfos[data?.id] = data ?? null
 }
 
 export async function fetchProjectPipelines(projectId, options) {
@@ -46,6 +56,33 @@ export async function fetchProjectAccessTokens(projectId) {
 
 export async function fetchCommit(projectId, commitHash) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/commits/${commitHash}`))?.data
+}
+
+
+export async function fetchBranches(projectId) {
+    let result
+    if(result = branchesData[projectId]) {
+        return result
+    }
+    const data = (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+
+    setTimeout(() => delete branchesData[projectId], 1000)
+    return branchesData[projectId] = data ?? null
+}
+
+export async function fetchBranch(projectId, branch) {
+    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
+}
+
+export async function createBranch(projectId, branch) {
+    const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref: 'main'}, {validateStatus() {return true}})
+
+    if(response.status >= 400) {
+        console.error(response.data)
+        throw new Error(`Couldn't create branch '${branch}'`)
+    }
+
+    return response.data
 }
 
 export async function generateProjectAccessToken(projectId, options) {
@@ -87,4 +124,25 @@ export async function fetchContainerRepositories(fullPath) {
 
     const nodes = response.data?.project?.containerRepositories?.nodes || []
     return nodes
+}
+
+const getUserPermissions = gql`
+        query userPermissions($projectPath: ID!) {
+            project(fullPath: $projectPath) {
+                userPermissions {
+                    pushCode
+                    __typename
+                }
+            }
+        }`
+
+
+export async function fetchProjectPermissions(projectPath) {
+    const result = await graphqlClient.defaultClient.query({
+        query: getUserPermissions,
+        variables: {projectPath},
+        errorPolicy: 'all'
+    })
+
+    return result?.data?.project?.userPermissions?.pushCode ?? false
 }

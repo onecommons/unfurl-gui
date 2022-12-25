@@ -1,10 +1,9 @@
 import axios from '~/lib/utils/axios_utils'
-import gql from 'graphql-tag'
-import {cloneDeep} from 'lodash'
-import graphqlClient from 'oc_pages/project_overview/graphql';
-import {UpdateDeploymentObject} from 'oc_pages/project_overview/graphql/mutations/update_deployment_object.graphql'
+import {unfurl_cloud_vars_url} from './unfurl-invocations'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
+import {fetchProjectInfo, fetchBranches} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserAccessToken} from './user'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -88,20 +87,35 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
     // #!endif
 }
 
-export async function initUnfurlEnvironment(projectPath, environment) {
+// NOTE try to keep this in sync with commitPreparedMutations
+// NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
+export async function initUnfurlEnvironment(projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
+    const branch = 'main' // TODO don't hardcode main
+
+    const {username, password} = credentials
+    const patch = [{
+        ...environment,
+        connections: {primary_provider: environment.primary_provider},
+        __typename: 'DeploymentEnvironment'
+    }]
+
+    let projectUrl = new URL(window.location.origin + '/' + projectPath)
+
+    projectUrl.username = username || window.gon.current_username
+    projectUrl.password = password || await fetchUserAccessToken()
+
+    projectUrl = projectUrl.toString()
+
     const variables = {
-        patch: [{
-            ...environment,
-            connections: {primary_provider: environment.primary_provider},
-            __typename: 'DeploymentEnvironment'
-        }],
-        fullPath: projectPath,
+        commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
+        projectPath: projectUrl,
+        project_path: projectUrl,
+        patch,
+        branch,
         path: 'environments.json'
     }
-    return await graphqlClient.clients.defaultClient.mutate({
-        mutation: UpdateDeploymentObject,
-        variables
-    })
+
+    return await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${encodeURIComponent(projectPath)}`, variables)
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -138,70 +152,48 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, fetchPolicy}) {
-    const query = gql`
-        query getProjectEnvironments($fullPath: ID!) {
-            project(fullPath: $fullPath) {
-                environments {
-                    nodes {
-                        deploymentEnvironment @client {
-                            connections
-                            instances
-                            primary_provider
-                        }
-                        ResourceType @client
-                        deployments
-                        clientPayload
-                        name
-                        state
-                    }
-                }
-            }
-        }`
+export async function fetchEnvironments({fullPath, token, projectId, credentials, unfurlServicesUrl}) {
+    // TODO don't hardcode main
+    const branch = 'main'
 
-    let environments
-    let deployments = []
-    let deploymentPaths = []
-    let resourceTypeDictionary
+    const dashboardUrl = new URL(window.location.origin + '/' + fullPath + '.git')
+    dashboardUrl.username = credentials.username || 'UNFURL_PROJECT_TOKEN'
+    dashboardUrl.password = credentials.password || token
 
-    const {data, errors} = await graphqlClient.clients.defaultClient.query({
-        query,
-        fetchPolicy,
-        errorPolicy: 'all',
-        variables: {fullPath}
-    })
-    if(errors) {throw new Error(errors)}
+    const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
+        ?.find(b => b.name == branch)
+        ?.commit?.id
 
-    let defaults
-    // cloning in the resolver can't be relied on unless we use a different fetchPolicy
-    // there's probably a better way of getting vuex to stop watching environments when we call this action
-    // alternatively we could check if it's cached
-    environments = cloneDeep(data.project.environments).nodes.map(environment => {
-        Object.assign(environment, environment.deploymentEnvironment)
-        // alternative to adding a graphql type?
-        environment.external = environment.clientPayload.DeploymentEnvironment.external || {}
-        if(environment.clientPayload.defaults) defaults = environment.clientPayload.defaults
-        deploymentPaths = deploymentPaths.concat(Object.values(environment.clientPayload.DeploymentPath || {}))
-        //commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
-        //commit('setDeploymentPaths', deploymentPaths)
-        //delete environment.ResourceType
-        for(const deployment of environment.deployments) {
-            if(!deployment._environment) deployment._environment = environment.name
-            for(const dep of Object.values(deployment.Deployment || {})) {
-                dep.__typename = 'Deployment'
-            }
-            deployments.push(deployment)
-        }
-        delete environment.deploymentEnvironment
-        delete environment.clientPayload
-        environment._dashboard = fullPath
-        environment.__typename = 'DeploymentEnvironment' // just documenting this to avoid confusion with __typename Environment
+    // TODO get the branch passed into fetch environments
+    // TODO use ?include_deployments=true
+    let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
+    environmentUrl += `&url=${encodeURIComponent(dashboardUrl.toString())}`
+    environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
+    environmentUrl += `&branch=${branch}`
+    environmentUrl += `&latest_commit=${latestCommit}`
 
-        connectionsToArray(environment)
+    if(token) {
+        const cloudVarsUrl = unfurl_cloud_vars_url({
+            protocol: window.location.protocol,
+            server: window.location.hostname + ':' + window.location.port,
+            projectId: projectId || encodeURIComponent(fullPath),
+            token
+        })
 
-        return environment
-    })
+        environmentUrl += '&cloud_vars_url=' + encodeURIComponent(cloudVarsUrl)
+    }
 
-    return {environments, deployments, deploymentPaths, fullPath, defaults}
+    const {data} = await axios.get(environmentUrl)
 
+    const environments = Object.values(data.DeploymentEnvironment)
+        .filter(env => env.name != 'defaults')
+        .map(env => {env._dashboard = fullPath; return env})
+
+    for(const env of environments) { env._dashboard = fullPath }
+
+    const deploymentPaths = Object.values(data.DeploymentPath)
+
+    const  defaults = data.DeploymentEnvironment.defaults
+
+    return {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
 }

@@ -117,6 +117,7 @@ const mutations = {
 const actions = {
     // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
     populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
+        commit('resetTemplateResourceState')
         const isDeploymentTemplate = deployment.__typename == 'DeploymentTemplate'
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(
             isDeploymentTemplate? deployment.name: deployment.deploymentTemplate
@@ -161,9 +162,11 @@ const actions = {
 
     // used by deploy and blueprint editing
     populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+        commit('resetTemplateResourceState')
         // TODO this doesn't make any sense to people reading this
         commit('setContext', false)
         if(!templateSlug) return false;
+
 
         let _syncState = syncState
         let blueprint = rootGetters.getApplicationBlueprint;
@@ -180,7 +183,6 @@ const actions = {
                 let dt
                 try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
                 if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
-
                 dispatch('useProjectState', {root: _.cloneDeep({...dict, ResourceType: undefined}), shouldMerge: true, projectPath})
                 _syncState = false // override sync state if we just loaded this
                 /*
@@ -222,7 +224,9 @@ const actions = {
             primary.title = renamePrimary;
         }
 
-         
+        if(!rootGetters.userCanEdit) {
+            commit('setCommitBranch', deploymentTemplate.name)
+        } 
 
         if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
@@ -264,11 +268,6 @@ const actions = {
                     return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
                 });
             }
-            /*
-            for(const property of resourceTemplate.properties) {
-                commit('setInputValidStatus', {card: resourceTemplate, input: property, status: !!(property.value ?? false)});
-            }
-            */
 
             for(let dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
@@ -280,7 +279,6 @@ const actions = {
 
                 completionStatus = valid? 'created': null;
                 if(!completionStatus && environmentName) {
-                    // TODO wrap this in a getter
                     let connected = rootGetters.lookupConnection(environmentName, dependency.match)
                     if(connected) {
                         valid = true
@@ -311,6 +309,7 @@ const actions = {
 
     // used by /dashboard/environment/<environment-name> TODO merge these actions
     populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
+        commit('resetTemplateResourceState')
         for(const resource of resourceTemplates) {
             if(resource.name == 'primary_provider') continue
             commit('createTemplateResource', {...(rootGetters.resolveResourceTemplate(resource.name) || resource)})
@@ -430,7 +429,6 @@ const actions = {
     },
 
     async connectNodeResource({getters, state, rootGetters, commit}, {dependentName, dependentRequirement, externalResource, resource}) {
-
         const fieldsToReplace = {completionStatus: 'connected', valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const deploymentTemplateName = state.lastFetchedFrom.templateSlug
@@ -438,7 +436,7 @@ const actions = {
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
             const name = `__${externalResource}`
-            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName}
+            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName, __typename: 'ResourceTemplate'}
             commit(
                 'pushPreparedMutation',
                 () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
@@ -866,14 +864,17 @@ const getters = {
 
     lookupResourceTemplate(state, _a, _b, rootGetters) {
         return function(resourceTemplate) {
-            let result, sourceDt
+            let sourceDt, templateFromSource
             if(sourceDt = state.lastFetchedFrom?.sourceDeploymentTemplate) {
-                result = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
+                templateFromSource = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
             }
-            if(!result){
-                result = rootGetters.resolveResourceTemplate(resourceTemplate)
+            const templateFromStore = rootGetters.resolveResourceTemplate(resourceTemplate)
+
+            if(templateFromStore && !templateFromStore.directives?.includes('default')) {
+                return templateFromStore
             }
-            return result
+
+            return templateFromSource
         }
     },
   
@@ -917,17 +918,17 @@ const getters = {
 
     editingDeployed(state, _a, _b, rootGetters) {
         try {
-            rootGetters.resolveDeployment(state.deploymentTemplate.name)
+            return rootGetters.resolveDeployment(state.deploymentTemplate.name).__typename == 'Deployment' && state.context === false
         }
         catch(e) {
             return false
         }
-        return state.context === false
     },
 
     editingTorndown(_a, getters, _b, rootGetters) {
+        // TODO use deployment status
         return getters.editingDeployed && rootGetters.lookupDeployPath(
-            rootGetters.getDeployment.name,
+            rootGetters.getDeployment?.name,
             getters.getCurrentEnvironmentName
         )?.pipeline?.variables?.WORKFLOW == 'undeploy'
     },
@@ -950,7 +951,9 @@ const getters = {
         }
 
         return 'Not all required components have been created or connected'
-    }
+    },
+
+    lastFetchedFrom(state) { return state.lastFetchedFrom }
 };
 
 export default {

@@ -1,4 +1,4 @@
-function unfurl_cloud_vars_url({
+export function unfurl_cloud_vars_url({
   protocol, token, server, projectId
 }) {
   return `${protocol}//${server}/api/v4/projects/${projectId}/variables?per_page=1000&private_token=\${UNFURL_PROJECT_TOKEN:${token}}`

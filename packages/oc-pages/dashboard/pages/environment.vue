@@ -188,14 +188,12 @@ export default {
         ...mapMutations([
             'setEnvironmentScope',
             'setAvailableResourceTypes',
-            'setUpdateObjectPath',
-            'setUpdateObjectProjectPath',
             'useBaseState',
             'pushPreparedMutation',
             'setRouterHook',
             'clearPreparedMutations',
             'resetTemplateResourceState',
-            'setUpdateObjectPath',
+            'setUpdateType',
             'setUpdateObjectProjectPath'
         ]),
         onExternalAdded({selection, title}) {
@@ -234,7 +232,7 @@ export default {
         },
         onSaveTemplate(reload=true) {
             const environment = this.environment
-            this.setUpdateObjectPath('environments.json')
+            this.setUpdateType('environment')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             this.setEnvironmentScope(environment.name)
 
@@ -258,16 +256,17 @@ export default {
         async onDelete() {
             const environment = this.environment
             
-            await deleteEnvironment(window.gon.projectPath, window.gon.projectId, environment.name, window.gon.environmentId)
-
             this.setUpdateObjectProjectPath(window.gon.projectPath)
-            this.setUpdateObjectPath('environments.json')
+            this.setUpdateType('delete-environment')
 
             this.pushPreparedMutation(function(accumulator) {
                 return [ {typename: 'DeploymentEnvironment', target: environment.name, patch: null} ]
             })
 
             await this.commitPreparedMutations()
+
+            await deleteEnvironment(window.gon.projectPath, window.gon.projectId, environment.name, window.gon.environmentId)
+
             sessionStorage['oc_flash'] = JSON.stringify({type: FLASH_TYPES.SUCCESS, message: `${environment.name} was deleted successfully.`})
             return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         },
@@ -292,7 +291,6 @@ export default {
             this.setRouterHook()
 
             this.clearPreparedMutations()
-            this.resetTemplateResourceState()
 
             const environmentName = this.environmentName
             const environment = this.lookupEnvironment(environmentName)
@@ -301,13 +299,13 @@ export default {
                 return
             }
             this.environment = environment
+
+            this.onSaveTemplate(false)
+            this.populateTemplateResources2({resourceTemplates: [...Object.values(environment.instances), ...Object.values(environment.connections)], environmentName, context: 'environment'})
+
             this.setAvailableResourceTypes(
                 this.environmentLookupDiscoverable(environment)
             )
-
-
-            this.onSaveTemplate(false)
-            this.populateTemplateResources2({resourceTemplates: [...environment.instances, ...environment.connections], environmentName, context: 'environment'})
         },
 
         onHide(e) {

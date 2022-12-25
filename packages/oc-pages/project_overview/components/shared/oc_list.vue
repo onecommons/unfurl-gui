@@ -320,11 +320,11 @@ export default {
 <template>
     <div>
         <component :is="customInputComponent" :readonly="_readonly" v-if="customInputComponent" :card="_card"/>
-        <gl-tabs v-if="shouldRenderTabs" class="">
+        <gl-tabs v-if="shouldRenderTabs" v-model="currentTab" class="">
             <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
-                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name + '-template'"/>
+                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name"/>
                     </div>
                 </div>
             </oc-tab>
@@ -352,7 +352,7 @@ export default {
             <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
-                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name + '-template'"/>
+                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name"/>
                     </div>
                 </div>
             </oc-tab>

@@ -81,7 +81,6 @@ export default {
     ...mapGetters([
       'pipelinesPath',
       'resolveResourceTypeFromAny',
-      'getProjectInfo',
       'getRequirementSelected',
       'getTemplate',
       'getPrimaryCard',
@@ -115,7 +114,7 @@ export default {
 
         // params.slug is the blueprint unfortunately
         const deploymentSlug = this.$route.params.slug //slugify(this.$route.query.fn)
-        return `environments/${environment}/${this.getProjectInfo.fullPath}/${deploymentSlug}`
+        return `environments/${environment}/${this.project.globalVars.projectPath}/${deploymentSlug}`
     },
     saveStatus() {
       switch(this.$route.name) {
@@ -318,7 +317,8 @@ export default {
       'setUpdateObjectProjectPath',
       'setEnvironmentScope',
       'pushPreparedMutation',
-      'setCommitMessage'
+      'setCommitMessage',
+      'setUpdateType'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -375,7 +375,7 @@ export default {
         const renameDeploymentTemplate = this.$route.query.fn;
         const environmentName = this.$route.params.environment
         if(this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
-          this.setUpdateObjectPath(`${this.deploymentDir}/deployment.json`);
+          this.setUpdateObjectPath(this.deploymentDir);
           this.setUpdateObjectProjectPath(this.getHomeProjectPath);
           this.setEnvironmentScope(environmentName)
         }
@@ -407,8 +407,12 @@ export default {
         if(type == 'draft'){
           const name = this.$route.query.fn;
           this.setCommitMessage(`Save draft of ${name}`)
+          this.setUpdateType('deployment')
           await this.commitPreparedMutations();
-          await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
+
+          // will be handled by unfurl server
+          // await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
+
           sessionStorage['oc_flash'] = JSON.stringify({
             message: this.editingDeployed? __('Deployment saved!'): __('Draft saved!'),
             type: FLASH_TYPES.SUCCESS,
@@ -416,9 +420,9 @@ export default {
             linkText: 'Return to overview',
             linkTo: `/${this.project.globalVars.projectPath}#${this.$route.params.slug}` // TODO 
           });
+
           const query = {...this.$route.query}
           delete query.ts
-
 
           if(this.editingDeployed) {
               this.returnToReferrer()
@@ -450,11 +454,12 @@ export default {
 
         this.startedTriggeringDeployment = true;
         const name = this.$route.query.fn;
+        this.setUpdateType('deployment')
         this.setCommitMessage(`Trigger deployment of ${name}`)
         await this.triggerSave();
         const result = await this.deployInto({
           environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
+          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
           deployPath: this.deploymentDir,
           deploymentName: this.$route.params.slug,
           deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
@@ -498,11 +503,12 @@ export default {
 
         this.startedTriggeringDeployment = true;
         const name = this.$route.query.fn;
+        this.setUpdateType('deployment')
         this.setCommitMessage(`Trigger deployment of ${name}`)
         await this.triggerSave();
         const result = await this.deployInto({
           environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.getProjectInfo.fullPath}.git`,
+          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
           deployPath: this.deploymentDir,
           deploymentName: this.$route.params.slug,
           deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source

@@ -9,7 +9,9 @@ export default {
     components: {StatusIcon},
     computed: {
         status() {
-            return this.scope.item.environment?.state == 'available'? 1: 3
+            // return this.scope.item.environment?.state == 'available'? 1: 3
+            // TODO determine based on the status of whichever job ran with environment creation
+            return 1
         }
     }
 }
