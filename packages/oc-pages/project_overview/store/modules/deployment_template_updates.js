@@ -790,15 +790,9 @@ const actions = {
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
         const projectId = project.id
 
-        let projectUrl = new URL(window.location.origin + '/' + projectPath)
-        projectUrl.username = username
-        projectUrl.password = password
-
-        projectUrl = projectUrl.toString()
-
         const variables = {
-            projectPath: projectUrl,
-            project_path: projectUrl,
+            username,
+            password,
             patch, 
             branch: state.branch || project.default_branch,
             path: state.path

@@ -49,17 +49,12 @@ const actions = {
             ?.find(b => b.name == branch)
             ?.commit?.id
 
-        let blueprintUrl = new URL(window.gon.gitlab_url + '/' + (fullPath || projectPath) + '.git')
-        try {
-            blueprintUrl.password = await fetchUserAccessToken()
-            blueprintUrl.username = rootGetters.getUsername
-        } catch(e) {
-            console.warn("@fetchProject: couldn't fetch user credentials for blueprint export")
-        }
-        blueprintUrl = blueprintUrl.toString()
+        const username = rootGetters.getUsername
+        const password = await fetchUserAccessToken()
 
         let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
-        exportUrl += `&url=${encodeURIComponent(blueprintUrl)}`
+        exportUrl += `&username=${username}`
+        exportUrl += `&password=${password}`
         exportUrl += `&branch=${branch}`
         exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
         exportUrl += `&latest_commit=${latestCommit}`
