@@ -88,21 +88,36 @@ export default {
             return {name, size, 'class': className, title}
         },
 
+        actionLabel() {
+            const requirement = this.dependency
+            if(requirement.match?.startsWith('__')) {
+                return 'Disconnect'
+            } else if(requirement.match) {
+                return 'Remove'
+            } else {
+                return this.DEFAULT_ACTION_LABEL
+            }
+        },
+
+        matchIsValid() {
+            return this.requirementMatchIsValid(this.dependency)
+        },
+
+        completionStatus() {
+            const requirement = this.dependency
+            if(requirement.match?.startsWith('__')) {
+                return 'connected'
+            } else if(requirement.match) {
+                return 'created'
+            } else {
+                return null
+            }
+        },
     },
     methods: {
         ...mapActions([
             'setRequirementSelected',
         ]),
-
-        //TODO 
-        getCurrentActionLabel(requirement) {
-            switch(requirement.completionStatus) {
-              case 'connected': return __('Disconnect')
-              case 'created': return __('Remove')
-              default: return this.DEFAULT_ACTION_LABEL
-            }
-        },
-
 
         findElementToScroll({requirement}) {
             bus.$emit('moveToElement', {elId: requirement.match});
@@ -149,7 +164,7 @@ export default {
                     v-gl-tooltip.hover
                     v-bind="statusIconProps"
                 />
-                <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
+                <span v-if="matchIsValid" class=" oc_resource-details">
 
                     <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
                         <span v-if="displayStatus">
@@ -171,7 +186,7 @@ export default {
                 v-bind="statusIconProps"
             />
 
-            <span v-if="requirementMatchIsValid(dependency)" class=" oc_resource-details">
+            <span v-if="matchIsValid" class=" oc_resource-details">
 
                 <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
                     <span v-if="displayStatus">
@@ -184,11 +199,11 @@ export default {
         </div>
 
         <div
-            v-if="!readonly && requirementMatchIsValid(dependency)"
+            v-if="!readonly && matchIsValid"
             class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
             <div style="height: 32px;">
                 <gl-button
-                    v-if="getCurrentActionLabel(dependency) !== 'Disconnect'"
+                    v-if="actionLabel !== 'Disconnect'"
                     title="edit"
                     :aria-label="__(`edit`)"
                     type="button"
@@ -196,15 +211,15 @@ export default {
                     @click.prevent="findElementToScroll({requirement: dependency})"
                 >{{ __('Edit') }}</gl-button>
                 <gl-button
-                    v-if="getCurrentActionLabel(dependency) && !card._deployed"
-                    :title="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
-                    :aria-label="__(dependency.completionStatus || DEFAULT_ACTION_LABEL)"
+                    v-if="actionLabel && !card._deployed"
+                    :title="__(completionStatus || DEFAULT_ACTION_LABEL)"
+                    :aria-label="__(completionStatus || DEFAULT_ACTION_LABEL)"
                     type="button"
                     :data-testid="`delete-or-disconnect-${card.name}.${dependency.name}`"
                     class="gl-ml-3 oc_requirements_actions"
-                    @click.prevent="openDeleteModal(getCurrentActionLabel(dependency))">
+                    @click.prevent="openDeleteModal(actionLabel)">
                     {{
-                        getCurrentActionLabel(dependency) 
+                        actionLabel
                     }}</gl-button>
             </div>
         </div>

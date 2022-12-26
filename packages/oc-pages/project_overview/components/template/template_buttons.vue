@@ -64,7 +64,7 @@ export default {
         },
         deleteTitle() {
             if(this.target == 'Environment' && this.environmentHasActiveDeployments(this.getCurrentEnvironment)) { // TODO refactor this
-                return __(`Environment cannot be deleted - you have active deployments.`)
+                return __(`Please delete any deployments associated with this environment before continuing.`)
             }
             return __(`Delete ${this.target}`)
         },

@@ -106,3 +106,13 @@ export async function generateAccessToken(tokenName, options) {
 export async function fetchUser() {
     return (await axios.get('/api/v4/user'))?.data
 }
+
+let userAccessToken
+export async function fetchUserAccessToken() {
+    if(!userAccessToken) {
+        const {token} = (await axios.get('/api/v4/unfurl_access_token'))?.data
+        userAccessToken = token
+    }
+    return userAccessToken
+}
+

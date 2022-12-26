@@ -56,16 +56,16 @@ export default {
 
     computed: {
         ...mapGetters([
-            'getProjectInfo'
+            'getApplicationBlueprint'
         ]),
         ...mapState([
             'project'
         ]),
         visitProject() {
-            return `/${this.$projectGlobal.projectPath}/-/tree/main`
+            return this.$projectGlobal.treePath
         },
         livePreview() {
-            return this.$projectGlobal.livePreview || this.getProjectInfo.livePreview
+            return this.$projectGlobal.livePreview || this.getApplicationBlueprint.livePreview
         }
     },
 

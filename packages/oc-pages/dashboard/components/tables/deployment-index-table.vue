@@ -124,7 +124,7 @@ export default {
             },
             {
                 key: 'last-deploy',
-                label: 'Last Deploy',
+                label: 'Last Update',
                 textValue: () => '',
             },
             {
@@ -409,10 +409,13 @@ export default {
                 const diA = self.deploymentItem({item: a})
                 const diB = self.deploymentItem({item: b})
 
+
                 let createdAtA = diA?.createdAt || 0
                 let createdAtB = diB?.createdAt || 0
-                if(createdAtA == 0) createdAtA = createdAtB + 1
-                if(createdAtB == 0) createdAtB = createdAtA + 1
+
+                // sort as int, maintain position when missing
+                if(createdAtA == 0) createdAtA = createdAtB - -1
+                if(createdAtB == 0) createdAtB = createdAtA - -1
 
                 return createdAtB - createdAtA
 
@@ -562,7 +565,7 @@ export default {
                         <b>Warning</b>: Re-deploying after you've torn down a deployment is not supported
                     </p>
                 </div>
-                <div v-else>
+                <div v-else-if="deploymentItemDirect({deployment: target.deployment, environment: target.environment}, 'isDeployed')">
                     <p>
                         Some resources may have already been created for <b>{{target.deployment.title}}</b>.
                     </p>

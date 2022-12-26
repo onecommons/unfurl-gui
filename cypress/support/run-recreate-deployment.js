@@ -211,7 +211,7 @@ Cypress.Commands.add('recreateDeployment', options => {
                   .prev()
                   .click()
 
-                cy.get(`[data-testid^="resource-selection-"]`).last().click()
+                cy.get(`[data-testid^="resource-selection-"]`).first().click()
 
                 cy.contains('button', 'Next').click()
               } else {

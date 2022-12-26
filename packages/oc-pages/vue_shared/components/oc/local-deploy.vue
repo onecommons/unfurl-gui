@@ -78,7 +78,6 @@ export default {
             const environmentName = this.environment.name
             const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
             const blueprint = this.deployment.blueprint
-            // XXX if (blueprint token) add ${blueprint_deploy_bot}:${blueprint token}@ to blueprintUrl
             const blueprintUrl = this.blueprintUrl
             return { protocol, username, token, server, projectName, projectPath, projectId, environmentName, deploymentName, deployPath, blueprint, blueprintUrl }
         },
@@ -163,13 +162,9 @@ export default {
                 <code-clipboard class="mt-1">{{localCloneInvocation}}</code-clipboard>
                 (Or if you have, run "git pull" to get latest.)
             </p>
-            <p v-if="!deploymentExists"> 
-                Create the deployment from the blueprint.
-                <code-clipboard v-loading="gettingBlueprintCreds" class="mt-1">{{localCreateDeploymentInvocation}}</code-clipboard>
-            </p>
             <p>
                 Deploy the blueprint:
-                <code-clipboard class="mt-1">{{localDeployInvocation}}</code-clipboard>
+                <code-clipboard class="mt-1">cd dashboard; {{localDeployInvocation}}</code-clipboard>
             </p>
             <p>Learn more at <a href="https://github.com/onecommons/unfurl" target="_blank">https://github.com/onecommons/unfurl</a>.</p>
         </div>

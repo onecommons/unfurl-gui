@@ -38,9 +38,12 @@ export default class DeploymentItem {
         }
     }
 
-    async getCreatedAt(n=-1) {
-        const date = (await this.getCommit(n))?.created_at
-        return date && new Date(date)
+    get createdAt() {
+        let t
+        if(t = this.deployment?.deployTime || this.deployment?.commitTime) {
+            return new Date(Date.parse(t))
+        }
+        return null
     }
 
     get pipelineWorkflow() {
@@ -114,18 +117,17 @@ export default class DeploymentItem {
         return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}}
     }
 
-    async getCreatedAtDate(n=-1) { const createdAt = await this.getCreatedAt(n); return createdAt?.toLocaleDateString() }
-    async getCreatedAtTime(n=-1) { const createdAt = await this.getCreatedAt(n); return createdAt?.toLocaleTimeString() }
-    async getCreatedAtText(n=-1) {
-        const createdAtDate = await this.getCreatedAtDate(n), createdAtTime = await this.getCreatedAtTime(n)
-        if(!(createdAtDate && createdAtTime)) return ''
-        return `${createdAtDate} ${createdAtTime}`
+    get createdAtDate() { return this.createdAt?.toLocaleDateString() }
+    get createdAtTime() { return this.createdAt?.toLocaleTimeString() }
+    get createdAtText() {
+        if(!(this.createdAtDate && this.createdAtTime)) return ''
+        return `${this.createdAtDate} ${this.createdAtTime}`
     }
     get isEditable() {
         return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
     }
     get isDraft() {
-        return this.deployment.__typename == 'DeploymentTemplate' && this.pipeline === undefined
+        return this.deployment.__typename == 'DeploymentTemplate'
     }
     get isUndeployed() {
         return this.deployment.__typename == 'Deployment' && !this.isDeployed && (this.deployment?.status != 3)

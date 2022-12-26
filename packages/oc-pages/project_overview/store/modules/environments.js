@@ -9,6 +9,7 @@ import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_ut
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
@@ -167,7 +168,7 @@ const actions = {
         if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
 
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         await dispatch('runEnvironmentSaveHooks') // putting this before pipeline so the upstream vars can be set
 
@@ -262,7 +263,7 @@ const actions = {
 
         if(pipeline) {pipelines.push(pipeline)}
 
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
         const commitMessage = parameters.workflow == 'undeploy'?
             `Undeploy ${parameters.deploymentName} from ${parameters.environmentName}`:
@@ -298,7 +299,7 @@ const actions = {
     async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
         commit('useBaseState', {}, {root: true})
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'delete-deployment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit('pushPreparedMutation', () => {
             return [{
@@ -309,33 +310,10 @@ const actions = {
         })
         await dispatch('commitPreparedMutations', {}, {root: true})
 
-        const draftFiles = ['deployment.json'].map(file => `${deployPath.name}/${file}`) // I don't think it's important to delete this on it's own
-        const deploymentFiles = draftFiles.concat(
-            ['ensemble.json', 'ensemble.yaml', 'jobs.tsv'].map(file => `${deployPath.name}/${file}`)
-        )
-
-        try {
-            const response = await deleteFiles(
-                encodeURIComponent(rootGetters.getHomeProjectPath),
-                deploymentFiles,
-                {
-                    commitMessage: `Delete deployment records for ${deploymentName}`,
-                    accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
-                }
-            )
-            return
-        } catch(e) {
-            // expected error
-            if(e.message != "A file with this name doesn't exist") {
-                console.error(e)
-                throw(e)
-            }
-        }
-
-        const response = await deleteFiles(
+        // TODO remove after switch to delete_ensemble
+        await deleteFiles(
             encodeURIComponent(rootGetters.getHomeProjectPath),
-            // try a second time with just draft files
-            draftFiles,
+            [deployPath.name + '/ensemble.yaml'],
             {
                 commitMessage: `Delete deployment records for ${deploymentName}`,
                 accessToken: getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
@@ -352,7 +330,7 @@ const actions = {
         commit('patchEnvironment', {envName: _envName, patch})
         const _env = getters.lookupEnvironment(_envName)
 
-        commit('setUpdateObjectPath', `environments.json`, {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
         commit(
             'pushPreparedMutation',
@@ -369,18 +347,32 @@ const actions = {
     },
 
 
-    async fetchProjectEnvironments({commit, dispatch}, {fullPath, fetchPolicy}) {
-        let environments, deployments = []
+    async fetchProjectEnvironments({commit, getters, dispatch, rootGetters}, {fullPath, fetchPolicy}) {
+        let environments = []
         try {
-            const result = await fetchEnvironments({fullPath, fetchPolicy})
+            const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+            const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
+            const credentials = {username: rootGetters.getUsername, password: await fetchUserAccessToken()}
+            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials, unfurlServicesUrl: rootGetters.unfurlServicesUrl})
             environments = result.environments
-            deployments = result.deployments
+
+            // TODO figure out if we might need ResourceType dictionary per environment
             for(const environment of environments) {
-                commit('setResourceTypeDictionary', {environment, dict: environment.ResourceType})
-                delete environment.ResourceType
+                commit('setResourceTypeDictionary', {environment, dict: result.ResourceType})
             }
+
             commit('setDefaults', result.defaults)
             commit('setDeploymentPaths', result.deploymentPaths)
+
+            const deploymentFetches = []
+            for(const deployPath of result.deploymentPaths) {
+                deploymentFetches.push(
+                    dispatch('fetchDeployment', {deployPath, fullPath, token, projectId, credentials})
+                )
+            }
+
+            await Promise.all(deploymentFetches)
+            
         }
         catch(e){
             console.error('Could not fetch project environments', e)
@@ -390,7 +382,6 @@ const actions = {
             environments = []
 
         }
-        commit('setDeployments', deployments, {root: true})
         commit('setProjectEnvironments', environments)
     },
     async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
@@ -432,7 +423,6 @@ const actions = {
         if(Object.keys(patchObj).length > 0) {
             try {
                 await patchEnv(patchObj, '*', fullPath)
-                await dispatch('fetchEnvironmentVariables', {fullPath}) // mostly only useful for testing
             } catch(e) {
                 console.warn(`Failed to set vault password for ${fullPath}`, e.message)
             }
@@ -453,15 +443,22 @@ const actions = {
             await patchEnv({UNFURL_PROJECT_TOKEN: {value: UNFURL_PROJECT_TOKEN, masked: true}}, '*', fullPath)
         }
     },
+
+    // TODO try to parallelize better
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
-        await Promise.all([
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy}),
-            dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
-        ])
-        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}).then(() => commit('setReady', true))
-        dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+        await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
+        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath})
+        await dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+        
+
+        // TODO replace this with new patchEnv impl
+        await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
+
+        await dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy})
+
+        commit('setReady', true)
     },
     async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
         const key = toDepTokenEnvKey(projectId)
@@ -493,7 +490,7 @@ const actions = {
         }
         await shareEnvironmentVariables(state.projectPath, provider.environment.name, cloneTarget, variables, '')
 
-        commit('setUpdateObjectPath', 'environments.json', {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
         commit('pushPreparedMutation', () => {
             return [{
@@ -517,9 +514,10 @@ const actions = {
     },
 
     async loadAdditionalDashboards({rootGetters, commit}) {
-        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=40`))?.data
+        // include developer access for deploy requests, etc.
+        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=30`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace}))
+            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id, unfurlServicesUrl: rootGetters.unfurlServicesUrl}))
 
         commit('setAdditionalDashboards', await Promise.all(dashboards))
     }
@@ -543,7 +541,7 @@ const getters = {
         //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
         if(!environment) return []
         let result = []
-        if(environment.instances) result = environment.instances.filter(conn => {
+        if(environment.instances) result = Object.values(environment.instances).filter(conn => {
             const cextends = rootGetters.resolveResourceType(conn.type)?.extends
             return cextends && cextends.includes(constraintType)
         })
@@ -605,9 +603,11 @@ const getters = {
 
     lookupConnection: (_, getters) => function(environmentName, connectedResource) {
         const environment = getters.lookupEnvironment(environmentName)
-        //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
-        if(! Array.isArray(environment?.instances) ) return null
-        return cloneDeep(environment.instances.find(conn => conn.name == connectedResource))
+        try {
+            return cloneDeep(environment.instances[connectedResource])
+        } catch(e) {
+            return null
+        }
     },
     environmentResourceTypeDict(state) {
         return function(environment) {
@@ -649,6 +649,11 @@ const getters = {
             return result
         }
     },
+    hasDeployPathKey(state) {
+        return function(key) {
+            return state.deploymentPaths.some(dp => dp.name == key)
+        }
+    },
     lookupVariableByEnvironment(state) {
         return function(variable, environmentName) {
             const name = environmentName?.name || environmentName
@@ -675,12 +680,12 @@ const getters = {
             return type.extends.includes('unfurl.relationships.ConnectsTo.CloudAccount') || type.extends.includes('unfurl.relationships.ConnectsTo.K8sCluster')
         }
         for(const environment of getters.getEnvironments) {
-            for(const connection of environment.connections) {
+            for(const connection of Object.values(environment.connections)) {
                 if(isValidProvider(environment, connection)) {
                     result.push({environment, template: connection, source: 'connection'})
                 }
             }
-            for(const instance of environment.instances) {
+            for(const instance of Object.values(environment.instances)) {
                 if(isValidProvider(environment, instance)) {
                     result.push({environment, template: instance, source: 'instance'})
                 }

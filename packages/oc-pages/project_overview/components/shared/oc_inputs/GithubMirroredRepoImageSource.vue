@@ -74,12 +74,6 @@ export default {
             }
             return this.saved.project_id ?? null
         },
-        repository_id() {
-            if(this.project_id && this.branch) {
-                return `${this.project_id}/${this.branch}`
-            }
-            return this.saved.repository_id ?? null
-        },
         remote_git_url() {
             if(this.project_id) {
                 return `${gon.gitlab_url}/${this.project_id}`
@@ -113,7 +107,7 @@ export default {
         },
         displayableCardProperties() {
             return this.card.properties.filter(property => {
-                return ['github_project', 'remote_git_url', 'branch', 'project_id', 'repository_id', 'registry_url'].includes(property.name)
+                return ['github_project', 'remote_git_url', 'branch', 'project_id', 'registry_url'].includes(property.name)
             })
         }
     },
@@ -132,9 +126,6 @@ export default {
         },
         project_id() {
             this.updateValue('project_id')
-        },
-        repository_id() {
-            this.updateValue('repository_id')
         },
         remote_git_url() {
             this.updateValue('remote_git_url')
@@ -239,7 +230,8 @@ export default {
                     await this.updateProjectInfo(encodeURIComponent(this.project_id))
                 }
 
-                if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == this.repository_id)) {
+                // TODO check if blueprint default repository_id is already set
+                if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == `${this.project_id}/${this.branch}`)) {
                     console.log('image already exists')
                     // this.setUpstreamId we need to look up the last pipeline that has the given branch and project
                     const id = this.projectInfo.id

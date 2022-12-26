@@ -133,19 +133,6 @@ export default {
         pipelinesPath(){
             return `/${this.getHomeProjectPath}/-/pipelines`
         },
-        deploymentDir() {
-            const environment = this.$route.params.environment
-            // this.getDeploymentTemplate.name not loaded yet
-            return `environments/${environment}/${this.getProjectInfo.name}/${this.$route.params.slug}`
-        },
-
-        // TODO remove this
-        shouldRenderTemplates() {
-            return true
-        },
-        getMainInputs() {
-            return cloneDeep(this.$store.getters.getProjectInfo.inputs);
-        },
 
         primaryPropsDelete() {
             return {
@@ -345,13 +332,9 @@ export default {
 
     methods: {
         ...mapMutations([
-            'resetTemplateResourceState',
             'setRouterHook',
             'clearPreparedMutations',
             'resetStagedChanges',
-            'onApplicationBlueprintLoaded',
-            'setUpdateObjectPath',
-            'setUpdateObjectProjectPath',
             'pushPreparedMutation'
         ]),
         ...mapActions([

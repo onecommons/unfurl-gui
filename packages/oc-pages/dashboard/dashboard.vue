@@ -38,8 +38,11 @@ export default {
         ]),
     },
     async mounted() {
+        this.initUserSettings({username: this.getUsername})
+
         const pathComponents = this.$router.options.base.split('/').filter(s => s);
         const currentNamespace = pathComponents.slice(0, -1).join('/')
+
         this.setCurrentNamespace(currentNamespace);
         this.setDashboardName(pathComponents[pathComponents.lastIndex])
         this.populateCurrentUser()
@@ -63,7 +66,6 @@ export default {
             delete sessionStorage['oc_flash']
         }
 
-        this.initUserSettings({username: this.getUsername})
 
         if(sessionStorage['trigger-deployment']) {
           this.deployInto(JSON.parse(sessionStorage['trigger-deployment']))
