@@ -70,6 +70,33 @@ export async function fetchBranches(projectId) {
     return branchesData[projectId] = data ?? null
 }
 
+function commitSessionStorageKey(projectId, branch) {
+    return `${projectId}#${branch}.latest_commit`
+}
+
+export function setLastCommit(projectId, branch, commit) {
+    const when = (new Date(Date.now())).toISOString()
+    sessionStorage[commitSessionStorageKey(projectId, branch)] = JSON.stringify({commit, when})
+}
+
+export async function fetchLastCommit(projectId, branch) {
+    const branches = await fetchBranches(projectId)
+    const {commit, created_at} = branches.find(b => b.name == branch)
+    let lastInSessionStorage
+    try {
+        lastInSessionStorage = JSON.parse(sessionStorage[commitSessionStorageKey(projectId, branch)])
+    } catch(e) {}
+
+    const fromAPI = new Date(created_at)
+    const fromStore = new Date(lastInSessionStorage?.when || 0)
+
+    if (fromStore > fromAPI) {
+        return lastInSessionStorage.commit
+    }
+
+    return commit
+}
+
 export async function fetchBranch(projectId, branch) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
 }
