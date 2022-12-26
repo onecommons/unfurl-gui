@@ -49,12 +49,18 @@ const actions = {
             ?.find(b => b.name == branch)
             ?.commit?.id
 
-        const username = rootGetters.getUsername
-        const password = await fetchUserAccessToken()
 
         let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
-        exportUrl += `&username=${username}`
-        exportUrl += `&password=${password}`
+
+        try {
+            const password = await fetchUserAccessToken()
+            const username = rootGetters.getUsername
+            exportUrl += `&username=${username}`
+            exportUrl += `&password=${password}`
+        } catch(e) {
+            console.error(e)
+        }
+
         exportUrl += `&branch=${branch}`
         exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
         exportUrl += `&latest_commit=${latestCommit}`
