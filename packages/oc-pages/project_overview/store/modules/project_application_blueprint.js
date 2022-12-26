@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
-import {fetchProjectInfo, fetchBranches} from '../../../vue_shared/client_utils/projects'
+import {fetchProjectInfo, fetchLastCommit} from '../../../vue_shared/client_utils/projects'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -39,16 +39,13 @@ const mutations = {
 }
 const actions = {
     async fetchProject({commit, dispatch, rootGetters}, params) {
-        const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
+        const {projectPath, projectGlobal} = params
         commit('loaded', false)
 
         const project = await fetchProjectInfo(encodeURIComponent(projectPath))
         const branch = project.default_branch
 
-        const latestCommit = (await fetchBranches(project.id))
-            ?.find(b => b.name == branch)
-            ?.commit?.id
-
+        const latestCommit = await fetchLastCommit(encodeURIComponent(projectPath), branch)
 
         let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
 
