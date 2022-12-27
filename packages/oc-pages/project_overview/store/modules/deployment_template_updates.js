@@ -9,6 +9,7 @@ import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import axios from '~/lib/utils/axios_utils'
+import {setLastCommit} from "../../../vue_shared/client_utils/projects";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -790,11 +791,12 @@ const actions = {
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
         const projectId = project.id
 
+        const branch = state.branch || project.default_branch
         const variables = {
             username,
             password,
             patch, 
-            branch: state.branch || project.default_branch,
+            branch,
             path: state.path
         }
 
@@ -869,7 +871,11 @@ const actions = {
             post = axios.post(unfurlServiceMutation('update_environment'), variables)
         }
 
-        await post
+        {
+            const {commit} = (await post)?.data || {}
+            setLastCommit(encodeURIComponent(projectPath), branch, commit)
+        }
+
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {

@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import {unfurl_cloud_vars_url} from './unfurl-invocations'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
-import {fetchProjectInfo, fetchBranches} from 'oc_vue_shared/client_utils/projects'
+import {setLastCommit, fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from './user'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
@@ -110,7 +110,8 @@ export async function initUnfurlEnvironment(projectPath, environment, credential
         path: 'environments.json'
     }
 
-    return await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${encodeURIComponent(projectPath)}`, variables)
+    const {commit} = (await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${encodeURIComponent(projectPath)}`, variables))?.data
+    setLastCommit(encodeURIComponent(projectPath), branch, commit)
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -154,10 +155,7 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     const username = credentials.username || 'UNFURL_PROJECT_TOKEN'
     const password = credentials.password || token
 
-    const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
-        ?.find(b => b.name == branch)
-        ?.commit?.id
-
+    const latestCommit = await fetchLastCommit(encodeURIComponent(fullPath), branch)
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
     let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
