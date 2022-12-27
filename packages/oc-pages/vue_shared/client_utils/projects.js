@@ -81,7 +81,7 @@ export function setLastCommit(projectId, branch, commit) {
 
 export async function fetchLastCommit(projectId, branch) {
     const branches = await fetchBranches(projectId)
-    const {commit, created_at} = branches.find(b => b.name == branch)
+    const {id, created_at} = branches.find(b => b.name == branch).commit
     let lastInSessionStorage
     try {
         lastInSessionStorage = JSON.parse(sessionStorage[commitSessionStorageKey(projectId, branch)])
@@ -94,7 +94,7 @@ export async function fetchLastCommit(projectId, branch) {
         return lastInSessionStorage.commit
     }
 
-    return commit
+    return id
 }
 
 export async function fetchBranch(projectId, branch) {
