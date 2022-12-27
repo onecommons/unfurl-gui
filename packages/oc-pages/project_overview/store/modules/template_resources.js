@@ -240,35 +240,10 @@ const actions = {
                     {root: true}
                 );
             }
-
-            // Push all resource templates into deployment.json, etc. so they can be referenced later
-            for(const resourceTemplateName of deploymentTemplate.resourceTemplates) {
-                let templateToCommit
-                if(
-                    !state.resourceTemplates[resourceTemplateName] &&
-                    (templateToCommit = rootGetters.resolveResourceTemplate(resourceTemplateName))
-                ) {
-                    let typename = 'ResourceTemplate'
-                    // Do not confuse unfurl by committing as 'ResourceTemplate' with defaults
-                    // we could handle this more generically, but this is the only code path where this is possible
-                    if (templateToCommit.directives?.includes('default')) typename = 'DefaultTemplate'
-                    commit(
-                        'pushPreparedMutation',
-                        () => [{patch: templateToCommit, target: templateToCommit.name, typename}],
-                        {root: true}
-                    )
-                }
-            }
         }
 
 
         function createMatchedTemplateResources(resourceTemplate) {
-            if(_syncState) {
-                commit('pushPreparedMutation', (accumulator) => {
-                    return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
-                });
-            }
-
             for(let dependency of resourceTemplate.dependencies) {
                 if(typeof(dependency.match) != 'string') continue;
                 const resolvedDependencyMatch = deploymentDict ?
@@ -874,7 +849,7 @@ const getters = {
                 return templateFromStore
             }
 
-            return templateFromSource
+            return templateFromSource || templateFromStore
         }
     },
   
