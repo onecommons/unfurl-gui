@@ -1,5 +1,4 @@
 import axios from '~/lib/utils/axios_utils'
-import {unfurl_cloud_vars_url} from './unfurl-invocations'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
 import {setLastCommit, fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
@@ -148,7 +147,7 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, token, projectId, credentials, unfurlServicesUrl}) {
+export async function fetchEnvironments({fullPath, token, credentials, unfurlServicesUrl, includeDeployments}) {
     // TODO don't hardcode main
     const branch = 'main'
 
@@ -164,16 +163,8 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
     environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
     environmentUrl += `&branch=${branch}`
     environmentUrl += `&latest_commit=${latestCommit}`
-
-    if(token) {
-        const cloudVarsUrl = unfurl_cloud_vars_url({
-            protocol: window.location.protocol,
-            server: window.location.hostname + ':' + window.location.port,
-            projectId: projectId || encodeURIComponent(fullPath),
-            token
-        })
-
-        environmentUrl += '&cloud_vars_url=' + encodeURIComponent(cloudVarsUrl)
+    if(includeDeployments) {
+        environmentUrl += `&include_all_deployments=1`
     }
 
     const {data} = await axios.get(environmentUrl)
@@ -188,5 +179,21 @@ export async function fetchEnvironments({fullPath, token, projectId, credentials
 
     const  defaults = data.DeploymentEnvironment.defaults
 
-    return {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
+    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
+
+
+    if(includeDeployments) {
+        const deployments = data.deployments
+
+        deployments.forEach(deployment => {
+            console.log(deployment.name)
+            const deploymentName = Object.keys(deployment.Deployment)[0]
+
+            const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
+            deployment._environment = environment
+        })
+        result.deployments = deployments
+    }
+
+    return result
 }

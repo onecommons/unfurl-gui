@@ -353,7 +353,7 @@ const actions = {
             const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
             const credentials = {username: rootGetters.getUsername, password: await fetchUserAccessToken()}
-            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials, unfurlServicesUrl: rootGetters.unfurlServicesUrl})
+            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials, unfurlServicesUrl: rootGetters.unfurlServicesUrl, includeDeployments: true})
             environments = result.environments
 
             // TODO figure out if we might need ResourceType dictionary per environment
@@ -363,16 +363,8 @@ const actions = {
 
             commit('setDefaults', result.defaults)
             commit('setDeploymentPaths', result.deploymentPaths)
-
-            const deploymentFetches = []
-            for(const deployPath of result.deploymentPaths) {
-                deploymentFetches.push(
-                    dispatch('fetchDeployment', {deployPath, fullPath, token, projectId, credentials})
-                )
-            }
-
-            await Promise.all(deploymentFetches)
             
+            commit('setDeployments', result.deployments)
         }
         catch(e){
             console.error('Could not fetch project environments', e)
