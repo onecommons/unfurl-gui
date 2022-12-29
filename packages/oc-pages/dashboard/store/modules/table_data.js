@@ -107,7 +107,11 @@ const actions = {
                 application.projectPath = deployment.projectPath
 
                 if(!application.projectIcon) {
-                    application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
+                    try {
+                        application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
+                    } catch(e) {
+                        console.error(`@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, e)
+                    }
                 }
 
                 deepFreeze(application) 
