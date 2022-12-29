@@ -20,13 +20,18 @@ export default {
         //return {routes}
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath']),
+        ...mapGetters(['getHomeProjectPath', 'deploymentItemDirect']),
         id() {
             return generateCardId(this.resource.name)
         },
+        deploymentItem() {
+            const {environment, deployment} = this
+            const deploymentItem = this.deploymentItemDirect({environment, deployment})
+            return deploymentItem
+        },
         to() {
             const href = this.noRouter?
-            `/${this.getHomeProjectPath}/-/${this.environment.name}/${this.deployment.name}#${this.id}`: // TODO use from routes.js
+            `${this.deploymentItem.viewableLink}#${this.id}`:
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}, hash: `#${this.id}`}
             return this.noRouter ? href : {to: href}
         },
