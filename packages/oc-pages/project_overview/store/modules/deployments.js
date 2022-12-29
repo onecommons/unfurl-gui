@@ -3,7 +3,6 @@ import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vu
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
-import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import Vue from 'vue'
 import _ from 'lodash'
 import axios from '~/lib/utils/axios_utils'
@@ -351,18 +350,6 @@ const actions = {
         deploymentUrl += `&branch=${branch}`
         deploymentUrl += `&latest_commit=${latestCommit}`
 
-        if(token) {
-            const cloudVarsUrl = unfurl_cloud_vars_url({
-                protocol: window.location.protocol,
-                server: window.location.hostname + ':' + window.location.port,
-                projectId: projectId || encodeURIComponent(fullPath),
-                token
-            })
-
-            deploymentUrl += '&cloud_vars_url=' + encodeURIComponent(cloudVarsUrl)
-        }
-
-
         try {
             const {data} = await axios.get(deploymentUrl)
 
@@ -418,7 +405,7 @@ const getters = {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
-            const deployment = _.isObject(dict.Deployment) && dict.Resource[dict.Deployment.primary]? dict.Deployment: dict.DeploymentTemplate
+            const deployment = _.isObject(dict.Deployment) && dict.Resource[Object.values(dict.Deployment)[0].primary]? dict.Deployment: dict.DeploymentTemplate
             if(!deployment) continue
             Object.values(deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
