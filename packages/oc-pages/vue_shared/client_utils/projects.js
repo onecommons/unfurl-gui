@@ -41,9 +41,9 @@ export async function fetchProjectInfo(projectId, options) {
     if(result = projectInfos[projectId]) {
         return result
     }
-    const data = (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+    const promise =  async() => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
 
-    return projectInfos[projectId] = projectInfos[data?.id] = data ?? null
+    return projectInfos[projectId] = promise()
 }
 
 export async function fetchProjectPipelines(projectId, options) {
@@ -64,10 +64,10 @@ export async function fetchBranches(projectId) {
     if(result = branchesData[projectId]) {
         return result
     }
-    const data = (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+    const promise = async () => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
 
     setTimeout(() => delete branchesData[projectId], 1000)
-    return branchesData[projectId] = data ?? null
+    return branchesData[projectId] = promise()
 }
 
 function commitSessionStorageKey(projectId, branch) {

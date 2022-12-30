@@ -1,10 +1,10 @@
 import axios from '~/lib/utils/axios_utils'
 
-import {USER_HOME_PROJECT} from '../util.mjs'
-
 export function toDepTokenEnvKey(projectId) {
     return `_dep_${projectId}`
 }
+
+const variablesByPath = {}
 
 export async function patchEnv(env, environmentScope, fullPath) {
     if(!fullPath) {
@@ -50,7 +50,10 @@ export async function patchEnv(env, environmentScope, fullPath) {
             }
         }
         const response = await axios.patch(endpoint, {variables_attributes: envPatch})
-        return response?.data
+        const result = response?.data
+
+        variablesByPath[fullPath] = result.variables
+        return result
     }
 
     return null
@@ -77,10 +80,16 @@ export async function fetchEnvironmentVariables(fullPath) {
     if(!fullPath) {
         throw new Error('Need a path to update environment variables')
     }
+
+    let cachedCopy
+    if(cachedCopy = variablesByPath[fullPath]) {
+        return cachedCopy
+    }
+
     const endpoint = `/${fullPath}/-/variables`
     try {
         const data = (await axios.get(endpoint)).data
-        return data.variables || []
+        return variablesByPath[fullPath] = data.variables || []
     } catch(e) {
         return []
     }
