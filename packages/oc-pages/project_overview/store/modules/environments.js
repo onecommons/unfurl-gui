@@ -7,7 +7,7 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {fetchLastCommit, fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
@@ -347,13 +347,29 @@ const actions = {
     },
 
 
-    async fetchProjectEnvironments({commit, getters, dispatch, rootGetters}, {fullPath, fetchPolicy}) {
+    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath}) {
         let environments = []
         try {
-            const token = getters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
-            const credentials = {username: rootGetters.getUsername, password: await fetchUserAccessToken()}
-            const result = await fetchEnvironments({fullPath, token, fetchPolicy, projectId, credentials, unfurlServicesUrl: rootGetters.unfurlServicesUrl, includeDeployments: true})
+            const unfurlServicesUrl = rootGetters.unfurlServicesUrl
+
+            // TODO don't hardcode main
+            const branch = 'main'
+
+            const [credentials, latestCommit] = await Promise.all([
+                (async() => ({username: rootGetters.getUsername, password: await fetchUserAccessToken()}))(),
+                fetchLastCommit(encodeURIComponent(fullPath), branch)
+            ])
+
+            const result = await fetchEnvironments({
+                fullPath,
+                branch,
+                projectId,
+                credentials,
+                latestCommit,
+                unfurlServicesUrl,
+                includeDeployments: true
+            })
             environments = result.environments
 
             // TODO figure out if we might need ResourceType dictionary per environment
@@ -440,15 +456,16 @@ const actions = {
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
-        await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
-        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath})
-        await dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
-        
-
-        // TODO replace this with new patchEnv impl
-        await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
-
-        await dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy})
+        await Promise.all([
+            (async () => {
+                await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
+                await Promise.all([
+                    dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}),
+                    dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+                ])
+            })(),
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy})
+        ])
 
         commit('setReady', true)
     },

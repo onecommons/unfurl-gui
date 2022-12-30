@@ -1,7 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
-import {setLastCommit, fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
+import {setLastCommit} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from './user'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
@@ -147,14 +147,10 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, token, credentials, unfurlServicesUrl, includeDeployments}) {
-    // TODO don't hardcode main
-    const branch = 'main'
+export async function fetchEnvironments({fullPath, credentials, unfurlServicesUrl, includeDeployments, latestCommit, branch}) {
+    const username = credentials.username
+    const password = credentials.password
 
-    const username = credentials.username || 'UNFURL_PROJECT_TOKEN'
-    const password = credentials.password || token
-
-    const latestCommit = await fetchLastCommit(encodeURIComponent(fullPath), branch)
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
     let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
@@ -186,11 +182,14 @@ export async function fetchEnvironments({fullPath, token, credentials, unfurlSer
         const deployments = data.deployments
 
         deployments.forEach(deployment => {
-            console.log(deployment.name)
-            const deploymentName = Object.keys(deployment.Deployment)[0]
+            try {
+                const deploymentName = Object.keys(deployment.Deployment)[0]
 
-            const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
-            deployment._environment = environment
+                const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
+                deployment._environment = environment
+            } catch(e) {
+                console.error('@fetchEnvironments: unexpected shape for deployment', deployment, e)
+            }
         })
         result.deployments = deployments
     }
