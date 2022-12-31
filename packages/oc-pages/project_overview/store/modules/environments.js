@@ -366,7 +366,7 @@ const actions = {
                 branch,
                 projectId,
                 credentials,
-                latestCommit,
+                latestCommit: latestCommit[0],
                 unfurlServicesUrl,
                 includeDeployments: true
             })

@@ -334,12 +334,11 @@ const actions = {
     },
 
     // TODO move fetch logic into client_utils
-    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath, token, projectId}) {
+    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath}) {
         const username = rootGetters.getUsername
         const password = await fetchUserAccessToken()
-        const branch = 'main'
 
-        const latestCommit = await fetchLastCommit(encodeURIComponent(fullPath), branch)
+        const [latestCommit, branch] = await fetchLastCommit(encodeURIComponent(fullPath))
 
         let deploymentUrl = `${rootGetters.unfurlServicesUrl}/export?format=deployment`
         deploymentUrl += `&username=${username}`

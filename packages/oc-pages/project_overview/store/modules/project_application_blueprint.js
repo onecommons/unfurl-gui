@@ -42,10 +42,7 @@ const actions = {
         const {projectPath, projectGlobal} = params
         commit('loaded', false)
 
-        const project = await fetchProjectInfo(encodeURIComponent(projectPath))
-        const branch = project.default_branch
-
-        const latestCommit = await fetchLastCommit(encodeURIComponent(projectPath), branch)
+        const [latestCommit, branch] = await fetchLastCommit(encodeURIComponent(projectPath))
 
         let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
 
