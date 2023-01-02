@@ -110,8 +110,12 @@ export async function fetchUser() {
 let userAccessToken
 export async function fetchUserAccessToken() {
     if(!userAccessToken) {
-        const {token} = (await axios.get('/api/v4/unfurl_access_token'))?.data
-        userAccessToken = token
+        try {
+            const {token} = (await axios.get('/api/v4/unfurl_access_token'))?.data
+            userAccessToken = token
+        } catch(e) {
+            console.error(e)
+        }
     }
     return userAccessToken
 }

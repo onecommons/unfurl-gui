@@ -158,8 +158,10 @@ export async function fetchEnvironments({fullPath, credentials, unfurlServicesUr
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
     let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
-    environmentUrl += `&username=${username}`
-    environmentUrl += `&password=${password}`
+    if(username && password) {
+        environmentUrl += `&username=${username}`
+        environmentUrl += `&password=${password}`
+    }
     environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
     environmentUrl += `&branch=${branch}`
     environmentUrl += `&latest_commit=${latestCommit}`

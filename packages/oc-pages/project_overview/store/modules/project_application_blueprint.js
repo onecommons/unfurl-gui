@@ -49,8 +49,10 @@ const actions = {
         try {
             const password = await fetchUserAccessToken()
             const username = rootGetters.getUsername
-            exportUrl += `&username=${username}`
-            exportUrl += `&password=${password}`
+            if(username && password) {
+                exportUrl += `&username=${username}`
+                exportUrl += `&password=${password}`
+            }
         } catch(e) {
             console.error(e)
         }
