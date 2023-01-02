@@ -10,6 +10,7 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import axios from '~/lib/utils/axios_utils'
 import {setLastCommit} from "../../../vue_shared/client_utils/projects";
+import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -302,22 +303,18 @@ export function createEnvironmentInstance({type, name, title, description, depen
 export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        const index = patch.instances.findIndex(instance => instance.name == templateName)
-        if(index != -1) {
-            patch.instances.splice(index, 1)
-
+        if(delete patch.instances[templateName]) {
             if(dependentName) {
-                const dependent = patch.instances.find(rt => rt.name == dependentName)
+                const dependent = patch.instances[dependentName]
                 const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+
                 if(dependency) {
                     dependency.match = null
                 }
             }
         } else {
-            const index = patch.connections.findIndex(connection => connection.name == templateName)
-            if(index != -1) {
-                patch.connections.splice(index, 1)
-            }
+            // assume we are attempting to delete a provider
+            delete patch.connections[templateName]
         }
 
         return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
@@ -827,7 +824,7 @@ const actions = {
             return `${rootGetters.unfurlServicesUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
         }
 
-        let post
+        let post, sync
         if(state.updateType == UPDATE_TYPE.deployment) {
             variables.deployment_path = variables.path
             if(!rootGetters.hasDeployPathKey(variables.path)) {
@@ -869,10 +866,24 @@ const actions = {
                 variables.path = 'unfurl.yaml'
             }
             post = axios.post(unfurlServiceMutation('update_environment'), variables)
+
+            // TODO be more selective about which patches to run this on
+            sync = Promise.all(
+                patch
+                    .filter(p => p.__typename == 'DeploymentEnvironment')
+                    .map(p => declareAvailableProviders(
+                        projectPath,
+                        p.name,
+                        //guarunteed ordering of primary_provider first
+                        [p.connections.primary_provider].concat(Object.values(p.connections).filter(conn => conn.name != 'primary_provider'))
+                            .map(provider => provider.type)
+                    ))
+            )
         }
 
         {
-            const {commit} = (await post)?.data || {}
+            const [postResponse, _] = await Promise.all([post, sync])
+            const {commit} = postResponse?.data || {}
             setLastCommit(encodeURIComponent(projectPath), branch, commit)
         }
 
