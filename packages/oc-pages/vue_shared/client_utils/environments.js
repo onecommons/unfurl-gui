@@ -3,6 +3,10 @@ import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
 import {setLastCommit} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from './user'
+import gql from 'graphql-tag'
+import graphqlClient from 'oc/graphql-shim'
+import _ from 'lodash'
+import { lookupCloudProviderAlias } from '../util.mjs'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -195,4 +199,121 @@ export async function fetchEnvironments({fullPath, credentials, unfurlServicesUr
     }
 
     return result
+}
+
+let _gitlabProjectEnvironments = {}
+export async function gitlabProjectEnvironments(projectPath) {
+    const env = _gitlabProjectEnvironments[projectPath]
+    if(env) return env
+    return _gitlabProjectEnvironments[projectPath] = (() => axios.get(`/api/v4/projects/${encodeURIComponent(projectPath)}/environments`).then(res => res.data))()
+}
+
+export async function gitlabEnvironmentId(projectPath, environmentName) {
+    const environments = await gitlabProjectEnvironments(projectPath)
+    return environments.find(env => env.name == environmentName)?.id
+}
+
+function encodeProviderString(providers) {
+    return `http://localhost/${encodeURIComponent(providers.join(','))}`
+}
+
+function decodeProviderString(s) {
+    return s && decodeURIComponent((new URL(s)).pathname.slice(1)).split(',')
+}
+
+export async function declareAvailableProviders(projectPath, environmentName, providerTypes) {
+    const providers = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
+
+    if(providers.some(p => !p)) {
+        throw new Error(`@declareAvailableProviders: unknown provider types among ${JSON.stringify(providerTypes)}`)
+    }
+
+    const environmentId = await gitlabEnvironmentId(projectPath, environmentName)
+    if (!_.isNumber(environmentId)) {
+        throw new Error(`@declareAvailableProviders: could not lookup environment ID for ${environmentName} in ${projectPath}`)
+    }
+
+    axios.put(
+        `/api/v4/projects/${encodeURIComponent(projectPath)}/environments/${environmentId}`,
+        {
+            external_url: encodeProviderString(providers)
+        }
+    )
+}
+
+class DashboardProviders {
+    constructor(data) {
+        this.project = data.project
+    }
+
+    get environments() {
+        return this.project.environments.nodes
+    }
+
+    get fullPath() {
+        return this.project.fullPath
+    }
+
+    get accessLevel() {
+        return this.project.projectMembers.nodes[0].accessLevel.integerValue
+    }
+
+    get providersByEnvironment() {
+        const result = {}
+        this.environments.forEach(env => {
+            result[env.name] = decodeProviderString(env.externalUrl)
+        })
+        return result
+    }
+}
+
+export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
+    // FIXME find a better way of getting username
+    const username = window.gon.current_username
+
+    const query = gql`
+        query fetchAvailableProviderDashboards ($username: String){
+            currentUser {
+                projectMemberships {
+                    nodes {
+                        project {
+                            fullPath
+                            projectMembers (search: $username) {
+                                nodes {
+                                    user {
+                                        name
+                                    }
+                                    accessLevel {
+                                        integerValue
+                                    }
+                                }
+                            }
+                            environments {
+                                nodes
+                                {
+                                    name
+                                    externalUrl
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    `
+
+    const response = await graphqlClient.defaultClient.query({
+        query,
+        variables: {username}
+    })
+
+    const {data, errors} = response
+    const projects = data?.currentUser?.projectMemberships?.nodes
+
+    if(!Array.isArray(projects)) {
+        console.error(data)
+        throw new Error(`@fetchAvailableProviderDashboards: could not read list of providers`)
+    }
+
+    return projects.map(p => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
 }
