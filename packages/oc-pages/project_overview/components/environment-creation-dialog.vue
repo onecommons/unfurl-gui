@@ -101,7 +101,7 @@ export default {
             return this.enableShowExistingProviders && this.filteredAvailableProviders?.length
         },
         currentType() {
-            return this.selectedCloudProvider?.template?.type || this.selectedCloudProvider
+            return lookupCloudProviderAlias(this.selectedCloudProvider?.template?.type || this.selectedCloudProvider)
         },
         currentText() {
             return this.displayProvider(this.selectedCloudProvider) || this.selectedCloudProvider || __('Select')
@@ -131,7 +131,7 @@ export default {
           await postGitlabEnvironmentForm();
           const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
               name: 'primary_provider', 
-              type: lookupCloudProviderAlias(this.selectedCloudProvider),
+              type: this.currentType,
               __typename: 'ResourceTemplate'
           } : undefined
 
@@ -255,6 +255,7 @@ export default {
         <form class="d-none" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
             <input name="environment[name]" :value="slugify(environmentName)">
+            <input v-if="currentType" name="environment[external_url]" :value="`http://localhost/${currentType}`">
             <input name="provider" :value="providerInput">
         </form>
     </div>
