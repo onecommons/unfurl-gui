@@ -1,12 +1,13 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
 import { fetchLastCommit, setLastCommit } from "./projects";
+import {shouldEncodePasswordsInExportUrl} from '../storage-keys';
 
-function createConfig({username, password}) {
+function createConfig({includePasswordInQuery, username, password}) {
     const config = {}
     const headers = {}
 
-    if(username && password) {
+    if(!includePasswordInQuery && username && password) {
         headers['x-git-credentials'] = btoa(username + ':' + password)
     }
 
@@ -25,13 +26,12 @@ export async function unfurlServerExport({baseUrl, format, branch, projectPath, 
 
     let exportUrl = `${baseUrl}/export?format=${format}`
 
-    /*
-     * TODO check a global variable for this
-    if(username && password) {
+    const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
+
+    if(includePasswordInQuery && username && password) {
         exportUrl += `&username=${username}`
         exportUrl += `&password=${password}`
     }
-    */
 
     exportUrl += `&branch=${_branch}`
     exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
@@ -41,7 +41,7 @@ export async function unfurlServerExport({baseUrl, format, branch, projectPath, 
         exportUrl += '&include_all_deployments=1'
     }
 
-    const response = await axios.get(exportUrl, createConfig({username, password}))
+    const response = await axios.get(exportUrl, createConfig({includePasswordInQuery, username, password}))
     return response.data
 }
 
