@@ -96,7 +96,7 @@ export async function fetchLastCommit(projectId, _branch) {
     const fromAPI = new Date(created_at)
     const fromStore = new Date(lastInSessionStorage?.when || 0)
 
-    if (fromStore > fromAPI) {
+    if (lastInSessionStorage?.commit && fromStore > fromAPI) {
         return [lastInSessionStorage.commit, branch]
     }
 
