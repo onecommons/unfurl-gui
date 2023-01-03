@@ -7,9 +7,8 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {fetchLastCommit, fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
-import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
@@ -356,20 +355,14 @@ const actions = {
             // TODO don't hardcode main
             const branch = 'main'
 
-            const [credentials, latestCommit] = await Promise.all([
-                (async() => ({username: rootGetters.getUsername, password: await fetchUserAccessToken()}))(),
-                fetchLastCommit(encodeURIComponent(fullPath), branch)
-            ])
-
             const result = await fetchEnvironments({
                 fullPath,
                 branch,
                 projectId,
-                credentials,
-                latestCommit: latestCommit[0],
                 unfurlServicesUrl,
                 includeDeployments: true
             })
+
             environments = result.environments
 
             // TODO figure out if we might need ResourceType dictionary per environment

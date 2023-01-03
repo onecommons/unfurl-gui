@@ -320,7 +320,7 @@ export default {
 <template>
     <div>
         <component :is="customInputComponent" :readonly="_readonly" v-if="customInputComponent" :card="_card"/>
-        <gl-tabs v-if="shouldRenderTabs" v-model="currentTab" class="">
+        <gl-tabs v-if="shouldRenderTabs" class="">
             <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">

@@ -1,12 +1,12 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
-import {setLastCommit} from 'oc_vue_shared/client_utils/projects'
-import {fetchUserAccessToken} from './user'
+import { unfurlServerUpdate } from './unfurl-server'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.mjs'
+import {unfurlServerExport} from './unfurl-server'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -92,7 +92,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 // NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
-export async function initUnfurlEnvironment(projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
+export async function initUnfurlEnvironment(projectPath, environment, unfurlServicesUrl='/services/unfurl-server') {
     const branch = 'main' // TODO don't hardcode main
 
     const patch = [{
@@ -101,20 +101,15 @@ export async function initUnfurlEnvironment(projectPath, environment, credential
         __typename: 'DeploymentEnvironment'
     }]
 
-    const username = credentials.username || window.gon.current_username
-    const password = credentials.password || await fetchUserAccessToken()
-
-    const variables = {
-        commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
-        username,
-        password,
+    await unfurlServerUpdate({
+        baseUrl: unfurlServicesUrl,
+        commitMessage: `Create environment '${environment.name}' in ${projectPath}`,
+        projectPath,
+        method: 'update_environment',
         patch,
         branch,
-        path: 'environments.json'
-    }
-
-    const {commit} = (await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${encodeURIComponent(projectPath)}`, variables))?.data
-    setLastCommit(encodeURIComponent(projectPath), branch, commit)
+        path: 'unfurl.yaml'
+    })
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -151,25 +146,18 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, credentials, unfurlServicesUrl, includeDeployments, latestCommit, branch}) {
-    const username = credentials.username
-    const password = credentials.password
+export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDeployments, branch}) {
 
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
-    let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
-    if(username && password) {
-        environmentUrl += `&username=${username}`
-        environmentUrl += `&password=${password}`
-    }
-    environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
-    environmentUrl += `&branch=${branch}`
-    environmentUrl += `&latest_commit=${latestCommit}`
-    if(includeDeployments) {
-        environmentUrl += `&include_all_deployments=1`
-    }
 
-    const {data} = await axios.get(environmentUrl)
+    const data = await unfurlServerExport({
+        baseUrl: unfurlServicesUrl,
+        format: 'environments',
+        projectPath: fullPath,
+        includeDeployments,
+        branch,
+    })
 
     const environments = Object.values(data.DeploymentEnvironment)
         .filter(env => env.name != 'defaults')
@@ -179,7 +167,7 @@ export async function fetchEnvironments({fullPath, credentials, unfurlServicesUr
 
     const deploymentPaths = Object.values(data.DeploymentPath)
 
-    const  defaults = data.DeploymentEnvironment.defaults
+    const defaults = data.DeploymentEnvironment.defaults
 
     const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
 

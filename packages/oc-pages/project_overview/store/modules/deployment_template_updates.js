@@ -8,9 +8,9 @@ import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
-import axios from '~/lib/utils/axios_utils'
 import {setLastCommit} from "../../../vue_shared/client_utils/projects";
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
+import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -781,27 +781,14 @@ const actions = {
             })
         }
 
-        const username = rootGetters.getUsername
-        const password = await fetchUserAccessToken()
         const projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
         const projectId = project.id
 
-        const branch = state.branch || project.default_branch
-        const variables = {
-            username,
-            password,
-            patch, 
-            branch,
-            path: state.path
-        }
-
-        if(state.commitMessage) {
-            variables.commit_msg = state.commitMessage
-        }
-
         const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+
+        const variables = {}
 
         if(token) {
             variables.cloud_vars_url = unfurl_cloud_vars_url({
@@ -812,7 +799,6 @@ const actions = {
             })
         }
 
-
         if(o?.dryRun) {
             console.log(state.committedNames)
             console.log(variables)
@@ -820,19 +806,15 @@ const actions = {
             return
         }
 
-        function unfurlServiceMutation(method) {
-            return `${rootGetters.unfurlServicesUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
-        }
+        let sync, method, path = state.path
 
-        let post, sync
         if(state.updateType == UPDATE_TYPE.deployment) {
-            variables.deployment_path = variables.path
-            if(!rootGetters.hasDeployPathKey(variables.path)) {
-
+            variables.deployment_path = path
+            if(!rootGetters.hasDeployPathKey(path)) {
                 // infer information from the deployment object path instead of our getters
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
-                const pathSplits = variables.path.split('/')
+                const pathSplits = path.split('/')
                 pathSplits.shift()
                 const environmentName = pathSplits.shift()
                 const deploymentName = pathSplits.pop()
@@ -842,30 +824,31 @@ const actions = {
                 variables.deployment_blueprint = deploymentName
 
                 variables.blueprint_url = new URL(window.location.origin + '/' + blueprintProjectPath + '.git')
-                variables.blueprint_url.username = username
-                variables.blueprint_url.password = password
+                variables.blueprint_url.username = rootGetters.getUsername
+                variables.blueprint_url.password = await fetchUserAccessToken()
 
                 variables.blueprint_url = variables.blueprint_url.toString()
 
-                post = axios.post(unfurlServiceMutation('create_ensemble'), variables)
+                method = 'create_ensemble'
             } else {
-                post = axios.post(unfurlServiceMutation('update_ensemble'), variables)
+                method = 'update_ensemble'
             }
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
-            if(!variables.path) {
-                variables.path = 'unfurl.yaml'
+            if(!path) {
+                path = 'unfurl.yaml'
             }
-            post = axios.post(unfurlServiceMutation('delete_deployment'), variables)
+            method = 'delete_deployment'
         } else if(state.updateType == UPDATE_TYPE.deleteEnvironment) {
-            if(!variables.path) {
-                variables.path = 'unfurl.yaml'
+            if(!path) {
+                path = 'unfurl.yaml'
             }
-            post = axios.post(unfurlServiceMutation('delete_environment'), variables)
+            method = 'delete_environment'
         } else if(state.updateType == UPDATE_TYPE.environment) {
-            if(!variables.path) {
-                variables.path = 'unfurl.yaml'
+            if(!path) {
+                path = 'unfurl.yaml'
             }
-            post = axios.post(unfurlServiceMutation('update_environment'), variables)
+
+            method = 'update_environment'
 
             // TODO be more selective about which patches to run this on
             sync = Promise.all(
@@ -880,6 +863,18 @@ const actions = {
                     ))
             )
         }
+
+        const branch = state.branch || project.default_branch
+
+        const post = unfurlServerUpdate({
+            baseUrl: rootGetters.unfurlServicesUrl,
+            method,
+            projectPath,
+            branch,
+            patch,
+            commitMessage: state.commitMessage,
+            variables
+        })
 
         {
             const [postResponse, _] = await Promise.all([post, sync])
