@@ -1,8 +1,7 @@
-import axios from '~/lib/utils/axios_utils'
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
-import {fetchProjectInfo, fetchLastCommit} from '../../../vue_shared/client_utils/projects'
+import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -42,31 +41,13 @@ const actions = {
         const {projectPath, projectGlobal} = params
         commit('loaded', false)
 
-        const project = await fetchProjectInfo(encodeURIComponent(projectPath))
-        const branch = project.default_branch
+        const root = await unfurlServerExport({
+            baseUrl: rootGetters.unfurlServicesUrl,
+            format: 'blueprint',
+            projectPath,
+            //TODO pass branch
+        })
 
-        const latestCommit = await fetchLastCommit(encodeURIComponent(projectPath), branch)
-
-        let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
-
-        try {
-            const password = await fetchUserAccessToken()
-            const username = rootGetters.getUsername
-            exportUrl += `&username=${username}`
-            exportUrl += `&password=${password}`
-        } catch(e) {
-            console.error(e)
-        }
-
-        exportUrl += `&branch=${branch}`
-        exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
-        exportUrl += `&latest_commit=${latestCommit}`
-
-        const {data} = await axios.get(exportUrl)
-
-        // TODO handle errors
-
-        const root = data
         root.projectGlobal = projectGlobal
 
         dispatch('useProjectState', {projectPath, root})

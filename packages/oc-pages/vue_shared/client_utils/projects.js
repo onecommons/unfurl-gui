@@ -41,9 +41,9 @@ export async function fetchProjectInfo(projectId, options) {
     if(result = projectInfos[projectId]) {
         return result
     }
-    const data = (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+    const promise =  async() => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
 
-    return projectInfos[projectId] = projectInfos[data?.id] = data ?? null
+    return projectInfos[projectId] = promise()
 }
 
 export async function fetchProjectPipelines(projectId, options) {
@@ -64,10 +64,10 @@ export async function fetchBranches(projectId) {
     if(result = branchesData[projectId]) {
         return result
     }
-    const data = (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+    const promise = async () => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
 
     setTimeout(() => delete branchesData[projectId], 1000)
-    return branchesData[projectId] = data ?? null
+    return branchesData[projectId] = promise()
 }
 
 function commitSessionStorageKey(projectId, branch) {
@@ -79,9 +79,15 @@ export function setLastCommit(projectId, branch, commit) {
     sessionStorage[commitSessionStorageKey(projectId, branch)] = JSON.stringify({commit, when})
 }
 
-export async function fetchLastCommit(projectId, branch) {
-    const branches = await fetchBranches(projectId)
-    const {id, created_at} = branches.find(b => b.name == branch).commit
+export async function fetchLastCommit(projectId, _branch) {
+    const [branch, branches] = await Promise.all([
+        _branch, // allow provided branch to be a promise so they can be fetched in parallel?
+        fetchBranches(projectId)
+    ])
+
+    const {commit, name} = branches.find(b => branch? b.name == branch: b.default)
+    const {id, created_at} = commit
+
     let lastInSessionStorage
     try {
         lastInSessionStorage = JSON.parse(sessionStorage[commitSessionStorageKey(projectId, branch)])
@@ -90,11 +96,11 @@ export async function fetchLastCommit(projectId, branch) {
     const fromAPI = new Date(created_at)
     const fromStore = new Date(lastInSessionStorage?.when || 0)
 
-    if (fromStore > fromAPI) {
-        return lastInSessionStorage.commit
+    if (lastInSessionStorage?.commit && fromStore > fromAPI) {
+        return [lastInSessionStorage.commit, branch]
     }
 
-    return id
+    return [id, name]
 }
 
 export async function fetchBranch(projectId, branch) {

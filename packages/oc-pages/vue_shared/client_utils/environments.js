@@ -1,8 +1,12 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
-import {setLastCommit, fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
-import {fetchUserAccessToken} from './user'
+import { unfurlServerUpdate } from './unfurl-server'
+import gql from 'graphql-tag'
+import graphqlClient from 'oc/graphql-shim'
+import _ from 'lodash'
+import { lookupCloudProviderAlias } from '../util.mjs'
+import {unfurlServerExport} from './unfurl-server'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -88,7 +92,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 // NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
-export async function initUnfurlEnvironment(projectPath, environment, credentials={}, unfurlServicesUrl='/services/unfurl-server') {
+export async function initUnfurlEnvironment(projectPath, environment, unfurlServicesUrl='/services/unfurl-server') {
     const branch = 'main' // TODO don't hardcode main
 
     const patch = [{
@@ -97,20 +101,15 @@ export async function initUnfurlEnvironment(projectPath, environment, credential
         __typename: 'DeploymentEnvironment'
     }]
 
-    const username = credentials.username || window.gon.current_username
-    const password = credentials.password || await fetchUserAccessToken()
-
-    const variables = {
-        commit_msg: `Create environment '${environment.name}' in ${projectPath}`,
-        username,
-        password,
+    await unfurlServerUpdate({
+        baseUrl: unfurlServicesUrl,
+        commitMessage: `Create environment '${environment.name}' in ${projectPath}`,
+        projectPath,
+        method: 'update_environment',
         patch,
         branch,
-        path: 'environments.json'
-    }
-
-    const {commit} = (await axios.post(`${unfurlServicesUrl}/update_environment?auth_project=${encodeURIComponent(projectPath)}`, variables))?.data
-    setLastCommit(encodeURIComponent(projectPath), branch, commit)
+        path: 'unfurl.yaml'
+    })
 }
 
 export async function postGitlabEnvironmentForm() {
@@ -147,27 +146,18 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, token, credentials, unfurlServicesUrl, includeDeployments}) {
-    // TODO don't hardcode main
-    const branch = 'main'
+export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDeployments, branch}) {
 
-    const username = credentials.username || 'UNFURL_PROJECT_TOKEN'
-    const password = credentials.password || token
-
-    const latestCommit = await fetchLastCommit(encodeURIComponent(fullPath), branch)
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
-    let environmentUrl = `${unfurlServicesUrl}/export?format=environments`
-    environmentUrl += `&username=${username}`
-    environmentUrl += `&password=${password}`
-    environmentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
-    environmentUrl += `&branch=${branch}`
-    environmentUrl += `&latest_commit=${latestCommit}`
-    if(includeDeployments) {
-        environmentUrl += `&include_all_deployments=1`
-    }
 
-    const {data} = await axios.get(environmentUrl)
+    const data = await unfurlServerExport({
+        baseUrl: unfurlServicesUrl,
+        format: 'environments',
+        projectPath: fullPath,
+        includeDeployments,
+        branch,
+    })
 
     const environments = Object.values(data.DeploymentEnvironment)
         .filter(env => env.name != 'defaults')
@@ -177,7 +167,7 @@ export async function fetchEnvironments({fullPath, token, credentials, unfurlSer
 
     const deploymentPaths = Object.values(data.DeploymentPath)
 
-    const  defaults = data.DeploymentEnvironment.defaults
+    const defaults = data.DeploymentEnvironment.defaults
 
     const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
 
@@ -186,14 +176,134 @@ export async function fetchEnvironments({fullPath, token, credentials, unfurlSer
         const deployments = data.deployments
 
         deployments.forEach(deployment => {
-            console.log(deployment.name)
-            const deploymentName = Object.keys(deployment.Deployment)[0]
+            try {
+                const deploymentName = Object.keys(deployment.Deployment)[0]
 
-            const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
-            deployment._environment = environment
+                const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
+                deployment._environment = environment
+            } catch(e) {
+                console.error('@fetchEnvironments: unexpected shape for deployment', deployment, e)
+            }
         })
         result.deployments = deployments
     }
 
     return result
+}
+
+let _gitlabProjectEnvironments = {}
+export async function gitlabProjectEnvironments(projectPath) {
+    const env = _gitlabProjectEnvironments[projectPath]
+    if(env) return env
+    return _gitlabProjectEnvironments[projectPath] = (() => axios.get(`/api/v4/projects/${encodeURIComponent(projectPath)}/environments`).then(res => res.data))()
+}
+
+export async function gitlabEnvironmentId(projectPath, environmentName) {
+    const environments = await gitlabProjectEnvironments(projectPath)
+    return environments.find(env => env.name == environmentName)?.id
+}
+
+function encodeProviderString(providers) {
+    return `http://localhost/${encodeURIComponent(providers.join(','))}`
+}
+
+function decodeProviderString(s) {
+    return s && decodeURIComponent((new URL(s)).pathname.slice(1)).split(',')
+}
+
+export async function declareAvailableProviders(projectPath, environmentName, providerTypes) {
+    const providers = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
+
+    if(providers.some(p => !p)) {
+        throw new Error(`@declareAvailableProviders: unknown provider types among ${JSON.stringify(providerTypes)}`)
+    }
+
+    const environmentId = await gitlabEnvironmentId(projectPath, environmentName)
+    if (!_.isNumber(environmentId)) {
+        throw new Error(`@declareAvailableProviders: could not lookup environment ID for ${environmentName} in ${projectPath}`)
+    }
+
+    axios.put(
+        `/api/v4/projects/${encodeURIComponent(projectPath)}/environments/${environmentId}`,
+        {
+            external_url: encodeProviderString(providers)
+        }
+    )
+}
+
+class DashboardProviders {
+    constructor(data) {
+        this.project = data.project
+    }
+
+    get environments() {
+        return this.project.environments.nodes
+    }
+
+    get fullPath() {
+        return this.project.fullPath
+    }
+
+    get accessLevel() {
+        return this.project.projectMembers.nodes[0].accessLevel.integerValue
+    }
+
+    get providersByEnvironment() {
+        const result = {}
+        this.environments.forEach(env => {
+            result[env.name] = decodeProviderString(env.externalUrl)
+        })
+        return result
+    }
+}
+
+export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
+    // FIXME find a better way of getting username
+    const username = window.gon.current_username
+
+    const query = gql`
+        query fetchAvailableProviderDashboards ($username: String){
+            currentUser {
+                projectMemberships {
+                    nodes {
+                        project {
+                            fullPath
+                            projectMembers (search: $username) {
+                                nodes {
+                                    user {
+                                        name
+                                    }
+                                    accessLevel {
+                                        integerValue
+                                    }
+                                }
+                            }
+                            environments {
+                                nodes
+                                {
+                                    name
+                                    externalUrl
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    `
+
+    const response = await graphqlClient.defaultClient.query({
+        query,
+        variables: {username}
+    })
+
+    const {data, errors} = response
+    const projects = data?.currentUser?.projectMemberships?.nodes
+
+    if(!Array.isArray(projects)) {
+        console.error(data)
+        throw new Error(`@fetchAvailableProviderDashboards: could not read list of providers`)
+    }
+
+    return projects.map(p => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
 }
