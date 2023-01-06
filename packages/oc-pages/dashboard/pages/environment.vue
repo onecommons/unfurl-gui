@@ -134,7 +134,7 @@ export default {
             return this.showingResourcesTab || this.showingPublicCloudTab
         },
         showingProviderModal: {
-            get() { return this.$route.query.hasOwnProperty('provider') },
+            get() { return this.$route.query.hasOwnProperty('provider') && !this.$route.query.provider },
             set(val) {
                 const query = {...this.$route.query}
                 if(val) { query.provider = null }
