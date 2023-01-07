@@ -92,7 +92,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 // NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
-export async function initUnfurlEnvironment(projectPath, environment, unfurlServicesUrl='/services/unfurl-server') {
+export async function initUnfurlEnvironment(projectPath, environment, variables={}, unfurlServicesUrl='/services/unfurl-server') {
     const branch = 'main' // TODO don't hardcode main
 
     const patch = [{
@@ -101,14 +101,17 @@ export async function initUnfurlEnvironment(projectPath, environment, unfurlServ
         __typename: 'DeploymentEnvironment'
     }]
 
+    const method = variables.deployment_path? 'create_provider': 'update_environment'
+
     await unfurlServerUpdate({
         baseUrl: unfurlServicesUrl,
         commitMessage: `Create environment '${environment.name}' in ${projectPath}`,
         projectPath,
-        method: 'update_environment',
+        method: method,
         patch,
         branch,
-        path: 'unfurl.yaml'
+        path: 'unfurl.yaml',
+        variables
     })
 }
 
@@ -173,7 +176,7 @@ export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDep
 
 
     if(includeDeployments) {
-        const deployments = data.deployments
+        const deployments = data.deployments.filter(dep => !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
 
         deployments.forEach(deployment => {
             try {

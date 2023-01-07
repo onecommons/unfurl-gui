@@ -36,7 +36,7 @@ function mapCloudProviderProps(ci_variables) {
 
     const deployPath = this.lookupDeployPath('primary_provider', this.environmentName)
     if(deployPath) {
-        const jobId = this.jobByPipelineId(deployPath.pipeline.id)?.id
+        const jobId = this.jobByPipelineId(deployPath.pipeline?.id)?.id
         if(jobId) {
             result.push({
                 name: 'Created in',
