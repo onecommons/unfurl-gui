@@ -55,7 +55,7 @@ export async function unfurlServerUpdate({baseUrl, method, projectPath, branch, 
             ...variables,
             branch,
             patch,
-            commitMessage
+            commit_msg: commitMessage || method
         },
         createConfig({username, password})
     )

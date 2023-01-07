@@ -876,12 +876,7 @@ const actions = {
             variables
         })
 
-        {
-            const [postResponse, _] = await Promise.all([post, sync])
-            const {commit} = postResponse?.data || {}
-            setLastCommit(encodeURIComponent(projectPath), branch, commit)
-        }
-
+        await Promise.all([post, sync])
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {
