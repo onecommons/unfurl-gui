@@ -54,18 +54,7 @@ const actions = {
         commit('loaded', true)
     },
 
-    useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
-        if(!projectPath) {console.warn('projectPath is not set')}
-        console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
-        if(!(state.clean || shouldMerge)) {
-            commit('resetProjectState')
-            commit('clearRepositoryDependencies', null, {root: true})
-        }
-
-        if(state.clean && projectPath) {
-            commit('addRepositoryDependencies', [projectPath], {root: true})
-        }
-        
+    normalizeUnfurlData({state, getters}, {key, entry, root, projectPath}) {
         let transforms
 
         function normalizeProperties(properties) {
@@ -190,20 +179,34 @@ const actions = {
             }
         }
 
+
+        if(Object.isFrozen(entry)) return
+        transforms[key] && transforms[key](entry, root)
+    },
+
+    useProjectState({state, commit, dispatch}, {projectPath, root, shouldMerge}) {
+        if(!projectPath) {console.warn('projectPath is not set')}
+        console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
+        if(!(state.clean || shouldMerge)) {
+            commit('resetProjectState')
+            commit('clearRepositoryDependencies', null, {root: true})
+        }
+
+        if(state.clean && projectPath) {
+            commit('addRepositoryDependencies', [projectPath], {root: true})
+        }
+
         // guarunteed ordering
         const ordering = uniq(['ResourceType', 'DefaultTemplate', 'DeploymentEnvironment', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
         for(const key of ordering) {
             const value = root[key]
 
-            // delete __typename: JSON in case it exists
             try {
-                delete value.__typename
-            } catch(e) {}
-
-            if(!value || typeof value != 'object') continue
-            if(!Object.isFrozen(value) && typeof transforms[key] == 'function')
-                Object.values(value).forEach(entry => {if(typeof entry == 'object' && !Object.isFrozen(entry)) {transforms[key](entry, root)}})
+                Object.values(value).forEach(entry => dispatch('normalizeUnfurlData', {key, entry, root, projectPath}))
+            } catch(e) {
+                // console.error('@useProjectStat', e)
+            }
 
             // commit so we can use our resolvers while normalizing
             if(key == 'ResourceType') {

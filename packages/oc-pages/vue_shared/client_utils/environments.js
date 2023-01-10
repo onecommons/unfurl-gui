@@ -169,7 +169,8 @@ export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDep
     for(const env of environments) { 
         env._dashboard = fullPath
         Object.entries(env.instances).forEach(([key, value]) => {
-            env.instances[key] = {title: key, ...value, name: key}
+            const title = value.title || value.metadata?.title || key
+            env.instances[key] = {...value, title, name: key}
         })
     }
 
