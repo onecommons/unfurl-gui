@@ -20,11 +20,11 @@ function mariaDBSaves(title, fixture) {
   cy.get('[data-testid^="resource-selection-unfurl.nodes."]').click()
 
   cy.get('.modal-content').within(() => {
-    cy.contains('button', 'Next').click()
+    cy.contains('button:visible', 'Next').click()
   })
 
 
-  cy.contains('button', 'Save as Draft').click()
+  cy.contains('button:visible', 'Save').click()
   cy.wait(BASE_TIMEOUT / 2)
 
   cy.get('[data-testid="card-compute-for-self-hosted-mariadb"]').should('exist')
@@ -41,10 +41,10 @@ describe('Drafts', () => {
     cy.get('[data-testid="delete-or-disconnect-the_app.db"]').click()
 
     cy.get('.modal-content').within(() => {
-      cy.contains('button', 'Remove').click()
+      cy.contains('button:visible', 'Remove').click()
     })
 
-    cy.contains('button', 'Save as Draft').click()
+    cy.contains('button:visible', 'Save').click()
     cy.wait(BASE_TIMEOUT / 2)
 
     cy.get('[data-testid="create-dependency-the_app.db"]').click()
@@ -53,10 +53,10 @@ describe('Drafts', () => {
     cy.wait(100)
 
     cy.get('.modal-content').within(() => {
-      cy.contains('button', 'Next').click()
+      cy.contains('button:visible', 'Next').click()
     })
 
-    cy.contains('button', 'Save as Draft').click()
+    cy.contains('button:visible', 'Save').click()
 
     cy.wait(BASE_TIMEOUT / 2)
     cy.get('[data-testid="card-self-hosted-mariadb"]').should('exist')
