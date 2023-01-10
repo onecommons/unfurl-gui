@@ -63,6 +63,7 @@ module.exports = (on, config) => {
   config.env.GCP_DNS_ZONE = GCP_DNS_ZONE || DIGITALOCEAN_DNS_ZONE
   config.env.AWS_DNS_ZONE = AWS_DNS_ZONE || DIGITALOCEAN_DNS_ZONE
 
+  const INTEGRATION_TEST_ARGS = config.env.INTEGRATION_TEST_ARGS
 
   let 
     TEARDOWN = config.env.TEARDOWN ?? '',
@@ -71,7 +72,7 @@ module.exports = (on, config) => {
   if (typeof TEARDOWN == 'string') TEARDOWN = TEARDOWN.toLowerCase()
   if (typeof GENERATE_SUBDOMAINS == 'string') GENERATE_SUBDOMAINS = GENERATE_SUBDOMAINS.toLowerCase()
 
-  console.log({TEARDOWN, GENERATE_SUBDOMAINS})
+  console.log({TEARDOWN, GENERATE_SUBDOMAINS, INTEGRATION_TEST_ARGS})
   // default true
   config.env.TEARDOWN = !['0', 'false', 'no', false].includes(TEARDOWN)
   // default false

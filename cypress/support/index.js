@@ -23,6 +23,8 @@ const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
 const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
+const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS') 
+
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
 Cypress.Cookies.defaults({
@@ -45,6 +47,10 @@ before(() => {
         cy.visit(`${BASE_URL}/admin/users/${IMPERSONATE}`)
         cy.get('[data-qa-selector="impersonate_user_link"]').click()
         cy.url().should('not.contain', 'admin')
+
+        if(INTEGRATION_TEST_ARGS.dashboardRepo) {
+          cy.visit(`${BASE_URL}/${IMPERSONATE}/dashboard`)
+        }
       }
     }
   })

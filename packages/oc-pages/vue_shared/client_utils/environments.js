@@ -130,7 +130,7 @@ export async function postGitlabEnvironmentForm() {
 export function connectionsToArray(environment) {
     if(Array.isArray(environment)) return environment
     if(environment.connections) {
-        for(const key in environment.connections) { 
+        for(const key in environment.connections) {
             if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
                 delete environment.connections[key]
             }
@@ -138,7 +138,7 @@ export function connectionsToArray(environment) {
         environment.connections = Object.values(environment.connections)
     }
     if(environment.instances) {
-        for(const key in environment.instances) { 
+        for(const key in environment.instances) {
             if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
                 delete environment.instances[key]
             }
@@ -166,7 +166,12 @@ export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDep
         .filter(env => env.name != 'defaults')
         .map(env => {env._dashboard = fullPath; return env})
 
-    for(const env of environments) { env._dashboard = fullPath }
+    for(const env of environments) { 
+        env._dashboard = fullPath
+        Object.entries(env.instances).forEach(([key, value]) => {
+            env.instances[key] = {title: key, ...value, name: key}
+        })
+    }
 
     const deploymentPaths = Object.values(data.DeploymentPath)
 

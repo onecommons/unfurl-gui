@@ -277,7 +277,7 @@ const actions = {
                 // we can use acc here because updateResourceSharedState populated the state
                 //const patch = acc.DeploymentEnvironment[environmentName]
                 const patch = _.cloneDeep(rootGetters.lookupEnvironment(environmentName))
-                patch.instances.push(newObject)
+                patch.instances[newObject.name] = newObject
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
