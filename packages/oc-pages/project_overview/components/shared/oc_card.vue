@@ -103,7 +103,7 @@ export default {
         id() {
             return generateCardId(this.card?.name)
         },
-        ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny']),
+        ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny', 'getDeployments', 'getDeploymentDictionary']),
 
         badgeHeaderText() {
             const type = this.getCardType(this.card)
@@ -138,7 +138,26 @@ export default {
 
         _displayStatus() {
             return this.displayStatus || this._readonly
+        },
+
+        importedResource() {
+            if(!this.card?.imported) return null
+            const [deploymentName, resourceName] = this.card.imported.split(':')
+            const deployment = this.getDeployments.find(dep => dep.name == deploymentName)
+            const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
+            const resource = dict['Resource'][resourceName]
+
+            // resolve the template here, since it's not in our other dictionary
+            return {...resource, template: dict['ResourceTemplate'][resource.template]}
+        },
+
+        _card() {
+            if(this.importedResource) {
+                return {...this.card, ...this.importedResource, imported: this.card.imported}
+            }
+            return this.card
         }
+
 
     },
     methods: {
@@ -183,7 +202,7 @@ export default {
                     <slot name="header">
                         <div v-if="card" class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
                             <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
-                            <h4 class="gl-my-0 oc_card_title">{{ customTitle || card.title }}</h4>
+                            <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
                             <el-tooltip :disabled="!tooltip">
                                 <template #content>
                                     <div>
