@@ -3,6 +3,7 @@ import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import { fetchUser } from 'oc_vue_shared/client_utils/user'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
+import {unfurlServerUrlOverride} from 'oc_vue_shared/storage-keys'
 
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
@@ -62,7 +63,7 @@ const getters = {
         return state.user
     },
     unfurlServicesUrl() {
-        return '/services/unfurl-server'
+        return unfurlServerUrlOverride() || '/services/unfurl-server'
     },
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},

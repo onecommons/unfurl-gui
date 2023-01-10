@@ -2,6 +2,7 @@ import { cloneDeep, create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
 import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
+import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 
@@ -410,12 +411,14 @@ const actions = {
         let resourceTemplateNode
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
-            const name = `__${externalResource}`
-            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName, __typename: 'ResourceTemplate'}
-            commit(
-                'pushPreparedMutation',
-                () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
-            )
+            const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
+            resourceTemplateNode = {...resourceTemplate, name, dependentName, directives: [], dependentRequirement, deploymentTemplateName, __typename: 'ResourceTemplate'}
+            if(!shouldConnectWithoutCopy()) {
+                commit(
+                    'pushPreparedMutation',
+                    () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
+                )
+            }
             commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName}))
         } else if(resource) {
             commit(

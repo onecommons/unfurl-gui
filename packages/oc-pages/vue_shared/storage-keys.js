@@ -3,7 +3,9 @@ export const INTERNAL_STORAGE_KEYS = {
 }
 
 export const HIDDEN_OPTION_KEYS = {
-    encodedPasswordExportUrls: 'encoded-password-export-urls'
+    encodedPasswordExportUrls: 'encoded-password-export-urls',
+    unfurlServerUrl: 'unfurl-server-url',
+    connectWithoutCopy: 'connect-without-copy'
 }
 
 
@@ -27,4 +29,12 @@ function lookupKey(key) {
 
 export function shouldEncodePasswordsInExportUrl() {
     return isTruthyStorageValue(lookupKey( HIDDEN_OPTION_KEYS.encodedPasswordExportUrls ))
+}
+
+export function shouldConnectWithoutCopy() {
+    return isTruthyStorageValue(lookupKey( HIDDEN_OPTION_KEYS.connectWithoutCopy ))
+}
+
+export function unfurlServerUrlOverride() {
+    return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl )
 }

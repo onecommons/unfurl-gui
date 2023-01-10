@@ -173,7 +173,6 @@ const actions = {
             },
             DeploymentEnvironment(de, root) {
                 for(const connection of Object.values(de.connections)) {
-                    const providerType = connection?.type
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
 
                     // intentionally not cloning
