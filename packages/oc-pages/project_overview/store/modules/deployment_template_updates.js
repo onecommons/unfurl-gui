@@ -1,14 +1,11 @@
 import { __ } from "~/locale";
 import _ from 'lodash'
-import graphqlClient from '../../graphql';
-import gql from 'graphql-tag';
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
-import {setLastCommit} from "../../../vue_shared/client_utils/projects";
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
 
@@ -83,7 +80,7 @@ function normalizeEnvName(_name) {
 
 let Serializers
 Serializers = {
-    DeploymentEnvironment(env) {
+    DeploymentEnvironment(env, state) {
         allowFields(env, 'connections', 'instances', 'external', 'repositories')
         fieldsToDictionary(env, 'connections', 'instances')
 
@@ -93,8 +90,12 @@ Serializers = {
         }
 
         for(const [name, instance] of Object.entries(env.instances)) {
-            if(lookupCloudProviderAlias(instance.type)) {
+            if(lookupCloudProviderAlias(instance?.type)) {
                 env.connections[name] = env.instances[name]
+                delete env.instances[name]
+            }
+
+            if(env.name != 'defaults' && state.DeploymentEnvironment?.defaults?.instances?.hasOwnProperty(name)) {
                 delete env.instances[name]
             }
         }
@@ -713,7 +714,7 @@ const mutations = {
                         const nestedPatches = Serializers[typename](record, state.accumulator)
                         if(Array.isArray(nestedPatches)) {
                             for(const p of nestedPatches) {
-                                if(Serializers[p.__typename])
+                                if(Serializers[p?.__typename])
                                     Serializers[p.__typename](p, record)
                             }
                         }
@@ -735,27 +736,8 @@ const mutations = {
 
 const actions = {
     async fetchRoot({commit, rootGetters, rootState}) {
-        // use project_application_blueprint store if it's loaded
         const state = rootGetters.getApplicationRoot
-        if(state?.loaded) {
-            // clone to get rid of observers and frozen objects
-            commit('setBaseState', JSON.parse(JSON.stringify(state)))
-            return
-        }
-
-        // TODO stop using this query
-        const query = gql`
-            query GetTemplateStateBeforeUpdating($fullPath: ID!) {
-                applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client
-            }
-        `
-        if(!rootState.project?.project?.globalVars?.projectPath) return
-        const {data, errors} = await graphqlClient.clients.defaultClient.query({
-            query,
-            variables: {fullPath: rootState.project.globalVars.projectPath}
-        })
-
-        commit('setBaseState', data?.applicationBlueprintProject?.json)
+        commit('setBaseState', _.cloneDeep(state))
     },
 
     async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
@@ -853,7 +835,7 @@ const actions = {
             // TODO be more selective about which patches to run this on
             sync = Promise.all(
                 patch
-                    .filter(p => p.__typename == 'DeploymentEnvironment')
+                    .filter(p => p.__typename == 'DeploymentEnvironment' && p.name != 'defaults' && p.connections?.primary_provider)
                     .map(p => declareAvailableProviders(
                         projectPath,
                         p.name,

@@ -29,6 +29,7 @@ export default {
             'deploymentItemDirect',
             'lookupDeploymentOrDraft',
             'lookupEnvironment',
+            'getEnvironmentDefaults',
             'lookupDeployPath',
             'getDashboardItems',
             'isAcknowledged',
@@ -117,10 +118,16 @@ export default {
                 e.flash = true
                 throw e
             }
+
+            const DeploymentEnvironment = {
+                [this.environment.name]: this.lookupEnvironment(this.environment.name),
+                defaults: this.getEnvironmentDefaults
+            }
+
             if(this.deployment.__typename == 'DeploymentTemplate') {
                 const projectPath = this.deployment.projectPath
                 await this.fetchProject({projectPath})
-                this.useProjectState({root: cloneDeep(this.state), shouldMerge: true, projectPath})
+                this.useProjectState({root: cloneDeep({...this.state, DeploymentEnvironment}), shouldMerge: true, projectPath})
             } else {
                 console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')
                 let ResourceType =  this.state.ResourceType
@@ -128,7 +135,7 @@ export default {
                     ResourceType = this.environmentResourceTypeDict(this.environment.name)
                 }
                 const projectPath = this.state.DeploymentTemplate[this.deployment.deploymentTemplate].projectPath
-                this.useProjectState({projectPath, root: cloneDeep({...this.state, ResourceType})})
+                this.useProjectState({projectPath, root: cloneDeep({...this.state, DeploymentEnvironment, ResourceType})})
             }
             this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true

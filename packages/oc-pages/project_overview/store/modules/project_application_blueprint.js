@@ -1,6 +1,5 @@
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
-import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import _ from 'lodash'
 import Vue from 'vue'
