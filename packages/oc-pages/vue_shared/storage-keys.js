@@ -38,3 +38,7 @@ export function shouldConnectWithoutCopy() {
 export function unfurlServerUrlOverride() {
     return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl )
 }
+
+window.lsHiddenOptions = function() {
+    for(const opt of Object.values(HIDDEN_OPTION_KEYS)) console.log(opt)
+}

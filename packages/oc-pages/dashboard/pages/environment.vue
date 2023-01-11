@@ -78,6 +78,7 @@ export default {
             'cardIsValid',
             'userCanEdit',
             'getVariables',
+            'getEnvironmentDefaults',
             'lookupDeployPath',
             'jobByPipelineId',
             'resolveResourceType',
@@ -245,7 +246,8 @@ export default {
                 const ResourceType = this.environmentResourceTypeDict(environment)
                 const root = _.cloneDeep({
                     DeploymentEnvironment: {
-                        [environment.name]: environment
+                        [environment.name]: environment,
+                        defaults: this.getEnvironmentDefaults
                     },
                     ResourceType 
                 })
