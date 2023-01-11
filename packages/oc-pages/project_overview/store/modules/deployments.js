@@ -100,7 +100,7 @@ const actions = {
 
         const deploymentDir = getDeploymentDir(deployPathName, newDeploymentName)
 
-        commit('useBaseState', {}, {root: true})
+        //commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Clone into ${newDeploymentName}`)
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
         commit('setUpdateObjectPath', deploymentDir, {root: true})
@@ -207,12 +207,13 @@ const actions = {
     },
 
     unshareResourceFromEnvironment({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        const name = `__${environmentName}__${deploymentName}__${resourceName}`
         commit(
             'pushPreparedMutation',
             (acc) => {
                 const environment = rootGetters.lookupEnvironment(environmentName)
                 // TODO check if this needs to be cloned
-                const patch = _.cloneDeep({...environment, instances: {...instances, [instance.name]: undefined}})
+                const patch = _.cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -226,8 +227,7 @@ const actions = {
             (acc) => {
                 const environment = rootGetters.getEnvironmentDefaults
                 // instances is initially an object for defaults
-                const instances = Object.values(environment.instances).filter(instance => instance.name != name)
-                const patch = _.cloneDeep({...environment, instances})
+                const patch = _.cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
                 return [{target: 'defaults', patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -240,8 +240,9 @@ const actions = {
 
         commit('setShareState', {shareState: null, name: `__${environmentName}__${deploymentName}__${resourceName}` })
 
-        commit('useBaseState', {}, {root: true})
+        //commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Unshare ${resourceName}`, {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
 
 
@@ -319,7 +320,7 @@ const actions = {
 
         commit('setShareState', {shareState, name: `__${environmentName}__${deploymentName}__${resourceName}` })
 
-        commit('useBaseState', {}, {root: true})
+        //commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Share ${resourceName} with ${shareState}`, {root: true})
         commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
