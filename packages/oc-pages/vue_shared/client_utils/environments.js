@@ -264,6 +264,14 @@ class DashboardProviders {
         })
         return result
     }
+
+    primaryProviderFor(environmentName) {
+        try {
+            return this.providersByEnvironment[environmentName][0]
+        } catch(e) {
+            return null
+        }
+    }
 }
 
 export async function fetchAvailableProviderDashboards(minAccessLevel=0) {

@@ -193,8 +193,7 @@ const actions = {
 
     },
     
-    async runDeploymentHooks({state, commit, rootGetters, dispatch}) {
-        const promises = []
+    async runDeploymentHooks({state, dispatch}) {
         for(const hook of state.deploymentHooks) {
             let result = hook()
             if(typeof result?.then == 'function') {
@@ -202,7 +201,13 @@ const actions = {
             }
             if(result === false) { return false }
         }
-        await dispatch('postQueuedProjectSubscriptions')
+        try {
+            await dispatch('postQueuedProjectSubscriptions')
+        } catch(e) {
+            // this is probably OK if the environment isn't loaded yet
+            // for GCP a pipeline has to run to create the provider - this is started after the cluster creation redirect
+            console.error('@runDeploymentHooks: failed to post subscriptions', e)
+        }
         return true
     },
 
@@ -411,8 +416,8 @@ const getters = {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
             })
         }
-        for(const dashboard of rootGetters.getAdditionalDashboards) {
-            for(const dict of dashboard.deployments) {
+        for(const dashboard of rootGetters.getAdditionalDashboards || []) {
+            for(const dict of dashboard?.deployments || []) {
                 const deployment = _.isObject(dict.Deployment)? dict.Deployment: dict.DeploymentTemplate
                 if(!deployment) continue
                 result.push(Object.values(deployment)[0])
