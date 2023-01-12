@@ -43,8 +43,8 @@ export default {
             return (this.additionalDashboards || [])
                 .map(
                     dash => Object.entries(dash.providersByEnvironment)
-                        .filter(([env, providers]) => providers.includes(this.provider))
-                        .map(([env, _]) => ({name: env, _dashboard: dash.fullPath, type: dash.providersByEnvironment[env][0]}))
+                        .filter(([env, providers]) => providers && providers.includes(this.provider))
+                        .map(([env, _]) => ({name: env, _dashboard: dash.fullPath, type: dash.primaryProviderFor(env)}))
                 ).flat()
         },
         env() {
