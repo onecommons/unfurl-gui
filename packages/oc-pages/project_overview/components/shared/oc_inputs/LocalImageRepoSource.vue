@@ -78,7 +78,7 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         ...mapMutations(['onDeploy', 'setUpstreamProject']),
 
         getStatus() {

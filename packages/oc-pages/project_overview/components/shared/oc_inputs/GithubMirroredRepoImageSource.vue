@@ -143,7 +143,7 @@ export default {
         },
     },
     methods: {
-        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject', 'setUpstreamBranch']),
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
