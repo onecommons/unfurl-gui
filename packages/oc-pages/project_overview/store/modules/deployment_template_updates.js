@@ -1,14 +1,13 @@
 import { __ } from "~/locale";
 import _ from 'lodash'
-import graphqlClient from '../../graphql';
-import gql from 'graphql-tag';
 import {slugify} from 'oc_vue_shared/util.mjs'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
-import axios from '~/lib/utils/axios_utils'
+import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
+import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -81,7 +80,7 @@ function normalizeEnvName(_name) {
 
 let Serializers
 Serializers = {
-    DeploymentEnvironment(env) {
+    DeploymentEnvironment(env, state) {
         allowFields(env, 'connections', 'instances', 'external', 'repositories')
         fieldsToDictionary(env, 'connections', 'instances')
 
@@ -91,8 +90,12 @@ Serializers = {
         }
 
         for(const [name, instance] of Object.entries(env.instances)) {
-            if(lookupCloudProviderAlias(instance.type)) {
+            if(lookupCloudProviderAlias(instance?.type)) {
                 env.connections[name] = env.instances[name]
+                delete env.instances[name]
+            }
+
+            if(env.name != 'defaults' && state.DeploymentEnvironment?.defaults?.instances?.hasOwnProperty(name)) {
                 delete env.instances[name]
             }
         }
@@ -301,22 +304,18 @@ export function createEnvironmentInstance({type, name, title, description, depen
 export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        const index = patch.instances.findIndex(instance => instance.name == templateName)
-        if(index != -1) {
-            patch.instances.splice(index, 1)
-
+        if(delete patch.instances[templateName]) {
             if(dependentName) {
-                const dependent = patch.instances.find(rt => rt.name == dependentName)
+                const dependent = patch.instances[dependentName]
                 const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+
                 if(dependency) {
                     dependency.match = null
                 }
             }
         } else {
-            const index = patch.connections.findIndex(connection => connection.name == templateName)
-            if(index != -1) {
-                patch.connections.splice(index, 1)
-            }
+            // assume we are attempting to delete a provider
+            delete patch.connections[templateName]
         }
 
         return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
@@ -715,7 +714,7 @@ const mutations = {
                         const nestedPatches = Serializers[typename](record, state.accumulator)
                         if(Array.isArray(nestedPatches)) {
                             for(const p of nestedPatches) {
-                                if(Serializers[p.__typename])
+                                if(Serializers[p?.__typename])
                                     Serializers[p.__typename](p, record)
                             }
                         }
@@ -737,27 +736,8 @@ const mutations = {
 
 const actions = {
     async fetchRoot({commit, rootGetters, rootState}) {
-        // use project_application_blueprint store if it's loaded
         const state = rootGetters.getApplicationRoot
-        if(state?.loaded) {
-            // clone to get rid of observers and frozen objects
-            commit('setBaseState', JSON.parse(JSON.stringify(state)))
-            return
-        }
-
-        // TODO stop using this query
-        const query = gql`
-            query GetTemplateStateBeforeUpdating($fullPath: ID!) {
-                applicationBlueprintProject(fullPath: $fullPath, dehydrated: true) @client
-            }
-        `
-        if(!rootState.project?.project?.globalVars?.projectPath) return
-        const {data, errors} = await graphqlClient.clients.defaultClient.query({
-            query,
-            variables: {fullPath: rootState.project.globalVars.projectPath}
-        })
-
-        commit('setBaseState', data?.applicationBlueprintProject?.json)
+        commit('setBaseState', _.cloneDeep(state))
     },
 
     async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
@@ -783,26 +763,14 @@ const actions = {
             })
         }
 
-        const username = rootGetters.getUsername
-        const password = await fetchUserAccessToken()
         const projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
         const projectId = project.id
 
-        const variables = {
-            username,
-            password,
-            patch, 
-            branch: state.branch || project.default_branch,
-            path: state.path
-        }
-
-        if(state.commitMessage) {
-            variables.commit_msg = state.commitMessage
-        }
-
         const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
+
+        const variables = {}
 
         if(token) {
             variables.cloud_vars_url = unfurl_cloud_vars_url({
@@ -813,7 +781,6 @@ const actions = {
             })
         }
 
-
         if(o?.dryRun) {
             console.log(state.committedNames)
             console.log(variables)
@@ -821,19 +788,15 @@ const actions = {
             return
         }
 
-        function unfurlServiceMutation(method) {
-            return `${rootGetters.unfurlServicesUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
-        }
+        let sync, method, path = state.path
 
-        let post
         if(state.updateType == UPDATE_TYPE.deployment) {
-            variables.deployment_path = variables.path
-            if(!rootGetters.hasDeployPathKey(variables.path)) {
-
+            variables.deployment_path = path
+            if(!rootGetters.hasDeployPathKey(path)) {
                 // infer information from the deployment object path instead of our getters
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
-                const pathSplits = variables.path.split('/')
+                const pathSplits = path.split('/')
                 pathSplits.shift()
                 const environmentName = pathSplits.shift()
                 const deploymentName = pathSplits.pop()
@@ -843,33 +806,59 @@ const actions = {
                 variables.deployment_blueprint = deploymentName
 
                 variables.blueprint_url = new URL(window.location.origin + '/' + blueprintProjectPath + '.git')
-                variables.blueprint_url.username = username
-                variables.blueprint_url.password = password
+                variables.blueprint_url.username = rootGetters.getUsername
+                variables.blueprint_url.password = await fetchUserAccessToken()
 
                 variables.blueprint_url = variables.blueprint_url.toString()
 
-                post = axios.post(unfurlServiceMutation('create_ensemble'), variables)
+                method = 'create_ensemble'
             } else {
-                post = axios.post(unfurlServiceMutation('update_ensemble'), variables)
+                method = 'update_ensemble'
             }
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
-            if(!variables.path) {
-                variables.path = 'unfurl.yaml'
+            if(!path) {
+                path = 'unfurl.yaml'
             }
-            post = axios.post(unfurlServiceMutation('delete_deployment'), variables)
+            method = 'delete_deployment'
         } else if(state.updateType == UPDATE_TYPE.deleteEnvironment) {
-            if(!variables.path) {
-                variables.path = 'unfurl.yaml'
+            if(!path) {
+                path = 'unfurl.yaml'
             }
-            post = axios.post(unfurlServiceMutation('delete_environment'), variables)
+            method = 'delete_environment'
         } else if(state.updateType == UPDATE_TYPE.environment) {
-            if(!variables.path) {
-                variables.path = 'unfurl.yaml'
+            if(!path) {
+                path = 'unfurl.yaml'
             }
-            post = axios.post(unfurlServiceMutation('update_environment'), variables)
+
+            method = 'update_environment'
+
+            // TODO be more selective about which patches to run this on
+            sync = Promise.all(
+                patch
+                    .filter(p => p.__typename == 'DeploymentEnvironment' && p.name != 'defaults' && p.connections?.primary_provider)
+                    .map(p => declareAvailableProviders(
+                        projectPath,
+                        p.name,
+                        //guarunteed ordering of primary_provider first
+                        [p.connections.primary_provider].concat(Object.values(p.connections).filter(conn => conn.name != 'primary_provider'))
+                            .map(provider => provider.type)
+                    ))
+            )
         }
 
-        await post
+        const branch = state.branch || project.default_branch
+
+        const post = unfurlServerUpdate({
+            baseUrl: rootGetters.unfurlServicesUrl,
+            method,
+            projectPath,
+            branch,
+            patch,
+            commitMessage: state.commitMessage,
+            variables
+        })
+
+        await Promise.all([post, sync])
     },
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {

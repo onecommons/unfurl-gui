@@ -1,8 +1,6 @@
-import axios from '~/lib/utils/axios_utils'
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
-import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
-import {fetchProjectInfo, fetchBranches} from '../../../vue_shared/client_utils/projects'
+import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -39,31 +37,16 @@ const mutations = {
 }
 const actions = {
     async fetchProject({commit, dispatch, rootGetters}, params) {
-        const {projectPath, fullPath, fetchPolicy, projectGlobal} = params
+        const {projectPath, projectGlobal} = params
         commit('loaded', false)
 
-        const project = await fetchProjectInfo(encodeURIComponent(projectPath))
-        const branch = project.default_branch
+        const root = await unfurlServerExport({
+            baseUrl: rootGetters.unfurlServicesUrl,
+            format: 'blueprint',
+            projectPath,
+            //TODO pass branch
+        })
 
-        const latestCommit = (await fetchBranches(project.id))
-            ?.find(b => b.name == branch)
-            ?.commit?.id
-
-        const username = rootGetters.getUsername
-        const password = await fetchUserAccessToken()
-
-        let exportUrl = `${rootGetters.unfurlServicesUrl}/export?format=blueprint`
-        exportUrl += `&username=${username}`
-        exportUrl += `&password=${password}`
-        exportUrl += `&branch=${branch}`
-        exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
-        exportUrl += `&latest_commit=${latestCommit}`
-
-        const {data} = await axios.get(exportUrl)
-
-        // TODO handle errors
-
-        const root = data
         root.projectGlobal = projectGlobal
 
         dispatch('useProjectState', {projectPath, root})
@@ -72,18 +55,7 @@ const actions = {
 
     },
 
-    useProjectState({state, commit, getters}, {projectPath, root, shouldMerge}) {
-        if(!projectPath) {console.warn('projectPath is not set')}
-        console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
-        if(!(state.clean || shouldMerge)) {
-            commit('resetProjectState')
-            commit('clearRepositoryDependencies', null, {root: true})
-        }
-
-        if(state.clean && projectPath) {
-            commit('addRepositoryDependencies', [projectPath], {root: true})
-        }
-        
+    normalizeUnfurlData({state, getters}, {key, entry, root, projectPath}) {
         let transforms
 
         function normalizeProperties(properties) {
@@ -191,7 +163,6 @@ const actions = {
             },
             DeploymentEnvironment(de, root) {
                 for(const connection of Object.values(de.connections)) {
-                    const providerType = connection?.type
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
 
                     // intentionally not cloning
@@ -209,20 +180,34 @@ const actions = {
             }
         }
 
+
+        if(Object.isFrozen(entry)) return
+        transforms[key] && transforms[key](entry, root)
+    },
+
+    useProjectState({state, commit, dispatch}, {projectPath, root, shouldMerge}) {
+        if(!projectPath) {console.warn('projectPath is not set')}
+        console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
+        if(!(state.clean || shouldMerge)) {
+            commit('resetProjectState')
+            commit('clearRepositoryDependencies', null, {root: true})
+        }
+
+        if(state.clean && projectPath) {
+            commit('addRepositoryDependencies', [projectPath], {root: true})
+        }
+
         // guarunteed ordering
         const ordering = uniq(['ResourceType', 'DefaultTemplate', 'DeploymentEnvironment', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
         for(const key of ordering) {
             const value = root[key]
 
-            // delete __typename: JSON in case it exists
             try {
-                delete value.__typename
-            } catch(e) {}
-
-            if(!value || typeof value != 'object') continue
-            if(!Object.isFrozen(value) && typeof transforms[key] == 'function')
-                Object.values(value).forEach(entry => {if(typeof entry == 'object' && !Object.isFrozen(entry)) {transforms[key](entry, root)}})
+                Object.values(value).forEach(entry => dispatch('normalizeUnfurlData', {key, entry, root, projectPath}))
+            } catch(e) {
+                // console.error('@useProjectStat', e)
+            }
 
             // commit so we can use our resolvers while normalizing
             if(key == 'ResourceType') {

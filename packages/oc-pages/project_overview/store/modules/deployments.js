@@ -2,8 +2,7 @@ import {slugify} from 'oc_vue_shared/util.mjs'
 import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
-import {fetchBranches} from 'oc_vue_shared/client_utils/projects'
-import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
+import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
 import Vue from 'vue'
 import _ from 'lodash'
 import axios from '~/lib/utils/axios_utils'
@@ -101,7 +100,7 @@ const actions = {
 
         const deploymentDir = getDeploymentDir(deployPathName, newDeploymentName)
 
-        commit('useBaseState', {}, {root: true})
+        //commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Clone into ${newDeploymentName}`)
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
         commit('setUpdateObjectPath', deploymentDir, {root: true})
@@ -194,8 +193,7 @@ const actions = {
 
     },
     
-    async runDeploymentHooks({state, commit, rootGetters, dispatch}) {
-        const promises = []
+    async runDeploymentHooks({state, dispatch}) {
         for(const hook of state.deploymentHooks) {
             let result = hook()
             if(typeof result?.then == 'function') {
@@ -203,17 +201,24 @@ const actions = {
             }
             if(result === false) { return false }
         }
-        await dispatch('postQueuedProjectSubscriptions')
+        try {
+            await dispatch('postQueuedProjectSubscriptions')
+        } catch(e) {
+            // this is probably OK if the environment isn't loaded yet
+            // for GCP a pipeline has to run to create the provider - this is started after the cluster creation redirect
+            console.error('@runDeploymentHooks: failed to post subscriptions', e)
+        }
         return true
     },
 
     unshareResourceFromEnvironment({commit, rootGetters}, {environmentName, deploymentName, resourceName}) {
+        const name = `__${environmentName}__${deploymentName}__${resourceName}`
         commit(
             'pushPreparedMutation',
             (acc) => {
                 const environment = rootGetters.lookupEnvironment(environmentName)
                 // TODO check if this needs to be cloned
-                const patch = _.cloneDeep({...environment, instances: {...instances, [instance.name]: undefined}})
+                const patch = _.cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -227,8 +232,7 @@ const actions = {
             (acc) => {
                 const environment = rootGetters.getEnvironmentDefaults
                 // instances is initially an object for defaults
-                const instances = Object.values(environment.instances).filter(instance => instance.name != name)
-                const patch = _.cloneDeep({...environment, instances})
+                const patch = _.cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
                 return [{target: 'defaults', patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -241,8 +245,9 @@ const actions = {
 
         commit('setShareState', {shareState: null, name: `__${environmentName}__${deploymentName}__${resourceName}` })
 
-        commit('useBaseState', {}, {root: true})
+        //commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Unshare ${resourceName}`, {root: true})
+        commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
 
 
@@ -278,7 +283,7 @@ const actions = {
                 // we can use acc here because updateResourceSharedState populated the state
                 //const patch = acc.DeploymentEnvironment[environmentName]
                 const patch = _.cloneDeep(rootGetters.lookupEnvironment(environmentName))
-                patch.instances.push(newObject)
+                patch.instances[newObject.name] = newObject
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -320,7 +325,7 @@ const actions = {
 
         commit('setShareState', {shareState, name: `__${environmentName}__${deploymentName}__${resourceName}` })
 
-        commit('useBaseState', {}, {root: true})
+        //commit('useBaseState', {}, {root: true})
         commit('setCommitMessage', `Share ${resourceName} with ${shareState}`, {root: true})
         commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root:true})
@@ -335,14 +340,11 @@ const actions = {
     },
 
     // TODO move fetch logic into client_utils
-    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath, token, projectId}) {
+    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath}) {
         const username = rootGetters.getUsername
         const password = await fetchUserAccessToken()
-        const branch = 'main'
 
-        const latestCommit = (await fetchBranches(encodeURIComponent(fullPath)))
-            ?.find(b => b.name == branch)
-            ?.commit?.id
+        const [latestCommit, branch] = await fetchLastCommit(encodeURIComponent(fullPath))
 
         let deploymentUrl = `${rootGetters.unfurlServicesUrl}/export?format=deployment`
         deploymentUrl += `&username=${username}`
@@ -352,18 +354,6 @@ const actions = {
         deploymentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
         deploymentUrl += `&branch=${branch}`
         deploymentUrl += `&latest_commit=${latestCommit}`
-
-        if(token) {
-            const cloudVarsUrl = unfurl_cloud_vars_url({
-                protocol: window.location.protocol,
-                server: window.location.hostname + ':' + window.location.port,
-                projectId: projectId || encodeURIComponent(fullPath),
-                token
-            })
-
-            deploymentUrl += '&cloud_vars_url=' + encodeURIComponent(cloudVarsUrl)
-        }
-
 
         try {
             const {data} = await axios.get(deploymentUrl)
@@ -420,14 +410,14 @@ const getters = {
         if(!state.deployments) return []
         const result = []
         for(const dict of state.deployments) {
-            const deployment = _.isObject(dict.Deployment) && dict.Resource[dict.Deployment.primary]? dict.Deployment: dict.DeploymentTemplate
+            const deployment = _.isObject(dict.Deployment) && dict.Resource[Object.values(dict.Deployment)[0].primary]? dict.Deployment: dict.DeploymentTemplate
             if(!deployment) continue
             Object.values(deployment).forEach(dep => {
                 result.push({...dep, _environment: dict._environment}) // _environment assigned on fetch in environments store
             })
         }
-        for(const dashboard of rootGetters.getAdditionalDashboards) {
-            for(const dict of dashboard.deployments) {
+        for(const dashboard of rootGetters.getAdditionalDashboards || []) {
+            for(const dict of dashboard?.deployments || []) {
                 const deployment = _.isObject(dict.Deployment)? dict.Deployment: dict.DeploymentTemplate
                 if(!deployment) continue
                 result.push(Object.values(deployment)[0])

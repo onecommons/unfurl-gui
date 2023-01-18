@@ -68,8 +68,10 @@ export default {
 
 
         if(sessionStorage['trigger-deployment']) {
-          this.deployInto(JSON.parse(sessionStorage['trigger-deployment']))
-          delete sessionStorage['trigger-deployment']
+            // we need to await this because our updates all have a shared global state
+            // the user can potentially initiate other update operations while one or more of this trigger's subrequests are in flight
+            await this.deployInto(JSON.parse(sessionStorage['trigger-deployment']))
+            delete sessionStorage['trigger-deployment']
         }
 
         this.isLoaded = true

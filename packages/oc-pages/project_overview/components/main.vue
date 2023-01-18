@@ -48,8 +48,12 @@ export default {
                     );
                 })
 
-                this.$store.dispatch('loadAdditionalDashboards')
-                    .catch(() => {})
+            /*
+             * This shouldn't be needed, but this will load additional dashboards the user has access to in the background
+             * for users with a higher number of dashboard memberships, this will slow down requests that are needed to render the view
+            this.$store.dispatch('loadAdditionalDashboards')
+                .catch(() => {})
+             */
         }
         try {
             const {projectPath} = this.$projectGlobal

@@ -36,7 +36,7 @@ function mapCloudProviderProps(ci_variables) {
 
     const deployPath = this.lookupDeployPath('primary_provider', this.environmentName)
     if(deployPath) {
-        const jobId = this.jobByPipelineId(deployPath.pipeline.id)?.id
+        const jobId = this.jobByPipelineId(deployPath.pipeline?.id)?.id
         if(jobId) {
             result.push({
                 name: 'Created in',
@@ -78,6 +78,7 @@ export default {
             'cardIsValid',
             'userCanEdit',
             'getVariables',
+            'getEnvironmentDefaults',
             'lookupDeployPath',
             'jobByPipelineId',
             'resolveResourceType',
@@ -134,7 +135,7 @@ export default {
             return this.showingResourcesTab || this.showingPublicCloudTab
         },
         showingProviderModal: {
-            get() { return this.$route.query.hasOwnProperty('provider') },
+            get() { return this.$route.query.hasOwnProperty('provider') && !this.$route.query.provider },
             set(val) {
                 const query = {...this.$route.query}
                 if(val) { query.provider = null }
@@ -245,7 +246,8 @@ export default {
                 const ResourceType = this.environmentResourceTypeDict(environment)
                 const root = _.cloneDeep({
                     DeploymentEnvironment: {
-                        [environment.name]: environment
+                        [environment.name]: environment,
+                        defaults: this.getEnvironmentDefaults
                     },
                     ResourceType 
                 })

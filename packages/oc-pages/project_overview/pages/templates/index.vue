@@ -700,7 +700,6 @@ export default {
                 <oc-card
                   v-for="(card, idx) in getCardsStacked"
                   :key="__('levelOne-') + card.title"
-                  :custom-title="card.title"
                   :card="card"
                   :icon-title="true"
                   :icon-color="card.valid ? 'icon-green' : 'icon-red'"

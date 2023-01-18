@@ -2,6 +2,7 @@ import { cloneDeep, create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
 import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
+import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 
@@ -161,7 +162,7 @@ const actions = {
     },
 
     // used by deploy and blueprint editing
-    populateTemplateResources({getters, rootGetters, state, commit, dispatch}, {projectPath, templateSlug, fetchPolicy, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+    populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('resetTemplateResourceState')
         // TODO this doesn't make any sense to people reading this
         commit('setContext', false)
@@ -185,11 +186,6 @@ const actions = {
                 if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
                 dispatch('useProjectState', {root: _.cloneDeep({...dict, ResourceType: undefined}), shouldMerge: true, projectPath})
                 _syncState = false // override sync state if we just loaded this
-                /*
-                deploymentTemplate = _.cloneDeep(dt)
-                primary = _.cloneDeep(dict.ResourceTemplate[deploymentTemplate.primary])
-                deploymentDict = dict
-                */
                 break
             }
             setdt()
@@ -240,65 +236,10 @@ const actions = {
                     {root: true}
                 );
             }
-
-            // Push all resource templates into deployment.json, etc. so they can be referenced later
-            for(const resourceTemplateName of deploymentTemplate.resourceTemplates) {
-                let templateToCommit
-                if(
-                    !state.resourceTemplates[resourceTemplateName] &&
-                    (templateToCommit = rootGetters.resolveResourceTemplate(resourceTemplateName))
-                ) {
-                    let typename = 'ResourceTemplate'
-                    // Do not confuse unfurl by committing as 'ResourceTemplate' with defaults
-                    // we could handle this more generically, but this is the only code path where this is possible
-                    if (templateToCommit.directives?.includes('default')) typename = 'DefaultTemplate'
-                    commit(
-                        'pushPreparedMutation',
-                        () => [{patch: templateToCommit, target: templateToCommit.name, typename}],
-                        {root: true}
-                    )
-                }
-            }
         }
 
 
-        function createMatchedTemplateResources(resourceTemplate) {
-            if(_syncState) {
-                commit('pushPreparedMutation', (accumulator) => {
-                    return [{target: resourceTemplate.name, patch: resourceTemplate, typename: 'ResourceTemplate'}];
-                });
-            }
-
-            for(let dependency of resourceTemplate.dependencies) {
-                if(typeof(dependency.match) != 'string') continue;
-                const resolvedDependencyMatch = deploymentDict ?
-                    deploymentDict.ResourceTemplate[dependency.match] :
-                    getters.lookupResourceTemplate(dependency.match);
-                let valid, completionStatus
-                valid = !!resolvedDependencyMatch;
-
-                completionStatus = valid? 'created': null;
-                if(!completionStatus && environmentName) {
-                    let connected = rootGetters.lookupConnection(environmentName, dependency.match)
-                    if(connected) {
-                        valid = true
-                        completionStatus = 'connected'
-                    }
-                }
-
-                dependency = {...dependency, valid, completionStatus}
-
-                const id = resolvedDependencyMatch && btoa(resolvedDependencyMatch.name).replace(/=/g, '');
-
-                commit('createTemplateResource', {...resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resourceTemplate.name, _deployed: getters.editingDeployed});
-
-                if(resolvedDependencyMatch) {
-                    createMatchedTemplateResources(resolvedDependencyMatch);
-                }
-            }
-        }
-
-        createMatchedTemplateResources(primary);
+        dispatch('createMatchedResources', {resource: primary, isDeploymentTemplate: true});
         
         commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
@@ -331,27 +272,35 @@ const actions = {
         commit('setContext', context)
     },
 
-    // NOTE this doesn't work with instantiating from an unfurl.json blueprint because of local ResourceTemplate
     createMatchedResources({state, commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
-        /*
-        for(const attribute of resource.attributes) {
-            commit('setInputValidStatus', {card: resource, input: attribute, status: !!(attribute.value)})
-        }
-        */
         for(const dependency of resource.dependencies) {
             if(state.resourceTemplates.hasOwnProperty(dependency.match)) {
                 console.warn(`Cannot create matched resource for ${dependency.match}: already exists in store`)
                 continue
             }
 
-            const resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
+            let resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
+            let environmentName = state.lastFetchedFrom?.environmentName
+
+            if(!resolvedDependencyMatch && environmentName) {
+                let matchedInstance = rootGetters.lookupConnection(environmentName, dependency.match)
+                if(matchedInstance) {
+                    matchedInstance = _.cloneDeep(matchedInstance)
+                    dispatch('normalizeUnfurlData', {key: 'ResourceTemplate', entry: matchedInstance})
+                    matchedInstance
+                    resolvedDependencyMatch = matchedInstance
+
+                    resolvedDependencyMatch.completionStatus = 'connected'
+                    resolvedDependencyMatch.readonly = true
+                }
+            }
+
             let child = resolvedDependencyMatch
             if(!isDeploymentTemplate && child) {
                 child = rootGetters.resolveResource(dependency.target)
             }
             const valid = !!(child)
             const id = valid && btoa(child.name).replace(/=/g, '')
-
 
             if(valid) {
                 commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
@@ -435,12 +384,14 @@ const actions = {
         let resourceTemplateNode
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
-            const name = `__${externalResource}`
-            resourceTemplateNode = {...resourceTemplate, name, dependentName, dependentRequirement, deploymentTemplateName, __typename: 'ResourceTemplate'}
-            commit(
-                'pushPreparedMutation',
-                () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
-            )
+            const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
+            resourceTemplateNode = {...resourceTemplate, name, dependentName, directives: [], dependentRequirement, deploymentTemplateName, readonly: true, __typename: 'ResourceTemplate'}
+            if(!shouldConnectWithoutCopy()) {
+                commit(
+                    'pushPreparedMutation',
+                    () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
+                )
+            }
             commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName}))
         } else if(resource) {
             commit(
@@ -874,7 +825,7 @@ const getters = {
                 return templateFromStore
             }
 
-            return templateFromSource
+            return templateFromSource || templateFromStore
         }
     },
   
@@ -918,7 +869,8 @@ const getters = {
 
     editingDeployed(state, _a, _b, rootGetters) {
         try {
-            return rootGetters.resolveDeployment(state.deploymentTemplate.name).__typename == 'Deployment' && state.context === false
+            const deployment = rootGetters.resolveDeployment(state.deploymentTemplate.name)
+            return  deployment.__typename == 'Deployment' && state.context === false && deployment.hasOwnProperty('status')
         }
         catch(e) {
             return false

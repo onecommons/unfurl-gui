@@ -69,6 +69,7 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'GCP_DNS_ZONE', 'AWS_DNS_ZONE',
   'MOCK_DEPLOY', 'UNFURL_MOCK_DEPLOY', 'UNFURL_VALIDATION_MODE', 'VALIDATION_MODE',
   'OC_IMPERSONATE', 'DO_ENVIRONMENT_NAME', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', // always overriden
+  'INTEGRATION_TEST_ARGS',
   'MAIL_USERNAME', 'MAIL_PASSWORD', 'SMTP_HOST', 'MAIL_RESOURCE_NAME',
   'DEPLOY_IMAGE', 'DEPLOY_TAG',
   'TEARDOWN', 'GENERATE_SUBDOMAINS', // used in recreate deployment
@@ -124,7 +125,8 @@ async function main() {
   const args = require('minimist')(process.argv.slice(2))
   let prepareUserCommand
 
-  let {username, awsAuthMethod, cypressEnv, dashboardRepo, REPOS_NAMESPACE} = readArgs(args)
+  const parsedArgs = readArgs(args)
+  let {username, awsAuthMethod, cypressEnv, dashboardRepo, REPOS_NAMESPACE} = parsedArgs
 
   if(!REPOS_NAMESPACE) REPOS_NAMESPACE = 'testing'
 
@@ -141,8 +143,9 @@ async function main() {
   const AWS_ENVIRONMENT_NAME = identifierFromCurrentTime('aws').toLowerCase()
   const DO_ENVIRONMENT_NAME = identifierFromCurrentTime('do').toLowerCase()
   const K8S_ENVIRONMENT_NAME = identifierFromCurrentTime('k8s').toLowerCase()
+  const INTEGRATION_TEST_ARGS = JSON.stringify(parsedArgs)
 
-  const forwardedEnv = forwardedEnvironmentVariables({OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, REPOS_NAMESPACE})
+  const forwardedEnv = forwardedEnvironmentVariables({OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS})
 
   const cypressCommand = invokeCypressCommand(args._, forwardedEnv)
 

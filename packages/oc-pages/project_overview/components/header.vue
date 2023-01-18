@@ -65,7 +65,7 @@ export default {
             return this.$projectGlobal.treePath
         },
         livePreview() {
-            return this.$projectGlobal.livePreview || this.getApplicationBlueprint.livePreview
+            return this.$projectGlobal?.livePreview || this.getApplicationBlueprint?.livePreview
         }
     },
 
