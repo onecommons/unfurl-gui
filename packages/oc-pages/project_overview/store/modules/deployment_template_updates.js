@@ -735,17 +735,17 @@ const mutations = {
 
 
 const actions = {
-    async fetchRoot({commit, rootGetters, rootState}) {
+    async fetchRoot({commit, rootGetters}) {
         const state = rootGetters.getApplicationRoot
         commit('setBaseState', _.cloneDeep(state))
     },
 
-    async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
+    async sendUpdateSubrequests({state, getters, rootState, rootGetters}, o){
         // send environment variables before trying to commit changes
         if(o?.dryRun) {
             console.log(state.env, state.environmentScope, state.projectPath)
         } else {
-            await patchEnv(state.env, state.environmentScope, state.projectPath)
+            await patchEnv(state.env, state.environmentScope, state.projectPath, 0)
         }
 
         const patch = []
