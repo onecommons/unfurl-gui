@@ -25,6 +25,8 @@ const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS') 
 
+const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
+
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
 Cypress.Cookies.defaults({
@@ -69,6 +71,9 @@ beforeEach(() => {
     }
     if(UNFURL_VALIDATION_MODE) {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
+    }
+    if(UNFURL_SERVER_URL) {
+      win.sessionStorage['unfurl-server-url'] = UNFURL_SERVER_URL
     }
     win.sessionStorage['unfurl-trace'] = 't'
   })

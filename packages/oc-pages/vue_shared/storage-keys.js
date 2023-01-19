@@ -39,6 +39,9 @@ export function unfurlServerUrlOverride() {
     return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl )
 }
 
+export const XHR_JAIL_URL = '/-/crossorigin-xhr'
+export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
+
 window.lsHiddenOptions = function() {
     for(const opt of Object.values(HIDDEN_OPTION_KEYS)) console.log(opt)
 }
