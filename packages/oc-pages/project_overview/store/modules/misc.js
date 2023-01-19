@@ -62,9 +62,6 @@ const getters = {
     getUser(state) {
         return state.user
     },
-    unfurlServicesUrl() {
-        return unfurlServerUrlOverride() || '/services/unfurl-server'
-    },
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
     pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },

@@ -849,7 +849,6 @@ const actions = {
         const branch = state.branch || project.default_branch
 
         const post = unfurlServerUpdate({
-            baseUrl: rootGetters.unfurlServicesUrl,
             method,
             projectPath,
             branch,

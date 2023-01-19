@@ -346,11 +346,10 @@ const actions = {
     },
 
 
-    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath}) {
+    async fetchProjectEnvironments({commit, dispatch}, {fullPath}) {
         let environments = []
         try {
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
-            const unfurlServicesUrl = rootGetters.unfurlServicesUrl
 
             // TODO don't hardcode main
             const branch = 'main'
@@ -359,7 +358,6 @@ const actions = {
                 fullPath,
                 branch,
                 projectId,
-                unfurlServicesUrl,
                 includeDeployments: true
             })
 
@@ -523,7 +521,7 @@ const actions = {
         // include developer access for deploy requests, etc.
         const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=30`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id, unfurlServicesUrl: rootGetters.unfurlServicesUrl}))
+            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id}))
 
         commit('setAdditionalDashboards', await Promise.all(dashboards))
     }
