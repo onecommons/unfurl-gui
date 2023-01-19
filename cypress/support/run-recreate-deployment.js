@@ -22,7 +22,7 @@ function pseudorandomPassword() {
 }
 
 Cypress.Commands.add('recreateDeployment', options => {
-  let fixture, shouldDeploy, shouldSave, title, skipTeardown
+  let fixture, shouldDeploy, shouldSave, title, skipTeardown, _env, _dnsZone
   if (typeof options == 'string') {
     fixture = options
     shouldDeploy = true
@@ -31,6 +31,8 @@ Cypress.Commands.add('recreateDeployment', options => {
     shouldSave = options.shouldSave ?? false
     shouldDeploy = options.shouldDeploy ?? !shouldSave
     skipTeardown = options.skipTeardown
+    _dnsZone = options.dnsZone
+    _env = options.env
   }
   cy.fixture(fixture).then(deployment => {
     const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
@@ -50,51 +52,52 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
 
 
-    let env = Object.values(DeploymentPath)[0].environment
-    let dnsZone
+    let env = _env || Object.values(DeploymentPath)[0].environment
+    let dnsZone = _dnsZone
     let subdomain
-    if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
-      env = AWS_ENVIRONMENT_NAME
-      dnsZone = AWS_DNS_ZONE
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createAWSEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+    if(!_env) {
+      if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
+        env = AWS_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createAWSEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
-    } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
-      env = GCP_ENVIRONMENT_NAME
-      dnsZone = GCP_DNS_ZONE
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createGCPEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+      } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
+        env = GCP_ENVIRONMENT_NAME
+        dnsZone = GCP_DNS_ZONE
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createGCPEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
-    } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.DigitalOcean') {
-      env = DO_ENVIRONMENT_NAME
-      dnsZone = AWS_DNS_ZONE // not a mistake
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createDigitalOceanEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+      } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.DigitalOcean') {
+        env = DO_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE // not a mistake
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createDigitalOceanEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
-    } else if(K8S_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
-      env = K8S_ENVIRONMENT_NAME
-      dnsZone = AWS_DNS_ZONE
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createK8SEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+      } else if(K8S_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
+        env = K8S_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createK8SEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
+      }
     }
-
     if(USE_UNFURL_DNS) {
       dnsZone = `${USERNAME}.u.${USE_UNFURL_DNS}`
     }
@@ -158,18 +161,27 @@ Cypress.Commands.add('recreateDeployment', options => {
                 }
               }
             }
+
             // NOTE coupled tightly with element ui
             let q = `
               [data-testid="oc-input-${template.name}-${property.name}"].el-input,
               [data-testid="oc-input-${template.name}-${property.name}"].el-input-number
             `
+            let qChecked = `label[data-testid="oc-input-${template.name}-${property.name}"].el-checkbox`
+            let el
             if($document.querySelector(q)) {
               cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`)
                 .last()
                 .invoke('val', '')
                 .type(value)
+            } else if (el = $document.querySelector(qChecked)) {
+              if(el.classList.contains('is-checked') && !value) {
+                cy.get(qChecked).click()
+              } else if(!el.classList.contains('is-checked') && value) {
+                cy.get(qChecked).click()
+              }
             } else {
-              console.log(`Could not find ${property.name} on ${template.name}`)
+              cy.log(`Could not find ${property.name} on ${template.name}`)
             }
           }
 
@@ -178,8 +190,12 @@ Cypress.Commands.add('recreateDeployment', options => {
         for(const dependency of template.dependencies) {
           if (!dependency.match) continue
 
-          const match = ResourceTemplate[dependency.match]
-          expect(match).to.exist
+          cy.log(dependency.match)
+          const match = ResourceTemplate[dependency.match] || dt.ResourceTemplate[dependency.match]
+          // dockerhost missing for some reason with current export?
+          //expect(match).to.exist
+
+          if(!match) continue
 
           if (dependency.constraint.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)

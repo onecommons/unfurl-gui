@@ -82,6 +82,7 @@ export default {
             'lookupDeployPath',
             'jobByPipelineId',
             'resolveResourceType',
+            'getApplicationRoot'
         ]),
         resourcesTabIndex() {
             return 0
@@ -183,6 +184,7 @@ export default {
             'populateTemplateResources2',
             'createNodeResource',
             'commitPreparedMutations',
+            'normalizeUnfurlData',
         ]),
 
 
@@ -213,9 +215,16 @@ export default {
             )
 
         },
-        onProviderAdded({selection, title}) {
-            this.freshState()
+        async onProviderAdded({selection, title}) {
+            await this.freshState()
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+            if(selection.name == lookupCloudProviderAlias('k8s')) {
+                this.createNodeResource({
+                    selection: this.resolveResourceType('KubernetesIngressController'),
+                    title: "KubernetesIngressController",
+                    name: "k8sDefaultIngressController",
+                })
+            }
             this.$refs.deploymentResources.cleanModalResource()
 
             this.scrollToProvider(slugify(title))
@@ -289,7 +298,7 @@ export default {
 
         lookupCloudProviderAlias,
 
-        freshState() {
+        async freshState() {
             this.setRouterHook()
 
             this.clearPreparedMutations()
@@ -303,7 +312,23 @@ export default {
             this.environment = environment
 
             this.onSaveTemplate(false)
-            this.populateTemplateResources2({resourceTemplates: [...Object.values(environment.instances), ...Object.values(environment.connections)], environmentName, context: 'environment'})
+
+            const instances = _.cloneDeep(Object.values(environment.instances))
+            const connections = _.cloneDeep(Object.values(environment.connections))
+
+            await Promise.all(
+                instances.map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot}))
+            )
+            // TODO implement and test normalization for connections - this should account better for users making manual changes
+
+            this.populateTemplateResources2({
+                resourceTemplates: [
+                    ...instances,
+                    ...connections
+                ],
+                environmentName,
+                context: 'environment'
+            })
 
             this.setAvailableResourceTypes(
                 this.environmentLookupDiscoverable(environment)
@@ -319,16 +344,16 @@ export default {
 
     },
     watch: {
-        showingProviderModal(val) {
+        async showingProviderModal(val) {
             if(!val) {
-                this.freshState()
+                await this.freshState()
                 this.$refs.providerModal.close()
             }
         }
     },
 
-    created() {
-        this.freshState()
+    async created() {
+        await this.freshState()
     }
 }
 </script>

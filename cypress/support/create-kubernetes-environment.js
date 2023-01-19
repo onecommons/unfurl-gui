@@ -39,6 +39,44 @@ Cypress.Commands.add('k8sCompleteEnvironmentDialog', options => {
   cy.contains('button', 'Next').click()
 })
 
+function enterK8sInfo(providerName='primary_provider') {
+  if(K8S_CLUSTER_NAME) {
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-name"]`).type(K8S_CLUSTER_NAME)
+  }
+  if(K8S_CONTEXT) {
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-context"]`).type(K8S_CONTEXT)
+  }
+  if(K8S_CA_CERT) {
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-cluster_ca_certificate"]`).type(K8S_CA_CERT)
+  }
+  if(K8S_INSECURE) {
+    cy.get(`label[data-testid="oc-input-${providerName}-insecure"] input[type="checkbox"]`).click({force: true})
+  }
+  if(K8S_AUTH_TOKEN) {
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-token"]`).type(K8S_AUTH_TOKEN)
+  }
+  if(K8S_NAMESPACE) {
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-namespace"]`).type(K8S_NAMESPACE)
+  }
+  if(K8S_BASE_URL) {
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-api_server"]`).type(K8S_BASE_URL)
+  }
+}
+
+function addK8sAnnotations() {
+  for(const {key, value} of [
+    {key: 'cert-manager.io/issuer', value: 'gitlab-issuer'},
+    {key: 'kubernetes.io/ingress.class', value: 'gitlab-nginx'},
+    {key: 'kubernetes.io/ingress.provider', value: 'nginx'},
+  ]) {
+    cy.contains('button.formily-element-array-base-addition', 'Add').click()
+    cy.get('[placeholder="key"]').last().type(key)
+    cy.get('[placeholder="value"]').last().type(value)
+  }
+}
+
+Cypress.Commands.add('enterK8sInfo', enterK8sInfo)
+Cypress.Commands.add('addK8sAnnotations', addK8sAnnotations)
 Cypress.Commands.add('createK8SEnvironment', (options) => {
   const { environmentName, shouldCreateExternalResource, shouldCreateDNS } = Object.assign(
     {
@@ -58,27 +96,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
   cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments/${environmentName}?provider`)
 
-  if(K8S_CLUSTER_NAME) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-name"]').type(K8S_CLUSTER_NAME)
-  }
-  if(K8S_CONTEXT) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-context"]').type(K8S_CONTEXT)
-  }
-  if(K8S_CA_CERT) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-cluster_ca_certificate"]').type(K8S_CA_CERT)
-  }
-  if(K8S_INSECURE) {
-    cy.get('label[data-testid="oc-input-primary_provider-insecure"] input[type="checkbox"]').click({force: true})
-  }
-  if(K8S_AUTH_TOKEN) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-token"]').type(K8S_AUTH_TOKEN)
-  }
-  if(K8S_NAMESPACE) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-namespace"]').type(K8S_NAMESPACE)
-  }
-  if(K8S_BASE_URL) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-api_server"]').type(K8S_BASE_URL)
-  }
+  enterK8sInfo()
 
   cy.get('#providerModal').within(() => {
     cy.contains('button', 'Save Changes').click()
@@ -88,15 +106,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
   cy.contains('a', 'Resources').click()
 
-  for(const {key, value} of [
-    {key: 'cert-manager.io/issuer', value: 'gitlab-issuer'},
-    {key: 'kubernetes.io/ingress.class', value: 'gitlab-nginx'},
-    {key: 'kubernetes.io/ingress.provider', value: 'nginx'},
-  ]) {
-    cy.contains('button.formily-element-array-base-addition', 'Add').click()
-    cy.get('[placeholder="key"]').last().type(key)
-    cy.get('[placeholder="value"]').last().type(value)
-  }
+  addK8sAnnotations()
 
   // create external resource
   if (shouldCreateExternalResource) {
