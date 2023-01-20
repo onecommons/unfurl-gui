@@ -6,11 +6,12 @@ import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {GlLoadingIcon} from '@gitlab/ui'
 import * as routes from './router/constants'
+import ExperimentalSettingIndicator from 'oc_vue_shared/components/oc/experimental-settings-indicator.vue'
 const USER_TOURED_EXPLORE_PAGE = 'USER_TOURED_EXPLORE_PAGE'
 export default {
     name: 'Dashboard',
     data() {return {isLoaded: false, doNotRender: false}},
-    components: {GlLoadingIcon},
+    components: {GlLoadingIcon, ExperimentalSettingIndicator},
     methods: {
         ...mapActions([
             'loadDashboard',
@@ -80,6 +81,7 @@ export default {
 </script>
 <template>
     <div>
+        <experimental-setting-indicator />
         <gl-loading-icon v-if="!isLoaded" label="Loading" size="lg" style="margin-top: 5em;" />
         <router-view v-else-if="!doNotRender"/>
     </div>

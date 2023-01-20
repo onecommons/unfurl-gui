@@ -1,7 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
 import { fetchLastCommit, setLastCommit } from "./projects";
-import {XHR_JAIL_URL, DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride} from '../storage-keys';
+import {XHR_JAIL_URL, DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
 
 function createHeaders({includePasswordInQuery, username, password}) {
     const headers = {}
@@ -116,7 +116,10 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     exportUrl += `&branch=${_branch}`
     exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
-    exportUrl += `&latest_commit=${latestCommit}`
+
+    if(alwaysSendLatestCommit() || !unfurlServerUrlOverride()) {
+        exportUrl += `&latest_commit=${latestCommit}`
+    }
 
     if(includeDeployments) {
         exportUrl += '&include_all_deployments=1'
@@ -128,13 +131,15 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
-    const password = await fetchUserAccessToken()
+    const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
+    const [latestCommit, _branch] = lastCommitResult
 
     const body = {
-            ...variables,
-            branch,
-            patch,
-            commit_msg: commitMessage || method
+        ...variables,
+        branch: branch || _branch,
+        latest_commit: latestCommit,
+        patch,
+        commit_msg: commitMessage || method
     }
     const headers = createHeaders({username, password})
     headers['Content-Type'] = 'application/json'

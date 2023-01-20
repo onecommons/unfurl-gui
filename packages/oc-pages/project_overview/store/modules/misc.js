@@ -93,7 +93,7 @@ const getters = {
 
 const actions = {
     handleResize({commit, state}) {
-        window.addEventListener('resize', _.debounce(
+        window.addEventListener('resize', _.throttle(
             function(e) {
                 const _isMobileLayout = isMobileLayout()
                 if(_isMobileLayout != state.isMobileLayout) {

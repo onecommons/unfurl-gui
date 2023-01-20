@@ -5,9 +5,16 @@ export const INTERNAL_STORAGE_KEYS = {
 export const HIDDEN_OPTION_KEYS = {
     encodedPasswordExportUrls: 'encoded-password-export-urls',
     unfurlServerUrl: 'unfurl-server-url',
-    connectWithoutCopy: 'connect-without-copy'
+    connectWithoutCopy: 'connect-without-copy',
+    sendLatestCommit: 'always-send-latest-commit'
 }
 
+export const CONFIGURABLE_HIDDEN_OPTIONS = [
+    { key: 'unfurlServerUrl', label: 'Unfurl Server URL' },
+    { key: 'encodedPasswordExportUrls', label: 'Encode Passwords in URL', placeholder: 'false' },
+    { key: 'connectWithoutCopy', label: 'Connect External Without Copy', placeholder: 'false' },
+    { key: 'sendLatestCommit', label: 'Latest Commit for UFSV URL', placeholder: 'false' },
+]
 
 function isTruthyStorageValue(value) {
     try {
@@ -17,7 +24,26 @@ function isTruthyStorageValue(value) {
     return ['yes', 't', 'y', ''].includes(value)
 }
 
-function lookupKey(key) {
+export function setLocalStorageKey(_key, value) {
+    let key = HIDDEN_OPTION_KEYS[_key] || _key
+
+    // sessionStorage will override localStorage here
+    delete sessionStorage[key]
+    delete sessionStorage[`unfurl_gui:${key}`]
+    delete localStorage[key]
+    delete localStorage[`unfurl_gui:${key}`]
+
+    if(!key.startsWith('unfurl_gui:')) {
+        key = `unfurl_gui:${key}`
+    }
+
+    if(value !== undefined) {
+        localStorage[key] = value
+    }
+}
+
+export function lookupKey(_key) {
+    const key = HIDDEN_OPTION_KEYS[_key] || _key
     if(!key.startsWith('unfurl_gui:')) {
         const lookupResult = lookupKey(`unfurl_gui:${key}`)
         if(lookupResult !== undefined) return lookupResult
@@ -25,6 +51,10 @@ function lookupKey(key) {
 
     if(sessionStorage.hasOwnProperty(key)) return sessionStorage[key]
     if(localStorage.hasOwnProperty(key)) return localStorage[key]
+}
+
+export function clearSettings() {
+    Object.values(HIDDEN_OPTION_KEYS).forEach(k => setLocalStorageKey(k, undefined))
 }
 
 export function shouldEncodePasswordsInExportUrl() {
@@ -37,6 +67,14 @@ export function shouldConnectWithoutCopy() {
 
 export function unfurlServerUrlOverride() {
     return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl )
+}
+
+export function alwaysSendLatestCommit() {
+    return lookupKey( HIDDEN_OPTION_KEYS.sendLatestCommit )
+}
+
+export function indicateExperimentalSetting() {
+    return unfurlServerUrlOverride() || shouldConnectWithoutCopy() || alwaysSendLatestCommit()
 }
 
 export const XHR_JAIL_URL = '/-/crossorigin-xhr'
