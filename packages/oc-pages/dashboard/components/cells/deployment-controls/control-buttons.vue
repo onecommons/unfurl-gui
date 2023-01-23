@@ -1,6 +1,7 @@
 <script>
 import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
+import OpenLiveApp from './open-live-app.vue'
 export default {
     props: {
         deployment: Object,
@@ -18,7 +19,7 @@ export default {
             default: () => 'gl-button'
         }
     },
-    components: {GlIcon, GlButton, GlDropdown, GlDropdownItem},
+    components: {GlIcon, GlButton, GlDropdown, GlDropdownItem, OpenLiveApp},
     methods: {
         hasButton(id) { return this.controlButtons.includes(id) },
         hasDisabledButton(id) { return this.disabledButtons.includes(id) },
@@ -67,10 +68,7 @@ export default {
         <gl-icon :size="16" name="cancel"/> 
         {{__('Cancel Job')}}
     </component>
-    <component :is='component' v-if="hasButton('open')" target="_blank" rel="noopener noreferrer" :href="deployment.url" variant="confirm">
-        <gl-icon :size="16" name="external-link"/> 
-        {{__('Open Live App')}}
-    </component>
+    <open-live-app :component="component" v-if="hasButton('open')" :deployment="deployment" />
     <component :is='component' v-if="hasButton('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Draft')}}
