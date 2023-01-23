@@ -150,7 +150,8 @@ export default {
             'deleteDeployment',
             'deployInto',
             'undeployFrom',
-            'cloneDeployment'
+            'cloneDeployment',
+            'addUrlPoll',
         ]),
         async deploy() {
             await this.deployInto(this.deploymentParameters)
@@ -482,6 +483,15 @@ export default {
         }
     },
     watch: {
+        items: {
+            immediate: true,
+            handler(val) {
+                for(const item of val) {
+                    const deploymentItem = this.deploymentItemDirect({deployment: item.deployment, environment: item.environment})
+                    if(deploymentItem?.isDeployed && item.deployment?.url) this.addUrlPoll(item.deployment)
+                }
+            }
+        },
         currentTab(val) {
             const path = this.$route.path
             const show = val == 0? undefined : tabFilters[val]?.title?.toLowerCase()

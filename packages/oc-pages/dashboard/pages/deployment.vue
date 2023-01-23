@@ -7,7 +7,7 @@ import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
-import {GlTabs} from '@gitlab/ui'
+import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
 import {OcTab} from 'oc_vue_shared/oc-components'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
@@ -17,7 +17,7 @@ import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
 
 export default {
-    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle},
+    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle, GlLoadingIcon},
     data() {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
@@ -34,7 +34,8 @@ export default {
             'getDashboardItems',
             'isAcknowledged',
             'environmentResourceTypeDict',
-            'environmentsAreReady'
+            'environmentsAreReady',
+            'pollingStatus',
         ]),
         breadcrumbItems() {
             return  [
@@ -69,6 +70,9 @@ export default {
                     item.context.deployment.name == this.deploymentName
                 )
             })
+        },
+        showStartingUpStatus() {
+            return this.pollingStatus(this.deployment.url) == 'PENDING'
         }
     },
     watch: {
@@ -176,6 +180,13 @@ export default {
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
             <template #primary-controls="card">
                 <share-resource-toggle class="mr-1" :card="card" />
+            </template>
+
+            <template v-if="showStartingUpStatus" #status>
+                <div class="d-inline-flex align-items-center">
+                    <gl-loading-icon class="mr-1"/>
+                    <span>Waiting for <b>{{deployment.title}}</b> to go live</span>
+                </div>
             </template>
 
             <template #controls="card">
