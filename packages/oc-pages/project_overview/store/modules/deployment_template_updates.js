@@ -249,7 +249,11 @@ export function updatePropertyInInstance({environmentName, templateName, propert
                 patch.connections[templateName]
         }
         const property = instance.properties.find(p => p.name == propertyName)
-        property.value = _propertyValue
+        if(property) {
+            property.value = _propertyValue
+        } else {
+            instance.properties.push({name: propertyName, value: _propertyValue})
+        }
         return [ {typename: 'DeploymentEnvironment', target: templateName, patch, env} ]
     }
 }

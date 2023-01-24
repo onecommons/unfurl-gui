@@ -625,6 +625,7 @@ const getters = {
         }
     },
     getCardsStacked: (_state, getters, _a, rootGetters) => {
+        if(!_state.lastFetchedFrom) return []
         if(_state.lastFetchedFrom.noPrimary) return Object.values(_state.resourceTemplates).filter(rt => !_state.deploymentTemplate?.primary || rt.name != _state.deploymentTemplate.primary)
         let cards = Object.values(_state.resourceTemplates)
 
