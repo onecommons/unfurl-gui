@@ -62,9 +62,6 @@ const getters = {
     getUser(state) {
         return state.user
     },
-    unfurlServicesUrl() {
-        return unfurlServerUrlOverride() || '/services/unfurl-server'
-    },
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
     pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },
@@ -96,7 +93,7 @@ const getters = {
 
 const actions = {
     handleResize({commit, state}) {
-        window.addEventListener('resize', _.debounce(
+        window.addEventListener('resize', _.throttle(
             function(e) {
                 const _isMobileLayout = isMobileLayout()
                 if(_isMobileLayout != state.isMobileLayout) {

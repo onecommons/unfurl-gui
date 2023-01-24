@@ -339,43 +339,6 @@ const actions = {
         await dispatch('commitPreparedMutations')
     },
 
-    // TODO move fetch logic into client_utils
-    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath}) {
-        const username = rootGetters.getUsername
-        const password = await fetchUserAccessToken()
-
-        const [latestCommit, branch] = await fetchLastCommit(encodeURIComponent(fullPath))
-
-        let deploymentUrl = `${rootGetters.unfurlServicesUrl}/export?format=deployment`
-        deploymentUrl += `&username=${username}`
-        deploymentUrl += `&password=${password}`
-        deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
-        deploymentUrl += `&environment=${deployPath.environment}`
-        deploymentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
-        deploymentUrl += `&branch=${branch}`
-        deploymentUrl += `&latest_commit=${latestCommit}`
-
-        try {
-            const {data} = await axios.get(deploymentUrl)
-
-            data._environment = deployPath.environment
-
-            const deployments = [...state.deployments]
-
-            let index = deployments.findIndex(dep => Object.values(dep.Deployment)[0].name == Object.values(data.Deployment)[0].name && dep._environment == deployPath.environment)
-
-            if(index != -1) {
-                deployments[index] = data
-            } else {
-                deployments.push(data)
-            }
-
-            commit('setDeployments',  deployments)
-        }catch(e) {
-            console.error(e)
-        }
-
-    }
 };
 const getters = {
     getDeploymentDictionary(state) {

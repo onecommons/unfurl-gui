@@ -36,12 +36,11 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, dispatch, rootGetters}, params) {
+    async fetchProject({commit, dispatch}, params) {
         const {projectPath, projectGlobal} = params
         commit('loaded', false)
 
         const root = await unfurlServerExport({
-            baseUrl: rootGetters.unfurlServicesUrl,
             format: 'blueprint',
             projectPath,
             //TODO pass branch

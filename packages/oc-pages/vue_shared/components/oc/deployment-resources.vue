@@ -162,6 +162,7 @@ export default {
         alertProviderExists() {
             if(!this.providerSelection) return false
             const env = this.getCurrentEnvironment
+            if(!env) return false
             const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
 
             return connections.some(conn => conn.type == this.providerSelection.name)
@@ -191,9 +192,9 @@ export default {
         },
         targetName() {
             if(this.target == 'Environment') {
-                return this.getCurrentEnvironment.name
+                return this.getCurrentEnvironment?.name
             } else {
-                return this.getDeploymentTemplate.title
+                return this.getDeploymentTemplate?.title
             }
 
         },
