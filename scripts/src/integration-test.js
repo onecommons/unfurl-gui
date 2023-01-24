@@ -73,6 +73,7 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'MAIL_USERNAME', 'MAIL_PASSWORD', 'SMTP_HOST', 'MAIL_RESOURCE_NAME',
   'DEPLOY_IMAGE', 'DEPLOY_TAG',
   'TEARDOWN', 'GENERATE_SUBDOMAINS', // used in recreate deployment
+  'UNFURL_SERVER_URL', // session storage vars
 ]
 
 
