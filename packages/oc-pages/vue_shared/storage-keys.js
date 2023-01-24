@@ -77,7 +77,7 @@ export function indicateExperimentalSetting() {
     return unfurlServerUrlOverride() || shouldConnectWithoutCopy() || alwaysSendLatestCommit()
 }
 
-export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr'
+export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
 
 window.lsHiddenOptions = function() {
