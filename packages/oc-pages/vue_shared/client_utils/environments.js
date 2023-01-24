@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
-import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
+import {patchEnv, tryFetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
 import { unfurlServerUpdate } from './unfurl-server'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
@@ -39,7 +39,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
 
     const patch = {}
     const transferredVariables = []
-    for(const environmentVariable of await fetchEnvironmentVariables(projectPath)) {
+    for(const environmentVariable of await tryFetchEnvironmentVariables(projectPath)) {
         if(environmentVariable.environment_scope != sourceEnvironment) continue
         if(!variables.includes(environmentVariable.key)) continue
         delete environmentVariable.id
@@ -53,7 +53,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
     return {
         prefix: _prefix,
         transferredVariables,
-        patch: await patchEnv(patch, targetEnvironment, projectPath)
+        patch: await patchEnv(patch, targetEnvironment, projectPath, 0)
     }
 }
 

@@ -42,7 +42,7 @@ export default {
         return data
     },
     methods: {
-        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         ...mapMutations(['onSaveEnvironment', 'setUpstreamProject', 'setUpstreamBranch', 'setUpstreamCommit']),
         async getUserProjectSuggestions(queryString, callback) {
             const projects = await this.userProjectSuggestionsPromise

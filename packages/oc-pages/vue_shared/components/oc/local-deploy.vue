@@ -97,7 +97,7 @@ export default {
         deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' }
     },
     methods: {
-        ...mapActions(['fetchEnvironmentVariables', 'deployInto'])
+        ...mapActions(['tryFetchEnvironmentVariables', 'deployInto'])
     },
     watch: {
         blueprintCredentials: {
@@ -127,7 +127,7 @@ export default {
 
                     const result = await this.deployInto(params)
 
-                    await this.fetchEnvironmentVariables({fullPath: this.getHomeProjectPath})
+                    await this.tryFetchEnvironmentVariables({fullPath: this.getHomeProjectPath})
 
                     this.gettingBlueprintCreds = false
                 }

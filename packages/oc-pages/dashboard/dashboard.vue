@@ -16,7 +16,6 @@ export default {
         ...mapActions([
             'loadDashboard',
             'handleResize',
-            'updateEnvironment',
             'populateJobsList',
             'populateDeploymentItems',
             'populateCurrentUser',
