@@ -14,6 +14,7 @@ export {default as EnvironmentSelection} from './components/oc/environment-selec
 export {default as DeploymentScheduler} from './components/oc/deployment-scheduler.vue'
 export {default as IncrementalDeploymentSwitch} from './components/oc/incremental-deployment-switch.vue'
 export {default as LocalDeploy} from './components/oc/local-deploy.vue'
+export {default as CodeClipboard} from './components/oc/code-clipboard.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error'

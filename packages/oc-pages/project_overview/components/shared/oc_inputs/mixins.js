@@ -1,6 +1,42 @@
 import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
+async function updateValue(propertyName) {
+    console.log('updateValue', propertyName)
+    if(!this.getStatus) {
+        throw new Error('updateValue requires "this.getStatus" to be available')
+    }
+
+    if(!this.updateProperty) {
+        throw new Error('updateValue requires "this.updateProperty" to be available as a mapped action')
+    }
+
+
+    if(!this.updateCardInputValidStatus) {
+        throw new Error('updateValue requires "this.updateCardInputValidStatus" to be available as a mapped action')
+    }
+
+    let status = await this.getStatus()
+
+    if (this.onUpdateValue) {
+        status = await this.onUpdateValue() || status
+    }
+
+    this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
+
+    if(propertyName) {
+        this.updateProperty({
+            deploymentName: this.$route.params.slug,
+            templateName: this.card.name,
+            propertyName,
+            propertyValue: this[propertyName],
+            debounce: 300,
+            sensitive: false,
+        })
+    }
+}
+
+
 export const connectedRepo = {
     data() {
         return {username: undefined, password: undefined}
@@ -28,34 +64,12 @@ export const connectedRepo = {
             this.updateValue('password')
         },
 
-        async updateValue(propertyName) {
-            if(!this.getStatus) {
-                throw new Error('updateValue requires "this.getStatus" to be available')
-            }
+        updateValue
+    }
+}
 
-            if(!this.updateProperty) {
-                throw new Error('updateValue requires "this.updateProperty" to be available as a mapped action')
-            }
-
-
-            let status = await this.getStatus()
-
-            if (this.onUpdateValue) {
-                status = await this.onUpdateValue() || status
-            }
-
-            this.updateCardInputValidStatus({card: this.card, status, debounce: 300})
-
-            if(propertyName) {
-                this.updateProperty({
-                    deploymentName: this.$route.params.slug,
-                    templateName: this.card.name,
-                    propertyName,
-                    propertyValue: this[propertyName],
-                    debounce: 300,
-                    sensitive: false,
-                })
-            }
-        },
+export const hasUpdates = {
+    methods: {
+        updateValue
     }
 }
