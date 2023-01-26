@@ -1,7 +1,8 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
 import { fetchLastCommit, setLastCommit } from "./projects";
-import {XHR_JAIL_URL, DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
+import { XhrIFrame } from './crossorigin-xhr';
+import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
 
 function createHeaders({includePasswordInQuery, username, password}) {
     const headers = {}
@@ -13,73 +14,8 @@ function createHeaders({includePasswordInQuery, username, password}) {
     return headers
 }
 
-function genUid() {
-    return Math.random().toString(36).slice(-6)
-}
-
-class UnfurlServerIFrame {
-    /*
-     * example XHR handler
-    window.addEventListener('xhr', async ({detail}) => {
-        const {eventId, method, url, body, headers} = detail
-        const _headers = new Headers()
-
-        Object.entries(headers).forEach(([key, value]) => _headers.append(key, value))
-
-        const options = {
-            method,
-            headers: _headers
-        }
-
-        if(method == 'POST') options.body = body
-
-        const response = await fetch(url, options)
-
-        const status = response.status
-        const payload = await response.json()
-        const event = new CustomEvent(eventId, {detail: {status, payload}})
-
-        window.parent.document.dispatchEvent(event)
-    })
-    */
-
-    constructor() {
-        const id = this.id = genUid()
-        const element = this.element = document.createElement('IFRAME')
-        element.className = 'd-none'
-        element.src = `${XHR_JAIL_URL}?${id}`
-        document.body.appendChild(element)
-    }
-
-    dispatchEvent(event) {
-        this.element.contentWindow.dispatchEvent(event)
-    }
-
-    async doXhr(_method, url, body, headers) {
-        const method = _method.toUpperCase()
-        const eventId = genUid()
-
-        const event = new CustomEvent('xhr', {detail: {eventId, method, url, body: JSON.stringify(body), headers}})
-        ufsvIFrame.dispatchEvent(event)
-
-        let resolve, reject
-        const p = new Promise((_resolve, _reject) => { resolve = _resolve; reject = _reject; })
-
-        function handler ({detail}) {
-            if(detail.status >= 200 && detail.status <= 400){
-                resolve(detail.payload)
-            } else { reject(detail.payload) }
-            document.removeEventListener(eventId, handler)
-        }
-        document.addEventListener(eventId, handler)
-
-        const result = await p
-        return result
-    }
-}
-
 let ufsvIFrame
-if(unfurlServerUrlOverride()) { ufsvIFrame = new UnfurlServerIFrame() }
+if(unfurlServerUrlOverride()) { ufsvIFrame = new XhrIFrame() }
 
 async function doXhr(_method, url, body, headers) {
     const method = _method.toUpperCase()
@@ -125,7 +61,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += '&include_all_deployments=1'
     }
 
-    return await doXhr('GET', exportUrl, null, createHeaders({includePasswordInQuery, username, password}))//await axios.get(exportUrl, createConfig({includePasswordInQuery, username, password}))
+    return await doXhr('GET', exportUrl, null, createHeaders({includePasswordInQuery, username, password}))
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {

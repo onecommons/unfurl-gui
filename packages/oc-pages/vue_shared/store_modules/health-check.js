@@ -1,54 +1,12 @@
 const HEALTH_CHECK_PATH = '/__unfurl/proxy_health'
 import {sleep} from '../client_utils/misc'
+import { XhrIFrame } from '../client_utils/crossorigin-xhr'
 import Vue from 'vue'
-import {XHR_JAIL_URL} from '../storage-keys';
 
 const BASE_POLLING_INTERVAL = 1000
 const BACKOFF_EXPONENT = 1.25
 const DEFAULT_STARTUP_ESTIMATE = 5 * 60 * 10000// 5 minutes
 
-function genUid() {
-    return Math.random().toString(36).slice(-6)
-}
-
-class XhrIFrame {
-    constructor() {
-        const id = this.id = genUid()
-        const element = this.element = document.createElement('IFRAME')
-        element.className = 'd-none'
-        element.src = `${XHR_JAIL_URL}?${id}`
-        document.body.appendChild(element)
-    }
-
-    dispatchEvent(event) {
-        this.element.contentWindow.dispatchEvent(event)
-    }
-
-    async doXhr(_method, url, body, headers) {
-        const method = _method.toUpperCase()
-        const eventId = genUid()
-
-        const event = new CustomEvent('xhr', {detail: {eventId, method, url, body: JSON.stringify(body), headers: headers || {}}})
-        let resolve, reject
-        const p = new Promise((_resolve, _reject) => { resolve = _resolve; reject = _reject; })
-
-        try {
-            this.dispatchEvent(event)
-            function handler ({detail}) {
-                if(detail.status >= 200 && detail.status <= 400){
-                    resolve(detail.payload)
-                } else { reject(detail.payload) }
-                document.removeEventListener(eventId, handler)
-            }
-            document.addEventListener(eventId, handler)
-        } catch(e) {
-            console.error(e)
-            reject(e)
-        }
-
-        return p
-    }
-}
 
 const xhrIframe = new XhrIFrame()
 

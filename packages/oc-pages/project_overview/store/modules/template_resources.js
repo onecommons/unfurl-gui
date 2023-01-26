@@ -841,12 +841,29 @@ const getters = {
 
     getParentDependency(state, getters) {
         return function(dependencyName) {
+            if(!dependencyName) return null
             let primaryName = state.deploymentTemplate.primary 
-            if (dependencyName === primaryName) return
+            if (dependencyName === primaryName) return null
 
             let dependency = state.resourceTemplates[dependencyName]
             let dependent = getters.getParentDependency(dependency.dependentName) || dependency
             return dependent
+        }
+    },
+
+    getDependent(state) {
+        return function(dependencyName) {
+            if(!dependencyName) return null
+            let primaryName = state.deploymentTemplate.primary 
+            if (dependencyName === primaryName) return null
+
+            const dependency = state.resourceTemplates[dependencyName]
+            try {
+                return state.resourceTemplates[dependency.dependentName]
+            } catch(e) {
+                console.error(e)
+                return null
+            }
         }
     },
 

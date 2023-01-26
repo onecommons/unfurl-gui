@@ -1,12 +1,14 @@
 import LocalImageRepoSource from './LocalImageRepoSource.vue'
 import GithubMirroredRepoImageSource from './GithubMirroredRepoImageSource.vue'
 import UnfurlCloudMirroredRepoImageSource from './UnfurlCloudMirroredRepoImageSource.vue'
+import UnfurlCNamedDNSZone from './UnfurlCNamedDNSZone.vue'
 import EnvironmentTooltip from './tooltips/EnvironmentTooltip.vue'
 
 const customComponents = {
     GithubMirroredRepoImageSource,
     LocalImageRepoSource,
-    UnfurlCloudMirroredRepoImageSource
+    UnfurlCloudMirroredRepoImageSource,
+    UnfurlCNamedDNSZone
 }
 
 const customTooltips = {
