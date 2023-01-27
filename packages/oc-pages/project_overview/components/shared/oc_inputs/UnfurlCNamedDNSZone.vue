@@ -19,7 +19,7 @@ export default {
     data() {
         const data =  {
             target_subdomain:  Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36),
-            user_domain: '',
+            name: '',
             verifiedStatus: 'UNVERIFIED',
             saved: {}
         }
@@ -47,8 +47,8 @@ export default {
             immediate: true,
             handler(val) { this.updateValue('target_subdomain') }
         },
-        user_domain() {
-            this.updateValue('user_domain')
+        name() {
+            this.updateValue('name')
         },
 
         subdomain() {
@@ -59,7 +59,7 @@ export default {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         async checkCName() {
             this.verifiedStatus = 'VERIFYING'
-            const {status} = await xhrIframe.doXhr('GET', `https://${this.subdomain}.${this.user_domain}`)
+            const {status} = await xhrIframe.doXhr('GET', `https://${this.subdomain}.${this.name}`)
 
             if(status == -1) {
                 await sleep(1000)
@@ -87,7 +87,7 @@ export default {
             return parentDependency.properties.find(prop => prop.name == 'subdomain')?.value
         },
         validUserDomain() {
-            return this.user_domain?.match(/\..{3}/) && this.subdomain
+            return this.name?.match(/\..{3}/) && this.subdomain
         },
         descAttrs() {
             if(!this.validUserDomain) {
@@ -106,7 +106,7 @@ export default {
         <ol>
             <error-small class="m-0" :condition="!subdomain">A subdomain is required to use a CNAME.</error-small>
             <li>Enter the domain you would like to use below:</li>
-            <el-input v-model="user_domain" class="mb-2">
+            <el-input v-model="name" class="mb-2">
                 <template #prepend>Domain</template>
             </el-input>
             <li v-bind="descAttrs">Visit your DNS provider or registrar's site to create a CNAME record for this service. This functionality will usually be available under "Advanced DNS".

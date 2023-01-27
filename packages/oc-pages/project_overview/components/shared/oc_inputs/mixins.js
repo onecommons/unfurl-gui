@@ -2,7 +2,6 @@ import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 async function updateValue(propertyName) {
-    console.log('updateValue', propertyName)
     if(!this.getStatus) {
         throw new Error('updateValue requires "this.getStatus" to be available')
     }
