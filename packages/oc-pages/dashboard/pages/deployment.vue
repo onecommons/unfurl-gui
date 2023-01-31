@@ -36,6 +36,7 @@ export default {
             'environmentResourceTypeDict',
             'environmentsAreReady',
             'pollingStatus',
+            'formattedDeploymentEta',
         ]),
         breadcrumbItems() {
             return  [
@@ -72,7 +73,7 @@ export default {
             })
         },
         showStartingUpStatus() {
-            return this.pollingStatus(this.deployment.url) == 'PENDING'
+            return this.pollingStatus(this.deployment.name) == 'PENDING'
         }
     },
     watch: {
@@ -185,7 +186,7 @@ export default {
             <template v-if="showStartingUpStatus" #status>
                 <div class="d-inline-flex align-items-center">
                     <gl-loading-icon class="mr-1"/>
-                    <span>Waiting for <b>{{deployment.title}}</b> to go live</span>
+                    <span>Waiting for <b>{{deployment.title}}</b> to go live (eta: {{formattedDeploymentEta(deployment.name)}})</span>
                 </div>
             </template>
 
