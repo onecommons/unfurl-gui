@@ -36,10 +36,12 @@ export default {
         _properties() {
             // TODO handle this gracefully when we don't have an environment loaded
             const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
-            return properties.map(prop => {
-                if (prop.value?.get_env) return {...prop, value: this.lookupEnvironmentVariable(prop.value?.get_env)}
-                return prop
-            })
+            return properties
+                .filter(prop => prop.visibility != 'hidden')
+                .map(prop => {
+                    if (prop.value?.get_env) return {...prop, value: this.lookupEnvironmentVariable(prop.value?.get_env)}
+                    return prop
+                })
         },
     },
     methods: {
