@@ -7,6 +7,7 @@ import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.mjs'
 import {unfurlServerExport} from './unfurl-server'
+import {localNormalize} from '../lib/normalize'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -183,10 +184,12 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
 
         deployments.forEach(deployment => {
             try {
-                const deploymentName = Object.keys(deployment.Deployment)[0]
+                const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
                 const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
                 deployment._environment = environment
+
+                localNormalize(deploymentObject, 'Deployment', deployment)
             } catch(e) {
                 console.error('@fetchEnvironments: unexpected shape for deployment', deployment, e)
             }

@@ -1,4 +1,3 @@
-const HEALTH_CHECK_PATH = '/__unfurl/proxy_health'
 import {sleep} from '../client_utils/misc'
 import { XhrIFrame } from '../client_utils/crossorigin-xhr'
 import Vue from 'vue'
@@ -13,38 +12,66 @@ const xhrIframe = new XhrIFrame()
 const stateFn = () => ({
     urlPolls: {},
     statuses: {},
+    etas: {},
     pollingLoopStarted: false,
 })
 const state = stateFn()
 
 const mutations = {
-    _addUrlPoll(state, {url, initialStatus}) {
-        let healthCheckUrl = new URL(url)
-        healthCheckUrl.pathname = HEALTH_CHECK_PATH
-        state.urlPolls[url] = () => xhrIframe.doXhr('GET', healthCheckUrl.toString())
-        Vue.set(state.statuses, url, initialStatus)
+    _addUrlPoll(state, {url, name, initialStatus}) {
+        state.urlPolls[name] = () => xhrIframe.doXhr('GET', url)
+        Vue.set(state.statuses, name, initialStatus)
     },
-    markUrlPending(state, url) {
-        Vue.set(state.statuses, url, 'PENDING')
+    clearPollingStateFor(state, name) {
+        Vue.delete(state.urlPolls, name)
+        Vue.delete(state.etas, name)
+        Vue.delete(state.statuses, name)
     },
-    completeUrlPolling(state, url) {
-        delete state.urlPolls[url]
-        Vue.set(state.statuses, url, 'COMPLETE')
+    markUrlPending(state, name) {
+        Vue.set(state.statuses, name, 'PENDING')
+    },
+    completeUrlPolling(state, name) {
+        delete state.urlPolls[name]
+        Vue.set(state.statuses, name, 'COMPLETE')
     },
     setPollingLoopStarted(state) {
         state.pollingLoopStarted = true
+    },
+    insertEta(state, {name, deployTime, readinessEstimate}) {
+        const value = (deployTime - Date.now()) / 1000 + readinessEstimate
+        Vue.set(
+            state.etas,
+            name,
+            Math.max(value, 0)
+        )
+    },
+    decrimentEtas(state, quantity=1000) {
+        Object.entries(state.etas).forEach(([key, value]) => {
+            Vue.set(state.etas, key, Math.max(value - quantity / 1000, 0))
+        })
     }
 }
 
 const actions = {
     async addUrlPoll({state, commit, dispatch}, deployment) {
-        if(!deployment.status) return
-        
-        const startupEstimate = deployment.startupEstimate || DEFAULT_STARTUP_ESTIMATE
-        const initialStatus = Date.now() - new Date(deployment.deployTime) < startupEstimate ? 'PENDING': 'LIKELY_UP'
-        const url = deployment.url
+        if(!( //NOT
+            deployment.status &&
+            deployment.healthCheckUrl &&
+            deployment.deployTime &&
+            deployment.workflow == 'deploy'
+        )) {
+            console.warn(`Skipping polling ${deployment.name}`, deployment)
+            commit('clearPollingStateFor', deployment.name)
+            return
+        }
 
-        commit('_addUrlPoll', {initialStatus, url})
+        if(['PENDING', 'LIKELY_UP'].includes(state.statuses[deployment.name])) return
+        
+        const readinessEstimate = deployment.readinessEstimate || DEFAULT_STARTUP_ESTIMATE
+        const initialStatus = Date.now() - deployment.deployTime < readinessEstimate ? 'PENDING': 'LIKELY_UP'
+
+        commit('insertEta', {name: deployment.name, deployTime: deployment.deployTime, readinessEstimate})
+        commit('_addUrlPoll', {initialStatus, name: deployment.name, url: deployment.healthCheckUrl})
         if(!state.pollingLoopStarted) {
             await sleep(30) // allow other urls to be queued before beginning
             dispatch('startPollingLoop')
@@ -56,48 +83,79 @@ const actions = {
         const waitingFor = {}
         const backoffCounters = {}
         while(true) {
-            for(const [url, healthCheck] of Object.entries(state.urlPolls)) {
-                if(!waitingFor[url]) {
-                    waitingFor[url] = true
+            for(const [name, healthCheck] of Object.entries(state.urlPolls)) {
+                if(!waitingFor[name]) {
+                    waitingFor[name] = true
 
-                    if(!backoffCounters[url]) {
-                        if(state.statuses[url] == 'LIKELY_UP') {
-                            backoffCounters[url] = 5
+                    if(!backoffCounters[name]) {
+                        if(state.statuses[name] == 'LIKELY_UP') {
+                            backoffCounters[name] = 5
                         } else {
-                            backoffCounters[url] = 1
+                            backoffCounters[name] = 1
                         }
                     }
 
                      const healthCheckPromise = healthCheck()
-                        .then(_payload => commit('completeUrlPolling', url))
-                        .catch(_e => commit('markUrlPending', url))
+                        .then(_payload => commit('completeUrlPolling', name))
+                        .catch(_e => commit('markUrlPending', name))
 
                     const promiseWithBackoff = Promise.all([
-                        sleep(BASE_POLLING_INTERVAL * Math.pow(backoffCounters[url], BACKOFF_EXPONENT)),
+                        sleep(BASE_POLLING_INTERVAL * Math.pow(backoffCounters[name], BACKOFF_EXPONENT)),
                         healthCheckPromise
                     ])
 
                     promiseWithBackoff.finally(() => {
-                        backoffCounters[url] += 1
-                        waitingFor[url] = false
+                        backoffCounters[name] += 1
+                        waitingFor[name] = false
                     })
                 }
             }
 
             await sleep(BASE_POLLING_INTERVAL)
+            commit('decrimentEtas', BASE_POLLING_INTERVAL)
         }
     }
 }
 
 const getters = {
     pollingStatus(state) {
-        return function(url) {
+        return function(name) {
             if(!xhrIframe) return 'COMPLETE'
             try {
-                return state.statuses[url]
+                return state.statuses[name]
             } catch(e) {
                 return null
             }
+        }
+    },
+    deploymentEta(state) {
+        return function(name) {
+            try {
+                return Math.floor(state.etas[name])
+            } catch(e) {
+                return 0
+            }
+        }
+    },
+    formattedDeploymentEta(_, getters) {
+        return function(name) {
+            const deploymentEta = getters.deploymentEta(name)
+            const result = []
+            const minutes = deploymentEta / 60
+            let seconds
+            if(minutes > 1) {
+                result.push(Math.floor(minutes) + ' minutes')
+                seconds = deploymentEta % 60
+            } else {
+                seconds = deploymentEta
+            }
+
+            if(seconds == 0) {}
+            else if (seconds == 1) {result.push('1 second')}
+            else {result.push(`${seconds} seconds`)}
+
+            if(result.length == 0) return 'now'
+            return result.join(', ')
         }
     }
 }

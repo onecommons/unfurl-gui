@@ -52,7 +52,7 @@ const actions = {
         commit('loaded', true)
     },
 
-    normalizeUnfurlData({state, getters}, {key, entry, root, projectPath}) {
+    normalizeUnfurlData({getters}, {key, entry, root, projectPath}) {
         let transforms
 
         function normalizeProperties(properties) {
@@ -79,6 +79,7 @@ const actions = {
             }
         }
 
+        // TODO refactor independent transformations into vue_shared/lib/normalize
         transforms = {
             ResourceTemplate(resourceTemplate) {
                 resourceTemplate.dependencies = _.uniqBy(normalizeDependencies(resourceTemplate.dependencies), 'name')

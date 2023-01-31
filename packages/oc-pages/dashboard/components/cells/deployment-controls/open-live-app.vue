@@ -15,7 +15,7 @@ export default {
         ...mapGetters(['pollingStatus']),
         disabled() {
             if(typeof this.pollingStatus != 'function') return false
-            const pollingStatus = this.pollingStatus(this.deployment?.url)
+            const pollingStatus = this.pollingStatus(this.deployment?.name)
             return pollingStatus == 'PENDING'
         }
 

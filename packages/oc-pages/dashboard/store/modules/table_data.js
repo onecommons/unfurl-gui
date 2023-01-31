@@ -51,7 +51,7 @@ const actions = {
             context.environment = environment
             context.environmentName = environmentName
             for(const frozenDeploymentDict of rootGetters.getDeploymentDictionaries.filter(dep => dep._environment == environmentName)) {
-                console.log(frozenDeploymentDict)
+
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 let deployment
                 const clonedDeploymentDict = _.cloneDeep(frozenDeploymentDict)
@@ -71,6 +71,9 @@ const actions = {
                 } else {
                     deployment = Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
                 }
+
+                dispatch('addUrlPoll', deployment, {root: true})
+
                 const i = ++iterationCounter
                 deployment.resources = deployment.resources?.map(r => {
                     if(typeof r == 'string') {
