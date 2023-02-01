@@ -143,14 +143,15 @@ export default {
                     visibilityMap[name] = value.visibility
                 })
 
-            properties = properties.map(property => {
-              const name = titleMap[property.name] || property.name
-              const sensitive = sensitiveMap[property.name]
-              const visibility = visibilityMap[property.name]
-              let value = property.value
-              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
-              return {...property, name, value, sensitive, visibility}
-            })
+            properties = properties
+                .filter(property => visibilityMap[property.name] != 'hidden')
+                .map(property => {
+                    const name = titleMap[property.name] || property.name
+                    const sensitive = sensitiveMap[property.name]
+                    let value = property.value
+                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+                    return {...property, name, value, sensitive}
+                })
 
             if(this.cardCanIncrementalDeploy(this.card)) {
                 properties.push({
@@ -208,14 +209,16 @@ export default {
                     outboundLinkText
                 })
             }
-            attributes = attributes.map(attribute => {
-              const name = titleMap[attribute.name] || attribute.name
-              const sensitive = sensitiveMap[attribute.name]
-              const visibility = visibilityMap[attribute.name]
-              let value = attribute.value
-              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
-              return {...attribute, name, value, sensitive, visibility}
-            })
+            attributes = attributes
+                .filter(attribute => visibilityMap[attribute.name] != 'hidden')
+                .map(attribute => {
+                    const name = titleMap[attribute.name] || attribute.name
+                    const sensitive = sensitiveMap[attribute.name]
+                    const visibility = visibilityMap[attribute.name]
+                    let value = attribute.value
+                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+                    return {...attribute, name, value, sensitive}
+                })
 
             if(this.cardCanIncrementalDeploy(this.card) && this._readonly) {
                 attributes.push({

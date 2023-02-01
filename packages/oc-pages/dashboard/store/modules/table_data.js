@@ -72,7 +72,7 @@ const actions = {
                     deployment = Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
                 }
 
-                dispatch('addUrlPoll', deployment, {root: true})
+                dispatch('addUrlPoll', {deployment, environment}, {root: true})
 
                 const i = ++iterationCounter
                 deployment.resources = deployment.resources?.map(r => {

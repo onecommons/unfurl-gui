@@ -1,6 +1,7 @@
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -47,6 +48,12 @@ const actions = {
         })
 
         root.projectGlobal = projectGlobal
+
+        if(root.ResourceType) {
+            Object.values(root.ResourceType).forEach(resourceType => {
+                localNormalize(resourceType, 'ResourceType', root)
+            })
+        }
 
         dispatch('useProjectState', {projectPath, root})
         commit('loaded', true)
@@ -127,10 +134,6 @@ const actions = {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
-            },
-            ResourceType(resourceType) {
-                if(!resourceType.title) resourceType.title = resourceType.name
-                resourceType.__typename = 'ResourceType'
             },
             Resource(resource, root) {
                 if(!resource.dependencies) resource.dependencies = resource.connections || []
