@@ -47,7 +47,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     if(includePasswordInQuery && username && password) {
         exportUrl += `&username=${username}`
-        exportUrl += `&password=${password}`
+        exportUrl += `&private_token=${password}`
     }
 
     exportUrl += `&branch=${_branch}`

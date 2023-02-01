@@ -73,10 +73,6 @@ export function alwaysSendLatestCommit() {
     return lookupKey( HIDDEN_OPTION_KEYS.sendLatestCommit )
 }
 
-export function indicateExperimentalSetting() {
-    return unfurlServerUrlOverride() || shouldConnectWithoutCopy() || alwaysSendLatestCommit()
-}
-
 export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
 
