@@ -341,7 +341,7 @@ const actions = {
         catch(e){
             console.error('Could not fetch project environments', e)
             if(window.gon.current_username) {
-                dispatch('createFlash', { projectPath: fullPath, message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment' }, {root: true})
+                dispatch('createFlash', { projectPath: fullPath, message: 'Could not fetch project environments.  Is your unfurl.yaml valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment' }, {root: true})
             }
             environments = []
 
