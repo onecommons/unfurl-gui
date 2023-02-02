@@ -471,7 +471,39 @@ const getters = {
             const result = deployments.find(dep => dep.title == deploymentName || dep.name == slugify(deploymentName))
             return result
         }
+    },
+    listSharedResources(_, getters) {
+        return function(deploymentName, environmentName) {
+            const dictionary = getters.getDeploymentDictionary(deploymentName, environmentName)
+            return Object.values(dictionary.Resource)
+                .filter(r => getters.getResourceSharedState(environmentName, deploymentName, r.name))
+        }
+    },
+
+    deleteDeploymentPreventedBy(_, getters) {
+        return function(deploymentName, environmentName) {
+            const result = []
+            getters.listSharedResources(deploymentName, environmentName).forEach(
+                r => result.push(`A shared resource <b>${r.title}</b> exists in this deployment.`)
+            )
+
+            return result
+        }
+    },
+
+    undeployPreventedBy(_, getters) {
+        return function(deploymentName, environmentName) {
+            const result = []
+            getters.listSharedResources(deploymentName, environmentName)
+                .filter(r => !r.protected)
+                .forEach(
+                    r =>  result.push(`An unprotected shared resource <b>${r.title}</b> exists in this deployment.`)
+                )
+
+            return result
+        }
     }
+
 };
 
 
