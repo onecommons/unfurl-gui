@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const expect = require('expect')
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
 axios.defaults.withCredentials = true
@@ -12,7 +12,6 @@ const jar = new CookieJar()
 axios.defaults.httpsAgent = new HttpsCookieAgent({
   jar,
   keepAlive: true,
-  rejectUnauthorized: false,
 })
 
 async function isSetup(baseURL) {
@@ -20,19 +19,18 @@ async function isSetup(baseURL) {
   return data.setup.find(el => el.hasOwnProperty('status')).status
 } 
 
-async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, registerName}) {
+async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, registerName, expectExisting}) {
   const adminSessionEndpoint = `${baseURL}/ghost/api/admin/session`
   const authSetupEndpoint = `${baseURL}/ghost/api/admin/authentication/setup/`
   const userRolesEndpoint = `${baseURL}/ghost/api/admin/users/me/?include=roles`
   const magicLinkEndpoint = `${baseURL}/members/api/send-magic-link/`
-
-
 
   const initialRequest = await axios.get(baseURL)
   expect(initialRequest.status).toBeLessThan(400)
 
   if(useAdminEmail && useAdminPassword) {
     if(await isSetup(baseURL)) {
+      expect(expectExisting).toBeFalsy()
       const adminSessionPost = await axios.post(adminSessionEndpoint, {username: useAdminEmail, password: useAdminPassword})
       expect(adminSessionPost.data).toBe('Created')
     }
@@ -46,12 +44,8 @@ async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, re
       expect(await isSetup(baseURL)).toBe(true)
     }
     
-
-
     const userRolesFetch = await axios.get(userRolesEndpoint)
-
     expect(userRolesFetch.data.errors).toBeUndefined()
-
   } 
 
   if(registerEmail && registerName) {
@@ -75,6 +69,7 @@ async function tryMain() {
       registerEmail: args['register-email'],
       useAdminEmail: args['admin-email'],
       useAdminPassword: args['admin-password'],
+      expectExisting: args['expect-existing'],
       ...args
     })
   } catch(e) {

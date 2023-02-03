@@ -155,6 +155,7 @@ cloud_redis:
   rules:
     - if: $TEST == "cloud_redis"
 
+# Not yet fully supported for $TEST == "all"
 multiple_workflows:
   extends: .tests
   script:
@@ -162,3 +163,9 @@ multiple_workflows:
   rules:
     - if: $TEST == "multiple_workflows"
 
+shared_volumes:
+  extends: .tests
+  script:
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/integration/deployments/shared-volume.js
+  rules:
+    - if: $TEST == "shared_volumes" || $TEST == "all"
