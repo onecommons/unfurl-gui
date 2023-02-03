@@ -139,17 +139,16 @@ export default {
                     </b>
                 </li>
             </ul>
-
-
+            <p> We highly recommend completing this step before deploying. </p>
             </li>
-            <li v-bind="descAttrs">
+            <!--li v-bind="descAttrs">
                 (Optional) Verify your CNAME record <br>
                 <el-button type="primary" :loading="verifiedStatus == 'VERIFYING'" @click="checkCName">
                     <span v-if="verifiedStatus == 'VERIFYING'">Verifying CNAME</span>
                     <span v-else-if="verifiedStatus == 'COMPLETE'">CNAME was verified successfully</span>
                     <span v-else>Verify CNAME</span>
                 </el-button>
-            </li>
+            </li-->
         </ol>
     </el-card>
 </template>
