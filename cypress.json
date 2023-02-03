@@ -1,5 +1,5 @@
 {
-  "defaultCommandTimeout": 10000,
+  "defaultCommandTimeout": 15000,
   "videoCompression": false,
   "video": false,
   "videoRecording": false

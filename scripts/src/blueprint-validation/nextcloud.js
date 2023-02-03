@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const expect = require('expect')
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+
 const FormData = require('form-data')
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
@@ -13,10 +13,9 @@ const jar = new CookieJar()
 axios.defaults.httpsAgent = new HttpsCookieAgent({
   jar,
   keepAlive: true,
-  rejectUnauthorized: false,
 })
 
-async function main({baseURL, registerName, registerPassword}) {
+async function main({baseURL, registerName, registerPassword, expectExisting}) {
   const signupEndpoint = `${baseURL}/index.php`
   const loginEndpoint = `${baseURL}/login`
 
@@ -24,6 +23,7 @@ async function main({baseURL, registerName, registerPassword}) {
   expect(initialRequest.status).toBeLessThan(400)
 
   if(initialRequest.data.match(/Create.*admin account/g)) {
+    expect(expectExisting).toBeFalsy()
     expect(initialRequest.data).not.toMatch(/Configure the database/g)
     const form = new FormData()
     form.append('install', 'true')
@@ -63,6 +63,7 @@ async function tryMain() {
       baseURL: args['base-url'],
       registerName: args['register-name'],
       registerPassword: args['register-password'],
+      expectExisting: args['expect-existing'],
       ...args
     })
   } catch(e) {
@@ -72,10 +73,9 @@ async function tryMain() {
       process.exit(1)
     } else {
       console.log(e.message)
-      console.log('Baserow tests failed')
+      console.log('Nextcloud tests failed')
       process.exit(1)
     }
   }
 }
 tryMain()
-
