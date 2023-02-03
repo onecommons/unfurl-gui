@@ -53,12 +53,15 @@ const mutations = {
 }
 
 const actions = {
-    async addUrlPoll({state, commit, dispatch}, deployment) {
+    async addUrlPoll({state, commit, dispatch, rootGetters}, {deployment, environment}) {
+        const deployPath = rootGetters.lookupDeployPath(deployment.name, environment.name)
+        const lastWorkflow = deployPath?.pipeline?.variables?.WORKFLOW
         if(!( //NOT
             deployment.status &&
             deployment.healthCheckUrl &&
             deployment.deployTime &&
-            deployment.workflow == 'deploy'
+            deployment.workflow == 'deploy' &&
+            lastWorkflow == 'deploy'
         )) {
             console.warn(`Skipping polling ${deployment.name}`, deployment)
             commit('clearPollingStateFor', deployment.name)

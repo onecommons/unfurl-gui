@@ -488,7 +488,7 @@ export default {
             handler(val) {
                 for(const item of val) {
                     const deploymentItem = this.deploymentItemDirect({deployment: item.deployment, environment: item.environment})
-                    if(deploymentItem?.isDeployed && item.deployment?.url) this.addUrlPoll(item.deployment)
+                    if(deploymentItem?.isDeployed && item.deployment?.url) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
                 }
             }
         },

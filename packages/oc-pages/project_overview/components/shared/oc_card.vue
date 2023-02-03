@@ -346,7 +346,7 @@ export default {
 
 .oc-card.primary h4 {
     font-size: 1.25rem;
-    line-height: 0;
+    line-height: 1;
 }
 
 .oc-card >>> .gl-card-body {

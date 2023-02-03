@@ -176,8 +176,11 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
 
     const defaults = data.DeploymentEnvironment.defaults
 
-    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
+    Object.values(data.ResourceType).forEach(resourceType => {
+        localNormalize(resourceType, 'ResourceType', null)
+    })
 
+    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
 
     if(includeDeployments) {
         const deployments = data.deployments.filter(dep => !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
@@ -188,6 +191,10 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
 
                 const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
                 deployment._environment = environment
+
+                if(deployment.ResourceType) {
+                    Object.values(deployment.ResourceType).forEach(rt => localNormalize(rt, 'ResourceType', deployment))
+                }
 
                 localNormalize(deploymentObject, 'Deployment', deployment)
             } catch(e) {

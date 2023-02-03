@@ -1,5 +1,7 @@
 const transforms = {
     Deployment(deployment, root) {
+        deployment._environment = root._environment
+
         let primary
         try {
             if(primary = root.Resource[deployment.primary]) {
@@ -25,6 +27,32 @@ const transforms = {
         } catch(e) {
             delete deployment.deployTime
         }
+    },
+
+    ResourceType(resourceType) {
+        if(!resourceType.title) resourceType.title = resourceType.name
+        resourceType.__typename = 'ResourceType'
+
+        function normalizeSchemaProperty(property) {
+            if(property.type == 'object' && property.properties && typeof property.properties == 'object') {
+                try {
+                    Object.values(property.properties).forEach(normalizeSchemaProperty)
+                } catch(e) {}
+            }
+            if(property.hidden) {
+                property.visibility = 'hidden'
+            }
+        }
+        ['inputsSchema', 'computedPropertiesSchema', 'outputsSchema'].forEach(schemaType => {
+            let properties
+            try {
+                properties = Object.values(resourceType[schemaType].properties)
+            } catch(e) {}
+
+            if(properties) {
+                properties.forEach(normalizeSchemaProperty)
+            }
+        })
     }
 }
 
