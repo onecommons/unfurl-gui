@@ -1,5 +1,5 @@
 <script>
-import {CONFIGURABLE_HIDDEN_OPTIONS, indicateExperimentalSetting, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
+import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
 import {Card as ElCard, Input as ElInput} from 'element-ui'
 import ErrorSmall from './ErrorSmall.vue'
@@ -9,7 +9,6 @@ export default {
     components: {GlButton, GlIcon, GlModal, ElInput, ErrorSmall},
     data() {
         return {
-            indicateExperimentalSetting: indicateExperimentalSetting(),
             yPos: '0px',
             xPos: '0px',
             CONFIGURABLE_HIDDEN_OPTIONS,
@@ -46,6 +45,9 @@ export default {
                 this.valuesByKey = CONFIGURABLE_HIDDEN_OPTIONS.reduce((acc, option) => {acc[option.key] = lookupKey(option.key); return acc}, {})
             }
         },
+        indicateExperimentalSetting() {
+            return Object.values(this.valuesByKey).some(val => !!val)
+        }
     },
     watch: {
         windowWidth: {
@@ -69,7 +71,7 @@ export default {
             modal-id="dev-settings-modal"
             :action-primary="{text: 'OK', attributes: [{variant: 'info'}]}"
             :action-secondary="{text: 'Restore Default Settings', attributes: [{variant: 'danger'}]}"
-            @secondary="clearSettings(); modal = false; indicateExperimentalSetting = false;"
+            @secondary="clearSettings(); modal = false;"
             v-model="modal"
         >
             <el-card class="settings-modal-body">
