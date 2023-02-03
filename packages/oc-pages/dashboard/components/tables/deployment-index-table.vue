@@ -8,10 +8,9 @@ import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
-import {redirectToJobConsole, triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
-import Vue from 'vue'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 
 
@@ -24,7 +23,7 @@ function deploymentGroupBy(item) {
     return result
 }
 
-const tabFilters =  [
+const tabFilters = [
     {
         title: 'All'
     },
@@ -340,8 +339,26 @@ export default {
             'getCurrentNamespace',
             'getCurrentEnvironment',
             'getDeploymentTemplate',
-            'deploymentItemDirect'
+            'deploymentItemDirect',
+            'deleteDeploymentPreventedBy',
+            'undeployPreventedBy'
         ]),
+        intentToDeletePreventedBy() {
+            if(this.intent != 'delete') return []
+            const {deployment, environment} = this.target
+            return this.deleteDeploymentPreventedBy(deployment.name, environment.name)
+        },
+        ableToDelete() {
+            return this.intent == 'delete' && this.intentToDeletePreventedBy.length == 0
+        },
+        intentToUndeployPreventedBy() {
+            if(this.intent != 'undeploy') return []
+            const {deployment, environment} = this.target
+            return this.undeployPreventedBy(deployment.name, environment.name)
+        },
+        ableToUndeploy() {
+            return this.intent == 'undeploy' && this.intentToUndeployPreventedBy.length == 0
+        },
         projectPath() {
             const {deployment, environment} = this.target
             if(deployment.__typename == 'DeploymentTemplate') {
@@ -384,9 +401,17 @@ export default {
             const targetTitle = this.target?.deployment?.title || this.target?.deployment?.name
             switch(this.intent){
                 case 'delete':
-                    return `Are you sure you want to delete ${targetTitle}?`
+                    if(this.ableToDelete) {
+                        return `Are you sure you want to delete ${targetTitle}?`
+                    } else {
+                        return `${targetTitle} can't be safely deleted yet.`
+                    }
                 case 'undeploy':
-                    return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
+                    if(this.ableToUndeploy) {
+                        return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
+                    } else {
+                        return `${targetTitle} can't be safely torn down yet.`
+                    }
                 case 'deploy':
                     return `Deploy ${targetTitle}?`
                 case 'clone':
@@ -464,7 +489,8 @@ export default {
         },
         actionPrimary() {
             return {
-                text: this.deleteWarning? 'Delete Anyway':
+                text: (this.intent == 'delete' && (this.deleteWarning || !this.ableToDelete)) ? 'Delete Anyway':
+                    this.intent == 'undeploy' && !this.ableToUndeploy? 'Undeploy Anyway':
                     this.intent == 'localDeploy' ? 'OK': 'Confirm'
             }
         },
@@ -548,8 +574,15 @@ export default {
             :actionCancel="actionCancel"
             @primary="onModalConfirmed"
             >
+            <div
+                v-if="intent == 'delete' && !ableToDelete"
+                class="m-3">
+                <ol>
+                    <li v-for="reason in intentToDeletePreventedBy" :key="reason" v-html="reason" />
+                </ol>
+            </div>
             <div 
-                v-if="deleteWarning" 
+                v-else-if="deleteWarning" 
                 class="m-3"
                 >
                 <div style="color: red">
@@ -558,6 +591,13 @@ export default {
                 <div class="mt-2">
                     Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
                 </div>
+            </div>
+            <div 
+                v-if="intent == 'undeploy' && !ableToUndeploy"
+                class="m-3">
+                <ol>
+                    <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
+                </ol>
             </div>
             <div v-if="intent == 'clone'">
                 <gl-form-group class="m-3" label="New deployment title">
