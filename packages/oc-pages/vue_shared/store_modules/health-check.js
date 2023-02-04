@@ -56,6 +56,7 @@ const actions = {
     async addUrlPoll({state, commit, dispatch}, deployment) {
         if(!( //NOT
             deployment.status &&
+            ![3,5].includes(deployment.status) &&
             deployment.healthCheckUrl &&
             deployment.deployTime &&
             deployment.workflow == 'deploy'
