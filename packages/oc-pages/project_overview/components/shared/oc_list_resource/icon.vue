@@ -1,6 +1,6 @@
 <script>
 import commonMethods from '../../mixins/commonMethods.js'
-import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon} from 'oc/vue_shared/components/oc'
 export default {
     name: 'OcListResourceIcon',
     mixins: [commonMethods],

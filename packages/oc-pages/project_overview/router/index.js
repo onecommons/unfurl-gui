@@ -3,9 +3,9 @@ import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
 import * as routeNames from './constants.js'
-import { PageNotFound } from 'oc_vue_shared/oc-components'
+import { PageNotFound } from 'oc/vue_shared/components/oc'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
-import { hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
+import { hideLastFlash } from 'oc/vue_shared/client_utils/oc-flash'
 
 Vue.use(VueRouter);
 
@@ -47,7 +47,7 @@ export default function createRouter(base) {
                 return false
             }
         }
-        if(router.app.$store) {
+        if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
             router.app.$store.getters.getRouterHook(to, from, next)
         }
         else next()

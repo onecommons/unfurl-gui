@@ -1,8 +1,8 @@
 import { cloneDeep, create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
-import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
+import { lookupCloudProviderAlias, slugify } from 'oc/vue_shared/util.mjs';
+import {shouldConnectWithoutCopy} from 'oc/vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
 import Vue from 'vue'
 

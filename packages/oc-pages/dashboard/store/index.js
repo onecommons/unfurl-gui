@@ -10,8 +10,9 @@ import deployment_template_updates from '../../project_overview/store/modules/de
 import template_resources from '../../project_overview/store/modules/template_resources'
 import table_data from './modules/table_data'
 import deployment_info from './modules/deployment-info'
-import health_check from 'oc_vue_shared/store_modules/health-check'
-import {createCiVariablesStore} from 'oc_vue_shared/oc-components'
+import health_check from 'oc/vue_shared/store_modules/health-check'
+import errors from 'oc/vue_shared/store_modules/errors'
+import {createCiVariablesStore} from 'oc/vue_shared/components/oc'
 
 Vue.use(Vuex);
 
@@ -27,7 +28,8 @@ const modules = {
     table_data,
     deployment_info,
     user_settings,
-    health_check
+    health_check,
+    errors
 }
 const variableDataEl = document.querySelector('#js-oc-ci-variables')
 

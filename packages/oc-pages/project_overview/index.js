@@ -6,10 +6,12 @@ import store from './store';
 import {GlTooltipDirective} from '@gitlab/ui';
 import __ from '~/locale';
 import ElementUI from 'element-ui'
-import {setupTheme} from 'oc_vue_shared/theme'
+import {OcComponents} from 'oc/vue_shared/components/oc/plugin'
+import {setupTheme} from 'oc/vue_shared/theme'
 
 import './assets/global.css';
 
+Vue.use(OcComponents)
 Vue.use(ElementUI)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 

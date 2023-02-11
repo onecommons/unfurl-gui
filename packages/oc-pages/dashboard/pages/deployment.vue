@@ -1,20 +1,20 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import DeploymentResources from 'oc_vue_shared/components/oc/deployment-resources.vue'
+import DeploymentResources from 'oc/vue_shared/components/oc/deployment-resources.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import ShareResourceToggle from '../components/share-resource-toggle.vue'
-import {bus} from 'oc_vue_shared/bus'
+import {bus} from 'oc/vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
-import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
+import ConsoleWrapper from 'oc/vue_shared/components/console-wrapper.vue'
 import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
-import {OcTab} from 'oc_vue_shared/oc-components'
-import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
-import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
-import {FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
-import {notFoundError} from 'oc_vue_shared/client_utils/error'
-import {sleep} from 'oc_vue_shared/client_utils/misc'
-import {DeploymentIndexTable} from 'oc_dashboard/components'
+import {OcTab} from 'oc/vue_shared/components/oc'
+import {getJobsData} from 'oc/vue_shared/client_utils/pipelines'
+import {fetchProjectPipelines} from 'oc/vue_shared/client_utils/projects'
+import {FLASH_TYPES} from 'oc/vue_shared/client_utils/oc-flash'
+import {notFoundError} from 'oc/vue_shared/client_utils/error'
+import {sleep} from 'oc/vue_shared/client_utils/misc'
+import {DeploymentIndexTable} from 'oc/dashboard/components'
 
 export default {
     components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle, GlLoadingIcon},
@@ -37,6 +37,7 @@ export default {
             'environmentsAreReady',
             'pollingStatus',
             'formattedDeploymentEta',
+            'hasCriticalErrors',
         ]),
         breadcrumbItems() {
             return  [
@@ -132,6 +133,7 @@ export default {
             if(this.deployment.__typename == 'DeploymentTemplate') {
                 const projectPath = this.deployment.projectPath
                 await this.fetchProject({projectPath})
+                if(this.hasCriticalErrors) return
                 this.useProjectState({root: cloneDeep({...this.state, DeploymentEnvironment}), shouldMerge: true, projectPath})
             } else {
                 console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')

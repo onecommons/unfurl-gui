@@ -1,5 +1,5 @@
 <script>
-import TableComponent from 'oc_vue_shared/components/oc/table.vue'
+import TableComponent from 'oc/vue_shared/components/oc/table.vue'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ApplicationCell from '../cells/application-cell.vue'
 import DeploymentCell from '../cells/deployment-cell.vue'

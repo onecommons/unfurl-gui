@@ -1,8 +1,8 @@
 <script>
 import {GlButton, GlTooltipDirective} from '@gitlab/ui'
-import {DetectIcon, StatusIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon, StatusIcon} from 'oc/vue_shared/components/oc'
 import {mapGetters, mapActions} from 'vuex'
-import {bus} from 'oc_vue_shared/bus'
+import {bus} from 'oc/vue_shared/bus'
 import { __ } from '~/locale';
 
 // TODO clean up dependency vs requirement in here!
