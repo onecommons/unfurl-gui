@@ -1,17 +1,16 @@
 <script>
-import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc/vue_shared/client_utils/oc-flash';
 import {mapActions, mapMutations, mapGetters, mapState} from 'vuex'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
-import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
-import {notFoundError} from 'oc_vue_shared/client_utils/error'
+import {lookupCloudProviderAlias} from 'oc/vue_shared/util.mjs'
+import {deleteEnvironmentByName} from 'oc/vue_shared/client_utils/environments'
+import {notFoundError} from 'oc/vue_shared/client_utils/error'
 import {GlLoadingIcon} from '@gitlab/ui'
 import * as routes from './router/constants'
-import ExperimentalSettingIndicator from 'oc_vue_shared/components/oc/experimental-settings-indicator.vue'
 const USER_TOURED_EXPLORE_PAGE = 'USER_TOURED_EXPLORE_PAGE'
 export default {
     name: 'Dashboard',
     data() {return {isLoaded: false, doNotRender: false}},
-    components: {GlLoadingIcon, ExperimentalSettingIndicator},
+    components: {GlLoadingIcon},
     methods: {
         ...mapActions([
             'loadDashboard',
@@ -48,14 +47,17 @@ export default {
         this.populateCurrentUser()
         this.populateDashboardProject()
 
+
+
         try {
-          await Promise.all([this.loadDashboard(), this.populateJobsList()])
+            await Promise.all([this.loadDashboard(), this.populateJobsList()])
         } catch(e) {
-          if(currentNamespace != this.getUsername) {
-            notFoundError()
-          } else {
-            throw(e)
-          }
+            if(currentNamespace != this.getUsername) {
+                notFoundError()
+                console.error('displaying 404 for ', e)
+            } else {
+                throw(e)
+            }
         }
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()
@@ -80,7 +82,8 @@ export default {
 </script>
 <template>
     <div>
-        <experimental-setting-indicator />
+        <oc-experimental-settings-indicator />
+        <oc-unfurl-gui-errors />
         <gl-loading-icon v-if="!isLoaded" label="Loading" size="lg" style="margin-top: 5em;" />
         <router-view v-else-if="!doNotRender"/>
     </div>

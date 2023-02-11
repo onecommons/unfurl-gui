@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { __ } from "~/locale";
 import axios from '~/lib/utils/axios_utils'
-import {lookupNumberOfComments} from 'oc_vue_shared/client_utils/comments'
+import {lookupNumberOfComments} from 'oc/vue_shared/client_utils/comments'
 
 const state = () => ({
     commentsIssueUrl: null,

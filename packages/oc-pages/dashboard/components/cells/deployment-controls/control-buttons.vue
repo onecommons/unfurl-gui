@@ -1,6 +1,6 @@
 <script>
 import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
-import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
+import {generateGitLabIssueSync} from 'oc/vue_shared/client_utils/gitlab-issues'
 import OpenLiveApp from './open-live-app.vue'
 export default {
     props: {

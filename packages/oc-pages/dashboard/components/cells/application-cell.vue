@@ -1,6 +1,6 @@
 <script>
 import * as routes from '../../router/constants'
-import ProjectIcon from 'oc_vue_shared/components/oc/project-icon.vue'
+import ProjectIcon from 'oc/vue_shared/components/oc/project-icon.vue'
 export default {
     components: { ProjectIcon },
     props: {

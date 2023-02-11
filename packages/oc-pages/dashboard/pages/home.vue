@@ -1,5 +1,5 @@
 <script>
-import TableComponent from 'oc_vue_shared/components/oc/table.vue';
+import TableComponent from 'oc/vue_shared/components/oc/table.vue';
 
 import QuantityCard from '../components/quantity-card.vue'
 import ApplicationCell from '../components/cells/application-cell.vue'

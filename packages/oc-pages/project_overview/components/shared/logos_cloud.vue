@@ -6,7 +6,7 @@ import SmallAWS from '../../assets/aws-small.svg?inline'
 import SmallGCP from '../../assets/gcp-small.svg?inline'
 import SmallAzure from '../../assets/azure-small.svg?inline'
 
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc/vue_shared/util.mjs'
 
 const MAPPINGS = {
     [lookupCloudProviderAlias('gcp')]: GCP,

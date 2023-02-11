@@ -3,7 +3,7 @@ import { GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
 import {mapGetters, mapState} from 'vuex'
-import {OcTab, DetectIcon} from 'oc_vue_shared/oc-components'
+import {OcTab, DetectIcon} from 'oc/vue_shared/components/oc'
 
 export default {
     name: 'ProjectDescriptionBox',
