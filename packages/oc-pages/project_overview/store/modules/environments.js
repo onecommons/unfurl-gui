@@ -2,17 +2,17 @@ import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
 import {cloneDeep} from 'lodash'
-import {lookupCloudProviderAlias } from 'oc/vue_shared/util.mjs'
-import {isDiscoverable} from 'oc/vue_shared/client_utils/resource_types'
-import { FLASH_TYPES } from 'oc/vue_shared/client_utils/oc-flash';
-import {prepareVariables, triggerAtomicDeployment} from 'oc/vue_shared/client_utils/pipelines'
-import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc/vue_shared/client_utils/envvars'
-import {fetchProjectInfo, generateProjectAccessToken} from 'oc/vue_shared/client_utils/projects'
-import {fetchEnvironments, shareEnvironmentVariables} from 'oc/vue_shared/client_utils/environments'
-import {tryResolveDirective} from 'oc/vue_shared/lib'
-import {environmentVariableDependencies} from 'oc/vue_shared/lib/deployment-template'
-import {deleteFiles} from 'oc/vue_shared/client_utils/commits'
-import {slugify} from 'oc/vue_shared/util.mjs'
+import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
+import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
+import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {fetchEnvironments, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {tryResolveDirective} from 'oc_vue_shared/lib'
+import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
+import {slugify} from 'oc_vue_shared/util.mjs'
 import Vue from 'vue'
 
 
@@ -170,19 +170,8 @@ const actions = {
         }
 
         const projects = await Promise.all(
-            state.repositoryDependencies.map(
-                dep => fetchProjectInfo(encodeURIComponent(dep))
-                    .catch(e => {
-                        commit(
-                            'createError',
-                            {message: `Couldn't lookup dependency info (${e.message})`, context: dep, severity: 'critical'},
-                            {root: true}
-                        )
-                    })
-            )
+            state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)))
         )
-
-        if(rootGetters.hasCriticalErrors) return
 
         const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
 
@@ -225,36 +214,23 @@ const actions = {
         })
 
 
-        let data
+        let data, error
 
-        try {
-            data = await triggerAtomicDeployment(
-                rootGetters.getHomeProjectPath,
-                {
-                    variables: deployVariables,
-                    dependencies,
-                    ...parameters.deployOptions
-                }
-            )
-        } catch(e) {
-            commit(
-                'createError',
-                {
-                    message: `Failed to trigger deployment (${e.message})`,
-                    context: {
-                        projectPath: rootGetters.getHomeProjectPath,
-                        variables: deployVariables,
-                        dependencies,
-                        ...parameters.deployOptions
-                    },
-                    severity: 'critical'
-                },
-                {root: true}
-            )
-            return
+        data = await triggerAtomicDeployment(
+            rootGetters.getHomeProjectPath,
+            {
+                variables: deployVariables,
+                dependencies,
+                ...parameters.deployOptions
+            }
+        )
+
+
+        if(error = data?.errors) {
+            return {pipelineData: data, error}
         }
-
         const pipelines = [...(dp?.pipelines || [])]
+
 
         const pipeline = data?
             {
@@ -269,6 +245,7 @@ const actions = {
                 'upstream_branch': state.upstreamBranch
             } :
             null
+
 
         if(pipeline) {pipelines.push(pipeline)}
 
@@ -348,10 +325,6 @@ const actions = {
                 projectId,
                 includeDeployments: true
             })
-            
-            result.errors.forEach(e => commit('createError', e, {root: true}))
-
-            if(rootGetters.hasCriticalErrors) return
 
             environments = result.environments
 
@@ -366,13 +339,9 @@ const actions = {
             commit('setDeployments', result.deployments)
         }
         catch(e){
+            console.error('Could not fetch project environments', e)
             if(window.gon.current_username) {
-                commit('createError', {
-                    message: `Could not fetch project environments (${e})`,
-                    context: e,
-                    severity: 'critical',
-                    issue: 'Missing environment',
-                })
+                dispatch('createFlash', { projectPath: fullPath, message: 'Could not fetch project environments.  Is your unfurl.yaml valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment' }, {root: true})
             }
             environments = []
 

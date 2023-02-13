@@ -1,14 +1,14 @@
 <script>
-import TableComponent from 'oc/vue_shared/components/oc/table.vue'
-import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc/vue_shared/components/oc'
+import TableComponent from 'oc_vue_shared/components/oc/table.vue'
+import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc_vue_shared/oc-components'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
-import {mapGetters, mapActions, mapMutations} from 'vuex'
-import {triggerIncrementalDeployment} from 'oc/vue_shared/client_utils/pipelines'
+import {mapGetters, mapActions} from 'vuex'
+import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
@@ -19,7 +19,7 @@ function deploymentGroupBy(item) {
     let result 
     try{
         result = `${item.deployment.name}:${item.application.name}:${item.environment.name}`
-    } catch(e) { return }
+    } catch(e) {return }
     return result
 }
 
@@ -152,10 +152,8 @@ export default {
             'cloneDeployment',
             'addUrlPoll',
         ]),
-        ...mapMutations(['createError']),
         async deploy() {
             await this.deployInto(this.deploymentParameters)
-            if(this.hasCriticalErrors) return
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
                 name: routes.OC_DASHBOARD_DEPLOYMENTS, 
@@ -170,7 +168,6 @@ export default {
         },
         async undeploy() {
             await this.undeployFrom(this.deploymentParameters)
-            if(this.hasCriticalErrors) return
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
                 name: routes.OC_DASHBOARD_DEPLOYMENTS, 
@@ -240,7 +237,6 @@ export default {
                         newDeploymentTitle: this.newDeploymentTitle,
                         targetEnvironment,
                     })
-                    if(this.hasCriticalErrors) return
                     const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
@@ -345,8 +341,7 @@ export default {
             'getDeploymentTemplate',
             'deploymentItemDirect',
             'deleteDeploymentPreventedBy',
-            'undeployPreventedBy',
-            'hasCriticalErrors'
+            'undeployPreventedBy'
         ]),
         intentToDeletePreventedBy() {
             if(this.intent != 'delete') return []
@@ -461,7 +456,7 @@ export default {
                 for(const item of this.itemsSorted) {
                     const deploymentItem = this.deploymentItem({item})
                     if(!deploymentItem) {
-                        this.createError({message: `Deployment item not found for ${item?.deployment?.name}`, context: item, severity: 'major', issue: 'Unfurl GUI should not be considering these valid deployments'})
+                        console.error('deployment item not found for', item)
                         continue
                     }
                     if(!tab.filter || tab.filter(deploymentItem)) {

@@ -1,6 +1,5 @@
-import {deepFreeze} from 'oc/vue_shared/client_utils/misc'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
-import {useImportedStateOnBreakpointOrElse} from 'oc/vue_shared/storage-keys'
+import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 import _ from 'lodash'
 const state = () => ({
@@ -24,11 +23,7 @@ const actions = {
     async loadDashboard({commit, dispatch, rootGetters}, options={}) {
         const {fetchPolicy} = options
         commit('setDashboardLoaded', false)
-        
-        await useImportedStateOnBreakpointOrElse('loadDashboard', async() => {
-            await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
-        })
-
+        await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
         const items = [];
         let deployments = 0
         let applications = 0 
@@ -64,8 +59,8 @@ const actions = {
                 let projectPath
                 try {
                     projectPath = Object.values(frozenDeploymentDict.DeploymentTemplate)[0].projectPath
-                } catch(context) {
-                    commit('createError', {message: `@loadDashboard: Couldn't find project path`, severity: 'minor', context})
+                } catch(e) {
+                    console.error(e)
                 }
 
                 dispatch('useProjectState', {root: clonedDeploymentDict, projectPath})
@@ -118,7 +113,7 @@ const actions = {
                     try {
                         application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
                     } catch(e) {
-                        commit('createError', {message: `@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, severity: 'minor', context: e})
+                        console.error(`@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, e)
                     }
                 }
 
@@ -128,13 +123,7 @@ const actions = {
                 context.application = application
                 context.deployment = deployment
 
-                const deployPath = rootGetters.lookupDeployPath(context.deployment?.name, context.environment?.name)
-                if(!deployPath) {
-                    const message = `Couldn't look up deploy path for ${context.deployment?.name} in ${context.environment?.name}`
-                    commit('createError', {message, severity: 'major', context})
-                    continue
-                }
-
+                //for(const resource of rootGetters.getResources) {
                 for(const resource of deployment.resources) {
                     const i = ++iterationCounter
                     const resourceTemplate = rootGetters.resolveResourceTemplate(resource.template);

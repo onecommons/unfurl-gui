@@ -1,13 +1,13 @@
 <script>
 import _ from 'lodash';
-import {bus} from 'oc/vue_shared/bus';
+import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {Card as ElCard} from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
-import {tryResolveDirective} from 'oc/vue_shared/lib'
+import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {getCustomTooltip} from './oc_inputs'
 
 

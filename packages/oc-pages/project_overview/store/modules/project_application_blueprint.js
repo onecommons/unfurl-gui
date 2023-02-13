@@ -1,7 +1,7 @@
 import {uniq} from 'lodash'
-import {isConfigurable} from 'oc/vue_shared/client_utils/resource_types'
-import {unfurlServerExport} from 'oc/vue_shared/client_utils/unfurl-server'
-import {localNormalize} from 'oc/vue_shared/lib/normalize'
+import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
+import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -39,34 +39,13 @@ const mutations = {
 const actions = {
     async fetchProject({commit, dispatch}, params) {
         const {projectPath, projectGlobal} = params
-        const format = 'blueprint'
         commit('loaded', false)
 
-        let root
-        try {
-            root = await unfurlServerExport({
-                format,
-                projectPath,
-                //TODO pass branch
-            })
-        } catch(e) {
-            // TODO handle this from the caller
-            commit(
-                'createError',
-                {
-                    message: `An error occurred while exporting ${projectPath}`,
-                    context: {
-                        error: e.message,
-                        projectPath,
-                        format
-                    },
-                    severity: 'critical',
-                }
-            )
-
-            return
-        }
-        
+        const root = await unfurlServerExport({
+            format: 'blueprint',
+            projectPath,
+            //TODO pass branch
+        })
 
         root.projectGlobal = projectGlobal
 
@@ -407,7 +386,6 @@ const getters = {
     lookupConfigurableTypes(state, _a, _b, rootGetters) {
         return function(environment) {
             //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
-            if(!state.ResourceType) return
             const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }

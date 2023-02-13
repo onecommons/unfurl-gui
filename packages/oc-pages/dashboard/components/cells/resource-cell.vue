@@ -1,8 +1,8 @@
 <script>
 import {mapGetters} from 'vuex'
 import * as routes from '../../router/constants'
-import StatusIcon from 'oc/vue_shared/components/oc/Status.vue';
-import {generateCardId} from 'oc/vue_shared/util.mjs'
+import StatusIcon from 'oc_vue_shared/components/oc/Status.vue';
+import {generateCardId} from 'oc_vue_shared/util.mjs'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 
 export default {

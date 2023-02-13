@@ -1,10 +1,10 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import {sleep} from 'oc/vue_shared/client_utils/misc'
+import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {Card as ElCard, Input as ElInput, Button as ElButton, Tooltip as ElTooltip} from 'element-ui'
-import { XhrIFrame } from 'oc/vue_shared/client_utils/crossorigin-xhr'
-import CodeClipboard from 'oc/vue_shared/components/oc/code-clipboard.vue'
-import ErrorSmall from 'oc/vue_shared/components/oc/ErrorSmall.vue'
+import { XhrIFrame } from 'oc_vue_shared/client_utils/crossorigin-xhr'
+import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
+import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import {hasUpdates} from './mixins'
 import _ from 'lodash'
 

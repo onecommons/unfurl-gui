@@ -1,6 +1,6 @@
 <script>
 import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
-import { bus } from 'oc/vue_shared/bus';
+import { bus } from 'oc_vue_shared/bus';
 import { mapGetters } from 'vuex';
 
 import { __ } from '~/locale';

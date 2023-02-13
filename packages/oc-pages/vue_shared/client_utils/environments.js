@@ -149,36 +149,16 @@ export function connectionsToArray(environment) {
 }
 
 export async function fetchEnvironments({fullPath, includeDeployments, branch}) {
-    const projectPath = fullPath
-    const format = 'environments'
-    const errors = []
 
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
 
-    let data
-
-    try {
-        data = await unfurlServerExport({
-            format,
-            projectPath,
-            includeDeployments,
-            branch,
-        })
-    } catch(e) {
-        errors.push({
-            message: `@fatchEnvironments: An error occurred during an export request (${e.message})`,
-            context: {
-                error: e.message,
-                format,
-                projectPath,
-                includeDeployments,
-                branch
-            },
-            severity: 'critical'
-        })
-        return {errors}
-    }
+    const data = await unfurlServerExport({
+        format: 'environments',
+        projectPath: fullPath,
+        includeDeployments,
+        branch,
+    })
 
     const environments = Object.values(data.DeploymentEnvironment)
         .filter(env => env.name != 'defaults')
@@ -200,20 +180,12 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
         localNormalize(resourceType, 'ResourceType', null)
     })
 
-    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType, errors}
+    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
 
     if(includeDeployments) {
-        const deployments = data.deployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
+        const deployments = data.deployments.filter(dep => !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
 
         deployments.forEach(deployment => {
-            if(deployment.error) {
-                errors.push({
-                    message: `@fetchEnvironments: An error occured while exporting a deployment ${deployment.deployment}`,
-                    context: deployment,
-                    severity: 'major'
-                })
-                return
-            }
             try {
                 const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
@@ -226,11 +198,7 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
 
                 localNormalize(deploymentObject, 'Deployment', deployment)
             } catch(e) {
-                errors.push({
-                    message: '@fetchEnvironments: Unexpected shape for deployment',
-                    context: e,
-                    severity: 'major'
-                })
+                console.error('@fetchEnvironments: unexpected shape for deployment', deployment, e)
             }
         })
         result.deployments = deployments

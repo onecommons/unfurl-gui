@@ -1,8 +1,8 @@
 <script>
 import {mapGetters} from 'vuex'
-import TableComponent from 'oc/vue_shared/components/oc/table.vue'
-import {DetectIcon} from 'oc/vue_shared/components/oc'
-import {lookupCloudProviderAlias, cloudProviderFriendlyName} from 'oc/vue_shared/util.mjs'
+import TableComponent from 'oc_vue_shared/components/oc/table.vue'
+import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {lookupCloudProviderAlias, cloudProviderFriendlyName} from 'oc_vue_shared/util.mjs'
 
 export default {
     name: 'OpenCloudDeployments',
