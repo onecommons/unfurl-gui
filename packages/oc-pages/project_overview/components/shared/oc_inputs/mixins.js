@@ -1,5 +1,5 @@
-import {toDepTokenEnvKey} from 'oc/vue_shared/client_utils/envvars'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
+import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 async function updateValue(propertyName) {
     if(!this.getStatus) {

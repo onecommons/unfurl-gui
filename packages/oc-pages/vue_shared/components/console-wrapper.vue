@@ -1,6 +1,6 @@
 <script>
 import {mapMutations, mapActions, mapGetters} from 'vuex'
-import {compatibilityMountJobConsole} from 'oc/vue_shared/compat'
+import {compatibilityMountJobConsole} from 'oc_vue_shared/compat'
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
 export default {
     props: {

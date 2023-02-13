@@ -2,9 +2,9 @@
 import CodeClipboard from './code-clipboard.vue'
 import {GlLoadingIcon} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
-import {cloneProject, cloneBlueprint} from 'oc/vue_shared/client_utils/unfurl-invocations'
-import {toDepTokenEnvKey} from 'oc/vue_shared/client_utils/envvars'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
+import {cloneProject, cloneBlueprint} from 'oc_vue_shared/client_utils/unfurl-invocations'
+import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 const protocol = window.location.protocol
 let server  = window.location.hostname

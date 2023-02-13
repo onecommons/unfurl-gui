@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import { USER_HOME_PROJECT} from 'oc/vue_shared/util.mjs'
-import { fetchUser } from 'oc/vue_shared/client_utils/user'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
-import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc/vue_shared/client_utils/oc-flash'
-import {unfurlServerUrlOverride} from 'oc/vue_shared/storage-keys'
+import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import { fetchUser } from 'oc_vue_shared/client_utils/user'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
+import {unfurlServerUrlOverride} from 'oc_vue_shared/storage-keys'
 
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
@@ -19,8 +19,7 @@ const state = () => ({
     dashboard: null,
     dashboardProjectInfo: null,
     user: null,
-    windowWidth: window.innerWidth,
-    scrollTop: document.scrollingElement.scrollTop
+    windowWidth: window.innerWidth
 })
 
 const mutations = {
@@ -51,10 +50,6 @@ const mutations = {
 
     setWindowWidth(state, windowWidth) {
         state.windowWidth = windowWidth
-    },
-
-    setScrollTop(state, scrollTop) {
-        state.scrollTop = scrollTop
     }
 }
 
@@ -90,7 +85,6 @@ const getters = {
         return sessionStorage['registry-url']
     },
     windowWidth(state) {return state.windowWidth},
-    scrollTop(state) {return state.scrollTop},
     serviceDesk() {
         // TODO make this configurable
         return 'onecommons/support'
@@ -99,24 +93,16 @@ const getters = {
 
 const actions = {
     handleResize({commit, state}) {
-        function onResize(e) {
-            const _isMobileLayout = isMobileLayout()
-            if(_isMobileLayout != state.isMobileLayout) {
-                commit('setMobileLayout', _isMobileLayout)
-            }
-            commit('setWindowWidth', window.innerWidth)
-        }
-        function onScroll(e) {
-            commit('setScrollTop', document.scrollingElement.scrollTop)
-        }
         window.addEventListener('resize', _.throttle(
             function(e) {
-                onResize(e)
-                onScroll(e)
+                const _isMobileLayout = isMobileLayout()
+                if(_isMobileLayout != state.isMobileLayout) {
+                    commit('setMobileLayout', _isMobileLayout)
+                }
+                commit('setWindowWidth', window.innerWidth)
             }, 
             30
         ))
-        window.addEventListener('scroll', _.throttle( onScroll, 15 ))
     },
 
     async populateCurrentUser({commit}) {

@@ -24,6 +24,7 @@ async function doXhr(_method, url, body, headers) {
         let response
         if(method == 'GET') { response = await axios.get(url, {headers}) }
         else if(method == 'POST') { response = await axios.post(url, body, {headers}) }
+
         return response?.data
     } else {
         return await ufsvIFrame.doXhr(...arguments)

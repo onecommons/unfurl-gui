@@ -70,31 +70,18 @@ const actions = {
                 itemKey = `${item.context.environment.name}:${item.context.deployment.name}`
             } catch(e) {continue}
             if(!dict[itemKey]) {
-                function recordDeploymentItem() {
-                    const context = {}
-                    context.environment = item.context.environment
-                    context.deployment = item.context.deployment
-                    context.application = item.context.application
-                    context.deployPath = rootGetters.lookupDeployPath(context.deployment.name, context.environment.name)
+                const context = {}
+                context.environment = item.context.environment
+                context.deployment = item.context.deployment
+                context.application = item.context.application
+                context.deployPath = rootGetters.lookupDeployPath(context.deployment.name, context.environment.name)
 
-                    if(!context.deployPath) throw new Error(`Couldn't look up deploy path for ${context.deployment.name} in ${context.environment.name}`)
+                if(!context.deployPath) throw new Error(`Couldn't look up deploy path for ${context.deployment.name} in ${context.environment.name}`)
 
-                    context.job = getters.jobByPipelineId(context.deployPath?.pipeline?.id)
-                    context.projectPath = rootGetters.getHomeProjectPath
-                    context.namespace = rootGetters.getCurrentNamespace
-                    dict[itemKey] = new DeploymentItem(context)
-                }
-
-                try {
-                    recordDeploymentItem()
-                } catch({message}) {
-                    commit(
-                        'createError', {
-                            message,
-                            severity: 'major',
-                            context: item
-                    }, {root: true})
-                }
+                context.job = getters.jobByPipelineId(context.deployPath?.pipeline?.id)
+                context.projectPath = rootGetters.getHomeProjectPath
+                context.namespace = rootGetters.getCurrentNamespace
+                dict[itemKey] = new DeploymentItem(context)
             }
         }
         commit('setDeploymentItems', dict)
