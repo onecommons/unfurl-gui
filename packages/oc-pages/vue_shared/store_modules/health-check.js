@@ -58,6 +58,7 @@ const actions = {
         const lastWorkflow = deployPath?.pipeline?.variables?.WORKFLOW
         if(!( //NOT
             deployment.status &&
+            ![3,5].includes(deployment.status) &&
             deployment.healthCheckUrl &&
             deployment.deployTime &&
             deployment.workflow == 'deploy' &&

@@ -354,7 +354,7 @@ export default {
 
           // quick fix with redundant copy
           // get_env directive resolving to empty string causes default to be used by formily which might be a _generate directive
-          next.value = _.cloneDeepWith(next.value || next.default, function(value) {
+          next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
             let resolvedDirective
             if(resolvedDirective = tryResolveDirective(value)) {
               next.dirty = true
