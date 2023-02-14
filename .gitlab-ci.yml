@@ -44,7 +44,7 @@ build:
   image: $CI_REGISTRY_IMAGE:latest
   before_script:
     - npm i -g yarn
-    - yarn install --immutable
+    - yarn install --immutable || {rm -rf node_modules && yarn cache clean && yarn install}
     - git config --global user.email "$GITLAB_USER_EMAIL"
     - git config --global user.name "$GITLAB_USER_NAME"
 
