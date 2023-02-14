@@ -34,6 +34,11 @@ Cypress.Cookies.defaults({
 })
 
 before(() => {
+  Cypress.on('window:before:load', win => {
+    console.log(win.gc)
+    typeof win.gc == 'function' && win.gc()
+  })
+
   Cypress.on('uncaught:exception', (err, runnable) => {
     return false
   })

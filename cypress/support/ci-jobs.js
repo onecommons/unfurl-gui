@@ -10,12 +10,16 @@ function withCompletedJob(job, cb) {
   let running = true
   // cypress gets mad when this isn't an async function
   cy.waitUntil(async () => {
-    cy.wait(1000)
+    // we'll use less memory on snapshots if we don't poll so frequently
+    cy.wait(BASE_TIMEOUT / 2)
     cy.request(jobToJSONEndpoint(job)).then(response => {
       if(running && response.body.complete) {
         running = false
         cb(response.body)
       }
+    })
+    cy.window().then(win => {
+      typeof win.gc == 'function' && win.gc()
     })
     return !running
   }, {timeout: BASE_TIMEOUT * 60}) // should be about 10 minutes

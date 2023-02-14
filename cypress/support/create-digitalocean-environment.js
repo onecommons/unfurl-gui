@@ -51,7 +51,7 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
 
   cy.wait(BASE_TIMEOUT / 2)
 
-  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments/${environmentName}?provider`)
+  //cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments/${environmentName}?provider`)
 
   cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
 

@@ -28,6 +28,8 @@ module.exports = (on, config) => {
   // `on` is used to hook into various events Cypress emits
   // `config` is the resolved Cypress config
   //
+  config.env.ELECTRON_EXTRA_LAUNCH_ARGS = '--js-flags="--expose-gc"'
+
   const OC_URL = config.env.OC_URL = config.env.OC_URL || 'http://localhost:8080'
   config.env.OC_GRAPHQL_ENDPOINT = (function(baseUrl){
     const url = new URL(baseUrl)
@@ -37,10 +39,17 @@ module.exports = (on, config) => {
     else return '/api/graphql'
   })(OC_URL)
 
+  on('before:browser:launch', (browser, launchOptions) => {
+    launchOptions.args.push('--js-flags=--expose-gc')
+    return launchOptions
+  });
+  
+
   config.env.OC_NAMESPACE = config.env.OC_NAMESPACE || 'demo'
   config.env.REPOS_NAMESPACE = config.env.REPOS_NAMESPACE || 'testing'
   config.env.SIMPLE_BLUEPRINT = config.env.SIMPLE_BLUEPRINT || 'simple-blueprint'
   config.env.BASE_TIMEOUT = config.defaultCommandTimeout || 5000
+
 
   config.env.K8S_CLUSTER_NAME = config.env.K8S_CLUSTER_NAME || config.env.KUBE_CTX_CLUSTER
   config.env.K8S_CONTEXT = config.env.K8S_CONTEXT || config.env.KUBE_CTX

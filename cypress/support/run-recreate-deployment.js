@@ -22,6 +22,7 @@ function pseudorandomPassword() {
 }
 
 Cypress.Commands.add('recreateDeployment', options => {
+  cy.wait(5000)
   let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, _env, _dnsZone
   if (typeof options == 'string') {
     fixture = options
