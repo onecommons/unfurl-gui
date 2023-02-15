@@ -33,6 +33,22 @@ Cypress.Cookies.defaults({
   preserve: /.*/
 })
 
+const origLog = Cypress.log
+
+// don't waste memory logging XHR requests
+Cypress.log = function (opts, ...other) {
+  if ( ['fetch', 'xhr', 'wrap'].includes( opts.displayName )) {
+    return
+  } 
+  try {
+    if ( opts.message?.includes("TypeError: ") ) {
+      console.warn(opts.message)
+      return
+    }
+  } catch(e) {console.error(opts)}
+  return origLog(opts, ...other)
+}
+
 before(() => {
   Cypress.on('window:before:load', win => {
     console.log(win.gc)

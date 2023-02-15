@@ -35,7 +35,6 @@ import './create-kubernetes-environment'
 import './environments'
 import './github'
 import './ci-jobs'
-import './obsolete.js'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
 
