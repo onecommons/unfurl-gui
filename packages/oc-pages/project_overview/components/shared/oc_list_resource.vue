@@ -2,7 +2,7 @@
 import {  GlFormRadio, GlIcon } from '@gitlab/ui';
 import OcListResourceIcon from './oc_list_resource/icon.vue';
 import { __ } from '~/locale';
-import {lookupCloudProviderAlias} from 'oc/vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {mapGetters} from 'vuex';
 
 const CLOUD_PROVIDER_NAMES = {

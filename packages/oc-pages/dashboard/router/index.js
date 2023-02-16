@@ -3,7 +3,7 @@ import VueRouter from 'vue-router';
 import {baseRouteNaive} from './base-route';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
-import { PageNotFound } from 'oc/vue_shared/components/oc'
+import { PageNotFound } from 'oc_vue_shared/components/oc'
 import * as ROUTES from './constants'
 
 Vue.use(VueRouter);

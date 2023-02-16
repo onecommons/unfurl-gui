@@ -1,8 +1,8 @@
 <script>
 import {mapMutations, mapActions, mapGetters} from 'vuex'
-import {compatibilityMountNotesApp} from 'oc/vue_shared/compat'
-import {sleep} from 'oc/vue_shared/client_utils/misc'
-import {countComments} from 'oc/vue_shared/client_utils/comments'
+import {compatibilityMountNotesApp} from 'oc_vue_shared/compat'
+import {sleep} from 'oc_vue_shared/client_utils/misc'
+import {countComments} from 'oc_vue_shared/client_utils/comments'
 
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
 const POLL_PERIOD = 1000

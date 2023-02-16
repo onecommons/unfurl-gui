@@ -1,11 +1,11 @@
 import { __ } from "~/locale";
 import _ from 'lodash'
-import {slugify} from 'oc/vue_shared/util.mjs'
-import {lookupCloudProviderAlias} from 'oc/vue_shared/util.mjs'
-import {patchEnv} from 'oc/vue_shared/client_utils/envvars'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
-import {fetchUserAccessToken} from 'oc/vue_shared/client_utils/user'
-import {unfurl_cloud_vars_url} from 'oc/vue_shared/client_utils/unfurl-invocations'
+import {slugify} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
+import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
 

@@ -1,7 +1,7 @@
 import {uniq} from 'lodash'
-import {isConfigurable} from 'oc/vue_shared/client_utils/resource_types'
-import {unfurlServerExport} from 'oc/vue_shared/client_utils/unfurl-server'
-import {localNormalize} from 'oc/vue_shared/lib/normalize'
+import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
+import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import _ from 'lodash'
 import Vue from 'vue'
 

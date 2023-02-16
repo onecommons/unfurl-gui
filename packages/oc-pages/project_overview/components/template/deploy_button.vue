@@ -3,7 +3,7 @@ import { mapGetters } from 'vuex'
 
 import { Tooltip as ElTooltip } from 'element-ui'
 import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem } from '@gitlab/ui';
-import ErrorSmall from 'oc/vue_shared/components/oc/ErrorSmall.vue'
+import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 
 export default {
     name: 'DeployButton',

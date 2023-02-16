@@ -2,7 +2,7 @@
 import {mapGetters} from 'vuex'
 import EnvironmentCreationDialog from '../../project_overview/components/environment-creation-dialog.vue'
 import {GlModal} from '@gitlab/ui'
-import {slugify, USER_HOME_PROJECT} from 'oc/vue_shared/util.mjs'
+import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
 import {__} from '~/locale'
 export default {
     name: 'CreateEnvironmentModal',

@@ -2,17 +2,17 @@ import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
 import {cloneDeep} from 'lodash'
-import {lookupCloudProviderAlias } from 'oc/vue_shared/util.mjs'
-import {isDiscoverable} from 'oc/vue_shared/client_utils/resource_types'
-import { FLASH_TYPES } from 'oc/vue_shared/client_utils/oc-flash';
-import {prepareVariables, triggerAtomicDeployment} from 'oc/vue_shared/client_utils/pipelines'
-import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc/vue_shared/client_utils/envvars'
-import {fetchProjectInfo, generateProjectAccessToken} from 'oc/vue_shared/client_utils/projects'
-import {fetchEnvironments, shareEnvironmentVariables} from 'oc/vue_shared/client_utils/environments'
-import {tryResolveDirective} from 'oc/vue_shared/lib'
-import {environmentVariableDependencies} from 'oc/vue_shared/lib/deployment-template'
-import {deleteFiles} from 'oc/vue_shared/client_utils/commits'
-import {slugify} from 'oc/vue_shared/util.mjs'
+import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
+import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
+import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {fetchEnvironments, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {tryResolveDirective} from 'oc_vue_shared/lib'
+import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
+import {slugify} from 'oc_vue_shared/util.mjs'
 import Vue from 'vue'
 
 

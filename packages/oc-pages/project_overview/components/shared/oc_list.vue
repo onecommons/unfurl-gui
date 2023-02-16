@@ -1,9 +1,9 @@
 <script>
 import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
-import {DetectIcon} from 'oc/vue_shared/components/oc'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 
 import OcInputs from './oc_inputs.vue'
-import { bus } from 'oc/vue_shared/bus';
+import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
 import { mapGetters, mapActions } from 'vuex'

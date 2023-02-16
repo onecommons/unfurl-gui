@@ -1,9 +1,9 @@
 import _ from 'lodash'
-import { USER_HOME_PROJECT} from 'oc/vue_shared/util.mjs'
-import { fetchUser } from 'oc/vue_shared/client_utils/user'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
-import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc/vue_shared/client_utils/oc-flash'
-import {unfurlServerUrlOverride} from 'oc/vue_shared/storage-keys'
+import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import { fetchUser } from 'oc_vue_shared/client_utils/user'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
+import {unfurlServerUrlOverride} from 'oc_vue_shared/storage-keys'
 
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 

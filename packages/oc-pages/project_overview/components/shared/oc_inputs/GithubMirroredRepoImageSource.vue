@@ -4,12 +4,12 @@ import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
 import {Autocomplete as ElAutocomplete, Card as ElCard, Checkbox as ElCheckbox} from 'element-ui'
-import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
-import {triggerPipeline} from 'oc/vue_shared/client_utils/pipelines'
-import {GithubImportHandler, importStatus, oauthStatus} from 'oc/vue_shared/client_utils/github-import'
+import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
+import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
 import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
-import GithubAuth from 'oc/vue_shared/components/oc/github-auth.vue'
-import ImportButton from 'oc/vue_shared/components/oc/import-button.vue'
+import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
+import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
 
 
 

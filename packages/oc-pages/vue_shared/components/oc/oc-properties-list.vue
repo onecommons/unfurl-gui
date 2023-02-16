@@ -1,7 +1,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
-import {DetectIcon, Status} from 'oc/vue_shared/components/oc'
+import {DetectIcon, Status} from 'oc_vue_shared/components/oc'
 import {JSONView} from 'vue-json-component'
 import Redacted from './redacted.vue'
 

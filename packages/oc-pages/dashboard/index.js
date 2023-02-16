@@ -5,10 +5,10 @@ import apolloProvider from './graphql';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router';
-import { FLASH_TYPES } from 'oc/vue_shared/client_utils/oc-flash';
-import {setupTheme} from 'oc/vue_shared/theme'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import {setupTheme} from 'oc_vue_shared/theme'
 import ElementUI, {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
-import {OcComponents} from 'oc/vue_shared/components/oc/plugin'
+import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 
 Vue.use(GlToast);

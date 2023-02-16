@@ -1,7 +1,7 @@
 <script>
 import { GlCard, GlIcon } from '@gitlab/ui'
 import {mapState, mapGetters} from 'vuex'
-import {DeploymentIndexTable} from 'oc/dashboard/components'
+import {DeploymentIndexTable} from 'oc_dashboard/components'
 /*
         const fields = [
             {

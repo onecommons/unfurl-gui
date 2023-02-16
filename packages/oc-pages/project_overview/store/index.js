@@ -10,8 +10,8 @@ import deployment_info from '../../dashboard/store/modules/deployment-info'
 import misc from './modules/misc'
 import deployments from './modules/deployments'
 import user_settings from './modules/user_settings'
-import health_check from 'oc/vue_shared/store_modules/health-check'
-import errors from 'oc/vue_shared/store_modules/errors'
+import health_check from 'oc_vue_shared/store_modules/health-check'
+import errors from 'oc_vue_shared/store_modules/errors'
 
 Vue.use(Vuex);
 

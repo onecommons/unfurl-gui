@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import * as routes from '../../../router/constants'
-import {fetchCommit, fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
+import {fetchCommit, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 export default class DeploymentItem {
     constructor(context) {
         Object.assign(this, context)

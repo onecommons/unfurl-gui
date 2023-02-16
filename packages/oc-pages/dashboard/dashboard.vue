@@ -1,9 +1,9 @@
 <script>
-import { FLASH_TYPES } from 'oc/vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {mapActions, mapMutations, mapGetters, mapState} from 'vuex'
-import {lookupCloudProviderAlias} from 'oc/vue_shared/util.mjs'
-import {deleteEnvironmentByName} from 'oc/vue_shared/client_utils/environments'
-import {notFoundError} from 'oc/vue_shared/client_utils/error'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
+import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {GlLoadingIcon} from '@gitlab/ui'
 import * as routes from './router/constants'
 const USER_TOURED_EXPLORE_PAGE = 'USER_TOURED_EXPLORE_PAGE'

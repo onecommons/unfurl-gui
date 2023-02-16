@@ -1,6 +1,6 @@
 <script>
 import {mapGetters} from 'vuex'
-import {DetectIcon} from 'oc/vue_shared/components/oc'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {Tooltip as ElTooltip} from 'element-ui'
 
 export default {

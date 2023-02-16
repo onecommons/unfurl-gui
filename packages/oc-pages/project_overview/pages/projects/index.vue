@@ -1,7 +1,7 @@
 <script>
 import createFlash, { FLASH_TYPES } from '~/flash';
 import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider, GlMarkdown } from '@gitlab/ui';
-import TableWithoutHeader from 'oc/vue_shared/components/oc/table_without_header.vue';
+import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
 import { s__, __ } from '~/locale';
@@ -10,12 +10,12 @@ import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
-import NotesWrapper from 'oc/vue_shared/components/notes-wrapper.vue'
-import {OcTab, DetectIcon, EnvironmentSelection} from 'oc/vue_shared/components/oc'
-import { bus } from 'oc/vue_shared/bus';
-import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc/vue_shared/util.mjs'
-import {deleteEnvironmentByName} from 'oc/vue_shared/client_utils/environments'
-import {fetchProjectPermissions} from 'oc/vue_shared/client_utils/projects'
+import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
+import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/components/oc'
+import { bus } from 'oc_vue_shared/bus';
+import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
+import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 

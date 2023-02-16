@@ -1,6 +1,6 @@
-import {deepFreeze} from 'oc/vue_shared/client_utils/misc'
-import {fetchProjectInfo} from 'oc/vue_shared/client_utils/projects'
-import {useImportedStateOnBreakpointOrElse} from 'oc/vue_shared/storage-keys'
+import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
+import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {useImportedStateOnBreakpointOrElse} from 'oc_vue_shared/storage-keys'
 
 import _ from 'lodash'
 const state = () => ({

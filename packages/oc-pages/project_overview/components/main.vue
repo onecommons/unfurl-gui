@@ -1,5 +1,5 @@
 <script>
-import { FLASH_TYPES } from 'oc/vue_shared/client_utils/oc-flash';
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';

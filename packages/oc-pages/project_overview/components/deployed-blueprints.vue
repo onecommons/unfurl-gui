@@ -1,7 +1,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import {GlCard, GlIcon} from '@gitlab/ui'
-import {lookupCloudProviderAlias} from 'oc/vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 const DISPLAY_MAP = {
     [lookupCloudProviderAlias('gcp')]: 'Google Cloud',
     [lookupCloudProviderAlias('aws')]: 'AWS',

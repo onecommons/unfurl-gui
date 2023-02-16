@@ -1,5 +1,5 @@
 <script>
-import StatusIcon from 'oc/vue_shared/components/oc/Status.vue'
+import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 
 export default {
     name: 'EnvironmentStatus',

@@ -1,6 +1,6 @@
 <script>
-import TableComponent from 'oc/vue_shared/components/oc/table.vue'
-import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc/vue_shared/components/oc'
+import TableComponent from 'oc_vue_shared/components/oc/table.vue'
+import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc_vue_shared/components/oc'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
@@ -8,7 +8,7 @@ import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
-import {triggerIncrementalDeployment} from 'oc/vue_shared/client_utils/pipelines'
+import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
