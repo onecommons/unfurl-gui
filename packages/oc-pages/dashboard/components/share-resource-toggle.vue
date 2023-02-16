@@ -14,7 +14,7 @@ export default {
     },
     components: {DetectIcon, GlDropdown, GlDropdownItem, GlDropdownDivider},
     computed: {
-        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny']),
+        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny', 'userCanEdit']),
         canShareResource() {
             /*
              * don't require connect implementation, handled by Unfurl
@@ -24,6 +24,7 @@ export default {
 
             return (
                 // type?.implementations?.includes('connect') &&
+                this.userCanEdit &&
                 this.card?.name &&
                 !(this.card?.status == 3 || this.card?.status == 5) && // status is not error or absent
                 this.card?.__typename != 'ResourceTemplate' &&
