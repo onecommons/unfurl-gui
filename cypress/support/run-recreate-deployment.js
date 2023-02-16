@@ -233,7 +233,7 @@ Cypress.Commands.add('recreateDeployment', options => {
                 if(USE_UNFURL_DNS) {
                   cy.get(`[data-testid^="resource-selection-"]`).first().click()
                 } else {
-                  cy.get(`'[data-testid^="resource-selection-"]:not([data-testid="resource-selection-dns-zone"])'`).first().click()
+                  cy.get(`[data-testid^="resource-selection-"]`).not(`[data-testid="resource-selection-dns-zone"]`).first().click()
                 }
 
                 cy.contains('button', 'Next').click()
@@ -299,3 +299,4 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
   })
 })
+
