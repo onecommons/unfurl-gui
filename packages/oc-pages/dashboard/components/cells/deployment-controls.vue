@@ -74,7 +74,11 @@ export default {
                     if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
                 }
             }
-            result.push('clone-deployment')
+
+            if(this.userCanEdit) {
+                result.push('clone-deployment')
+            }
+
             if(!this.deploymentItem?.isDraft && this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('teardown')
 
             //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
@@ -85,7 +89,7 @@ export default {
                 result.push('view-artifacts')
             } 
 
-            if(window.gon.projectId) {
+            if(window.gon.projectId && this.userCanEdit) {
                 //temporary limitation (restrict to dashboard app)
 
                 if(!this.deploymentItem?.isUndeployed) result.push('local-deploy')

@@ -87,10 +87,10 @@ export default {
     </component>
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
-    <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
+    <!-- View Deployment History is too long when this is the primary action --> 
     <component :is='component' v-if="hasButton('job-history')" :disabled="hasDisabledButton('job-history')" :href="viewJobsLink">
         <gl-icon :size="16" name="history"/> 
-        {{__('View Deployment History')}}
+        {{component == 'gl-button'? __("Deploy History"): __('View Deployment History')}}
     </component>
     <component :is='component' v-if="hasButton('view-artifacts')" :href="viewArtifactsLink">
         <gl-icon :size="16" name="archive"/> 
@@ -99,6 +99,7 @@ export default {
     <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
     <component :is='component' v-if="hasButton('view-in-repository')" :href="viewInRepositoryLink" target="_blank"><gl-icon :size="16" name="file-tree" /> {{__('View in Repository')}}</component>
     <component :is='component' v-if="hasButton('inc-redeploy')" @click="incRedeploy"><gl-icon :size="16" name="repeat" /> {{__('Incremental Redeploy')}}</component>
+    <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>
