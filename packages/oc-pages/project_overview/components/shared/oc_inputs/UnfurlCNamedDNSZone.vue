@@ -1,14 +1,18 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import {sleep} from 'oc/vue_shared/client_utils/misc'
-import {Card as ElCard, Input as ElInput, Button as ElButton, Tooltip as ElTooltip} from 'element-ui'
-import { XhrIFrame } from 'oc/vue_shared/client_utils/crossorigin-xhr'
-import CodeClipboard from 'oc/vue_shared/components/oc/code-clipboard.vue'
-import ErrorSmall from 'oc/vue_shared/components/oc/ErrorSmall.vue'
+import {sleep} from 'oc_vue_shared/client_utils/misc'
+import {Card as ElCard, Input as ElInput, Button as ElButton, Tooltip as ElTooltip, Tag as ElTag} from 'element-ui'
+import axios from '~/lib/utils/axios_utils'
+import { XhrIFrame } from 'oc_vue_shared/client_utils/crossorigin-xhr'
+import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
+import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import {hasUpdates} from './mixins'
 import _ from 'lodash'
 
-const xhrIframe = new XhrIFrame({rejectErrorCode: false})
+const COMPLETE = 'COMPLETE', VERIFIED = 'COMPLETE'
+const UNVERIFIED = 'UNVERIFIED'
+const VERIFYING = 'VERIFYING'
+const ERROR = 'ERROR'
 
 export default {
     name: 'UnfurlCNamedDNSZone',
@@ -20,8 +24,13 @@ export default {
         const data =  {
             target_subdomain:  Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36),
             name: '',
-            verifiedStatus: 'UNVERIFIED',
-            saved: {}
+            verifiedStatus: UNVERIFIED,
+            saved: {},
+            COMPLETE,
+            UNVERIFIED,
+            VERIFYING,
+            ERROR,
+            nameserversResolved: []
         }
 
         for(const {name, value} of this.card.properties) {
@@ -35,10 +44,7 @@ export default {
         return data
     },
     components: {
-        ElCard,
-        ElInput,
-        ElButton,
-        ElTooltip,
+        ElCard, ElInput, ElButton, ElTooltip, ElTag,
         CodeClipboard,
         ErrorSmall
     },
@@ -53,19 +59,41 @@ export default {
 
         subdomain() {
             this.updateValue()
+        },
+        verifiedStatus() {
+            this.nameserversResolved = []
         }
     },
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         async checkCName() {
-            this.verifiedStatus = 'VERIFYING'
-            const {status} = await xhrIframe.doXhr('GET', `https://${this.subdomain}.${this.name}`)
-
-            if(status == -1) {
-                await sleep(1000)
+            this.verifiedStatus = VERIFYING
+            const sleepAndRecurse = async () => {
+                await sleep(5000)
                 this.checkCName()
-            } else {
-                this.verifiedStatus = 'COMPLETE'
+            }
+            let response
+            try {
+                response = await axios.get(`/services/project-dns/cname_verification/${this.host}?target=${this.target}&auth_project=${encodeURIComponent(this.getHomeProjectPath)}`)
+                const {nameserver_results, target_reachable} = response.data || {}
+
+                if(nameserver_results) {
+                    this.nameserversResolved = Object.entries(nameserver_results).filter(([_, value]) => value).map(([key]) => key)
+                }
+
+                // no assumptions about the number of nameservers we check
+                const nameserversReady = nameserver_results && Object.values(nameserver_results).indexOf(false) == -1
+
+                if(!(nameserversReady && target_reachable)) {
+                    sleepAndRecurse()
+                } else {
+                    this.verifiedStatus = COMPLETE
+                }
+                return
+            } catch(e) {
+                console.error(e)
+                this.verifiedStatus = ERROR
+                return
             }
         },
 
@@ -77,7 +105,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['lookupEnvironmentVariable', 'getDependent']),
+        ...mapGetters(['lookupEnvironmentVariable', 'getDependent', 'getHomeProjectPath']),
         subdomain() {
             let parentDependency = this.card
             do {
@@ -85,6 +113,12 @@ export default {
             } while (parentDependency = this.getDependent(parentDependency?.name))
             
             return parentDependency.properties.find(prop => prop.name == 'subdomain')?.value
+        },
+        target() {
+            return `${this.target_subdomain}.${this.lookupEnvironmentVariable('PROJECT_DNS_ZONE')}`
+        },
+        host() {
+            return `${this.subdomain}.${this.name}`
         },
         validUserDomain() {
             return this.name?.match(/\..{3}/) && this.subdomain
@@ -135,20 +169,28 @@ export default {
                         <u>target</u></el-tooltip>
                     field:
                     <b class="user-select-all">
-                        <code-clipboard>{{target_subdomain}}.{{lookupEnvironmentVariable('PROJECT_DNS_ZONE')}}</code-clipboard>
+                        <code-clipboard>{{target}}</code-clipboard>
                     </b>
                 </li>
             </ul>
             <p> We highly recommend completing this step before deploying. </p>
             </li>
-            <!--li v-bind="descAttrs">
-                (Optional) Verify your CNAME record <br>
-                <el-button type="primary" :loading="verifiedStatus == 'VERIFYING'" @click="checkCName">
-                    <span v-if="verifiedStatus == 'VERIFYING'">Verifying CNAME</span>
-                    <span v-else-if="verifiedStatus == 'COMPLETE'">CNAME was verified successfully</span>
-                    <span v-else>Verify CNAME</span>
-                </el-button>
-            </li-->
+            <li v-bind="descAttrs">
+                    <div>
+                        (Optional) Verify your CNAME record <br>
+                        <div class="d-flex">
+                            <el-button :type="verifiedStatus == ERROR? 'danger': 'primary'" :loading="verifiedStatus == VERIFYING" @click="checkCName">
+                                <span v-if="verifiedStatus == VERIFYING">Verifying CNAME</span>
+                                <span v-else-if="verifiedStatus == COMPLETE">CNAME was verified successfully</span>
+                                <span v-else-if="verifiedStatus == ERROR">Couldn't connect to DNS service</span>
+                                <span v-else>Verify CNAME</span>
+                            </el-button>
+                            <div class="d-flex align-items-center ml-3">
+                                <el-tag v-for="resolved in nameserversResolved" type="success" class="mr-2" effect="dark" :key="resolved"><i class="el-icon-success mr-1"/>{{resolved}}</el-tag>
+                            </div>
+                        </div>
+                </div>
+            </li>
         </ol>
     </el-card>
 </template>
