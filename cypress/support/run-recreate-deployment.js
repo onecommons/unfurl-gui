@@ -229,7 +229,12 @@ Cypress.Commands.add('recreateDeployment', options => {
                   .prev()
                   .click()
 
-                cy.get(`[data-testid^="resource-selection-"]`).first().click()
+                // special case for inconsistent ordering of Unfurl Cloud DNS
+                if(USE_UNFURL_DNS) {
+                  cy.get(`[data-testid^="resource-selection-"]`).first().click()
+                } else {
+                  cy.get(`'[data-testid^="resource-selection-"]:not([data-testid="resource-selection-dns-zone"])'`).first().click()
+                }
 
                 cy.contains('button', 'Next').click()
               } else {
