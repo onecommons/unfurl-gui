@@ -142,7 +142,7 @@ kubernetes:
 unfurl_cloud_dns:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -e USE_UNFURL_DNS=opencloudservices.net -s './cypress/e2e/blueprints/aws__nextcloud__only-mail.js'
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -e USE_UNFURL_DNS=opencloudservices.net -s './cypress/e2e/blueprints/aws__nextcloud__only-mail*.js'
   rules:
     - if: $TEST =~ /uc_dns/ || $TEST == "all"
 
@@ -150,7 +150,7 @@ unfurl_cloud_dns:
 cloud_redis:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/e2e/blueprints/gcp__nextcloud__memorystore.js,cypress/e2e/blueprints/aws__nextcloud__memorydb.js
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/e2e/blueprints/gcp__nextcloud__memorystore*.js,cypress/e2e/blueprints/aws__nextcloud__memorydb*.js
   rules:
     - if: $TEST == "cloud_redis"
 
@@ -158,14 +158,14 @@ cloud_redis:
 multiple_workflows:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/e2e/deployments/multiple-workflows.js
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/e2e/deployments/multiple-workflows*.js
   rules:
     - if: $TEST == "multiple_workflows"
 
 shared_volumes:
   extends: .tests
   script:
-    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/e2e/deployments/shared-volume.js
+    - yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s cypress/e2e/deployments/shared-volume*.js
   rules:
     - if: $TEST == "shared_volumes" || $TEST == "all"
 
