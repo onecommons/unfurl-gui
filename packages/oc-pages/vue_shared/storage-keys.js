@@ -6,7 +6,10 @@ export const HIDDEN_OPTION_KEYS = {
     encodedPasswordExportUrls: 'encoded-password-export-urls',
     unfurlServerUrl: 'unfurl-server-url',
     connectWithoutCopy: 'connect-without-copy',
-    sendLatestCommit: 'always-send-latest-commit'
+    sendLatestCommit: 'always-send-latest-commit',
+    uploadStateBreakpoint: 'upload-state-breakpoint',
+    preserveImportedVuexState: 'preserveImportedVuexState',
+    defaultSeverityLevel: 'defaultSeverityLevel'
 }
 
 export const CONFIGURABLE_HIDDEN_OPTIONS = [
@@ -14,6 +17,9 @@ export const CONFIGURABLE_HIDDEN_OPTIONS = [
     { key: 'encodedPasswordExportUrls', label: 'Encode Passwords in URL', placeholder: 'false' },
     { key: 'connectWithoutCopy', label: 'Connect External Without Copy', placeholder: 'false' },
     { key: 'sendLatestCommit', label: 'Latest Commit for UFSV URL', placeholder: 'false' },
+    { key: 'uploadStateBreakpoint', label: 'Replace Vuex State at X', placeholder: 'loadDashboard' },
+    { key: 'preserveImportedVuexState', label: "Load Vuex from file onreload", placeholder: 'false' },
+    { key: 'defaultSeverityLevel', label: "Show Errors of at least X Severity", placeholder: 'minor, [major], critical' },
 ]
 
 function isTruthyStorageValue(value) {
@@ -73,8 +79,21 @@ export function alwaysSendLatestCommit() {
     return lookupKey( HIDDEN_OPTION_KEYS.sendLatestCommit )
 }
 
+export function defaultSeverityLevel() {
+    return lookupKey( HIDDEN_OPTION_KEYS.defaultSeverityLevel ) || 'major'
+}
+
+export function useImportedStateOnBreakpointOrElse(breakpointName, cb) {
+    const newState = sessionStorage['unfurl-gui:state']
+    if(newState && [lookupKey('uploadStateBreakpoint'), 'loadDashboard'].includes(breakpointName)) {
+        window.$store.replaceState({...window.$store.state, ...JSON.parse(newState)})
+        if(!lookupKey('preserveImportedVuexState')) delete sessionStorage['unfurl-gui:state']
+    } else {return cb()}
+
+}
 export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
+
 
 window.lsHiddenOptions = function() {
     for(const opt of Object.values(HIDDEN_OPTION_KEYS)) console.log(opt)

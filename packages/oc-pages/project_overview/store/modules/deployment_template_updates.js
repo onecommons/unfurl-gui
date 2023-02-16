@@ -744,12 +744,28 @@ const actions = {
         commit('setBaseState', _.cloneDeep(state))
     },
 
-    async sendUpdateSubrequests({state, getters, rootState, rootGetters}, o){
+    async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
         // send environment variables before trying to commit changes
-        if(o?.dryRun) {
-            console.log(state.env, state.environmentScope, state.projectPath)
-        } else {
-            await patchEnv(state.env, state.environmentScope, state.projectPath, 0)
+        try {
+            if(o?.dryRun) {
+                console.log(state.env, state.environmentScope, state.projectPath)
+            } else {
+                await patchEnv(state.env, state.environmentScope, state.projectPath, 0)
+            }
+        } catch(e) {
+            commit(
+                'createError',
+                {
+                    message: `Failed to update secrets -- aborting commit (${e.message})`,
+                    context: {
+                        environmentScope: state.environmentScope,
+                        projectPath: state.projectPath
+                    },
+                    severity: 'critical'
+                },
+                {root: true}
+            )
+            return
         }
 
         const patch = []
@@ -859,6 +875,23 @@ const actions = {
             patch,
             commitMessage: state.commitMessage,
             variables
+        }).catch(e => {
+            commit(
+                'createError',
+                {
+                    message: `Failed to commit update to ${path} (${e.message})`,
+                    context: {
+                        method,
+                        projectPath,
+                        branch,
+                        patch,
+                        commitMessage: state.commitMessage,
+                        variables
+                    },
+                    severity: 'critical'
+                },
+                {root: true}
+            )
         })
 
         await Promise.all([post, sync])

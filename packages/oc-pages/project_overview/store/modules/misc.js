@@ -19,7 +19,8 @@ const state = () => ({
     dashboard: null,
     dashboardProjectInfo: null,
     user: null,
-    windowWidth: window.innerWidth
+    windowWidth: window.innerWidth,
+    scrollTop: document.scrollingElement.scrollTop
 })
 
 const mutations = {
@@ -50,6 +51,10 @@ const mutations = {
 
     setWindowWidth(state, windowWidth) {
         state.windowWidth = windowWidth
+    },
+
+    setScrollTop(state, scrollTop) {
+        state.scrollTop = scrollTop
     }
 }
 
@@ -85,6 +90,7 @@ const getters = {
         return sessionStorage['registry-url']
     },
     windowWidth(state) {return state.windowWidth},
+    scrollTop(state) {return state.scrollTop},
     serviceDesk() {
         // TODO make this configurable
         return 'onecommons/support'
@@ -93,16 +99,24 @@ const getters = {
 
 const actions = {
     handleResize({commit, state}) {
+        function onResize(e) {
+            const _isMobileLayout = isMobileLayout()
+            if(_isMobileLayout != state.isMobileLayout) {
+                commit('setMobileLayout', _isMobileLayout)
+            }
+            commit('setWindowWidth', window.innerWidth)
+        }
+        function onScroll(e) {
+            commit('setScrollTop', document.scrollingElement.scrollTop)
+        }
         window.addEventListener('resize', _.throttle(
             function(e) {
-                const _isMobileLayout = isMobileLayout()
-                if(_isMobileLayout != state.isMobileLayout) {
-                    commit('setMobileLayout', _isMobileLayout)
-                }
-                commit('setWindowWidth', window.innerWidth)
+                onResize(e)
+                onScroll(e)
             }, 
             30
         ))
+        window.addEventListener('scroll', _.throttle( onScroll, 15 ))
     },
 
     async populateCurrentUser({commit}) {

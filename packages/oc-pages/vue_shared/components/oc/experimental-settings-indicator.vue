@@ -1,7 +1,7 @@
 <script>
 import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
-import {Card as ElCard, Input as ElInput} from 'element-ui'
+import {Card as ElCard, Input as ElInput, Button as ElButton} from 'element-ui'
 import ErrorSmall from './ErrorSmall.vue'
 import {mapGetters} from 'vuex'
 export default {
@@ -21,6 +21,38 @@ export default {
             const {y, height, x, width} = document.querySelector('[data-qa-selector="navbar"] .navbar-collapse.collapse').getBoundingClientRect()
             this.yPos = y + 'px'
             this.xPos = x + 'px'
+        },
+        downloadState() {
+            const link = document.createElement('A')
+            const location = window.location.pathname + window.location.search
+            const state = this.$store.state
+            const contents = JSON.stringify({location, state})
+            const file = new Blob([contents], {type: 'application/json'})
+            link.href = URL.createObjectURL(file)
+            link.download = encodeURIComponent(location.slice(1)) + '.json'
+            link.click()
+            URL.revokeObjectURL(link.href)
+        },
+        uploadState() {
+            const input = document.createElement('INPUT')
+            input.setAttribute('type', 'file')
+            input.setAttribute('accept', 'application/json')
+            input.click() 
+            input.addEventListener('change', () => {
+                try {
+                    input.files[0].text().then(text => {
+                            const {location, state} = JSON.parse(text)
+                            //location = '/' + decodeURIComponent(location)
+                            const dest = new URL(window.location.href)
+                            const [pathname, query] = location.split('?')
+                            dest.pathname = pathname || ''
+                            dest.search = query || ''
+                            sessionStorage['unfurl-gui:state'] = JSON.stringify(state)
+                            window.location.href = dest.toString()
+                    })
+                }
+                catch(e) { console.error(e) }
+            })
         },
         lookupKey,
         setLocalStorageKey,
@@ -86,6 +118,13 @@ export default {
                     <template slot="prepend"><span style="font-size: 12px;" class="text-monospace">{{option.label}}</span></template>
                 </el-input>
                 <error-small :condition="changed" message="Changes will be reflected after page refresh" />
+
+                <div class="d-flex justify-content-end mt-4">
+                    <el-button @click="downloadState" type="text" icon="el-icon-download"> Download app state </el-button>
+                    <div class="border-right mr-2 ml-2" />
+                    <el-button @click="uploadState" type="text" icon="el-icon-upload2"> Upload app state </el-button>
+                </div>
+
             </el-card>
         </gl-modal>
         <div class="position-fixed" style=" z-index: 1000; pointer-events: none;" :style="{left: xPos, top: yPos}">

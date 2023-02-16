@@ -1,6 +1,6 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 export default {

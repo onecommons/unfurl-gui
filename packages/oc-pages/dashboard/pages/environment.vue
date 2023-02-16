@@ -5,7 +5,7 @@ import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs, GlModal} from '@gitlab/ui'
 import {Tooltip as ElTooltip} from 'element-ui'
-import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from 'oc_vue_shared/oc-components'
+import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue_shared/components/oc'
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
 import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util.mjs'
@@ -55,7 +55,6 @@ export default {
         OcTab,
         CiVariableSettings,
         DashboardBreadcrumbs,
-        OcPropertiesList,
         GlTabs, GlFormInput, GlButton, GlIcon, GlModal,
         DeploymentResources,
         DetectIcon,
