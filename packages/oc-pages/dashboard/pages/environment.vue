@@ -109,7 +109,7 @@ export default {
             })
         },
         cloudProviderDisplayName() {
-            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')
+            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Generic')
         },
         saveStatus() {
             if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
@@ -370,7 +370,7 @@ export default {
             :header="cloudProviderDisplayName"
             :containerStyle="{'font-size': '0.9em', ...width}"
             :properties="propviderProps"
-            v-if="[lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
+            v-if="!environment.primary_provider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
