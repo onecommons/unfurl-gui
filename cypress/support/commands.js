@@ -32,13 +32,13 @@ import './create-aws-environment'
 import './create-gcp-environment'
 import './create-digitalocean-environment'
 import './create-kubernetes-environment'
+import './create-generic-environment'
 import './environments'
 import './github'
 import './ci-jobs'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
 
-const BASE_URL = Cypress.env('OC_URL') || 'localhost:8080'
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')

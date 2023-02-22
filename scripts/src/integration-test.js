@@ -10,6 +10,7 @@ const READ_ARGS = {
   username: (args) => args.u || args.username,
   cypressEnv: (args) => args.e || args.env || args['cypress-env'],
   dashboardRepo: (args) => args.dashboard || args['dashboard-repo'],
+  group: (args) => args.group,
   REPOS_NAMESPACE: (args) => args.namespace || args['repo-namespace'] || args['repos-namespace'],
   awsAuthMethod: (args) => {
     const authMethod = args['aws-auth-method'] || args['aws-auth']
@@ -71,7 +72,7 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
   'OC_IMPERSONATE', 'DO_ENVIRONMENT_NAME', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', // always overriden
   'INTEGRATION_TEST_ARGS',
   'MAIL_USERNAME', 'MAIL_PASSWORD', 'SMTP_HOST', 'MAIL_RESOURCE_NAME',
-  'DEPLOY_IMAGE', 'DEPLOY_TAG',
+  'DEPLOY_IMAGE', 'DEFAULT_NAMESPACE',
   'TEARDOWN', 'GENERATE_SUBDOMAINS', // used in recreate deployment
   'UNFURL_SERVER_URL', // session storage vars
 ]
@@ -127,7 +128,7 @@ async function main() {
   let prepareUserCommand
 
   const parsedArgs = readArgs(args)
-  let {username, awsAuthMethod, cypressEnv, dashboardRepo, REPOS_NAMESPACE} = parsedArgs
+  let {username, awsAuthMethod, cypressEnv, dashboardRepo, REPOS_NAMESPACE, group} = parsedArgs
 
   if(!REPOS_NAMESPACE) REPOS_NAMESPACE = 'testing'
 
@@ -136,8 +137,10 @@ async function main() {
     username = identifierFromCurrentTime('user')
     prepareUserCommand = createDashboardCommand(username, dashboardRepo)
 
+
     console.log(`Created user ${username}`)  
   }
+
   console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)
 
   const GCP_ENVIRONMENT_NAME = identifierFromCurrentTime('gcp').toLowerCase()
@@ -146,11 +149,37 @@ async function main() {
   const K8S_ENVIRONMENT_NAME = identifierFromCurrentTime('k8s').toLowerCase()
   const INTEGRATION_TEST_ARGS = JSON.stringify(parsedArgs)
 
-  const forwardedEnv = forwardedEnvironmentVariables({OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS})
+  let env = {OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS}
+
+  if(group) {
+    env.DEFAULT_NAMESPACE = group
+  }
+
+  const forwardedEnv = forwardedEnvironmentVariables(env)
 
   const cypressCommand = invokeCypressCommand(args._, forwardedEnv)
 
   if(prepareUserCommand) prepareUserCommand()
+
+  if(group) {
+    console.log(`Attempting to create group ${group}`)
+    try {
+      execFileSync(path.join(__dirname, 'create-group.js'), [group], {stdio:'inherit'})
+    } catch(e) { console.error(e.message) }
+    console.log(`Attempting to add ${username} to ${group}`)
+    try {
+      execFileSync(path.join(__dirname, 'add-group-member.js'), ['--user', username, '--group', group], {stdio:'inherit'})
+    } catch(e) { console.error(e.message) }
+
+    if(dashboardRepo) {
+      console.log(`Pushing dashboard to ${group}/dashboard`)
+      try {
+        execFileSync(path.join(__dirname, 'push-local-repo.js'), [dashboardRepo, '--project-path', `${group}/dashboard`], {stdio: 'inherit'})
+      } catch(e) { console.error(e.message) }
+    }
+  }
+
+
   const cypressResult = cypressCommand()
   console.log(cypressResult)
   const status = cypressResult.status

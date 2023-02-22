@@ -1,6 +1,6 @@
 const FIXTURE = 'generated/deployments/_staging-aws__nextcloud__only-mail'
-const BASE_URL = Cypress.env('OC_URL')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
+const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 function deploymentName(baseTitle) {
@@ -42,7 +42,7 @@ describe('Multiple workflows', () => {
 
 
     cy.waitUntil(() => {
-      cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/deployments?show=running`)
+      cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
       cy.get('.oc-table').first().should('exist')
       return cy.document().then($document => {
         let table = $document.querySelector('.oc-table')

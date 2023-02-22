@@ -1,6 +1,6 @@
 const FIXTURE = 'generated/deployments/_production-gcp__nextcloud__redis-mail-pg'
-const BASE_URL = Cypress.env('OC_URL')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
+const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 function deploymentName(baseTitle) {
@@ -28,7 +28,7 @@ describe('Shared redis', () => {
       skipTeardown: true
     })
 
-    cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/deployments?show=running`)
+    cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
 
     cy.contains("a", dep1).click()
 

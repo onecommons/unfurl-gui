@@ -1,13 +1,13 @@
 const GOOGLE_APPLICATION_CREDENTIALS = Cypress.env('GOOGLE_APPLICATION_CREDENTIALS')
-const BASE_URL = Cypress.env('OC_URL')
 const GCP_ZONE = Cypress.env('CLOUDSDK_COMPUTE_ZONE') || 'us-central1-a'
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
 const GCP_DNS_TYPE = Cypress.env('GCP_DNS_TYPE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
+const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 
 function createGCPEnvironment({environmentName, shouldCreateExternalResource, shouldCreateDNS}) {
-  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments`)
+  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
   cy.clickCreateEnvironmentButton()
   cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
   cy.url().should('include', environmentName)
@@ -31,7 +31,7 @@ function validateGCPEnvironment(filePath=GOOGLE_APPLICATION_CREDENTIALS) {
     const {project_id} = credentials
     cy.contains(project_id, {timeout: BASE_TIMEOUT * 2.4}).should('be.visible')
     cy.contains(GCP_ZONE).should('be.visible')
-    cy.contains('Local Development', {matchCase: false}).should('not.exist')
+    cy.contains('.properties-list-container', 'Generic', {matchCase: false}).should('not.exist')
   })
 }
 

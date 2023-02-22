@@ -1,4 +1,3 @@
-const BASE_URL = Cypress.env('OC_URL')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 

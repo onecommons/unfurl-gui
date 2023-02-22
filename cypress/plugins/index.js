@@ -58,6 +58,8 @@ module.exports = (on, config) => {
   config.env.K8S_AUTH_TOKEN = config.env.K8S_AUTH_TOKEN || config.env.KUBE_TOKEN
   config.env.K8S_BASE_URL = config.env.K8S_BASE_URL || config.env.KUBE_HOST
 
+  config.env.DEFAULT_NAMESPACE = config.env.DEFAULT_NAMESPACE || config.env.OC_IMPERSONATE
+
   const 
     DIGITALOCEAN_DNS_ZONE = config.env.DIGITALOCEAN_DNS_ZONE || 'untrusted.me',
     GCP_DNS_ZONE = config.env.GCP_DNS_ZONE,

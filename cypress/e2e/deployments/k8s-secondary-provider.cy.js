@@ -1,5 +1,4 @@
 const FIXTURE = 'generated/deployments/_cy-k8s-secondary-gcprvdt9055__nextcloud__gcp-sql'
-const BASE_URL = Cypress.env('OC_URL')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')

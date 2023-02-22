@@ -1,4 +1,3 @@
-const BASE_URL = Cypress.env('OC_URL')
 const ENVIRONMENT_NAME = Cypress.env('K8S_ENVIRONMENT_NAME')
 const K8S_CLUSTER_NAME = Cypress.env('K8S_CLUSTER_NAME')
 const K8S_CONTEXT = Cypress.env('K8S_CONTEXT')
@@ -15,6 +14,7 @@ const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
 const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
+const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -85,7 +85,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
     options
   )
 
-  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments`)
+  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
   createEnvironmentButton().click()
   cy.k8sCompleteEnvironmentDialog({environmentName})
   cy.url().should('include', environmentName)
@@ -94,7 +94,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
   cy.wait(BASE_TIMEOUT / 2)
 
-  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/environments/${environmentName}?provider`)
+  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}?provider`)
 
   enterK8sInfo()
 

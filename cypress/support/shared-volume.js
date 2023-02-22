@@ -1,5 +1,4 @@
-const BASE_URL = Cypress.env('OC_URL')
-const USERNAME = Cypress.env('OC_IMPERSONATE')
+const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 export function deploymentName(baseTitle) {
@@ -13,7 +12,7 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
     skipTeardown: true
   })
 
-  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/deployments?show=running`)
+  cy.visit(`/${DEFAULT_NAMESPACE}/dashboard/-/deployments?show=running`)
 
   cy.contains("a", dep).click()
 
@@ -33,7 +32,7 @@ export function deploySharedVolume2(dep, fixture, cardTestId) {
     expectExisting: true
   })
 
-  cy.visit(`${BASE_URL}/${USERNAME}/dashboard/-/deployments`)
+  cy.visit(`/${DEFAULT_NAMESPACE}/dashboard/-/deployments`)
 
   cy.contains("a", dep).click()
 

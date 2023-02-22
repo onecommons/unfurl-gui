@@ -1,8 +1,8 @@
-const BASE_URL = Cypress.env('OC_URL')
 const USER = Cypress.env('OC_IMPERSONATE')
+const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 function jobToJSONEndpoint(job) {
-  return `${BASE_URL}/${USER}/dashboard/-/jobs/${job}.json`
+  return `/${NAMESPACE}/dashboard/-/jobs/${job}.json`
 }
 
 function withCompletedJob(job, cb) {
@@ -44,7 +44,7 @@ function withJob(cb) {
 }
 
 function assertDeploymentRunning(deploymentTitle) {
-  //cy.visit(`${BASE_URL}/dashboard/deployments?show=running`)
+  //cy.visit(`/dashboard/deployments?show=running`)
   cy.contains('td', deploymentTitle).within(() => {
     //cy.get('[data-testid="status_success_solid-icon"]').should('exist')
     cy.get('[data-testid="status_success_solid-icon"]').should('exist')

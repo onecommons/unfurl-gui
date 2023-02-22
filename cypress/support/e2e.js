@@ -16,13 +16,13 @@
 // Import commands.js using ES2015 syntax:
 import './commands'
 
-const BASE_URL = Cypress.env('OC_URL') || 'localhost:8080'
 const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')
 const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
 const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
+const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS') 
 
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
@@ -59,7 +59,7 @@ before(() => {
     return false
   })
   if(Cypress.spec.name.startsWith('00_visitor')) return
-  cy.visit(`${BASE_URL}/users/sign_in`).wait(100)
+  cy.visit(`/users/sign_in`).wait(100)
   cy.url().then(url => {
     if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
       cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
@@ -67,12 +67,12 @@ before(() => {
       cy.getInputOrTextarea(`[data-qa-selector="sign_in_button"]`).click()
 
       if(IMPERSONATE) {
-        cy.visit(`${BASE_URL}/admin/users/${IMPERSONATE}`)
+        cy.visit(`/admin/users/${IMPERSONATE}`)
         cy.get('[data-qa-selector="impersonate_user_link"]').click()
         cy.url().should('not.contain', 'admin')
 
         if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-          cy.visit(`${BASE_URL}/${IMPERSONATE}/dashboard`)
+          cy.visit(`/${IMPERSONATE}/dashboard`)
         }
       }
     }
@@ -89,6 +89,9 @@ beforeEach(() => {
     }
     if(MOCK_DEPLOY) {
       win.sessionStorage['mock-deploy'] = 't'
+    }
+    if(DEFAULT_NAMESPACE) {
+      win.sessionStorage['defaultNamespace'] = DEFAULT_NAMESPACE
     }
     if(UNFURL_VALIDATION_MODE) {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE

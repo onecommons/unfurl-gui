@@ -1,7 +1,7 @@
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
-const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('DO_ENVIRONMENT_NAME')
+const ENVIRONMENT_NAME = 'env-test-' + 'generic'
 
-describe('Digital Ocean environments', () => {
+describe('Generic environment', () => {
   beforeEach(() => {
     cy.whenEnvironmentExists(ENVIRONMENT_NAME, () => {
       cy.deleteEnvironment(ENVIRONMENT_NAME)
@@ -10,13 +10,13 @@ describe('Digital Ocean environments', () => {
   })
 
   afterEach(() => {
-    cy.contains('.properties-list-container', 'Generic', {matchCase: false}).should('not.exist')
+    cy.contains('Generic', {matchCase: false}).should('exist')
     cy.visit(`${NAMESPACE}/dashboard/-/environments`)
     cy.environmentShouldExist(ENVIRONMENT_NAME)
   })
 
-  it('Can create a digital ocean environment', () => {
-    cy.createDigitalOceanEnvironment({
+  it('Can create a generic environment', () => {
+    cy.createGenericEnvironment({
       environmentName: ENVIRONMENT_NAME,
       shouldCreateExternalResource: true,
     })
