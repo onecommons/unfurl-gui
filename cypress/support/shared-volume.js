@@ -12,7 +12,7 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
     skipTeardown: true
   })
 
-  cy.visit(`/${DEFAULT_NAMESPACE}/dashboard/-/deployments?show=running`)
+  cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
 
   cy.contains("a", dep).click()
 
@@ -32,7 +32,7 @@ export function deploySharedVolume2(dep, fixture, cardTestId) {
     expectExisting: true
   })
 
-  cy.visit(`/${DEFAULT_NAMESPACE}/dashboard/-/deployments`)
+  cy.visit(`/${NAMESPACE}/dashboard/-/deployments`)
 
   cy.contains("a", dep).click()
 
