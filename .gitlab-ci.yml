@@ -38,7 +38,6 @@ build:
       changes: # I don't see this working?
         - docker/e2e.Dockerfile
 
-
 .tests:
   stage: test
   image: $CI_REGISTRY_IMAGE:latest
