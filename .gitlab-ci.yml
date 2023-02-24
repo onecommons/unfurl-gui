@@ -171,6 +171,6 @@ shared_volumes:
 command:
   extends: .tests
   script:
-    - eval $COMMAND
+    - eval $CY_COMMAND
   rules:
     - if: $TEST == "command"
