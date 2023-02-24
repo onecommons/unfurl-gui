@@ -9,7 +9,8 @@ export const HIDDEN_OPTION_KEYS = {
     sendLatestCommit: 'always-send-latest-commit',
     uploadStateBreakpoint: 'upload-state-breakpoint',
     preserveImportedVuexState: 'preserveImportedVuexState',
-    defaultSeverityLevel: 'defaultSeverityLevel'
+    defaultSeverityLevel: 'defaultSeverityLevel',
+    defaultNamespace: 'defaultNamespace'
 }
 
 export const CONFIGURABLE_HIDDEN_OPTIONS = [
@@ -20,6 +21,7 @@ export const CONFIGURABLE_HIDDEN_OPTIONS = [
     { key: 'uploadStateBreakpoint', label: 'Replace Vuex State at X', placeholder: 'loadDashboard' },
     { key: 'preserveImportedVuexState', label: "Load Vuex from file onreload", placeholder: 'false' },
     { key: 'defaultSeverityLevel', label: "Show Errors of at least X Severity", placeholder: 'minor, [major], critical' },
+    { key: 'defaultNamespace', label: "Use namespace instead of username" },
 ]
 
 function isTruthyStorageValue(value) {

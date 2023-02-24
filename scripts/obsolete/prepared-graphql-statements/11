@@ -1,1 +1,0 @@
-{"operationName":"DeleteResourceTemplate","variables":{"patch":{"awsinstance":null},"fullPath":"demo/apostrophe-demo"},"query":"mutation DeleteResourceTemplate($fullPath: ID!, $patch: JSON!) {\n  updateDeploymentObj(projectPath: $fullPath, typename: \"ResourceTemplate\", patch: $patch) {\n    isOk\n    errors\n    __typename\n  }\n}\n"}
