@@ -168,3 +168,9 @@ shared_volumes:
   rules:
     - if: $TEST == "shared_volumes" || $TEST == "all"
 
+command:
+  extends: .tests
+  script:
+    - eval $COMMAND
+  rules:
+    - if: $TEST == "command"
