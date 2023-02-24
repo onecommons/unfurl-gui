@@ -113,6 +113,12 @@ const actions = {
                 resourceTemplate.dependencies = _.uniqBy(normalizeDependencies(resourceTemplate.dependencies), 'name')
                 resourceTemplate.properties = _.uniqBy(normalizeProperties(resourceTemplate.properties), 'name')
 
+                resourceTemplate.properties.forEach(prop => {
+                    if(Array.isArray(prop.value?.get_env)) {
+                        prop.value.get_env = prop.value.get_env[0]
+                    }
+                })
+
                 const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
                 resourceTemplate.properties = properties
                 resourceTemplate.computedProperties = computedProperties

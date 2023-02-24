@@ -832,9 +832,10 @@ const getters = {
   
     lookupEnvironmentVariable(state, _a, _b, rootGetters) {
         return function(variableName) {
+            const _variableName = Array.isArray(variableName)? variableName[0]: variableName
             return (
-              rootGetters.lookupVariableByEnvironment(variableName, state.lastFetchedFrom.environmentName) || 
-              rootGetters.lookupVariableByEnvironment(variableName, '*')
+              rootGetters.lookupVariableByEnvironment(_variableName, state.lastFetchedFrom.environmentName) ||
+              rootGetters.lookupVariableByEnvironment(_variableName, '*')
             )
         }
     },
