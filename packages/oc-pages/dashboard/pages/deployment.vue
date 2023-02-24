@@ -8,7 +8,7 @@ import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
-import {OcTab} from 'oc_vue_shared/oc-components'
+import {OcTab} from 'oc_vue_shared/components/oc'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
 import {FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
@@ -37,6 +37,7 @@ export default {
             'environmentsAreReady',
             'pollingStatus',
             'formattedDeploymentEta',
+            'hasCriticalErrors',
         ]),
         breadcrumbItems() {
             return  [
@@ -132,6 +133,7 @@ export default {
             if(this.deployment.__typename == 'DeploymentTemplate') {
                 const projectPath = this.deployment.projectPath
                 await this.fetchProject({projectPath})
+                if(this.hasCriticalErrors) return
                 this.useProjectState({root: cloneDeep({...this.state, DeploymentEnvironment}), shouldMerge: true, projectPath})
             } else {
                 console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')

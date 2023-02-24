@@ -1,11 +1,6 @@
 <script>
 import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
-import {DetectIcon, OcPropertiesList} from 'oc_vue_shared/oc-components'
-
-// webpack gets confused with these two
-import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
-import IncrementalDeploymentSwitch from 'oc_vue_shared/components/oc/incremental-deployment-switch.vue'
-//
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 
 import OcInputs from './oc_inputs.vue'
 import { bus } from 'oc_vue_shared/bus';
@@ -19,11 +14,8 @@ export default {
     name: 'OcList',
     components: {
         GlTabs,
-        OcTab,
-        OcPropertiesList,
         OcInputs,
         Dependency,
-        IncrementalDeploymentSwitch
     },
 
     mixins: [commonMethods],
@@ -325,7 +317,7 @@ export default {
             </oc-tab>
             <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="properties.length">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties">
-                    <template #Incremental_Deploy> <incremental-deployment-switch :card="_card" /> </template>
+                    <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="_card" /> </template>
                 </oc-properties-list>
 
                 <oc-inputs v-else :card="_card" />
@@ -335,13 +327,13 @@ export default {
             </oc-tab>
             <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
                 <oc-properties-list :container-style="propertiesStyle" :properties="attributes">
-                    <template #Incremental_Deploy> <incremental-deployment-switch :card="card" /> </template>
+                    <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="card" /> </template>
                 </oc-properties-list>
             </oc-tab>
             <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="_card.outputs.length">
                 <oc-properties-list :container-style="propertiesStyle" :card="_card" property="outputs">
                     <!-- not sure this template would ever be reached -->
-                    <template #Incremental_Deploy> <incremental-deployment-switch :card="card" /> </template>
+                    <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="card" /> </template>
                 </oc-properties-list>
             </oc-tab>
             <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">

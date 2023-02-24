@@ -4,7 +4,7 @@ import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from 'oc_vue_shared/bus';
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
-import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateCardId} from 'oc_vue_shared/util.mjs'
 import {Tooltip as ElTooltip} from 'element-ui'
 

@@ -3,7 +3,7 @@ import VueRouter from 'vue-router';
 import {baseRouteNaive} from './base-route';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
-import { PageNotFound } from 'oc_vue_shared/oc-components'
+import { PageNotFound } from 'oc_vue_shared/components/oc'
 import * as ROUTES from './constants'
 
 Vue.use(VueRouter);
@@ -87,7 +87,7 @@ export default function createRouter() {
         } catch(e) {
             console.error("Couldn't set class on side navigation;", e.message)
         }
-        if(router.app.$store) {
+        if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
             router.app.$store.getters.getRouterHook(to, from, next)
         }
         else next()

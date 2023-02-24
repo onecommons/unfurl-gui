@@ -39,13 +39,34 @@ const mutations = {
 const actions = {
     async fetchProject({commit, dispatch}, params) {
         const {projectPath, projectGlobal} = params
+        const format = 'blueprint'
         commit('loaded', false)
 
-        const root = await unfurlServerExport({
-            format: 'blueprint',
-            projectPath,
-            //TODO pass branch
-        })
+        let root
+        try {
+            root = await unfurlServerExport({
+                format,
+                projectPath,
+                //TODO pass branch
+            })
+        } catch(e) {
+            // TODO handle this from the caller
+            commit(
+                'createError',
+                {
+                    message: `An error occurred while exporting ${projectPath}`,
+                    context: {
+                        error: e.message,
+                        projectPath,
+                        format
+                    },
+                    severity: 'critical',
+                }
+            )
+
+            return
+        }
+        
 
         root.projectGlobal = projectGlobal
 
@@ -386,6 +407,7 @@ const getters = {
     lookupConfigurableTypes(state, _a, _b, rootGetters) {
         return function(environment) {
             //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
+            if(!state.ResourceType) return
             const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }

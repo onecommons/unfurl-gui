@@ -1,7 +1,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
-import {DetectIcon, Status} from 'oc_vue_shared/oc-components'
+import {DetectIcon, Status} from 'oc_vue_shared/components/oc'
 import {JSONView} from 'vue-json-component'
 import Redacted from './redacted.vue'
 
@@ -9,13 +9,15 @@ export default {
     name: 'OcPropertiesList',
     components: {GlIcon, Status, 'json-view': JSONView, Redacted, DetectIcon},
     data() {
-        return {expanded: true}
+        return {expanded: !this.startCollapsed}
     },
     props: {
         card: {
             type: Object,
             required: false
         },
+        startCollapsed: Boolean,
+        fullWidth: Boolean,
         properties: {
             type: Array,
             required: false,
@@ -26,7 +28,8 @@ export default {
         },
         header: String,
         property: String,
-        containerStyle: Object
+        containerStyle: [Object, String],
+        headerStyle: [Object, String]
     },
     computed: {
         ...mapGetters([
@@ -81,7 +84,6 @@ export default {
             return property.sensitive
         },
         tableSizingHack() {
-            // TODO use CSS grid instead
             this.$nextTick(() => {
                 try {
                     const headerWidth = this.$refs.header?.clientWidth
@@ -89,7 +91,7 @@ export default {
                     if(!(headerWidth && nameColumnWdith)) return
                     this.$refs.transitionTarget.style.width = headerWidth + 'px'
                     this.$refs.transitionTarget.querySelectorAll('td.value-column').forEach(cell => {
-                        cell.style.width = (headerWidth - nameColumnWdith - 30) + 'px'
+                        cell.style.width = (headerWidth - nameColumnWdith) + 'px'
                     })
                     this.$refs.transitionTarget.style.tableLayout = 'fixed'
                 } catch(e) {console.error(e)}
@@ -111,7 +113,7 @@ export default {
 <template>
     <div style="max-width: 100%; overflow-x: auto;">
         <div :style="containerStyle" class="properties-list-container">
-            <div @click="toggleExpanded" v-if="header" class="header" ref="header">
+            <div @click="toggleExpanded" v-if="header" class="header" :style="headerStyle" ref="header">
                 <slot name="header-text">
                     <div>{{header}}</div>
                 </slot>
@@ -120,7 +122,7 @@ export default {
                     <gl-icon v-if="_properties.length" :name="expanded? 'chevron-down': 'chevron-left'" :size="18"></gl-icon>
                 </div>
             </div>
-            <table ref="transitionTarget" class="properties-list-inner" style="display: table; width: 100%;">
+            <table ref="transitionTarget" class="properties-list-inner" :style="{display: startCollapsed && !expanded? 'none': 'table'}" style="width: 100%;">
                 <tr style="display: table-row" class="properties-list-item" v-for="property in _properties" :key="property.name">
                     <td class="name-column">{{formatName(property)}}</td>
                     <td :style="property.valueStyle" class="value-column">
@@ -189,6 +191,9 @@ export default {
     margin: -1px;
     min-width: min(100%, 22em);
 }
+.name-column {
+    text-transform: capitalize;
+}
 .name-column, .value-column {
     padding: 0.75em;
     border-width: 1px;
@@ -216,6 +221,8 @@ export default {
     font-size: 1.25em;
     display: flex;
     justify-content: space-between;
+    user-select: none;
+    cursor: pointer;
 }
 
 .gl-dark .header {

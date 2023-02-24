@@ -105,7 +105,8 @@ export default {
       'getPrimary',
       'environmentsAreReady',
       'editingDeployed',
-      'deployTooltip'
+      'deployTooltip',
+      'hasCriticalErrors'
     ]),
     
     deploymentDir() {
@@ -318,7 +319,8 @@ export default {
       'setEnvironmentScope',
       'pushPreparedMutation',
       'setCommitMessage',
-      'setUpdateType'
+      'setUpdateType',
+      'createError'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -381,6 +383,7 @@ export default {
         }
         // TODO see if we can get rid of this, since it's probably already loaded
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
+        if(this.hasCriticalErrors) return
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 
@@ -410,6 +413,8 @@ export default {
           this.setUpdateType('deployment')
           await this.commitPreparedMutations();
 
+          if(this.hasCriticalErrors) return
+
           // will be handled by unfurl server
           // await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
 
@@ -433,11 +438,14 @@ export default {
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           await this.commitPreparedMutations();
-          return true;
+          return !this.hasCriticalErrors;
         }
       } catch (e) {
-        console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createError({
+            message: `An unexpected error occurred while saving (${e.message})`,
+            context: e.message,
+            severity: 'major'
+        })
         return false;
       }
     },
@@ -445,98 +453,84 @@ export default {
     triggerLocalDeploy: _.debounce(async function() {
       // TODO consolodate implementation with triggerDeployment
 
-      try {
-        this.createFlash({
-          message: __('Preparing deployment...'),
-          type: FLASH_TYPES.SUCCESS,
-          duration: this.durationOfAlerts,
-        });
+      this.createFlash({
+        message: __('Preparing deployment...'),
+        type: FLASH_TYPES.SUCCESS,
+        duration: this.durationOfAlerts,
+      });
 
-        this.startedTriggeringDeployment = true;
-        const name = this.$route.query.fn;
-        this.setUpdateType('deployment')
-        this.setCommitMessage(`Trigger deployment of ${name}`)
-        await this.triggerSave();
-        const result = await this.deployInto({
-          environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-          deployPath: this.deploymentDir,
-          deploymentName: this.$route.params.slug,
-          deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
-          deployOptions: {
-              schedule: 'defer'
-          }
-        })
-        if(result === false) return
+      this.startedTriggeringDeployment = true;
+      const name = this.$route.query.fn;
+      this.setUpdateType('deployment')
+      this.setCommitMessage(`Trigger deployment of ${name}`)
 
-        const {pipelineData, error} = result
+      await this.triggerSave();
+      if(this.hasCriticalErrors) return
 
-        if(error) {
-          throw new Error(error)
+      const result = await this.deployInto({
+        environmentName: this.$route.params.environment,
+        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
+        deployPath: this.deploymentDir,
+        deploymentName: this.$route.params.slug,
+        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        deployOptions: {
+            schedule: 'defer'
         }
+      })
 
-        if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+      if(this.hasCriticalErrors) return
 
-        const router = this.$router
+      if(result === false) return
 
-        const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-        window.history.replaceState({}, null, href)
+      const {pipelineData} = result
 
-        this.dataWritten = true
-        window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
-      } catch (err) {
-        console.error(err)
-        const errors = err?.response?.data?.errors || [];
-        const [error] = errors;
-        this.dataWritten = true
-        return this.createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
-      }
+      if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+
+      const router = this.$router
+
+      const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
+      window.history.replaceState({}, null, href)
+
+      this.dataWritten = true
+      window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
     }, 250),
 
     triggerDeployment: _.debounce(async function() {
-      try {
-        this.createFlash({
-          message: __('Starting deployment...'),
-          type: FLASH_TYPES.SUCCESS,
-          duration: this.durationOfAlerts,
-        });
+      this.createFlash({
+        message: __('Starting deployment...'),
+        type: FLASH_TYPES.SUCCESS,
+        duration: this.durationOfAlerts,
+      });
 
-        this.startedTriggeringDeployment = true;
-        const name = this.$route.query.fn;
-        this.setUpdateType('deployment')
-        this.setCommitMessage(`Trigger deployment of ${name}`)
-        await this.triggerSave();
-        const result = await this.deployInto({
-          environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-          deployPath: this.deploymentDir,
-          deploymentName: this.$route.params.slug,
-          deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
-        })
-        if(result === false) return
+      this.startedTriggeringDeployment = true;
+      const name = this.$route.query.fn;
+      this.setUpdateType('deployment')
+      this.setCommitMessage(`Trigger deployment of ${name}`)
 
-        const {pipelineData, error} = result
+      await this.triggerSave();
+      if(this.hasCriticalErrors) return
 
-        if(error) {
-          throw new Error(error)
-        }
+      const result = await this.deployInto({
+        environmentName: this.$route.params.environment,
+        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
+        deployPath: this.deploymentDir,
+        deploymentName: this.$route.params.slug,
+        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
+      })
 
-        if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+      if(this.hasCriticalErrors) return
 
-        const router = this.$router
+      const {pipelineData} = result
 
-        const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-        window.history.replaceState({}, null, href)
+      if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
-        this.dataWritten = true
-        window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
-      } catch (err) {
-        console.error(err)
-        const errors = err?.response?.data?.errors || [];
-        const [error] = errors;
-        this.dataWritten = true
-        return this.createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
-      }
+      const router = this.$router
+
+      const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
+      window.history.replaceState({}, null, href)
+
+      this.dataWritten = true
+      window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
     }, 250),
 
     cleanModalResource() {

@@ -8,10 +8,12 @@ import createRouter from './router';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {setupTheme} from 'oc_vue_shared/theme'
 import ElementUI, {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
+import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 
 Vue.use(GlToast);
 Vue.use(ElementUI)
+Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 Vue.component('el-popover', ElPopover)
 
@@ -31,6 +33,10 @@ export default (elemId='js-table-component') => {
     const element = document.getElementById(elemId);
     window.gon = {...window.gon, ...element.dataset}
 
+    if(window.Cypress || sessionStorage['debug'] || sessionStorage['unfurl-gui:state']) {
+        window.$store = store
+    }
+
     const vm = new Vue({
         el: element,
         apolloProvider,
@@ -40,11 +46,6 @@ export default (elemId='js-table-component') => {
             return createElement(Dashboard);
         },
     });
-
-
-    if(window.Cypress || sessionStorage['debug']) {
-        window.$store = vm.$store
-    }
 
     return vm
 };

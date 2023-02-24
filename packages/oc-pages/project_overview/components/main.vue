@@ -3,7 +3,6 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
-import ExperimentalSettingIndicator from 'oc_vue_shared/components/oc/experimental-settings-indicator.vue'
 
 
 const ERROR_CONTEXT = {
@@ -13,9 +12,6 @@ const ERROR_CONTEXT = {
 export default {
     name: 'MainComponent',
     // TODO move this into page level components
-    components: {
-        ExperimentalSettingIndicator
-    },
     async beforeCreate() {
         let errorContext
 
@@ -97,7 +93,8 @@ export default {
 <template>
     <!-- <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" /> -->
     <div id="OcAppDeployments">
-        <experimental-setting-indicator />
+        <oc-experimental-settings-indicator />
+        <oc-unfurl-gui-errors />
         <router-view />
     </div>
 </template>

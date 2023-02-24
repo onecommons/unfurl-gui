@@ -1,8 +1,8 @@
 <script>
 import { __ } from '~/locale';
-import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters} from 'vuex'
-import {ProjectIcon} from 'oc_vue_shared/oc-components'
+import {ProjectIcon} from 'oc_vue_shared/components/oc'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 export default {

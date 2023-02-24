@@ -11,6 +11,7 @@ import misc from './modules/misc'
 import deployments from './modules/deployments'
 import user_settings from './modules/user_settings'
 import health_check from 'oc_vue_shared/store_modules/health-check'
+import errors from 'oc_vue_shared/store_modules/errors'
 
 Vue.use(Vuex);
 
@@ -27,7 +28,8 @@ const store = new Vuex.Store({
         project_application_blueprint,
         deployment_info,
         user_settings,
-        health_check
+        health_check,
+        errors
     },
     strict: development,
     plugins: development && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],

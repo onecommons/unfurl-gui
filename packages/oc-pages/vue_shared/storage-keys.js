@@ -81,8 +81,21 @@ export function alwaysSendLatestCommit() {
     return lookupKey( HIDDEN_OPTION_KEYS.sendLatestCommit )
 }
 
+export function defaultSeverityLevel() {
+    return lookupKey( HIDDEN_OPTION_KEYS.defaultSeverityLevel ) || 'major'
+}
+
+export function useImportedStateOnBreakpointOrElse(breakpointName, cb) {
+    const newState = sessionStorage['unfurl-gui:state']
+    if(newState && [lookupKey('uploadStateBreakpoint'), 'loadDashboard'].includes(breakpointName)) {
+        window.$store.replaceState({...window.$store.state, ...JSON.parse(newState)})
+        if(!lookupKey('preserveImportedVuexState')) delete sessionStorage['unfurl-gui:state']
+    } else {return cb()}
+
+}
 export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
+
 
 window.lsHiddenOptions = function() {
     for(const opt of Object.values(HIDDEN_OPTION_KEYS)) console.log(opt)
