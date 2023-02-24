@@ -1,7 +1,3 @@
-const USERNAME = Cypress.env('OC_IMPERSONATE')
-const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
-
-
 import {deploymentName, deploySharedVolume1, deploySharedVolume2} from '../../support/shared-volume'
 
 describe('GCP shared volume', () => {

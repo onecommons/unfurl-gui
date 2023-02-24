@@ -2,69 +2,66 @@
 
 const path = require('path')
 const {unfurlGuiRoot} = require('./shared/util.js')
-const args = process.argv.slice(2)
 const fs = require('fs')
+const args = require('minimist')(process.argv.slice(2))
 
-const pathComponents = args[0].split(path.sep)
-pathComponents.pop()
-const
-  deploymentName = pathComponents.pop(),
-  blueprintName = pathComponents.pop()
+const deploymentName = args.deployment || args['deployment-name']
+const generateTest = args['test-name'] || args['test'] || args['generate-test']
 
-let environmentName
-while(pathComponents.length && pathComponents[pathComponents.length - 1] != 'environments') {
-  environmentName = pathComponents.pop()
-}
-pathComponents.pop()
+const unfurlExport = JSON.parse(fs.readFileSync( 0, 'utf-8' ))
 
-const dashboardDir = path.join(...pathComponents)
+function main() {
+  const deployPath = Object.keys(unfurlExport.DeploymentPath).find(path => path.endsWith(`/${deploymentName}`))
+  const pathComponents = deployPath.split('/')
+  pathComponents.pop()
+  const
+    blueprintName = pathComponents.pop()
 
-const fixtureName = `_${environmentName}__${blueprintName}__${deploymentName}`,
-  fixturePath = `generated/deployments/${fixtureName}`
-
-const testTemplate = fs.readFileSync(
-  path.join(__dirname, 'fixture-from-deployment', 'recreate-deployment.template.js'),
-  'utf-8'
-)
-  .replace('$FIXTURE_PATH', fixturePath)
-  .replace('$TEST_NAME', fixtureName)
-
-const environmentsJSON = fs.readFileSync(
-  path.join(dashboardDir, 'environments.json'),
-  'utf-8'
-)
-const {DeploymentPath} = JSON.parse(environmentsJSON)
-
-Object.keys(DeploymentPath).forEach(key => {
-  if(!key.startsWith(`environments/${environmentName}`) || !key.endsWith(`${blueprintName}/${deploymentName}`)) {
-    delete DeploymentPath[key]
+  let environmentName
+  while(pathComponents.length && pathComponents[pathComponents.length - 1] != 'environments') {
+    environmentName = pathComponents.pop()
   }
-})
+  pathComponents.pop()
 
-switch(Object.keys(DeploymentPath).length) {
-  case 0:
-    throw new Error('No deployment records found in environments.json')
-  case 1:
-    break
-  default:
-    throw new Error('Conflicting deployment records found in environments.json')
+  const fixtureName = `_${environmentName}__${blueprintName}__${deploymentName}`,
+    fixturePath = `generated/deployments/${fixtureName}`
+
+  const DeploymentPath = { [deployPath]: unfurlExport.DeploymentPath[deployPath]}
+  const deployment = {
+    ...unfurlExport.deployments.find(dep => Object.values(dep.DeploymentTemplate)[0].name == deploymentName),
+    DeploymentPath
+  }
+
+  switch(Object.keys(DeploymentPath).length) {
+    case 0:
+      throw new Error('No deployment records found in environments.json')
+    case 1:
+      break
+    default:
+      throw new Error('Conflicting deployment records found in environments.json')
+  }
+
+  fs.writeFileSync(
+    path.join(unfurlGuiRoot, 'cypress/fixtures', `${fixturePath}.json`),
+    JSON.stringify(deployment)
+  )
+
+  if(generateTest) {
+    const testTemplate = fs.readFileSync(
+      path.join(__dirname, 'fixture-from-deployment', 'recreate-deployment.template.js'),
+      'utf-8'
+    )
+      .replace('$FIXTURE_PATH', fixturePath)
+      .replace('$TEST_NAME', generateTest)
+
+    fs.writeFileSync(
+      path.join(unfurlGuiRoot, 'cypress/integration/blueprints', `${fixtureName}.js`),
+      testTemplate
+    )
+  }
 }
 
-let deploymentJSON = fs.readFileSync(
-  args[0],
-  'utf-8'
-)
+main()
 
-deploymentJSON = JSON.parse(deploymentJSON)
 
-deploymentJSON.DeploymentPath = DeploymentPath
 
-fs.writeFileSync(
-  path.join(unfurlGuiRoot, 'cypress/fixtures', `${fixturePath}.json`),
-  JSON.stringify(deploymentJSON)
-)
-
-fs.writeFileSync(
-  path.join(unfurlGuiRoot, 'cypress/integration/blueprints', `${fixtureName}.js`),
-  testTemplate
-)
