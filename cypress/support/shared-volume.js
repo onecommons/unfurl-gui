@@ -1,15 +1,19 @@
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
-export function deploymentName(baseTitle) {
-  return `Cy ${baseTitle} ${Date.now().toString(36).slice(4) + Math.random().toString().slice(-4)}`
+export function deploymentNames(...titles) {
+  const descriminator =  Date.now().toString(36).slice(4) + Math.random().toString(36).slice(4)
+  return titles.map(baseTitle => `Cy ${baseTitle} ${descriminator}`)
 }
 
+
 export function deploySharedVolume1(dep, fixture, cardTestId) {
+  const subdomain = dep.split(' ').pop()
   cy.recreateDeployment({
     fixture,
     title: dep,
-    skipTeardown: true
+    skipTeardown: true,
+    subdomain
   })
 
   cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
@@ -25,16 +29,18 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
   cy.undeploy(dep)
 }
 
-export function deploySharedVolume2(dep, fixture, cardTestId) {
+export function deploySharedVolume2(dep1, dep2, fixture, cardTestId) {
+  const subdomain = dep2.split(' ').pop()
   cy.recreateDeployment({
     fixture,
-    title: dep,
-    expectExisting: true
+    title: dep2,
+    expectExisting: true,
+    subdomain
   })
 
   cy.visit(`/${NAMESPACE}/dashboard/-/deployments`)
 
-  cy.contains("a", dep).click()
+  cy.contains("a", dep1).click()
 
   cy.get(`[data-testid="${cardTestId}"]`).within(() => {
     cy.contains("button", "Shared").click()

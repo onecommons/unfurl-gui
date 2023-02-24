@@ -23,7 +23,7 @@ function pseudorandomPassword() {
 
 Cypress.Commands.add('recreateDeployment', options => {
   cy.wait(5000)
-  let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, _env, _dnsZone
+  let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, _env, _dnsZone, subdomain
   if (typeof options == 'string') {
     fixture = options
     shouldDeploy = true
@@ -33,6 +33,8 @@ Cypress.Commands.add('recreateDeployment', options => {
     shouldDeploy = options.shouldDeploy ?? !shouldSave
     skipTeardown = options.skipTeardown
     expectExisting = options.expectExisting || false
+    subdomain = options.subdomain
+
     _dnsZone = options.dnsZone
     _env = options.env
   }
@@ -56,7 +58,6 @@ Cypress.Commands.add('recreateDeployment', options => {
 
     let env = _env || Object.values(DeploymentPath)[0].environment
     let dnsZone = _dnsZone
-    let subdomain
     if(!_env) {
       if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
         env = AWS_ENVIRONMENT_NAME
@@ -146,8 +147,12 @@ Cypress.Commands.add('recreateDeployment', options => {
           for (const property of template.properties) {
             let value = property.value
             let name = property.name
-            if(GENERATE_SUBDOMAINS && name == 'subdomain') {
-              value = subdomain = (Date.now()).toString(36) + pseudorandomPassword().slice(0, 4)
+            if(name == 'subdomain') {
+              if(subdomain) {
+                value = subdomain
+              } else if(GENERATE_SUBDOMAINS) {
+                value = subdomain = (Date.now()).toString(36) + pseudorandomPassword().slice(0, 4)
+              }
             }
             else if(typeof value == 'object' && value) {
               if (typeof value.get_env == 'string') {

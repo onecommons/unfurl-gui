@@ -31,11 +31,11 @@ async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, re
 
   if(useAdminEmail && useAdminPassword) {
     if(await isSetup(baseURL)) {
-      assert(!expectExisting, 'expected existing admin user')
       const adminSessionPost = await axios.post(adminSessionEndpoint, {username: useAdminEmail, password: useAdminPassword})
       assert.equal(adminSessionPost.data, 'Created', adminSessionPost.data)
     }
     else {
+      assert(!expectExisting, 'expected existing admin user')
       const setupPayload = {setup: [
         {blogTitle: 'Test Blog', email: useAdminEmail, name: 'John Denne', password: useAdminPassword}
       ]}
