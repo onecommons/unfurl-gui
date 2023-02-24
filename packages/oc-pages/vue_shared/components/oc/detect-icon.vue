@@ -39,7 +39,7 @@ const CUSTOM_ICON_MAPPINGS = {
     mail: 'MailIcon', email: 'MailIcon', smtpserver: 'MailIcon',
     mongodb: MongoDbIcon,
     compute: 'ComputeIcon', 'unfurl.nodes.compute': 'ComputeIcon',
-    'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon',
+    'self-hosted': 'LocalDevIcon', 'local dev': 'LocalDevIcon', 'generic': 'LocalDevIcon',
     'error-filled': 'ErrorFilled',
     'protected': Protected, 'failed': Failed, 'absent': Absent,
     expire: Expire,

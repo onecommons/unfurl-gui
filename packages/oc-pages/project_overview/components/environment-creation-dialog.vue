@@ -12,7 +12,7 @@ import {token} from 'oc_vue_shared/compat.js'
 import {mapGetters, mapActions} from 'vuex'
 
 
-const LOCAL_DEV = 'Local Dev'
+const LOCAL_DEV = 'Generic'
 
 const CLUSTER_PROVIDER_NAMES = {
     'Google Cloud Platform': 'gcp',
@@ -181,7 +181,11 @@ export default {
                 }
                 await this.createEnvironmentWithoutCluster(instances)
                 sessionStorage['redirectOnProviderSaved'] = redirectTarget
-                window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
+                if(provider) {
+                  window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
+                } else {
+                  window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+                }
             } else {
                 const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
                 sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)

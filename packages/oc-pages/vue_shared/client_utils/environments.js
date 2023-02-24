@@ -167,7 +167,7 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
         })
     } catch(e) {
         errors.push({
-            message: `@fatchEnvironments: An error occurred during an export request (${e.message})`,
+            message: `@fetchEnvironments: An error occurred during an export request (${e.message})`,
             context: {
                 error: e.message,
                 format,
