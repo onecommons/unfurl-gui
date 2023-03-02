@@ -181,7 +181,7 @@ const getters = {
         for(const dict of rootGetters.getDeploymentDictionaries) {
             let deploymentTemplate
             try {
-                Object.values(dict?.DeploymentTemplate)[0]
+                deploymentTemplate = Object.values(dict?.DeploymentTemplate)[0]
             } catch(e) {continue}
             if(deploymentTemplate?.projectPath != state.globalVars.projectPath)
                 continue
