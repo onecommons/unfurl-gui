@@ -67,13 +67,12 @@ export default {
         // as a result the old, fallback method will be used
 
         requirements() {
-            const self = this
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.requirementsForType(this.projectInfo.primary).filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
+                return this.requirementsForType(this.projectInfo.primary)?.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
             }
 
-            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0) || []
             
             return requirements.map(r => {
                 const constraint = r.dependency.constraint
@@ -82,13 +81,12 @@ export default {
             })
         },
         extras() {
-            const self = this
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.requirementsForType(this.projectInfo.primary).filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
+                return this.requirementsForType(this.projectInfo.primary)?.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
             }
 
-            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0) || []
             
             return requirements.map(r => {
                 const constraint = r.dependency.constraint

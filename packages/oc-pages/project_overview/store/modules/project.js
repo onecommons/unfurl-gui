@@ -174,12 +174,15 @@ const getters = {
     getTemplate: _state => _state.template,
     getRequirementSelected: _state => _state.requirementSelected,
     getProjectDescription(state, _a, _b, rootGetters) {
-        state.globalVars.projectDescription || rootGetters.getApplicationBlueprint?.description
+        return state.globalVars.projectDescription || rootGetters.getApplicationBlueprint?.description
     },
     yourDeployments(state, getters, _, rootGetters) {
         const result = []
         for(const dict of rootGetters.getDeploymentDictionaries) {
-            const deploymentTemplate = Object.values(dict?.DeploymentTemplate)[0]
+            let deploymentTemplate
+            try {
+                Object.values(dict?.DeploymentTemplate)[0]
+            } catch(e) {continue}
             if(deploymentTemplate?.projectPath != state.globalVars.projectPath)
                 continue
 
