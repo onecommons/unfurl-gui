@@ -44,6 +44,14 @@ const actions = {
     },
 
     async cloneDeployment({getters, dispatch, rootGetters, commit}, {deployment, environment, newDeploymentTitle, targetEnvironment, dryRun}) {
+        if(rootGetters.hasPreparedMutations) {
+            dispatch('createError', {
+                message: "Can't clone deployment - there are prepared changes that haven't been committed. This is a bug.",
+                context: arguments[1],
+                severity: 'critical'
+            })
+            return
+        }
         const deploymentName = deployment?.name || deployment
         const environmentName = environment?.name || environment
         const targetEnvironmentName = (targetEnvironment?.name ||  targetEnvironment || environmentName)
@@ -115,6 +123,9 @@ const actions = {
             }
         }
         await dispatch('commitPreparedMutations', {dryRun}, {root: true})
+
+        if(rootGetters.hasCriticalErrors) return
+
         if(dryRun) {
             commit('clearPreparedMutations', null, {root:true})
         }

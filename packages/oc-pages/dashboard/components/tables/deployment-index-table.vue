@@ -9,6 +9,7 @@ import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import Vue from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
@@ -219,8 +220,12 @@ export default {
             return result
         },
         async onModalConfirmed() {
+            const intent = this.intent
             const {deployment, environment} = this.target
-            switch(this.intent) {
+
+            await Vue.nextTick() // wait until modal is closed before doing anything
+
+            switch(intent) {
                 case 'undeploy':
                     this.undeploy()
                     return
