@@ -49,6 +49,17 @@ export function lookupCloudProviderAlias(key) {
   return result
 }
 
+export function lookupCloudProviderShortName(key) {
+  const actual = lookupCloudProviderAlias(key)
+  const dict = {
+    [GCP]: 'GCP',
+    [AWS]: 'AWS',
+    [K8s]: 'K8s',
+    [Azure]: 'Azure',
+    [DigitalOcean]: 'DO'
+  }
+  return dict[actual]
+}
 
 export function cloudProviderFriendlyName(key) {
     const actual = lookupCloudProviderAlias(key)
