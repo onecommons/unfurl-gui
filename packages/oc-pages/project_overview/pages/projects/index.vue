@@ -16,6 +16,7 @@ import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
+import {lookupCloudProviderShortName} from 'oc_vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 
@@ -177,7 +178,7 @@ export default {
         },
         templateSelected: function(val) {
             if(this.templateForkedName) return
-            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(val.title)
+            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(this.getApplicationBlueprint.title + ' ' + lookupCloudProviderShortName(val.cloud))
             else this.templateForkedName = ''
 
         },
