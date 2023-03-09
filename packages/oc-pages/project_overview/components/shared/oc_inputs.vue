@@ -327,11 +327,12 @@ export default {
 
       const resolvedDirective = tryResolveDirective(value)
       if(resolvedDirective) {
+        next.dirty = true
+
         if(resolverName(value) == '_generate') {
           return ''
         }
 
-        next.dirty = true
         return resolvedDirective
       }
     },

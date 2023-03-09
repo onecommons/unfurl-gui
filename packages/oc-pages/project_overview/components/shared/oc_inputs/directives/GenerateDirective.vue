@@ -27,11 +27,11 @@ export default {
     },
     methods: {
         assignGenerated(force=false) {
-            if((!force) && this.card.properties.find(prop => prop.name = this.property.name)?.value) {
+            const el = document.querySelector(`[data-testid="${this.property['x-component-props']['data-testid']}"] input`)
+            if((!force) && el.value) {
                 this.showModal = true
                 return
             }
-            const el = document.querySelector(`[data-testid="${this.property['x-component-props']['data-testid']}"] input`)
             el.value = this.generated
             el.dispatchEvent(new InputEvent('input'))
         }
