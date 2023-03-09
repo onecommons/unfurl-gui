@@ -27,6 +27,9 @@ const navigationElementRouteMapping = {
     deployments: ROUTES.OC_DASHBOARD_DEPLOYMENTS_INDEX
 }
 
+try {
+    document.querySelector('.top-nav-button[title="Dashboard"]').classList.add('active')
+} catch(e) {}
 
 export default function createRouter() {
     /*
