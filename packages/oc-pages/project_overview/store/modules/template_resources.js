@@ -4,6 +4,7 @@ import { __ } from "~/locale";
 import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
+import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import Vue from 'vue'
 
 const baseState = () => ({
@@ -137,7 +138,7 @@ const actions = {
             e.flash = true
             throw e
         }
-        if(!isDeploymentTemplate) resource = {...resource, template: getters.lookupResourceTemplate(resource.template)}
+        if(!isDeploymentTemplate) resource = {...resource, template: getters.dtResolveResourceTemplate(resource.template)}
 
         deploymentTemplate.primary = resource.name
         if(!deploymentTemplate.cloud) {
@@ -209,7 +210,7 @@ const actions = {
         }
         commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName, sourceDeploymentTemplate});
 
-        primary = getters.lookupResourceTemplate(deploymentTemplate.primary)
+        primary = getters.dtResolveResourceTemplate(deploymentTemplate.primary)
         if(!primary) return false;
         primary = {...primary}
         // NOTE sometimes this is failing and as a bandaid I'm also doing it in project_application_blueprint
@@ -240,7 +241,7 @@ const actions = {
 
 
         dispatch('createMatchedResources', {resource: primary, isDeploymentTemplate: true});
-        
+
         commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
@@ -279,7 +280,7 @@ const actions = {
                 continue
             }
 
-            let resolvedDependencyMatch = getters.lookupResourceTemplate(dependency.match)
+            let resolvedDependencyMatch = getters.dtResolveResourceTemplate(dependency.match)
             let environmentName = state.lastFetchedFrom?.environmentName
 
             if(!resolvedDependencyMatch && environmentName) {
@@ -325,6 +326,12 @@ const actions = {
             target._uncommitted = true
             target.__typename = 'ResourceTemplate'
             target.visibility = target.visibility || 'inherit'
+
+            const directAncestor = state.resourceTemplates[dependentName]
+            if(directAncestor) {
+                target._ancestors = directAncestor._ancestors.concat([[directAncestor, dependentRequirement]])
+            }
+
             try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
             catch { target.properties = []; }
 
@@ -559,8 +566,8 @@ const getters = {
     },
     constraintIsHidden(state, getters) {
         return function(dependentName, dependentRequirement) {
-            const constraint = state.resourceTemplates[dependentName]
-                ?.dependencies?.find(dep => dep.name == dependentRequirement)
+            const constraint = getters.getDependencies(dependentName)
+                ?.find(dep => dep.name == dependentRequirement)
                 ?.constraint
 
             switch(constraint?.visibility) {
@@ -576,7 +583,7 @@ const getters = {
     },
     cardIsHidden(state, getters) {
         return function(cardName) {
-            const card = state.resourceTemplates[cardName?.name || cardName]
+            const card = getters.dtResolveResourceTemplate(cardName)
             if(!card) return false
 
             if(card.__typename == 'Resource') {
@@ -593,8 +600,9 @@ const getters = {
         }
     },
     resourceCardIsHidden(state, getters) {
-        return function(card) {
+        return function(cardName) {
             // TODO duplicated logic from table_data
+            const card = getters.dtResolveResourceTemplate(cardName)
 
             return getters.templateCardIsHidden(card)
             // below implements hiding cards when they don't appear on the deployment table
@@ -611,7 +619,8 @@ const getters = {
         }
     },
     templateCardIsHidden(state, getters) {
-        return function(card) {
+        return function(cardName) {
+            const card = getters.dtResolveResourceTemplate(cardName)
 
             switch(card.visibility) {
                 case 'hidden':
@@ -643,7 +652,7 @@ const getters = {
                 parentDependencies.some(dep => dep.match == rt.name):
                 parentDependencies.some(dep => dep.target == rt.name)
             )
-                
+
         });
 
         for(const card of cards) {
@@ -656,9 +665,24 @@ const getters = {
 
         return result
     },
-    getDependencies: (_state) => {
+    getDependencies: (_state, getters) => {
         return function(resourceTemplateName) {
-            return _state.resourceTemplates[resourceTemplateName]?.dependencies || [];
+            const rt = getters.dtResolveResourceTemplate(resourceTemplateName)
+
+            if(!rt) return null
+
+            const dependencies = _.cloneDeep(rt.dependencies || [])
+
+            if(dependencies.length == 0) return []
+
+            const requirementsFilterGroups = getters.groupRequirementFilters(resourceTemplateName)
+
+
+            for(const dep of dependencies) {
+                if(!requirementsFilterGroups[dep.name]?.length) continue
+            }
+
+            return dependencies.filter(dep => dep.constraint.max > 0)
         };
     },
     cardStatus(state) {
@@ -669,7 +693,7 @@ const getters = {
     getBuriedDependencies(state, getters) {
         return function(cardName) {
             if(!getters.cardIsHidden(cardName?.name || cardName)) return []
-            const card = state.resourceTemplates[cardName?.name || cardName]
+            const card = getters.dtResolveResourceTemplate(cardName)
             const result = []
             for(const dependency of getters.getDependencies(card.name)) {
                 if(!getters.constraintIsHidden(card.name, dependency.name)) {
@@ -687,7 +711,7 @@ const getters = {
     },
     getDisplayableDependenciesByCard(state, getters) {
         return function(cardName) {
-            const card = state.resourceTemplates[cardName?.name || cardName]
+            const card = getters.dtResolveResourceTemplate(cardName)
             const result = []
             for(const dependency of getters.getDependencies(card.name)) {
                 if(!getters.constraintIsHidden(card.name, dependency.name)) {
@@ -814,9 +838,15 @@ const getters = {
         }
     },
 
-    lookupResourceTemplate(state, _a, _b, rootGetters) {
-        return function(resourceTemplate) {
+    dtResolveResourceTemplate(state, _a, _b, rootGetters) {
+        return function(_resourceTemplate) {
             let sourceDt, templateFromSource
+            const resourceTemplate = _resourceTemplate?.name || _resourceTemplate
+
+            const localTemplate = state.resourceTemplates[resourceTemplate]
+
+            if(localTemplate) return localTemplate
+
             if(sourceDt = state.lastFetchedFrom?.sourceDeploymentTemplate) {
                 templateFromSource = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
             }
@@ -826,7 +856,48 @@ const getters = {
                 return templateFromStore
             }
 
+
             return templateFromSource || templateFromStore
+        }
+    },
+
+    calculateParentConstraint(state, getters) {
+        return function(resourceTemplate) {
+            const rt = typeof resourceTemplate == 'string' || resourceTemplate.__typename == 'Resource'?
+                getters.dtResolveResourceTemplate(resourceTemplate?.template || resourceTemplate) :
+                resourceTemplate
+
+            if(!rt._ancestors) return null
+
+            const ancestorConstraints = _.cloneDeep(rt._ancestors).map(([rt, req]) => rt.dependencies.find(dep => dep.name == req)?.constraint)
+
+            const parentConstraint = ancestorConstraints.reduce((prev, cur) => _.merge(cur, ...(prev?.requirementsFilter || [])), null)
+
+            return parentConstraint
+        }
+
+    },
+
+    groupRequirementFilters(state, getters) {
+        return function(resourceTemplate) {
+            const parentConstraint = getters.calculateParentConstraint(resourceTemplate)
+            return _.groupBy(parentConstraint?.requirementsFilter || [], 'name')
+        }
+    },
+
+    resourceTemplateInputsSchema(state, getters) {
+        return function(resourceTemplate) {
+            const rt = typeof resourceTemplate == 'string' || resourceTemplate.__typename == 'Resource'?
+                getters.dtResolveResourceTemplate(resourceTemplate?.template || resourceTemplate) :
+                resourceTemplate
+
+            const inputsSchema = _.cloneDeep(getters.resolveResourceTypeFromAny(rt.type)?.inputsSchema)
+
+            if(inputsSchema) {
+                applyInputsSchema({inputsSchema}, getters.calculateParentConstraint(resourceTemplate)?.inputsSchema)
+            } 
+
+            return inputsSchema
         }
     },
   
