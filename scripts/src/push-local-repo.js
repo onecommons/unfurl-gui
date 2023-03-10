@@ -20,19 +20,22 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
   const {
     force,
     skipCI,
-    branch
+    setUpstream,
+    branch,
   } = Object.assign({
     force: false,
     skipCI: true,
-    branch: null
+    setUpstream: true,
+    branch: null,
   }, options)
+  console.log({setUpstream}, options)
   const url = constructTargetURL(projectPath)
   const args = []
 
-  if(force) args.push('-f')
 
   args.push('push')
-  args.push('--set-upstream')
+  if(force) args.push('-f')
+  if(setUpstream) args.push('--set-upstream')
   args.push(url)
 
   if(branch) {
@@ -44,7 +47,22 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
     args.push('ci.skip')
   }
 
-  const {status} = spawnSync('git', args, {cwd: localRepoPath, stdio: 'inherit'})
+  console.log('git', ...args)
+  const cmdOpts = {cwd: localRepoPath, encoding: 'utf-8'}
+  const {status, stdout, stderr} = spawnSync('git', args, cmdOpts)
+  if(stderr) console.error(stderr)
+  if(stderr.includes('fatal: not a git repository')) {
+    const {stderr} = spawnSync('git', ['init', '--initial-branch=main'], cmdOpts)
+    if(stderr && stderr.includes('error: unknown option')) {
+      return false
+    }
+
+    spawnSync('git', ['add', '.'], cmdOpts)
+    spawnSync('git', ['commit', '-m', 'init'], cmdOpts)
+
+    return pushLocalRepo(localRepoPath, projectPath, {...options, branch: 'main'})
+  }
+
   return status === 0
 }
 
@@ -60,6 +78,11 @@ if(require.main === module) {
 }
 async function main() {
   const args = require('minimist')(process.argv.slice(2))
+  for(const key of Object.keys(args)) {
+    try {
+      args[key] = JSON.parse(args[key])
+    } catch(e) {}
+  }
   const projectPath = args.projectPath || args['project-path']
   const path = args.path || args._[0]
   if (!projectPath) {
@@ -70,7 +93,7 @@ async function main() {
     throw new Error('expected path to be set')
   }
 
-  let success = pushLocalRepo(path, projectPath)
+  let success = pushLocalRepo(path, projectPath, args)
 
   if(!success) throw new Error('Failed to push repo')
 
