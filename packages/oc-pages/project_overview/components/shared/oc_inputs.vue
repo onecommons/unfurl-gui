@@ -56,11 +56,15 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['resolveResourceType', 'cardInputsAreValid', 'lookupEnvironmentVariable']),
+    ...mapGetters(['resourceTemplateInputsSchema', 'resolveResourceTemplateType', 'cardInputsAreValid', 'lookupEnvironmentVariable']),
+
+    inputsSchema() {
+        return this.resourceTemplateInputsSchema(this.card)
+    },
 
     // we want this to recurse eventually
     nestedProp() {
-      const properties = this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+      const properties = this.inputsSchema?.properties || {}
       if(this.tab) {
         const [name, prop] = Object.entries(properties).find(([name, prop]) => prop.tab_title == this.tab)
         return {...prop, name}
@@ -69,7 +73,7 @@ export default {
     },
 
     fromSchema() {
-      return this.nestedProp?.properties || this.cardType?.inputsSchema?.properties || {}
+      return this.nestedProp?.properties || this.inputsSchema?.properties || {}
     },
 
     /*
@@ -85,20 +89,9 @@ export default {
       return result
     },
 
-    cardType() {
-      if(!this.card?.type) {
-        throw new Error(`Card "${this.card.name}" does not have a type`)
-      }
-      const result = this.resolveResourceType(this.card?.type)
-      if(!result) {
-        throw new Error(`Could not lookup card type ${this.card?.type} for ${this.card.name}`)
-      }
-      return result
-    },
-
     schema() {
       return {
-        type: this.cardType?.inputsSchema?.type,
+        type: this.inputsSchema?.type,
         properties: this.convertProperties(this.fromSchema),
       }
     },

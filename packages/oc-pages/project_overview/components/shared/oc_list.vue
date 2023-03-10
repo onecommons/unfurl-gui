@@ -90,6 +90,12 @@ export default {
         }
     },
 
+    methods: {
+        requirementKey(requirement) {
+            return `${requirement.card.dependentName}.${requirement.card.dependentRequirement}.${requirement.dependency.name}`
+        }
+    },
+
     computed: {
         ...mapGetters([
             'getCurrentEnvironment',
@@ -103,6 +109,7 @@ export default {
             'lookupEnvironmentVariable',
             'cardCanIncrementalDeploy',
             'getDeployments', 'getDeploymentDictionary',
+            'resourceTemplateInputsSchema',
             'getCurrentContext'
         ]),
         hasRequirementsSetter() {
@@ -128,7 +135,7 @@ export default {
             const sensitiveMap = {}
             const visibilityMap = {}
             const resourceType = this.resolveResourceTypeFromAny(this._card.type)
-            Object.entries(resourceType?.inputsSchema?.properties || {})
+            Object.entries(this.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
                     sensitiveMap[name] = value.sensitive
@@ -161,7 +168,7 @@ export default {
             const visibilityMap = {}
             const resourceType = this.resolveResourceTypeFromAny(this._card.type)
 
-            Object.entries(resourceType?.inputsSchema?.properties || {})
+            Object.entries(this.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
                     sensitiveMap[name] = value.sensitive
@@ -270,13 +277,13 @@ export default {
         customInputComponent() {
             return (!this._readonly || this.getCurrentContext === false) && getCustomInputComponent(this._card.type)
         },
-        cardType() {
-            return this.resolveResourceTypeFromAny(this._card.type)
+        inputsSchema() {
+            return this.resourceTemplateInputsSchema(this._card)
         },
         inputTabs() {
             if(!this.renderInputTabs || this._readonly) return []
             const result = []
-            for(const [name, value] of Object.entries(this.cardType.inputsSchema.properties)) {
+            for(const [name, value] of Object.entries(this.inputsSchema.properties)) {
                 if(value.tab_title) {
                     const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
                     result.push({name, tab_title: value.tab_title, value, count})
@@ -310,8 +317,7 @@ export default {
         <gl-tabs v-if="shouldRenderTabs" class="">
             <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
-                    <div class="ci-table" role="grid">
-                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name"/>
+                    <div class="ci-table" role="grid"> <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirementKey(requirement)"/>
                     </div>
                 </div>
             </oc-tab>
@@ -339,7 +345,7 @@ export default {
             <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
-                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name"/>
+                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="requirementKey(extra)"/>
                     </div>
                 </div>
             </oc-tab>
