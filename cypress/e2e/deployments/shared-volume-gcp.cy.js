@@ -1,7 +1,7 @@
-import {deploymentName, deploySharedVolume1, deploySharedVolume2} from '../../support/shared-volume'
+import {deploymentNames, deploySharedVolume1, deploySharedVolume2} from '../../support/shared-volume'
 
 describe('GCP shared volume', () => {
-  let dep1 = deploymentName('Sharing'), dep2 = deploymentName('Borrowing')
+  const [dep1, dep2] = deploymentNames('Sharing', 'Borrowing')
   const fixture = 'generated/deployments/_gcp__nextcloud__volume.json'
   const cardTestId = 'card-google-cloud-compute-persistent-disk'
 
@@ -10,7 +10,7 @@ describe('GCP shared volume', () => {
   })
 
   it('Can share a deployed volume (gcp)', () => {
-    deploySharedVolume2(dep2, fixture, cardTestId)
+    deploySharedVolume2(dep1, dep2, fixture, cardTestId)
   })
 
 })
