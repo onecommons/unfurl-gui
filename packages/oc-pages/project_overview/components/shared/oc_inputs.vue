@@ -7,8 +7,8 @@ import {FormProvider, createSchemaField} from "@formily/vue";
 import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {Card as ElCard} from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
-import {tryResolveDirective} from 'oc_vue_shared/lib'
-import {getCustomTooltip} from './oc_inputs'
+import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
+import {getCustomTooltip, getUiDirective} from './oc_inputs'
 
 
 const ComponentMap = {
@@ -81,7 +81,7 @@ export default {
 
     formValues() {
       // element formily needs ?? undefined for some reason
-      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? undefined}), {})
+      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? b.default ?? undefined}), {})
       return result
     },
 
@@ -143,7 +143,6 @@ export default {
       )
     },
     convertProperties(properties) {
-      //_.filter turns this into an array
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
         if (!currentValue.type) {
@@ -159,7 +158,11 @@ export default {
         if(getCustomTooltip(name)) {
           currentValue['x-decorator-props'].tooltip = {...getCustomTooltip(name), f: () => ({$store: this.$store, card: this.card})}
         }
+        if(currentValue.default?._generate) {
+          currentValue['x-decorator-props'].addonAfter = {...getUiDirective('generate'), f: () => ({$store: this.$store, card: this.card, property: currentValue})}
+        }
 
+        currentValue.default = undefined
         currentValue['x-data'] = value
 
         let componentType = currentValue.type;
@@ -313,6 +316,27 @@ export default {
       triggerFn(field, value, disregardUncommitted)
     },
 
+    cloneInner(next, value) {
+      if(Array.isArray(value) && value.length > 0 && !next.isMap) {
+        return value.map(input => ({input}))
+      }
+
+      if(value?.get_env) {
+          return this.lookupEnvironmentVariable(value.get_env) || ''
+      }
+
+      const resolvedDirective = tryResolveDirective(value)
+      if(resolvedDirective) {
+        next.dirty = true
+
+        if(resolverName(value) == '_generate') {
+          return ''
+        }
+
+        return resolvedDirective
+      }
+    },
+
     getMainInputs() {
       const self = this
       const result = []
@@ -320,8 +344,7 @@ export default {
       const properties = this.card.properties || []
 
       for (const [name, definition] of Object.entries(this.fromSchema)) {
-        let overrideValue = false
-        try{
+        try {
           let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))
 
           if(this.nestedProp) {
@@ -330,37 +353,14 @@ export default {
 
           const next = {...property, ...definition}
 
-          const isMap = next.additionalProperties && _.isObject(next.value)
-          if(isMap) { // I don't know how to handle this in clone deep
+          if(next.isMap = next.additionalProperties && _.isObject(next.value)) {
             next.value = Object.entries(next.value).map(([key, value]) => ({key, value}))
           }
 
-          /*
-           * uncomment to default to minimum
-          if(next.type == 'number' && next.required && next.minimum && (next.default ?? null) === null) {
-            next.default = next.minimum
-          }
-          */
+          const cloneInner = this.cloneInner.bind(this, next)
 
-          next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
-            if(Array.isArray(value) && value.length > 0 && !isMap) {
-              return value.map(input => ({input}))
-            }
-            if(value?.get_env) {
-              overrideValue = true
-              return self.lookupEnvironmentVariable(value.get_env) || ''
-            }
-          })
-
-          // quick fix with redundant copy
-          // get_env directive resolving to empty string causes default to be used by formily which might be a _generate directive
-          next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
-            let resolvedDirective
-            if(resolvedDirective = tryResolveDirective(value)) {
-              next.dirty = true
-              return resolvedDirective
-            }
-          })
+          next.value = _.cloneDeepWith(next.value, cloneInner)
+          next.default = _.cloneDeepWith(next.default, cloneInner)
 
           result.push(next)
         } catch (e) {
@@ -389,6 +389,7 @@ export default {
       }
     })
     this.form = form
+    
     for(const input of this.mainInputs) {
       if(input.dirty) {
         this.triggerSave(input, input.value ?? input.initialValue, true)
@@ -477,6 +478,9 @@ export default {
 
 .oc-inputs >>> .formily-element-form-item {
   font-size: 1rem !important;
+}
+.oc-inputs >>> .formily-element-form-item-control .formily-element-form-item-control-content .formily-element-form-item-addon-after {
+  margin-left: 0;
 }
 
 </style>
