@@ -680,6 +680,7 @@ const getters = {
 
             for(const dep of dependencies) {
                 if(!requirementsFilterGroups[dep.name]?.length) continue
+                dep.constraint = _.mergeWith(dep.constraint, ...requirementsFilterGroups[dep.name], customMerge)
             }
 
             return dependencies.filter(dep => dep.constraint.max > 0)

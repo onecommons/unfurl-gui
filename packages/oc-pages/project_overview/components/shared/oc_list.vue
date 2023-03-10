@@ -90,6 +90,12 @@ export default {
         }
     },
 
+    methods: {
+        requirementKey(requirement) {
+            return `${requirement.card.dependentName}.${requirement.card.dependentRequirement}.${requirement.dependency.name}`
+        }
+    },
+
     computed: {
         ...mapGetters([
             'getCurrentEnvironment',
@@ -311,8 +317,7 @@ export default {
         <gl-tabs v-if="shouldRenderTabs" class="">
             <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
-                    <div class="ci-table" role="grid">
-                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name"/>
+                    <div class="ci-table" role="grid"> <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirementKey(requirement)"/>
                     </div>
                 </div>
             </oc-tab>
@@ -340,7 +345,7 @@ export default {
             <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
-                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name"/>
+                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="requirementKey(extra)"/>
                     </div>
                 </div>
             </oc-tab>
