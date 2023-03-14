@@ -857,7 +857,6 @@ const getters = {
                 return templateFromStore
             }
 
-
             return templateFromSource || templateFromStore
         }
     },
@@ -891,6 +890,12 @@ const getters = {
             const rt = typeof resourceTemplate == 'string' || resourceTemplate.__typename == 'Resource'?
                 getters.dtResolveResourceTemplate(resourceTemplate?.template || resourceTemplate) :
                 resourceTemplate
+
+            // we don't have the resource template we need loaded
+            // TODO figure out how to handle shared resources with node_filter
+            if(!rt && resourceTemplate?.type) {
+                return getters.resolveResourceTypeFromAny(resourceTemplate.type)?.inputsSchema
+            }
 
             const inputsSchema = _.cloneDeep(getters.resolveResourceTypeFromAny(rt.type)?.inputsSchema)
 
