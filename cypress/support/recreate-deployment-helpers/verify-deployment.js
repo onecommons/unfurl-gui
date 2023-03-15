@@ -90,14 +90,22 @@ const verificationRoutines = {
     const identifier = Date.now().toString(36) 
     const command = `./scripts/src/blueprint-validation/container-webapp.js --live-url https://${subdomain}.${dnsZone} --repository ${repository} --identifier ${identifier}`
     cb({command, timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG})
-  }
+  },
+
+  'default': function({deployment, env, dnsZone, sub, cb}) {
+    const primary = _primary(deployment)
+    const subdomain = sub || primary.properties.find(prop => prop.name == 'subdomain').value
+    const command = `./scripts/src/blueprint-validation/no-http-error.js --base-url https://${subdomain}.${dnsZone}`
+    cb({command, timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG})
+  },
+
 }
 
 function verifyDeployment({deployment, env, dnsZone, sub, expectExisting}, verificationArgs) {
   console.log(deployment)
   if(MOCK_DEPLOY) return
   const ab = Object.values(deployment.ApplicationBlueprint)[0] 
-  const routine = verificationRoutines[ab.name]
+  const routine = verificationRoutines[ab.name] || verificationRoutines['default']
 
   function cb({timeout, interval, command}) {
     const _command = expectExisting? `${command} --expect-existing`: command
@@ -111,7 +119,7 @@ function verifyDeployment({deployment, env, dnsZone, sub, expectExisting}, verif
       ).then(result => {console.log(result); return result.code == 0})
     }, {timeout, interval})
   }
-  routine && routine({deployment, env, dnsZone, sub, cb}, verificationArgs)
+  routine({deployment, env, dnsZone, sub, cb}, verificationArgs)
 }
 
 Cypress.Commands.add('verifyDeployment', verifyDeployment)

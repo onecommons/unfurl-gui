@@ -55,7 +55,7 @@ function main() {
       .replace('$TEST_NAME', generateTest)
 
     fs.writeFileSync(
-      path.join(unfurlGuiRoot, 'cypress/integration/blueprints', `${fixtureName}.js`),
+      path.join(unfurlGuiRoot, 'cypress/e2e/blueprints', `${generateTest}.cy.js`),
       testTemplate
     )
   }
