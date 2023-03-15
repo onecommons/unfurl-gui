@@ -114,7 +114,7 @@ const actions = {
         commit('loaded', true)
     },
 
-    normalizeUnfurlData({getters}, {key, entry, root, projectPath}) {
+    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath}) {
         let transforms
 
         function normalizeProperties(properties) {
