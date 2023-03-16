@@ -33,3 +33,5 @@ export function getCustomTooltip(type) {
 export function getUiDirective(type) {
     return uiDirectives[type] ?? null
 }
+
+export {default as FakePassword} from './formily-fake-password'

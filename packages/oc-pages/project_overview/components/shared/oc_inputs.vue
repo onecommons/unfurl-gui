@@ -4,11 +4,11 @@ import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
+import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} from "@formily/element";
 import {Card as ElCard} from 'element-ui'
 import {createForm, onFieldInputValueChange} from "@formily/core";
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
-import {getCustomTooltip, getUiDirective} from './oc_inputs'
+import {FakePassword, getCustomTooltip, getUiDirective} from './oc_inputs'
 
 
 const ComponentMap = {
@@ -18,7 +18,7 @@ const ComponentMap = {
   enum: 'Select',
   object: 'Editable.Popover',
   array: 'ArrayItems',
-  password: 'Password',
+  password: FakePassword,
 };
 
 const fields = createSchemaField({
@@ -27,7 +27,7 @@ const fields = createSchemaField({
     ArrayItems,
     Space,
     Input,
-    InputNumber, Checkbox, Select, Password, Editable
+    InputNumber, Checkbox, Select, FakePassword, Editable
   }
 })
 
