@@ -243,7 +243,7 @@ export default {
 .image-project {
     width: 300px;
     height: 300px;
-    object-fit: cover;
+    object-fit: contain;
 }
 .image-placeholder-default {
     background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><line x1='0' y1='0' x2='100' y2='100' stroke='rgb(240,240,240,1)' vector-effect='non-scaling-stroke'/><line x1='0' y1='100' x2='100' y2='0' stroke='rgb(240,240,240,1)' vector-effect='non-scaling-stroke'/></svg>");

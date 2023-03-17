@@ -77,8 +77,7 @@ export default {
         <div class="gl-display-flex gl-justify-content-space-between gl-flex-wrap gl-sm-flex-direction-column gl-mb-3">
             <div class="home-panel-title-row gl-display-flex">
                 <div class="avatar-container rect-avatar s48 gl-flex-shrink-0 gl-w-11 gl-h-11 gl-mr-3 float-none">
-                    <!--div class="project_icon_oc" v-html="this.$projectGlobal.projectIcon"></div-->
-                    <img v-if="project.globalVars && project.globalVars.projectIcon" :src="project.globalVars.projectIcon">
+                    <img v-if="project.globalVars && project.globalVars.projectIcon" :src="project.globalVars.projectIcon" class="w-100" style="object-fit: contain">
                 </div>
                 <div class="d-flex flex-column flex-wrap align-items-baseline">
                     <div class="d-inline-flex align-items-baseline">
