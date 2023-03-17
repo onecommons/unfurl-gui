@@ -10,15 +10,17 @@
 import csrf from '~/lib/utils/csrf'
 import mountJobsConsole from '~/jobs'
 import mountNotesApp from '~/notes'
+import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf-badge.js'
 // #!endif
 
 export let token = ''
 export let compatibilityMountJobConsole = function() {}
 export let compatibilityMountNotesApp = function() {}
+export let compatibilityUnfurlBadgeUrlBuilder = function() {}
 
 // #!if false
 token = csrf.token
 compatibilityMountJobConsole = mountJobsConsole
 compatibilityMountNotesApp = mountNotesApp
-
+compatibilityUnfurlBadgeUrlBuilder = initUnfurlBadgeUrlBuilder
 // #!endif
