@@ -6,7 +6,7 @@ const DEPLOY_BUTTON_PARAM = 'deploy-btn'
 import Vue from 'vue'
 import _ from 'lodash'
 import { mapState } from 'vuex'
-import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf-badge.js'
+import {compatibilityUnfurlBadgeUrlBuilder as initUnfurlBadgeUrlBuilder} from 'oc_vue_shared/compat'
 
 import { GlModal } from '@gitlab/ui'
 export default {
