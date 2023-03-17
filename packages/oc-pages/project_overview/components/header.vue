@@ -1,6 +1,7 @@
 <script>
 /* eslint-disable vue/no-v-html */
 import { GlIcon, GlButton } from '@gitlab/ui';
+import OverviewShareModal from './header/overview-share-modal.vue'
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
 import {mapGetters, mapState} from 'vuex'
@@ -11,6 +12,7 @@ export default {
     components: {
         GlIcon,
         GlButton,
+        OverviewShareModal
     },
     props: {
         projectInfo: {
@@ -48,6 +50,9 @@ export default {
                     }
                 })
                 .catch(() => createFlash(__('Star toggle failed. Try again later.')));
+        },
+        openShareModal() {
+            this.$refs.shareModal.visible = true
         },
         redirectTo(link) {
             window.location.href = link;
@@ -112,9 +117,21 @@ export default {
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
+                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
+                    <gl-button
+                        class="btn-sm star-btn toggle-star"
+                        @click="openShareModal">
+                        <gl-icon
+                            name="share"
+                            :size="16"
+                        />
+                        <span>Share</span>
+                    </gl-button>
+                </div>
                 <gl-button v-if="livePreview" :href="livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm ml-1" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
             </div>
         </div>
+        <overview-share-modal ref="shareModal" />
     </div>
 </template>
 <style scoped>
