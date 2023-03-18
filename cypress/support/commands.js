@@ -75,7 +75,7 @@ function withStore(cb) {
 }
 
 function getInputOrTextarea(selector) {
-  return cy.get(`input${selector}, textarea${selector}`)
+  return cy.get(`input${selector}, textarea${selector}, ${selector} input`)
 }
 
 function execLoud(...args) {
