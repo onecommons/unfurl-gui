@@ -639,6 +639,7 @@ const mutations = {
         state.environmentScope = environmentScope
     },
     setCommitBranch(state, branch) {
+        console.log('setCommitBranch', branch)
         state.branch = branch
     },
     setUpdateType(state, updateType) {

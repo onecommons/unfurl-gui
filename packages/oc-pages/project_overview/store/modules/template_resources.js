@@ -221,10 +221,6 @@ const actions = {
             primary.title = renamePrimary;
         }
 
-        if(!rootGetters.userCanEdit) {
-            commit('setCommitBranch', deploymentTemplate.name)
-        } 
-
         if(_syncState) {
             commit('pushPreparedMutation', (accumulator) => {
                 const patch = {...deploymentTemplate};

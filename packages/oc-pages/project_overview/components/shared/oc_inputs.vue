@@ -56,7 +56,7 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['resourceTemplateInputsSchema', 'resolveResourceTemplateType', 'cardInputsAreValid', 'lookupEnvironmentVariable']),
+    ...mapGetters(['resourceTemplateInputsSchema', 'resolveResourceTemplateType', 'cardInputsAreValid', 'lookupEnvironmentVariable', 'userCanEdit']),
 
     inputsSchema() {
         return this.resourceTemplateInputsSchema(this.card)
@@ -138,9 +138,13 @@ export default {
     convertProperties(properties) {
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
-        if (!currentValue.type) {
+
+        if(currentValue.sensitive && !this.userCanEdit) return null
+
+        if(!currentValue.type) {
           currentValue.type = 'string'
         }
+
         currentValue.title = currentValue.title ?? name;
         currentValue['x-decorator'] = 'FormItem'
         currentValue['x-decorator-props'] = {}
@@ -337,7 +341,9 @@ export default {
       const properties = this.card.properties || []
 
       for (const [name, definition] of Object.entries(this.fromSchema)) {
+        console.log(name, definition)
         try {
+          if(definition.sensitive && !this.userCanEdit) continue
           let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))
 
           if(this.nestedProp) {
@@ -360,6 +366,7 @@ export default {
           console.error(e)
         }
       }
+      this.$emit('setInputLength', result.length)
       return result
     }
   },

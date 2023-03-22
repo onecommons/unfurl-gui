@@ -33,7 +33,7 @@ export default {
         if(gon.current_user_id) {
             this.$store.dispatch('populateCurrentUser').catch(() => {})
             errorContext = 'ocFetchEnvironments'
-            this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath})
+            this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath, branch: this.$route.query.branch || 'main'})
                 .catch((err) => {
                     console.error('@main.vue', err)
                     this.$store.dispatch(

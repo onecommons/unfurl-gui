@@ -18,7 +18,8 @@ export default {
         mergeStatus: {type: String, default: () => 'disabled'},
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
-        target: {type: String, default: () => 'template'}
+        target: {type: String, default: () => 'template'},
+        mergeRequest: Object
     },
 
     methods: {
@@ -32,9 +33,14 @@ export default {
             this.$emit('saveDraft');
         },
 
-        triggerDeploy: _.throttle(function () {
-            this.$emit('triggerDeploy');
+        triggerDeploy: _.throttle(function (...args) {
+            this.$emit('triggerDeploy', ...args);
         }, 3000),
+
+        mergeRequestReady: _.throttle(function (...args) {
+            this.$emit('mergeRequestReady', ...args);
+        }, 3000),
+
 
         triggerLocalDeploy: _.throttle(function () {
             this.$emit('triggerLocalDeploy');
@@ -132,8 +138,21 @@ export default {
                 >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}</gl-button
             >
 
+            <gl-button
+                v-if="mergeRequest"
+                data-testid="view-merge-request"
+                title="View Merge Request"
+                aria-label="View Merge Request"
+                target="_blank"
+                type="button"
+                icon="link"
+                :href="mergeRequest.web_url"
+            >
+                View Merge Request
+            </gl-button>
+
         </div>
-        <DeployButton :deploy-status="deployStatus" @triggerDeploy="triggerDeploy" @triggerLocalDeploy="triggerLocalDeploy"/>
+        <DeployButton :deploy-status="deployStatus" @triggerDeploy="triggerDeploy" :mergeRequest="mergeRequest" @mergeRequestReady="mergeRequestReady" @triggerLocalDeploy="triggerLocalDeploy"/>
     </div>
 </template>
 <style scoped>
