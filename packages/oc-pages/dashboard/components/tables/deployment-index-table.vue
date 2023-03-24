@@ -251,13 +251,14 @@ export default {
                     return
                 case 'incRedeploy':
                     const deploymentItem = this.deploymentItemDirect({deployment, environment})
+                    const variables = deploymentItem.pipeline.variables
                     const upstreamBranch = deploymentItem.pipeline.upstream_branch
                     const upstreamCommit = deploymentItem.pipeline.upstream_commit_id
                     const upstreamPipeline = deploymentItem.pipeline.upstream_pipeline_id
                     const upstreamProject = deploymentItem.pipeline.upstream_project_id
                     const result = await triggerIncrementalDeployment(
                         this.pipelinesPath,
-                        {upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}
+                        {variables, upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}
                     )
                     console.log(result)
                     return

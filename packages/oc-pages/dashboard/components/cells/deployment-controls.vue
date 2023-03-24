@@ -1,6 +1,7 @@
 <script>
 import {GlIcon, GlDropdown, /*GlDropdownItem*/} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
+import {lookupKey} from 'oc_vue_shared/storage-keys'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import PipelineDropdownItem from './deployment-controls/pipeline-dropdown-item.vue'
 import * as routes from '../../router/constants'
@@ -101,7 +102,8 @@ export default {
             // these checks are inadequate
             //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
             // temporary solution -- hide behind developer setting
-            if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
+            if(lookupKey('manualIncrementalDeploy') && !this.deploymentItem?.isJobCancelable) result.push('inc-redeploy')
+            //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
             if(this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('delete')
             return result
