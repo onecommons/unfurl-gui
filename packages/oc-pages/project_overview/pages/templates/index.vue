@@ -463,13 +463,19 @@ export default {
               const title = `[Draft] ${this.getDeploymentTemplate.title}`
               const labels = [this.$route.params.slug, 'unfurl-gui-mr']
               const dest = window.location.origin + this.$router.resolve({...this.$route, query}).href
-              const description = `[Edit Deployment Draft 🖊](${dest})`
+              const description = [
+                  `[Edit Deployment Draft 🖊](${dest})`,
+                  '\n',
+                  `Your Deployment Template will be available as [${this.$route.params.slug}](${window.location.origin}${this.$router.resolve({...this.$route, query: {...query, branch: undefined}}).href}) when it's been merged.`
+              ].join('\n')
 
               try {
                 this.mergeRequest = await createMergeRequest(encodeURIComponent(this.getHomeProjectPath), {branch, target, title, labels, description})
                 if(redirect) {
                   window.location.href = this.mergeRequest.web_url
                 }
+                // only return if this succeeds, otherwise we're kicking them off the draft
+                return
               } catch(e) {
                 if(e.response) {
                   this.createError({
@@ -480,7 +486,6 @@ export default {
 
                 }
               }
-              return
             }
           }
 
