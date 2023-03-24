@@ -297,15 +297,27 @@ const actions = {
             }
 
             let child = resolvedDependencyMatch
+
+
             if(!isDeploymentTemplate && child) {
                 child = rootGetters.resolveResource(dependency.target)
             }
+
             const valid = !!(child)
             const id = valid && btoa(child.name).replace(/=/g, '')
 
             if(valid) {
-                commit('createTemplateResource', {...child, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
-                dispatch('createMatchedResources', {resource: child, isDeploymentTemplate})
+                let _ancestors = child._ancestors
+                if(
+                    (!child._ancestors && resource._ancestors && !child.readonly) ||
+                    (Array.isArray(child._ancestors) && child._ancestors.length == 0)
+                ) {
+                    _ancestors = resource._ancestors.concat([[resource, dependency.name]])
+                }
+                const newResource = {...child, _ancestors}
+
+                commit('createTemplateResource', {...newResource, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
+                dispatch('createMatchedResources', {resource: newResource, isDeploymentTemplate})
             }
         }
     },
@@ -328,7 +340,16 @@ const actions = {
             target.visibility = target.visibility || 'inherit'
 
             const directAncestor = state.resourceTemplates[dependentName]
+
             if(directAncestor) {
+                const ancestorDependencies = getters.getDependencies(directAncestor)
+                console.log(ancestorDependencies, dependentRequirement)
+                const inputsSchemaFromDirectAncestor = ancestorDependencies.find(dep => dep.name == dependentRequirement)?.constraint?.inputsSchema
+
+                if(inputsSchemaFromDirectAncestor) {
+                    applyInputsSchema(target, inputsSchemaFromDirectAncestor)
+                }
+
                 target._ancestors = directAncestor._ancestors.concat([[directAncestor, dependentRequirement]])
             }
 
