@@ -28,6 +28,14 @@ export function applyInputsSchema(type, inputsSchema) {
     _.merge(type.inputsSchema, inputsSchema)
 
     for(const key in type.inputsSchema.properties) {
+        let computedPropertiesSchema
+        if(computedPropertiesSchema = type.computedPropertiesSchema) {
+            if(computedPropertiesSchema.properties.hasOwnProperty(key)) {
+                delete type.inputsSchema.properties[key]
+                continue
+            }
+        }
+
         if(type.inputsSchema.properties[key] === null) {
             delete type.inputsSchema.properties[key]
         }

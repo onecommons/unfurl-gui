@@ -918,13 +918,13 @@ const getters = {
                 return getters.resolveResourceTypeFromAny(resourceTemplate.type)?.inputsSchema
             }
 
-            const inputsSchema = _.cloneDeep(getters.resolveResourceTypeFromAny(rt.type)?.inputsSchema)
+            const type = _.cloneDeep(getters.resolveResourceTypeFromAny(rt.type))
 
-            if(inputsSchema) {
-                applyInputsSchema({inputsSchema}, getters.calculateParentConstraint(resourceTemplate)?.inputsSchema)
+            if(type?.inputsSchema) {
+                applyInputsSchema(type, getters.calculateParentConstraint(resourceTemplate)?.inputsSchema)
             } 
 
-            return inputsSchema
+            return type?.inputsSchema
         }
     },
   
