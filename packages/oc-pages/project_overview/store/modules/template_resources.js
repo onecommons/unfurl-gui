@@ -867,7 +867,7 @@ const getters = {
 
             const localTemplate = state.resourceTemplates[resourceTemplate]
 
-            if(localTemplate) return localTemplate
+            if(localTemplate && !localTemplate.directives?.includes('default')) return localTemplate
 
             if(sourceDt = state.lastFetchedFrom?.sourceDeploymentTemplate) {
                 templateFromSource = rootGetters.resolveLocalResourceTemplate(sourceDt, resourceTemplate)
@@ -878,7 +878,7 @@ const getters = {
                 return templateFromStore
             }
 
-            return templateFromSource || templateFromStore
+            return templateFromSource || templateFromStore || localTemplate
         }
     },
 
