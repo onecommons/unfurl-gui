@@ -21,6 +21,7 @@ const state = () => ({
     dashboardProjectInfo: null,
     user: null,
     windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
     scrollTop: document.scrollingElement.scrollTop
 })
 
@@ -52,6 +53,10 @@ const mutations = {
 
     setWindowWidth(state, windowWidth) {
         state.windowWidth = windowWidth
+    },
+
+    setWindowHeight(state, windowHeight) {
+        state.windowHeight = windowHeight
     },
 
     setScrollTop(state, scrollTop) {
@@ -91,6 +96,7 @@ const getters = {
         return sessionStorage['registry-url']
     },
     windowWidth(state) {return state.windowWidth},
+    windowHeight(state) {return state.windowHeight},
     scrollTop(state) {return state.scrollTop},
     serviceDesk() {
         // TODO make this configurable
@@ -106,6 +112,7 @@ const actions = {
                 commit('setMobileLayout', _isMobileLayout)
             }
             commit('setWindowWidth', window.innerWidth)
+            commit('setWindowHeight', window.innerHeight)
         }
         function onScroll(e) {
             commit('setScrollTop', document.scrollingElement.scrollTop)

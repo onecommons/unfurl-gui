@@ -2,6 +2,7 @@
 import {mapMutations, mapActions, mapGetters} from 'vuex'
 import {compatibilityMountJobConsole} from 'oc_vue_shared/compat'
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
+const BOTTOM_MARGIN = -100
 export default {
     props: {
         jobsData: {
@@ -19,7 +20,12 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath, getDashboardItems'])
+        ...mapGetters(['getHomeProjectPath, getDashboardItems', 'windowHeight'])
+    },
+    watch: {
+       windowHeight() {
+           this.setConsoleHeight()
+       }
     },
     methods: {
         ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
@@ -97,6 +103,12 @@ export default {
 
                 self.pollLogState()
             }, time)
+        },
+        setConsoleHeight() {
+            console.log('setConsoleHeight')
+            const consoleContainer = document.querySelector('#console-container')
+            delete consoleContainer.style.maxHeight
+            consoleContainer.style.height = (this.windowHeight - consoleContainer.getBoundingClientRect().y - BOTTOM_MARGIN) + 'px'
         }
     },
     async beforeCreate() {
@@ -111,6 +123,8 @@ export default {
         const element = tempDocument.querySelector('#js-job-vue-app')
         const dataset = element.dataset
         const consoleContainer = document.querySelector('#console-container')
+        this.setConsoleHeight()
+
         consoleContainer.appendChild(element)
         consoleContainer.classList.add('loaded')
         consoleContainer.onscroll = () => {
@@ -140,4 +154,10 @@ export default {
 #console-container >>> a {
     pointer-events: none;
 }
+
+/*
+#console-container >>> .content-wrapper {
+  padding-bottom: 0;
+}
+*/
 </style>
