@@ -110,28 +110,12 @@ Serializers = {
                 if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
                     delete localResourceTemplates[rt]
                 } else {
+                    // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
                     Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                 }
             }
         }
-        /*
-        const resourceTemplates = []
-        function addMatchedResourceTemplates(templateName) {
-            let template 
-            try {
-                template = state.DeploymentTemplate[dt.name].ResourceTemplate[templateName]
-            } catch(e) {}
-            if(!template) {
-                template = state.ResourceTemplate[templateName]
-            }
 
-            if(template) {
-                resourceTemplates.push(templateName)
-                template.dependencies?.forEach(dep => dep.match && addMatchedResourceTemplates(dep.match))
-            }
-        }
-        addMatchedResourceTemplates(dt.primary)
-        */
         dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
     },
     // TODO unit test
@@ -142,6 +126,7 @@ Serializers = {
             allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', '__typename')
             return
         }
+
         try {
             delete rt.visibility // do not commit template visibility
         } catch(e) {
