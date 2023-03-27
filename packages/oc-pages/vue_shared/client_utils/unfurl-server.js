@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchLastCommit, setLastCommit } from "./projects";
+import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
 
@@ -49,7 +49,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += `&private_token=${password}`
     }
 
-    exportUrl += `&branch=${_branch}`
+    exportUrl += `&branch=${branch || _branch}`
     exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
 
     if(alwaysSendLatestCommit() || !unfurlServerUrlOverride()) {
@@ -64,10 +64,15 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
+    console.log(arguments[0])
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
     const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
     const [latestCommit, _branch] = lastCommitResult
+
+    if(_branch != branch) {
+        await createBranch(encodeURIComponent(projectPath), branch, latestCommit)
+    }
 
     const body = {
         ...variables,

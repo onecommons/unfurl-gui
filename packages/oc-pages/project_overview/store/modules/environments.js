@@ -334,17 +334,14 @@ const actions = {
         commit("SET_ENVIRONMENT_NAME", { envName });
     },
 
-    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath}) {
+    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath, branch}) {
         let environments = []
         try {
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
 
-            // TODO don't hardcode main
-            const branch = 'main'
-
             const result = await fetchEnvironments({
                 fullPath,
-                branch,
+                branch: branch || 'main',
                 projectId,
                 includeDeployments: true
             })
@@ -441,8 +438,7 @@ const actions = {
         }
     },
 
-    // TODO try to parallelize better
-    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
+    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, branch, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
         await Promise.all([
@@ -457,7 +453,7 @@ const actions = {
                     console.warn('@ocFetchProjectEnvironments: Could not read/write envvars', e)
                 }
             })(),
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy})
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, fetchPolicy})
         ])
 
         commit('setReady', true)

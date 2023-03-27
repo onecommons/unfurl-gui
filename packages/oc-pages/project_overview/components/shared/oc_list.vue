@@ -87,6 +87,7 @@ export default {
     data() {
         return {
             resourceName: '',
+            inputsLength: null,
         }
     },
 
@@ -307,6 +308,10 @@ export default {
                 return {...this.card, ...this.importedResource, imported: this.card.imported}
             }
             return this.card
+        },
+
+        inputsTitleCount() {
+          return this.inputsLength ?? this.properties.length
         }
     },
 }
@@ -321,12 +326,12 @@ export default {
                     </div>
                 </div>
             </oc-tab>
-            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="properties.length">
+            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="inputsTitleCount">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties">
                     <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="_card" /> </template>
                 </oc-properties-list>
 
-                <oc-inputs v-else :card="_card" />
+                <oc-inputs @setInputLength="i => inputsLength = i" ref="inputs" v-else :card="_card" />
             </oc-tab>
             <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
                 <oc-inputs :card="_card" :tab="tab.tab_title"/>

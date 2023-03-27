@@ -17,6 +17,7 @@ import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {getJobsData, redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
+import {setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import * as routes from '../../router/constants'
 
@@ -44,6 +45,7 @@ export default {
 
   data() {
     return {
+      branch: 'main',
       uiTimeout: null,
       createNodeResourceData: {},
       deleteNodeData: {},
@@ -73,6 +75,7 @@ export default {
         shortName: 'main',
         fullName: 'refs/heads/main',
       },
+      mergeRequest: null
     };
   },
 
@@ -106,7 +109,8 @@ export default {
       'environmentsAreReady',
       'editingDeployed',
       'deployTooltip',
-      'hasCriticalErrors'
+      'hasCriticalErrors',
+      'userCanEdit'
     ]),
     
     deploymentDir() {
@@ -120,14 +124,18 @@ export default {
     saveStatus() {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
-          return 'hidden';
+          if(!this.mergeRequest) break
         default: 
           return this.hasPreparedMutations? 'enabled': 'disabled';
       }
+      return 'hidden'
     },
     saveDraftStatus() {
       return this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT?
-        (this.hasPreparedMutations? 'enabled': 'disabled') : 'hidden'
+        (
+         (this.mergeRequest)? 'hidden':
+           (this.hasPreparedMutations? 'enabled': 'disabled')
+        ) : 'hidden'
     },
     deleteStatus() {
       switch(this.$route.name) {
@@ -320,7 +328,8 @@ export default {
       'pushPreparedMutation',
       'setCommitMessage',
       'setUpdateType',
-      'createError'
+      'createError',
+      'setCommitBranch'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -366,10 +375,26 @@ export default {
       }, timeToWait);
     },
 
-    async fetchItems(n=1) {
+    async fetchItems() {
       try {
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
+
+        if(!this.userCanEdit) {
+          const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
+          this.setCommitBranch(this.branch)
+
+          const target = 'main'
+          const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+
+          const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened'})
+
+          if(openedMR) {
+            this.mergeRequest = openedMR
+          }
+
+        }
+
         const projectPath = this.project.globalVars.projectPath
         if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
@@ -382,7 +407,7 @@ export default {
           this.setEnvironmentScope(environmentName)
         }
         // TODO see if we can get rid of this, since it's probably already loaded
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
         if(this.hasCriticalErrors) return
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
@@ -405,9 +430,9 @@ export default {
       }
     },
     debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
-    async triggerSave(type) {
+    async triggerSave(type, redirect=true) {
       try {
-        if(type == 'draft'){
+        if(type == 'draft' || this.mergeRequest){
           const name = this.$route.query.fn;
           this.setCommitMessage(`Save draft of ${name}`)
           this.setUpdateType('deployment')
@@ -429,12 +454,49 @@ export default {
           const query = {...this.$route.query}
           delete query.ts
 
+          if(this.branch != 'main') {
+            query.branch = this.branch
+
+            if(!this.mergeRequest) {
+              const branch = this.branch
+              const target = 'main'
+              const title = `[Draft] ${this.getDeploymentTemplate.title}`
+              const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+              const dest = window.location.origin + this.$router.resolve({...this.$route, query}).href
+              const description = [
+                  `[Edit Deployment Draft 🖊](${dest})`,
+                  '\n',
+                  `Your Deployment Template will be available as [${this.$route.params.slug}](${window.location.origin}${this.$router.resolve({...this.$route, query: {...query, branch: undefined}}).href}) when it's been merged.`
+              ].join('\n')
+
+              try {
+                this.mergeRequest = await createMergeRequest(encodeURIComponent(this.getHomeProjectPath), {branch, target, title, labels, description})
+                if(redirect) {
+                  window.location.href = this.mergeRequest.web_url
+                }
+                // only return if this succeeds, otherwise we're kicking them off the draft
+                return
+              } catch(e) {
+                if(e.response) {
+                  this.createError({
+                    message: `Unable to create merge request`,
+                    context: e.response,
+                    severity: 'critical'
+                  })
+
+                }
+              }
+            }
+          }
+
           if(this.editingDeployed) {
               this.returnToReferrer()
               return
           }
 
-          window.location.href = this.$router.resolve({...this.$route, query}).href
+          if(redirect) {
+            window.location.href = this.$router.resolve({...this.$route, query}).href
+          }
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           await this.commitPreparedMutations();
@@ -531,6 +593,23 @@ export default {
 
       this.dataWritten = true
       window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
+    }, 250),
+
+    mergeRequestReady: _.debounce(async function({status}) {
+      this.startedTriggeringDeployment = true;
+      await this.triggerSave('draft', false);
+      this.dataWritten = true
+
+      if(this.hasCriticalErrors) return
+
+      const branch = this.branch
+      const target = 'main'
+      const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+
+      await setMergeRequestReadyStatus(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened', status})
+
+      window.location.href = this.mergeRequest.web_url
+
     }, 250),
 
     cleanModalResource() {
@@ -734,12 +813,14 @@ export default {
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
-            @saveDraft="debouncedTriggerSave('draft')"
-            @saveTemplate="debouncedTriggerSave()"
-            @triggerDeploy="triggerDeployment()"
-            @triggerLocalDeploy="triggerLocalDeploy()"
-            @cancelDeployment="returnToReferrer()"
-            @launchModalDeleteTemplate="openModalDeleteTemplate()"
+            :mergeRequest="mergeRequest"
+            @saveDraft="debouncedTriggerSave('draft', true)"
+            @saveTemplate="debouncedTriggerSave"
+            @triggerDeploy="triggerDeployment"
+            @mergeRequestReady="mergeRequestReady"
+            @triggerLocalDeploy="triggerLocalDeploy"
+            @cancelDeployment="returnToReferrer"
+            @launchModalDeleteTemplate="openModalDeleteTemplate"
             />
 
 
