@@ -31,7 +31,7 @@ export default {
         ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
         ...mapMutations(['clearPreparedMutations']),
         async mountJobsConsole() {
-            this.consoleApp = compatibilityMountJobConsole()
+            this.consoleApp = await compatibilityMountJobConsole()
         },
         async onComplete() {
             await Promise.all([

@@ -6,14 +6,15 @@ import store from './store';
 import createRouter from './router';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {setupTheme} from 'oc_vue_shared/theme'
-import {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
+import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 
 Vue.use(GlToast);
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
-Vue.component('el-popover', ElPopover)
+Vue.directive('loading', ElLoading) // when we're able to tree shake, this can go in async components that need it
+Vue.component('el-popover', ElPopover) // needed for formily to have tooltips
 
 setupTheme(Vue)
 
