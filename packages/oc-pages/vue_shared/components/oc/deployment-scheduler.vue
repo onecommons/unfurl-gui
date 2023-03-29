@@ -8,7 +8,8 @@ const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
 export default {
     name: 'DeploymentScheduler',
     components: {
-        DetectIcon
+        DetectIcon,
+        ElCheckbox
     },
     props: {
         resourceName: String,

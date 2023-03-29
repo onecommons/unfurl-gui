@@ -26,7 +26,7 @@ compatibilityMountJobConsole = async function(...args) {
         mountJobsConsole = import('~/jobs').then(module => module.default)
     }
 
-    (await mountJobsConsole)(...args)
+    return (await mountJobsConsole)(...args)
 }
 
 compatibilityMountNotesApp = async function(...args) {
@@ -34,6 +34,6 @@ compatibilityMountNotesApp = async function(...args) {
         mountNotesApp = import('~/notes').then(module => module.default)
     }
 
-    (await mountNotesApp)(...args)
+    return (await mountNotesApp)(...args)
 }
 // #!endif

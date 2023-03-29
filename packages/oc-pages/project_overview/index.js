@@ -7,11 +7,14 @@ import {GlTooltipDirective} from '@gitlab/ui';
 import __ from '~/locale';
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import {setupTheme} from 'oc_vue_shared/theme'
+import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 
 import './assets/global.css';
 
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
+Vue.directive('loading', ElLoading) // when we're able to tree shake, this can go in async components that need it
+Vue.component('el-popover', ElPopover) // needed for formily to have tooltips
 
 setupTheme(Vue)
 
