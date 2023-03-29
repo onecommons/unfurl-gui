@@ -3,10 +3,7 @@ import _ from 'lodash';
 import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import {mapActions, mapMutations, mapGetters} from 'vuex'
-import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} from "@formily/element";
 import {Card as ElCard} from 'element-ui'
-import {createForm, onFieldInputValueChange} from "@formily/core";
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
 import {FakePassword, getCustomTooltip, getUiDirective} from './oc_inputs'
 
@@ -18,18 +15,53 @@ const ComponentMap = {
   enum: 'Select',
   object: 'Editable.Popover',
   array: 'ArrayItems',
-  password: FakePassword,
+  password: 'FakePassword',
 };
 
-const fields = createSchemaField({
-  components: {
-    FormItem,
-    ArrayItems,
-    Space,
-    Input,
-    InputNumber, Checkbox, Select, FakePassword, Editable
-  }
-})
+const formilyElement = async function() {
+    if(!formilyElement.promise) {
+        formilyElement.promise = import('@formily/element')
+    }
+    const {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = await formilyElement.promise
+    return {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space}
+}
+
+const formilyVue = async function() {
+    if(!formilyVue.promise) {
+        formilyVue.promise = import('@formily/vue')
+    }
+    const {FormProvider, createSchemaField} = await formilyVue.promise
+    return {FormProvider, createSchemaField}
+}
+
+const fields =  async function() {
+    const [_formilyVue, _formilyElement] = await Promise.all([
+        formilyVue(),
+        formilyElement(),
+    ])
+
+    const {createSchemaField} = _formilyVue
+    const {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = _formilyElement
+
+    return createSchemaField({
+      components: {
+        FormItem,
+        ArrayItems,
+        Space,
+        Input,
+        InputNumber, Checkbox, Select, FakePassword, Editable
+      }
+    })
+}
+
+
+const FormProvider = async() => (await formilyVue()).FormProvider
+const FormLayout = async() => (await formilyElement()).FormLayout
+
+const schemaFieldComponents = {}
+for(const schemaFieldComponentName of ['SchemaField', 'FormItem', 'ArrayItems', 'Input', 'InputNumber', 'Checkbox', 'Select', 'Editable', 'Space']) {
+    schemaFieldComponents[schemaFieldComponentName] = async() => (await fields())[schemaFieldComponentName]
+}
 
 
 export default {
@@ -38,7 +70,7 @@ export default {
     FormProvider,
     FormLayout,
     ElCard,
-    ...fields
+    ...schemaFieldComponents
   },
 
   props: {
@@ -370,7 +402,8 @@ export default {
       return result
     }
   },
-  mounted() {
+  async mounted() {
+    const {createForm, onFieldInputValueChange} = await import("@formily/core")
     this.mainInputs = this.getMainInputs()
     const form = createForm({
         //initialValues: this.initialFormValues,

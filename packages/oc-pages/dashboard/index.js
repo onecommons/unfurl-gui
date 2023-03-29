@@ -1,5 +1,4 @@
 import Vue from 'vue';
-//import TableComponentContainer from './components/table.vue';
 import Dashboard from './dashboard.vue';
 import apolloProvider from './graphql';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
@@ -7,12 +6,11 @@ import store from './store';
 import createRouter from './router';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {setupTheme} from 'oc_vue_shared/theme'
-import ElementUI, {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
+import {Popover as ElPopover} from 'element-ui' // formily not finding popover correctly
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 
 Vue.use(GlToast);
-Vue.use(ElementUI)
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 Vue.component('el-popover', ElPopover)
