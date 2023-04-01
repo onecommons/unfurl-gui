@@ -28,7 +28,7 @@ describe('_k8s-20221031t185051178z__container-webapp5__container-webapp', () => 
     })
   })
 
-  const FIXTURE = 'generated/deployments/_k8s-20221031t185051178z__container-webapp5__container-webapp'
+  const FIXTURE = 'generated/deployments/_aws__container-webapp__container-webapp-k.json'
 
   it('Can recreate deployment', () => {
     cy.enterGithubToken()
