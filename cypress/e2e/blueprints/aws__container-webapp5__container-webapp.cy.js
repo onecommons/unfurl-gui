@@ -43,7 +43,7 @@ describe('_aws-2022-08-18t23-03-03__container-webapp5__container-webapp', () => 
     cy.enterGithubToken()
     cy.recreateDeployment({
       verificationArgs: {repository: repoName},
-      fixture: 'generated/deployments/_aws-2022-08-18t23-03-03__container-webapp5__container-webapp',
+      fixture: 'generated/deployments/_aws__container-webapp__container-webapp-a.json',
       afterRecreateDeployment() {
         cy.contains('.el-input-group__prepend', 'Github Project').next().type(`${GITHUB_USERNAME}/${repoName}`)
         cy.contains('button', 'Import').click({force: true})

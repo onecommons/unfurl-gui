@@ -28,7 +28,7 @@ describe('_env-test-gcp-2022-09-07t04-37-10__container-webapp5__container-webapp
     })
   })
 
-  const FIXTURE = 'generated/deployments/_env-test-gcp-2022-09-07t04-37-10__container-webapp5__container-webapp'
+  const FIXTURE = 'generated/deployments/_aws__container-webapp__container-webapp-g.json'
   it('Can recreate deployment', () => {
     cy.enterGithubToken()
     cy.recreateDeployment({

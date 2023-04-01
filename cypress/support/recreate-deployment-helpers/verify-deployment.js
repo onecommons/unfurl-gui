@@ -101,11 +101,11 @@ const verificationRoutines = {
 
 }
 
-function verifyDeployment({deployment, env, dnsZone, sub, expectExisting}, verificationArgs) {
+function verifyDeployment({deployment, env, dnsZone, sub, expectExisting, verificationRoutine}, verificationArgs) {
   console.log(deployment)
   if(MOCK_DEPLOY) return
   const ab = Object.values(deployment.ApplicationBlueprint)[0] 
-  const routine = verificationRoutines[ab.name] || verificationRoutines['default']
+  const routine = verificationRoutines[verificationRoutine || ab.name] || verificationRoutines['default']
 
   function cb({timeout, interval, command}) {
     const _command = expectExisting? `${command} --expect-existing`: command

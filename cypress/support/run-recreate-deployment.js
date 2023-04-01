@@ -23,7 +23,7 @@ function pseudorandomPassword() {
 
 Cypress.Commands.add('recreateDeployment', options => {
   cy.wait(5000)
-  let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, _env, _dnsZone, subdomain
+  let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, verificationRoutine, _env, _dnsZone, subdomain
   if (typeof options == 'string') {
     fixture = options
     shouldDeploy = true
@@ -33,7 +33,8 @@ Cypress.Commands.add('recreateDeployment', options => {
     shouldDeploy = options.shouldDeploy ?? !shouldSave
     skipTeardown = options.skipTeardown
     expectExisting = options.expectExisting || false
-    subdomain = options.subdomain
+    subdomain = options.subdomain,
+    verificationRoutine = options.verificationRoutine
 
     _dnsZone = options.dnsZone
     _env = options.env
@@ -135,6 +136,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.contains('button', 'Next').click()
 
     cy.get('[data-testid^="card-"]').should('exist')
+    cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
 
     function recreateTemplate(template, variant = 0) {
       cy.document().then($document => {
@@ -292,7 +294,7 @@ Cypress.Commands.add('recreateDeployment', options => {
           cy.expectSuccessfulJob(job)
         })
         cy.assertDeploymentRunning(dt.title)
-        cy.verifyDeployment({deployment, env, dnsZone, sub: subdomain, expectExisting}, options.verificationArgs || {})
+        cy.verifyDeployment({deployment, env, dnsZone, sub: subdomain, expectExisting, verificationRoutine}, options.verificationArgs || {})
         if(TEARDOWN && !skipTeardown) {
           cy.undeploy(dt.title)
         }
