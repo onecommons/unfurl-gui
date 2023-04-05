@@ -132,7 +132,7 @@ const getters = {
     isDashboardLoaded(state) {return state.loaded},
     getDashboardItems(state) {return state.items},
     runningDeploymentsCount(state) {return state.counters.deployments},
-    totalDeploymentsCount(state) {return state.counters.totalDeployments},
+    totalDeploymentsCount(state, _a, _b, rootGetters) {return state.counters.totalDeployments + rootGetters.mergeRequests.length},
     environmentsCount(state) {return state.counters.environments},
     applicationsCount(state) {return state.counters.applications}
 }

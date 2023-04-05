@@ -10,16 +10,30 @@ export default {
             type: Object,
             default: () =>  '#'
         },
-        createLink: [String, Object]
+        secondaryLink: [String, Object],
+        secondaryLinkText: {
+            type: String,
+            default: () => '+ Create New'
+        },
+        secondaryLinkRequiresEdit: {
+            type: Boolean,
+            default: true
+        }
+
     },
     computed: {
         ...mapGetters(['userCanEdit']),
         cardCss() {
             return {backgroundColor: this.color}
         },
-        createLinkProps() {
-            if(typeof this.createLink == 'string') return {href: this.createLink}
-            return {to: this.createLink}
+        secondaryLinkProps() {
+            if(typeof this.secondaryLink == 'string') return {href: this.secondaryLink}
+            return {to: this.secondaryLink}
+        },
+        showSecondaryLink() {
+            if(this.secondaryLinkRequiresEdit && !this.userCanEdit) return false
+
+            return !!this.secondaryLink
         }
     }
 }
@@ -32,8 +46,8 @@ export default {
                 <span class="count"> {{count}} </span>
                 <span class="text"> {{n__(s, p, count)}} </span>
                 <div style="height: 1em; margin-top: -0.5em; font-weight: 500;">
-                    <component :is="typeof createLink == 'string'? 'a': 'router-link'" v-if="createLink && userCanEdit" @click="e => e.stopPropagation()" v-bind="createLinkProps">
-                        + {{__('Create New')}}
+                    <component :is="typeof secondaryLink == 'string'? 'a': 'router-link'" v-if="showSecondaryLink" @click="e => e.stopPropagation()" v-bind="secondaryLinkProps">
+                        {{secondaryLinkText}}
                     </component>
                 </div>
             </div>

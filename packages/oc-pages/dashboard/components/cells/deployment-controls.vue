@@ -116,10 +116,10 @@ export default {
             return result
         },
         primaryControlButtons() {
-            return this.controlButtons.slice(0,1)
+            return [this.controlButtons.find(cb => !this.disabledButtons.includes(cb))]
         },
         contextMenuControlButtons() {
-            return this.controlButtons.slice(1)
+            return this.controlButtons.filter(cb => cb != this.primaryControlButtons)
         },
         resumeEditingTarget() {
             return this.deploymentItem?.editableLink

@@ -137,11 +137,15 @@ const actions = {
     },
 
     createFlash({getters}, options) {
+        let _options = options
+        if(typeof _options == 'string') {
+            _options = {message: options, type: FLASH_TYPES.NOTICE}
+        }
         return createFlash({
             projectPath: getters.getHomeProjectPath,
             serviceDesk: getters.serviceDesk,
             confidential: true,
-            ...options
+            ..._options
         })
     }
 }

@@ -19,6 +19,7 @@ export default {
             'populateDeploymentItems',
             'populateCurrentUser',
             'populateDashboardProject',
+            'fetchMergeRequests',
             'deployInto',
             'createFlash'
         ]),
@@ -59,6 +60,9 @@ export default {
                 throw(e)
             }
         }
+
+        this.fetchMergeRequests() // not awaiting
+
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()
         

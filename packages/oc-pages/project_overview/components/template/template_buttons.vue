@@ -1,5 +1,6 @@
 <script>
 import { GlButton } from '@gitlab/ui';
+import { Tooltip as ElTooltip } from 'element-ui'
 import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
@@ -9,7 +10,8 @@ export default {
     name: 'TemplateButtons',
     components: {
         GlButton,
-        DeployButton
+        DeployButton,
+        ElTooltip
     },
     props: {
         deployStatus: {type: String, default: () => 'disabled'},
@@ -19,7 +21,8 @@ export default {
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
         target: {type: String, default: () => 'template'},
-        mergeRequest: Object
+        mergeRequest: Object,
+        saveTooltip: String
     },
 
     methods: {
@@ -112,31 +115,39 @@ export default {
                 @click.prevent="cancelDeployment"
                 >{{ __(editingDeployed? 'Cancel': 'Cancel Deployment') }}
             </gl-button>
-            <gl-button
-                v-show="saveStatus != 'hidden'"
-                data-testid="save-template-btn"
-                title="Save Changes"
-                :aria-label="__('Save Changes')"
-                type="button"
-                variant="confirm"
-                icon="doc-new"
-                :disabled="saveStatus == 'disabled'"
-                class=""
-                @click.prevent="saveTemplate"
-                >{{ __('Save Changes') }}</gl-button
-            >
-            <gl-button
-                v-show="saveDraftStatus != 'hidden'"
-                data-testid="save-draft-btn"
-                title="Save Changes"
-                :aria-label="__('Save Changes')"
-                type="button"
-                icon="doc-new"
-                :disabled="saveDraftStatus == 'disabled'"
-                
-                @click.prevent="saveDraft"
-                >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}</gl-button
-            >
+            <el-tooltip :disabled="!saveTooltip">
+                <template #content>
+                    {{saveTooltip}}
+                </template>
+                <div>
+                <gl-button
+                    v-if="saveStatus != 'hidden'"
+                    data-testid="save-template-btn"
+                    :title="!saveTooltip && 'Save Changes'"
+                    :aria-label="__('Save Changes')"
+                    type="button"
+                    variant="confirm"
+                    icon="doc-new"
+                    :disabled="saveStatus == 'disabled'"
+                    class=""
+                    @click.prevent="saveTemplate"
+                    >{{ __('Save Changes') }}
+                </gl-button>
+
+                <gl-button
+                    v-if="saveDraftStatus != 'hidden'"
+                    data-testid="save-draft-btn"
+                    :title="!saveTooltip && 'Save Changes'"
+                    :aria-label="__('Save Changes')"
+                    type="button"
+                    icon="doc-new"
+                    :disabled="saveDraftStatus == 'disabled'"
+
+                    @click.prevent="saveDraft"
+                    >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}
+                </gl-button>
+                </div>
+            </el-tooltip>
 
             <gl-button
                 v-if="mergeRequest"

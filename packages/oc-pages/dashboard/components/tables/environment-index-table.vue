@@ -25,7 +25,7 @@ export default {
     data() {
         const fields = [
             {
-            key: 'environment',
+                key: 'environment',
                 label: 'Environment',
                 groupBy: (item) => item.environment.name
             },
