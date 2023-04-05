@@ -87,6 +87,34 @@ function execLoud(...args) {
   })
 }
 
+function login(username, password, impersonate) {
+  cy.visit(`/users/sign_in`).wait(100)
+  cy.url().then(url => {
+    if(username && password && url.endsWith('sign_in'))  {
+      cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(username)
+      cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(password)
+      cy.getInputOrTextarea(`[data-qa-selector="sign_in_button"]`).click()
+
+      if(impersonate) {
+        cy.visit(`/admin/users/${impersonate}`)
+        cy.get('[data-qa-selector="impersonate_user_link"]').click()
+        cy.url().should('not.contain', 'admin')
+
+        if(INTEGRATION_TEST_ARGS.dashboardRepo) {
+          cy.visit(`/${impersonate}/dashboard`)
+        }
+      }
+    }
+  })
+}
+
+function logout() {
+  cy.get('[data-qa-selector="stop_impersonation_link"]').click()
+  cy.get('[data-qa-selector="user_menu"]').click()
+  cy.get('[data-qa-selector="sign_out_link"]').click()
+  cy.url().should('include', 'sign_')
+}
+
 /*
  * Cypress 12.x
 function login(impersonateUser) {
@@ -139,4 +167,5 @@ Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
 Cypress.Commands.add('withStore', withStore)
 Cypress.Commands.add('getInputOrTextarea', getInputOrTextarea)
 Cypress.Commands.add('execLoud', execLoud)
-//Cypress.Commands.add('login', login)
+Cypress.Commands.add('login', login)
+Cypress.Commands.add('logout', logout)

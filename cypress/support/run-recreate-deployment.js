@@ -14,6 +14,7 @@ const GENERATE_SUBDOMAINS = Cypress.env('GENERATE_SUBDOMAINS')
 const USE_UNFURL_DNS = Cypress.env('USE_UNFURL_DNS')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const TEARDOWN = Cypress.env('TEARDOWN')
+const CLEAR_CACHE = Cypress.env('CLEAR_CACHE')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -113,6 +114,11 @@ Cypress.Commands.add('recreateDeployment', options => {
       projectPath = [REPOS_NAMESPACE, projectPath[projectPath.length - 1]]
       projectPath = projectPath.join('/')
     }
+
+    if(CLEAR_CACHE) {
+      cy.execLoud(`./scripts/src/clear-project-file-cache.js --project-path ${projectPath}`)
+    }
+
 
     cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
 
@@ -302,7 +308,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     } else if(shouldSave) {
       cy.get('[data-testid="save-draft-btn"]').click()
       cy.wait(BASE_TIMEOUT / 2)
-      cy.contains('Draft saved!').should('exist')
+      cy.get('.gl-alert.gl-alert-danger').should('not.exist')
     }
   })
 })
