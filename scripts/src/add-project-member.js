@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const {extractCsrf} = require("./shared/util.js")
 const axios = require('./shared/axios-instance.js')
 const FormData = require('form-data')
@@ -55,9 +57,26 @@ async function addProjectMember(o) {
     console.error(response)
     throw new Error(`Could not add ${username} to ${project}`)
   }
-
-
-
 } 
+
+async function main() {
+  const args = require('minimist')(process.argv.slice(2))
+  await addProjectMember({
+    accesslevel: args['access-level'] || 30,
+    ...args
+  })
+}
+
+async function tryMain() {
+  try {
+    await main()
+  } catch(e) {
+    console.error(e.message)
+  }
+}
+
+if(require.main == module) {
+  tryMain()
+}
 
 module.exports = addProjectMember
