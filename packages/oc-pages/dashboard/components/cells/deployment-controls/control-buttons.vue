@@ -110,7 +110,7 @@ export default {
     display: flex;
     align-items: center;
 }
-.control-button-container >>> .gl-button { width: 10em; padding: 0.2em 0;}
+.control-button-container >>> .gl-button { width: 10.5em; padding: 0.2em 0;}
 .control-button-container >>> .gl-new-dropdown-item-text-primary { display: flex; align-items: center; }
 .control-button-container >>> .gl-icon { margin-right: 0.25em; }
 .control-button-container >>> .disabled { opacity: 0.7; }

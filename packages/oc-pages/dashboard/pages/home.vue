@@ -63,6 +63,7 @@ export default {
             'totalDeploymentsCount',
             'environmentsCount',
             'applicationsCount',
+            'mergeRequests'
         ]),
         tableFields() {
             if(this.environmentsCount > 0 && this.applicationsCount == 0) {
@@ -77,6 +78,16 @@ export default {
                 result = this.getDashboardItems.filter(item => !!item.context?.deployment)
             }
             return result
+        },
+        totalDeploymentsSecondary() {
+            if(this.mergeRequests.length > 0) {
+                return {
+                    link: {name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'merge requests'}},
+                    text: `${this.mergeRequests.length} Merge Request${this.mergeRequests.length == 1? '': 's'}`
+                }
+            } else {
+                return {link: null, text: null}
+            }
         }
     },
 };
@@ -95,14 +106,14 @@ export default {
                     s="Application" 
                     p="Applications" 
                     class="qcard1"
-                    create-link="/explore/blueprints" />
+                    secondary-link="/explore/blueprints" />
                 <quantity-card 
                     :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                     :count="environmentsCount"
                     s="Environment"
                     p="Environments"
                     class="qcard2"
-                    :create-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
+                    :secondary-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
             </div>
             <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card
@@ -111,14 +122,18 @@ export default {
                     s="Running Deployment"
                     p="Running Deployments"
                     class="qcard3"
-                    create-link="/explore/blueprints" />
+                    secondary-link="/explore/blueprints" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
                     :count="totalDeploymentsCount"
                     s="Total Deployment"
                     p="Total Deployments"
-                    class="qcard4" />
+                    class="qcard4"
+                    :secondary-link="totalDeploymentsSecondary.link"
+                    :secondary-link-text="totalDeploymentsSecondary.text"
+                    :secondary-link-requires-edit="false"
+                 />
             </div>
         </div>
     </div>

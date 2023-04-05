@@ -13,6 +13,7 @@ import Vue from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
+import MergeRequestsTable from './merge-requests-table.vue'
 
 
 
@@ -48,6 +49,10 @@ const tabFilters = [
         filter(item) { return item.isDraft }
     },
     {
+        title: 'Merge Requests',
+        filter(item) { return false }
+    },
+    {
         title: 'Failed',
         filter(item) {
             return (
@@ -79,7 +84,8 @@ export default {
         GlFormInput,
         GlFormGroup,
         DeploymentStatusIcon,
-        DashboardRouterLink
+        DashboardRouterLink,
+        MergeRequestsTable
     },
     props: {
         items: {
@@ -107,7 +113,7 @@ export default {
         const glDark = document.querySelector('body.gl-dark') // not getting gl dark for some reason on this component
         const self = this
         const fields = [
-            {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
+            {key: 'deployment', groupBy: deploymentGroupBy, label: 'Deployment'},
             {
                 key: 'environment',
                 label: 'Environments',
@@ -351,7 +357,8 @@ export default {
             'deploymentItemDirect',
             'deleteDeploymentPreventedBy',
             'undeployPreventedBy',
-            'hasCriticalErrors'
+            'hasCriticalErrors',
+            'mergeRequests'
         ]),
         intentToDeletePreventedBy() {
             if(this.intent != 'delete') return []
@@ -483,6 +490,8 @@ export default {
                 const counts = _.countBy(list, (item) => item.context.environment?.name + ':' + item.context.deployment?.name)
                 return Object.keys(counts).length
             })
+            result[tabFilters.findIndex(tf => tf.title == 'Merge Requests')] += this.mergeRequests.length
+            result[tabFilters.findIndex(tf => tf.title == 'All')] += this.mergeRequests.length
             return result
         },
         tableItems() {
@@ -516,6 +525,9 @@ export default {
             const loaded = this.getDeploymentTemplate?.name && this.getCurrentEnvironment?.name
 
             return matchingParams && loaded
+        },
+        showingMergeRequestsTab() {
+            return this.currentTab == tabFilters.findIndex(tf => tf.title == 'Merge Requests')
         }
     },
     watch: {
@@ -642,7 +654,7 @@ export default {
         <gl-tabs v-model="currentTab" v-if="useTabs">
             <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
         </gl-tabs>
-        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
+        <table-component v-show="!showingMergeRequestsTab" :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
                 <div class="ml-2" style="padding-left: 30px">
                     {{__('Deployment')}}
@@ -684,6 +696,9 @@ export default {
             </template>
 
         </table-component>
+        <p class="mt-5"/>
+        <h3 v-if="this.tab && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
+        <merge-requests-table v-show="(this.tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
     </div>
 
 </template>

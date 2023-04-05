@@ -45,7 +45,7 @@ export default {
 
   data() {
     return {
-      branch: 'main',
+      selfBranch: null,
       uiTimeout: null,
       createNodeResourceData: {},
       deleteNodeData: {},
@@ -110,7 +110,9 @@ export default {
       'editingDeployed',
       'deployTooltip',
       'hasCriticalErrors',
-      'userCanEdit'
+      'userCanEdit',
+      'getApplicationBlueprint',
+      'isAcknowledged'
     ]),
     
     deploymentDir() {
@@ -211,6 +213,23 @@ export default {
             text: __('Cancel'),
         };
     },
+
+    saveTooltip() {
+      if(this.saveDraftStatus == 'enabled' && this.branch && this.branch != 'main') {
+        return 'Save a draft of the edits on this deployment blueprint and open a merge request.'
+      }
+      return null
+    },
+
+    branch: {
+      get() {
+        return this.selfBranch || this.$route.query.branch || 'main'
+      },
+
+      set(branch) {
+        this.selfBranch = branch
+      }
+    }
   },
 
   watch: {
@@ -346,7 +365,8 @@ export default {
       'fetchProject',
       'deployInto',
       'createDeploymentPathPointer',
-      'createFlash'
+      'createFlash',
+      'acknowledge'
     ]),
 
     unloadHandler(e) {
@@ -380,19 +400,36 @@ export default {
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
 
-        if(!this.userCanEdit) {
-          const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
-          this.setCommitBranch(this.branch)
+        console.log(this.branch, this.userCanEdit)
 
-          const target = 'main'
-          const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+        if(this.branch == 'main') {
+          if(!this.userCanEdit) {
+            // computed setter
+            const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
+            this.setCommitBranch(this.branch)
 
-          const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened'})
+            const target = 'main'
+            const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
 
-          if(openedMR) {
-            this.mergeRequest = openedMR
+            const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened'})
+
+            if(openedMR) {
+              this.mergeRequest = openedMR
+            } else {
+              const key = `branch ${branch}`
+              if(!this.isAcknowledged(key)) {
+                this.createFlash(`You are working on a new branch "${branch}". After your changes are saved, a merge request will be created automatically so they can be merged back into main and deployed by a maintainer.`)
+              }
+              this.acknowledge(key)
+
+            }
           }
-
+        } else {
+          const key = `branch ${this.branch}`
+          if(!this.isAcknowledged(key)) {
+            this.createFlash(`You are working on an alternate branch "${this.branch}".`)
+          }
+          this.acknowledge(key)
         }
 
         const projectPath = this.project.globalVars.projectPath
@@ -458,10 +495,17 @@ export default {
             query.branch = this.branch
 
             if(!this.mergeRequest) {
+              const projectPath = this.project.globalVars.projectPath
               const branch = this.branch
               const target = 'main'
               const title = `[Draft] ${this.getDeploymentTemplate.title}`
-              const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+              const labels = [
+                this.$route.params.slug,
+                `environment:${this.$route.params.environment}`,
+                `application-blueprint-title:${this.getApplicationBlueprint.title}`,
+                `application-blueprint-project-path:${projectPath}`,
+                'unfurl-gui-mr'
+              ]
               const dest = window.location.origin + this.$router.resolve({...this.$route, query}).href
               const description = [
                   `[Edit Deployment Draft 🖊](${dest})`,
@@ -813,6 +857,7 @@ export default {
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
+            :save-tooltip="saveTooltip"
             :mergeRequest="mergeRequest"
             @saveDraft="debouncedTriggerSave('draft', true)"
             @saveTemplate="debouncedTriggerSave"

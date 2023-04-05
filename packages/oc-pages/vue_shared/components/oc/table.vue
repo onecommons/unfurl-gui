@@ -3,7 +3,8 @@ import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
 import { __, n__ } from '~/locale';
 
-function searchMatchingFunction(cellContent, searchKey) {
+function searchMatchingFunction(_cellContent, searchKey) {
+  const cellContent = typeof _cellContent == 'object'? JSON.stringify(_cellContent): _cellContent?.toString()
   if(!(cellContent && cellContent.toLowerCase)) return false;
   if(searchKey.length <= 2) {
     return cellContent.toLowerCase() == searchKey.toLowerCase();
@@ -340,17 +341,14 @@ export default {
             <slot name="empty" />
           </template>
           <template #head(selected)>
-            <span @click="toggleAll" class="control-cell primary-toggle">
-              <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
-              <gl-icon v-else title="Expand All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
-            </span>
+            <slot name="selected$head">
+                <span @click="toggleAll" class="control-cell primary-toggle">
+                  <gl-icon v-if="allExpanded()" title="Collapse All" v-gl-tooltip.hover name="chevron-down" style="margin: 0"/>
+                  <gl-icon v-else title="Expand All" v-gl-tooltip.hover name="chevron-right" style="margin: 0"/>
+                </span>
+            </slot>
           </template>
 
-          <!--template #head($menu)>
-          <span class="control-cell">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-three-dots-vertical" viewBox="0 0 16 16"> <path d="M9.5 13a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0zm0-5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/> </svg>
-          </span>
-        </template-->
 
         <template #head()=scope>
           <slot :name="scope.field.key + '$head'" v-bind="scope">
@@ -371,7 +369,7 @@ export default {
           <div class="table-body" :style="scope.field.tableBodyStyles" :class="{'expanded-row': scope.item.isChild(), 'filter-match': scope.item._filterIndex == scope.field.index}">
             <slot :name="scope.field.key + '$all'" v-bind="scope">
               <span class="collapsable" v-if="scope.item.childrenOfGroup(scope.field.key) > 1" @click="_ => toggleExpanded(scope.item.index, scope.field.index)">
-                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
+                <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1" />
                 <span v-if="scope.field.index != 0">
                   <gl-icon v-if="expandedAt(scope.item.index, scope.field.index)" name="chevron-down" class="accordion-cell" />
                   <gl-icon v-else name="chevron-right" class="accordion-cell" />
