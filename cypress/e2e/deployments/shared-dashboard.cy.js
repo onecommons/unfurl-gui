@@ -44,13 +44,16 @@ describe('Shared dashboard test', () => {
     cy.wait(BASE_TIMEOUT / 2)
     cy.get('[data-testid="merge-button"]').click()
     cy.contains('.detail-page-header-body', 'Merged').should('exist')
-    cy.wait(BASE_TIMEOUT / 2)
+    cy.wait(BASE_TIMEOUT) // this is stupidly slow for some reason
     cy.get('[data-qa-selector="description_content"]').within(() => {
       cy.contains('a', 'cy-mail-and-pg').click()
     })
     cy.wait(BASE_TIMEOUT / 2)
+    cy.get('[data-testid="deploy-button"]').should('be.disabled')
     cy.get('[data-testid="tab-inputs-self-hosted-postgresdb"]').click()
     cy.contains('button', 'Generate').click()
+
+    cy.wait(BASE_TIMEOUT / 2)
 
     cy.get('[data-testid="deploy-button"]').click()
     cy.wait(BASE_TIMEOUT / 2)
