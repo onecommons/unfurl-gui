@@ -56,6 +56,7 @@ export default {
             } else {
                 transitionTarget.style.marginTop = `-${transitionTarget.offsetHeight}px`
             }
+            this.tableSizingHack()
         },
         isUrl(value) {
             const regex = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi)
@@ -131,7 +132,7 @@ export default {
                                 <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
                                     <Status :status="property.status" :state="property.state" :size="14" display-text />
                                 </div>
-                                <div v-else style="width: 100%">
+                                <div v-else style="width: 100%; overflow: auto;">
                                     <div v-if="property.icon" class="icon-container">
                                         <detect-icon :size="14" :name="property.icon" />
                                     </div>

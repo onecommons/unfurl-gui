@@ -203,14 +203,16 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
     const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType, errors}
 
     if(includeDeployments) {
+        const deploymentErrors = []
         const deployments = data.deployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
 
         deployments.forEach(deployment => {
             if(deployment.error) {
-                errors.push({
-                    message: `@fetchEnvironments: An error occured while exporting a deployment ${deployment.deployment}`,
-                    context: deployment,
-                    severity: 'major'
+                deploymentErrors.push({
+                    detail: `Error occured while exporting a deployment`,
+                    deployment: deployment.deployment,
+                    url: deployment.deployment.replace(/^(..\/)*/, window.location.origin + '/'),
+                    error: deployment.error
                 })
                 return
             }
@@ -226,13 +228,28 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
 
                 localNormalize(deploymentObject, 'Deployment', deployment)
             } catch(e) {
-                errors.push({
-                    message: '@fetchEnvironments: Unexpected shape for deployment',
-                    context: e,
-                    severity: 'major'
+                deploymentErrors.push({
+                    deployment: Object.values(deployment.Deployment)[0].title,
+                    detail: 'Unexpected shape for deployment',
+                    error: e.message,
                 })
             }
         })
+        if(deploymentErrors.length > 0) {
+            let message = ''
+            if (deploymentErrors.length == 1) {
+                message = 'An error occurred while fetching deployments.'
+            } else {
+                message = `${deploymentErrors.length} errors occurred while fetching deployments.`
+            }
+
+            message += ` Unable to display ${deploymentErrors.map(de => de.deployment.split('/').pop()).join(', ')} due to errors.`
+            errors.push({
+                message,
+                context: deploymentErrors,
+                severity: 'major'
+            })
+        }
         result.deployments = deployments
     }
 
