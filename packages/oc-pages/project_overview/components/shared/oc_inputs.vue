@@ -2,6 +2,7 @@
 import _ from 'lodash';
 import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
+import Vue from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {Card as ElCard} from 'element-ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
@@ -429,7 +430,10 @@ export default {
       }
     }
     
-    form.onMount = () => {
+    form.onMount = async () => {
+      // we have to wait for the components to exist for formily to validate?
+      await fields()
+      await Vue.nextTick()
       this.validate()
     }
   }
