@@ -29,7 +29,7 @@ export default {
     },
     methods: {
         ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
-        ...mapMutations(['clearPreparedMutations']),
+        ...mapMutations(['clearPreparedMutations', 'pushMessage']),
         async mountJobsConsole() {
             this.consoleApp = await compatibilityMountJobConsole()
         },
@@ -49,8 +49,11 @@ export default {
             if(jobLogSection.content && jobLogSection.lineNumber > highestLineNumber) {
                 highestLineNumber = jobLogSection.lineNumber
                 for(const contentSection of jobLogSection.content) {
-                    //console.log(contentSection.text)
-                    //visit here
+                    if(contentSection.style == 'd-none') {
+                        try {
+                          this.pushMessage({...JSON.parse(contentSection.text), lineNumber: jobLogSection.lineNumber})
+                        } catch(e) {}
+                    }
                 }
             }
             else {
@@ -105,7 +108,6 @@ export default {
             }, time)
         },
         setConsoleHeight() {
-            console.log('setConsoleHeight')
             const consoleContainer = document.querySelector('#console-container')
             delete consoleContainer.style.maxHeight
             consoleContainer.style.height = (this.windowHeight - consoleContainer.getBoundingClientRect().y - BOTTOM_MARGIN) + 'px'
@@ -149,10 +151,6 @@ export default {
   max-height: 700px;
   min-height: 100px;
   overflow-y: auto;
-}
-
-#console-container >>> a {
-    pointer-events: none;
 }
 
 /*
