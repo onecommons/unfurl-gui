@@ -10,6 +10,7 @@ import {DetectIcon, ErrorSmall} from 'oc_vue_shared/components/oc'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {token} from 'oc_vue_shared/compat.js'
 import {mapGetters, mapActions} from 'vuex'
+import {lookupKey} from 'oc_vue_shared/storage-keys'
 
 
 const LOCAL_DEV = 'Generic'
@@ -18,9 +19,17 @@ const CLUSTER_PROVIDER_NAMES = {
     'Google Cloud Platform': 'gcp',
     'Amazon Web Services': 'aws',
     'Digital Ocean': 'DigitalOcean',
+    'Azure': 'azure',
     'Kubernetes': 'k8s',
     [LOCAL_DEV]: ''
 }
+
+/*
+ * hide azure behind dev setting
+if(lookupKey('azureCloudProvider')) {
+    CLUSTER_PROVIDER_NAMES['Azure'] = 'azure'
+}
+*/
 
 // using this for the environments POST
 // if provider is set while creating an environment, it tries to redirect to the cluster page and fails

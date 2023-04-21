@@ -172,13 +172,13 @@ export default {
                     this.currentTab = 1
 
 
-                    const el = document.querySelector(lineNo.input)
+                    const el = document.querySelector(lineNo?.input)
                     if(el) {
                         window.scrollTo(0, document.body.scrollHeight)
                         window.requestAnimationFrame(() => {
                             el.scrollIntoView()
                         })
-                    } else {
+                    } else if(lineNo?.input) {
                         await sleep(100)
                         this.setTabToConsoleIfNeeded()
                     }

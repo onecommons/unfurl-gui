@@ -1,18 +1,19 @@
 <script>
 import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
 import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
-import {Card as ElCard, Input as ElInput, Button as ElButton} from 'element-ui'
+import {Card as ElCard, Button as ElButton} from 'element-ui'
 import ErrorSmall from './ErrorSmall.vue'
 import {mapGetters} from 'vuex'
+import ExperimentalSettingInput from './experimental-settings-indicator/experimental-settings-input.vue'
+
 export default {
     name: 'ExperimentalSettingIndicator',
-    components: {GlButton, GlIcon, GlModal, ElInput, ErrorSmall},
+    components: {GlButton, GlIcon, GlModal, ElCard, ElButton, ErrorSmall, ExperimentalSettingInput},
     data() {
         return {
             yPos: '0px',
             xPos: '0px',
             CONFIGURABLE_HIDDEN_OPTIONS,
-            valuesByKey: CONFIGURABLE_HIDDEN_OPTIONS.reduce((acc, option) => {acc[option.key] = lookupKey(option.key); return acc}, {}),
             changed: false
         }
     },
@@ -74,11 +75,10 @@ export default {
                     newQuery['dev-settings'] = null
                     this.$router.push({...this.$route, query: newQuery})
                 }
-                this.valuesByKey = CONFIGURABLE_HIDDEN_OPTIONS.reduce((acc, option) => {acc[option.key] = lookupKey(option.key); return acc}, {})
             }
         },
         indicateExperimentalSetting() {
-            return Object.values(this.valuesByKey).some(val => !!val)
+            return this.changed || this.CONFIGURABLE_HIDDEN_OPTIONS.some(o => !!lookupKey(o.key))
         }
     },
     watch: {
@@ -107,16 +107,14 @@ export default {
             v-model="modal"
         >
             <el-card class="settings-modal-body">
-                <el-input
-                    @input="v => {setLocalStorageKey(option.key, v); valuesByKey[option.key] = v; changed = true}"
+
+                <experimental-setting-input
                     v-for="option in CONFIGURABLE_HIDDEN_OPTIONS"
+                    @changed="changed = true"
                     :key="option.key"
-                    :value="valuesByKey[option.key]"
-                    :placeholder="option.placeholder"
-                    :type="option.type || 'text'"
-                >
-                    <template slot="prepend"><span style="font-size: 12px;" class="text-monospace">{{option.label}}</span></template>
-                </el-input>
+                    :option="option"
+                />
+
                 <error-small :condition="changed" message="Changes will be reflected after page refresh" />
 
                 <div class="d-flex justify-content-end mt-4">

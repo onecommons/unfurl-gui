@@ -29,7 +29,7 @@ const GL_ICON_MAPPINGS = {
 const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.googlecloudproject': 'GCP', 'google cloud platform': 'GCP',
     'unfurl.relationships.connectsto.k8scluster': 'K8s', 'kubernetes': 'K8s',
-    'unfurl.relationships.connectsto.azure': 'Azure', 'azure': 'Azure',
+    'unfurl.relationships.connectsto.azureaccount': 'Azure', 'unfurl.relationships.connectsto.azure': 'Azure', 'azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS', 'amazon web services': 'AWS',
     'unfurl.relationships.connectsto.digitalocean': 'DigitalOcean', 'digital ocean': 'DigitalOcean',
     gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
@@ -159,7 +159,8 @@ export default {
     height: 1em;
     position: absolute;
 }
-.gl-dark .custom-icon > img {
+
+.gl-dark .custom-icon > img:not([src$="no-invert"]) {
     filter: invert(1) hue-rotate(180deg);
 }
 </style>

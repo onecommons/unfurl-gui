@@ -78,6 +78,25 @@ function normalizeEnvName(_name) {
     return name
 }
 
+function concealSensitiveProperties(name, schema, props, envvarPrefix, pathComponents=[], env={}) {
+    const _pathComponents = pathComponents.concat([name])
+    if(name == '$toscatype') return
+
+    if(schema.type == 'object') {
+        const innerProps = props[name]
+        Object.entries(schema.properties).forEach(([name, schema]) => {
+            concealSensitiveProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)
+        })
+    } else if(schema.sensitive) {
+        const envKey = `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')
+        env[envKey] = props[name]
+        props[name] = {[SECRET_DIRECTIVE]: envKey}
+    }
+
+    return env
+}
+
+
 let Serializers
 Serializers = {
     DeploymentEnvironment(env, state) {
@@ -214,15 +233,16 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(data?.data?.errors?.length) throw new Error(data.data.errors)
 }
 
-export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, isSensitive}) {
+export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, inputsSchema}) {
     return function(accumulator) {
-        let _propertyValue = propertyValue
-        let env
-        if(isSensitive) {
-            const envname = normalizeEnvName(`${templateName}__${propertyName}`)
-            env = {[envname]: propertyValue}
-            _propertyValue = {[SECRET_DIRECTIVE]: envname}
-        }
+        let _propertyValue = _.cloneDeep(propertyValue)
+        const schemaFor = inputsSchema.properties[propertyName]
+        const envvarPrefix = templateName
+
+        const props = {[propertyName]: _propertyValue}
+        const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+        _propertyValue = props[propertyName]
+
         const patch = accumulator['DeploymentEnvironment'][environmentName]
         let instance = Array.isArray(patch.instances) ?
             patch.instances.find(i => i.name == templateName) :
@@ -233,7 +253,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
                 patch.connections.find(i => i.name == templateName) :
                 patch.connections[templateName]
         }
-        const property = instance.properties.find(p => p.name == propertyName)
+        const property = instance.properties.find(p => p.name == (propertyName))
         if(property) {
             property.value = _propertyValue
         } else {
@@ -251,16 +271,6 @@ export function createEnvironmentInstance({type, name, title, description, depen
             properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
-        /*
-        const dependencies = resourceType?.requirements?.map(req => ({
-            constraint: req,
-            match: null,
-            target: null,
-            name: req.name,
-            __typename: 'Dependency'
-        })) || []
-        */
-
         const template = {
             type: typeof(type) == 'string'? type: type.name,
             name,
@@ -272,19 +282,20 @@ export function createEnvironmentInstance({type, name, title, description, depen
         }
 
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        if(! Array.isArray(patch.instances)) {
-            patch.instances = []
+
+        if(! patch.instances) {
+            patch.instances = {}
         }
+
         if(dependentName) {
-            const dependent = patch.instances.find(rt => rt.name == dependentName)
+            const dependent = patch.instances[dependentName]
             const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
             if(dependency) {
                 dependency.match = template.name
             }
         }
 
-        patch.instances.push(template)
-
+        patch.instances[template.name] = template
 
         return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
     }
@@ -311,15 +322,17 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
     }
 }
 
-export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, isSensitive, deploymentName}) {
+// TODO refactor to share implementation with updatePropertyInInstance
+export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, deploymentName, inputsSchema}) {
     return function(accumulator) {
-        let _propertyValue = propertyValue
-        let env
-        if(isSensitive) {
-            const envname = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
-            env = {[envname]: propertyValue}
-            _propertyValue = {[SECRET_DIRECTIVE]: envname}
-        }
+        let _propertyValue = _.cloneDeep(propertyValue)
+        const schemaFor = inputsSchema.properties[propertyName]
+        const envvarPrefix = `${deploymentName}__${templateName}`
+
+        const props = {[propertyName]: _propertyValue}
+        const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+        _propertyValue = props[propertyName]
+
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
         property.value = _propertyValue

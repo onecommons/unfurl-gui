@@ -13,7 +13,7 @@ export function generateCardId(name) {
 
 const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
 const AWS = 'unfurl.relationships.ConnectsTo.AWSAccount'
-const Azure = 'unfurl.relationships.ConnectsTo.AzureAccount'
+const Azure = 'unfurl.relationships.ConnectsTo.Azure'
 const K8s = 'unfurl.relationships.ConnectsTo.K8sCluster'
 const DigitalOcean = 'unfurl.relationships.ConnectsTo.DigitalOcean'
 const CLOUD_PROVIDER_ALIASES = {

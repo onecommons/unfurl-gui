@@ -11,7 +11,8 @@ export const HIDDEN_OPTION_KEYS = {
     preserveImportedVuexState: 'preserveImportedVuexState',
     defaultSeverityLevel: 'defaultSeverityLevel',
     defaultNamespace: 'defaultNamespace',
-    manualIncrementalDeploy: 'manualIncrementalDeploy'
+    manualIncrementalDeploy: 'manualIncrementalDeploy',
+    azureCloudProvider: 'azureCloudProvider',
 }
 
 export const CONFIGURABLE_HIDDEN_OPTIONS = [
@@ -23,7 +24,8 @@ export const CONFIGURABLE_HIDDEN_OPTIONS = [
     { key: 'preserveImportedVuexState', label: "Load Vuex from file onreload", placeholder: 'false' },
     { key: 'defaultSeverityLevel', label: "Show Errors of at least X Severity", placeholder: 'minor, [major], critical' },
     { key: 'defaultNamespace', label: "Use namespace instead of username" },
-    { key: 'manualIncrementalDeploy', label: 'Allow manual incremental deploy', placeholder: false }
+    { key: 'manualIncrementalDeploy', label: 'Allow manual incremental deploy', placeholder: 'false' },
+    { key: 'azureCloudProvider', label: 'Show Azure as a cloud provider', placeholder: 'false' },
 ]
 
 function isTruthyStorageValue(value) {

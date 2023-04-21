@@ -33,7 +33,7 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                 for(const _key in env) {
                     let key = _key.startsWith('$')? _key.slice(1) : _key
                     if(! /^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(key)) {
-                        key = `_` + key.split('').map(c => c.charCodeAt(0).toString(16)).join('')
+                        throw new Error(`Environment variable name does not match "^[a-zA-Z_]+[a-zA-Z0-9_]*$".  Received ${_key}`)
                     }
 
                     let secret_value = env[_key]
@@ -44,15 +44,18 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                         secret_value = data.value || data.secret_value
                     }
 
-                    envPatch.push({
-                        key,
-                        secret_value,
-                        environment_scope: environmentScope,
-                        variable_type: 'env_var',
-                        masked: secret_value.length >= 8 && !secret_value.includes('\n'),
-                        protected: false,
-                        ...data
-                    })
+                    if(secret_value) {
+                        envPatch.push({
+                            key,
+                            secret_value,
+                            environment_scope: environmentScope,
+                            variable_type: 'env_var',
+                            masked: secret_value.length >= 8 && !secret_value.includes('\n'),
+                            protected: false,
+                            ...data
+                        })
+                    }
+
                 }
 
                 if(window.gon.unfurl_gui) {
