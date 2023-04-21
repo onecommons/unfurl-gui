@@ -25,18 +25,15 @@ const mutations = {
         }
     },
 
-    setInputValidStatus(state, {card, input, status}) {
-        const byCard = state.inputValidationStatus[card.name] || {};
-        const inputName = input.name || input.title
-        if(status)
-            byCard[inputName] = true;
-        else
-            delete byCard[inputName];
-
-        state.inputValidationStatus = {...state.inputValidationStatus, [card.name]: byCard};
-    },
-    setCardInputValidStatus(state, {card, status}) {
-        Vue.set(state.inputValidationStatus, card.name, status)
+    // TODO account for duplicate or enumerated properties
+    setInputValidStatus(state, {card, path, status}) {
+        const cardName = card?.name || card
+        if(!state.inputValidationStatus[cardName]) {
+            Vue.set(state.inputValidationStatus, cardName, {[path]: status})
+        }
+        else {
+            Vue.set(state.inputValidationStatus[card?.name || card], path, status)
+        }
     },
 
     setAvailableResourceTypes(state, resourceTypes) {
@@ -103,14 +100,14 @@ const mutations = {
         state.context = context
     },
 
-    templateUpdateProperty(state, {templateName, propertyName, propertyValue}) {
+    templateUpdateProperty(state, {templateName, propertyName, propertyValue, nestedPropName}) {
         const template = state.resourceTemplates[templateName]
-        let property = template.properties.find(prop => prop.name == propertyName)
+        let property = template.properties.find(prop => prop.name == (nestedPropName || propertyName))
         if(property) {
             property.value = propertyValue
         } else {
             console.warn(`[OC] Updated a property "${propertyName}" with ${JSON.stringify(propertyValue)}.  This property was not found in the schema`)
-            template.properties.push({name: propertyName, value: propertyValue})
+            template.properties.push({name: (nestedPropName || propertyName), value: propertyValue})
         }
         Vue.set(state.resourceTemplates, templateName, template)
     },
@@ -474,12 +471,12 @@ const actions = {
             throw new Error(err.message);
         }
     },
-    updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, isSensitive, debounce, nestedPropName}) {
+    updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, debounce, nestedPropName}) {
         if(debounce) {
             const handle = setTimeout(() => {
                 dispatch(
                     'updateProperty',
-                    {deploymentName, templateName, propertyName, propertyValue, isSensitive, nestedPropName}
+                    {deploymentName, templateName, propertyName, propertyValue, nestedPropName}
                 )
             }, debounce)
             dispatch('updateTimeout', {deploymentName, templateName, propertyName, handle})
@@ -497,18 +494,20 @@ const actions = {
             update.propertyValue = {...templatePropertyValue, [propertyName]: propertyValue}
         }
 
+        const inputsSchema = getters.resourceTemplateInputsSchema(templateName)
+
         if(_.isEqual(templatePropertyValue ?? null, update.propertyValue ?? null)) return
 
-        commit('templateUpdateProperty', {templateName, ...update})
+        commit('templateUpdateProperty', {templateName, ...update, nestedPropName})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, ...update, isSensitive})
+                updatePropertyInInstance({environmentName: state.lastFetchedFrom.environmentName, templateName, ...update, inputsSchema})
             )
         } else {
             commit(
                 'pushPreparedMutation',
-                updatePropertyInResourceTemplate({deploymentName, templateName, ...update, isSensitive})
+                updatePropertyInResourceTemplate({deploymentName, templateName, ...update, inputsSchema})
             )
         }
     },
@@ -533,7 +532,7 @@ const actions = {
             dispatch('updateTimeout', {key, handle})
             return
         }
-        commit('setCardInputValidStatus', {card, status})
+        commit('setInputValidStatus', {card, path: 'all', status})
     },
 
 };
@@ -783,7 +782,7 @@ const getters = {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
             if(!card?.properties?.length) return true
-            return (state.inputValidationStatus[card.name] || 'valid') == 'valid'
+            return (Object.values(state.inputValidationStatus[card.name] || {})).every(status => status == 'valid')
         };
     },
 

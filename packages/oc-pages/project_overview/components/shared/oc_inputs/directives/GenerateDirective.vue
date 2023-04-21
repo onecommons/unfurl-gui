@@ -15,11 +15,8 @@ export default {
     },
     computed: {
         ...mapGetters(['resolveResourceTypeFromAny']),
-        resourceType() {
-            return this.resolveResourceTypeFromAny(this.card.type)
-        },
         propertyDefault() {
-            return this.resourceType.inputsSchema.properties[this.property.name]?.default
+            return this.inputsSchema.properties[this.property.name]?.default
         },
         generated() {
             return tryResolveDirective(this.propertyDefault)

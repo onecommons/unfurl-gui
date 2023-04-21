@@ -698,8 +698,8 @@ export default {
 
         </table-component>
         <p class="mt-5"/>
-        <h3 v-if="this.tab && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
-        <merge-requests-table v-show="(this.tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
+        <h3 v-if="tabs && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
+        <merge-requests-table v-show="(tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
     </div>
 
 </template>

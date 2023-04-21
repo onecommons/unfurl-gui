@@ -102,7 +102,7 @@ export default {
                 {text: this.environment?.name, href: '#'}
             ]
         },
-        propviderProps() {
+        providerProps() {
             return mapCloudProviderProps.bind(this)({
                 ...this.$store.state.ci_variables,
                 ...this.getVariables(this.environment)
@@ -369,7 +369,7 @@ export default {
         <oc-properties-list
             :header="cloudProviderDisplayName"
             :containerStyle="{'font-size': '0.9em', ...width}"
-            :properties="propviderProps"
+            :properties="providerProps"
             v-if="!environment.primary_provider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
         >
             <template #header-text>

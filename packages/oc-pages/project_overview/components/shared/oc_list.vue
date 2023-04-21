@@ -1,12 +1,10 @@
 <script>
-import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
-import {DetectIcon} from 'oc_vue_shared/components/oc'
+import { GlTabs } from '@gitlab/ui';
 
 import OcInputs from './oc_inputs.vue'
-import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 import Dependency from './dependency.vue'
 import {getCustomInputComponent} from './oc_inputs'
 
@@ -135,7 +133,6 @@ export default {
             const titleMap = {}
             const sensitiveMap = {}
             const visibilityMap = {}
-            const resourceType = this.resolveResourceTypeFromAny(this._card.type)
             Object.entries(this.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title

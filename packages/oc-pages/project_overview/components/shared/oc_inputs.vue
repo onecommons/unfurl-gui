@@ -133,13 +133,14 @@ export default {
 
   methods: {
     ...mapMutations([
-      'pushPreparedMutation', 'setCardInputValidStatus', 'clientDisregardUncommitted'
+      'pushPreparedMutation', 'setInputValidStatus', 'clientDisregardUncommitted'
     ]),
     ...mapActions([
       'updateProperty'
     ]),
     async validate() {
       let status = 'valid'
+      let path
       try {
         // was using this because without the onMount => validate() setup validating individual fields did nothing
         // await this.form.validate()
@@ -149,6 +150,10 @@ export default {
           try { formField = this.form.fields[key] }
           catch(e) {}
           if (formField) {
+            path = key
+            if(this.nestedProp) {
+              path = `${this.nestedProp.name}.${path}`
+            }
             const {data, value} = formField
             if(value?.length === 0 && data.required && data.type == 'object' && data.additionalProperties?.required) {
               // skip validating empty required object
@@ -158,15 +163,20 @@ export default {
             if(formField.invalid) {
               status = 'error'
             }
+            this.updateFieldValidation(
+              path,
+              status
+            )
           }
         }
       } catch(e) {
         status = 'error'
+        console.error(e)
+        this.updateFieldValidation(
+          path || 'all',
+          status
+        )
       }
-      this.updateFieldValidation(
-        this.card, 
-        status
-      )
     },
     convertProperties(properties) {
       return _.mapValues(properties, (value, name) => {
@@ -189,7 +199,7 @@ export default {
           currentValue['x-decorator-props'].tooltip = {...getCustomTooltip(name), f: () => ({$store: this.$store, card: this.card})}
         }
         if(currentValue.default?._generate) {
-          currentValue['x-decorator-props'].addonAfter = {...getUiDirective('generate'), f: () => ({$store: this.$store, card: this.card, property: currentValue})}
+          currentValue['x-decorator-props'].addonAfter = {...getUiDirective('generate'), f: () => ({$store: this.$store, card: this.card, property: currentValue, inputsSchema: this.nestedProp || this.inputsSchema})}
         }
 
         currentValue.default = undefined
@@ -310,8 +320,9 @@ export default {
       });
     },
 
-    updateFieldValidation(field, status) {
-      this.setCardInputValidStatus({card: this.card, status})
+    updateFieldValidation(path, status) {
+      if(!path) return
+      this.setInputValidStatus({card: this.card, path, status})
     },
 
     triggerSave(field, value, disregardUncommitted) {
@@ -337,7 +348,7 @@ export default {
               }
             } 
           })
-          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive, nestedPropName: this.nestedProp?.name})
+          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
@@ -368,7 +379,6 @@ export default {
     },
 
     getMainInputs() {
-      const self = this
       const result = []
 
       const properties = this.card.properties || []
