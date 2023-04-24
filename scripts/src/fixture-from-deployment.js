@@ -28,7 +28,7 @@ function main() {
 
   const DeploymentPath = { [deployPath]: unfurlExport.DeploymentPath[deployPath]}
   const deployment = {
-    ...unfurlExport.deployments.find(dep => Object.values(dep.DeploymentTemplate)[0].name == deploymentName),
+    ...unfurlExport.deployments.find(dep => Object.values(dep.DeploymentTemplate || [[]])[0].name == deploymentName),
     DeploymentPath
   }
 

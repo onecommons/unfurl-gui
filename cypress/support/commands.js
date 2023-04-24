@@ -29,6 +29,7 @@
 import './undeploy' // should be imported before run-recreate-deployment
 import './run-recreate-deployment'
 import './create-aws-environment'
+import './create-az-environment'
 import './create-gcp-environment'
 import './create-digitalocean-environment'
 import './create-kubernetes-environment'
