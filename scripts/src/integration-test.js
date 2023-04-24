@@ -53,7 +53,7 @@ function transformEnvironmentVariables(key, value) {
 }
 
 const INTERNAL_TEST_VARIALBES = [
-  'OC_IMPERSONATE', 'DO_ENVIRONMENT_NAME', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', // always overriden
+  'OC_IMPERSONATE', 'DO_ENVIRONMENT_NAME', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', 'AZ_ENVIRONMENT_NAME', // always overriden
 ]
 const FORWARD_ENVIRONMENT_VARIABLES = [
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'forwarded-variables.json'), 'utf-8')),
@@ -130,9 +130,10 @@ async function main() {
   const AWS_ENVIRONMENT_NAME = identifierFromCurrentTime('aws').toLowerCase()
   const DO_ENVIRONMENT_NAME = identifierFromCurrentTime('do').toLowerCase()
   const K8S_ENVIRONMENT_NAME = identifierFromCurrentTime('k8s').toLowerCase()
+  const AZ_ENVIRONMENT_NAME = identifierFromCurrentTime('az').toLowerCase()
   const INTEGRATION_TEST_ARGS = JSON.stringify(parsedArgs)
 
-  let env = {OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS}
+  let env = {OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, AZ_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS}
 
   if(group) {
     env.DEFAULT_NAMESPACE = group

@@ -330,7 +330,7 @@ export default {
 
                 <oc-inputs @setInputLength="i => inputsLength = i" ref="inputs" v-else :card="_card" />
             </oc-tab>
-            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
+            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" :title-testid="`tab-${tab.name}-${_card.name}`" v-for="tab in inputTabs">
                 <oc-inputs :card="_card" :tab="tab.tab_title"/>
             </oc-tab>
             <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">

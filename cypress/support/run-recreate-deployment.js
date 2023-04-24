@@ -4,6 +4,7 @@ const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const K8S_ENVIRONMENT_NAME = Cypress.env('K8S_ENVIRONMENT_NAME')
 const DO_ENVIRONMENT_NAME = Cypress.env('DO_ENVIRONMENT_NAME')
+const AZ_ENVIRONMENT_NAME = Cypress.env('AZ_ENVIRONMENT_NAME')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
@@ -96,6 +97,16 @@ Cypress.Commands.add('recreateDeployment', options => {
         dnsZone = AWS_DNS_ZONE
         cy.whenEnvironmentAbsent(env, () => {
           cy.createK8SEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
+        })
+      } else if(AZ_ENVIRONMENT_NAME && dt.cloud == 'ConnectsTo.AzureEnvironment') {
+        env = AZ_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE // not a mistake
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createAzEnvironment({
             environmentName: env,
             shouldCreateExternalResource: true,
             shouldCreateDNS: !USE_UNFURL_DNS,
@@ -276,6 +287,20 @@ Cypress.Commands.add('recreateDeployment', options => {
     recreateTemplate(primary, PRIMARY)
 
     console.log(options)
+
+    // hack for azure credentials
+    if(env == AZ_ENVIRONMENT_NAME) {
+      cy.get('[data-testid^="tab-credentials"]').each($el => {
+        cy.wrap($el).click()
+        cy.wait(200)
+      })
+
+      cy.get('[data-testid$="admin_password"]').each($el => {
+        cy.wrap($el).type(pseudorandomPassword() + 'aA1')
+        cy.wait(200)
+      })
+    }
+
     if(typeof options.afterRecreateDeployment == 'function') options.afterRecreateDeployment()
 
     // formily oninput bug
