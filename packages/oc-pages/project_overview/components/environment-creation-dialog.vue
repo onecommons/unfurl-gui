@@ -9,7 +9,7 @@ import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider,
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/components/oc'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {token} from 'oc_vue_shared/compat.js'
-import {mapGetters, mapActions} from 'vuex'
+import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
 
 
@@ -71,7 +71,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders']),
+        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders', 'hasCriticalErrors']),
         environmentsList() {
             const result = Object.keys(CLUSTER_PROVIDER_NAMES)
             
@@ -135,23 +135,40 @@ export default {
     },
     methods: {
         ...mapActions(['environmentFromProvider']),
+        ...mapMutations(['createError']),
 
         async createEnvironmentWithoutCluster(instances={}) {
-          await postGitlabEnvironmentForm();
-          const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
-              name: 'primary_provider', 
-              type: this.currentType,
-              __typename: 'ResourceTemplate'
-          } : undefined
+            const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
+                name: 'primary_provider',
+                type: this.currentType,
+                __typename: 'ResourceTemplate'
+            } : undefined
 
-          await initUnfurlEnvironment(
-            this.getHomeProjectPath,
-            {
-              name: slugify(this.environmentName),
-              primary_provider,
-              instances
+            try {
+                await initUnfurlEnvironment(
+                    this.getHomeProjectPath,
+                    {
+                        name: slugify(this.environmentName),
+                        primary_provider,
+                        instances
+                    }
+                )
+            } catch(e) {
+                this.createError({
+                    message: `@createEnvironmentWithoutCluster: ${e.message}`,
+                    context: {
+                        primary_provider,
+                        instances,
+                        name: slugify(this.environmentName)
+                    },
+                    severity: 'critical',
+                })
+
+                return
             }
-          )
+
+            await postGitlabEnvironmentForm();
+
         },
 
         async beginEnvironmentCreation(_redirectTarget) {
@@ -189,6 +206,7 @@ export default {
                     }
                 }
                 await this.createEnvironmentWithoutCluster(instances)
+                if(this.hasCriticalErrors) return
                 sessionStorage['redirectOnProviderSaved'] = redirectTarget
                 if(provider) {
                   window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
