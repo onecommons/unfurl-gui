@@ -82,7 +82,8 @@ function concealSensitiveProperties(name, schema, props, envvarPrefix, pathCompo
     const _pathComponents = pathComponents.concat([name])
     if(name == '$toscatype') return
 
-    if(schema.type == 'object') {
+    // this doesn't currently account for additional properties
+    if(schema.type == 'object' && schema.properties) {
         const innerProps = props[name]
         Object.entries(schema.properties).forEach(([name, schema]) => {
             concealSensitiveProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)

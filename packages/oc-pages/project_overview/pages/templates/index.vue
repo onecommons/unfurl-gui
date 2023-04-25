@@ -547,6 +547,7 @@ export default {
           return !this.hasCriticalErrors;
         }
       } catch (e) {
+        console.error(e)
         this.createError({
             message: `An unexpected error occurred while saving (${e.message})`,
             context: e.message,
