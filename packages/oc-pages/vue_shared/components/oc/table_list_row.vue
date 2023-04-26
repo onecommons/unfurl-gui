@@ -2,6 +2,7 @@
 import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
 import { bus } from 'oc_vue_shared/bus';
 import { mapGetters } from 'vuex';
+import { MarkdownView } from 'oc_vue_shared/components/oc'
 
 import { __ } from '~/locale';
 
@@ -10,7 +11,8 @@ export default {
     name: "TableListRow",
     components: {
         GlIcon,
-        GlButton
+        GlButton,
+        MarkdownView
     },
     directives: {
         GlModal: GlModalDirective,
@@ -59,7 +61,7 @@ export default {
                     <span class=" title">{{ item.title || item.name }}</span>
                 </div>
                 <div class="table-section oc-table-section section-wrap text-truncate section-40">
-                    <div class="light-gray">{{ item.description }}</div>
+                    <div class="light-gray"><markdown-view :content="item.description" /></div>
                 </div>
 
                 <div class="table-section oc-table-section section-wrap text-truncate section-15">

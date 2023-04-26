@@ -7,6 +7,7 @@ import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {Card as ElCard} from 'element-ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
 import {FakePassword, getCustomTooltip, getUiDirective} from './oc_inputs'
+import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
 
 
 const ComponentMap = {
@@ -439,18 +440,20 @@ export default {
         this.triggerSave(input, input.value ?? input.initialValue, true)
       }
     }
+    const container = this.$refs.container
     
     form.onMount = async () => {
       // we have to wait for the components to exist for formily to validate?
       await fields()
       await Vue.nextTick()
+      container.$el.querySelectorAll('.formily-element-form-item-extra').forEach(el => el.innerHTML = parseMarkdown(el.textContent))
       this.validate()
     }
   }
 }
 </script>
 <template>
-<el-card v-if="!card.properties.length == 0" class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+<el-card ref="container" v-if="!card.properties.length == 0" class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
   <FormProvider v-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
