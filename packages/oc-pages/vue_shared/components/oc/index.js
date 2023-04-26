@@ -17,6 +17,7 @@ export {default as LocalDeploy} from 'oc_vue_shared/components/oc/local-deploy.v
 export {default as CodeClipboard} from 'oc_vue_shared/components/oc/code-clipboard.vue'
 export {default as UnfurlGuiErrors} from 'oc_vue_shared/components/oc/ufgui-errors.vue'
 export {default as ExperimentalSettingsIndicator} from 'oc_vue_shared/components/oc/experimental-settings-indicator.vue'
+export {default as MarkdownView} from 'oc_vue_shared/components/oc/markdown-view.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error.js'
