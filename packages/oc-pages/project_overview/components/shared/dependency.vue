@@ -5,6 +5,9 @@ import {mapGetters, mapActions} from 'vuex'
 import {bus} from 'oc_vue_shared/bus'
 import { __ } from '~/locale';
 
+// webpack failing to import from oc_vue_shared/components/oc on initial load
+import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
+
 // TODO clean up dependency vs requirement in here!
 
 export default {
@@ -29,6 +32,7 @@ export default {
         GlButton,
         DetectIcon,
         StatusIcon,
+        MarkdownView,
     },
     computed: {
         ...mapGetters([
@@ -155,8 +159,9 @@ export default {
                     <span class="oc_requirement_title">{{ dependencyConstraint.title }}</span>
                 </div>
                 <div class="oc_requirement_description">
-                    {{ dependencyConstraint.description}}
+                    <markdown-view :content="dependencyConstraint.description" />
                 </div>
+
             </div>
             <div v-if="isMobileLayout && !requirementFilled" class="ml-2 mr-2 validation">
                 <detect-icon
@@ -273,7 +278,8 @@ export default {
     color: rgba(255, 255, 255) !important;
 }
 .oc_requirement_description {
-    color: #666666
+    color: #666666;
+    height: 1em; /* handle markdown interpreted as paragraph */
 }
 
 .gl-dark .oc_requirement_description{

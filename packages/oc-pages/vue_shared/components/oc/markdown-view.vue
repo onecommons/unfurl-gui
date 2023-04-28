@@ -23,7 +23,12 @@ export default {
 </template>
 <style scoped>
     div {
-        display: content;
+        display: contents;
+    }
+
+    /* TODO add a class override this */
+    div >>> p {
+        margin-bottom: 0;
     }
 </style>
 
