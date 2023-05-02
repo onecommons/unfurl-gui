@@ -234,6 +234,7 @@ export default {
 
             switch(intent) {
                 case 'rename':
+                    if(deployment.title == this.newDeploymentTitle) return
                     await this.renameDeployment({deploymentName: deployment.name, environmentName: environment.name, newTitle: this.newDeploymentTitle})
                     if(! this.hasCriticalErrors) window.location.reload()
                     return

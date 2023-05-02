@@ -356,6 +356,8 @@ const actions = {
         const deployment = Object.values(deploymentDict.Deployment)[0], deploymentTemplate = Object.values(deploymentDict.DeploymentTemplate)[0]
         const deploymentDir = rootGetters.lookupDeployPath(deploymentName, environmentName)?.name
 
+        if(deployment.title == newTitle) return
+
         commit('setCommitMessage', `Rename ${deployment.title || deploymentName} to ${newTitle}`)
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath)
         commit('setUpdateType', 'deployment', {root: true})
