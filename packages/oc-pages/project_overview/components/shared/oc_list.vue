@@ -248,7 +248,10 @@ export default {
         },
         requirements() {
             try {
-                const requirements = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+                let requirements = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+                if(this._readonly) {
+                    requirements = requirements.filter(pairing => !!pairing.dependency?.match)
+                }
                 return requirements
             } catch(e) {
                 // catch for imported resources
@@ -257,7 +260,10 @@ export default {
         },
         extras() {
             try {
-                const extras = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+                let extras = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+                if(this._readonly) {
+                    extras = extras.filter(pairing => !!pairing.dependency?.match)
+                }
                 return extras
             } catch(e) {
                 // catch for imported resources
