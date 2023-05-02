@@ -23,6 +23,9 @@ export default {
     methods: {
         hasButton(id) { return this.controlButtons.includes(id) },
         hasDisabledButton(id) { return this.disabledButtons.includes(id) },
+        renameDeployment() {
+            this.$emit('renameDeployment')
+        },
         deleteDeployment() {
             this.$emit('deleteDeployment')
         },
@@ -100,6 +103,7 @@ export default {
     <component :is='component' v-if="hasButton('view-in-repository')" :href="viewInRepositoryLink" target="_blank"><gl-icon :size="16" name="file-tree" /> {{__('View in Repository')}}</component>
     <component :is='component' v-if="hasButton('inc-redeploy')" @click="incRedeploy"><gl-icon :size="16" name="repeat" /> {{__('Incremental Redeploy')}}</component>
     <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
+    <component :is='component' v-if="hasButton('rename-deployment')" @click="renameDeployment"><gl-icon :size="16" name="label" /> {{__('Rename Deployment')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>

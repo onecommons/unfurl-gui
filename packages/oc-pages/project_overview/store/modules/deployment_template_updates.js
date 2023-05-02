@@ -123,20 +123,22 @@ Serializers = {
         return Object.values(env.instances || {}).concat(Object.values(env.connections))
     },
     DeploymentTemplate(dt, state) {
-        // should we be serializing local templates?
-        const localResourceTemplates = dt?.ResourceTemplate
-        if(localResourceTemplates) {
-            for(const rt of Object.keys(localResourceTemplates)) {
-                if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
-                    delete localResourceTemplates[rt]
-                } else {
-                    // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
-                    Serializers.ResourceTemplate(localResourceTemplates[rt], state)
+        if(state.ResourceTemplate) {
+            // should we be serializing local templates?
+            const localResourceTemplates = dt?.ResourceTemplate
+            if(localResourceTemplates) {
+                for(const rt of Object.keys(localResourceTemplates)) {
+                    if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
+                        delete localResourceTemplates[rt]
+                    } else {
+                        // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
+                        Serializers.ResourceTemplate(localResourceTemplates[rt], state)
+                    }
                 }
             }
-        }
 
-        dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
+            dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
+        }
     },
     // TODO unit test
     ResourceTemplate(rt) {

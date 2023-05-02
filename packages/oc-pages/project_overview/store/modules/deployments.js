@@ -350,6 +350,34 @@ const actions = {
         await dispatch('commitPreparedMutations')
     },
 
+    async renameDeployment({getters, commit, rootGetters, dispatch}, {deploymentName, environmentName, newTitle}) {
+        const deploymentDict = getters.getDeploymentDictionary(deploymentName, environmentName)
+
+        const deployment = Object.values(deploymentDict.Deployment)[0], deploymentTemplate = Object.values(deploymentDict.DeploymentTemplate)[0]
+        const deploymentDir = rootGetters.lookupDeployPath(deploymentName, environmentName)?.name
+
+        commit('setCommitMessage', `Rename ${deployment.title || deploymentName} to ${newTitle}`)
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath)
+        commit('setUpdateType', 'deployment', {root: true})
+        commit('setUpdateObjectPath', deploymentDir, {root: true})
+
+        const updateTitleInDeployment = () => [{
+            typename: 'Deployment',
+            patch: {__typename: 'Deployment', ...deployment, title: newTitle},
+            target: deploymentName
+        }]
+
+        const updateTitleInDeploymentTemplate = () => [{
+            typename: 'DeploymentTemplate',
+            patch: {__typename: 'DeploymentTemplate', ...deploymentTemplate, title: newTitle},
+            target: deploymentName
+        }]
+
+        commit('pushPreparedMutation', updateTitleInDeployment, {root: true})
+        commit('pushPreparedMutation', updateTitleInDeploymentTemplate, {root: true})
+
+        await dispatch('commitPreparedMutations')
+    }
 };
 const getters = {
     getDeploymentDictionary(state) {

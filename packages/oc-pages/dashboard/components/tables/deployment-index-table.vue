@@ -158,6 +158,7 @@ export default {
             'undeployFrom',
             'cloneDeployment',
             'addUrlPoll',
+            'renameDeployment'
         ]),
         ...mapMutations(['createError']),
         async deploy() {
@@ -232,6 +233,10 @@ export default {
             await Vue.nextTick() // wait until modal is closed before doing anything
 
             switch(intent) {
+                case 'rename':
+                    await this.renameDeployment({deploymentName: deployment.name, environmentName: environment.name, newTitle: this.newDeploymentTitle})
+                    if(! this.hasCriticalErrors) window.location.reload()
+                    return
                 case 'undeploy':
                     this.undeploy()
                     return
@@ -275,6 +280,11 @@ export default {
                     return
 
             }
+        },
+        onIntentToRename(deployment, environment) {
+            this.intent = 'rename'
+            this.target = {deployment, environment}
+            this.newDeploymentTitle = deployment.title
         },
         onIntentToDelete(deployment, environment) {
             this.intent = 'delete'
@@ -430,17 +440,14 @@ export default {
                     } else {
                         return `${targetTitle} can't be safely torn down yet.`
                     }
-                case 'deploy':
-                    return `Deploy ${targetTitle}?`
-                case 'clone':
-                    return `Clone ${targetTitle}?`
                 case 'localDeploy':
                     return `Deploy ${targetTitle} locally with Unfurl`
                 case 'incRedeploy':
                     return `Force an update of ${targetTitle}?`
                 case 'edit':
                     return `Edit deployment '${targetTitle}'?`
-                default: return ''
+                default:
+                    return `${this.intent.toString().slice(0, 1)?.toUpperCase()}${this.intent.toString().slice(1)} ${targetTitle}?`
             }
         },
         useTabs() {
@@ -622,10 +629,11 @@ export default {
                     <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
                 </ol>
             </div>
-            <div v-if="intent == 'clone'">
+            <div v-if="['clone', 'rename'].includes(intent)">
                 <gl-form-group class="m-3" label="New deployment title">
                     <gl-form-input v-model="newDeploymentTitle"/>
                     <environment-selection 
+                        v-if="intent == 'clone'"
                         class="mt-2"
                         v-model="cloneTargetEnvironment"
                         :provider="target.environment.primary_provider.type"
@@ -693,7 +701,7 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" @edit="onIntentToEdit" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls @renameDeployment="onIntentToRename" @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" @edit="onIntentToEdit" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>
