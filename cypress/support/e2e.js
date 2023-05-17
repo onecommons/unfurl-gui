@@ -64,7 +64,7 @@ before(() => {
     if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
       cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
       cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(PASSWORD)
-      cy.getInputOrTextarea(`[data-qa-selector="sign_in_button"]`).click()
+      cy.get(`[data-qa-selector="sign_in_button"]`).click()
 
       if(IMPERSONATE) {
         cy.visit(`/admin/users/${IMPERSONATE}`)
