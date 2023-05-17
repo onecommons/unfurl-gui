@@ -487,12 +487,30 @@ export default {
 }
 .formily-element-form-default > :global(*) {
   display: inline-flex !important;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 2.2em;
   flex-wrap: wrap;
 }
+
+.oc-inputs >>> .formily-element-form-item-label {
+  flex-basis: fit-content;
+}
+
+
 .oc-inputs >>> .formily-element-form-item-control {
-  position: relative;
+  flex-basis: content;
+  flex-grow: 0;
+}
+
+.oc-inputs >>> .formily-element-form-item-label-content {
+  /* required asterisk after label */
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.oc-inputs >>> .formily-element-form-item-asterisk {
+  /* required asterisk after label */
+  margin: 0 0 0 4px;
 }
 
 .gl-dark >>> .formily-element-form-item-label-content > label { 
@@ -515,7 +533,7 @@ export default {
 }
 
 .oc-inputs >>> .formily-element-form-item-control-content-component { 
-  width: 300px;
+  width: 300px !important;
   max-width: 300px;
 }
 @media only screen and (min-width: 430px) {
@@ -528,9 +546,14 @@ export default {
 
 .oc-inputs >>> .formily-element-form-item {
   font-size: 1rem !important;
+  position: relative;
 }
 .oc-inputs >>> .formily-element-form-item-control .formily-element-form-item-control-content .formily-element-form-item-addon-after {
   margin-left: 0;
 }
 
+/* hide the colon */
+.oc-inputs >>> .formily-element-form-item-colon {
+  opacity: 0;
+}
 </style>
