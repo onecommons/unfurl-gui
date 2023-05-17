@@ -20,7 +20,10 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath, getDashboardItems', 'windowHeight'])
+        ...mapGetters(['getHomeProjectPath, getDashboardItems', 'windowHeight']),
+        shouldScroll() {
+            return this.autoscroll && !this.$route.hash.match(/L\d+/)
+        }
     },
     watch: {
        windowHeight() {
@@ -69,42 +72,37 @@ export default {
             return highestLineNumber
         },
         pollLogState(time=30) {
-            
-            const self = this
+            clearTimeout(this.timeout)
             this.timeout = setTimeout(async () => {
-                const state = self.consoleApp?.$store?.state
+                const state = this.consoleApp?.$store?.state
                 let complete
                 if(!state || (complete = state.job.complete) === undefined) {
-                    self.pollLogState(time * 2)
+                    this.pollLogState(time * 2)
                     return
                 }
-                switch(self.initialCompletionState) {
+                switch(this.initialCompletionState) {
                     case 'complete':
                         break
                     case 'incomplete':
                         if(complete) {
-                            await self.onComplete()
+                            await this.onComplete()
                         }
                     case null:
-                        self.initialCompletionState = complete? 'complete': 'incomplete'
-                        if(self.initialCompletionState == 'incomplete') {
-                            self.$emit('active-deployment')
-                        }
-
+                        this.initialCompletionState = complete? 'complete': 'incomplete'
                         break
 
                 }
                 const consoleContainer = document.querySelector('#console-container')
                 for(const jobLogSection of state.jobLog) {
-                    const newConsoleLength = self.visitJobLogSection(jobLogSection, self.linesRead)
+                    const newConsoleLength = this.visitJobLogSection(jobLogSection, this.linesRead)
                     
-                    if(self.autoscroll && newConsoleLength > self.linesRead) {
+                    if(this.shouldScroll && newConsoleLength > this.linesRead) {
                         consoleContainer.scrollTop = consoleContainer.scrollHeight - consoleContainer.offsetHeight
                     }
-                    self.linesRead = newConsoleLength
+                    this.linesRead = newConsoleLength
                 }
 
-                self.pollLogState()
+                this.pollLogState()
             }, time)
         },
         setConsoleHeight() {
