@@ -429,7 +429,7 @@ export default {
   border-bottom-style: none;
 }
 
-.oc-table >>> th {
+.oc-table >>> table tr th {
   padding: 0.25em;
   white-space: nowrap;
   font-family: 'Noto Sans';
@@ -439,9 +439,10 @@ export default {
   border-bottom-style: solid;
   border-width: 1px;
   border-color: #DBDBDB;
+  vertical-align: middle;
 }
 
-.oc-table >>> td {
+.oc-table >>> table tr td {
   font-family: 'Noto Sans';
   white-space: nowrap;
   font-size: 0.8125em;
