@@ -17,7 +17,8 @@ import {
     SignIn,
     PageNotFound,
     UnfurlGuiErrors,
-    ExperimentalSettingsIndicator
+    ExperimentalSettingsIndicator,
+    MarkdownView
 } from './index'
 
 export const OcComponents = {
@@ -41,5 +42,6 @@ export const OcComponents = {
         app.component('oc-404', PageNotFound)
         app.component('oc-unfurl-gui-errors', UnfurlGuiErrors)
         app.component('oc-experimental-settings-indicator', ExperimentalSettingsIndicator)
+        app.component('oc-markdown-view', MarkdownView)
     }
 }

@@ -4,7 +4,6 @@ import OcListResourceIcon from './oc_list_resource/icon.vue';
 import { __ } from '~/locale';
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {mapGetters} from 'vuex';
-import { MarkdownView } from 'oc_vue_shared/components/oc'
 
 const CLOUD_PROVIDER_NAMES = {
     [lookupCloudProviderAlias('gcp')]: __('Google Cloud Platform'),
@@ -19,7 +18,6 @@ export default {
         GlFormRadio,
         GlIcon,
         OcListResourceIcon,
-        MarkdownView
     },
 
     data() {
@@ -107,7 +105,7 @@ export default {
             <!--div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
             <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div-->
             <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-display-flex gl-pl-2">
-                <span class=" oc_resource-type"><markdown-view :content="description(resource)" /></span>
+                <span class=" oc_resource-type"><oc-markdown-view :content="description(resource)" /></span>
             </div>
             <div v-if="resource.details_url" class="table-section oc-table-section section-wrap text-truncate section-10 text-center">
                 <span  class=" oc_resource-details">
