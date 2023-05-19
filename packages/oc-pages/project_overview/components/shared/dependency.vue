@@ -5,9 +5,6 @@ import {mapGetters, mapActions} from 'vuex'
 import {bus} from 'oc_vue_shared/bus'
 import { __ } from '~/locale';
 
-// webpack failing to import from oc_vue_shared/components/oc on initial load
-import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
-
 // TODO clean up dependency vs requirement in here!
 
 export default {
@@ -32,7 +29,6 @@ export default {
         GlButton,
         DetectIcon,
         StatusIcon,
-        MarkdownView,
     },
     computed: {
         ...mapGetters([
@@ -159,7 +155,7 @@ export default {
                     <span class="oc_requirement_title">{{ dependencyConstraint.title }}</span>
                 </div>
                 <div class="oc_requirement_description">
-                    <markdown-view :content="dependencyConstraint.description" />
+                    <oc-markdown-view v-if="dependencyConstraint" :content="dependencyConstraint.description" />
                 </div>
 
             </div>
