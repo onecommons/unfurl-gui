@@ -10,7 +10,7 @@ export default {
     name: "TableListRow",
     components: {
         GlIcon,
-        GlButton
+        GlButton,
     },
     directives: {
         GlModal: GlModalDirective,
@@ -59,7 +59,7 @@ export default {
                     <span class=" title">{{ item.title || item.name }}</span>
                 </div>
                 <div class="table-section oc-table-section section-wrap text-truncate section-40">
-                    <div class="light-gray">{{ item.description }}</div>
+                    <div class="light-gray"><oc-markdown-view :content="item.description" /></div>
                 </div>
 
                 <div class="table-section oc-table-section section-wrap text-truncate section-15">

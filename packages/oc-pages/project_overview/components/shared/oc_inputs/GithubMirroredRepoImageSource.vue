@@ -11,10 +11,6 @@ import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
 import GithubAuth from 'oc_vue_shared/components/oc/github-auth.vue'
 import ImportButton from 'oc_vue_shared/components/oc/import-button.vue'
 
-import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
-import {OcPropertiesList} from 'oc_vue_shared/oc-components'
-// webpack can't figure this out
-// import {OcPropertiesList, DeploymentScheduler} from 'oc_vue_shared/oc-components'
 
 
 import {connectedRepo} from './mixins'
@@ -30,7 +26,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'GithubMirroredRepoImageSource',
-    components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox, OcPropertiesList, DeploymentScheduler},
+    components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox},
     mixins: [connectedRepo],
     props: {
         card: Object,
@@ -143,7 +139,7 @@ export default {
         },
     },
     methods: {
-        ...mapActions(['updateProperty', 'updateCardInputValidStatus', 'generateProjectTokenIfNeeded']),
+        ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject', 'setUpstreamBranch']),
         async updateProjectInfo(projectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
@@ -269,7 +265,7 @@ export default {
             <h4>Existing properties:</h4>
 
             <oc-properties-list :properties="displayableCardProperties"/>
-            <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
+            <oc-deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </template>
         <div v-if="isExternalUser">
             <h3>Your profile must be set to developer mode to deploy with GitHub...</h3>
@@ -303,7 +299,7 @@ export default {
                     </div>
                 </div>
             </div>
-            <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
+            <oc-deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </div>
     </github-auth>
     </el-card>

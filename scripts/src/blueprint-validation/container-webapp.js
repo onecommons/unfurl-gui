@@ -5,7 +5,7 @@ const path = require('path')
 const fs = require('fs')
 const os = require('os')
 const {execSync} = require('child_process')
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
 axios.defaults.timeout = 40000
@@ -17,7 +17,6 @@ const jar = new CookieJar()
 axios.defaults.httpsAgent = new HttpsCookieAgent({
   jar,
   keepAlive: true,
-  rejectUnauthorized: false,
 })
 
 

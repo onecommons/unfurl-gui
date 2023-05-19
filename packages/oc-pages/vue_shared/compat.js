@@ -8,17 +8,32 @@
 
 // #!if false
 import csrf from '~/lib/utils/csrf'
-import mountJobsConsole from '~/jobs'
-import mountNotesApp from '~/notes'
+import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf-badge.js'
+let mountJobsConsole
+let mountNotesApp
 // #!endif
 
 export let token = ''
 export let compatibilityMountJobConsole = function() {}
 export let compatibilityMountNotesApp = function() {}
+export let compatibilityUnfurlBadgeUrlBuilder = function() {}
 
 // #!if false
 token = csrf.token
-compatibilityMountJobConsole = mountJobsConsole
-compatibilityMountNotesApp = mountNotesApp
+compatibilityUnfurlBadgeUrlBuilder = initUnfurlBadgeUrlBuilder
+compatibilityMountJobConsole = async function(...args) {
+    if(!mountJobsConsole) {
+        mountJobsConsole = import('~/jobs').then(module => module.default)
+    }
 
+    return (await mountJobsConsole)(...args)
+}
+
+compatibilityMountNotesApp = async function(...args) {
+    if(!mountNotesApp) {
+        mountNotesApp = import('~/notes').then(module => module.default)
+    }
+
+    return (await mountNotesApp)(...args)
+}
 // #!endif

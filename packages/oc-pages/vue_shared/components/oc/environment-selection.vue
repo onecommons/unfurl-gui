@@ -1,6 +1,6 @@
 <script>
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
-import {ErrorSmall, DetectIcon} from 'oc_vue_shared/oc-components'
+import {ErrorSmall, DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters} from 'vuex'
 import {fetchAvailableProviderDashboards} from 'oc_vue_shared/client_utils/environments'
 

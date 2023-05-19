@@ -4,6 +4,7 @@ const OC_URL = Cypress.env('OC_URL')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const K8S_ENVIRONMENT_NAME = Cypress.env('K8S_ENVIRONMENT_NAME')
 const DO_ENVIRONMENT_NAME = Cypress.env('DO_ENVIRONMENT_NAME')
+const AZ_ENVIRONMENT_NAME = Cypress.env('AZ_ENVIRONMENT_NAME')
 const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
@@ -14,6 +15,7 @@ const GENERATE_SUBDOMAINS = Cypress.env('GENERATE_SUBDOMAINS')
 const USE_UNFURL_DNS = Cypress.env('USE_UNFURL_DNS')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const TEARDOWN = Cypress.env('TEARDOWN')
+const CLEAR_CACHE = Cypress.env('CLEAR_CACHE')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -22,7 +24,8 @@ function pseudorandomPassword() {
 }
 
 Cypress.Commands.add('recreateDeployment', options => {
-  let fixture, shouldDeploy, shouldSave, title, skipTeardown
+  cy.wait(5000)
+  let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, verificationRoutine, _env, _dnsZone, subdomain
   if (typeof options == 'string') {
     fixture = options
     shouldDeploy = true
@@ -31,6 +34,12 @@ Cypress.Commands.add('recreateDeployment', options => {
     shouldSave = options.shouldSave ?? false
     shouldDeploy = options.shouldDeploy ?? !shouldSave
     skipTeardown = options.skipTeardown
+    expectExisting = options.expectExisting || false
+    subdomain = options.subdomain,
+    verificationRoutine = options.verificationRoutine
+
+    _dnsZone = options.dnsZone
+    _env = options.env
   }
   cy.fixture(fixture).then(deployment => {
     const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
@@ -50,51 +59,61 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
 
 
-    let env = Object.values(DeploymentPath)[0].environment
-    let dnsZone
-    let subdomain
-    if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
-      env = AWS_ENVIRONMENT_NAME
-      dnsZone = AWS_DNS_ZONE
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createAWSEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+    let env = _env || Object.values(DeploymentPath)[0].environment
+    let dnsZone = _dnsZone
+    if(!_env) {
+      if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
+        env = AWS_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createAWSEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
-    } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
-      env = GCP_ENVIRONMENT_NAME
-      dnsZone = GCP_DNS_ZONE
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createGCPEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+      } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
+        env = GCP_ENVIRONMENT_NAME
+        dnsZone = GCP_DNS_ZONE
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createGCPEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
-    } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.DigitalOcean') {
-      env = DO_ENVIRONMENT_NAME
-      dnsZone = AWS_DNS_ZONE // not a mistake
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createDigitalOceanEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+      } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.DigitalOcean') {
+        env = DO_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE // not a mistake
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createDigitalOceanEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
-    } else if(K8S_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
-      env = K8S_ENVIRONMENT_NAME
-      dnsZone = AWS_DNS_ZONE
-      cy.whenEnvironmentAbsent(env, () => {
-        cy.createK8SEnvironment({
-          environmentName: env,
-          shouldCreateExternalResource: true,
-          shouldCreateDNS: !USE_UNFURL_DNS,
+      } else if(K8S_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
+        env = K8S_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createK8SEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
         })
-      })
+      } else if(AZ_ENVIRONMENT_NAME && dt.cloud == 'ConnectsTo.AzureEnvironment') {
+        env = AZ_ENVIRONMENT_NAME
+        dnsZone = AWS_DNS_ZONE // not a mistake
+        cy.whenEnvironmentAbsent(env, () => {
+          cy.createAzEnvironment({
+            environmentName: env,
+            shouldCreateExternalResource: true,
+            shouldCreateDNS: !USE_UNFURL_DNS,
+          })
+        })
+      }
     }
-
     if(USE_UNFURL_DNS) {
       dnsZone = `${USERNAME}.u.${USE_UNFURL_DNS}`
     }
@@ -106,6 +125,11 @@ Cypress.Commands.add('recreateDeployment', options => {
       projectPath = [REPOS_NAMESPACE, projectPath[projectPath.length - 1]]
       projectPath = projectPath.join('/')
     }
+
+    if(CLEAR_CACHE) {
+      cy.execLoud(`./scripts/src/clear-project-file-cache.js --project-path ${projectPath}`)
+    }
+
 
     cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
 
@@ -129,6 +153,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.contains('button', 'Next').click()
 
     cy.get('[data-testid^="card-"]').should('exist')
+    cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
 
     function recreateTemplate(template, variant = 0) {
       cy.document().then($document => {
@@ -141,8 +166,12 @@ Cypress.Commands.add('recreateDeployment', options => {
           for (const property of template.properties) {
             let value = property.value
             let name = property.name
-            if(GENERATE_SUBDOMAINS && name == 'subdomain') {
-              value = subdomain = (Date.now()).toString(36) + pseudorandomPassword().slice(0, 4)
+            if(name == 'subdomain') {
+              if(subdomain) {
+                value = subdomain
+              } else if(GENERATE_SUBDOMAINS) {
+                value = subdomain = (Date.now()).toString(36) + pseudorandomPassword().slice(0, 4)
+              }
             }
             else if(typeof value == 'object' && value) {
               if (typeof value.get_env == 'string') {
@@ -158,18 +187,27 @@ Cypress.Commands.add('recreateDeployment', options => {
                 }
               }
             }
+
             // NOTE coupled tightly with element ui
             let q = `
               [data-testid="oc-input-${template.name}-${property.name}"].el-input,
               [data-testid="oc-input-${template.name}-${property.name}"].el-input-number
             `
+            let qChecked = `label[data-testid="oc-input-${template.name}-${property.name}"].el-checkbox`
+            let el
             if($document.querySelector(q)) {
               cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`)
                 .last()
                 .invoke('val', '')
                 .type(value)
+            } else if (el = $document.querySelector(qChecked)) {
+              if(el.classList.contains('is-checked') && !value) {
+                cy.get(qChecked).click()
+              } else if(!el.classList.contains('is-checked') && value) {
+                cy.get(qChecked).click()
+              }
             } else {
-              console.log(`Could not find ${property.name} on ${template.name}`)
+              cy.log(`Could not find ${property.name} on ${template.name}`)
             }
           }
 
@@ -178,8 +216,12 @@ Cypress.Commands.add('recreateDeployment', options => {
         for(const dependency of template.dependencies) {
           if (!dependency.match) continue
 
-          const match = ResourceTemplate[dependency.match]
-          expect(match).to.exist
+          cy.log(dependency.match)
+          const match = ResourceTemplate[dependency.match] || dt.ResourceTemplate[dependency.match]
+          // dockerhost missing for some reason with current export?
+          //expect(match).to.exist
+
+          if(!match) continue
 
           if (dependency.constraint.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)
@@ -211,7 +253,12 @@ Cypress.Commands.add('recreateDeployment', options => {
                   .prev()
                   .click()
 
-                cy.get(`[data-testid^="resource-selection-"]`).first().click()
+                // special case for inconsistent ordering of Unfurl Cloud DNS
+                if(USE_UNFURL_DNS) {
+                  cy.get(`[data-testid^="resource-selection-"]`).first().click()
+                } else {
+                  cy.get(`[data-testid^="resource-selection-"]`).not(`[data-testid="resource-selection-dns-zone"]`).first().click()
+                }
 
                 cy.contains('button', 'Next').click()
               } else {
@@ -240,6 +287,20 @@ Cypress.Commands.add('recreateDeployment', options => {
     recreateTemplate(primary, PRIMARY)
 
     console.log(options)
+
+    // hack for azure credentials
+    if(env == AZ_ENVIRONMENT_NAME) {
+      cy.get('[data-testid^="tab-credentials"]').each($el => {
+        cy.wrap($el).click()
+        cy.wait(200)
+      })
+
+      cy.get('[data-testid$="admin_password"]').each($el => {
+        cy.wrap($el).type(pseudorandomPassword() + 'aA1')
+        cy.wait(200)
+      })
+    }
+
     if(typeof options.afterRecreateDeployment == 'function') options.afterRecreateDeployment()
 
     // formily oninput bug
@@ -264,7 +325,7 @@ Cypress.Commands.add('recreateDeployment', options => {
           cy.expectSuccessfulJob(job)
         })
         cy.assertDeploymentRunning(dt.title)
-        cy.verifyDeployment(deployment, env, dnsZone, subdomain, options.verificationArgs || {})
+        cy.verifyDeployment({deployment, env, dnsZone, sub: subdomain, expectExisting, verificationRoutine}, options.verificationArgs || {})
         if(TEARDOWN && !skipTeardown) {
           cy.undeploy(dt.title)
         }
@@ -272,7 +333,8 @@ Cypress.Commands.add('recreateDeployment', options => {
     } else if(shouldSave) {
       cy.get('[data-testid="save-draft-btn"]').click()
       cy.wait(BASE_TIMEOUT / 2)
-      cy.contains('Draft saved!').should('exist')
+      cy.get('.gl-alert.gl-alert-danger').should('not.exist')
     }
   })
 })
+

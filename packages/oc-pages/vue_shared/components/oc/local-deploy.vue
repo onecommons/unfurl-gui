@@ -88,16 +88,13 @@ export default {
             return cloneProject(this._localCloneOptions)
         },
         localDeployInvocation() {
-            const projectName = this.getHomeProjectPath.split('/').pop()
             const deploymentName = this.deployment.name
-            const environmentName = this.environment.name
-            const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
-            return `unfurl deploy --commit ${deployPath} --use-environment ${environmentName}`
+            return `unfurl deploy --commit --push ${deploymentName}`
         },
         deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' }
     },
     methods: {
-        ...mapActions(['fetchEnvironmentVariables', 'deployInto'])
+        ...mapActions(['tryFetchEnvironmentVariables', 'deployInto'])
     },
     watch: {
         blueprintCredentials: {
@@ -127,7 +124,7 @@ export default {
 
                     const result = await this.deployInto(params)
 
-                    await this.fetchEnvironmentVariables({fullPath: this.getHomeProjectPath})
+                    await this.tryFetchEnvironmentVariables({fullPath: this.getHomeProjectPath})
 
                     this.gettingBlueprintCreds = false
                 }

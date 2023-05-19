@@ -3,21 +3,23 @@ import {mapGetters, mapActions} from 'vuex'
 import DeploymentResources from 'oc_vue_shared/components/oc/deployment-resources.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import ShareResourceToggle from '../components/share-resource-toggle.vue'
+import JobSummary from '../components/job-summary.vue'
 import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
-import {GlTabs} from '@gitlab/ui'
-import {OcTab} from 'oc_vue_shared/oc-components'
+import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
+import {OcTab} from 'oc_vue_shared/components/oc'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
 import {FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
+import Vue from 'vue'
 
 export default {
-    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle},
+    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle, GlLoadingIcon, JobSummary},
     data() {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
@@ -34,7 +36,11 @@ export default {
             'getDashboardItems',
             'isAcknowledged',
             'environmentResourceTypeDict',
-            'environmentsAreReady'
+            'environmentsAreReady',
+            'pollingStatus',
+            'formattedDeploymentEta',
+            'hasCriticalErrors',
+            'getJobSummary'
         ]),
         breadcrumbItems() {
             return  [
@@ -69,6 +75,9 @@ export default {
                     item.context.deployment.name == this.deploymentName
                 )
             })
+        },
+        showStartingUpStatus() {
+            return this.pollingStatus(this.deployment.name) == 'PENDING'
         }
     },
     watch: {
@@ -76,20 +85,35 @@ export default {
             if(this.deployment?.name && this?.environment.name) this.prepareView()
         },
         $route() {
-            if(this.$route.hash) {
-                if(this.currentTab == 1) {
+            const lineNo = this.$route.hash.match(/L\d+/)
+            if(this.$route.hash && !lineNo) {
+                if(this.currentTab > 0) {
                     this.currentTab = 0
                 }
                 this.$refs.deploymentResources.scrollDown(this.$route.hash, 500)
+            } else if(lineNo && this.currentTab == 2) {
+                this.setTabToConsoleIfNeeded()
             }
         },
         currentTab(tab) {
-            if(this.$route.hash && tab == 1){
-                this.$router.push({...this.$route, hash: undefined})
+            let hash = this.$route.hash
+            let query = this.$route.query
+            const lineNo = hash.match(/L\d+/)
+
+            if(hash && !lineNo && tab == 1){
+                hash = undefined
+            } else if((query?.show || lineNo) && tab == 0) {
+                query = undefined
+                if (lineNo) {
+                    hash = undefined
+                }
+            } else if (tab > 1 && hash) {
+                hash = undefined
+            } else {
+                return
             }
-            else if(this.$route.query?.show && tab == 0) {
-                this.$router.push({...this.$route, query: undefined})
-            }
+
+            this.$router.push({...this.$route, hash, query})
         },
         deploymentItem: {
             immediate: true,
@@ -127,6 +151,7 @@ export default {
             if(this.deployment.__typename == 'DeploymentTemplate') {
                 const projectPath = this.deployment.projectPath
                 await this.fetchProject({projectPath})
+                if(this.hasCriticalErrors) return
                 this.useProjectState({root: cloneDeep({...this.state, DeploymentEnvironment}), shouldMerge: true, projectPath})
             } else {
                 console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')
@@ -141,9 +166,22 @@ export default {
             this.viewReady = true
         },
         async setTabToConsoleIfNeeded() {
-            if(this.$route.query?.show == 'console' && this.jobsData) {
+            const lineNo = this.$route.hash.match(/L\d+/)
+            if((this.$route.query?.show == 'console'  || lineNo) && this.jobsData) {
                 if(document.querySelector('#ensure-console-tab-mounted')) {
                     this.currentTab = 1
+
+
+                    const el = document.querySelector(lineNo?.input)
+                    if(el) {
+                        window.scrollTo(0, document.body.scrollHeight)
+                        window.requestAnimationFrame(() => {
+                            el.scrollIntoView()
+                        })
+                    } else if(lineNo?.input) {
+                        await sleep(100)
+                        this.setTabToConsoleIfNeeded()
+                    }
                 } else {
                     await sleep(100)
                     this.setTabToConsoleIfNeeded()
@@ -172,10 +210,20 @@ export default {
             <oc-tab ref="consoleTab" v-if="jobsData" title="Console">
                 <div id="ensure-console-tab-mounted" />
             </oc-tab>
+            <oc-tab v-if="getJobSummary" title="Job Summary">
+                <job-summary />
+            </oc-tab>
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
             <template #primary-controls="card">
                 <share-resource-toggle class="mr-1" :card="card" />
+            </template>
+
+            <template v-if="showStartingUpStatus" #status>
+                <div class="d-inline-flex align-items-center">
+                    <gl-loading-icon class="mr-1"/>
+                    <span>Waiting for <b>{{deployment.title}}</b> to go live (eta: {{formattedDeploymentEta(deployment.name)}})</span>
+                </div>
             </template>
 
             <template #controls="card">

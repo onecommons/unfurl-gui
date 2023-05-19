@@ -4,6 +4,7 @@ import { fetchUser } from 'oc_vue_shared/client_utils/user'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
 import {unfurlServerUrlOverride} from 'oc_vue_shared/storage-keys'
+import {lookupKey} from 'oc_vue_shared/storage-keys'
 
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
@@ -19,7 +20,9 @@ const state = () => ({
     dashboard: null,
     dashboardProjectInfo: null,
     user: null,
-    windowWidth: window.innerWidth
+    windowWidth: window.innerWidth,
+    windowHeight: window.innerHeight,
+    scrollTop: document.scrollingElement.scrollTop
 })
 
 const mutations = {
@@ -50,20 +53,25 @@ const mutations = {
 
     setWindowWidth(state, windowWidth) {
         state.windowWidth = windowWidth
+    },
+
+    setWindowHeight(state, windowHeight) {
+        state.windowHeight = windowHeight
+    },
+
+    setScrollTop(state, scrollTop) {
+        state.scrollTop = scrollTop
     }
 }
 
 const getters = {
     getRouterHook(state) {return state.routerHook},
-    getCurrentNamespace(state, getters) {return state.namespace || getters.getUsername},
+    getCurrentNamespace(state, getters) {return state.namespace || lookupKey('defaultNamespace') || getters.getUsername},
     getHomeProjectPath(state, getters)  {return `${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`},
     getHomeProjectName(state) { return state.dashboardProjectInfo?.name || 'Dashboard' },
     getUsername() {return window.gon.current_username},
     getUser(state) {
         return state.user
-    },
-    unfurlServicesUrl() {
-        return unfurlServerUrlOverride() || '/services/unfurl-server'
     },
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
@@ -88,6 +96,8 @@ const getters = {
         return sessionStorage['registry-url']
     },
     windowWidth(state) {return state.windowWidth},
+    windowHeight(state) {return state.windowHeight},
+    scrollTop(state) {return state.scrollTop},
     serviceDesk() {
         // TODO make this configurable
         return 'onecommons/support'
@@ -96,16 +106,25 @@ const getters = {
 
 const actions = {
     handleResize({commit, state}) {
-        window.addEventListener('resize', _.debounce(
+        function onResize(e) {
+            const _isMobileLayout = isMobileLayout()
+            if(_isMobileLayout != state.isMobileLayout) {
+                commit('setMobileLayout', _isMobileLayout)
+            }
+            commit('setWindowWidth', window.innerWidth)
+            commit('setWindowHeight', window.innerHeight)
+        }
+        function onScroll(e) {
+            commit('setScrollTop', document.scrollingElement.scrollTop)
+        }
+        window.addEventListener('resize', _.throttle(
             function(e) {
-                const _isMobileLayout = isMobileLayout()
-                if(_isMobileLayout != state.isMobileLayout) {
-                    commit('setMobileLayout', _isMobileLayout)
-                }
-                commit('setWindowWidth', window.innerWidth)
+                onResize(e)
+                onScroll(e)
             }, 
             30
         ))
+        window.addEventListener('scroll', _.throttle( onScroll, 15 ))
     },
 
     async populateCurrentUser({commit}) {
@@ -118,11 +137,15 @@ const actions = {
     },
 
     createFlash({getters}, options) {
+        let _options = options
+        if(typeof _options == 'string') {
+            _options = {message: options, type: FLASH_TYPES.NOTICE}
+        }
         return createFlash({
             projectPath: getters.getHomeProjectPath,
             serviceDesk: getters.serviceDesk,
             confidential: true,
-            ...options
+            ..._options
         })
     }
 }

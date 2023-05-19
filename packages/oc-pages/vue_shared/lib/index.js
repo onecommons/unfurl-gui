@@ -1,1 +1,1 @@
-export {tryResolveDirective} from './directives'
+export {tryResolveDirective, resolverName} from './directives'

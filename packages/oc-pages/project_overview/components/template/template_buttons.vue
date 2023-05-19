@@ -1,5 +1,6 @@
 <script>
 import { GlButton } from '@gitlab/ui';
+import { Tooltip as ElTooltip } from 'element-ui'
 import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
@@ -9,7 +10,8 @@ export default {
     name: 'TemplateButtons',
     components: {
         GlButton,
-        DeployButton
+        DeployButton,
+        ElTooltip
     },
     props: {
         deployStatus: {type: String, default: () => 'disabled'},
@@ -18,7 +20,9 @@ export default {
         mergeStatus: {type: String, default: () => 'disabled'},
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
-        target: {type: String, default: () => 'template'}
+        target: {type: String, default: () => 'template'},
+        mergeRequest: Object,
+        saveTooltip: String
     },
 
     methods: {
@@ -32,9 +36,14 @@ export default {
             this.$emit('saveDraft');
         },
 
-        triggerDeploy: _.throttle(function () {
-            this.$emit('triggerDeploy');
+        triggerDeploy: _.throttle(function (...args) {
+            this.$emit('triggerDeploy', ...args);
         }, 3000),
+
+        mergeRequestReady: _.throttle(function (...args) {
+            this.$emit('mergeRequestReady', ...args);
+        }, 3000),
+
 
         triggerLocalDeploy: _.throttle(function () {
             this.$emit('triggerLocalDeploy');
@@ -106,34 +115,55 @@ export default {
                 @click.prevent="cancelDeployment"
                 >{{ __(editingDeployed? 'Cancel': 'Cancel Deployment') }}
             </gl-button>
+            <el-tooltip :disabled="!saveTooltip">
+                <template #content>
+                    {{saveTooltip}}
+                </template>
+                <div>
+                <gl-button
+                    v-if="saveStatus != 'hidden'"
+                    data-testid="save-template-btn"
+                    :title="!saveTooltip && 'Save Changes'"
+                    :aria-label="__('Save Changes')"
+                    type="button"
+                    variant="confirm"
+                    icon="doc-new"
+                    :disabled="saveStatus == 'disabled'"
+                    class=""
+                    @click.prevent="saveTemplate"
+                    >{{ __('Save Changes') }}
+                </gl-button>
+
+                <gl-button
+                    v-if="saveDraftStatus != 'hidden'"
+                    data-testid="save-draft-btn"
+                    :title="!saveTooltip && 'Save Changes'"
+                    :aria-label="__('Save Changes')"
+                    type="button"
+                    icon="doc-new"
+                    :disabled="saveDraftStatus == 'disabled'"
+
+                    @click.prevent="saveDraft"
+                    >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}
+                </gl-button>
+                </div>
+            </el-tooltip>
+
             <gl-button
-                v-show="saveStatus != 'hidden'"
-                data-testid="save-template-btn"
-                title="Save Changes"
-                :aria-label="__('Save Changes')"
+                v-if="mergeRequest"
+                data-testid="view-merge-request"
+                title="View Merge Request"
+                aria-label="View Merge Request"
+                target="_blank"
                 type="button"
-                variant="confirm"
-                icon="doc-new"
-                :disabled="saveStatus == 'disabled'"
-                class=""
-                @click.prevent="saveTemplate"
-                >{{ __('Save Changes') }}</gl-button
+                icon="link"
+                :href="mergeRequest.web_url"
             >
-            <gl-button
-                v-show="saveDraftStatus != 'hidden'"
-                data-testid="save-draft-btn"
-                title="Save Changes"
-                :aria-label="__('Save Changes')"
-                type="button"
-                icon="doc-new"
-                :disabled="saveDraftStatus == 'disabled'"
-                
-                @click.prevent="saveDraft"
-                >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}</gl-button
-            >
+                View Merge Request
+            </gl-button>
 
         </div>
-        <DeployButton :deploy-status="deployStatus" @triggerDeploy="triggerDeploy" @triggerLocalDeploy="triggerLocalDeploy"/>
+        <DeployButton :deploy-status="deployStatus" @triggerDeploy="triggerDeploy" :mergeRequest="mergeRequest" @mergeRequestReady="mergeRequestReady" @triggerLocalDeploy="triggerLocalDeploy"/>
     </div>
 </template>
 <style scoped>

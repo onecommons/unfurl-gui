@@ -1,8 +1,8 @@
 <script>
-import {GlIcon, GlDropdown, /*GlDropdownItem*/} from '@gitlab/ui'
+import {GlIcon, GlDropdown} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
+import {lookupKey} from 'oc_vue_shared/storage-keys'
 import ControlButtons from './deployment-controls/control-buttons.vue'
-import PipelineDropdownItem from './deployment-controls/pipeline-dropdown-item.vue'
 import * as routes from '../../router/constants'
 export default {
     props: {
@@ -18,9 +18,7 @@ export default {
     components: {
         GlIcon,
         GlDropdown,
-        //GlDropdownItem,
         ControlButtons,
-        //PipelineDropdownItem
     },
     computed: {
         ...mapGetters([
@@ -74,7 +72,11 @@ export default {
                     if(this.$route.name != routes.OC_DASHBOARD_DEPLOYMENTS) result.push('view-deployment')
                 }
             }
-            result.push('clone-deployment')
+
+            if(this.userCanEdit) {
+                result.push('clone-deployment')
+            }
+
             if(!this.deploymentItem?.isDraft && this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('teardown')
 
             //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
@@ -85,19 +87,22 @@ export default {
                 result.push('view-artifacts')
             } 
 
-            if(window.gon.projectId) {
+            if(window.gon.projectId && this.userCanEdit) {
                 //temporary limitation (restrict to dashboard app)
 
                 if(!this.deploymentItem?.isUndeployed) result.push('local-deploy')
 
             }
 
+            result.push('rename-deployment')
+
             result.push('view-in-repository')
 
             // these checks are inadequate
             //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
             // temporary solution -- hide behind developer setting
-            if(sessionStorage['manual-incremental-deploy'] && !this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
+            if(lookupKey('manualIncrementalDeploy') && !this.deploymentItem?.isJobCancelable) result.push('inc-redeploy')
+            //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
 
             if(this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('delete')
             return result
@@ -110,10 +115,10 @@ export default {
             return result
         },
         primaryControlButtons() {
-            return this.controlButtons.slice(0,1)
+            return [this.controlButtons.find(cb => !this.disabledButtons.includes(cb))]
         },
         contextMenuControlButtons() {
-            return this.controlButtons.slice(1)
+            return this.controlButtons.filter(cb => cb != this.primaryControlButtons)
         },
         resumeEditingTarget() {
             return this.deploymentItem?.editableLink
@@ -140,35 +145,32 @@ export default {
         }
     },
     methods: {
+        renameDeployment() {
+            this.$emit('renameDeployment', this.deployment, this.environment)
+        },
         deleteDeployment() {
-          this.$emit('deleteDeployment', this.deployment, this.environment)
+            this.$emit('deleteDeployment', this.deployment, this.environment)
         },
         // teardown in ui
         stopDeployment() {
-          this.$emit('stopDeployment', this.deployment, this.environment)
+            this.$emit('stopDeployment', this.deployment, this.environment)
         },
         startDeployment() {
-          this.$emit('startDeployment', this.deployment, this.environment)
+            this.$emit('startDeployment', this.deployment, this.environment)
         },
         cloneDeployment() {
-          this.$emit('cloneDeployment', this.deployment, this.environment)
+            this.$emit('cloneDeployment', this.deployment, this.environment)
         },
         localDeploy() {
-          this.$emit('localDeploy', this.deployment, this.environment)
+            this.$emit('localDeploy', this.deployment, this.environment)
         },
         incRedeploy() {
-          this.$emit('incRedeploy', this.deployment, this.environment)
+            this.$emit('incRedeploy', this.deployment, this.environment)
         },
         async cancelJob() {
             await this.deploymentItem.cancelJob()
             window.location.reload()
         },
-        /*
-        showPreviousJobs() {
-            //this.$emit('showPreviousJobs', this.deployment, this.environment)
-            this.$refs.previousJobs?.show()
-        },
-         */
         pipelineToJobsLink(pipeline) {
             if(!pipeline) return
             const jobId = this.jobByPipelineId(pipeline.id)?.id
@@ -197,6 +199,7 @@ export default {
          :control-buttons="primaryControlButtons"
          :view-in-repository-link="viewInRepositoryLink"
          :disabled-buttons="disabledButtons"
+         @renameDeployment="renameDeployment"
          @deleteDeployment="deleteDeployment"
          @stopDeployment="stopDeployment"
          @startDeployment="startDeployment"
@@ -222,6 +225,7 @@ export default {
              :disabled-buttons="disabledButtons"
              :issues-link-args="issuesLinkArgs"
              component="gl-dropdown-item"
+             @renameDeployment="renameDeployment"
              @deleteDeployment="deleteDeployment"
              @stopDeployment="stopDeployment"
              @startDeployment="startDeployment"

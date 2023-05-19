@@ -17,7 +17,7 @@ export default {
     components: {
         GlFormRadio,
         GlIcon,
-        OcListResourceIcon
+        OcListResourceIcon,
     },
 
     data() {
@@ -105,7 +105,7 @@ export default {
             <!--div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
             <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div-->
             <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-display-flex gl-pl-2">
-              <span class=" oc_resource-type">{{ description(resource) }}</span>
+                <span class=" oc_resource-type"><oc-markdown-view :content="description(resource)" /></span>
             </div>
             <div v-if="resource.details_url" class="table-section oc-table-section section-wrap text-truncate section-10 text-center">
                 <span  class=" oc_resource-details">

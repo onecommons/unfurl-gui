@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const expect = require('expect')
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+const assert = require('assert')
+
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
 axios.defaults.withCredentials = true
@@ -12,7 +13,6 @@ const jar = new CookieJar()
 axios.defaults.httpsAgent = new HttpsCookieAgent({
   jar,
   keepAlive: true,
-  rejectUnauthorized: false,
 })
 
 async function isSetup(baseURL) {
@@ -20,13 +20,11 @@ async function isSetup(baseURL) {
   return data.setup.find(el => el.hasOwnProperty('status')).status
 } 
 
-async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, registerName}) {
+async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, registerName, expectExisting}) {
   const adminSessionEndpoint = `${baseURL}/ghost/api/admin/session`
   const authSetupEndpoint = `${baseURL}/ghost/api/admin/authentication/setup/`
   const userRolesEndpoint = `${baseURL}/ghost/api/admin/users/me/?include=roles`
   const magicLinkEndpoint = `${baseURL}/members/api/send-magic-link/`
-
-
 
   const initialRequest = await axios.get(baseURL)
   expect(initialRequest.status).toBeLessThan(400)
@@ -34,32 +32,30 @@ async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, re
   if(useAdminEmail && useAdminPassword) {
     if(await isSetup(baseURL)) {
       const adminSessionPost = await axios.post(adminSessionEndpoint, {username: useAdminEmail, password: useAdminPassword})
-      expect(adminSessionPost.data).toBe('Created')
+      assert.equal(adminSessionPost.data, 'Created', adminSessionPost.data)
     }
     else {
+      assert(!expectExisting, 'expected existing admin user')
       const setupPayload = {setup: [
         {blogTitle: 'Test Blog', email: useAdminEmail, name: 'John Denne', password: useAdminPassword}
       ]}
       const setupPost = await axios.post(authSetupEndpoint, setupPayload)
-      expect(setupPayload.data).toBe('Created')
+      assert.equal(setupPayload.data, 'Created', setupPayload.data)
 
-      expect(await isSetup(baseURL)).toBe(true)
+      assert.ok(await isSetup(baseURL), 'Setup should be completed')
     }
     
-
-
     const userRolesFetch = await axios.get(userRolesEndpoint)
-
-    expect(userRolesFetch.data.errors).toBeUndefined()
-
+    assert.equal(userRolesFetch.data.errors, undefined, JSON.stringify(userRolesFetch.data.errors, null, 2))
   } 
 
+  /*
+   * reenable this when mailu is working again
   if(registerEmail && registerName) {
     const magicLinkPost = await axios.post(magicLinkEndpoint, {name: registerName, email: registerEmail, requestSrc: 'portal'})
-    expect(magicLinkPost.status).toBeLessThan(400)
+    assert(magicLinkPost.status < 400, JSON.stringify(magicLinkPost.data, null, 2))
   }
-  //https://www.untrusted.me/
-  //{"name":"Andrew","email":"breidenbach.aj@gmail.com","requestSrc":"portal"}
+  */
 
 
   console.log('Ghost tests passed')
@@ -75,15 +71,16 @@ async function tryMain() {
       registerEmail: args['register-email'],
       useAdminEmail: args['admin-email'],
       useAdminPassword: args['admin-password'],
+      expectExisting: args['expect-existing'],
       ...args
     })
   } catch(e) {
-    if(e.code) {
+    if(e.code && e.code != 'ERR_ASSERTION') {
       console.error(e.code)
       //console.error(e)
       process.exit(1)
     } else {
-      console.log(e.message)
+      console.error(e)
       console.log('Ghost tests failed')
       process.exit(1)
     }

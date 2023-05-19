@@ -1,8 +1,43 @@
 import {uniq} from 'lodash'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {localNormalize} from 'oc_vue_shared/lib/normalize'
+import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node-filter'
 import _ from 'lodash'
 import Vue from 'vue'
+
+function computeDependencyMap(root) {
+    try {
+        const res = Object.values(root.ResourceTemplate)
+            .map(
+                rt => rt.dependencies
+                .filter(req => req.match)
+                .map(req => ({[req.match]: [rt, req.name]}))
+            ).flat()
+
+        return Object.assign({}, ...res)
+    } catch(e) {console.error(e)}
+}
+
+function lookupAncestors(rt, root, mutable=false) {
+    let computedDependencyMap = mutable? root.computedDependencyMap: null
+    if(!computedDependencyMap) {
+        computedDependencyMap = computeDependencyMap(root)
+        if(mutable)  {
+            root.computedDependencyMap = computedDependencyMap
+        }
+    }
+
+    let current = rt, matchEntry
+    const reverseAncestors = []
+    while(matchEntry = computedDependencyMap[current.name]) {
+        const [rt, req] = matchEntry
+        reverseAncestors.push(matchEntry)
+        current = rt
+    }
+
+    return reverseAncestors.reverse()
+}
 
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
@@ -36,18 +71,44 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, dispatch, rootGetters}, params) {
+    async fetchProject({commit, dispatch}, params) {
         const {projectPath, projectGlobal} = params
+        const format = 'blueprint'
         commit('loaded', false)
 
-        const root = await unfurlServerExport({
-            baseUrl: rootGetters.unfurlServicesUrl,
-            format: 'blueprint',
-            projectPath,
-            //TODO pass branch
-        })
+        let root
+        try {
+            root = await unfurlServerExport({
+                format,
+                projectPath,
+                //TODO pass branch
+            })
+        } catch(e) {
+            // TODO handle this from the caller
+            commit(
+                'createError',
+                {
+                    message: `An error occurred while exporting ${projectPath}`,
+                    context: {
+                        error: e.message,
+                        projectPath,
+                        format
+                    },
+                    severity: 'critical',
+                }
+            )
+
+            return
+        }
+        
 
         root.projectGlobal = projectGlobal
+
+        if(root.ResourceType) {
+            Object.values(root.ResourceType).forEach(resourceType => {
+                localNormalize(resourceType, 'ResourceType', root)
+            })
+        }
 
         dispatch('useProjectState', {projectPath, root})
         commit('loaded', true)
@@ -55,7 +116,7 @@ const actions = {
 
     },
 
-    normalizeUnfurlData({state, getters}, {key, entry, root, projectPath}) {
+    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath}) {
         let transforms
 
         function normalizeProperties(properties) {
@@ -82,10 +143,18 @@ const actions = {
             }
         }
 
+        // TODO refactor independent transformations into vue_shared/lib/normalize
         transforms = {
             ResourceTemplate(resourceTemplate) {
                 resourceTemplate.dependencies = _.uniqBy(normalizeDependencies(resourceTemplate.dependencies), 'name')
                 resourceTemplate.properties = _.uniqBy(normalizeProperties(resourceTemplate.properties), 'name')
+                resourceTemplate._ancestors = lookupAncestors(resourceTemplate, root, true)
+
+                resourceTemplate.properties.forEach(prop => {
+                    if(Array.isArray(prop.value?.get_env)) {
+                        prop.value.get_env = prop.value.get_env[0]
+                    }
+                })
 
                 const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
                 resourceTemplate.properties = properties
@@ -130,14 +199,13 @@ const actions = {
                 }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
-            ResourceType(resourceType) {
-                if(!resourceType.title) resourceType.title = resourceType.name
-                resourceType.__typename = 'ResourceType'
-            },
             Resource(resource, root) {
                 if(!resource.dependencies) resource.dependencies = resource.connections || []
                 if(!resource.attributes) resource.attributes = []
                 if(!resource.visibility) resource.visibility = 'inherit'
+
+                resource._ancestors = lookupAncestors(resource, root, true)
+
                 resource.dependencies.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
@@ -203,11 +271,16 @@ const actions = {
         for(const key of ordering) {
             const value = root[key]
 
-            try {
-                Object.values(value).forEach(entry => dispatch('normalizeUnfurlData', {key, entry, root, projectPath}))
-            } catch(e) {
-                // console.error('@useProjectStat', e)
-            }
+            if(! value) continue
+
+            Object.values(value).forEach(entry => {
+                try {
+                    dispatch('normalizeUnfurlData', {key, entry, root, projectPath})
+                } catch(e) {
+                    console.error({key, entry, root, projectPath})
+                    console.error('@useProjectState', e)
+                }
+            })
 
             // commit so we can use our resolvers while normalizing
             if(key == 'ResourceType') {
@@ -271,6 +344,56 @@ function storeResolver(typename) {
 const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType: storeResolver('ResourceType'),
+    resolveResourceTypeWithAncestors(state, getters) {
+        // where ancestors looks like [(ResourceType, RequirementConstraint?)]
+        return function(resourceType, ancestors) {
+            console.assert(resourceType, 'expected resource type')
+            if(ancestors.length == 0)  {
+                return getters.resolveResourceType(resourceType)
+            }
+
+            // don't mutate existing types
+            const nodeFilterPath = _.cloneDeep([
+                ...(ancestors.map(([rt, req]) => [getters.resolveResourceType(rt.type), req])),
+                [getters.resolveResourceType(resourceType), null]
+            ])
+
+
+            for(let i = 0; i < ancestors.length; i++) {
+                try {
+                    const [current, req] = nodeFilterPath[i]
+                    const [child, _] = nodeFilterPath[i+1]
+
+                    const requirement = current.requirements.find(r => r.name == req)
+
+                    if(requirement?.requirementsFilter) {
+                        applyRequirementsFilter(child, requirement.requirementsFilter)
+                    }
+
+                    if(requirement?.inputsSchema) {
+                        applyInputsSchema(child, requirement.inputsSchema)
+                    }
+                } catch(e) {
+                    console.error('Could not apply requirements filter to requirement', e, {i, ancestors, resourceType, nodeFilterPath})
+                }
+            }
+
+            const result = _.last(nodeFilterPath)[0]
+            return result
+        }
+    },
+    resolveResourceTemplateType(state, getters) {
+        return function(resourceTemplate) {
+            const rt = typeof resourceTemplate == 'string'? getters.resolveResourceTemplate(resourceTemplate): resourceTemplate
+            return getters.resolveResourceType(rt.type)
+
+            // too slow at the moment for the fact that it's not that useful
+            // this is just for normalization
+
+            // const ancestors = rt._ancestors || lookupAncestors(rt, state)
+            // return getters.resolveResourceTypeWithAncestors(rt.type, ancestors)
+        }
+    },
     resolveResourceTemplate: storeResolver('ResourceTemplate'),
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate'),
     resolveLocalResourceTemplate: storeResolver(
@@ -326,7 +449,7 @@ const getters = {
     },
     getMissingDependencies(_, getters) {
         return function(resourceTemplate) {
-            const generatedDependencies = getters.dependenciesFromResourceType(resourceTemplate.type)
+            const generatedDependencies = getters.dependenciesFromResourceType(getters.resolveResourceTemplateType(resourceTemplate))
             if(generatedDependencies.length == resourceTemplate.dependencies?.length) {
                 return [] // assuming they're correct
             }
@@ -344,7 +467,7 @@ const getters = {
     },
     getMissingProperties(_, getters) {
         return function(resourceTemplate) {
-            const generatedProperties = getters.propertiesFromResourceType(resourceTemplate.type)
+            const generatedProperties = getters.propertiesFromResourceType(getters.resolveResourceTemplateType(resourceTemplate))
             if(generatedProperties.length == resourceTemplate.properties?.length) {
                 return [] // assuming they're correct
             }
@@ -362,7 +485,7 @@ const getters = {
     },
     groupProperties(_, getters) {
         return function(resourceTemplate) {
-            const type = getters.resolveResourceType(resourceTemplate.type)
+            const type = getters.resolveResourceTemplateType(resourceTemplate)
             const groups = {properties: [], computedProperties: []}
 
             for(const property of resourceTemplate.properties || []) {
@@ -385,6 +508,7 @@ const getters = {
     lookupConfigurableTypes(state, _a, _b, rootGetters) {
         return function(environment) {
             //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
+            if(!state.ResourceType) return
             const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }

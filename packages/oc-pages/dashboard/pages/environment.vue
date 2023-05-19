@@ -5,7 +5,7 @@ import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {GlFormInput, GlButton, GlIcon, GlTabs, GlModal} from '@gitlab/ui'
 import {Tooltip as ElTooltip} from 'element-ui'
-import {OcTab, DetectIcon, CiVariableSettings, OcPropertiesList, DeploymentResources} from 'oc_vue_shared/oc-components'
+import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue_shared/components/oc'
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
 import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util.mjs'
@@ -55,7 +55,6 @@ export default {
         OcTab,
         CiVariableSettings,
         DashboardBreadcrumbs,
-        OcPropertiesList,
         GlTabs, GlFormInput, GlButton, GlIcon, GlModal,
         DeploymentResources,
         DetectIcon,
@@ -82,6 +81,7 @@ export default {
             'lookupDeployPath',
             'jobByPipelineId',
             'resolveResourceType',
+            'getApplicationRoot'
         ]),
         resourcesTabIndex() {
             return 0
@@ -102,14 +102,14 @@ export default {
                 {text: this.environment?.name, href: '#'}
             ]
         },
-        propviderProps() {
+        providerProps() {
             return mapCloudProviderProps.bind(this)({
                 ...this.$store.state.ci_variables,
                 ...this.getVariables(this.environment)
             })
         },
         cloudProviderDisplayName() {
-            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Local development')
+            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Generic')
         },
         saveStatus() {
             if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
@@ -183,6 +183,7 @@ export default {
             'populateTemplateResources2',
             'createNodeResource',
             'commitPreparedMutations',
+            'normalizeUnfurlData',
         ]),
 
 
@@ -213,9 +214,16 @@ export default {
             )
 
         },
-        onProviderAdded({selection, title}) {
-            this.freshState()
+        async onProviderAdded({selection, title}) {
+            await this.freshState()
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+            if(selection.name == lookupCloudProviderAlias('k8s')) {
+                this.createNodeResource({
+                    selection: this.resolveResourceType('KubernetesIngressController'),
+                    title: "KubernetesIngressController",
+                    name: "k8sDefaultIngressController",
+                })
+            }
             this.$refs.deploymentResources.cleanModalResource()
 
             this.scrollToProvider(slugify(title))
@@ -289,7 +297,7 @@ export default {
 
         lookupCloudProviderAlias,
 
-        freshState() {
+        async freshState() {
             this.setRouterHook()
 
             this.clearPreparedMutations()
@@ -303,7 +311,23 @@ export default {
             this.environment = environment
 
             this.onSaveTemplate(false)
-            this.populateTemplateResources2({resourceTemplates: [...Object.values(environment.instances), ...Object.values(environment.connections)], environmentName, context: 'environment'})
+
+            const instances = _.cloneDeep(Object.values(environment.instances))
+            const connections = _.cloneDeep(Object.values(environment.connections))
+
+            await Promise.all(
+                instances.map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot}))
+            )
+            // TODO implement and test normalization for connections - this should account better for users making manual changes
+
+            this.populateTemplateResources2({
+                resourceTemplates: [
+                    ...instances,
+                    ...connections
+                ],
+                environmentName,
+                context: 'environment'
+            })
 
             this.setAvailableResourceTypes(
                 this.environmentLookupDiscoverable(environment)
@@ -319,16 +343,16 @@ export default {
 
     },
     watch: {
-        showingProviderModal(val) {
+        async showingProviderModal(val) {
             if(!val) {
-                this.freshState()
+                await this.freshState()
                 this.$refs.providerModal.close()
             }
         }
     },
 
-    created() {
-        this.freshState()
+    async created() {
+        await this.freshState()
     }
 }
 </script>
@@ -345,8 +369,8 @@ export default {
         <oc-properties-list
             :header="cloudProviderDisplayName"
             :containerStyle="{'font-size': '0.9em', ...width}"
-            :properties="propviderProps"
-            v-if="[lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
+            :properties="providerProps"
+            v-if="!environment.primary_provider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">

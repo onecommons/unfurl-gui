@@ -8,7 +8,7 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
-import {fetchEnvironments, connectionsToArray, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {fetchEnvironments, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
@@ -104,18 +104,6 @@ const mutations = {
         state.ready = readyStatus
     },
 
-    patchEnvironment(state, { envName, patch }) {
-        const env = state.projectEnvironments.find(env => env.name == envName)
-        Object.assign(env, patch)
-        state.environments = state.environments
-    },
-
-    environmentsToArray(state) {
-        // map is kinda pointless here
-        state.environments = state.environments.map(connectionsToArray)
-        state.projectEnvironments = state.projectEnvironments.map(connectionsToArray)
-    },
-
     setProjectEnvironments(state, environments) {
         state.projectEnvironments = environments
     },
@@ -151,8 +139,7 @@ const mutations = {
 
 const actions = {
 
-    async runEnvironmentSaveHooks({state, commit}) {
-        const promises = []
+    async runEnvironmentSaveHooks({state}) {
         for(const hook of state.saveEnvironmentHooks) {
             let result = hook()
             if(typeof result?.then == 'function') {
@@ -183,8 +170,19 @@ const actions = {
         }
 
         const projects = await Promise.all(
-            state.repositoryDependencies.map(dep => fetchProjectInfo(encodeURIComponent(dep)))
+            state.repositoryDependencies.map(
+                dep => fetchProjectInfo(encodeURIComponent(dep))
+                    .catch(e => {
+                        commit(
+                            'createError',
+                            {message: `Couldn't lookup dependency info (${e.message})`, context: dep, severity: 'critical'},
+                            {root: true}
+                        )
+                    })
+            )
         )
+
+        if(rootGetters.hasCriticalErrors) return
 
         const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
 
@@ -227,23 +225,36 @@ const actions = {
         })
 
 
-        let data, error
+        let data
 
-        data = await triggerAtomicDeployment(
-            rootGetters.getHomeProjectPath,
-            {
-                variables: deployVariables,
-                dependencies,
-                ...parameters.deployOptions
-            }
-        )
-
-
-        if(error = data?.errors) {
-            return {pipelineData: data, error}
+        try {
+            data = await triggerAtomicDeployment(
+                rootGetters.getHomeProjectPath,
+                {
+                    variables: deployVariables,
+                    dependencies,
+                    ...parameters.deployOptions
+                }
+            )
+        } catch(e) {
+            commit(
+                'createError',
+                {
+                    message: `Failed to trigger deployment (${e.message})`,
+                    context: {
+                        projectPath: rootGetters.getHomeProjectPath,
+                        variables: deployVariables,
+                        dependencies,
+                        ...parameters.deployOptions
+                    },
+                    severity: 'critical'
+                },
+                {root: true}
+            )
+            return
         }
-        const pipelines = [...(dp?.pipelines || [])]
 
+        const pipelines = [...(dp?.pipelines || [])]
 
         const pipeline = data?
             {
@@ -258,7 +269,6 @@ const actions = {
                 'upstream_branch': state.upstreamBranch
             } :
             null
-
 
         if(pipeline) {pipelines.push(pipeline)}
 
@@ -324,44 +334,21 @@ const actions = {
         commit("SET_ENVIRONMENT_NAME", { envName });
     },
 
-    async updateEnvironment({getters, commit, dispatch, rootGetters}, {env, envName, patch}) {
-        const _envName =  envName || env?.name
-        commit('patchEnvironment', {envName: _envName, patch})
-        const _env = getters.lookupEnvironment(_envName)
-
-        commit('setUpdateType', 'environment', {root: true})
-        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
-        commit(
-            'pushPreparedMutation',
-            _ => {
-                // I thought awaiting commit prepared mutations would make it so I don't have to clone env
-                // apparently not
-                return [ {typename: 'DeploymentEnvironment', target: _env.name, patch: cloneDeep(_env)}]
-            },
-            {root: true}
-        )
-        await dispatch('commitPreparedMutations', null,  {root: true})
-        commit('environmentsToArray')
-        await dispatch('fetchProjectEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy: 'network-only'})
-    },
-
-
-    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath}) {
+    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath, branch}) {
         let environments = []
         try {
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
-            const unfurlServicesUrl = rootGetters.unfurlServicesUrl
-
-            // TODO don't hardcode main
-            const branch = 'main'
 
             const result = await fetchEnvironments({
                 fullPath,
-                branch,
+                branch: branch || 'main',
                 projectId,
-                unfurlServicesUrl,
                 includeDeployments: true
             })
+            
+            result.errors.forEach(e => commit('createError', e, {root: true}))
+
+            if(rootGetters.hasCriticalErrors) return
 
             environments = result.environments
 
@@ -376,9 +363,13 @@ const actions = {
             commit('setDeployments', result.deployments)
         }
         catch(e){
-            console.error('Could not fetch project environments', e)
             if(window.gon.current_username) {
-                dispatch('createFlash', { projectPath: fullPath, message: 'Could not fetch project environments.  Is your environments.json valid?', type: FLASH_TYPES.ALERT, issue: 'Missing environment' }, {root: true})
+                commit('createError', {
+                    message: `Could not fetch project environments (${e})`,
+                    context: e,
+                    severity: 'critical',
+                    issue: 'Missing environment',
+                })
             }
             environments = []
 
@@ -390,7 +381,7 @@ const actions = {
         try {
             envvars = await fetchEnvironmentVariables(fullPath)
         } catch(e) {
-            console.warn(`Failed to fetch environment variables for ${fullPath}`, e.message)
+            throw new Error(`Failed to fetch environment variables for ${fullPath}`, e.message)
         }
 
         const variablesByEnvironment = {'*': {}}
@@ -406,29 +397,27 @@ const actions = {
             variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
             commit('setVariablesByEnvironment', variablesByEnvironment)
         } catch(e) {
-            console.warn('Unable to set PROJECT_DNS_ZONE', e)
+            throw new Error('Unable to set PROJECT_DNS_ZONE', e)
         }
     },
     async generateVaultPasswordIfNeeded({getters, dispatch, rootGetters}, {fullPath}) {
-        const patchObj = {}
+        const promises = []
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
-            patchObj['UNFURL_VAULT_DEFAULT_PASSWORD'] = {value: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true}
+            promises.push(
+                dispatch('setEnvironmentVariable', {environmentName: '*', variableName: 'UNFURL_VAULT_DEFAULT_PASSWORD', variableValue: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true})
+                .catch(e => console.warn(`Failed to set vault password for ${fullPath}`, e.message))
+            )
         }
 
         // issues with reactivity if this isn't set
         if(!getters.lookupVariableByEnvironment('UNFURL_PROJECT_SUBSCRIPTIONS', '*')) {
-            patchObj['UNFURL_PROJECT_SUBSCRIPTIONS'] = {value: "{}", masked: false}
+            promises.push(
+                dispatch('setEnvironmentVariable', {environmentName: '*', variableName: 'UNFURL_PROJECT_SUBSCRIPTIONS', variableValue: "{}", masked: false})
+            )
         }
 
-        if(Object.keys(patchObj).length > 0) {
-            try {
-                await patchEnv(patchObj, '*', fullPath)
-            } catch(e) {
-                console.warn(`Failed to set vault password for ${fullPath}`, e.message)
-            }
-        }
-
+        await Promise.all(promises)
     },
     async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
         const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath))
@@ -442,38 +431,32 @@ const actions = {
                 const UNFURL_PROJECT_TOKEN = await generateProjectAccessToken(encodeURIComponent(fullPath), {name: 'UNFURL_PROJECT_TOKEN', scopes})
 
                 if(! UNFURL_PROJECT_TOKEN) return
-                await patchEnv({UNFURL_PROJECT_TOKEN: {value: UNFURL_PROJECT_TOKEN, masked: true}}, '*', fullPath)
+                await dispatch('setEnvironmentVariable', {environmentName: '*', variableName: 'UNFURL_PROJECT_TOKEN', variableValue: UNFURL_PROJECT_TOKEN, masked: true})
             }
         } catch(e) {
             console.warn('Unable to create access token')
         }
     },
 
-    // TODO try to parallelize better
-    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, fetchPolicy}) {
+    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, branch, fetchPolicy}) {
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
         await Promise.all([
             (async () => {
-                await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
-                await Promise.all([
-                    dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}),
-                    dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
-                ])
+                try {
+                    await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
+                    await Promise.all([
+                        dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}),
+                        dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
+                    ])
+                } catch(e) {
+                    console.warn('@ocFetchProjectEnvironments: Could not read/write envvars', e)
+                }
             })(),
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, fetchPolicy})
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, fetchPolicy})
         ])
 
         commit('setReady', true)
-    },
-    async generateProjectTokenIfNeeded({getters, rootGetters}, {projectId}) {
-        const key = toDepTokenEnvKey(projectId)
-        let token
-        if(!(token = getters.lookupProjectToken(projectId))) {
-            const token = await generateProjectAccessToken(projectId)
-            await patchEnv({ [key]: token }, '*', rootGetters.getHomeProjectPath)
-        }
-        return {key, token}
     },
 
     async environmentFromProvider({state, commit, dispatch}, {provider, newEnvironmentName}) {
@@ -516,14 +499,14 @@ const actions = {
 
     async setEnvironmentVariable({commit, rootGetters}, {environmentName, variableName, variableValue, masked}) {
         commit('setVariableByEnvironment', {environmentName, variableName, variableValue})
-        await patchEnv({[variableName]: {value: variableValue, masked: !!masked}}, '*', rootGetters.getHomeProjectPath)
+        await patchEnv({[variableName]: {value: variableValue, masked: !!masked}}, environmentName, rootGetters.getHomeProjectPath)
     },
 
     async loadAdditionalDashboards({rootGetters, commit}) {
         // include developer access for deploy requests, etc.
         const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=30`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id, unfurlServicesUrl: rootGetters.unfurlServicesUrl}))
+            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id}))
 
         commit('setAdditionalDashboards', await Promise.all(dashboards))
     }

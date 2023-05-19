@@ -4,7 +4,7 @@ import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
 import { bus } from 'oc_vue_shared/bus';
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
-import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateCardId} from 'oc_vue_shared/util.mjs'
 import {Tooltip as ElTooltip} from 'element-ui'
 
@@ -215,7 +215,9 @@ export default {
                             <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
                         </div>
                         <div class="d-flex m-1" v-if="card && _displayStatus">
-                            <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
+                            <slot name="status">
+                                <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
+                            </slot>
                         </div>
                     </slot>
                 </div>
@@ -344,7 +346,7 @@ export default {
 
 .oc-card.primary h4 {
     font-size: 1.25rem;
-    line-height: 0;
+    line-height: 1;
 }
 
 .oc-card >>> .gl-card-body {

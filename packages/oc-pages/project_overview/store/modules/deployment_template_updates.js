@@ -78,6 +78,26 @@ function normalizeEnvName(_name) {
     return name
 }
 
+function concealSensitiveProperties(name, schema, props, envvarPrefix, pathComponents=[], env={}) {
+    const _pathComponents = pathComponents.concat([name])
+    if(name == '$toscatype') return
+
+    // this doesn't currently account for additional properties
+    if(schema.type == 'object' && schema.properties) {
+        const innerProps = props[name]
+        Object.entries(schema.properties).forEach(([name, schema]) => {
+            concealSensitiveProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)
+        })
+    } else if(schema.sensitive) {
+        const envKey = `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')
+        env[envKey] = props[name]
+        props[name] = {[SECRET_DIRECTIVE]: envKey}
+    }
+
+    return env
+}
+
+
 let Serializers
 Serializers = {
     DeploymentEnvironment(env, state) {
@@ -103,36 +123,22 @@ Serializers = {
         return Object.values(env.instances || {}).concat(Object.values(env.connections))
     },
     DeploymentTemplate(dt, state) {
-        // should we be serializing local templates?
-        const localResourceTemplates = dt?.ResourceTemplate
-        if(localResourceTemplates) {
-            for(const rt of Object.keys(localResourceTemplates)) {
-                if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
-                    delete localResourceTemplates[rt]
-                } else {
-                    Serializers.ResourceTemplate(localResourceTemplates[rt], state)
+        if(state.ResourceTemplate) {
+            // should we be serializing local templates?
+            const localResourceTemplates = dt?.ResourceTemplate
+            if(localResourceTemplates) {
+                for(const rt of Object.keys(localResourceTemplates)) {
+                    if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
+                        delete localResourceTemplates[rt]
+                    } else {
+                        // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
+                        Serializers.ResourceTemplate(localResourceTemplates[rt], state)
+                    }
                 }
             }
-        }
-        /*
-        const resourceTemplates = []
-        function addMatchedResourceTemplates(templateName) {
-            let template 
-            try {
-                template = state.DeploymentTemplate[dt.name].ResourceTemplate[templateName]
-            } catch(e) {}
-            if(!template) {
-                template = state.ResourceTemplate[templateName]
-            }
 
-            if(template) {
-                resourceTemplates.push(templateName)
-                template.dependencies?.forEach(dep => dep.match && addMatchedResourceTemplates(dep.match))
-            }
+            dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
         }
-        addMatchedResourceTemplates(dt.primary)
-        */
-        dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
     },
     // TODO unit test
     ResourceTemplate(rt) {
@@ -142,6 +148,7 @@ Serializers = {
             allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', '__typename')
             return
         }
+
         try {
             delete rt.visibility // do not commit template visibility
         } catch(e) {
@@ -229,15 +236,16 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
     if(data?.data?.errors?.length) throw new Error(data.data.errors)
 }
 
-export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, isSensitive}) {
+export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, inputsSchema}) {
     return function(accumulator) {
-        let _propertyValue = propertyValue
-        let env
-        if(isSensitive) {
-            const envname = normalizeEnvName(`${templateName}__${propertyName}`)
-            env = {[envname]: propertyValue}
-            _propertyValue = {[SECRET_DIRECTIVE]: envname}
-        }
+        let _propertyValue = _.cloneDeep(propertyValue)
+        const schemaFor = inputsSchema.properties[propertyName]
+        const envvarPrefix = templateName
+
+        const props = {[propertyName]: _propertyValue}
+        const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+        _propertyValue = props[propertyName]
+
         const patch = accumulator['DeploymentEnvironment'][environmentName]
         let instance = Array.isArray(patch.instances) ?
             patch.instances.find(i => i.name == templateName) :
@@ -248,8 +256,12 @@ export function updatePropertyInInstance({environmentName, templateName, propert
                 patch.connections.find(i => i.name == templateName) :
                 patch.connections[templateName]
         }
-        const property = instance.properties.find(p => p.name == propertyName)
-        property.value = _propertyValue
+        const property = instance.properties.find(p => p.name == (propertyName))
+        if(property) {
+            property.value = _propertyValue
+        } else {
+            instance.properties.push({name: propertyName, value: _propertyValue})
+        }
         return [ {typename: 'DeploymentEnvironment', target: templateName, patch, env} ]
     }
 }
@@ -262,16 +274,6 @@ export function createEnvironmentInstance({type, name, title, description, depen
             properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
 
-        /*
-        const dependencies = resourceType?.requirements?.map(req => ({
-            constraint: req,
-            match: null,
-            target: null,
-            name: req.name,
-            __typename: 'Dependency'
-        })) || []
-        */
-
         const template = {
             type: typeof(type) == 'string'? type: type.name,
             name,
@@ -283,19 +285,20 @@ export function createEnvironmentInstance({type, name, title, description, depen
         }
 
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        if(! Array.isArray(patch.instances)) {
-            patch.instances = []
+
+        if(! patch.instances) {
+            patch.instances = {}
         }
+
         if(dependentName) {
-            const dependent = patch.instances.find(rt => rt.name == dependentName)
+            const dependent = patch.instances[dependentName]
             const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
             if(dependency) {
                 dependency.match = template.name
             }
         }
 
-        patch.instances.push(template)
-
+        patch.instances[template.name] = template
 
         return [ {typename: 'DeploymentEnvironment', target: environmentName, patch} ]
     }
@@ -322,15 +325,17 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
     }
 }
 
-export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, isSensitive, deploymentName}) {
+// TODO refactor to share implementation with updatePropertyInInstance
+export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, deploymentName, inputsSchema}) {
     return function(accumulator) {
-        let _propertyValue = propertyValue
-        let env
-        if(isSensitive) {
-            const envname = normalizeEnvName(`${deploymentName}__${templateName}__${propertyName}`)
-            env = {[envname]: propertyValue}
-            _propertyValue = {[SECRET_DIRECTIVE]: envname}
-        }
+        let _propertyValue = _.cloneDeep(propertyValue)
+        const schemaFor = inputsSchema.properties[propertyName]
+        const envvarPrefix = `${deploymentName}__${templateName}`
+
+        const props = {[propertyName]: _propertyValue}
+        const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+        _propertyValue = props[propertyName]
+
         const patch = accumulator['ResourceTemplate'][templateName]
         const property = patch.properties.find(p => p.name == propertyName)
         property.value = _propertyValue
@@ -635,6 +640,7 @@ const mutations = {
         state.environmentScope = environmentScope
     },
     setCommitBranch(state, branch) {
+        console.log('setCommitBranch', branch)
         state.branch = branch
     },
     setUpdateType(state, updateType) {
@@ -735,17 +741,33 @@ const mutations = {
 
 
 const actions = {
-    async fetchRoot({commit, rootGetters, rootState}) {
+    async fetchRoot({commit, rootGetters}) {
         const state = rootGetters.getApplicationRoot
         commit('setBaseState', _.cloneDeep(state))
     },
 
     async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
         // send environment variables before trying to commit changes
-        if(o?.dryRun) {
-            console.log(state.env, state.environmentScope, state.projectPath)
-        } else {
-            await patchEnv(state.env, state.environmentScope, state.projectPath)
+        try {
+            if(o?.dryRun) {
+                console.log(state.env, state.environmentScope, state.projectPath)
+            } else {
+                await patchEnv(state.env, state.environmentScope, state.projectPath, 0)
+            }
+        } catch(e) {
+            commit(
+                'createError',
+                {
+                    message: `Failed to update secrets -- aborting commit (${e.message})`,
+                    context: {
+                        environmentScope: state.environmentScope,
+                        projectPath: state.projectPath
+                    },
+                    severity: 'critical'
+                },
+                {root: true}
+            )
+            return
         }
 
         const patch = []
@@ -849,13 +871,29 @@ const actions = {
         const branch = state.branch || project.default_branch
 
         const post = unfurlServerUpdate({
-            baseUrl: rootGetters.unfurlServicesUrl,
             method,
             projectPath,
             branch,
             patch,
             commitMessage: state.commitMessage,
             variables
+        }).catch(e => {
+            commit(
+                'createError',
+                {
+                    message: `Failed to commit update to ${path} (${e.message})`,
+                    context: {
+                        method,
+                        projectPath,
+                        branch,
+                        patch,
+                        commitMessage: state.commitMessage,
+                        variables
+                    },
+                    severity: 'critical'
+                },
+                {root: true}
+            )
         })
 
         await Promise.all([post, sync])

@@ -15,11 +15,11 @@ export default {
         ...mapActions([
             'loadDashboard',
             'handleResize',
-            'updateEnvironment',
             'populateJobsList',
             'populateDeploymentItems',
             'populateCurrentUser',
             'populateDashboardProject',
+            'fetchMergeRequests',
             'deployInto',
             'createFlash'
         ]),
@@ -48,15 +48,21 @@ export default {
         this.populateCurrentUser()
         this.populateDashboardProject()
 
+
+
         try {
-          await Promise.all([this.loadDashboard(), this.populateJobsList()])
+            await Promise.all([this.loadDashboard(), this.populateJobsList()])
         } catch(e) {
-          if(currentNamespace != this.getUsername) {
-            notFoundError()
-          } else {
-            throw(e)
-          }
+            if(currentNamespace != this.getUsername) {
+                notFoundError()
+                console.error('displaying 404 for ', e)
+            } else {
+                throw(e)
+            }
         }
+
+        this.fetchMergeRequests() // not awaiting
+
         this.populateDeploymentItems(this.getDashboardItems)
         this.handleResize()
         
@@ -80,6 +86,8 @@ export default {
 </script>
 <template>
     <div>
+        <oc-experimental-settings-indicator />
+        <oc-unfurl-gui-errors />
         <gl-loading-icon v-if="!isLoaded" label="Loading" size="lg" style="margin-top: 5em;" />
         <router-view v-else-if="!doNotRender"/>
     </div>

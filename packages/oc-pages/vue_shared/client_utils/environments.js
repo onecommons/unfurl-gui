@@ -1,12 +1,13 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
-import {patchEnv, fetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
+import {patchEnv, tryFetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
 import { unfurlServerUpdate } from './unfurl-server'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.mjs'
 import {unfurlServerExport} from './unfurl-server'
+import {localNormalize} from '../lib/normalize'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -39,7 +40,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
 
     const patch = {}
     const transferredVariables = []
-    for(const environmentVariable of await fetchEnvironmentVariables(projectPath)) {
+    for(const environmentVariable of await tryFetchEnvironmentVariables(projectPath)) {
         if(environmentVariable.environment_scope != sourceEnvironment) continue
         if(!variables.includes(environmentVariable.key)) continue
         delete environmentVariable.id
@@ -53,7 +54,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
     return {
         prefix: _prefix,
         transferredVariables,
-        patch: await patchEnv(patch, targetEnvironment, projectPath)
+        patch: await patchEnv(patch, targetEnvironment, projectPath, 0)
     }
 }
 
@@ -91,8 +92,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 }
 
 // NOTE try to keep this in sync with commitPreparedMutations
-// NOTE can be invoked from cluster creation views - unfurlServicesUrl fallback to /services/unfurl-server 
-export async function initUnfurlEnvironment(projectPath, environment, variables={}, unfurlServicesUrl='/services/unfurl-server') {
+export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
     const branch = 'main' // TODO don't hardcode main
 
     const patch = [{
@@ -104,7 +104,6 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
     const method = variables.deployment_path? 'create_provider': 'update_environment'
 
     await unfurlServerUpdate({
-        baseUrl: unfurlServicesUrl,
         commitMessage: `Create environment '${environment.name}' in ${projectPath}`,
         projectPath,
         method: method,
@@ -149,18 +148,37 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDeployments, branch}) {
+export async function fetchEnvironments({fullPath, includeDeployments, branch}) {
+    const projectPath = fullPath
+    const format = 'environments'
+    const errors = []
 
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
 
-    const data = await unfurlServerExport({
-        baseUrl: unfurlServicesUrl,
-        format: 'environments',
-        projectPath: fullPath,
-        includeDeployments,
-        branch,
-    })
+    let data
+
+    try {
+        data = await unfurlServerExport({
+            format,
+            projectPath,
+            includeDeployments,
+            branch,
+        })
+    } catch(e) {
+        errors.push({
+            message: `@fetchEnvironments: An error occurred during an export request (${e.message})`,
+            context: {
+                error: e.message,
+                format,
+                projectPath,
+                includeDeployments,
+                branch
+            },
+            severity: 'critical'
+        })
+        return {errors}
+    }
 
     const environments = Object.values(data.DeploymentEnvironment)
         .filter(env => env.name != 'defaults')
@@ -178,22 +196,60 @@ export async function fetchEnvironments({fullPath, unfurlServicesUrl, includeDep
 
     const defaults = data.DeploymentEnvironment.defaults
 
-    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType}
+    Object.values(data.ResourceType).forEach(resourceType => {
+        localNormalize(resourceType, 'ResourceType', null)
+    })
 
+    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType, errors}
 
     if(includeDeployments) {
-        const deployments = data.deployments.filter(dep => !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
+        const deploymentErrors = []
+        const deployments = data.deployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
 
         deployments.forEach(deployment => {
+            if(deployment.error) {
+                deploymentErrors.push({
+                    detail: `Error occured while exporting a deployment`,
+                    deployment: deployment.deployment,
+                    url: deployment.deployment.replace(/^(..\/)*/, window.location.origin + '/'),
+                    error: deployment.error
+                })
+                return
+            }
             try {
-                const deploymentName = Object.keys(deployment.Deployment)[0]
+                const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
                 const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
                 deployment._environment = environment
+
+                if(deployment.ResourceType) {
+                    Object.values(deployment.ResourceType).forEach(rt => localNormalize(rt, 'ResourceType', deployment))
+                }
+
+                localNormalize(deploymentObject, 'Deployment', deployment)
             } catch(e) {
-                console.error('@fetchEnvironments: unexpected shape for deployment', deployment, e)
+                deploymentErrors.push({
+                    deployment: Object.values(deployment.Deployment)[0].title,
+                    detail: 'Unexpected shape for deployment',
+                    error: e.message,
+                })
             }
         })
+        if(deploymentErrors.length > 0) {
+            let message = ''
+            if (deploymentErrors.length == 1) {
+                message = 'An error occurred while fetching deployments.'
+            } else {
+                message = `${deploymentErrors.length} errors occurred while fetching deployments.`
+            }
+
+            message += ` Unable to display ${deploymentErrors.map(de => de.deployment.split('/').pop()).join(', ')} due to errors.`
+            errors.push({
+                message,
+                context: deploymentErrors,
+                severity: 'major'
+            })
+        }
         result.deployments = deployments
     }
 

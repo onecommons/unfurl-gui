@@ -2,13 +2,12 @@
 import _ from 'lodash';
 import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
+import Vue from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
-import {FormProvider, createSchemaField} from "@formily/vue";
-import {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Password, Editable, Space} from "@formily/element";
 import {Card as ElCard} from 'element-ui'
-import {createForm, onFieldInputValueChange} from "@formily/core";
-import {tryResolveDirective} from 'oc_vue_shared/lib'
-import {getCustomTooltip} from './oc_inputs'
+import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
+import {FakePassword, getCustomTooltip, getUiDirective} from './oc_inputs'
+import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
 
 
 const ComponentMap = {
@@ -18,18 +17,53 @@ const ComponentMap = {
   enum: 'Select',
   object: 'Editable.Popover',
   array: 'ArrayItems',
-  password: 'Password',
+  password: 'FakePassword',
 };
 
-const fields = createSchemaField({
-  components: {
-    FormItem,
-    ArrayItems,
-    Space,
-    Input,
-    InputNumber, Checkbox, Select, Password, Editable
-  }
-})
+const formilyElement = async function() {
+    if(!formilyElement.promise) {
+        formilyElement.promise = import('@formily/element')
+    }
+    const {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = await formilyElement.promise
+    return {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space}
+}
+
+const formilyVue = async function() {
+    if(!formilyVue.promise) {
+        formilyVue.promise = import('@formily/vue')
+    }
+    const {FormProvider, createSchemaField} = await formilyVue.promise
+    return {FormProvider, createSchemaField}
+}
+
+const fields =  async function() {
+    const [_formilyVue, _formilyElement] = await Promise.all([
+        formilyVue(),
+        formilyElement(),
+    ])
+
+    const {createSchemaField} = _formilyVue
+    const {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = _formilyElement
+
+    return createSchemaField({
+      components: {
+        FormItem,
+        ArrayItems,
+        Space,
+        Input,
+        InputNumber, Checkbox, Select, FakePassword, Editable
+      }
+    })
+}
+
+
+const FormProvider = async() => (await formilyVue()).FormProvider
+const FormLayout = async() => (await formilyElement()).FormLayout
+
+const schemaFieldComponents = {}
+for(const schemaFieldComponentName of ['SchemaField', 'FormItem', 'ArrayItems', 'Input', 'InputNumber', 'Checkbox', 'Select', 'Editable', 'Space']) {
+    schemaFieldComponents[schemaFieldComponentName] = async() => (await fields())[schemaFieldComponentName]
+}
 
 
 export default {
@@ -38,7 +72,7 @@ export default {
     FormProvider,
     FormLayout,
     ElCard,
-    ...fields
+    ...schemaFieldComponents
   },
 
   props: {
@@ -56,11 +90,15 @@ export default {
     }
   },
   computed: {
-    ...mapGetters(['resolveResourceType', 'cardInputsAreValid', 'lookupEnvironmentVariable']),
+    ...mapGetters(['resourceTemplateInputsSchema', 'resolveResourceTemplateType', 'cardInputsAreValid', 'lookupEnvironmentVariable', 'userCanEdit']),
+
+    inputsSchema() {
+        return this.resourceTemplateInputsSchema(this.card)
+    },
 
     // we want this to recurse eventually
     nestedProp() {
-      const properties = this.resolveResourceType(this.card.type)?.inputsSchema?.properties || {}
+      const properties = this.inputsSchema?.properties || {}
       if(this.tab) {
         const [name, prop] = Object.entries(properties).find(([name, prop]) => prop.tab_title == this.tab)
         return {...prop, name}
@@ -69,7 +107,7 @@ export default {
     },
 
     fromSchema() {
-      return this.nestedProp?.properties || this.cardType?.inputsSchema?.properties || {}
+      return this.nestedProp?.properties || this.inputsSchema?.properties || {}
     },
 
     /*
@@ -81,24 +119,13 @@ export default {
 
     formValues() {
       // element formily needs ?? undefined for some reason
-      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? undefined}), {})
-      return result
-    },
-
-    cardType() {
-      if(!this.card?.type) {
-        throw new Error(`Card "${this.card.name}" does not have a type`)
-      }
-      const result = this.resolveResourceType(this.card?.type)
-      if(!result) {
-        throw new Error(`Could not lookup card type ${this.card?.type} for ${this.card.name}`)
-      }
+      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? b.default ?? undefined}), {})
       return result
     },
 
     schema() {
       return {
-        type: this.cardType?.inputsSchema?.type,
+        type: this.inputsSchema?.type,
         properties: this.convertProperties(this.fromSchema),
       }
     },
@@ -107,13 +134,14 @@ export default {
 
   methods: {
     ...mapMutations([
-      'pushPreparedMutation', 'setCardInputValidStatus', 'clientDisregardUncommitted'
+      'pushPreparedMutation', 'setInputValidStatus', 'clientDisregardUncommitted'
     ]),
     ...mapActions([
       'updateProperty'
     ]),
     async validate() {
       let status = 'valid'
+      let path
       try {
         // was using this because without the onMount => validate() setup validating individual fields did nothing
         // await this.form.validate()
@@ -123,6 +151,10 @@ export default {
           try { formField = this.form.fields[key] }
           catch(e) {}
           if (formField) {
+            path = key
+            if(this.nestedProp) {
+              path = `${this.nestedProp.name}.${path}`
+            }
             const {data, value} = formField
             if(value?.length === 0 && data.required && data.type == 'object' && data.additionalProperties?.required) {
               // skip validating empty required object
@@ -132,23 +164,31 @@ export default {
             if(formField.invalid) {
               status = 'error'
             }
+            this.updateFieldValidation(
+              path,
+              status
+            )
           }
         }
       } catch(e) {
         status = 'error'
+        console.error(e)
+        this.updateFieldValidation(
+          path || 'all',
+          status
+        )
       }
-      this.updateFieldValidation(
-        this.card, 
-        status
-      )
     },
     convertProperties(properties) {
-      //_.filter turns this into an array
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
-        if (!currentValue.type) {
+
+        if(currentValue.sensitive && !this.userCanEdit) return null
+
+        if(!currentValue.type) {
           currentValue.type = 'string'
         }
+
         currentValue.title = currentValue.title ?? name;
         currentValue['x-decorator'] = 'FormItem'
         currentValue['x-decorator-props'] = {}
@@ -159,7 +199,11 @@ export default {
         if(getCustomTooltip(name)) {
           currentValue['x-decorator-props'].tooltip = {...getCustomTooltip(name), f: () => ({$store: this.$store, card: this.card})}
         }
+        if(currentValue.default?._generate) {
+          currentValue['x-decorator-props'].addonAfter = {...getUiDirective('generate'), f: () => ({$store: this.$store, card: this.card, property: currentValue, inputsSchema: this.nestedProp || this.inputsSchema})}
+        }
 
+        currentValue.default = undefined
         currentValue['x-data'] = value
 
         let componentType = currentValue.type;
@@ -277,8 +321,9 @@ export default {
       });
     },
 
-    updateFieldValidation(field, status) {
-      this.setCardInputValidStatus({card: this.card, status})
+    updateFieldValidation(path, status) {
+      if(!path) return
+      this.setInputValidStatus({card: this.card, path, status})
     },
 
     triggerSave(field, value, disregardUncommitted) {
@@ -304,7 +349,7 @@ export default {
               }
             } 
           })
-          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, isSensitive: field.sensitive, nestedPropName: this.nestedProp?.name})
+          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
@@ -313,15 +358,36 @@ export default {
       triggerFn(field, value, disregardUncommitted)
     },
 
+    cloneInner(next, value) {
+      if(Array.isArray(value) && value.length > 0 && !next.isMap) {
+        return value.map(input => ({input}))
+      }
+
+      if(value?.get_env) {
+          return this.lookupEnvironmentVariable(value.get_env) || ''
+      }
+
+      const resolvedDirective = tryResolveDirective(value)
+      if(resolvedDirective) {
+        next.dirty = true
+
+        if(resolverName(value) == '_generate') {
+          return ''
+        }
+
+        return resolvedDirective
+      }
+    },
+
     getMainInputs() {
-      const self = this
       const result = []
 
       const properties = this.card.properties || []
 
       for (const [name, definition] of Object.entries(this.fromSchema)) {
-        let overrideValue = false
-        try{
+        console.log(name, definition)
+        try {
+          if(definition.sensitive && !this.userCanEdit) continue
           let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))
 
           if(this.nestedProp) {
@@ -330,47 +396,26 @@ export default {
 
           const next = {...property, ...definition}
 
-          const isMap = next.additionalProperties && _.isObject(next.value)
-          if(isMap) { // I don't know how to handle this in clone deep
+          if(next.isMap = next.additionalProperties && _.isObject(next.value)) {
             next.value = Object.entries(next.value).map(([key, value]) => ({key, value}))
           }
 
-          /*
-           * uncomment to default to minimum
-          if(next.type == 'number' && next.required && next.minimum && (next.default ?? null) === null) {
-            next.default = next.minimum
-          }
-          */
+          const cloneInner = this.cloneInner.bind(this, next)
 
-          next.value = _.cloneDeepWith(next.value ?? next.default, function(value) {
-            if(Array.isArray(value) && value.length > 0 && !isMap) {
-              return value.map(input => ({input}))
-            }
-            if(value?.get_env) {
-              overrideValue = true
-              return self.lookupEnvironmentVariable(value.get_env) || ''
-            }
-          })
-
-          // quick fix with redundant copy
-          // get_env directive resolving to empty string causes default to be used by formily which might be a _generate directive
-          next.value = _.cloneDeepWith(next.value || next.default, function(value) {
-            let resolvedDirective
-            if(resolvedDirective = tryResolveDirective(value)) {
-              next.dirty = true
-              return resolvedDirective
-            }
-          })
+          next.value = _.cloneDeepWith(next.value, cloneInner)
+          next.default = _.cloneDeepWith(next.default, cloneInner)
 
           result.push(next)
         } catch (e) {
           console.error(e)
         }
       }
+      this.$emit('setInputLength', result.length)
       return result
     }
   },
-  mounted() {
+  async mounted() {
+    const {createForm, onFieldInputValueChange} = await import("@formily/core")
     this.mainInputs = this.getMainInputs()
     const form = createForm({
         //initialValues: this.initialFormValues,
@@ -389,20 +434,26 @@ export default {
       }
     })
     this.form = form
+    
     for(const input of this.mainInputs) {
       if(input.dirty) {
         this.triggerSave(input, input.value ?? input.initialValue, true)
       }
     }
+    const container = this.$refs.container
     
-    form.onMount = () => {
+    form.onMount = async () => {
+      // we have to wait for the components to exist for formily to validate?
+      await fields()
+      await Vue.nextTick()
+      container.$el.querySelectorAll('.formily-element-form-item-extra').forEach(el => el.innerHTML = parseMarkdown(el.textContent))
       this.validate()
     }
   }
 }
 </script>
 <template>
-<el-card v-if="!card.properties.length == 0" class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+<el-card ref="container" v-if="!card.properties.length == 0" class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
   <FormProvider v-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
@@ -436,12 +487,30 @@ export default {
 }
 .formily-element-form-default > :global(*) {
   display: inline-flex !important;
-  justify-content: flex-end;
+  justify-content: space-between;
   margin-bottom: 2.2em;
   flex-wrap: wrap;
 }
+
+.oc-inputs >>> .formily-element-form-item-label {
+  flex-basis: fit-content;
+}
+
+
 .oc-inputs >>> .formily-element-form-item-control {
-  position: relative;
+  flex-basis: content;
+  flex-grow: 0;
+}
+
+.oc-inputs >>> .formily-element-form-item-label-content {
+  /* required asterisk after label */
+  display: flex;
+  flex-direction: row-reverse;
+}
+
+.oc-inputs >>> .formily-element-form-item-asterisk {
+  /* required asterisk after label */
+  margin: 0 0 0 4px;
 }
 
 .gl-dark >>> .formily-element-form-item-label-content > label { 
@@ -464,7 +533,7 @@ export default {
 }
 
 .oc-inputs >>> .formily-element-form-item-control-content-component { 
-  width: 300px;
+  width: 300px !important;
   max-width: 300px;
 }
 @media only screen and (min-width: 430px) {
@@ -477,6 +546,14 @@ export default {
 
 .oc-inputs >>> .formily-element-form-item {
   font-size: 1rem !important;
+  position: relative;
+}
+.oc-inputs >>> .formily-element-form-item-control .formily-element-form-item-control-content .formily-element-form-item-addon-after {
+  margin-left: 0;
 }
 
+/* hide the colon */
+.oc-inputs >>> .formily-element-form-item-colon {
+  opacity: 0;
+}
 </style>

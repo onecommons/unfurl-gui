@@ -1,5 +1,6 @@
 import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import {useImportedStateOnBreakpointOrElse} from 'oc_vue_shared/storage-keys'
 
 import _ from 'lodash'
 const state = () => ({
@@ -23,7 +24,11 @@ const actions = {
     async loadDashboard({commit, dispatch, rootGetters}, options={}) {
         const {fetchPolicy} = options
         commit('setDashboardLoaded', false)
-        await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
+        
+        await useImportedStateOnBreakpointOrElse('loadDashboard', async() => {
+            await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
+        })
+
         const items = [];
         let deployments = 0
         let applications = 0 
@@ -32,9 +37,9 @@ const actions = {
         let applicationNames = {}
 
         const context = {}
-        function pushContext(iterationCounter, i) {
+        function pushContext(id, iterationCounter, i) {
             if(i == iterationCounter) {
-                const item = {...context, context: {...context}} 
+                const item = {id, ...context, context: {...context}}
                 Object.freeze(item.context)
                 Object.freeze(item)
                 items.push(item)
@@ -51,51 +56,32 @@ const actions = {
             context.environment = environment
             context.environmentName = environmentName
             for(const frozenDeploymentDict of rootGetters.getDeploymentDictionaries.filter(dep => dep._environment == environmentName)) {
-                console.log(frozenDeploymentDict)
+
                 context.deployment = null; context.application = null; context.resource = null; context.type = null;
                 let deployment
-                const clonedDeploymentDict = _.cloneDeep(frozenDeploymentDict)
-
                 let projectPath
+
                 try {
                     projectPath = Object.values(frozenDeploymentDict.DeploymentTemplate)[0].projectPath
-                } catch(e) {
-                    console.error(e)
+                } catch(context) {
+                    commit('createError', {message: `@loadDashboard: Couldn't find project path`, severity: 'minor', context})
                 }
 
-                dispatch('useProjectState', {root: clonedDeploymentDict, projectPath})
-                if(clonedDeploymentDict.Deployment && clonedDeploymentDict.Resource[Object.values(clonedDeploymentDict.Deployment)[0].primary]) {
-                    deployment = {...rootGetters.getDeployment}
-                    const dt = rootGetters.resolveDeploymentTemplate(deployment.deploymentTemplate) || Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
+                if(frozenDeploymentDict.Deployment && frozenDeploymentDict.Resource[Object.values(frozenDeploymentDict.Deployment)[0].primary]) {
+                    deployment = {...Object.values(frozenDeploymentDict.Deployment)[0]}
+                    const dt = frozenDeploymentDict.DeploymentTemplate[deployment.deploymentTemplate]
                     deployment.projectPath = dt?.projectPath
                 } else {
-                    deployment = Object.values(clonedDeploymentDict.DeploymentTemplate)[0]
+                    deployment = Object.values(frozenDeploymentDict.DeploymentTemplate)[0]
                 }
+
+                dispatch('addUrlPoll', {deployment, environment}, {root: true})
+
                 const i = ++iterationCounter
-                deployment.resources = deployment.resources?.map(r => {
-                    if(typeof r == 'string') {
-                        return rootGetters.resolveResource(r)
-                    } else {
-                        return r
-                    }
-                }) || []
 
-                const deploymentPrimary = deployment.resources.find(resource => resource?.name == deployment.primary)
-                // TODO remove deployment.statuses
-                if(deploymentPrimary) {
-                    deployment.statuses = [deploymentPrimary]
-                    let urlAttribute
-                    if(!deployment.url && (urlAttribute = deploymentPrimary.attributes.find(a => a.name == 'url'))) {
-                        deployment.url = urlAttribute.value
-                    }
-                } else {
-                    deployment.statuses = []
-                }
+                const resources = Object.values(frozenDeploymentDict.Resource || {}).filter(r => r.visibility != 'hidden')
 
-                // TODO share this logic
-                deployment.resources = deployment.resources.filter(r => {
-                    return r.visibility != 'hidden' 
-                })
+                const deploymentPrimary = resources.find(resource => resource?.name == deployment.primary)
 
                 deepFreeze(deployment)
 
@@ -103,14 +89,14 @@ const actions = {
                     deployments++
                 }
                 totalDeployments++
-                const application = {...rootGetters.getApplicationBlueprint};
+                const application = {...Object.values(frozenDeploymentDict['ApplicationBlueprint'])[0]}
                 application.projectPath = deployment.projectPath
 
                 if(!application.projectIcon) {
                     try {
                         application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
                     } catch(e) {
-                        console.error(`@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, e)
+                        commit('createError', {message: `@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, severity: 'minor', context: e})
                     }
                 }
 
@@ -120,20 +106,19 @@ const actions = {
                 context.application = application
                 context.deployment = deployment
 
-                //for(const resource of rootGetters.getResources) {
-                for(const resource of deployment.resources) {
+                for(const resource of resources) {
                     const i = ++iterationCounter
-                    const resourceTemplate = rootGetters.resolveResourceTemplate(resource.template);
-                    const resourceType = rootGetters.resolveResourceType(resourceTemplate.type);
-                    context.type = resourceType?.title
+                    deepFreeze(resource)
                     context.resource = resource
 
-                    pushContext()
+                    context.type = frozenDeploymentDict['ResourceTemplate'][resource.template]?.type
+
+                    pushContext([environmentName, deployment.name, resource.name].join('.'))
                 }
 
-                pushContext(iterationCounter, i)
+                pushContext([environmentName, deployment.name].join('.'), iterationCounter, i)
             }
-            pushContext(iterationCounter, i)
+            pushContext(environmentName, iterationCounter, i)
         }
         applications = Object.keys(applicationNames).length
 
@@ -147,7 +132,7 @@ const getters = {
     isDashboardLoaded(state) {return state.loaded},
     getDashboardItems(state) {return state.items},
     runningDeploymentsCount(state) {return state.counters.deployments},
-    totalDeploymentsCount(state) {return state.counters.totalDeployments},
+    totalDeploymentsCount(state, _a, _b, rootGetters) {return state.counters.totalDeployments + rootGetters.mergeRequests.length},
     environmentsCount(state) {return state.counters.environments},
     applicationsCount(state) {return state.counters.applications}
 }

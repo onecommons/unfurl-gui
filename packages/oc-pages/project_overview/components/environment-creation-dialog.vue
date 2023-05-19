@@ -6,21 +6,30 @@ import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider, GlFormCheckbox} from '@gitlab/ui'
-import {DetectIcon, ErrorSmall} from 'oc_vue_shared/oc-components'
+import {DetectIcon, ErrorSmall} from 'oc_vue_shared/components/oc'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
 import {token} from 'oc_vue_shared/compat.js'
-import {mapGetters, mapActions} from 'vuex'
+import {mapGetters, mapActions, mapMutations} from 'vuex'
+import {lookupKey} from 'oc_vue_shared/storage-keys'
 
 
-const LOCAL_DEV = 'Local Dev'
+const LOCAL_DEV = 'Generic'
 
 const CLUSTER_PROVIDER_NAMES = {
     'Google Cloud Platform': 'gcp',
     'Amazon Web Services': 'aws',
     'Digital Ocean': 'DigitalOcean',
+    'Azure': 'azure',
     'Kubernetes': 'k8s',
     [LOCAL_DEV]: ''
 }
+
+/*
+ * hide azure behind dev setting
+if(lookupKey('azureCloudProvider')) {
+    CLUSTER_PROVIDER_NAMES['Azure'] = 'azure'
+}
+*/
 
 // using this for the environments POST
 // if provider is set while creating an environment, it tries to redirect to the cluster page and fails
@@ -62,7 +71,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders']),
+        ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders', 'hasCriticalErrors']),
         environmentsList() {
             const result = Object.keys(CLUSTER_PROVIDER_NAMES)
             
@@ -126,23 +135,40 @@ export default {
     },
     methods: {
         ...mapActions(['environmentFromProvider']),
+        ...mapMutations(['createError']),
 
         async createEnvironmentWithoutCluster(instances={}) {
-          await postGitlabEnvironmentForm();
-          const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
-              name: 'primary_provider', 
-              type: this.currentType,
-              __typename: 'ResourceTemplate'
-          } : undefined
+            const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
+                name: 'primary_provider',
+                type: this.currentType,
+                __typename: 'ResourceTemplate'
+            } : undefined
 
-          await initUnfurlEnvironment(
-            this.getHomeProjectPath,
-            {
-              name: slugify(this.environmentName),
-              primary_provider,
-              instances
+            try {
+                await initUnfurlEnvironment(
+                    this.getHomeProjectPath,
+                    {
+                        name: slugify(this.environmentName),
+                        primary_provider,
+                        instances
+                    }
+                )
+            } catch(e) {
+                this.createError({
+                    message: `@createEnvironmentWithoutCluster: ${e.message}`,
+                    context: {
+                        primary_provider,
+                        instances,
+                        name: slugify(this.environmentName)
+                    },
+                    severity: 'critical',
+                })
+
+                return
             }
-          )
+
+            await postGitlabEnvironmentForm();
+
         },
 
         async beginEnvironmentCreation(_redirectTarget) {
@@ -180,8 +206,13 @@ export default {
                     }
                 }
                 await this.createEnvironmentWithoutCluster(instances)
+                if(this.hasCriticalErrors) return
                 sessionStorage['redirectOnProviderSaved'] = redirectTarget
-                window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
+                if(provider) {
+                  window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
+                } else {
+                  window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+                }
             } else {
                 const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
                 sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)

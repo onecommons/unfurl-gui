@@ -17,6 +17,7 @@ import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {getJobsData, redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
+import {setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import * as routes from '../../router/constants'
 
@@ -44,6 +45,7 @@ export default {
 
   data() {
     return {
+      selfBranch: null,
       uiTimeout: null,
       createNodeResourceData: {},
       deleteNodeData: {},
@@ -73,6 +75,7 @@ export default {
         shortName: 'main',
         fullName: 'refs/heads/main',
       },
+      mergeRequest: null
     };
   },
 
@@ -105,7 +108,11 @@ export default {
       'getPrimary',
       'environmentsAreReady',
       'editingDeployed',
-      'deployTooltip'
+      'deployTooltip',
+      'hasCriticalErrors',
+      'userCanEdit',
+      'getApplicationBlueprint',
+      'isAcknowledged'
     ]),
     
     deploymentDir() {
@@ -119,14 +126,18 @@ export default {
     saveStatus() {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
-          return 'hidden';
+          if(!this.mergeRequest) break
         default: 
           return this.hasPreparedMutations? 'enabled': 'disabled';
       }
+      return 'hidden'
     },
     saveDraftStatus() {
       return this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT?
-        (this.hasPreparedMutations? 'enabled': 'disabled') : 'hidden'
+        (
+         (this.mergeRequest)? 'hidden':
+           (this.hasPreparedMutations? 'enabled': 'disabled')
+        ) : 'hidden'
     },
     deleteStatus() {
       switch(this.$route.name) {
@@ -202,6 +213,23 @@ export default {
             text: __('Cancel'),
         };
     },
+
+    saveTooltip() {
+      if(this.saveDraftStatus == 'enabled' && this.branch && this.branch != 'main') {
+        return 'Save a draft of the edits on this deployment blueprint and open a merge request.'
+      }
+      return null
+    },
+
+    branch: {
+      get() {
+        return this.selfBranch || this.$route.query.branch || 'main'
+      },
+
+      set(branch) {
+        this.selfBranch = branch
+      }
+    }
   },
 
   watch: {
@@ -318,7 +346,9 @@ export default {
       'setEnvironmentScope',
       'pushPreparedMutation',
       'setCommitMessage',
-      'setUpdateType'
+      'setUpdateType',
+      'createError',
+      'setCommitBranch'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -335,7 +365,8 @@ export default {
       'fetchProject',
       'deployInto',
       'createDeploymentPathPointer',
-      'createFlash'
+      'createFlash',
+      'acknowledge'
     ]),
 
     unloadHandler(e) {
@@ -364,10 +395,43 @@ export default {
       }, timeToWait);
     },
 
-    async fetchItems(n=1) {
+    async fetchItems() {
       try {
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
+
+        console.log(this.branch, this.userCanEdit)
+
+        if(this.branch == 'main') {
+          if(!this.userCanEdit) {
+            // computed setter
+            const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
+            this.setCommitBranch(this.branch)
+
+            const target = 'main'
+            const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
+
+            const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened'})
+
+            if(openedMR) {
+              this.mergeRequest = openedMR
+            } else {
+              const key = `branch ${branch}`
+              if(!this.isAcknowledged(key)) {
+                this.createFlash(`You are working on a new branch "${branch}". After your changes are saved, a merge request will be created automatically so they can be merged back into main and deployed by a maintainer.`)
+              }
+              this.acknowledge(key)
+
+            }
+          }
+        } else {
+          const key = `branch ${this.branch}`
+          if(!this.isAcknowledged(key)) {
+            this.createFlash(`You are working on an alternate branch "${this.branch}".`)
+          }
+          this.acknowledge(key)
+        }
+
         const projectPath = this.project.globalVars.projectPath
         if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
@@ -380,7 +444,8 @@ export default {
           this.setEnvironmentScope(environmentName)
         }
         // TODO see if we can get rid of this, since it's probably already loaded
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', n, projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
+        await this.fetchProject({projectPath, fetchPolicy: 'network-only', projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
+        if(this.hasCriticalErrors) return
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath, 
           templateSlug, 
@@ -402,13 +467,15 @@ export default {
       }
     },
     debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
-    async triggerSave(type) {
+    async triggerSave(type, redirect=true) {
       try {
-        if(type == 'draft'){
+        if(type == 'draft' || this.mergeRequest){
           const name = this.$route.query.fn;
           this.setCommitMessage(`Save draft of ${name}`)
           this.setUpdateType('deployment')
           await this.commitPreparedMutations();
+
+          if(this.hasCriticalErrors) return
 
           // will be handled by unfurl server
           // await this.createDeploymentPathPointer({deploymentDir: this.deploymentDir, projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
@@ -424,20 +491,68 @@ export default {
           const query = {...this.$route.query}
           delete query.ts
 
+          if(this.branch != 'main') {
+            query.branch = this.branch
+
+            if(!this.mergeRequest) {
+              const projectPath = this.project.globalVars.projectPath
+              const branch = this.branch
+              const target = 'main'
+              const title = `[Draft] ${this.getDeploymentTemplate.title}`
+              const labels = [
+                this.$route.params.slug,
+                `environment:${this.$route.params.environment}`,
+                `application-blueprint-title:${this.getApplicationBlueprint.title}`,
+                `application-blueprint-project-path:${projectPath}`,
+                'unfurl-gui-mr'
+              ]
+              const dest = window.location.origin + this.$router.resolve({...this.$route, query}).href
+              const description = [
+                  `[Edit Deployment Draft 🖊](${dest})`,
+                  '\n',
+                  `Your Deployment Template will be available as [${this.$route.params.slug}](${window.location.origin}${this.$router.resolve({...this.$route, query: {...query, branch: undefined}}).href}) when it's been merged.`
+              ].join('\n')
+
+              try {
+                this.mergeRequest = await createMergeRequest(encodeURIComponent(this.getHomeProjectPath), {branch, target, title, labels, description})
+                if(redirect) {
+                  window.location.href = this.mergeRequest.web_url
+                }
+                // only return if this succeeds, otherwise we're kicking them off the draft
+                return
+              } catch(e) {
+                if(e.response) {
+                  this.createError({
+                    message: `Unable to create merge request`,
+                    context: e.response,
+                    severity: 'critical'
+                  })
+
+                }
+              }
+            }
+          }
+
           if(this.editingDeployed) {
               this.returnToReferrer()
               return
           }
 
-          window.location.href = this.$router.resolve({...this.$route, query}).href
+          if(redirect) {
+            window.location.href = this.$router.resolve({...this.$route, query}).href
+          }
           //window.location.href = `/${this.project.globalVars.projectPath}#${slugify(this.$route.query.fn)}`
         } else {
           await this.commitPreparedMutations();
-          return true;
+          return !this.hasCriticalErrors;
         }
       } catch (e) {
-        console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        console.error(e)
+        this.createError({
+            message: `An unexpected error occurred while saving (${e.message})`,
+            context: e.message,
+            severity: 'major'
+        })
         return false;
       }
     },
@@ -445,98 +560,101 @@ export default {
     triggerLocalDeploy: _.debounce(async function() {
       // TODO consolodate implementation with triggerDeployment
 
-      try {
-        this.createFlash({
-          message: __('Preparing deployment...'),
-          type: FLASH_TYPES.SUCCESS,
-          duration: this.durationOfAlerts,
-        });
+      this.createFlash({
+        message: __('Preparing deployment...'),
+        type: FLASH_TYPES.SUCCESS,
+        duration: this.durationOfAlerts,
+      });
 
-        this.startedTriggeringDeployment = true;
-        const name = this.$route.query.fn;
-        this.setUpdateType('deployment')
-        this.setCommitMessage(`Trigger deployment of ${name}`)
-        await this.triggerSave();
-        const result = await this.deployInto({
-          environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-          deployPath: this.deploymentDir,
-          deploymentName: this.$route.params.slug,
-          deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
-          deployOptions: {
-              schedule: 'defer'
-          }
-        })
-        if(result === false) return
+      this.startedTriggeringDeployment = true;
+      const name = this.$route.query.fn;
+      this.setUpdateType('deployment')
+      this.setCommitMessage(`Trigger deployment of ${name}`)
 
-        const {pipelineData, error} = result
+      await this.triggerSave();
+      if(this.hasCriticalErrors) return
 
-        if(error) {
-          throw new Error(error)
+      const result = await this.deployInto({
+        environmentName: this.$route.params.environment,
+        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
+        deployPath: this.deploymentDir,
+        deploymentName: this.$route.params.slug,
+        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        deployOptions: {
+            schedule: 'defer'
         }
+      })
 
-        if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+      if(this.hasCriticalErrors) return
 
-        const router = this.$router
+      if(result === false) return
 
-        const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-        window.history.replaceState({}, null, href)
+      const {pipelineData} = result
 
-        this.dataWritten = true
-        window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
-      } catch (err) {
-        console.error(err)
-        const errors = err?.response?.data?.errors || [];
-        const [error] = errors;
-        this.dataWritten = true
-        return this.createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
-      }
+      if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+
+      const router = this.$router
+
+      const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
+      window.history.replaceState({}, null, href)
+
+      this.dataWritten = true
+      window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
     }, 250),
 
     triggerDeployment: _.debounce(async function() {
-      try {
-        this.createFlash({
-          message: __('Starting deployment...'),
-          type: FLASH_TYPES.SUCCESS,
-          duration: this.durationOfAlerts,
-        });
+      this.createFlash({
+        message: __('Starting deployment...'),
+        type: FLASH_TYPES.SUCCESS,
+        duration: this.durationOfAlerts,
+      });
 
-        this.startedTriggeringDeployment = true;
-        const name = this.$route.query.fn;
-        this.setUpdateType('deployment')
-        this.setCommitMessage(`Trigger deployment of ${name}`)
-        await this.triggerSave();
-        const result = await this.deployInto({
-          environmentName: this.$route.params.environment,
-          projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-          deployPath: this.deploymentDir,
-          deploymentName: this.$route.params.slug,
-          deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
-        })
-        if(result === false) return
+      this.startedTriggeringDeployment = true;
+      const name = this.$route.query.fn;
+      this.setUpdateType('deployment')
+      this.setCommitMessage(`Trigger deployment of ${name}`)
 
-        const {pipelineData, error} = result
+      await this.triggerSave();
+      if(this.hasCriticalErrors) return
 
-        if(error) {
-          throw new Error(error)
-        }
+      const result = await this.deployInto({
+        environmentName: this.$route.params.environment,
+        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
+        deployPath: this.deploymentDir,
+        deploymentName: this.$route.params.slug,
+        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
+      })
 
-        if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
+      if(this.hasCriticalErrors) return
 
-        const router = this.$router
+      const {pipelineData} = result
 
-        const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-        window.history.replaceState({}, null, href)
+      if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
 
-        this.dataWritten = true
-        window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
-      } catch (err) {
-        console.error(err)
-        const errors = err?.response?.data?.errors || [];
-        const [error] = errors;
-        this.dataWritten = true
-        return this.createFlash({ message: `Pipeline ${error || err}`, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts, projectPath: this.getHomeProjectPath, issue: 'Failed to trigger deployment pipeline'});
-      }
+      const router = this.$router
+
+      const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
+      window.history.replaceState({}, null, href)
+
+      this.dataWritten = true
+      window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
+    }, 250),
+
+    mergeRequestReady: _.debounce(async function({status}) {
+      this.startedTriggeringDeployment = true;
+      await this.triggerSave('draft', false);
+      this.dataWritten = true
+
+      if(this.hasCriticalErrors) return
+
+      const branch = this.branch
+      const target = 'main'
+      const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+
+      await setMergeRequestReadyStatus(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened', status})
+
+      window.location.href = this.mergeRequest.web_url
+
     }, 250),
 
     cleanModalResource() {
@@ -740,12 +858,15 @@ export default {
             :merge-status="mergeStatus"
             :cancel-status="cancelStatus"
             :deploy-status="deployStatus"
-            @saveDraft="debouncedTriggerSave('draft')"
-            @saveTemplate="debouncedTriggerSave()"
-            @triggerDeploy="triggerDeployment()"
-            @triggerLocalDeploy="triggerLocalDeploy()"
-            @cancelDeployment="returnToReferrer()"
-            @launchModalDeleteTemplate="openModalDeleteTemplate()"
+            :save-tooltip="saveTooltip"
+            :mergeRequest="mergeRequest"
+            @saveDraft="debouncedTriggerSave('draft', true)"
+            @saveTemplate="debouncedTriggerSave"
+            @triggerDeploy="triggerDeployment"
+            @mergeRequestReady="mergeRequestReady"
+            @triggerLocalDeploy="triggerLocalDeploy"
+            @cancelDeployment="returnToReferrer"
+            @launchModalDeleteTemplate="openModalDeleteTemplate"
             />
 
 

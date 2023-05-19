@@ -2,6 +2,7 @@
 import {mapMutations, mapActions, mapGetters} from 'vuex'
 import {compatibilityMountJobConsole} from 'oc_vue_shared/compat'
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
+const BOTTOM_MARGIN = -100
 export default {
     props: {
         jobsData: {
@@ -19,13 +20,21 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath, getDashboardItems'])
+        ...mapGetters(['getHomeProjectPath, getDashboardItems', 'windowHeight']),
+        shouldScroll() {
+            return this.autoscroll && !this.$route.hash.match(/L\d+/)
+        }
+    },
+    watch: {
+       windowHeight() {
+           this.setConsoleHeight()
+       }
     },
     methods: {
         ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
-        ...mapMutations(['clearPreparedMutations']),
+        ...mapMutations(['clearPreparedMutations', 'pushMessage']),
         async mountJobsConsole() {
-            this.consoleApp = compatibilityMountJobConsole()
+            this.consoleApp = await compatibilityMountJobConsole()
         },
         async onComplete() {
             await Promise.all([
@@ -43,8 +52,11 @@ export default {
             if(jobLogSection.content && jobLogSection.lineNumber > highestLineNumber) {
                 highestLineNumber = jobLogSection.lineNumber
                 for(const contentSection of jobLogSection.content) {
-                    //console.log(contentSection.text)
-                    //visit here
+                    if(contentSection.style == 'd-none') {
+                        try {
+                          this.pushMessage({...JSON.parse(contentSection.text), lineNumber: jobLogSection.lineNumber})
+                        } catch(e) {}
+                    }
                 }
             }
             else {
@@ -60,44 +72,43 @@ export default {
             return highestLineNumber
         },
         pollLogState(time=30) {
-            
-            const self = this
+            clearTimeout(this.timeout)
             this.timeout = setTimeout(async () => {
-                const state = self.consoleApp?.$store?.state
+                const state = this.consoleApp?.$store?.state
                 let complete
                 if(!state || (complete = state.job.complete) === undefined) {
-                    self.pollLogState(time * 2)
+                    this.pollLogState(time * 2)
                     return
                 }
-                switch(self.initialCompletionState) {
+                switch(this.initialCompletionState) {
                     case 'complete':
                         break
                     case 'incomplete':
                         if(complete) {
-                            await self.onComplete()
+                            await this.onComplete()
                         }
                     case null:
-                        self.initialCompletionState = complete? 'complete': 'incomplete'
-                        if(self.initialCompletionState == 'incomplete') {
-                            self.$emit('active-deployment')
-                        }
-
+                        this.initialCompletionState = complete? 'complete': 'incomplete'
                         break
 
                 }
                 const consoleContainer = document.querySelector('#console-container')
                 for(const jobLogSection of state.jobLog) {
-                    const newConsoleLength = self.visitJobLogSection(jobLogSection, self.linesRead)
+                    const newConsoleLength = this.visitJobLogSection(jobLogSection, this.linesRead)
                     
-                    if(self.autoscroll && newConsoleLength > self.linesRead) {
+                    if(this.shouldScroll && newConsoleLength > this.linesRead) {
                         consoleContainer.scrollTop = consoleContainer.scrollHeight - consoleContainer.offsetHeight
                     }
-                    self.linesRead = newConsoleLength
+                    this.linesRead = newConsoleLength
                 }
 
-
-                self.pollLogState()
+                this.pollLogState()
             }, time)
+        },
+        setConsoleHeight() {
+            const consoleContainer = document.querySelector('#console-container')
+            delete consoleContainer.style.maxHeight
+            consoleContainer.style.height = (this.windowHeight - consoleContainer.getBoundingClientRect().y - BOTTOM_MARGIN) + 'px'
         }
     },
     async beforeCreate() {
@@ -112,6 +123,8 @@ export default {
         const element = tempDocument.querySelector('#js-job-page')
         const dataset = element.dataset
         const consoleContainer = document.querySelector('#console-container')
+        this.setConsoleHeight()
+
         consoleContainer.appendChild(element)
         consoleContainer.classList.add('loaded')
         consoleContainer.onscroll = () => {
@@ -139,7 +152,9 @@ export default {
   overflow-y: auto;
 }
 
-#console-container >>> a {
-    pointer-events: none;
+/*
+#console-container >>> .content-wrapper {
+  padding-bottom: 0;
 }
+*/
 </style>

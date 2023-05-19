@@ -28,7 +28,7 @@ export default {
     methods: {
         ...mapMutations(['setCommentsCount']),
         async mountNotesApp() {
-            this.notesApp = compatibilityMountNotesApp()
+            this.notesApp = await compatibilityMountNotesApp()
         },
         async pollDiscussions() {
             await sleep(POLL_PERIOD)

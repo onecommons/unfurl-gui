@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 const expect = require('expect')
-process.env['NODE_TLS_REJECT_UNAUTHORIZED'] = 0
+
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')
 axios.defaults.withCredentials = true
@@ -12,7 +12,6 @@ const jar = new CookieJar()
 axios.defaults.httpsAgent = new HttpsCookieAgent({
   jar,
   keepAlive: true,
-  rejectUnauthorized: false,
 })
 
 async function main({baseURL, registerName, registerEmail, registerPassword}) {

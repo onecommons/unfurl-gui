@@ -89,16 +89,16 @@ export async function prepareVariables({workflow, projectUrl, environmentName, d
     )
 }
 
-export async function triggerIncrementalDeployment(pipelinesPath, {upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}) {
+export async function triggerIncrementalDeployment(pipelinesPath, {variables, upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}) {
     const variablesDict = {
+        ...variables,
         UPSTREAM_BRANCH: upstreamBranch, UPSTREAM_REF: upstreamBranch,
         UPSTREAM_COMMIT: upstreamCommit,
         UPSTREAM_PIPELINE_ID: upstreamPipeline, UPSTREAM_PIPELINE: upstreamPipeline,
         UPSTREAM_PROJECT: upstreamProject
     }
-    const variables = toGlVariablesAttributes(variablesDict, 'env_var')
 
-    return triggerPipeline(pipelinesPath, variables)
+    return triggerPipeline(pipelinesPath, toGlVariablesAttributes(variablesDict, 'env_var'))
 }
 
 export async function deploy(pipelinesPath, parameters, options) {

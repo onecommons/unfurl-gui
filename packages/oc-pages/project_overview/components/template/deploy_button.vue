@@ -13,11 +13,16 @@ export default {
         GlButton, GlButtonGroup, GlDropdown, GlDropdownItem
     },
     props: {
-        deployStatus: String
+        deployStatus: String,
+        mergeRequest: Object
     },
     methods: {
         triggerDeploy() {
-            this.$emit('triggerDeploy')
+            if(this.userCanEdit) {
+                this.$emit('triggerDeploy')
+            } else {
+                this.$emit('mergeRequestReady', {status: !this.markedReady})
+            }
         },
         triggerLocalDeploy() {
             this.$emit('triggerLocalDeploy')
@@ -29,9 +34,31 @@ export default {
             'cardIsValid',
             'deployTooltip',
             'getPrimaryCard',
+            'userCanEdit'
         ]),
         canDeploy() {
             return this.cardIsValid(this.getPrimaryCard)
+        },
+        workInProgress() {
+            return this.mergeRequest && this.mergeRequest.work_in_progress
+        },
+        markedReady() {
+            return this.mergeRequest && !this.workInProgress
+        },
+        deployButtonText() {
+            if(this.userCanEdit) {
+                return 'Deploy'
+            }
+            if(this.markedReady) {
+                return 'Mark as Draft'
+            }
+            return 'Mark as Ready'
+        },
+        deployButtonIcon() {
+            if(this.userCanEdit) {
+                return 'upload'
+            }
+            return 'merge-request-open'
         },
     }
 }
@@ -47,18 +74,18 @@ export default {
         <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex flex-column position-relative">
             <gl-button-group class="deploy-button">
                 <gl-button
-                    :aria-label="__('Deploy')"
+                    :aria-label="deployButtonText"
                     data-testid="deploy-button"
-                    :title="!deployTooltip? 'Deploy': null"
+                    :title="!deployTooltip? deployButtonText: null"
                     type="button"
-                    icon="upload"
+                    :icon="deployButtonIcon"
                     class="deploy-action"
-                    :disabled="deployStatus == 'disabled'"
+                    :disabled="deployStatus == 'disabled' && !markedReady"
                     @click.prevent="triggerDeploy"
                 >
-                    {{ __('Deploy') }}
+                    {{ deployButtonText }}
                 </gl-button>
-                <gl-dropdown :disabled="deployStatus == 'disabled'" right>
+                <gl-dropdown v-if="userCanEdit" :disabled="deployStatus == 'disabled'" right>
                     <gl-dropdown-item @click="triggerLocalDeploy">
                         Deploy Locally
                     </gl-dropdown-item>

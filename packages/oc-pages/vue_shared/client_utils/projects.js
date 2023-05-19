@@ -70,6 +70,7 @@ export async function fetchBranches(projectId) {
     return branchesData[projectId] = promise()
 }
 
+
 function commitSessionStorageKey(projectId, branch) {
     return `${projectId}#${branch}.latest_commit`
 }
@@ -85,7 +86,7 @@ export async function fetchLastCommit(projectId, _branch) {
         fetchBranches(projectId)
     ])
 
-    const {commit, name} = branches.find(b => branch? b.name == branch: b.default)
+    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main')
     const {id, created_at} = commit
 
     let lastInSessionStorage
@@ -107,13 +108,17 @@ export async function fetchBranch(projectId, branch) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
 }
 
-export async function createBranch(projectId, branch) {
-    const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref: 'main'}, {validateStatus() {return true}})
+export async function createBranch(projectId, branch, ref='main') {
+    const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref}, {validateStatus() {return true}})
 
     if(response.status >= 400) {
         console.error(response.data)
         throw new Error(`Couldn't create branch '${branch}'`)
     }
+
+    try {
+        branchesData[branchName] = branchesData[ref]
+    } catch(e) {}
 
     return response.data
 }
@@ -179,3 +184,50 @@ export async function fetchProjectPermissions(projectPath) {
 
     return result?.data?.project?.userPermissions?.pushCode ?? false
 }
+
+export async function createMergeRequest(projectId, {branch, target, title, description, labels}) {
+    const body = {}
+    body['source_branch'] = branch
+    body['target_branch'] = target
+    body['title'] = title
+
+    if(description) {
+        body['description'] = description
+    }
+
+    if(labels) {
+        const _labels = Array.isArray(labels)? labels.join(','): labels
+        body['labels'] = _labels
+    }
+
+    return (await axios.post(`/api/v4/projects/${projectId}/merge_requests`, body))?.data
+}
+
+export async function listMergeRequests(projectId, {branch, target, labels, state}) {
+    const params = []
+    if(branch) {
+        params.push(`source_branch=${branch}`)
+    }
+    if(target) {
+        params.push(`target_branch=${target}`)
+    }
+    if(labels) {
+        const _labels = Array.isArray(labels)? labels.join(','): labels
+        params.push(`labels=${_labels}`)
+    }
+    if(state) {
+        params.push(`state=${state}`)
+    }
+
+    return (await axios.get(`/api/v4/projects/${projectId}/merge_requests?${params.join('&')}`))?.data
+}
+
+export async function setMergeRequestReadyStatus(projectId, {branch, target, labels, state, status}) {
+    const wip = status === false || status == 'wip'
+    const [mr] = await listMergeRequests(...arguments)
+
+    let title = mr.title.replace(/^\[Draft\]\s+/, '')
+    if(wip) title = `[Draft] ${title}`
+    return await axios.put(`/api/v4/projects/${projectId}/merge_requests/${mr.iid}`, {title})
+}
+

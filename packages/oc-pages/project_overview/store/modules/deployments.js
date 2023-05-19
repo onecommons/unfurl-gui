@@ -44,6 +44,14 @@ const actions = {
     },
 
     async cloneDeployment({getters, dispatch, rootGetters, commit}, {deployment, environment, newDeploymentTitle, targetEnvironment, dryRun}) {
+        if(rootGetters.hasPreparedMutations) {
+            dispatch('createError', {
+                message: "Can't clone deployment - there are prepared changes that haven't been committed. This is a bug.",
+                context: arguments[1],
+                severity: 'critical'
+            })
+            return
+        }
         const deploymentName = deployment?.name || deployment
         const environmentName = environment?.name || environment
         const targetEnvironmentName = (targetEnvironment?.name ||  targetEnvironment || environmentName)
@@ -115,6 +123,9 @@ const actions = {
             }
         }
         await dispatch('commitPreparedMutations', {dryRun}, {root: true})
+
+        if(rootGetters.hasCriticalErrors) return
+
         if(dryRun) {
             commit('clearPreparedMutations', null, {root:true})
         }
@@ -339,42 +350,35 @@ const actions = {
         await dispatch('commitPreparedMutations')
     },
 
-    // TODO move fetch logic into client_utils
-    async fetchDeployment({state, commit, rootGetters}, {deployPath, fullPath}) {
-        const username = rootGetters.getUsername
-        const password = await fetchUserAccessToken()
+    async renameDeployment({getters, commit, rootGetters, dispatch}, {deploymentName, environmentName, newTitle}) {
+        const deploymentDict = getters.getDeploymentDictionary(deploymentName, environmentName)
 
-        const [latestCommit, branch] = await fetchLastCommit(encodeURIComponent(fullPath))
+        const deployment = Object.values(deploymentDict.Deployment)[0], deploymentTemplate = Object.values(deploymentDict.DeploymentTemplate)[0]
+        const deploymentDir = rootGetters.lookupDeployPath(deploymentName, environmentName)?.name
 
-        let deploymentUrl = `${rootGetters.unfurlServicesUrl}/export?format=deployment`
-        deploymentUrl += `&username=${username}`
-        deploymentUrl += `&password=${password}`
-        deploymentUrl += `&deployment_path=${encodeURIComponent(deployPath.name)}`
-        deploymentUrl += `&environment=${deployPath.environment}`
-        deploymentUrl += `&auth_project=${encodeURIComponent(fullPath)}`
-        deploymentUrl += `&branch=${branch}`
-        deploymentUrl += `&latest_commit=${latestCommit}`
+        if(deployment.title == newTitle) return
 
-        try {
-            const {data} = await axios.get(deploymentUrl)
+        commit('setCommitMessage', `Rename ${deployment.title || deploymentName} to ${newTitle}`)
+        commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath)
+        commit('setUpdateType', 'deployment', {root: true})
+        commit('setUpdateObjectPath', deploymentDir, {root: true})
 
-            data._environment = deployPath.environment
+        const updateTitleInDeployment = () => [{
+            typename: 'Deployment',
+            patch: {__typename: 'Deployment', ...deployment, title: newTitle},
+            target: deploymentName
+        }]
 
-            const deployments = [...state.deployments]
+        const updateTitleInDeploymentTemplate = () => [{
+            typename: 'DeploymentTemplate',
+            patch: {__typename: 'DeploymentTemplate', ...deploymentTemplate, title: newTitle},
+            target: deploymentName
+        }]
 
-            let index = deployments.findIndex(dep => Object.values(dep.Deployment)[0].name == Object.values(data.Deployment)[0].name && dep._environment == deployPath.environment)
+        commit('pushPreparedMutation', updateTitleInDeployment, {root: true})
+        commit('pushPreparedMutation', updateTitleInDeploymentTemplate, {root: true})
 
-            if(index != -1) {
-                deployments[index] = data
-            } else {
-                deployments.push(data)
-            }
-
-            commit('setDeployments',  deployments)
-        }catch(e) {
-            console.error(e)
-        }
-
+        await dispatch('commitPreparedMutations')
     }
 };
 const getters = {
@@ -508,7 +512,39 @@ const getters = {
             const result = deployments.find(dep => dep.title == deploymentName || dep.name == slugify(deploymentName))
             return result
         }
+    },
+    listSharedResources(_, getters) {
+        return function(deploymentName, environmentName) {
+            const dictionary = getters.getDeploymentDictionary(deploymentName, environmentName)
+            return Object.values(dictionary.Resource)
+                .filter(r => getters.getResourceSharedState(environmentName, deploymentName, r.name))
+        }
+    },
+
+    deleteDeploymentPreventedBy(_, getters) {
+        return function(deploymentName, environmentName) {
+            const result = []
+            getters.listSharedResources(deploymentName, environmentName).forEach(
+                r => result.push(`A shared resource <b>${r.title}</b> exists in this deployment.`)
+            )
+
+            return result
+        }
+    },
+
+    undeployPreventedBy(_, getters) {
+        return function(deploymentName, environmentName) {
+            const result = []
+            getters.listSharedResources(deploymentName, environmentName)
+                .filter(r => !r.protected)
+                .forEach(
+                    r =>  result.push(`An unprotected shared resource <b>${r.title}</b> exists in this deployment.`)
+                )
+
+            return result
+        }
     }
+
 };
 
 

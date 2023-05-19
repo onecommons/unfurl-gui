@@ -11,11 +11,12 @@ import EnvironmentCreationDialog from '../../components/environment-creation-dia
 import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
-import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/oc-components'
+import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
+import {lookupCloudProviderShortName} from 'oc_vue_shared/util.mjs'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 
@@ -114,7 +115,8 @@ export default {
             'getLastUsedEnvironment',
             'environmentsAreReady',
             'commentsCount',
-            'commentsIssueUrl'
+            'commentsIssueUrl',
+            'hasCriticalErrors'
         ]),
         primaryProps() {
             return {
@@ -176,7 +178,7 @@ export default {
         },
         templateSelected: function(val) {
             if(this.templateForkedName) return
-            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(val.title)
+            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(this.getApplicationBlueprint.title + ' ' + lookupCloudProviderShortName(val.cloud))
             else this.templateForkedName = ''
 
         },
@@ -228,6 +230,7 @@ export default {
         //
 
         await this.loadPrimaryDeploymentBlueprint()
+        if(this.hasCriticalErrors) return
         this.fetchCloudmap() // async, not awaiting
 
         if (this.environmentsAreReady && this.yourDeployments.length && !this.triedPopulatingDeploymentItems) {
@@ -310,6 +313,7 @@ export default {
             const projectPath = this.$projectGlobal.projectPath
             if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
             await this.fetchProject({projectPath});
+            if(this.hasCriticalErrors) return
             const templateSlug = this.getApplicationBlueprint?.primaryDeploymentBlueprint
             if(!templateSlug) return
             return await this.populateTemplateResources({

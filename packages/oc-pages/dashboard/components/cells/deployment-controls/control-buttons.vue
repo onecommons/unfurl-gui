@@ -1,6 +1,7 @@
 <script>
 import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
+import OpenLiveApp from './open-live-app.vue'
 export default {
     props: {
         deployment: Object,
@@ -18,10 +19,13 @@ export default {
             default: () => 'gl-button'
         }
     },
-    components: {GlIcon, GlButton, GlDropdown, GlDropdownItem},
+    components: {GlIcon, GlButton, GlDropdown, GlDropdownItem, OpenLiveApp},
     methods: {
         hasButton(id) { return this.controlButtons.includes(id) },
         hasDisabledButton(id) { return this.disabledButtons.includes(id) },
+        renameDeployment() {
+            this.$emit('renameDeployment')
+        },
         deleteDeployment() {
             this.$emit('deleteDeployment')
         },
@@ -67,10 +71,7 @@ export default {
         <gl-icon :size="16" name="cancel"/> 
         {{__('Cancel Job')}}
     </component>
-    <component :is='component' v-if="hasButton('open')" target="_blank" rel="noopener noreferrer" :href="deployment.url" variant="confirm">
-        <gl-icon :size="16" name="external-link"/> 
-        {{__('Open Live App')}}
-    </component>
+    <open-live-app :component="component" v-if="hasButton('open')" :deployment="deployment" />
     <component :is='component' v-if="hasButton('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Draft')}}
@@ -89,10 +90,10 @@ export default {
     </component>
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
-    <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
+    <!-- View Deployment History is too long when this is the primary action --> 
     <component :is='component' v-if="hasButton('job-history')" :disabled="hasDisabledButton('job-history')" :href="viewJobsLink">
         <gl-icon :size="16" name="history"/> 
-        {{__('View Deployment History')}}
+        {{component == 'gl-button'? __("Deploy History"): __('View Deployment History')}}
     </component>
     <component :is='component' v-if="hasButton('view-artifacts')" :href="viewArtifactsLink">
         <gl-icon :size="16" name="archive"/> 
@@ -101,6 +102,8 @@ export default {
     <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
     <component :is='component' v-if="hasButton('view-in-repository')" :href="viewInRepositoryLink" target="_blank"><gl-icon :size="16" name="file-tree" /> {{__('View in Repository')}}</component>
     <component :is='component' v-if="hasButton('inc-redeploy')" @click="incRedeploy"><gl-icon :size="16" name="repeat" /> {{__('Incremental Redeploy')}}</component>
+    <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
+    <component :is='component' v-if="hasButton('rename-deployment')" @click="renameDeployment"><gl-icon :size="16" name="label" /> {{__('Rename Deployment')}}</component>
     <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>
@@ -111,7 +114,7 @@ export default {
     display: flex;
     align-items: center;
 }
-.control-button-container >>> .gl-button { width: 10em; padding: 0.2em 0;}
+.control-button-container >>> .gl-button { width: 10.5em; padding: 0.2em 0;}
 .control-button-container >>> .gl-new-dropdown-item-text-primary { display: flex; align-items: center; }
 .control-button-container >>> .gl-icon { margin-right: 0.25em; }
 .control-button-container >>> .disabled { opacity: 0.7; }

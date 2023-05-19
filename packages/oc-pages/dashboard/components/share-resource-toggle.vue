@@ -1,8 +1,25 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import {DetectIcon} from 'oc_vue_shared/oc-components'
+import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
+
+// TODO make this a global thing so it can apply to other operations
+let lock
+
+async function acquireLock() {
+    if(lock) {
+        await lock
+    }
+
+    let release
+    lock = new Promise((resolve, reject) => {
+        release = resolve
+    })
+
+    return release
+}
+
 export default {
     props: {
         card: Object
@@ -14,7 +31,7 @@ export default {
     },
     components: {DetectIcon, GlDropdown, GlDropdownItem, GlDropdownDivider},
     computed: {
-        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny']),
+        ...mapGetters(['getCurrentEnvironment', 'getDeploymentTemplate', 'getResourceSharedState', 'getHomeProjectPath', 'resolveResourceTypeFromAny', 'userCanEdit']),
         canShareResource() {
             /*
              * don't require connect implementation, handled by Unfurl
@@ -24,7 +41,9 @@ export default {
 
             return (
                 // type?.implementations?.includes('connect') &&
+                this.userCanEdit &&
                 this.card?.name &&
+                !(this.card?.status == 3 || this.card?.status == 5) && // status is not error or absent
                 this.card?.__typename != 'ResourceTemplate' &&
                 !this.card.name.startsWith('__') // __ prefix is a hack for unfurl-gui to track external resources
                 // && this.card.status == 1 // require OK status
@@ -50,32 +69,47 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['updateResourceSharedState', 'unshareResource']),
-        shareWithEnvironment() {
+        ...mapActions(['updateResourceSharedState', 'unshareResource', 'loadDashboard']),
+        async shareWithEnvironment() {
             const 
                 environmentName = this.getCurrentEnvironment.name,
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name,
                 shareState = 'environment'
+
+            const release = await acquireLock()
         
-            this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
+            await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
+            await this.loadDashboard()
+
+            release()
         },
-        shareWithDashboard() {
+        async shareWithDashboard() {
             const 
                 environmentName = this.getCurrentEnvironment.name,
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name,
                 shareState = 'dashboard'
 
-            this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
+            const release = await acquireLock()
+
+            await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
+            await this.loadDashboard()
+
+            release()
         },
-        stopSharing() {
+        async stopSharing() {
             const 
                 environmentName = this.getCurrentEnvironment.name,
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name
 
-            this.unshareResource({environmentName, deploymentName, resourceName})
+            const release = await acquireLock()
+
+            await this.unshareResource({environmentName, deploymentName, resourceName})
+            await this.loadDashboard()
+
+            release()
         },
         sharePublic() {
             const {projectPath, title, description} = this.openCloudPublish

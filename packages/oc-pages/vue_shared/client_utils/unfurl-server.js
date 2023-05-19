@@ -1,22 +1,38 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchLastCommit, setLastCommit } from "./projects";
-import {shouldEncodePasswordsInExportUrl} from '../storage-keys';
+import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
+import { XhrIFrame } from './crossorigin-xhr';
+import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
 
-function createConfig({includePasswordInQuery, username, password}) {
-    const config = {}
+function createHeaders({includePasswordInQuery, username, password}) {
     const headers = {}
 
     if(!includePasswordInQuery && username && password) {
         headers['x-git-credentials'] = btoa(username + ':' + password)
     }
 
-    config.headers = headers
-
-    return config
+    return headers
 }
 
-export async function unfurlServerExport({baseUrl, format, branch, projectPath, includeDeployments}) {
+let ufsvIFrame
+if(unfurlServerUrlOverride()) { ufsvIFrame = new XhrIFrame() }
+
+async function doXhr(_method, url, body, headers) {
+    const method = _method.toUpperCase()
+    if(!['GET', 'POST'].includes(method)) throw new Error(`@doXhr: unexpected method for unfurl server "${method}"`)
+    if(!unfurlServerUrlOverride()) {
+        let response
+        if(method == 'GET') { response = await axios.get(url, {headers}) }
+        else if(method == 'POST') { response = await axios.post(url, body, {headers}) }
+        return response?.data
+    } else {
+        return await ufsvIFrame.doXhr(...arguments)
+    }
+
+}
+
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments}) {
+    const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult
 
@@ -30,35 +46,46 @@ export async function unfurlServerExport({baseUrl, format, branch, projectPath, 
 
     if(includePasswordInQuery && username && password) {
         exportUrl += `&username=${username}`
-        exportUrl += `&password=${password}`
+        exportUrl += `&private_token=${password}`
     }
 
-    exportUrl += `&branch=${_branch}`
+    exportUrl += `&branch=${branch || _branch}`
     exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
-    exportUrl += `&latest_commit=${latestCommit}`
+
+    if(alwaysSendLatestCommit() || !unfurlServerUrlOverride()) {
+        exportUrl += `&latest_commit=${latestCommit}`
+    }
 
     if(includeDeployments) {
         exportUrl += '&include_all_deployments=1'
     }
 
-    const response = await axios.get(exportUrl, createConfig({includePasswordInQuery, username, password}))
-    return response.data
+    return await doXhr('GET', exportUrl, null, createHeaders({includePasswordInQuery, username, password}))
 }
 
-export async function unfurlServerUpdate({baseUrl, method, projectPath, branch, patch, commitMessage, variables}) {
+export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
+    console.log(arguments[0])
+    const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
-    const password = await fetchUserAccessToken()
+    const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
+    const [latestCommit, _branch] = lastCommitResult
 
-    const {data} = await axios.post(
-        `${baseUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`,
-        {
-            ...variables,
-            branch,
-            patch,
-            commit_msg: commitMessage || method
-        },
-        createConfig({username, password})
-    )
+    if(_branch != branch) {
+        await createBranch(encodeURIComponent(projectPath), branch, latestCommit)
+    }
+
+    const body = {
+        ...variables,
+        branch: branch || _branch,
+        latest_commit: latestCommit,
+        patch,
+        commit_msg: commitMessage || method
+    }
+    const headers = createHeaders({username, password})
+    headers['Content-Type'] = 'application/json'
+    const url = `${baseUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
+
+    const data = await doXhr('POST', url, body, headers)
 
     if(data.commit) {
         setLastCommit(encodeURIComponent(projectPath), branch, data.commit)

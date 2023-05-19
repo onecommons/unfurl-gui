@@ -1,17 +1,10 @@
 <script>
-import { GlTabs, GlIcon, GlButton } from '@gitlab/ui';
-import {DetectIcon, OcPropertiesList} from 'oc_vue_shared/oc-components'
-
-// webpack gets confused with these two
-import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
-import IncrementalDeploymentSwitch from 'oc_vue_shared/components/oc/incremental-deployment-switch.vue'
-//
+import { GlTabs } from '@gitlab/ui';
 
 import OcInputs from './oc_inputs.vue'
-import { bus } from 'oc_vue_shared/bus';
 import { __ } from '~/locale';
 import commonMethods from '../mixins/commonMethods';
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters } from 'vuex'
 import Dependency from './dependency.vue'
 import {getCustomInputComponent} from './oc_inputs'
 
@@ -19,11 +12,8 @@ export default {
     name: 'OcList',
     components: {
         GlTabs,
-        OcTab,
-        OcPropertiesList,
         OcInputs,
         Dependency,
-        IncrementalDeploymentSwitch
     },
 
     mixins: [commonMethods],
@@ -95,6 +85,13 @@ export default {
     data() {
         return {
             resourceName: '',
+            inputsLength: null,
+        }
+    },
+
+    methods: {
+        requirementKey(requirement) {
+            return `${requirement.card.dependentName}.${requirement.card.dependentRequirement}.${requirement.dependency.name}`
         }
     },
 
@@ -111,6 +108,7 @@ export default {
             'lookupEnvironmentVariable',
             'cardCanIncrementalDeploy',
             'getDeployments', 'getDeploymentDictionary',
+            'resourceTemplateInputsSchema',
             'getCurrentContext'
         ]),
         hasRequirementsSetter() {
@@ -134,23 +132,23 @@ export default {
 
             const titleMap = {}
             const sensitiveMap = {}
-            const resourceType = this.resolveResourceTypeFromAny(this._card.type)
-            Object.entries(resourceType?.inputsSchema?.properties || {})
+            const visibilityMap = {}
+            Object.entries(this.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
-                })
-            Object.entries(resourceType?.inputsSchema?.properties || {})
-                .forEach(([name, value]) => {
                     sensitiveMap[name] = value.sensitive
-              })
+                    visibilityMap[name] = value.visibility
+                })
 
-            properties = properties.map(property => {
-              const name = titleMap[property.name] || property.name
-              const sensitive = sensitiveMap[property.name]
-              let value = property.value
-              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
-              return {...property, name, value, sensitive}
-            })
+            properties = properties
+                .filter(property => visibilityMap[property.name] != 'hidden')
+                .map(property => {
+                    const name = titleMap[property.name] || property.name
+                    const sensitive = sensitiveMap[property.name]
+                    let value = property.value
+                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+                    return {...property, name, value, sensitive}
+                })
 
             if(this.cardCanIncrementalDeploy(this.card)) {
                 properties.push({
@@ -165,37 +163,29 @@ export default {
             let attributes = [].concat(this._card.attributes || [], this._card.computedProperties || [])
             const titleMap = {}
             const sensitiveMap = {}
+            const visibilityMap = {}
             const resourceType = this.resolveResourceTypeFromAny(this._card.type)
 
-            Object.entries(resourceType?.inputsSchema?.properties || {})
+            Object.entries(this.inputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
-                })
-
-            Object.entries(resourceType?.inputsSchema?.properties || {})
-                .forEach(([name, value]) => {
                     sensitiveMap[name] = value.sensitive
-              })
+                    visibilityMap[name] = value.visibility
+                })
 
             Object.entries(resourceType?.outputsSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
+                    sensitiveMap[name] = value.sensitive
+                    visibilityMap[name] = value.visibility
                 })
 
             Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
                 .forEach(([name, value]) => {
                     titleMap[name] = value?.title
+                    sensitiveMap[name] = value.sensitive
+                    visibilityMap[name] = value.visibility
                 })
-
-            Object.entries(resourceType?.outputsSchema?.properties || {})
-                .forEach(([name, value]) => {
-                    sensitiveMap[name] = value.sensitive
-              })
-
-            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
-                .forEach(([name, value]) => {
-                    sensitiveMap[name] = value.sensitive
-              })
 
             const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
             if(consoleURLIndex != -1) {
@@ -216,13 +206,16 @@ export default {
                     outboundLinkText
                 })
             }
-            attributes = attributes.map(attribute => {
-              const name = titleMap[attribute.name] || attribute.name
-              const sensitive = sensitiveMap[attribute.name]
-              let value = attribute.value
-              value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
-              return {...attribute, name, value, sensitive}
-            })
+            attributes = attributes
+                .filter(attribute => visibilityMap[attribute.name] != 'hidden')
+                .map(attribute => {
+                    const name = titleMap[attribute.name] || attribute.name
+                    const sensitive = sensitiveMap[attribute.name]
+                    const visibility = visibilityMap[attribute.name]
+                    let value = attribute.value
+                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+                    return {...attribute, name, value, sensitive}
+                })
 
             if(this.cardCanIncrementalDeploy(this.card) && this._readonly) {
                 attributes.push({
@@ -231,7 +224,6 @@ export default {
                 })
             }
 
-            //attributes = attributes.map(attribute => ({...attribute, name: titleMap[attribute.name] || attribute.name}))
             return attributes
         },
         propertiesStyle() {
@@ -256,7 +248,10 @@ export default {
         },
         requirements() {
             try {
-                const requirements = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+                let requirements = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+                if(this._readonly) {
+                    requirements = requirements.filter(pairing => !!pairing.dependency?.match)
+                }
                 return requirements
             } catch(e) {
                 // catch for imported resources
@@ -265,7 +260,10 @@ export default {
         },
         extras() {
             try {
-                const extras = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+                let extras = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+                if(this._readonly) {
+                    extras = extras.filter(pairing => !!pairing.dependency?.match)
+                }
                 return extras
             } catch(e) {
                 // catch for imported resources
@@ -283,13 +281,13 @@ export default {
         customInputComponent() {
             return (!this._readonly || this.getCurrentContext === false) && getCustomInputComponent(this._card.type)
         },
-        cardType() {
-            return this.resolveResourceTypeFromAny(this._card.type)
+        inputsSchema() {
+            return this.resourceTemplateInputsSchema(this._card)
         },
         inputTabs() {
             if(!this.renderInputTabs || this._readonly) return []
             const result = []
-            for(const [name, value] of Object.entries(this.cardType.inputsSchema.properties)) {
+            for(const [name, value] of Object.entries(this.inputsSchema.properties)) {
                 if(value.tab_title) {
                     const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
                     result.push({name, tab_title: value.tab_title, value, count})
@@ -313,6 +311,10 @@ export default {
                 return {...this.card, ...this.importedResource, imported: this.card.imported}
             }
             return this.card
+        },
+
+        inputsTitleCount() {
+          return this.inputsLength ?? this.properties.length
         }
     },
 }
@@ -323,36 +325,35 @@ export default {
         <gl-tabs v-if="shouldRenderTabs" class="">
             <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
-                    <div class="ci-table" role="grid">
-                        <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirement.dependency.name"/>
+                    <div class="ci-table" role="grid"> <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirementKey(requirement)"/>
                     </div>
                 </div>
             </oc-tab>
-            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="properties.length">
+            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="inputsTitleCount">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties">
-                    <template #Incremental_Deploy> <incremental-deployment-switch :card="_card" /> </template>
+                    <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="_card" /> </template>
                 </oc-properties-list>
 
-                <oc-inputs v-else :card="_card" />
+                <oc-inputs @setInputLength="i => inputsLength = i" ref="inputs" v-else :card="_card" />
             </oc-tab>
-            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" v-for="tab in inputTabs">
+            <oc-tab :key="tab.tab_title" :titleCount="tab.count" :title="tab.tab_title" :title-testid="`tab-${tab.name}-${_card.name}`" v-for="tab in inputTabs">
                 <oc-inputs :card="_card" :tab="tab.tab_title"/>
             </oc-tab>
             <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
                 <oc-properties-list :container-style="propertiesStyle" :properties="attributes">
-                    <template #Incremental_Deploy> <incremental-deployment-switch :card="card" /> </template>
+                    <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="card" /> </template>
                 </oc-properties-list>
             </oc-tab>
             <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="_card.outputs.length">
                 <oc-properties-list :container-style="propertiesStyle" :card="_card" property="outputs">
                     <!-- not sure this template would ever be reached -->
-                    <template #Incremental_Deploy> <incremental-deployment-switch :card="card" /> </template>
+                    <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="card" /> </template>
                 </oc-properties-list>
             </oc-tab>
             <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
-                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="extra.dependency.name"/>
+                        <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="requirementKey(extra)"/>
                     </div>
                 </div>
             </oc-tab>

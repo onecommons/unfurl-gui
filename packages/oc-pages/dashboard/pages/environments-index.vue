@@ -32,7 +32,8 @@ export default {
     computed: {
         ...mapGetters([
             'getDashboardItems',
-            'userCanEdit'
+            'userCanEdit',
+            'hasCriticalErrors'
         ]),
         displayModal: {
             get() {
@@ -40,7 +41,7 @@ export default {
             },
             set(value) {
                 const query = {...this.$route.query}
-                if(value) {
+                if(value && !this.hasCriticalErrors) {
                     query.create = null
                 } else {
                     delete query.create

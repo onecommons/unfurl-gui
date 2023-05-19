@@ -3,7 +3,7 @@ import { GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
 import {mapGetters, mapState} from 'vuex'
-import {OcTab, DetectIcon} from 'oc_vue_shared/oc-components'
+import {OcTab, DetectIcon} from 'oc_vue_shared/components/oc'
 
 export default {
     name: 'ProjectDescriptionBox',
@@ -67,13 +67,12 @@ export default {
         // as a result the old, fallback method will be used
 
         requirements() {
-            const self = this
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.requirementsForType(this.projectInfo.primary).filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
+                return this.requirementsForType(this.projectInfo.primary)?.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
             }
 
-            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0) || []
             
             return requirements.map(r => {
                 const constraint = r.dependency.constraint
@@ -82,13 +81,12 @@ export default {
             })
         },
         extras() {
-            const self = this
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.requirementsForType(this.projectInfo.primary).filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
+                return this.requirementsForType(this.projectInfo.primary)?.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
             }
 
-            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0) || []
             
             return requirements.map(r => {
                 const constraint = r.dependency.constraint
@@ -245,7 +243,7 @@ export default {
 .image-project {
     width: 300px;
     height: 300px;
-    object-fit: cover;
+    object-fit: contain;
 }
 .image-placeholder-default {
     background: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' version='1.1' preserveAspectRatio='none' viewBox='0 0 100 100'><line x1='0' y1='0' x2='100' y2='100' stroke='rgb(240,240,240,1)' vector-effect='non-scaling-stroke'/><line x1='0' y1='100' x2='100' y2='0' stroke='rgb(240,240,240,1)' vector-effect='non-scaling-stroke'/></svg>");

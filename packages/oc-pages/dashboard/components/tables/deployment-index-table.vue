@@ -1,18 +1,19 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
-import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc_vue_shared/oc-components'
+import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc_vue_shared/components/oc'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
 import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
-import {mapGetters, mapActions} from 'vuex'
-import {redirectToJobConsole, triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {mapGetters, mapActions, mapMutations} from 'vuex'
+import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import Vue from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
-import Vue from 'vue'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
+import MergeRequestsTable from './merge-requests-table.vue'
 
 
 
@@ -20,11 +21,11 @@ function deploymentGroupBy(item) {
     let result 
     try{
         result = `${item.deployment.name}:${item.application.name}:${item.environment.name}`
-    } catch(e) {return }
+    } catch(e) { return }
     return result
 }
 
-const tabFilters =  [
+const tabFilters = [
     {
         title: 'All'
     },
@@ -46,6 +47,10 @@ const tabFilters =  [
     {
         title: 'Drafts',
         filter(item) { return item.isDraft }
+    },
+    {
+        title: 'Merge Requests',
+        filter(item) { return false }
     },
     {
         title: 'Failed',
@@ -79,7 +84,8 @@ export default {
         GlFormInput,
         GlFormGroup,
         DeploymentStatusIcon,
-        DashboardRouterLink
+        DashboardRouterLink,
+        MergeRequestsTable
     },
     props: {
         items: {
@@ -107,7 +113,7 @@ export default {
         const glDark = document.querySelector('body.gl-dark') // not getting gl dark for some reason on this component
         const self = this
         const fields = [
-            {key: 'deployment', textValue: deploymentGroupBy, label: 'Deployment'},
+            {key: 'deployment', groupBy: deploymentGroupBy, label: 'Deployment'},
             {
                 key: 'environment',
                 label: 'Environments',
@@ -150,10 +156,14 @@ export default {
             'deleteDeployment',
             'deployInto',
             'undeployFrom',
-            'cloneDeployment'
+            'cloneDeployment',
+            'addUrlPoll',
+            'renameDeployment'
         ]),
+        ...mapMutations(['createError']),
         async deploy() {
             await this.deployInto(this.deploymentParameters)
+            if(this.hasCriticalErrors) return
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
                 name: routes.OC_DASHBOARD_DEPLOYMENTS, 
@@ -168,6 +178,7 @@ export default {
         },
         async undeploy() {
             await this.undeployFrom(this.deploymentParameters)
+            if(this.hasCriticalErrors) return
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
                 name: routes.OC_DASHBOARD_DEPLOYMENTS, 
@@ -216,8 +227,17 @@ export default {
             return result
         },
         async onModalConfirmed() {
+            const intent = this.intent
             const {deployment, environment} = this.target
-            switch(this.intent) {
+
+            await Vue.nextTick() // wait until modal is closed before doing anything
+
+            switch(intent) {
+                case 'rename':
+                    if(deployment.title == this.newDeploymentTitle) return
+                    await this.renameDeployment({deploymentName: deployment.name, environmentName: environment.name, newTitle: this.newDeploymentTitle})
+                    if(! this.hasCriticalErrors) window.location.reload()
+                    return
                 case 'undeploy':
                     this.undeploy()
                     return
@@ -237,18 +257,20 @@ export default {
                         newDeploymentTitle: this.newDeploymentTitle,
                         targetEnvironment,
                     })
+                    if(this.hasCriticalErrors) return
                     const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
                 case 'incRedeploy':
                     const deploymentItem = this.deploymentItemDirect({deployment, environment})
+                    const variables = deploymentItem.pipeline.variables
                     const upstreamBranch = deploymentItem.pipeline.upstream_branch
                     const upstreamCommit = deploymentItem.pipeline.upstream_commit_id
                     const upstreamPipeline = deploymentItem.pipeline.upstream_pipeline_id
                     const upstreamProject = deploymentItem.pipeline.upstream_project_id
                     const result = await triggerIncrementalDeployment(
                         this.pipelinesPath,
-                        {upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}
+                        {variables, upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}
                     )
                     console.log(result)
                     return
@@ -259,6 +281,11 @@ export default {
                     return
 
             }
+        },
+        onIntentToRename(deployment, environment) {
+            this.intent = 'rename'
+            this.target = {deployment, environment}
+            this.newDeploymentTitle = deployment.title
         },
         onIntentToDelete(deployment, environment) {
             this.intent = 'delete'
@@ -339,8 +366,28 @@ export default {
             'getCurrentNamespace',
             'getCurrentEnvironment',
             'getDeploymentTemplate',
-            'deploymentItemDirect'
+            'deploymentItemDirect',
+            'deleteDeploymentPreventedBy',
+            'undeployPreventedBy',
+            'hasCriticalErrors',
+            'mergeRequests'
         ]),
+        intentToDeletePreventedBy() {
+            if(this.intent != 'delete') return []
+            const {deployment, environment} = this.target
+            return this.deleteDeploymentPreventedBy(deployment.name, environment.name)
+        },
+        ableToDelete() {
+            return this.intent == 'delete' && this.intentToDeletePreventedBy.length == 0
+        },
+        intentToUndeployPreventedBy() {
+            if(this.intent != 'undeploy') return []
+            const {deployment, environment} = this.target
+            return this.undeployPreventedBy(deployment.name, environment.name)
+        },
+        ableToUndeploy() {
+            return this.intent == 'undeploy' && this.intentToUndeployPreventedBy.length == 0
+        },
         projectPath() {
             const {deployment, environment} = this.target
             if(deployment.__typename == 'DeploymentTemplate') {
@@ -383,20 +430,25 @@ export default {
             const targetTitle = this.target?.deployment?.title || this.target?.deployment?.name
             switch(this.intent){
                 case 'delete':
-                    return `Are you sure you want to delete ${targetTitle}?`
+                    if(this.ableToDelete) {
+                        return `Are you sure you want to delete ${targetTitle}?`
+                    } else {
+                        return `${targetTitle} can't be safely deleted yet.`
+                    }
                 case 'undeploy':
-                    return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
-                case 'deploy':
-                    return `Deploy ${targetTitle}?`
-                case 'clone':
-                    return `Clone ${targetTitle}?`
+                    if(this.ableToUndeploy) {
+                        return `Are you sure you want to teardown ${targetTitle}?` //It will not be deleted and you will be able to redeploy at any time.`
+                    } else {
+                        return `${targetTitle} can't be safely torn down yet.`
+                    }
                 case 'localDeploy':
                     return `Deploy ${targetTitle} locally with Unfurl`
                 case 'incRedeploy':
                     return `Force an update of ${targetTitle}?`
                 case 'edit':
                     return `Edit deployment '${targetTitle}'?`
-                default: return ''
+                default:
+                    return `${this.intent.toString().slice(0, 1)?.toUpperCase()}${this.intent.toString().slice(1)} ${targetTitle}?`
             }
         },
         useTabs() {
@@ -430,7 +482,7 @@ export default {
                 for(const item of this.itemsSorted) {
                     const deploymentItem = this.deploymentItem({item})
                     if(!deploymentItem) {
-                        console.error('deployment item not found for', item)
+                        this.createError({message: `Deployment item not found for ${item?.deployment?.name}`, context: item, severity: 'major', issue: 'Unfurl GUI should not be considering these valid deployments'})
                         continue
                     }
                     if(!tab.filter || tab.filter(deploymentItem)) {
@@ -447,6 +499,8 @@ export default {
                 const counts = _.countBy(list, (item) => item.context.environment?.name + ':' + item.context.deployment?.name)
                 return Object.keys(counts).length
             })
+            result[tabFilters.findIndex(tf => tf.title == 'Merge Requests')] += this.mergeRequests.length
+            result[tabFilters.findIndex(tf => tf.title == 'All')] += this.mergeRequests.length
             return result
         },
         tableItems() {
@@ -463,7 +517,8 @@ export default {
         },
         actionPrimary() {
             return {
-                text: this.deleteWarning? 'Delete Anyway':
+                text: (this.intent == 'delete' && (this.deleteWarning || !this.ableToDelete)) ? 'Delete Anyway':
+                    this.intent == 'undeploy' && !this.ableToUndeploy? 'Undeploy Anyway':
                     this.intent == 'localDeploy' ? 'OK': 'Confirm'
             }
         },
@@ -479,9 +534,21 @@ export default {
             const loaded = this.getDeploymentTemplate?.name && this.getCurrentEnvironment?.name
 
             return matchingParams && loaded
+        },
+        showingMergeRequestsTab() {
+            return this.currentTab == tabFilters.findIndex(tf => tf.title == 'Merge Requests')
         }
     },
     watch: {
+        items: {
+            immediate: true,
+            handler(val) {
+                for(const item of val) {
+                    const deploymentItem = this.deploymentItemDirect({deployment: item.deployment, environment: item.environment})
+                    if(deploymentItem?.isDeployed && item.deployment?.url) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
+                }
+            }
+        },
         currentTab(val) {
             const path = this.$route.path
             const show = val == 0? undefined : tabFilters[val]?.title?.toLowerCase()
@@ -538,8 +605,15 @@ export default {
             :actionCancel="actionCancel"
             @primary="onModalConfirmed"
             >
+            <div
+                v-if="intent == 'delete' && !ableToDelete"
+                class="m-3">
+                <ol>
+                    <li v-for="reason in intentToDeletePreventedBy" :key="reason" v-html="reason" />
+                </ol>
+            </div>
             <div 
-                v-if="deleteWarning" 
+                v-else-if="deleteWarning" 
                 class="m-3"
                 >
                 <div style="color: red">
@@ -549,10 +623,18 @@ export default {
                     Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
                 </div>
             </div>
-            <div v-if="intent == 'clone'">
+            <div 
+                v-if="intent == 'undeploy' && !ableToUndeploy"
+                class="m-3">
+                <ol>
+                    <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
+                </ol>
+            </div>
+            <div v-if="['clone', 'rename'].includes(intent)">
                 <gl-form-group class="m-3" label="New deployment title">
                     <gl-form-input v-model="newDeploymentTitle"/>
                     <environment-selection 
+                        v-if="intent == 'clone'"
                         class="mt-2"
                         v-model="cloneTargetEnvironment"
                         :provider="target.environment.primary_provider.type"
@@ -582,7 +664,7 @@ export default {
         <gl-tabs v-model="currentTab" v-if="useTabs">
             <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
         </gl-tabs>
-        <table-component :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
+        <table-component v-show="!showingMergeRequestsTab" :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
                 <div class="ml-2" style="padding-left: 30px">
                     {{__('Deployment')}}
@@ -620,10 +702,13 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" @edit="onIntentToEdit" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls @renameDeployment="onIntentToRename" @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" @edit="onIntentToEdit" v-if="scope.item._depth == 0" :scope="scope" />
             </template>
 
         </table-component>
+        <p class="mt-5"/>
+        <h3 v-if="tabs && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
+        <merge-requests-table v-show="(tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
     </div>
 
 </template>

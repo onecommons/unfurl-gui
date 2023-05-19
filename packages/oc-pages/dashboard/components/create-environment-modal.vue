@@ -22,7 +22,7 @@ export default {
         }
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath']),
+        ...mapGetters(['getHomeProjectPath', 'hasCriticalErrors']),
         disablePrimary() {
             return !(this.cp && this.env && this.env != __('Select'))
         }
@@ -31,12 +31,15 @@ export default {
         async redirectToNewEnvironment(e) {
             e.preventDefault()
             await this.$refs.environmentDialog.beginEnvironmentCreation(`/${this.getHomeProjectPath}/-/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
+            if(this.hasCriticalErrors) {
+                this.$refs.modal.close()
+            }
         },
     }
 }
 </script>
 <template>
-    <gl-modal modalId="create-env-modal" :visible="visible" @hidden="$emit('change', false)" :title="s__('OcDeployments|Create New Environment')" :action-cancel="{text: __('Cancel')}" :action-primary="{text: __('Next'), attributes: {disabled: disablePrimary, variant: 'confirm'}}" @primary="redirectToNewEnvironment">
+    <gl-modal ref="modal" modalId="create-env-modal" :visible="visible" @hidden="$emit('change', false)" :title="s__('OcDeployments|Create New Environment')" :action-cancel="{text: __('Cancel')}" :action-primary="{text: __('Next'), attributes: {disabled: disablePrimary, variant: 'confirm'}}" @primary="redirectToNewEnvironment">
         <environment-creation-dialog :allow-any="allowAny" ref="environmentDialog" @cloudProviderChange="cp => this.cp = cp" @environmentNameChange="env => this.env = env"/>
     </gl-modal>
 </template>
