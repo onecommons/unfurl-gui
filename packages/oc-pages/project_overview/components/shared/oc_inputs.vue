@@ -172,7 +172,6 @@ export default {
         }
       } catch(e) {
         status = 'error'
-        console.error(e)
         this.updateFieldValidation(
           path || 'all',
           status

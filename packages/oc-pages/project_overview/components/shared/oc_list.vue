@@ -98,7 +98,7 @@ export default {
     computed: {
         ...mapGetters([
             'getCurrentEnvironment',
-            'getValidConnections',
+            'getValidEnvironmentConnections',
             'cardDependenciesAreValid',
             'getDisplayableDependenciesByCard',
             'getCardProperties',

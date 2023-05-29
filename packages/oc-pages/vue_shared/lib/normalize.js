@@ -33,6 +33,19 @@ const transforms = {
         if(!resourceType.title) resourceType.title = resourceType.name
         resourceType.__typename = 'ResourceType'
 
+        if(! resourceType.requirements) {
+            resourceType.requirements = []
+        }
+
+        const utilization = resourceType.directives?.includes('substitute')? 0: 1
+        for(const req of resourceType.requirements) {
+            req._utilization = utilization
+            req.title = req.title || req.name
+        }
+
+        resourceType._maxUtilization = 1
+
+
         function normalizeSchemaProperty(property) {
             if(property.type == 'object' && property.properties && typeof property.properties == 'object') {
                 try {
@@ -53,6 +66,21 @@ const transforms = {
                 properties.forEach(normalizeSchemaProperty)
             }
         })
+    },
+
+    ResourceTemplate(resourceTemplate) {
+        if(!resourceTemplate.title) resourceTemplate.title = resourceTemplate.name
+        resourceTemplate.__typename = 'ResourceTemplate'
+
+        const utilization = resourceTemplate.directives?.includes('substitute')? 0: 1
+        for(const dep of resourceTemplate.dependencies) {
+            dep._utilization = utilization
+            dep.constraint._utilization = utilization
+            dep.title = dep.title || dep.name
+            dep.constraint.title = dep.constraint.title || dep.constraint.name
+        }
+
+        resourceTemplate._maxUtilization = 1
     }
 }
 
