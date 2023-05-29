@@ -97,7 +97,8 @@ beforeEach(() => {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
     }
     if(UNFURL_SERVER_URL) {
-      win.sessionStorage['unfurl-server-url'] = UNFURL_SERVER_URL
+      cy.log(UNFURL_SERVER_URL)
+      win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
     }
     win.sessionStorage['unfurl-trace'] = 't'
   })
