@@ -86,7 +86,7 @@ function createDashboardCommand(username, dashboardRepo) {
   const 
     file = path.join(__dirname, 'create-user.js'),
     args = ['--username', username, '--external', process.env['EXTERNAL'] || '1'],
-    options = {}
+    options = {stdio: 'inherit'}
   if(dashboardRepo) {
     args.push('--dashboard')
     args.push(dashboardRepo)
@@ -95,7 +95,7 @@ function createDashboardCommand(username, dashboardRepo) {
     try {
       execFileSync(file, args, options)
     } catch(e) {
-      console.error(e)
+      console.error(e.message)
     }
   }
 }
