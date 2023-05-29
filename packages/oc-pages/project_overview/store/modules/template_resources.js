@@ -4,6 +4,7 @@ import { __ } from "~/locale";
 import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
+import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import Vue from 'vue'
 
@@ -61,15 +62,11 @@ const mutations = {
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
         resourceTemplate.dependentName = dependentName;
         resourceTemplate.dependentRequirement = dependentRequirement;
-        dependent.dependencies[index] = {...dependent.dependencies[index], ...fieldsToReplace};
-        dependent.dependencies[index].match = resourceTemplate.name;
-        _state.resourceTemplates = {..._state.resourceTemplates};
-        if(_state.deploymentTemplate.resourceTemplates)
-            _state.deploymentTemplate.resourceTemplates = _state.deploymentTemplate.resourceTemplates.concat(resourceTemplate.name);
-        _state.deploymentTemplate = {..._state.deploymentTemplate};
+        dependent.dependencies[index] = {...dependent.dependencies[index], ...fieldsToReplace, match: resourceTemplate.name};
+        Vue.set(_state.resourceTemplates, dependentName, {...dependent})
     },
 
-    deleteReference(_state, { dependentName, dependentRequirement, deleteFromDeploymentTemplate }) {
+    deleteReference(_state, { dependentName, dependentRequirement }) {
         if(dependentName && dependentRequirement) {
             const dependent = _state.resourceTemplates[dependentName];
             const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
@@ -78,11 +75,6 @@ const mutations = {
 
             _state.resourceTemplates[dependentName] = {...dependent};
 
-            if(deleteFromDeploymentTemplate) {
-                _state.deploymentTemplate.resourceTemplates = _state.deploymentTemplate.resourceTemplates.filter(rt => rt != templateName);
-               delete _state.resourceTemplates[templateName];
-
-            }
             _state.resourceTemplates = {..._state.resourceTemplates};
         }
     },
@@ -336,7 +328,6 @@ const actions = {
 
             if(directAncestor) {
                 const ancestorDependencies = getters.getDependencies(directAncestor)
-                console.log(ancestorDependencies, dependentRequirement)
                 const inputsSchemaFromDirectAncestor = ancestorDependencies.find(dep => dep.name == dependentRequirement)?.constraint?.inputsSchema
 
                 if(inputsSchemaFromDirectAncestor) {
@@ -403,16 +394,25 @@ const actions = {
         const {environmentName} = state.lastFetchedFrom;
         const deploymentTemplateName = state.lastFetchedFrom.templateSlug
         let resourceTemplateNode
+        const existsLocally = state.resourceTemplates[externalResource || resource?.name]
+
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
-            const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
+            // const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
+            // TODO support connect without copy
+
+            const name = existsLocally? externalResource: `__${externalResource}`
+
             resourceTemplateNode = {...resourceTemplate, name, dependentName, directives: [], dependentRequirement, deploymentTemplateName, readonly: true, __typename: 'ResourceTemplate'}
-            if(!shouldConnectWithoutCopy()) {
+
+            if(! existsLocally) {
+                //copy
                 commit(
                     'pushPreparedMutation',
                     () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
                 )
             }
+
             commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName}))
         } else if(resource) {
             commit(
@@ -425,14 +425,33 @@ const actions = {
             throw new Error('connectNodeResource must be called with either "resource" or "externalResource" set')
         }
 
+
+        // node might have already been created
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate: resourceTemplateNode, fieldsToReplace});
-        commit('createTemplateResource', resourceTemplateNode)
+        if(! existsLocally) {
+            commit('createTemplateResource', resourceTemplateNode)
+        }
     },
 
     deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
         if(!getters.getCardsStacked.find(card => card.name == name)) return
-        try {
-            const actionLowerCase = action.toLowerCase();
+        const actionLowerCase = action.toLowerCase();
+
+        let shouldRemoveCard = actionLowerCase == 'delete' || !dependentName
+
+        if(dependentName) {
+            commit('deleteReference', {
+                dependentName,
+                dependentRequirement,
+            });
+
+            if(getters.getDependenciesMatchingCard(name).length == 0) {
+                shouldRemoveCard = true
+            }
+        }
+
+        if(shouldRemoveCard){
+            commit('removeCard', {templateName: name})
 
             for(const {card, dependency} of getters.getDisplayableDependenciesByCard(name)) {
                 const match = dependency?.match
@@ -440,36 +459,51 @@ const actions = {
                 dispatch('deleteNode', {name: match, action, dependentName: card.name, dependentRequirement: dependency.name})
             }
 
-            if(dependentName) {
-                commit('deleteReference', {
-                    dependentName,
-                    dependentRequirement,
-                    deleteFromDeploymentTemplate: true
-                });
-            } else {
-                commit('removeCard', {templateName: name})
+            if(state.context == 'environment') {
+                commit(
+                    'pushPreparedMutation',
+                    deleteEnvironmentInstance({
+                        templateName: name,
+                        environmentName: state.lastFetchedFrom.environmentName,
+                        dependentName,
+                        dependentRequirement
+                    }),
+                    {root: true}
+                );
+            }
+            else {
+                commit(
+                    'pushPreparedMutation',
+                    deleteResourceTemplate({
+                        templateName: name,
+                        deploymentTemplateName: getters.getDeploymentTemplate.name,
+                        dependentName, dependentRequirement}),
+                    {root: true}
+                );
             }
 
-            if(actionLowerCase === "delete" || actionLowerCase === 'remove') {
+            // clean up all dependencies still matched
+            for(const resourceTemplate of Object.values(state.resourceTemplates)) {
+                const danglingDependency = resourceTemplate.dependencies?.find(dep => dep.match == name || dep.constraint.match == name)
 
-                if(state.context == 'environment') {
-                    commit('pushPreparedMutation', deleteEnvironmentInstance({templateName: name, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement}), {root: true});
-                }
-                else {
-                    commit('pushPreparedMutation', deleteResourceTemplate({templateName: name, deploymentTemplateName: getters.getDeploymentTemplate.name, dependentName, dependentRequirement}), {root: true});
-                }
-                return true;
+                if(!danglingDependency) continue
+
+                commit(
+                    'pushPreparedMutation',
+                    deleteResourceTemplateInDependent({
+                        dependentName: resourceTemplate.name,
+                        dependentRequirement: danglingDependency.name,
+                        deploymentTemplateName: state.deploymentTemplate.name
+                    }),
+                    {root: true}
+                )
             }
 
-            if(actionLowerCase === "disconnect"){
-                commit('pushPreparedMutation', deleteResourceTemplateInDependent({dependentName: dependentName, dependentRequirement, deploymentTemplateName: state.deploymentTemplate.name}), {root: true});
-            }
-
-            return true;
-        } catch(err) {
-            console.error(err);
-            throw new Error(err.message);
+        } else {
+            commit('pushPreparedMutation', deleteResourceTemplateInDependent({dependentName: dependentName, dependentRequirement, deploymentTemplateName: state.deploymentTemplate.name}), {root: true});
         }
+
+        return true
     },
     updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, debounce, nestedPropName}) {
         if(debounce) {
@@ -622,16 +656,6 @@ const getters = {
 
             return getters.templateCardIsHidden(card)
             // below implements hiding cards when they don't appear on the deployment table
-            /*
-            const isVisible = card.visibility != 'hidden' && (
-                card.visibility == 'visible' ||
-                card.attributes?.find(a => a.name == 'id') ||
-                card.attributes?.find(a => a.name == 'console_url') ||
-                card.properties?.find(a => a.name == 'console_url') ||
-                card.computedProperties?.find(a => a.name == 'console_url')
-            )
-            return !isVisible
-            */
         }
     },
     templateCardIsHidden(state, getters) {
@@ -660,8 +684,10 @@ const getters = {
         const result = cards.filter((rt) => {
             if(!rootGetters.REVEAL_HIDDEN_TEMPLATES && getters.cardIsHidden(rt.name)) return false
             if(isDeployment) return !_state.deploymentTemplate?.primary || rt.name != _state.deploymentTemplate.primary
-            const parentDependencies = _state.resourceTemplates[rt.dependentName]?.dependencies;
-            if(!parentDependencies) return false;
+            const parentDependencies = getters.getDependenciesMatchingCard(rt.name)
+
+            // card is about to be removed
+            if(parentDependencies.length == 0) return false;
 
             return  (
                 rt.__typename == 'ResourceTemplate'?
@@ -730,6 +756,7 @@ const getters = {
         return function(cardName) {
             const card = getters.dtResolveResourceTemplate(cardName)
             const result = []
+            if(!card) return result
             for(const dependency of getters.getDependencies(card.name)) {
                 if(!getters.constraintIsHidden(card.name, dependency.name)) {
                     result.push({dependency, card})
@@ -937,6 +964,7 @@ const getters = {
 
     getParentDependency(state, getters) {
         return function(dependencyName) {
+            console.warn('Do not use getParentDependency - a template may fill multiple dependencies')
             if(!dependencyName) return null
             let primaryName = state.deploymentTemplate.primary 
             if (dependencyName === primaryName) return null
@@ -949,6 +977,7 @@ const getters = {
 
     getDependent(state) {
         return function(dependencyName) {
+            console.warn('Do not use getDependent - a template may fill multiple dependencies')
             if(!dependencyName) return null
             let primaryName = state.deploymentTemplate.primary 
             if (dependencyName === primaryName) return null
@@ -1019,7 +1048,63 @@ const getters = {
         return 'Not all required components have been created or connected'
     },
 
-    lastFetchedFrom(state) { return state.lastFetchedFrom }
+    lastFetchedFrom(state) { return state.lastFetchedFrom },
+
+    getDependenciesMatchingCard(state) {
+        return function(cardName) {
+            const result = []
+            Object.values(state.resourceTemplates).forEach(rt => {
+                for(const dep of rt.dependencies || []) {
+                    if(dep.match == cardName || dep.constraint.match == cardName) {
+                        result.push(dep)
+                    }
+                }
+            })
+            return result
+        }
+    },
+
+    getCardUtilization(state, getters) {
+        return function(cardName) {
+            let result = 0
+            getters.getDependenciesMatchingCard(cardName).forEach(dep => {
+                result += dep.constraint._utilization
+            })
+            return result
+        }
+    },
+
+    getValidConnections(state, getters, _, rootGetters) {
+        return function(cardName, requirement) {
+            const card = getters.dtResolveResourceTemplate(cardName)
+            const constraintType = constraintTypeFromRequirement(requirement)
+            if(!(card && constraintType)) {
+                return null
+            }
+
+            const result = []
+
+            const environmentName = state.lastFetchedFrom?.environmentName
+
+            if(environmentName) {
+                result.push(...rootGetters.getValidEnvironmentConnections(environmentName, requirement))
+            }
+
+            result.push(...Object.values(state.resourceTemplates).filter(rt => {
+                const type = rootGetters.resolveResourceType(rt.type)
+                if(! type?.extends?.includes(constraintType)) return
+
+                // type matches
+
+                const utilization = getters.getCardUtilization(rt.name)
+                if(rt._maxUtilization >= utilization + requirement._utilization) {
+                    return true
+                }
+            }))
+
+            return result
+        }
+    }
 };
 
 export default {

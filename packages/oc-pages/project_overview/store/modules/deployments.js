@@ -1,5 +1,5 @@
 import {slugify} from 'oc_vue_shared/util.mjs'
-import {environmentVariableDependencies, prefixEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
+import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
@@ -86,11 +86,13 @@ const actions = {
             deploymentObj.DeploymentTemplate = { [newDeploymentName]: deploymentObj.DeploymentTemplate[prevDeploymentName] }
             renameDeploymentTemplate(deploymentObj.DeploymentTemplate[newDeploymentName], newDeploymentName, newDeploymentTitle)
 
-            if(targetEnvironmentName != environmentName) {
-                const variables = environmentVariableDependencies(deploymentObj)
-                const {prefix, transferredVariables} = await shareEnvironmentVariables(rootGetters.getHomeProjectPath, environmentName, targetEnvironmentName, variables)
-                prefixEnvironmentVariables(deploymentObj, prefix, transferredVariables)
-            }
+            const variables = environmentVariableDependencies(deploymentObj)
+            const usePrefix = false
+            const substitutions = [
+                [new RegExp(`^${prevDeploymentName.replace(/-/g, '_')}__`), `${newDeploymentName.replace(/-/g, '_')}__`]
+            ]
+            const {transferredVariables} = await shareEnvironmentVariables(rootGetters.getHomeProjectPath, environmentName, targetEnvironmentName, variables, usePrefix, substitutions)
+            transformEnvironmentVariables(deploymentObj, transferredVariables, usePrefix, substitutions)
 
             return await dispatch('commitClonedDeployment', {deploymentObj, deployPathName, newDeploymentName, environmentName, targetEnvironmentName, dryRun})
 

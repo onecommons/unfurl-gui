@@ -48,11 +48,14 @@ export default {
             return this.dependency?.constraint || {}
 
         },
+        validConnections() {
+            return this.getValidConnections(this.card.name, this.dependency)
+        },
         canConnectServices() {
             return (
                 this.$route.name != 'templatePage' && (
                     this.$router.name != 'dashboard' ||
-                    this.getValidConnections(this.$route.params.environment, this.dependency).length > 0
+                    this.validConnections.length > 0
                 )
 
             )
@@ -64,11 +67,9 @@ export default {
             return this.cardIsValid(this.dependency?.match)
         },
         requirementFilled() {
-            return !!this.dependency?.match
+            return !!this.dependency?.match && this.matchIsValid
         },
         statusIconProps() {
-            const card = this.card
-
             const size = 16
             const className = []
             let title
@@ -152,7 +153,7 @@ export default {
             <div>
                 <div class="title d-flex align-items-center">
                     <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
-                    <span class="oc_requirement_title">{{ dependencyConstraint.title }}</span>
+                    <span class="oc_requirement_title">{{ dependencyConstraint.title || dependencyConstraint.name }}</span>
                 </div>
                 <div class="oc_requirement_description">
                     <oc-markdown-view v-if="dependencyConstraint" :content="dependencyConstraint.description" />
@@ -235,7 +236,7 @@ export default {
                     :aria-label="__(`connect`)"
                     type="button"
                     class="oc_requirements_actions"
-                    :disabled="getValidConnections($route.params.environment, dependency).length == 0"
+                    :disabled="validConnections.length == 0"
                     @click.prevent="connectToResource(dependency)"
                 >{{ __('Connect') }}</gl-button>
 

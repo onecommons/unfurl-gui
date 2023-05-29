@@ -48,6 +48,7 @@ export default {
       selfBranch: null,
       uiTimeout: null,
       createNodeResourceData: {},
+      connectNodeResourceData: {},
       deleteNodeData: {},
       componentKey: 0,
       startedTriggeringDeployment: false,
@@ -229,6 +230,12 @@ export default {
       set(branch) {
         this.selfBranch = branch
       }
+    },
+
+    validConnections() {
+      const cardName = this.connectNodeResourceData?.dependentName
+      const requirement = this.connectNodeResourceData?.requirement
+      return this.getValidConnections( cardName, requirement ) || []
     }
   },
 
@@ -399,9 +406,6 @@ export default {
       try {
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
-
-        console.log(this.branch, this.userCanEdit)
-
         if(this.branch == 'main') {
           if(!this.userCanEdit) {
             // computed setter
@@ -872,7 +876,7 @@ export default {
 
       <!-- Modal Resource Template -->
       <gl-modal
-            :ref="__('oc-template-resource')"
+            ref="oc-template-resource"
             modal-id="oc-template-resource"
             size="lg"
             :title="`Choose a ${getRequirementResourceType} template for ${getRequirementSelected.requirement && (getRequirementSelected.requirement.constraint.title)}`"
@@ -891,7 +895,7 @@ export default {
 
       <!-- Modal to delete -->
       <gl-modal
-        :ref="__('oc-delete-node')"
+        ref="oc-delete-node"
         :modal-id="__('oc-delete-node')"
         size="md"
         :title="`${nodeAction} ${nodeTitle}`"
@@ -909,20 +913,20 @@ export default {
 
       <!-- Modal Connect -->
       <gl-modal
-        :ref="__('oc-connect-resource')"
+        ref="oc-connect-resource"
         :modal-id="__('oc-connect-resource')"
         size="lg"
         :title="`Connect to  ${getNameResourceModal} resource`" :action-primary="ocResourceToConnectPrimary"
         :action-cancel="cancelProps"
         @primary="onSubmitModalConnect"
       >
-        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidConnections($route.params.environment, getRequirementSelected.requirement)"/>
+        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validConnections"/>
       </gl-modal>
 
       <!-- Modal to confirm the action to delete template -->
       <!-- Modal to delete -->
       <gl-modal
-        :ref="__('oc-delete-template')"
+        ref="oc-delete-template"
         :modal-id="__('oc-delete-template')"
         size="md"
         :title="`Delete Template ${getTemplate.title}`"

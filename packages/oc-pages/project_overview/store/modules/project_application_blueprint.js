@@ -176,7 +176,8 @@ const actions = {
                 resourceTemplate.dependencies.forEach(dep => {
                     if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
                 })
-                resourceTemplate.__typename = 'ResourceTemplate'
+
+                localNormalize(resourceTemplate, 'ResourceTemplate', root)
             },
             DeploymentTemplate(deploymentTemplate, root) {
                 if(!deploymentTemplate.resourceTemplates) {
@@ -252,7 +253,6 @@ const actions = {
     },
 
     useProjectState({state, commit, dispatch}, {projectPath, root, shouldMerge}) {
-        if(!projectPath) {console.warn('projectPath is not set')}
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
