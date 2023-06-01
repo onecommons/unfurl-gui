@@ -82,7 +82,7 @@ export default {
         ...mapMutations(['onDeploy', 'setUpstreamProject']),
 
         getStatus() {
-            const status = this.username && this.password && this.project_id && this.repository_id && this.repository_tag ?
+            const status = this.credentialsOk && this.project_id && this.repository_id && this.repository_tag ?
                 'valid': 'missing'
             return status
         },
