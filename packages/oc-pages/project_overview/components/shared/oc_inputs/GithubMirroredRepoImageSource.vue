@@ -1,7 +1,5 @@
 <script>
 import Vue from 'vue'
-import gql from 'graphql-tag'
-import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
 import {Autocomplete as ElAutocomplete, Card as ElCard, Checkbox as ElCheckbox} from 'element-ui'
 import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
@@ -189,8 +187,7 @@ export default {
                 this.project_id &&
                 this.remote_git_url &&
                 this.registry_url &&
-                this.username !== undefined &&
-                this.password !== undefined
+                this.credentialsOk
             ) ? 'valid': 'missing'
         },
 

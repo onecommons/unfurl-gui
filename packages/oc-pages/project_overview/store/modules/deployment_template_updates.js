@@ -107,8 +107,7 @@ function concealSensitiveProperties(name, schema, props, envvarPrefix, pathCompo
 
             if(pathComponents.length == 0) {
                 // at top level we should do this instead
-                // props[name] = {__deleted: true}
-                delete props[name]
+                props[name] = {__deleted: true}
             } else {
                 delete props[name]
             }
