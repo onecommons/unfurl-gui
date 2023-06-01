@@ -31,7 +31,7 @@ export async function lookupEnvironmentId(projectPath, environmentName) {
 }
 
 // use prefix='' to use no prefix
-export async function shareEnvironmentVariables(projectPath, sourceEnvironment, targetEnvironment, variables, prefix=null) {
+export async function shareEnvironmentVariables(projectPath, sourceEnvironment, targetEnvironment, variables, prefix=null, substitutions=[]) {
     let _prefix = prefix
     if(_prefix === null) {
         _prefix = `_${Date.now().toString(36)}`
@@ -47,6 +47,10 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
         environmentVariable.environment_scope = targetEnvironment
         transferredVariables.push(environmentVariable.key)
         environmentVariable.key = _prefix? `${_prefix}__${environmentVariable.key}`: environmentVariable.key
+
+        substitutions.forEach(([match, replacement]) => {
+            environmentVariable.key = environmentVariable.key.replace(match, replacement)
+        })
 
         patch[environmentVariable.key] = environmentVariable
     }

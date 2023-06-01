@@ -1,9 +1,9 @@
 <script>
 import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
-import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
+ import {Card as ElCard, Autocomplete as ElAutocomplete} from 'element-ui'
 
 import {connectedRepo} from './mixins'
 
@@ -19,7 +19,9 @@ export default {
         readonly: Boolean
     },
     components: {
-        DeploymentScheduler
+        DeploymentScheduler,
+        ElCard,
+        ElAutocomplete
     },
     mixins: [connectedRepo],
     data() {
@@ -66,7 +68,7 @@ export default {
         },
 
         getStatus() {
-            const status = this.username && this.password && this.project_id && this.repository_tag && this.registry_url && this.remote_git_url ?
+            const status = this.credentialsOk && this.project_id && this.repository_tag && this.registry_url && this.remote_git_url ?
                 'valid': 'missing'
             return status
         }

@@ -122,7 +122,7 @@ export default {
             'getUsername',
             'getHomeProjectPath',
             'getCurrentEnvironment',
-            'getValidConnections',
+            'getValidEnvironmentConnections',
             'getHomeProjectPath',
             'getApplicationBlueprint',
             'instantiableResourceTypes',
@@ -724,7 +724,7 @@ export default {
             :action-cancel="cancelProps"
             @primary="onSubmitModalConnect"
             >
-            <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidConnections($route.params.environment, selectedRequirement)"/>
+            <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="getValidEnvironmentConnections($route.params.environment, selectedRequirement)"/>
         </gl-modal>
         <gl-modal
             :ref="__('oc-delete-template')"

@@ -27,7 +27,8 @@ export default {
             }[jobCountKey] || 'neutral'
         },
         taskUrl(item) {
-            return `#L${this.taskLineNo(item)}`
+            const lineNo = this.taskLineNo(item)
+            if(lineNo) return `#L${this.taskLineNo(item)}`
         },
     }
 }

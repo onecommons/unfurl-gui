@@ -98,7 +98,7 @@ export default {
                 <div :data-testid="`resource-selection-${resource.name}`" @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
                     <div class="d-flex">
                         <oc-list-resource-icon v-bind="iconProps(resource)"/>
-                        <span class=" title">{{ resource.title }}</span>
+                        <span class=" title">{{ resource.title || resource.name }}</span>
                     </div>
                 </div>
             </div>

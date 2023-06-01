@@ -37,6 +37,7 @@ export default {
     computed: {
         ...mapGetters([
             'getUsername',
+            'getHomeProjectName',
             'getHomeProjectPath',
             'lookupVariableByEnvironment',
             'lookupDeployPath'
@@ -161,7 +162,7 @@ export default {
             </p>
             <p>
                 Deploy the blueprint:
-                <code-clipboard class="mt-1">cd dashboard; {{localDeployInvocation}}</code-clipboard>
+                <code-clipboard class="mt-1">cd {{getHomeProjectName}}; {{localDeployInvocation}}</code-clipboard>
             </p>
             <p>Learn more at <a href="https://github.com/onecommons/unfurl" target="_blank">https://github.com/onecommons/unfurl</a>.</p>
         </div>

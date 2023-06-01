@@ -44,13 +44,13 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                         secret_value = data.value || data.secret_value
                     }
 
-                    if(secret_value) {
+                    if(secret_value || secret_value === 0 || data._destroy) {
                         envPatch.push({
                             key,
                             secret_value,
                             environment_scope: environmentScope,
                             variable_type: 'env_var',
-                            masked: secret_value.length >= 8 && !secret_value.includes('\n'),
+                            masked:  typeof secret_value == 'string' && (secret_value.length >= 8 && !secret_value.includes('\n')),
                             protected: false,
                             ...data
                         })

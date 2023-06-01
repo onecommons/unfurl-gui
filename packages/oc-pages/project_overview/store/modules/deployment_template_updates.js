@@ -88,10 +88,30 @@ function concealSensitiveProperties(name, schema, props, envvarPrefix, pathCompo
         Object.entries(schema.properties).forEach(([name, schema]) => {
             concealSensitiveProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)
         })
-    } else if(schema.sensitive) {
-        const envKey = `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')
-        env[envKey] = props[name]
-        props[name] = {[SECRET_DIRECTIVE]: envKey}
+    } else {
+        const envKey = schema.sensitive && `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')
+        const value = props[name]
+        if(value || value === 0) {
+            if(schema.sensitive) {
+                env[envKey] = value
+                props[name] = {[SECRET_DIRECTIVE]: envKey}
+            }
+        } else {
+            if(schema.sensitive) {
+                // delete the environment variable
+                env[envKey] = {_destroy: true}
+
+                // to not clean up -
+                // delete env[envKey]
+            }
+
+            if(pathComponents.length == 0) {
+                // at top level we should do this instead
+                props[name] = {__deleted: true}
+            } else {
+                delete props[name]
+            }
+        }
     }
 
     return env

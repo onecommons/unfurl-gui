@@ -64,6 +64,11 @@ export const connectedRepo = {
         },
 
         updateValue
+    },
+    computed: {
+        credentialsOk() {
+            return this.projectInfo?.visibility == 'public' || (this.username && this.password)
+        }
     }
 }
 

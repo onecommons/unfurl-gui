@@ -11,6 +11,7 @@ import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client
 import {fetchEnvironments, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
+import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import {slugify} from 'oc_vue_shared/util.mjs'
 import Vue from 'vue'
@@ -305,11 +306,21 @@ const actions = {
     undeployFrom({dispatch}, parameters) {
         return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'undeploy'})
     },
-    async deleteDeployment({rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
+    async deleteDeployment({state, rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
         commit('useBaseState', {}, {root: true})
         commit('setUpdateType', 'delete-deployment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
+
+        const envvarsUpdate = {}
+        Object.keys(state.variablesByEnvironment[environmentName]).forEach(envvar => {
+            if(envvar.startsWith(`${deploymentName.replace(/-/g, '_')}__`)) {
+                envvarsUpdate[envvar] = {_destroy: true}
+            }
+        })
+
+        await patchEnv(envvarsUpdate, environmentName, rootGetters.getHomeProjectPath)
+
         commit('pushPreparedMutation', () => {
             return [{
                 typename: 'DeploymentPath',
@@ -521,13 +532,10 @@ const getters = {
         .concat(Object.values(state.additionalDashboards.map(db => db.environments)))
         .flat(),
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
-    getValidConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
-        let constraintType
-        if(typeof requirement != 'string') { constraintType = requirement?.constraint?.resourceType
-        } else { constraintType  = requirement }
+    getValidEnvironmentConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         const filter = envFilter(environmentName)
         const environment = state.environments.find(filter) || state.projectEnvironments.find(filter)
-        //if(!environment) {throw new Error(`Environment ${environmentName} not found`)}
+        const constraintType = constraintTypeFromRequirement(requirement)
         if(!environment) return []
         let result = []
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
