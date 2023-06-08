@@ -90,8 +90,8 @@ export default {
             if(window.gon.projectId && this.userCanEdit) {
                 //temporary limitation (restrict to dashboard app)
 
-                if(!this.deploymentItem?.isUndeployed) result.push('local-deploy')
-
+                // allowing local deploy regardless of teardown status
+                result.push('local-deploy')
             }
 
             result.push('rename-deployment')
