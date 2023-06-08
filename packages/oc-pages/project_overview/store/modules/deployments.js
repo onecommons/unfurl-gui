@@ -177,7 +177,7 @@ const actions = {
 
                 const card = rootGetters.getCardsStacked.find(card => card.name == resourceName)
                 if(!card) continue
-                const hasCorrectProjectId = card.properties.some(prop => prop.name == 'project_id' && prop.value == _projectPath)
+                const hasCorrectProjectId = card.properties.some(prop => prop.name == 'project_id' && prop.value?.toLowerCase() == _projectPath)
                 if(card && hasCorrectProjectId) {
                     subscriptions[_projectPath].push(record)
                     i++
