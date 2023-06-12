@@ -221,7 +221,6 @@ const actions = {
             upstreamBranch: state.upstreamBranch,
             upstreamProject: state.upstreamProject,
             upstreamProjectPath,
-            projectDnsZone: getters.lookupVariableByEnvironment('PROJECT_DNS_ZONE', '*'),
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
@@ -404,7 +403,7 @@ const actions = {
         }
 
         try {
-            const namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')
+            const namespaceDNS = rootGetters.getCurrentNamespace.split('/').reverse().join('.')?.toLowerCase()
             variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
             commit('setVariablesByEnvironment', variablesByEnvironment)
         } catch(e) {

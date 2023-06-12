@@ -92,7 +92,33 @@ export default {
     methods: {
         requirementKey(requirement) {
             return `${requirement.card.dependentName}.${requirement.card.dependentRequirement}.${requirement.dependency.name}`
+        },
+        formatPropertiesList(schema, items) {
+            const result = items
+                .filter(item => schema[item.name]?.visibility != 'hidden')
+                .map(item => {
+                    const name = schema[item.name]?.title || item.name
+                    const sensitive = schema[item.name]?.sensitive ?? false
+                    let value = item.value
+
+                    try {
+                        if(this._readonly) value = schema[item.name]['display-value'] || value
+                    } catch(e) {}
+
+                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
+                    return {...item, name, value, sensitive}
+                })
+
+            if(this.cardCanIncrementalDeploy(this.card) && this._readonly) {
+                result.push({
+                    name: 'Incremental_Deploy',
+                    value: this.card
+                })
+            }
+
+            return result
         }
+
     },
 
     computed: {
@@ -129,63 +155,19 @@ export default {
                 properties = []
             }
 
+            const schema = this.inputsSchema?.properties || {}
 
-            const titleMap = {}
-            const sensitiveMap = {}
-            const visibilityMap = {}
-            Object.entries(this.inputsSchema?.properties || {})
-                .forEach(([name, value]) => {
-                    titleMap[name] = value?.title
-                    sensitiveMap[name] = value.sensitive
-                    visibilityMap[name] = value.visibility
-                })
-
-            properties = properties
-                .filter(property => visibilityMap[property.name] != 'hidden')
-                .map(property => {
-                    const name = titleMap[property.name] || property.name
-                    const sensitive = sensitiveMap[property.name]
-                    let value = property.value
-                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
-                    return {...property, name, value, sensitive}
-                })
-
-            if(this.cardCanIncrementalDeploy(this.card)) {
-                properties.push({
-                    name: 'Incremental_Deploy',
-                    value: this.card
-                })
-            }
-
-            return properties
+            return this.formatPropertiesList(schema, properties)
         },
         attributes() {
             let attributes = [].concat(this._card.attributes || [], this._card.computedProperties || [])
-            const titleMap = {}
-            const sensitiveMap = {}
-            const visibilityMap = {}
             const resourceType = this.resolveResourceTypeFromAny(this._card.type)
 
-            Object.entries(this.inputsSchema?.properties || {})
-                .forEach(([name, value]) => {
-                    titleMap[name] = value?.title
-                    sensitiveMap[name] = value.sensitive
-                    visibilityMap[name] = value.visibility
-                })
-
-            Object.entries(resourceType?.outputsSchema?.properties || {})
-                .forEach(([name, value]) => {
-                    titleMap[name] = value?.title
-                    sensitiveMap[name] = value.sensitive
-                    visibilityMap[name] = value.visibility
-                })
-
-            Object.entries(resourceType?.computedPropertiesSchema?.properties || {})
-                .forEach(([name, value]) => {
-                    titleMap[name] = value?.title
-                    sensitiveMap[name] = value.sensitive
-                    visibilityMap[name] = value.visibility
-                })
+            const schema = {
+                ...this.inputsSchema?.properties,
+                ...resourceType.outputsSchema?.properties,
+                ...resourceType.computedPropertiesSchema?.properties
+            }
 
             const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
             if(consoleURLIndex != -1) {
@@ -206,25 +188,8 @@ export default {
                     outboundLinkText
                 })
             }
-            attributes = attributes
-                .filter(attribute => visibilityMap[attribute.name] != 'hidden')
-                .map(attribute => {
-                    const name = titleMap[attribute.name] || attribute.name
-                    const sensitive = sensitiveMap[attribute.name]
-                    const visibility = visibilityMap[attribute.name]
-                    let value = attribute.value
-                    value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
-                    return {...attribute, name, value, sensitive}
-                })
 
-            if(this.cardCanIncrementalDeploy(this.card) && this._readonly) {
-                attributes.push({
-                    name: 'Incremental_Deploy',
-                    value: this.card
-                })
-            }
-
-            return attributes
+            return this.formatPropertiesList(schema, attributes)
         },
         propertiesStyle() {
             if(this._card.dependentName) {
