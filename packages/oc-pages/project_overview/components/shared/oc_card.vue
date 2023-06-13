@@ -243,8 +243,8 @@ export default {
                 <slot name="content"></slot>
             </div>
         </div>
-        <template #footer>
-            <div v-if="$slots['footer-controls']" class="d-flex justify-content-end">
+        <template v-if="$slots['footer-controls']" #footer>
+            <div class="d-flex justify-content-end">
                 <slot class="float-right" name="footer-controls" />
             </div>
         </template>
