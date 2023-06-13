@@ -808,8 +808,9 @@ const getters = {
     cardInputsAreValid(state) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
+            if(!card) return true
             if(card.imported) return true
-            if(!card?.properties?.length) return true
+            if(!card.properties?.length) return true
             return (Object.values(state.inputValidationStatus[card.name] || {})).every(status => status == 'valid')
         };
     },
@@ -817,8 +818,9 @@ const getters = {
     cardDependenciesAreValid(state, getters) {
         return function(_card) {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
+            if(!card) return true
             if(card.imported) return true
-            if(!card?.dependencies?.length) return true;
+            if(!card.dependencies?.length) return true;
             return card.dependencies.every(dependency => (
                 (dependency.constraint.min == 0 && !dependency.match) ||
                 (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match))
