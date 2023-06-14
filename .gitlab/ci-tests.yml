@@ -1,0 +1,98 @@
+nextcloud_aws:
+  spec: ./cypress/e2e/blueprints/aws*nextcloud*.js
+  cond: $TEST == "nextcloud" || $TEST == "nextcloud_aws" || $TEST == "all"
+  description: Runs all nextcloud tests on aws
+
+nextcloud_gcp:
+  spec: ./cypress/e2e/blueprints/gcp*nextcloud*.js
+  cond: $TEST == "nextcloud" || $TEST == "nextcloud_gcp" || $TEST == "all"
+  description: Runs all nextcloud tests on gcp
+
+nextcloud_do:
+  spec: ./cypress/e2e/blueprints/do*nextcloud*.js
+  cond: $TEST == "nextcloud" || $TEST == "nextcloud_do" || $TEST == "all"
+  description: Runs all nextcloud tests on digital ocean
+
+baserow:
+  spec: ./cypress/e2e/blueprints/*baserow*.js
+  cond: $TEST =~ /baserow/ || $TEST == "all"
+  description: Runs all baserow tests
+
+minecraft:
+  spec: ./cypress/e2e/blueprints/*minecraft*.js
+  cond: $TEST =~ /minecraft/ || $TEST == "all"
+  description: Runs all minecraft tests
+
+container_webapp:
+  spec: ./cypress/e2e/blueprints/*container-webapp*.js
+  cond: $TEST == "container_webapp" || $TEST == "all"
+  description: Runs all container-webapp tests
+  env: EXTERNAL=0
+
+container_webapp_gcp:
+  spec: ./cypress/e2e/blueprints/gcp__container-webapp*.js
+  cond: $TEST == "container_webapp_gcp"
+  description: Runs container-webapp tests for gcp
+  env: EXTERNAL=0
+
+container_webapp_aws:
+  spec: ./cypress/e2e/blueprints/aws__container-webapp*.js
+  cond: $TEST == "container_webapp_aws"
+  description: Runs container-webapp tests for aws
+  env: EXTERNAL=0
+
+ghost:
+  spec: ./cypress/e2e/blueprints/*ghost*.js
+  cond: $TEST =~ /ghost/ || $TEST == "all"
+  description: Runs all ghost tests
+
+mediawiki:
+  spec: ./cypress/e2e/blueprints/*mediawiki*.js
+  cond: $TEST =~ /mediawiki/ || $TEST == "all"
+  description: Runs all mediawiki tests
+
+wordpress:
+  spec: ./cypress/e2e/blueprints/*wordpress*.js
+  cond: $TEST =~ /wordpress/ || $TEST == "all"
+  description: Runs all wordpress tests
+
+kubernetes:
+  spec: ./cypress/e2e/blueprints/k8s*.js
+  cond: $TEST =~ /k8s/ || ($TEST == "all" && $SKIP !~ /k8s/)
+  description: Runs all kubernetes tests
+
+unfurl_cloud_dns:
+  spec: ./cypress/e2e/blueprints/aws__nextcloud__only-mail*.js
+  cond: $TEST =~ /uc_dns/ || $TEST == "all"
+  description: Runs aws nextcloud with unfurl cloud dns
+  env: USE_UNFURL_DNS=opencloudservices.net
+
+# These tests normally run with their respective blueprints
+cloud_redis:
+  spec: cypress/e2e/blueprints/gcp__nextcloud__memorystore*.js,cypress/e2e/blueprints/aws__nextcloud__memorydb*.js
+  cond: $TEST == "cloud_redis"
+  description: Runs all cloud redis tests
+
+# Not yet fully supported for $TEST == "all"
+multiple_workflows:
+  spec: cypress/e2e/deployments/multiple-workflows*.js
+  cond: $TEST == "multiple_workflows"
+  description: Tries to run multiple deployments simultaneously (flakey)
+
+nextcloud_shared_volumes:
+  spec: cypress/e2e/deployments/shared-volume*.js
+  cond: $TEST == "shared_volumes" || $TEST == "all"
+  description: >
+    Runs all nextcloud shared volume tests
+    
+    The test does the following:
+
+    1. Deploys nextcloud with a volume
+
+    2. Shares the volume
+
+    3. Tears down the first deployment
+
+    4. Creates a new nextcloud deployment with the shared volume
+
+    5. Asserts that admin credentials are the same on the new instance
