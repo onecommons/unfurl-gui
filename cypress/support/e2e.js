@@ -29,6 +29,8 @@ const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
+const EXTERNAL = Cypress.env('EXTERNAL')
+
 Cypress.Cookies.defaults({
   preserve: /.*/
 })
@@ -74,6 +76,24 @@ before(() => {
         if(INTEGRATION_TEST_ARGS.dashboardRepo) {
           cy.visit(`/${IMPERSONATE}/dashboard`)
         }
+      }
+    } else {
+      const GENERATED_PASSWORD = Cypress.env('GENERATED_PASSWORD')
+      cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(IMPERSONATE)
+      cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(GENERATED_PASSWORD)
+      cy.get(`[data-qa-selector="sign_in_button"]`).click()
+
+      cy.document().then(doc => {
+        if(doc.querySelector('form[action="/users/sign_up/welcome"]')) {
+          const selection = EXTERNAL == '0'? 'software_developer': 'other'
+          cy.contains('label', 'Choose User Interface').next().select(selection)
+
+          cy.get('[data-qa-selector="get_started_button"]').click()
+        }
+      })
+
+      if(INTEGRATION_TEST_ARGS.dashboardRepo) {
+        cy.visit(`/${IMPERSONATE}/dashboard`)
       }
     }
   })
