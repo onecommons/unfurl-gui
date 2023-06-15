@@ -1,5 +1,11 @@
 #!/usr/bin/env node
 
+const OC_USERNAME = process.env.OC_USERNAME
+const OC_PASSWORD = process.env.OC_PASSWORD
+const OC_INVITE_CODE = process.env.OC_INVITE_CODE
+const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
+
+const GENERATED_PASSWORD = btoa(Number.MAX_SAFE_INTEGER * Math.random())
 
 const {execFileSync, spawnSync} = require('child_process')
 const path = require('path')
@@ -53,8 +59,15 @@ function transformEnvironmentVariables(key, value) {
 }
 
 const INTERNAL_TEST_VARIALBES = [
-  'OC_IMPERSONATE', 'DO_ENVIRONMENT_NAME', 'AWS_ENVIRONMENT_NAME', 'GCP_ENVIRONMENT_NAME', 'AZ_ENVIRONMENT_NAME', // always overriden
-]
+  'OC_IMPERSONATE',
+  'DO_ENVIRONMENT_NAME',
+  'AWS_ENVIRONMENT_NAME',
+  'GCP_ENVIRONMENT_NAME',
+  'AZ_ENVIRONMENT_NAME',
+  'GENERATED_PASSWORD',
+  'EXTERNAL'
+]  // always overriden
+
 const FORWARD_ENVIRONMENT_VARIABLES = [
   ...JSON.parse(fs.readFileSync(path.join(__dirname, 'forwarded-variables.json'), 'utf-8')),
   ...INTERNAL_TEST_VARIALBES
@@ -85,11 +98,19 @@ function createDashboardCommand(username, dashboardRepo) {
   //if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
   const 
     file = path.join(__dirname, 'create-user.js'),
-    args = ['--username', username, '--external', process.env['EXTERNAL'] || '1'],
+    args = ['--username', username, '--external', EXTERNAL],
     options = {stdio: 'inherit'}
   if(dashboardRepo) {
     args.push('--dashboard')
     args.push(dashboardRepo)
+  }
+  if(!(OC_USERNAME && OC_PASSWORD)) {
+    args.push('--password')
+    args.push(GENERATED_PASSWORD)
+  }
+  if(OC_INVITE_CODE) {
+    args.push('--invite-code')
+    args.push(OC_INVITE_CODE)
   }
   return () => {
     try {
@@ -133,7 +154,7 @@ async function main() {
   const AZ_ENVIRONMENT_NAME = identifierFromCurrentTime('az').toLowerCase()
   const INTEGRATION_TEST_ARGS = JSON.stringify(parsedArgs)
 
-  let env = {OC_IMPERSONATE: username, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, AZ_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS}
+  let env = {OC_IMPERSONATE: username, GENERATED_PASSWORD, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, AZ_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS}
 
   if(group) {
     env.DEFAULT_NAMESPACE = group

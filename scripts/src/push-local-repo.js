@@ -10,9 +10,9 @@ const {spawnSync} = require('child_process')
 const {sleep} = require('./shared/util.js')
 const setRepoVisibility = require('./set-repo-visibility.js')
 
-function constructTargetURL(projectPath) {
+function constructTargetURL(projectPath, username=process.env.OC_USERNAME, password=process.env.OC_PASSWORD) {
   const {protocol, host} = new URL(process.env.OC_URL)
-  const targetURL = `${protocol}//${process.env.OC_USERNAME}:${process.env.OC_PASSWORD}@${host}/${projectPath}`
+  const targetURL = `${protocol}//${username}:${password}@${host}/${projectPath}`
   return targetURL
 }
 
@@ -21,6 +21,8 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
     force,
     skipCI,
     setUpstream,
+    username,
+    password,
     branch,
   } = Object.assign({
     force: false,
@@ -29,7 +31,7 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
     branch: null,
   }, options)
   console.log({setUpstream}, options)
-  const url = constructTargetURL(projectPath)
+  const url = constructTargetURL(projectPath, username, password)
   const args = []
 
 
