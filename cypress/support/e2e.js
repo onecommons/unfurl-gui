@@ -63,34 +63,36 @@ before(() => {
   if(Cypress.spec.name.startsWith('00_visitor')) return
   cy.visit(`/users/sign_in`).wait(100)
   cy.url().then(url => {
-    if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
-      cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
-      cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(PASSWORD)
-      cy.get(`[data-qa-selector="sign_in_button"]`).click()
+    if(url.endsWith('sign_in')) {
+      if(USERNAME && PASSWORD)  {
+        cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
+        cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(PASSWORD)
+        cy.get(`[data-qa-selector="sign_in_button"]`).click()
 
-      if(IMPERSONATE) {
-        cy.visit(`/admin/users/${IMPERSONATE}`)
-        cy.get('[data-qa-selector="impersonate_user_link"]').click()
-        cy.url().should('not.contain', 'admin')
+        if(IMPERSONATE) {
+          cy.visit(`/admin/users/${IMPERSONATE}`)
+          cy.get('[data-qa-selector="impersonate_user_link"]').click()
+          cy.url().should('not.contain', 'admin')
 
-        if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-          cy.visit(`/${IMPERSONATE}/dashboard`)
+          if(INTEGRATION_TEST_ARGS.dashboardRepo) {
+            cy.visit(`/${IMPERSONATE}/dashboard`)
+          }
         }
+      } else {
+        const GENERATED_PASSWORD = Cypress.env('GENERATED_PASSWORD')
+        cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(IMPERSONATE)
+        cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(GENERATED_PASSWORD)
+        cy.get(`[data-qa-selector="sign_in_button"]`).click()
+
+        cy.document().then(doc => {
+          if(doc.querySelector('form[action="/users/sign_up/welcome"]')) {
+            const selection = EXTERNAL == '0'? 'software_developer': 'other'
+            cy.contains('label', 'Choose User Interface').next().select(selection)
+            cy.get('[data-qa-selector="get_started_button"]').click()
+          }
+        })
+
       }
-    } else {
-      const GENERATED_PASSWORD = Cypress.env('GENERATED_PASSWORD')
-      cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(IMPERSONATE)
-      cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(GENERATED_PASSWORD)
-      cy.get(`[data-qa-selector="sign_in_button"]`).click()
-
-      cy.document().then(doc => {
-        if(doc.querySelector('form[action="/users/sign_up/welcome"]')) {
-          const selection = EXTERNAL == '0'? 'software_developer': 'other'
-          cy.contains('label', 'Choose User Interface').next().select(selection)
-
-          cy.get('[data-qa-selector="get_started_button"]').click()
-        }
-      })
 
       if(INTEGRATION_TEST_ARGS.dashboardRepo) {
         cy.visit(`/${IMPERSONATE}/dashboard`)
