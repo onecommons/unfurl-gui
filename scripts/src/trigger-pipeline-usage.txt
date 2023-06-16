@@ -1,0 +1,14 @@
+trigger-pipeline.sh - Trigger an unfurl-gui test pipeline
+
+Usage: 
+  curl https://raw.githubusercontent.com/onecommons/unfurl-gui/cy-tests/scripts/trigger-pipeline.sh | bash -s <TEST>
+
+Variables:
+  OC_URL (required)       - the Unfurl Cloud instance to run tests against
+  TOKEN  (required)       - the pipeline trigger token for unfurl-gui project on the test running Unfurl Cloud instance
+  UNFURL_GUI_PROJECT_PATH - the project path from which the pipeline is triggered (default: onecommons/unfurl-gui)
+  GITLAB_SERVER_URL       - the instance to run the cypress pipeline on           (default: $OC_URL)
+
+
+For a full list of supported environment variables, see https://github.com/onecommons/unfurl-gui/blob/cy-tests/scripts/src/forwarded-variables.json.
+For a brief guide on triggering pipelines, see https://github.com/onecommons/unfurl-gui/tree/cy-tests#triggering-a-test-pipeline.
