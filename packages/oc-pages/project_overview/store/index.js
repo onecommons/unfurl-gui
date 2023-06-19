@@ -12,6 +12,7 @@ import deployments from './modules/deployments'
 import user_settings from './modules/user_settings'
 import health_check from 'oc_vue_shared/store_modules/health-check'
 import errors from 'oc_vue_shared/store_modules/errors'
+import merge_requests from 'oc_vue_shared/store_modules/merge-requests'
 
 Vue.use(Vuex);
 
@@ -29,7 +30,8 @@ const store = new Vuex.Store({
         deployment_info,
         user_settings,
         health_check,
-        errors
+        errors,
+        merge_requests,
     },
     strict: development,
     plugins: development && process.env.VUEX_LOGGER === "true" ? [createLogger()] : [],
