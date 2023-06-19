@@ -4,10 +4,11 @@ import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
 
-function createHeaders({includePasswordInQuery, username, password}) {
+function createHeaders({sendCredentials, username, password}) {
     const headers = {}
+    const _sendCredentials = sendCredentials ?? true
 
-    if(!includePasswordInQuery && username && password) {
+    if(_sendCredentials && username && password) {
         headers['x-git-credentials'] = btoa(username + ':' + password)
     }
 
@@ -31,10 +32,11 @@ async function doXhr(_method, url, body, headers) {
 
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments}) {
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials}) {
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult
+    const _sendCredentials = sendCredentials ?? true
 
     if(!latestCommit) throw new Error('@unfurlServerExport: latestCommit is not defined')
 
@@ -44,7 +46,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
 
-    if(includePasswordInQuery && username && password) {
+    if(_sendCredentials && includePasswordInQuery && username && password) {
         exportUrl += `&username=${username}`
         exportUrl += `&private_token=${password}`
     }
@@ -60,7 +62,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += '&include_all_deployments=1'
     }
 
-    return await doXhr('GET', exportUrl, null, createHeaders({includePasswordInQuery, username, password}))
+    return await doXhr('GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
