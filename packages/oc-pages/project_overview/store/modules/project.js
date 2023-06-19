@@ -173,6 +173,7 @@ const actions = {
 const getters = {
     getTemplate: _state => _state.template,
     getRequirementSelected: _state => _state.requirementSelected,
+    getGlobalVars: state => state.globalVars,
     getProjectDescription(state, _a, _b, rootGetters) {
         return state.globalVars.projectDescription || rootGetters.getApplicationBlueprint?.description
     },

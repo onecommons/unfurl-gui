@@ -71,7 +71,7 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, dispatch}, params) {
+    async fetchProject({commit, dispatch, rootGetters}, params) {
         const {projectPath, projectGlobal} = params
         const format = 'blueprint'
         commit('loaded', false)
@@ -81,6 +81,7 @@ const actions = {
             root = await unfurlServerExport({
                 format,
                 projectPath,
+                sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public')
                 //TODO pass branch
             })
         } catch(e) {

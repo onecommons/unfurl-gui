@@ -148,20 +148,13 @@ export default {
                 defaults: this.getEnvironmentDefaults
             }
 
-            if(this.deployment.__typename == 'DeploymentTemplate') {
-                const projectPath = this.deployment.projectPath
-                await this.fetchProject({projectPath})
-                if(this.hasCriticalErrors) return
-                this.useProjectState({root: cloneDeep({...this.state, DeploymentEnvironment}), shouldMerge: true, projectPath})
-            } else {
-                console.assert(this.deployment.__typename == 'Deployment', 'Expected deployment to be either DeploymentTemplate or Deployment')
-                let ResourceType =  this.state.ResourceType
-                if(!ResourceType) {
-                    ResourceType = this.environmentResourceTypeDict(this.environment.name)
-                }
-                const projectPath = this.state.DeploymentTemplate[this.deployment.deploymentTemplate].projectPath
-                this.useProjectState({projectPath, root: cloneDeep({...this.state, DeploymentEnvironment, ResourceType})})
+            let ResourceType =  this.state.ResourceType
+            if(!ResourceType) {
+                ResourceType = this.environmentResourceTypeDict(this.environment.name)
             }
+            const projectPath = this.deployment?.projectPath || this.state.DeploymentTemplate[this.deployment.deploymentTemplate]?.projectPath
+            this.useProjectState({projectPath, root: cloneDeep({...this.state, DeploymentEnvironment, ResourceType})})
+
             this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },
