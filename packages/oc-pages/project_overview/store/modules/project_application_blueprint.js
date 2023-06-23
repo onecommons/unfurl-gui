@@ -86,6 +86,7 @@ const actions = {
             })
         } catch(e) {
             // TODO handle this from the caller
+            const responseData = e.response?.data
             commit(
                 'createError',
                 {
@@ -93,7 +94,8 @@ const actions = {
                     context: {
                         error: e.message,
                         projectPath,
-                        format
+                        format,
+                        ...(typeof responseData == 'object'? responseData: null)
                     },
                     severity: 'critical',
                 }
