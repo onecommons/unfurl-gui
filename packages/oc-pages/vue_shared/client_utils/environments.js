@@ -170,6 +170,7 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
             branch,
         })
     } catch(e) {
+        const responseData = e.response?.data
         errors.push({
             message: `@fetchEnvironments: An error occurred during an export request (${e.message})`,
             context: {
@@ -177,7 +178,8 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
                 format,
                 projectPath,
                 includeDeployments,
-                branch
+                branch,
+                ...(typeof responseData == 'object'? responseData: null)
             },
             severity: 'critical'
         })
