@@ -23,12 +23,14 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
     setUpstream,
     username,
     password,
+    tags,
     branch,
   } = Object.assign({
     force: false,
     skipCI: true,
     setUpstream: true,
     branch: null,
+    tags: false,
   }, options)
   console.log({setUpstream}, options)
   const url = constructTargetURL(projectPath, username, password)
@@ -36,6 +38,9 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
 
 
   args.push('push')
+  if(tags) {
+    args.push('--tags')
+  }
   if(force) args.push('-f')
   if(setUpstream) args.push('--set-upstream')
   args.push(url)

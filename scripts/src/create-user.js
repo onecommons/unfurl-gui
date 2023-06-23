@@ -2,6 +2,8 @@
 
 const OC_USERNAME = process.env.OC_USERNAME
 const OC_PASSWORD = process.env.OC_PASSWORD
+const OC_URL = process.env.OC_URL
+
 const {spawnSync} = require('child_process')
 
 const {extractCsrf} = require("./shared/util.js")
@@ -13,7 +15,7 @@ const pushLocalRepo = require('./push-local-repo.js')
 async function createUserAsAdmin(o) {
   if(!o) throw new Error('expected options to create new user')
   await login()
-  const res = await axios.get(`${process.env.OC_URL}/admin/users/new`)
+  const res = await axios.get(`${OC_URL}/admin/users/new`)
   const authenticity_token = extractCsrf(res.data)
   const options = {
     name: o.name || o.username,
@@ -36,7 +38,7 @@ async function createUserAsAdmin(o) {
     "Content-Length": form.getLengthSync()
   }
 
-  const status = (await axios.post(`${process.env.OC_URL}/admin/users`, form, {headers})).status
+  const status = (await axios.post(`${OC_URL}/admin/users`, form, {headers})).status
 
   return status < 400 && status >= 200
 }
@@ -46,25 +48,37 @@ async function createUserBySignup(o) {
   const inviteCode = o.invite_code || o['invite-code']
 
   {
-    const signinPage = await axios.get(`${process.env.OC_URL}/users/sign_in`)
-    const authenticity_token = extractCsrf(signinPage.data)
+    const signupPage = await axios.get(`${OC_URL}/users/sign_up`)
+    const authenticity_token = extractCsrf(signupPage.data)
+    const username = o.username || o.name
+
+    const data = {
+      'authenticity_token': authenticity_token,
+      'new_user[invite_code]': inviteCode || '',
+      'firstname': '',
+      'new_user[first_name]': username,
+      'new_user[last_name]': '',
+      'new_user[username]': username,
+      'new_user[email]': `${username}@unfurl.cloud`,
+      'new_user[password]': o.password,
+    }
+
+    spawnSync('sleep', ['2'])
+
+    await axios.get(`${OC_URL}/users/${username}/exists}`)
 
     const form = new FormData()
-    form.append('authenticity_token', authenticity_token)
-    form.append('new_user[invite_code]', inviteCode || '')
-    form.append('firstname', '')
-    form.append('new_user[first_name]', o.username || o.name)
-    form.append('new_user[last_name]', '')
-    form.append('new_user[username]', o.username || o.name)
-    form.append('new_user[email]', `${o.username || o.name}@unfurl.cloud`)
-    form.append('new_user[password]', o.password)
+
+    Object.entries(data).forEach(([key, value]) => form.append(key, value))
 
     const headers = {
       ...form.getHeaders(),
       "Content-Length": form.getLengthSync()
     }
 
-    const response = (await axios.post(`${process.env.OC_URL}/users`, form, {headers}))
+    spawnSync('sleep', ['5'])
+
+    const response = (await axios.post(`${OC_URL}/users`, form, {headers}))
     if(response.status > 400) {
       console.error(response.data)
       return false
@@ -72,7 +86,7 @@ async function createUserBySignup(o) {
   }
 
   if(selectRole){
-    const welcomePage = await axios.get(`${process.env.OC_URL}/users/sign_up/welcome`)
+    const welcomePage = await axios.get(`${OC_URL}/users/sign_up/welcome`)
     const authenticity_token = extractCsrf(welcomePage.data)
 
     const external = o.external
@@ -89,7 +103,7 @@ async function createUserBySignup(o) {
       "Content-Length": form.getLengthSync()
     }
 
-    const response = (await axios.post(`${process.env.OC_URL}/users/sign_up/welcome`, form, {headers}))
+    const response = (await axios.post(`${OC_URL}/users/sign_up/welcome`, form, {headers}))
     if(response.status > 400) {
       console.error(response.data)
       return false
