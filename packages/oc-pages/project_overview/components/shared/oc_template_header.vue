@@ -16,13 +16,14 @@ export default {
           'getPrimaryCard',
           'getApplicationBlueprint',
           'getCurrentEnvironmentType',
-          'getCurrentEnvironmentName'
+          'getCurrentEnvironmentName',
+          'getDeploymentTemplate',
       ]),
       cloud() {
         if(!this.getCurrentEnvironmentType && this.getCurrentEnvironmentName) {
           return 'local dev'
         }
-        return this.getCurrentEnvironmentType
+        return this.getCurrentEnvironmentType || this.getDeploymentTemplate?.cloud
       },
       environmentURL() {
           const homePath = projectPathToHomeRoute(decodeURIComponent(this.$route.params.dashboard))
@@ -42,10 +43,11 @@ export default {
 <template>
     <div class="m-2 d-flex flex-wrap justify-content-between align-items-center">
         <h1 @click="returnHome" class="template-title m-0"> <project-icon style="font-size: 0.83em; margin-right: 0.5em;" :project-icon="getApplicationBlueprint.projectIcon" /> {{ getApplicationBlueprint.title }}</h1>
-        <a class="d-inline-flex align-items-center" :href="environmentURL" target="_blank">
+        <a v-if="getCurrentEnvironmentName" class="d-inline-flex align-items-center" :href="environmentURL" target="_blank">
             <span class="gl-pl-2 oc_environment_name mr-2">{{ getCurrentEnvironmentName }}</span> 
             <detect-icon :size="18" :type="cloud" />
         </a>
+        <detect-icon v-else-if="cloud" :size="18" :type="cloud" />
     </div>
 </template>
 <style>

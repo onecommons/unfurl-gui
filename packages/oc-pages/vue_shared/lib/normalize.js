@@ -29,6 +29,16 @@ const transforms = {
         }
     },
 
+
+    DeploymentTemplate(dt, root) {
+        if(dt.ResourceTemplate) {
+            Object.entries(dt.ResourceTemplate).forEach(([name, rt]) => {
+                rt._local = true
+                localNormalize(rt, 'ResourceTemplate', root)
+            })
+        }
+    },
+
     ResourceType(resourceType) {
         if(!resourceType.title) resourceType.title = resourceType.name
         resourceType.__typename = 'ResourceType'
@@ -81,7 +91,7 @@ const transforms = {
         }
 
         resourceTemplate._maxUtilization = 1
-    }
+    },
 }
 
 export function localNormalize(object, typename=null, root) {

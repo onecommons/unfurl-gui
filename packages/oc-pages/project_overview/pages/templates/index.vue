@@ -1,10 +1,7 @@
 <script>
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput } from '@gitlab/ui';
-import { cloneDeep } from 'lodash';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import axios from '~/lib/utils/axios_utils';
-import { redirectTo } from '~/lib/utils/url_utility';
 import _ from 'lodash'
 import { __ } from '~/locale';
 import OcCard from '../../components/shared/oc_card.vue';
@@ -16,9 +13,7 @@ import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util.mjs'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
-import {getJobsData, redirectToJobConsole} from 'oc_vue_shared/client_utils/pipelines'
 import {setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
-import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import * as routes from '../../router/constants'
 
 
@@ -35,7 +30,6 @@ export default {
     OcListResource,
     OcTemplateHeader,
     TemplateButtons,
-    ConsoleWrapper,
   },
 
 
@@ -113,7 +107,8 @@ export default {
       'hasCriticalErrors',
       'userCanEdit',
       'getApplicationBlueprint',
-      'isAcknowledged'
+      'isAcknowledged',
+      'getGlobalVars',
     ]),
     
     deploymentDir() {
@@ -459,7 +454,12 @@ export default {
           syncState: this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT
         })
         const environment = this.lookupEnvironment(environmentName)
-        this.setAvailableResourceTypes(this.lookupConfigurableTypes(environment))
+
+        this.setAvailableResourceTypes(this.lookupConfigurableTypes(
+          environment || (this.getDeploymentTemplate && {
+            connections: [{type: this.getDeploymentTemplate.cloud}]
+          })
+        ))
 
 
       } catch (e) {
@@ -473,7 +473,20 @@ export default {
     debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
     async triggerSave(type, redirect=true) {
       try {
-        if(type == 'draft' || this.mergeRequest){
+        if(!this.$route.params.environment) {
+          // we're editing a blueprint directly - TODO find a better way to determine this
+          const name = this.$route.params.slug
+          this.setCommitMessage(`Save changes to ${name}`)
+          this.setUpdateType('blueprint')
+          this.setUpdateObjectPath('ensemble-template.yaml')
+          this.setUpdateObjectProjectPath(this.getGlobalVars.projectPath)
+
+          await this.commitPreparedMutations();
+          if(!this.hasCriticalErrors) {
+            window.location.reload()
+          }
+        }
+        else if(type == 'draft' || this.mergeRequest) {
           const name = this.$route.query.fn;
           this.setCommitMessage(`Save draft of ${name}`)
           this.setUpdateType('deployment')
@@ -778,10 +791,7 @@ export default {
     <div v-if="shouldRenderTemplates" :key="componentKey">
 
       <!-- Header of templates -->
-      <oc-template-header
-        :header-info="{ title: getDeploymentTemplate.title, cloud: getDeploymentTemplate.cloud, environment: $route.params.environment}"/>
-
-      <console-wrapper v-if="jobsData" :jobs-data="jobsData" />
+      <oc-template-header />
 
       <!-- Content -->
       <div class="row-fluid gl-mt-6 gl-mb-6">
@@ -824,8 +834,8 @@ export default {
                   :key="__('levelOne-') + card.title"
                   :card="card"
                   :icon-title="true"
-                  :icon-color="card.valid ? 'icon-green' : 'icon-red'"
-                  :icon-name="card.valid ? 'check-circle-filled' : 'warning-solid'"
+                  :icon-color="card._valid ? 'icon-green' : 'icon-red'"
+                  :icon-name="card._valid ? 'check-circle-filled' : 'warning-solid'"
                   :actions="true"
                   :level="idx"
                   class="gl-mt-6">

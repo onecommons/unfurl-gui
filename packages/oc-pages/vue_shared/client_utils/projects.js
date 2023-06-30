@@ -77,7 +77,9 @@ function commitSessionStorageKey(projectId, branch) {
 
 export function setLastCommit(projectId, branch, commit) {
     const when = (new Date(Date.now())).toISOString()
-    sessionStorage[commitSessionStorageKey(projectId, branch)] = JSON.stringify({commit, when})
+    sessionStorage[commitSessionStorageKey(projectId, branch)] = commit === undefined?
+        undefined:
+        JSON.stringify({commit, when})
 }
 
 export async function fetchLastCommit(projectId, _branch) {
