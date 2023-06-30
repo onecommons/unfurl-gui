@@ -11,6 +11,7 @@ import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
+    blueprint: 'blueprint', BLUEPRINT: 'blueprint',
     environment: 'environment', ENVIRONMENT: 'environment',
     deleteDeployment: 'delete-deployment', DELETE_DEPLOYMENT: 'delete-deployment', 'delete-deployment': 'delete-deployment',
     deleteEnvironment: 'delete-environment', DELETE_ENVIRONMENT: 'delete-environment', 'delete-environment': 'delete-environment'
@@ -65,6 +66,17 @@ function allowFields(node, ...fields) {
         if(field == 'name' || field == '__typename') continue
         if(!fields.includes(field)) {
             node[field] = undefined
+        }
+    }
+}
+
+function excludePrefixedFields(node) {
+    for(const field in node) {
+        if(field.startsWith('_') && field != '__typename') {
+            try {
+                // TODO this can fail if our node is frozen
+                delete node[field]
+            } catch(e) { console.error(`@excludePrefixedFields: ${e.message}`) }
         }
     }
 }
@@ -149,7 +161,8 @@ Serializers = {
             if(localResourceTemplates) {
                 for(const rt of Object.keys(localResourceTemplates)) {
                     if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
-                        delete localResourceTemplates[rt]
+                        // we can't do this for editing blueprints
+                        // delete localResourceTemplates[rt]
                     } else {
                         // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
                         Serializers.ResourceTemplate(localResourceTemplates[rt], state)
@@ -168,6 +181,8 @@ Serializers = {
             allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', '__typename')
             return
         }
+
+        excludePrefixedFields(rt)
 
         try {
             delete rt.visibility // do not commit template visibility
@@ -198,6 +213,9 @@ Serializers = {
         })
 
         rt.dependencies?.forEach(dep => {
+            excludePrefixedFields(dep)
+            excludePrefixedFields(dep.constraint)
+
             if(! dep.constraint.visibility) {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
             }
@@ -348,23 +366,37 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
 // TODO refactor to share implementation with updatePropertyInInstance
 export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, deploymentName, inputsSchema}) {
     return function(accumulator) {
-        let _propertyValue = _.cloneDeep(propertyValue)
-        const schemaFor = inputsSchema.properties[propertyName]
-        const envvarPrefix = `${deploymentName}__${templateName}`
-
-        const props = {[propertyName]: _propertyValue}
-        const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
-        _propertyValue = props[propertyName]
-
-        const patch = accumulator['ResourceTemplate'][templateName]
-        const property = patch.properties.find(p => p.name == propertyName)
-        property.value = _propertyValue
-        return [
+        const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentName]
+        const result = [
             // reference this here so we delete local resource templates as necessary
-            {typename: 'DeploymentTemplate', target: deploymentName, patch: accumulator['DeploymentTemplate'][deploymentName]},
-
-            {typename: 'ResourceTemplate', target: templateName, patch, env}
+            // may also be used if we're editing a deployment
+            {typename: 'DeploymentTemplate', target: deploymentName, patch: deploymentTemplate},
         ]
+
+        let _propertyValue = _.cloneDeep(propertyValue)
+
+        if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
+            // It doesn't make sense to try to encrypt envvars here.
+            // We shouldn't be hitting this code path outside of editing blueprints.
+            const resourceTemplate = deploymentTemplate.ResourceTemplate[templateName]
+            const property = resourceTemplate.properties.find(p => p.name == propertyName)
+            property.value = _propertyValue
+        } else {
+            const schemaFor = inputsSchema.properties[propertyName]
+            const envvarPrefix = `${deploymentName}__${templateName}`
+
+            const props = {[propertyName]: _propertyValue}
+            const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+            _propertyValue = props[propertyName]
+
+            const patch = accumulator['ResourceTemplate'][templateName]
+            const property = patch.properties.find(p => p.name == propertyName)
+            property.value = _propertyValue
+
+            result.push({typename: 'ResourceTemplate', target: templateName, patch, env})
+        }
+
+        return result
     }
 }
 
@@ -432,19 +464,27 @@ export function deleteDeploymentTemplateInBlueprint({templateName}) {
 
 export function deleteResourceTemplate({templateName, deploymentTemplateName, dependentName, dependentRequirement}) {
     return function(accumulator) {
-        const patch = null
-        const result = [ {typename: 'ResourceTemplate', target: templateName, patch} ]
+        const result = []
+        const deploymentTemplate = accumulator.DeploymentTemplate[deploymentTemplateName]
+
+        if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
+            delete deploymentTemplate.ResourceTemplate[templateName]
+            result.push( {typename: 'DeploymentTemplate', target: deploymentTemplateName, patch: deploymentTemplate} )
+        } else {
+            const patch = null
+            result.push( {typename: 'ResourceTemplate', target: templateName, patch} )
+        }
+
         if(deploymentTemplateName) { 
             result.push(
                 deleteResourceTemplateInDT({templateName, deploymentTemplateName})//(accumulator)[0]
             )
         }
+
         if(dependentName && dependentRequirement) {
-            console.warn("this isn't tested yet")
             result.push(
                 deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName})
             )
-
         }
 
         return result
@@ -468,7 +508,13 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
                 dependency.match = templateName
             }
         }
-        return [ {typename: 'ResourceTemplate', target: dependentName, patch} ]
+        if(patch._local) {
+            const deploymentTemplatePatch = accumulator['DeploymentTemplate'][deploymentTemplateName]
+            deploymentTemplatePatch.ResourceTemplate[patch.name] = patch
+            return [ {typename: 'DeploymentTemplate', target: deploymentTemplateName, patch: deploymentTemplatePatch}]
+        } else {
+            return [ {typename: 'ResourceTemplate', target: dependentName, patch} ]
+        }
     }
 }
 
@@ -476,23 +522,41 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     return function (accumulator) {
         let patch
         let typename
+
+        function clearMatch() {
+            for(const dependency of patch.dependencies) {
+                // this is a weak check, we should see that dependency.match is correct
+                if(dependency.name == dependentRequirement && dependency.match) {
+                    dependency.match = null
+                    return true
+                }
+            }
+            return false
+        }
+
         try {
             patch = accumulator['DeploymentTemplate'][deploymentTemplateName]['ResourceTemplate'][dependentName]
             typename = 'DeploymentTemplate'
         } catch(e) {}
 
+        if(patch && !clearMatch()) {
+            patch = null
+        }
+
         if(!patch) {
             patch = accumulator['ResourceTemplate'][dependentName]
             typename = 'ResourceTemplate'
-        }
 
-        for(const dependency of patch.dependencies) {
-            if(dependency.name == dependentRequirement) {
-                dependency.match = null
+            if(patch && !clearMatch()) {
+                patch = null
             }
         }
 
-        return [ {typename: 'ResourceTemplate', target: dependentName, patch} ]
+        if(patch) {
+            return [ {typename, target: patch.name, patch} ]
+        }
+
+        return []
     }
 }
 
@@ -549,6 +613,39 @@ export function createResourceTemplate({type, name, title, description, properti
     }
 }
 
+export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported}) {
+    return function(accumulator) {
+        const result = []
+
+        if(dependentName && dependentRequirement) {
+            result.push(
+                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName})//(accumulator)[0]
+            )
+        }
+
+        const newResourceTemplate = {
+            type: typeof(type) == 'string'? type: type.name,
+            name,
+            title,
+            description,
+            properties,
+            dependencies,
+            imported,
+            __typename: "ResourceTemplate",
+        }
+
+        if(!accumulator.DeploymentTemplate.ResourceTemplate) {
+            accumulator.DeploymentTemplate.ResourceTemplate = {}
+        }
+
+        const patch = accumulator.DeploymentTemplate[deploymentTemplateName]
+        patch.ResourceTemplate[name] = newResourceTemplate
+
+        result.push({patch, target: name, typename: "DeploymentTemplate"})
+
+        return result
+    }
+}
 
 function expectParam(paramName, functionName, paramValue) {
     if(!paramValue) {
@@ -638,7 +735,7 @@ const mutations = {
             if(state.isCommitting) {
                 throw new Error('Cannot update path while committing')
             }
-            console.error('Tried to update path with uncommitted mutations')
+            console.warn('Tried to update path with uncommitted mutations')
             state.preparedMutation = []
         }
         state.path = path
@@ -648,7 +745,7 @@ const mutations = {
             if(state.isCommitting) {
                 throw new Error('Cannot update projectPath while committing')
             }
-            console.error('Tried to update path with uncommitted mutations')
+            console.warn('Tried to update path with uncommitted mutations')
             state.preparedMutation = []
         }
         state.projectPath = projectPath
@@ -857,6 +954,12 @@ const actions = {
             } else {
                 method = 'update_ensemble'
             }
+        } else if (state.updateType == UPDATE_TYPE.blueprint) {
+            if(!path) {
+                path = 'ensemble-template.yaml'
+            }
+            variables.deployment_path = path
+            method = 'update_ensemble'
         } else if(state.updateType == UPDATE_TYPE.deleteDeployment) {
             if(!path) {
                 path = 'unfurl.yaml'
@@ -908,7 +1011,8 @@ const actions = {
                         branch,
                         patch,
                         commitMessage: state.commitMessage,
-                        variables
+                        variables,
+                        response: e.response?.data,
                     },
                     severity: 'critical'
                 },

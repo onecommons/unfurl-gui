@@ -196,6 +196,7 @@ const actions = {
                 }
 
                 deploymentTemplate.__typename = 'DeploymentTemplate'
+                localNormalize(deploymentTemplate, 'DeploymentTemplate', root)
             },
             ApplicationBlueprint(applicationBlueprint) {
                 if(!applicationBlueprint.title) {
@@ -512,7 +513,7 @@ const getters = {
         return function(environment) {
             //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
             if(!state.ResourceType) return
-            const resolver = rootGetters.environmentResolveResourceType.bind(null, environment)
+            const resolver = rootGetters.resolveResourceTypeFromAny
             return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
         }
     },

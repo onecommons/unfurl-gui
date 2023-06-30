@@ -3,7 +3,7 @@ import _ from 'lodash'
 import { __ } from "~/locale";
 import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
-import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate} from './deployment_template_updates.js';
+import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import Vue from 'vue'
@@ -71,7 +71,8 @@ const mutations = {
             const dependent = _state.resourceTemplates[dependentName];
             const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
             const templateName = dependent.dependencies[index].match;
-            dependent.dependencies[index] = {...dependent.dependencies[index], match: null, completionStatus: null, valid: false};
+            dependent.dependencies[index] = {...dependent.dependencies[index], match: null, completionStatus: null, _valid: false};
+            dependent.dependencies[index].constraint.match = null
 
             _state.resourceTemplates[dependentName] = {...dependent};
 
@@ -154,8 +155,7 @@ const actions = {
     // used by deploy and blueprint editing
     populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('resetTemplateResourceState')
-        // TODO this doesn't make any sense to people reading this
-        commit('setContext', false)
+        commit('setContext', environmentName? 'template': 'blueprint')
         if(!templateSlug) return false;
 
 
@@ -288,10 +288,10 @@ const actions = {
                 child = rootGetters.resolveResource(dependency.target)
             }
 
-            const valid = !!(child)
-            const id = valid && btoa(child.name).replace(/=/g, '')
+            const _valid = !!(child)
+            const id = _valid && btoa(child.name).replace(/=/g, '')
 
-            if(valid) {
+            if(_valid) {
                 let _ancestors = child._ancestors
                 if(
                     (!child._ancestors && resource._ancestors && !child.readonly) ||
@@ -301,7 +301,7 @@ const actions = {
                 }
                 const newResource = {...child, _ancestors}
 
-                commit('createTemplateResource', {...newResource, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, valid})
+                commit('createTemplateResource', {...newResource, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, _valid})
                 dispatch('createMatchedResources', {resource: newResource, isDeploymentTemplate})
             }
         }
@@ -316,7 +316,7 @@ const actions = {
             const target = cloneDeep(selection);
             target.type = {...target};
             target.description = requirement?.description;
-            target.valid = true;
+            target._valid = true;
             target.name = name;
             target.title = title;
 
@@ -363,10 +363,19 @@ const actions = {
             if(state.context == 'environment') {
                 commit(
                     'pushPreparedMutation',
-                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement})
+                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement}),
+                    {root: true}
                 )
             }
-            else {
+            else if (state.context == 'blueprint') {
+                commit(
+                    'pushPreparedMutation',
+                    createResourceTemplateInDeploymentTemplate({
+                        ...target, dependentName, dependentRequirement, deploymentTemplateName: _state.lastFetchedFrom.templateSlug
+                    }),
+                    {root: true}
+                )
+            } else {
                 commit(
                     'pushPreparedMutation',
                     createResourceTemplate({...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
@@ -378,7 +387,7 @@ const actions = {
 
             const fieldsToReplace = {
                 completionStatus: "created",
-                valid: true
+                _valid: true
             };
 
             commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace});
@@ -390,7 +399,7 @@ const actions = {
     },
 
     async connectNodeResource({getters, state, rootGetters, commit}, {dependentName, dependentRequirement, externalResource, resource}) {
-        const fieldsToReplace = {completionStatus: 'connected', valid: true};
+        const fieldsToReplace = {completionStatus: 'connected', _valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const deploymentTemplateName = state.lastFetchedFrom.templateSlug
         let resourceTemplateNode
@@ -1015,7 +1024,7 @@ const getters = {
     editingDeployed(state, _a, _b, rootGetters) {
         try {
             const deployment = rootGetters.resolveDeployment(state.deploymentTemplate.name)
-            return  deployment.__typename == 'Deployment' && state.context === false && deployment.hasOwnProperty('status')
+            return  deployment.__typename == 'Deployment' && state.context == 'template' && deployment.hasOwnProperty('status')
         }
         catch(e) {
             return false

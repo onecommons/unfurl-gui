@@ -87,7 +87,17 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     headers['Content-Type'] = 'application/json'
     const url = `${baseUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
 
-    const data = await doXhr('POST', url, body, headers)
+    let data
+
+    try {
+        data = await doXhr('POST', url, body, headers)
+    } catch(e) {
+        if(e.response?.status == 409) {
+            setLastCommit(encodeURIComponent(projectPath), branch, undefined)
+        }
+
+        throw e
+    }
 
     if(data.commit) {
         setLastCommit(encodeURIComponent(projectPath), branch, data.commit)
