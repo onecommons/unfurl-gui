@@ -6,6 +6,7 @@ import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
+import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import Vue from 'vue'
 
 const baseState = () => ({
@@ -880,12 +881,6 @@ const getters = {
             })
         }
     },
-  
-    resolveResourceTypeFromAvailable(_, getters) {
-        return function(typeName) {
-            return getters.instantiableResourceTypes.find(rt => rt.name == typeName)
-        }
-    },
 
     resolveResourceTypeFromAny(state, _a, _b, rootGetters) {
         return function(typeName) {
@@ -894,6 +889,19 @@ const getters = {
             return rootGetters?.environmentResolveResourceType(state.lastFetchedFrom?.environmentName, typeName) || null
         }
     },
+
+    lookupConfigurableTypes(state, _a, _b, rootGetters) {
+        return function(environment) {
+            const resolver = rootGetters.resolveResourceTypeFromAny
+            return Object.values(
+                {
+                    ...rootGetters.blueprintResourceTypeDict,
+                    ...rootGetters.environmentResourceTypeDict(environment)
+                })
+                .filter(rt => isConfigurable(rt, environment, resolver))
+        }
+    },
+
 
     dtResolveResourceTemplate(state, _a, _b, rootGetters) {
         return function(_resourceTemplate) {

@@ -14,6 +14,7 @@ import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-temp
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import {slugify} from 'oc_vue_shared/util.mjs'
+import { fetchTypeRepositories } from  'oc_vue_shared/client_utils/unfurl-server'
 import Vue from 'vue'
 
 
@@ -110,7 +111,7 @@ const mutations = {
     },
 
     setResourceTypeDictionary(state, { environment, dict }) {
-        state.resourceTypeDictionaries[environment.name] = dict
+        state.resourceTypeDictionaries[environment?.name || environment] = dict
     },
 
     // TODO maybe add something that will delete the environment, that can also keep the state of the application consistent
@@ -519,6 +520,15 @@ const actions = {
             ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id}))
 
         commit('setAdditionalDashboards', await Promise.all(dashboards))
+    },
+
+    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, params}) {
+        const types = await fetchTypeRepositories(getters.environmentTypeRepositories(environmentName), params)
+
+        commit(
+            'setResourceTypeDictionary',
+            {environment: environmentName, dict: {...state.resourceTypeDictionaries[environmentName], ...types}}
+        )
     }
 
 };
@@ -615,7 +625,7 @@ const getters = {
         return function(environment, typename) {
             const environmentName = typeof environment == 'string'? environment: environment?.name
             const dict = state.resourceTypeDictionaries[environmentName]
-            if (dict) return Object.freeze(dict[typename])
+            if (dict) return Object.freeze(dict[typename?.name || typename])
             return null
         }
     },
@@ -701,6 +711,26 @@ const getters = {
             const environmentName = environment?.name || environment
 
             return {...state.variablesByEnvironment['*'], ...state.variablesByEnvironment[environmentName]}
+        }
+    },
+
+    environmentTypeRepositories(state, getters) {
+        return function(environment) {
+            const environmentName = environment?.name || environment
+            {
+                const environment = getters.lookupEnvironment(environmentName)
+                return Object.values(environment.repositories || {}).map(repo => repo.url)
+            }
+        }
+    },
+
+    providerTypesForEnvironment(state, getters) {
+        return function(environment) {
+            const environmentName = environment?.name || environment
+            {
+                const environment = getters.lookupEnvironment(environmentName)
+                return _.uniq(Object.values(environment.connections).map(conn => conn.type))
+            }
         }
     }
 };

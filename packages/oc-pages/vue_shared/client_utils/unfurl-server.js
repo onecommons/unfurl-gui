@@ -65,8 +65,77 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     return await doXhr('GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
 }
 
+const unfurlTypesResponsesCache = {}
+export async function unfurlServerGetTypes({branch, projectPath, sendCredentials}, params={}) {
+    const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
+
+    // this is rather convoluted, but we don't want to fetch last commit for a tagged release
+    // this code would probably be removed once unfurl server doesn't need a last commit
+    // the only other reason to hit branches would be to get the main branch
+
+    const fetchCommitPromise = (branch && !branch.startsWith('v'))? fetchLastCommit(encodeURIComponent(projectPath), branch): null
+    const [lastCommitResult, password] = await Promise.all([fetchCommitPromise, fetchUserAccessToken()])
+    const [latestCommit, _branch] = lastCommitResult || [null, branch]
+    const _sendCredentials = sendCredentials ?? true
+
+    const cacheKey = JSON.stringify({branch, projectPath, ...params})
+
+    if (unfurlTypesResponsesCache[cacheKey]) {
+        return await unfurlTypesResponsesCache[cacheKey]
+    }
+
+    const username = window.gon.current_username
+
+    let exportUrl = `${baseUrl}/types`
+
+    exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
+
+    const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
+
+    if(_sendCredentials && includePasswordInQuery && username && password) {
+        exportUrl += `&username=${username}`
+        exportUrl += `&private_token=${password}`
+    }
+
+    exportUrl += `&branch=${branch || _branch}`
+
+    if(latestCommit && (alwaysSendLatestCommit() || !unfurlServerUrlOverride())) {
+        exportUrl += `&latest_commit=${latestCommit}`
+    }
+
+    Object.entries(params).forEach(([key, value]) => {
+        if(Array.isArray(value)) {
+            value.forEach(value => exportUrl += `&${key}=${encodeURIComponent(value)}`)
+        } else {
+            exportUrl += `&${key}=${encodeURIComponent(value)}`
+        }
+    })
+
+    const result = doXhr('GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
+    unfurlTypesResponsesCache[cacheKey] = result
+
+    return await result
+}
+
+function repoToExportParams(repo) {
+    const url = new URL(repo)
+    const projectPath = url.pathname.slice(1).replace(/\.git$/, '')
+    const branch = url.hash?.slice(1) || 'main'
+    return {branch: branch, projectPath}
+}
+
+// just assume all repositories are public forn now
+export async function fetchTypeRepositories(repositories, params) {
+    const typesDictionaries = await (Promise.all(repositories.map(
+        repo => unfurlServerGetTypes(repoToExportParams(repo), params)
+            .then(typesResponse => typesResponse.ResourceType)
+    )))
+
+    if(!typesDictionaries.length) return {}
+    return Object.assign.apply(null, typesDictionaries)
+}
+
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
-    console.log(arguments[0])
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
     const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])

@@ -246,7 +246,6 @@ export default {
                     type="button"
                     :data-testid="`create-dependency-${card.name}.${dependency.name}`"
                     class="gl-ml-3 oc_requirements_actions"
-                    :disabled="availableResourceTypesForRequirement(dependency).length == 0"
                     @click="sendRequirement(dependency)">{{ __('Create') }}</gl-button>
             </div>
         </div>

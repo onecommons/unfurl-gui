@@ -62,7 +62,7 @@ export default {
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0}
+        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0, fetchedConnectable: false}
     },
     computed: {
         ...mapGetters([
@@ -81,7 +81,8 @@ export default {
             'lookupDeployPath',
             'jobByPipelineId',
             'resolveResourceType',
-            'getApplicationRoot'
+            'getApplicationRoot',
+            'providerTypesForEnvironment',
         ]),
         resourcesTabIndex() {
             return 0
@@ -184,6 +185,7 @@ export default {
             'createNodeResource',
             'commitPreparedMutations',
             'normalizeUnfurlData',
+            'environmentFetchTypesWithParams',
         ]),
 
 
@@ -329,9 +331,7 @@ export default {
                 context: 'environment'
             })
 
-            this.setAvailableResourceTypes(
-                this.environmentLookupDiscoverable(environment)
-            )
+            this.setAvailableResourceTypes(this.environmentLookupDiscoverable(environment))
         },
 
         onHide(e) {
@@ -339,6 +339,20 @@ export default {
                 e.preventDefault()
             }
             this.showingProviderModal = false
+        },
+
+        async addExternalResources() {
+            if(!this.fetchedConnectable) {
+                try {
+                    await this.environmentFetchTypesWithParams({environmentName: this.environment.name, params: {implements: ['connect'], implementation_requirements: this.providerTypesForEnvironment(this.environment)}})
+                    this.setAvailableResourceTypes(this.environmentLookupDiscoverable(this.environment))
+                    this.fetchedConnectable = true
+                } catch(e) {
+                    console.error(e)
+                }
+            }
+
+            this.$refs.deploymentResources.promptAddExternalResource()
         }
 
     },
@@ -421,7 +435,7 @@ export default {
                         </p>
                     </div>
                     <div v-if="userCanEdit">
-                        <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                        <gl-button variant="confirm" @click="addExternalResources">
                             <div>
                                 <gl-icon name="plus"/>
                                 {{__('Add External Resource')}}
@@ -470,7 +484,7 @@ export default {
             </template>
             <template #primary-controls>
                 <div v-if="!isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
-                    <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                    <gl-button variant="confirm" @click="addExternalResources">
                         <div>
                             <gl-icon name="plus"/>
                             {{__('Add External Resource')}}
@@ -480,7 +494,7 @@ export default {
             </template>
             <template #primary-controls-footer>
                 <div v-if="isMobileLayout" class="confirm-container">
-                    <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddExternalResource()">
+                    <gl-button variant="confirm" @click="addExternalResources">
                         <div>
                             <gl-icon name="plus"/>
                             {{__('Add External Resource')}}
