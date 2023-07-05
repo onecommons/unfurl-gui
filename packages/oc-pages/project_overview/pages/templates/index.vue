@@ -109,6 +109,9 @@ export default {
       'getApplicationBlueprint',
       'isAcknowledged',
       'getGlobalVars',
+      'providerTypesForEnvironment',
+      'blueprintRepositories',
+      'environmentTypeRepositories'
     ]),
     
     deploymentDir() {
@@ -231,7 +234,11 @@ export default {
       const cardName = this.connectNodeResourceData?.dependentName
       const requirement = this.connectNodeResourceData?.requirement
       return this.getValidConnections( cardName, requirement ) || []
-    }
+    },
+
+    validResourceTypesForSelectedRequirement() {
+      return this.availableResourceTypesForRequirement(this.getRequirementSelected.requirement)
+    },
   },
 
   watch: {
@@ -274,6 +281,23 @@ export default {
     resourceName: function(val) {
       this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     },
+
+    validResourceTypesForSelectedRequirement: _.debounce(function(val) {
+      if(!val.length && this.createNodeResourceData.requirement) {
+        const environmentName = this.$route.params.environment
+        this.createError({
+          message: `No types found for ${this.createNodeResourceData.requirement.constraint?.title || this.createNodeResourceData.requirement.name}`,
+          context: {
+            blueprintRepositories: this.blueprintRepositories,
+            environmentRepositories: environmentName && this.environmentTypeRepositories(environmentName),
+            needed: this.createNodeResourceData.requirement.constraint.resourceType
+          },
+          severity: 'major'
+        })
+        const ref = this.$refs['oc-template-resource']
+        ref.hide()
+      }
+    }, 100)
   },
 
   serverPrefetch() {
@@ -291,12 +315,32 @@ export default {
       this.scrollDown(elId, 500);
     });
 
-    bus.$on('placeTempRequirement', (obj) => {
+    bus.$on('placeTempRequirement', async (obj) => {
+      const environmentName = this.$route.params.environment
+      const environment = this.lookupEnvironment(environmentName)
+
+      const requiredType = obj.requirement.constraint.resourceType
+      const implementation_requirements = environment && this.providerTypesForEnvironment(environmentName)
+      const params = {'extends': requiredType, implementation_requirements}
+
+      try {
+        await Promise.all([
+          this.blueprintFetchTypesWithParams({params}),
+          environmentName && this.environmentFetchTypesWithParams({environmentName, params})
+        ])
+
+        this.setAvailableResourceTypes(this.lookupConfigurableTypes(
+          environment || (this.getDeploymentTemplate && {
+            connections: [{type: this.getDeploymentTemplate.cloud}]
+          })
+        ))
+      } catch(e) {
+        console.error(e)
+      }
+
       const ref = this.$refs['oc-template-resource'];
-      setTimeout(() => {
-        this.createNodeResourceData = obj;
-        ref.show();
-      }, 100);
+      this.createNodeResourceData = obj;
+      ref.show();
     });
 
     bus.$on('launchModalToConnect', (obj) => {
@@ -368,7 +412,9 @@ export default {
       'deployInto',
       'createDeploymentPathPointer',
       'createFlash',
-      'acknowledge'
+      'acknowledge',
+      'blueprintFetchTypesWithParams',
+      'environmentFetchTypesWithParams',
     ]),
 
     unloadHandler(e) {
@@ -896,7 +942,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(getRequirementSelected.requirement)" :resourceType="getRequirementResourceType"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validResourceTypesForSelectedRequirement" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" data-testid="create-resource-template-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>

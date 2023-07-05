@@ -1,8 +1,8 @@
 import {uniq} from 'lodash'
-import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node-filter'
+import { fetchTypeRepositories } from  'oc_vue_shared/client_utils/unfurl-server'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -301,8 +301,13 @@ const actions = {
             const value = root[key]
             commit('setProjectState', {key, value})
         }
-    }
+    },
     
+    async blueprintFetchTypesWithParams({state, getters, dispatch}, {params}) {
+        const types = await fetchTypeRepositories(getters.blueprintRepositories, params)
+
+        dispatch('useProjectState', {root: {ResourceType: types}, shouldMerge: true})
+    }
 }
 
 function storeResolver(typename) {
@@ -509,14 +514,6 @@ const getters = {
     getDeployment(state) {return Object.values(state.Deployment || {})[0]},
 
     applicationBlueprintIsLoaded(state) {return state.loaded},
-    lookupConfigurableTypes(state, _a, _b, rootGetters) {
-        return function(environment) {
-            //const resolver = rootGetters.resolveResourceTypeFromAvailable // didn't work for some reason
-            if(!state.ResourceType) return
-            const resolver = rootGetters.resolveResourceTypeFromAny
-            return Object.values(state.ResourceType).filter(rt => isConfigurable(rt, environment, resolver))
-        }
-    },
 
     getTemplatesList(state) {
         return Object.values(state.DeploymentTemplate)
@@ -542,6 +539,14 @@ const getters = {
             const rt = getters.resolveResourceType(_rt?.name || _rt)
             return rt.outputsSchema
         }
+    },
+
+    blueprintResourceTypeDict(state) {
+        return state.ResourceType
+    },
+
+    blueprintRepositories(state) {
+        return Object.values(state.repositories).map(repo => repo.url)
     },
 }
 
