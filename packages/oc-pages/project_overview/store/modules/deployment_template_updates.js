@@ -18,6 +18,8 @@ export const UPDATE_TYPE = {
 }
 
 const SECRET_DIRECTIVE = "get_env"
+const UNDERSCORE_PREFIX_WHITELIST = ['__typename', '_sourceinfo']
+
 /*
  * this module is used to prepare a set of patches and push them to correct path using updateDeploymentObj
  * the shape of areguments passed to updateDeploymentObj changed after this module was created, so there are unnecessary transformations and an internal representation of patches that doesn't make much sense
@@ -63,7 +65,7 @@ function fieldsToDictionary(node, ...fields) {
 
 function allowFields(node, ...fields) {
     for(const field in node) {
-        if(field == 'name' || field == '__typename') continue
+        if(field == 'name' || UNDERSCORE_PREFIX_WHITELIST.includes(field)) continue
         if(!fields.includes(field)) {
             node[field] = undefined
         }
@@ -72,7 +74,7 @@ function allowFields(node, ...fields) {
 
 function excludePrefixedFields(node) {
     for(const field in node) {
-        if(field.startsWith('_') && field != '__typename') {
+        if(field.startsWith('_') && !UNDERSCORE_PREFIX_WHITELIST.includes(field)) {
             try {
                 // TODO this can fail if our node is frozen
                 delete node[field]
@@ -178,7 +180,7 @@ Serializers = {
         if(rt.__typename == 'Resource') return Serializers.Resource(rt)
 
         if(rt.directives?.includes('select')) {
-            allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', '__typename')
+            allowFields(rt, 'name', 'title', 'directives', 'imported', 'type')
             return
         }
 
@@ -246,11 +248,7 @@ Serializers = {
         console.log('resource!', resource)
     },
     '*': function(any) {
-        for(const key in any) {
-            if(key.startsWith('_')) {
-                any[key] = undefined
-            }
-        }
+        excludePrefixedFields(any)
         Object.freeze(any)
     }
 }
@@ -304,7 +302,8 @@ export function updatePropertyInInstance({environmentName, templateName, propert
     }
 }
 
-export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement}) {
+// I'm not sure if _sourceinfo makes sense for an environment instance, but might as well pass it through
+export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement, _sourceinfo}) {
     return function(accumulator) {
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
@@ -319,6 +318,7 @@ export function createEnvironmentInstance({type, name, title, description, depen
             description,
             __typename: "ResourceTemplate",
             properties,
+            _sourceinfo,
             dependencies: dependencies || []
         }
 
@@ -560,7 +560,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported}) {
+export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, _sourceinfo}) {
     return function(accumulator) {
         const result = []
 
@@ -602,6 +602,7 @@ export function createResourceTemplate({type, name, title, description, properti
             title,
             description,
             imported,
+            _sourceinfo,
             __typename: "ResourceTemplate",
             properties: _properties,
             dependencies: _dependencies
@@ -613,7 +614,7 @@ export function createResourceTemplate({type, name, title, description, properti
     }
 }
 
-export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported}) {
+export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, _sourceinfo}) {
     return function(accumulator) {
         const result = []
 
@@ -631,6 +632,7 @@ export function createResourceTemplateInDeploymentTemplate({type, name, title, d
             properties,
             dependencies,
             imported,
+            _sourceinfo,
             __typename: "ResourceTemplate",
         }
 
