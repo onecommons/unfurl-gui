@@ -65,6 +65,12 @@ const transforms = {
             if(property.hidden) {
                 property.visibility = 'hidden'
             }
+
+            const expression = property?.default?.eval || property?.default
+
+            if(expression?.abspath || expression?.get_dir) {
+                property.input_type = 'file'
+            }
         }
         ['inputsSchema', 'computedPropertiesSchema', 'outputsSchema'].forEach(schemaType => {
             let properties

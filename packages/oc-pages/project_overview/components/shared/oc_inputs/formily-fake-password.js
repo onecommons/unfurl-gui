@@ -8,7 +8,7 @@ export const Password = async function () {
     ])
 
 
-    const { Input, PreviewText } = element
+    const { PreviewText } = element
     const { connect, mapProps, mapReadPretty } = vue
     const { composeExport, transformComponent } = formilyBuiltin
 

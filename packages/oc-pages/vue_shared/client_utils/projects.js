@@ -233,3 +233,6 @@ export async function setMergeRequestReadyStatus(projectId, {branch, target, lab
     return await axios.put(`/api/v4/projects/${projectId}/merge_requests/${mr.iid}`, {title})
 }
 
+export async function listProjectFiles(projectPath, {branch}={}) {
+    return (await axios.get(`/${projectPath}/-/files/${branch || 'main'}?format=json`)).data
+}
