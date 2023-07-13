@@ -175,7 +175,7 @@ const actions = {
                 let dt
                 try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
                 if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
-                dispatch('useProjectState', {root: _.cloneDeep({...dict, ResourceType: undefined}), shouldMerge: true, projectPath})
+                dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true, projectPath})
                 _syncState = false // override sync state if we just loaded this
                 break
             }
@@ -1124,6 +1124,10 @@ const getters = {
 
             return result
         }
+    },
+
+    getCurrentProjectPath(state) {
+        return state.deploymentTemplate.projectPath
     }
 };
 
