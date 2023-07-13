@@ -361,6 +361,7 @@ const actions = {
             target.dependentName = dependentName, target.dependentRequirement = dependentRequirement;
             target.id = btoa(target.name).replace(/=/g, '');
 
+            // FIXME these create helpers should accept meta args in a different object than target so they can be passed through as is
             if(state.context == 'environment') {
                 commit(
                     'pushPreparedMutation',
@@ -882,11 +883,11 @@ const getters = {
         }
     },
 
-    resolveResourceTypeFromAny(state, _a, _b, rootGetters) {
+    resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
             if(dictionaryResourceType) return dictionaryResourceType
-            return rootGetters?.environmentResolveResourceType(state.lastFetchedFrom?.environmentName, typeName) || null
+            return rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName) || null
         }
     },
 
