@@ -1,17 +1,18 @@
 <script>
 import _ from 'lodash';
-import {bus} from 'oc_vue_shared/bus';
 import {__} from '~/locale';
 import Vue from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {Card as ElCard} from 'element-ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
-import {FakePassword, getCustomTooltip, getUiDirective} from './oc_inputs'
+import {FakePassword, FileSelector, getCustomTooltip, getUiDirective} from './oc_inputs'
 import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
 
 
 const ComponentMap = {
   string: 'Input',
+  textarea: 'Input',
+  file: FileSelector,
   boolean: 'Checkbox',
   number: 'InputNumber',
   enum: 'Select',
@@ -110,13 +111,6 @@ export default {
       return this.nestedProp?.properties || this.inputsSchema?.properties || {}
     },
 
-    /*
-    initialFormValues() {
-      const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.initialValue}), {})
-      return result
-    },
-     */
-
     formValues() {
       // element formily needs ?? undefined for some reason
       const result = this.mainInputs.reduce((a, b) => Object.assign(a, {[b.name]: b.value ?? b.default ?? undefined}), {})
@@ -210,6 +204,9 @@ export default {
         currentValue['x-component-props'] = {
           placeholder: currentValue.placeholder || ' ',
           'data-testid': `oc-input-${this.card.name}-${currentValue.name}`,
+          componentType,
+          name,
+          schema: value,
         }
 
         if(currentValue.input_type) {
@@ -315,6 +312,11 @@ export default {
             }
           }
         }
+
+        if(currentValue.input_type) {
+          componentType = currentValue.input_type
+        }
+
         currentValue['x-component'] = ComponentMap[componentType]
         return currentValue;
       });
@@ -338,7 +340,8 @@ export default {
                 return null
               }
               if (value.some(o => o?.input !== undefined)) {
-                return value.map(o => o?.input? o?.input: o)
+                // I'm guessing we want to fall back on 'o' in case it's a new value, but this seems fragile
+                return value.map(o => o?.input ?? o)
               } else if (value.some(o => o?.key !== undefined)) {
                 const result = {}
                 for(const entry of value)  {

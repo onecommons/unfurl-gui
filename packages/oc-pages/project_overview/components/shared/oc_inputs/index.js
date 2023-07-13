@@ -35,3 +35,4 @@ export function getUiDirective(type) {
 }
 
 export {default as FakePassword} from './formily-fake-password'
+export {default as FileSelector} from './formily-file-selector.js'
