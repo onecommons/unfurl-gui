@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
 import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
-import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit} from '../storage-keys';
+import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo} from '../storage-keys';
 
 function createHeaders({sendCredentials, username, password}) {
     const headers = {}
@@ -66,6 +66,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 }
 
 const unfurlTypesResponsesCache = {}
+const constraintCombinationsWithCloudmap = {}
 export async function unfurlServerGetTypes({branch, projectPath, sendCredentials}, params={}) {
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
 
@@ -89,6 +90,13 @@ export async function unfurlServerGetTypes({branch, projectPath, sendCredentials
     let exportUrl = `${baseUrl}/types`
 
     exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
+
+    const combinationKey = JSON.stringify(params)
+
+    if(!constraintCombinationsWithCloudmap[combinationKey]) {
+        constraintCombinationsWithCloudmap[combinationKey] = true
+        exportUrl += `&cloudmap=${cloudmapRepo()}`
+    }
 
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
 
