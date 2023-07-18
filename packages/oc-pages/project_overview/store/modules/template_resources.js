@@ -543,6 +543,8 @@ const actions = {
 
         if(_.isEqual(templatePropertyValue ?? null, update.propertyValue ?? null)) return
 
+        update.propertyValue = _.cloneDeep(update.propertyValue)
+
         commit('templateUpdateProperty', {templateName, ...update, nestedPropName})
         if(state.context == 'environment') {
             commit(
@@ -862,7 +864,7 @@ const getters = {
     },
 
     getCurrentEnvironmentName(state) {
-        return state.lastFetchedFrom.environmentName
+        return state.lastFetchedFrom?.environmentName
     },
 
     getCurrentEnvironmentType(_, getters) {
@@ -1117,7 +1119,7 @@ const getters = {
                 // type matches
 
                 const utilization = getters.getCardUtilization(rt.name)
-                if(rt._maxUtilization >= utilization + requirement._utilization) {
+                if(rt._maxUtilization >= utilization + (requirement._utilization ?? requirement.constraint?._utilization)) {
                     return true
                 }
             }))
