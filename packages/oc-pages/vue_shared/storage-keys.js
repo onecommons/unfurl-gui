@@ -13,6 +13,7 @@ export const HIDDEN_OPTION_KEYS = {
     defaultNamespace: 'defaultNamespace',
     manualIncrementalDeploy: 'manualIncrementalDeploy',
     azureCloudProvider: 'azureCloudProvider',
+    cloudmapRepo: 'cloudmapRepo',
 }
 
 export const CONFIGURABLE_HIDDEN_OPTIONS = [
@@ -26,6 +27,7 @@ export const CONFIGURABLE_HIDDEN_OPTIONS = [
     { key: 'defaultNamespace', label: "Use namespace instead of username" },
     { key: 'manualIncrementalDeploy', label: 'Allow manual incremental deploy', placeholder: 'false' },
     { key: 'azureCloudProvider', label: 'Show Azure as a cloud provider', placeholder: 'false' },
+    { key: 'cloudmapRepo', label: 'Use another cloudmap repo', placeholder: 'onecommons/cloudmap' },
 ]
 
 function isTruthyStorageValue(value) {
@@ -87,6 +89,10 @@ export function alwaysSendLatestCommit() {
 
 export function defaultSeverityLevel() {
     return lookupKey( HIDDEN_OPTION_KEYS.defaultSeverityLevel ) || 'major'
+}
+
+export function cloudmapRepo() {
+    return lookupKey( HIDDEN_OPTION_KEYS.cloudmapRepo ) || 'onecommons/cloudmap'
 }
 
 export function useImportedStateOnBreakpointOrElse(breakpointName, cb) {
