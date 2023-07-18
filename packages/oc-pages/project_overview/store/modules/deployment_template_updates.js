@@ -92,7 +92,7 @@ function normalizeEnvName(_name) {
     return name
 }
 
-function concealSensitiveProperties(name, schema, props, envvarPrefix, pathComponents=[], env={}) {
+function normalizeUpdatedProperties(name, schema, props, envvarPrefix, pathComponents=[], env={}) {
     const _pathComponents = pathComponents.concat([name])
     if(name == '$toscatype') return
 
@@ -100,12 +100,15 @@ function concealSensitiveProperties(name, schema, props, envvarPrefix, pathCompo
     if(schema.type == 'object' && schema.properties) {
         const innerProps = props[name]
         Object.entries(schema.properties).forEach(([name, schema]) => {
-            concealSensitiveProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)
+            normalizeUpdatedProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)
         })
     } else {
         const envKey = schema.sensitive && `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')
-        const value = props[name]
-        if(value || value === 0) {
+        let value = props[name]
+
+        // allow 0 and empty strings unless the input is required
+        if(schema.required && value === '') value = null
+        if((value ?? null) !== null) {
             if(schema.sensitive) {
                 env[envKey] = value
                 props[name] = {[SECRET_DIRECTIVE]: envKey}
@@ -274,12 +277,13 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
 
 export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, inputsSchema}) {
     return function(accumulator) {
-        let _propertyValue = _.cloneDeep(propertyValue)
+        // let _propertyValue = _.cloneDeep(propertyValue)
+        let _propertyValue = propertyValue // clone moved to caller
         const schemaFor = inputsSchema.properties[propertyName]
         const envvarPrefix = templateName
 
         const props = {[propertyName]: _propertyValue}
-        const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+        const env = normalizeUpdatedProperties(propertyName, schemaFor, props, envvarPrefix)
         _propertyValue = props[propertyName]
 
         const patch = accumulator['DeploymentEnvironment'][environmentName]
@@ -303,7 +307,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
 }
 
 // I'm not sure if _sourceinfo makes sense for an environment instance, but might as well pass it through
-export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement, _sourceinfo}) {
+export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement, ...passthru}) {
     return function(accumulator) {
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
@@ -318,7 +322,7 @@ export function createEnvironmentInstance({type, name, title, description, depen
             description,
             __typename: "ResourceTemplate",
             properties,
-            _sourceinfo,
+            ...passthru,
             dependencies: dependencies || []
         }
 
@@ -373,7 +377,8 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
             {typename: 'DeploymentTemplate', target: deploymentName, patch: deploymentTemplate},
         ]
 
-        let _propertyValue = _.cloneDeep(propertyValue)
+        // let _propertyValue = _.cloneDeep(propertyValue)
+        let _propertyValue = propertyValue // clone moved to caller
 
         if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
             // It doesn't make sense to try to encrypt envvars here.
@@ -386,7 +391,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
             const envvarPrefix = `${deploymentName}__${templateName}`
 
             const props = {[propertyName]: _propertyValue}
-            const env = concealSensitiveProperties(propertyName, schemaFor, props, envvarPrefix)
+            const env = normalizeUpdatedProperties(propertyName, schemaFor, props, envvarPrefix)
             _propertyValue = props[propertyName]
 
             const patch = accumulator['ResourceTemplate'][templateName]
@@ -560,7 +565,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
     }
 }
 
-export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, _sourceinfo}) {
+export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}) {
     return function(accumulator) {
         const result = []
 
@@ -602,7 +607,7 @@ export function createResourceTemplate({type, name, title, description, properti
             title,
             description,
             imported,
-            _sourceinfo,
+            ...passthru,
             __typename: "ResourceTemplate",
             properties: _properties,
             dependencies: _dependencies
@@ -614,7 +619,7 @@ export function createResourceTemplate({type, name, title, description, properti
     }
 }
 
-export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, _sourceinfo}) {
+export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}) {
     return function(accumulator) {
         const result = []
 
@@ -632,7 +637,7 @@ export function createResourceTemplateInDeploymentTemplate({type, name, title, d
             properties,
             dependencies,
             imported,
-            _sourceinfo,
+            ...passthru,
             __typename: "ResourceTemplate",
         }
 

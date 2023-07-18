@@ -15,6 +15,7 @@ import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import {slugify} from 'oc_vue_shared/util.mjs'
 import { fetchTypeRepositories } from  'oc_vue_shared/client_utils/unfurl-server'
+import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 
 
@@ -524,6 +525,8 @@ const actions = {
 
     async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, params}) {
         const types = await fetchTypeRepositories(getters.environmentTypeRepositories(environmentName), params)
+
+        Object.values(types).forEach(type => localNormalize(type, 'ResourceType', {ResourceType: state.resourceTypeDictionaries[environmentName]}))
 
         commit(
             'setResourceTypeDictionary',
