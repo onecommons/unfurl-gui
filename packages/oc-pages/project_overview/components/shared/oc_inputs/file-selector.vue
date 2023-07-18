@@ -143,7 +143,8 @@ export default {
         },
 
         clear() {
-            this.$emit('change', null)
+            const value = this.schema.required? null: ''
+            this.$emit('change', value)
         },
 
         async fetchAndFilterFiles() {
