@@ -1,10 +1,12 @@
 <script>
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 import {ErrorSmall, DetectIcon} from 'oc_vue_shared/components/oc'
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
 import {fetchAvailableProviderDashboards} from 'oc_vue_shared/client_utils/environments'
 
 const DEPLOY_INTO_ENV_MIN_ACCESS = 30
+
+let GLOBAL_providersLoaded = false
 
 export default {
     name: 'EnvironmentSelection',
@@ -14,11 +16,7 @@ export default {
         value: Object,
         environmentCreation: Boolean,
     },
-    data() {
-        return {
-            additionalDashboards: []
-        }
-    },
+    data() {},
     components: {
         GlDropdown,
         GlDropdownItem,
@@ -34,13 +32,16 @@ export default {
             }
         }
     },
+    methods: {
+        ...mapActions(['loadAdditionalProviders'])
+    },
     computed: {
-        ...mapGetters([ 'lookupEnvironment', 'getMatchingEnvironments', 'getHomeProjectPath' ]),
+        ...mapGetters([ 'lookupEnvironment', 'getMatchingEnvironments', 'getHomeProjectPath', 'additionalDashboardProviders' ]),
         matchingEnvironments() {
             return this.getMatchingEnvironments(this.provider).filter(env => env._dashboard == this.getHomeProjectPath)
         },
         externalEnvironments() {
-            return (this.additionalDashboards || [])
+            return (this.additionalDashboardProviders || [])
                 .map(
                     dash => Object.entries(dash.providersByEnvironment)
                         .filter(([env, providers]) => providers && providers.includes(this.provider))
@@ -63,8 +64,10 @@ export default {
         }
     },
     async beforeMount() {
-        this.additionalDashboards = (await fetchAvailableProviderDashboards(DEPLOY_INTO_ENV_MIN_ACCESS))
-            .filter(dash => dash.fullPath != this.getHomeProjectPath)
+        if(!GLOBAL_providersLoaded) {
+            await this.loadAdditionalProviders({accessLevel: DEPLOY_INTO_ENV_MIN_ACCESS})
+        }
+        GLOBAL_providersLoaded = true
     }
 }
 
