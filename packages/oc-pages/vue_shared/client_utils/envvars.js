@@ -65,15 +65,22 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                 if(envPatch.length) {
                     const currentVars = await tryFetchEnvironmentVariables(fullPath)
                     for(const currentVar of currentVars) {
-                        const existingVar = envPatch.find(newVar => newVar.key == currentVar.key && currentVar.environment_scope == environmentScope)
+                        const existingVarIndex = envPatch.findIndex(newVar => newVar.key == currentVar.key && currentVar.environment_scope == environmentScope)
+                        const existingVar = envPatch[existingVarIndex]
                         if(existingVar) {
+                            if(!existingVar.id) {
+                                console.warn(`No ID for var \n${JSON.stringify(existingVar, null, 2)}\nNot including in patch`)
+                                envPatch.splice(existingVarIndex, 1)
+                                continue
+                            }
                             existingVar.id = currentVar.id
                         }
                     }
-                    const response = await axios.patch(endpoint, {variables_attributes: envPatch})
-                    result = response?.data
-
-                    variablesByPath[fullPath] = result.variables
+                    if(envPatch.length > 0) {
+                        const response = await axios.patch(endpoint, {variables_attributes: envPatch})
+                        result = response?.data
+                        variablesByPath[fullPath] = result.variables
+                    }
                 }
 
                 batchResolves[key](result)
