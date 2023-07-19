@@ -8,7 +8,7 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
-import {fetchEnvironments, shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
+import {fetchEnvironments, shareEnvironmentVariables, fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
@@ -24,7 +24,7 @@ const state = () => ({
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
-    additionalDashboards: [],
+    additionalDashboardProviders: [],
     repositoryDependencies: [],
     defaults: null,
     projectPath: null,
@@ -129,8 +129,8 @@ const mutations = {
         Vue.set(state.variablesByEnvironment, environmentName, variables)
     },
 
-    setAdditionalDashboards(state, additionalDashboards) {
-        state.additionalDashboards = additionalDashboards
+    setAdditionalProviders(state, additionalDashboardProviders) {
+        state.additionalDashboardProviders = additionalDashboardProviders
     },
 
     setDefaults(state, defaults) {
@@ -513,13 +513,15 @@ const actions = {
         await patchEnv({[variableName]: {value: variableValue, masked: !!masked}}, environmentName, rootGetters.getHomeProjectPath)
     },
 
-    async loadAdditionalDashboards({rootGetters, commit}) {
+    async loadAdditionalProviders({rootGetters, commit}, {accessLevel=30}) {
         // include developer access for deploy requests, etc.
-        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=30`))?.data
+        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchEnvironments({fullPath: dashboard.path_with_namespace, projectId: dashboard.project_id}))
+            ?.map(dashboard => fetchDashboardProviders(dashboard.path_with_namespace)) || []
 
-        commit('setAdditionalDashboards', await Promise.all(dashboards))
+        const dashboardProviders = (await Promise.all(dashboards)).filter(provider => !!provider)
+
+        commit('setAdditionalProviders', dashboardProviders)
     },
 
     async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, params}) {
@@ -537,9 +539,7 @@ function envFilter(name){
 }
 
 const getters = {
-    getEnvironments: state => state.projectEnvironments
-        .concat(Object.values(state.additionalDashboards.map(db => db.environments)))
-        .flat(),
+    getEnvironments: state => state.projectEnvironments,
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
     getValidEnvironmentConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
         const filter = envFilter(environmentName)
@@ -580,31 +580,10 @@ const getters = {
         })
         return result
     },
-    getAdditionalMatchingEnvironments(state, getters) {
-        return function(type) {
-            const result = state.additionalDashboards.map(dashboard => {
-                const result = []
-                const {environments} = dashboard
-                for(const environment of environments) {
-                    if(lookupCloudProviderAlias(environment.primary_provider?.type) == lookupCloudProviderAlias(type)) {
-                        result.push(environment)
-                    }
-                }
-                return result
-            }).flat()
-
-            return result
-        }
-    },
-    //
 
     getDefaultEnvironmentName: (_, getters) => function(type) {
         if(!type) return null
         return getters.getMatchingEnvironments(type).find(env => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
-    },
-
-    getAdditionalDashboards(state) {
-        return state.additionalDashboards
     },
 
     lookupConnection: (_, getters) => function(environmentName, connectedResource) {
@@ -732,7 +711,9 @@ const getters = {
                 return _.uniq(Object.values(environment.connections).map(conn => conn.type))
             }
         }
-    }
+    },
+
+    additionalDashboardProviders(state) { return state.additionalDashboardProviders },
 };
 
 export default {

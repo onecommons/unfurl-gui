@@ -386,3 +386,29 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
 
     return projects.map(p => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
 }
+
+export async function fetchDashboardProviders(projectPath) {
+    const query = gql`
+        query fetchDashboardProviders ($projectPath: ID!) {
+          project(fullPath: $projectPath) {
+            fullPath
+            environments {
+              nodes {
+                name
+                externalUrl
+              }
+            }
+          }
+        }
+    `
+     const response = await graphqlClient.defaultClient.query({
+        query,
+        variables: {projectPath}
+    })
+
+    const {data, errors} = response
+
+    if(errors) { throw new Error('@fetchDashboardProviders: ' + JSON.stringify(errors, null, 2)) }
+
+    return data?.project ? new DashboardProviders({project: data.project}): null
+}
