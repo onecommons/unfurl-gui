@@ -20,7 +20,6 @@ import Vue from 'vue'
 
 
 const state = () => ({
-    environments: [],
     projectEnvironments: [],
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
@@ -58,10 +57,6 @@ const mutations = {
 
     clearSaveEnvironmentHooks(state) {
         state.saveEnvironmentHooks = []
-    },
-
-    setEnvironments(state, environments) {
-        state.environments = environments
     },
 
     setDeploymentPaths(state, deploymentPaths) {
@@ -544,14 +539,14 @@ function envFilter(name){
 const getters = {
     getEnvironments: state => state.projectEnvironments,
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
-    getValidEnvironmentConnections: (state, _a, _b, rootGetters) => function(environmentName, requirement) {
+    getValidEnvironmentConnections: (state, getters) => function(environmentName, requirement) {
         const filter = envFilter(environmentName)
-        const environment = state.environments.find(filter) || state.projectEnvironments.find(filter)
+        const environment = state.projectEnvironments.find(filter)
         const constraintType = constraintTypeFromRequirement(requirement)
         if(!environment) return []
         let result = []
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
-            const cextends = rootGetters.resolveResourceType(conn.type)?.extends
+            const cextends = getters.environmentResolveResourceType(environmentName, conn.type)?.extends
             return cextends && cextends.includes(constraintType)
         })
 
