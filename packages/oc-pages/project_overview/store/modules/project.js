@@ -139,7 +139,7 @@ const actions = {
     },
 
     async fetchCommentsIssue({ state, commit }) {
-        const issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(state.globalVars.projectPath)}/issues?state=opened&label=general+discussion`))?.data
+        const issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(state.globalVars.projectPath)}/issues?state=opened&labels=general+comments`))?.data
 
 
         if(issues && issues.length > 0) {
