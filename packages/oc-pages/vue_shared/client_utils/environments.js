@@ -186,9 +186,24 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
         return {errors}
     }
 
-    const environments = Object.values(data.DeploymentEnvironment)
-        .filter(env => env.name != 'defaults')
-        .map(env => {env._dashboard = fullPath; return env})
+    const environments = Object.entries(data.DeploymentEnvironment)
+        .filter(([name, env]) => {
+            if(env.error) {
+                errors.push({
+                    message: `@fetchEnvironments: An error occurred during an environment export`,
+                    context: {
+                        ...env,
+                        name
+                    },
+                    severity: 'major'
+
+                })
+                return false
+            }
+
+            return env.name != 'defaults'
+        })
+        .map(([_, env]) => {env._dashboard = fullPath; return env})
 
     for(const env of environments) { 
         env._dashboard = fullPath

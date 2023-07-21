@@ -306,7 +306,11 @@ const actions = {
     async blueprintFetchTypesWithParams({state, getters, dispatch}, {params}) {
         const types = await fetchTypeRepositories(getters.blueprintRepositories, params)
 
-        dispatch('useProjectState', {root: {ResourceType: types}, shouldMerge: true})
+        dispatch(
+            'useProjectState',
+            // prioritize types that are already defined
+            {root: {ResourceType: {...types, ...state.ResourceType}}, shouldMerge: true}
+        )
     }
 }
 
@@ -546,7 +550,7 @@ const getters = {
     },
 
     blueprintRepositories(state) {
-        return Object.values(state.repositories).map(repo => repo.url)
+        return Object.values(state.repositories || {}).map(repo => repo.url)
     },
 }
 

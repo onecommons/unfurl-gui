@@ -1,6 +1,6 @@
 
 function hasMatchingConnection(implementationRequirement, environment, resourceTypeResolver) {
-    return Object.values(environment.connections).some(conn => {
+    return Object.values(environment.connections || {}).some(conn => {
         // NOTE this doesn't account for duplication
         const connResourceType = resourceTypeResolver(conn.type)
         return connResourceType?.extends?.includes(implementationRequirement)

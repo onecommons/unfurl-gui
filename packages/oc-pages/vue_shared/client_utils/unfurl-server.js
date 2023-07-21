@@ -3,6 +3,7 @@ import { fetchUserAccessToken } from './user';
 import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo} from '../storage-keys';
+import _ from 'lodash'
 
 function createHeaders({sendCredentials, username, password}) {
     const headers = {}
@@ -67,7 +68,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
 const unfurlTypesResponsesCache = {}
 const constraintCombinationsWithCloudmap = {}
-export async function unfurlServerGetTypes({branch, projectPath, sendCredentials}, params={}) {
+export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}) {
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
 
     // this is rather convoluted, but we don't want to fetch last commit for a tagged release
@@ -107,6 +108,10 @@ export async function unfurlServerGetTypes({branch, projectPath, sendCredentials
 
     exportUrl += `&branch=${branch || _branch}`
 
+    if(file) {
+        exportUrl += `&file=${file}`
+    }
+
     if(latestCommit && (alwaysSendLatestCommit() || !unfurlServerUrlOverride())) {
         exportUrl += `&latest_commit=${latestCommit}`
     }
@@ -125,11 +130,22 @@ export async function unfurlServerGetTypes({branch, projectPath, sendCredentials
     return await result
 }
 
-function repoToExportParams(repo) {
+export function repoToExportParams(repo) {
     const url = new URL(repo)
     const projectPath = url.pathname.slice(1).replace(/\.git$/, '')
     const branch = url.hash?.slice(1) || 'main'
-    return {branch: branch, projectPath}
+    const result = {branch: branch, projectPath}
+
+    // FIXME we need to know which file this is
+    if(projectPath != 'onecommons/unfurl-types') {
+        result['file'] = 'ensemble-template.yaml'
+    }
+
+    return result
+}
+
+export function reposAreEqual(a, b) {
+    return _.isEqual(repoToExportParams(a), repoToExportParams(b))
 }
 
 // just assume all repositories are public forn now
@@ -140,7 +156,8 @@ export async function fetchTypeRepositories(repositories, params) {
     )))
 
     if(!typesDictionaries.length) return {}
-    return Object.assign.apply(null, typesDictionaries)
+    // hopefully this won't hurt too badly if fetch results are small
+    return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {

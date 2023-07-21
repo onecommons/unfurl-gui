@@ -323,20 +323,7 @@ export default {
       const implementation_requirements = environment && this.providerTypesForEnvironment(environmentName)
       const params = {'extends': requiredType, implementation_requirements}
 
-      try {
-        await Promise.all([
-          this.blueprintFetchTypesWithParams({params}),
-          environmentName && this.environmentFetchTypesWithParams({environmentName, params})
-        ])
-
-        this.setAvailableResourceTypes(this.lookupConfigurableTypes(
-          environment || (this.getDeploymentTemplate && {
-            connections: [{type: this.getDeploymentTemplate.cloud}]
-          })
-        ))
-      } catch(e) {
-        console.error(e)
-      }
+      await this.fetchTypesForParams({params})
 
       const ref = this.$refs['oc-template-resource'];
       this.createNodeResourceData = obj;
@@ -413,8 +400,7 @@ export default {
       'createDeploymentPathPointer',
       'createFlash',
       'acknowledge',
-      'blueprintFetchTypesWithParams',
-      'environmentFetchTypesWithParams',
+      'fetchTypesForParams'
     ]),
 
     unloadHandler(e) {
@@ -499,14 +485,8 @@ export default {
           environmentName: this.$route.params.environment,
           syncState: this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT
         })
-        const environment = this.lookupEnvironment(environmentName)
 
-        this.setAvailableResourceTypes(this.lookupConfigurableTypes(
-          environment || (this.getDeploymentTemplate && {
-            connections: [{type: this.getDeploymentTemplate.cloud}]
-          })
-        ))
-
+        this.fetchTypesForParams()
 
       } catch (e) {
         console.error(e);
