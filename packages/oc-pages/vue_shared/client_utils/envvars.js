@@ -65,15 +65,15 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                 if(envPatch.length) {
                     const currentVars = await tryFetchEnvironmentVariables(fullPath)
                     for(const currentVar of currentVars) {
-                        const existingVarIndex = envPatch.findIndex(newVar => newVar.key == currentVar.key && currentVar.environment_scope == environmentScope)
-                        const existingVar = envPatch[existingVarIndex]
-                        if(existingVar) {
-                            if(!existingVar.id) {
-                                console.warn(`No ID for var \n${JSON.stringify(existingVar, null, 2)}\nNot including in patch`)
-                                envPatch.splice(existingVarIndex, 1)
+                        const mutatingVarIndex = envPatch.findIndex(newVar => newVar.key == currentVar.key && currentVar.environment_scope == environmentScope)
+                        const mutatingVar = envPatch[mutatingVarIndex]
+                        if(mutatingVar) {
+                            if(!currentVar.id) {
+                                console.warn(`No ID for var \n${JSON.stringify(currentVar, null, 2)}\nNot including in patch`)
+                                envPatch.splice(mutatingVarIndex, 1)
                                 continue
                             }
-                            existingVar.id = currentVar.id
+                            mutatingVar.id = currentVar.id
                         }
                     }
                     if(envPatch.length > 0) {
