@@ -14,7 +14,7 @@ import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-temp
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import {slugify} from 'oc_vue_shared/util.mjs'
-import { fetchTypeRepositories } from  'oc_vue_shared/client_utils/unfurl-server'
+import { fetchTypeRepositories, reposAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 
@@ -25,7 +25,8 @@ const state = () => ({
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
     additionalDashboardProviders: [],
-    repositoryDependencies: [],
+    repositoryDeploymentDependencies: [],
+    tempRepositories: [],
     defaults: null,
     projectPath: null,
     ready: false,
@@ -43,11 +44,11 @@ const mutations = {
     },
 
     addRepositoryDependencies(state, dependencies) {
-        state.repositoryDependencies = state.repositoryDependencies.concat(dependencies)
+        state.repositoryDeploymentDependencies = state.repositoryDeploymentDependencies.concat(dependencies)
     },
 
     clearRepositoryDependencies(state) {
-        state.repositoryDependencies = []
+        state.repositoryDeploymentDependencies = []
     },
 
     onSaveEnvironment(state, cb) {
@@ -131,6 +132,10 @@ const mutations = {
 
     setDefaults(state, defaults) {
         state.defaults = defaults
+    },
+
+    addTempRepository(state, repo) {
+        state.tempRepositories.push(repo)
     }
 
 };
@@ -172,7 +177,7 @@ const actions = {
         let projectPath
 
         if(projectPath = rootGetters.getCurrentProjectPath) {
-            deploymentDependencies = state.repositoryDependencies
+            deploymentDependencies = state.repositoryDeploymentDependencies
         } else {
             const deploymentDict = rootGetters.getDeploymentDictionary(
                 parameters.deploymentName,
@@ -226,6 +231,7 @@ const actions = {
                 const project = projects[i]
                 if(project.visibility == 'public') return acc
                 const variableName = toDepTokenEnvKey(project.id)
+
 
                 // TODO move this side effect out of a reduce
                 if(v == projectPath && parameters.projectUrl) {
@@ -554,13 +560,28 @@ const actions = {
     },
 
     async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, params}) {
-        const types = await fetchTypeRepositories(getters.environmentTypeRepositories(environmentName), params)
+        const currentEnvironmentRepositories = getters.currentEnvironmentRepositories(environmentName)
+
+        const types = await fetchTypeRepositories(
+            currentEnvironmentRepositories,
+            params
+        )
+
+        Object.entries(types).forEach(([name, type]) => {
+            try {
+                if(! currentEnvironmentRepositories.some(repo => reposAreEqual(repo, type._sourceinfo.url))) {
+                    console.log(`removing ${type.name} from repo ${type._sourceinfo.url}`)
+                    delete types[name]
+                }
+            } catch(e) { console.warn(`Can't read repository url from source info: ${e.message}`) }
+        })
 
         Object.values(types).forEach(type => localNormalize(type, 'ResourceType', {ResourceType: state.resourceTypeDictionaries[environmentName]}))
 
         commit(
             'setResourceTypeDictionary',
-            {environment: environmentName, dict: {...state.resourceTypeDictionaries[environmentName], ...types}}
+            // prioritize types that are already defined
+            {environment: environmentName, dict: {...types, ...state.resourceTypeDictionaries[environmentName]}}
         )
     }
 
@@ -745,6 +766,16 @@ const getters = {
     },
 
     additionalDashboardProviders(state) { return state.additionalDashboardProviders },
+
+    currentEnvironmentRepositories(state, getters) {
+        return function(environmentName) {
+            return [
+                getters.environmentTypeRepositories(environmentName),
+                state.tempRepositories
+            ].flat()
+
+        }
+    }
 };
 
 export default {

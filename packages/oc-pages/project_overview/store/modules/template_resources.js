@@ -5,6 +5,7 @@ import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
+import { reposAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import Vue from 'vue'
@@ -14,6 +15,7 @@ const baseState = () => ({
     resourceTemplates: {},
     inputValidationStatus: {},
     availableResourceTypes: [],
+    tempRepositories: [],
 });
 
 const timeouts = {}
@@ -308,13 +310,46 @@ const actions = {
         }
     },
 
+    async fetchTypesForParams({getters, commit, dispatch}, {params}={}) {
+        const environmentName = getters.getCurrentEnvironmentName
+        if(params) {
+            await Promise.all([
+                dispatch('blueprintFetchTypesWithParams', {params}),
+                environmentName && dispatch('environmentFetchTypesWithParams', {environmentName, params})
+            ])
+        }
+
+        // this can go to the receiver since all this information is local to the store
+        commit('setAvailableResourceTypes', getters.lookupConfigurableTypes(
+            getters.getCurrentEnvironment || (getters.getDeploymentTemplate && {
+                connections: [{type: getters.getDeploymentTemplate.cloud}]
+            })
+        ))
+    },
+
 
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
     // TODO use dependenciesFromResourceType here
     async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
         try {
-            const target = cloneDeep(selection);
+            let target
+
+            if(!getters.repositoryInScope(selection._sourceinfo)) {
+                commit('addTempRepository', selection._sourceinfo.url)
+                const environmentName = getters.getCurrentEnvironmentName
+                const implementation_requirements = environmentName && rootGetters.providerTypesForEnvironment(environmentName)
+                const params = {
+                    'extends': selection.name,
+                    implementation_requirements
+                }
+
+                await dispatch('fetchTypesForParams', {params})
+                target = cloneDeep(getters.resolveResourceTypeFromAny(selection.name))
+            } else {
+                target = cloneDeep(selection);
+            }
+
             target.type = {...target};
             target.description = requirement?.description;
             target._valid = true;
@@ -887,9 +922,13 @@ const getters = {
 
     resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
+            const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
+            if(environmentResourceType) return environmentResourceType
+
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
             if(dictionaryResourceType) return dictionaryResourceType
-            return rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName) || null
+
+            return null
         }
     },
 
@@ -1130,6 +1169,26 @@ const getters = {
 
     getCurrentProjectPath(state) {
         return state.deploymentTemplate?.projectPath
+    },
+
+    getCurrentRepositories(_a, getters, _b, rootGetters) {
+        const result = [
+            rootGetters.blueprintRepositories,
+            rootGetters.currentEnvironmentRepositories(getters.getCurrentEnvironmentName)
+        ]
+
+        return result.flat()
+    },
+
+    repositoryInScope(_, getters) {
+        return function (repo) {
+            try {
+                return getters.getCurrentRepositories.some(currentRepo => reposAreEqual(currentRepo, repo?.url ?? repo))
+            } catch(e) {
+                console.warn(`Can't read repository url from source info: ${e.message}`)
+                return true  // just assume that local file paths in url are already in scope
+            }
+        }
     }
 };
 
