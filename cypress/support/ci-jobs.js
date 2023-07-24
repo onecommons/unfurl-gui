@@ -38,6 +38,7 @@ function withJob(cb) {
     const deployment = store.getters.getDeploymentTemplate
     const deploymentItem = store.getters.deploymentItemDirect({deployment, environment})
     const result = deploymentItem && deploymentItem.job && deploymentItem.job.id
+    if(!result) return withJob(cb)
     cb && cb(result)
     return result
   })

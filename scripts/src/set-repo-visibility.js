@@ -6,7 +6,7 @@ const FormData = require('form-data')
 const login = require('./shared/login.js')
 
 async function setRepoVisibility(projectPath, visibility) {
-  const _visibility = visibility == 'public'? 20 : 0
+  const _visibility = visibility == 'public'? 20 : visibility == 'internal'? 10 : 0
   await login()
   const res = await axios.get(`${process.env.OC_URL}/${projectPath}/edit`)
   const authenticity_token = extractCsrf(res.data)
@@ -39,8 +39,8 @@ if(require.main === module) {
 async function main () {
   const args = require('minimist')(process.argv.slice(2))
   const visibility = args.visibility || args._[0] || 'private'
-  if (visibility != 'public' && visibility != 'private') {
-    throw new Error(`"--visibility" public|private, got: ${visibility}`)
+  if (!['public', 'private', 'internal'].includes(visibility)) {
+    throw new Error(`"--visibility" public|private|internal, got: ${visibility}`)
   }
   const projectPath = args.projectPath || args['project-path']
   if (!projectPath) {

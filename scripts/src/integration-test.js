@@ -3,6 +3,7 @@
 const OC_USERNAME = process.env.OC_USERNAME
 const OC_PASSWORD = process.env.OC_PASSWORD
 const OC_INVITE_CODE = process.env.OC_INVITE_CODE
+const OC_DISCRIMINATOR = process.env.OC_DISCRIMINATOR
 const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
 
 const GENERATED_PASSWORD = btoa(Number.MAX_SAFE_INTEGER * Math.random())
@@ -91,7 +92,9 @@ const ERROR_CREATE_USER_NO_DASHBOARD = 'A dashboard must be specified if a user 
 
 function identifierFromCurrentTime(baseId) {
   const d = new Date(Date.now())
-  return `${baseId}-${d.toISOString().replace(/(:|\.|-)/g, '')}`
+
+  const discriminator = OC_DISCRIMINATOR || d.toISOString().replace(/(:|\.|-)/g, '')
+  return `${baseId}-${discriminator}`
 }
 
 function createDashboardCommand(username, dashboardRepo) {
