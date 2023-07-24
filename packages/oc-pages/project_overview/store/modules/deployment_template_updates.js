@@ -20,6 +20,9 @@ export const UPDATE_TYPE = {
 const SECRET_DIRECTIVE = "get_env"
 const UNDERSCORE_PREFIX_WHITELIST = ['__typename', '_sourceinfo']
 
+const visitMutation = () => {}
+// const visitMutation = console.log
+
 /*
  * this module is used to prepare a set of patches and push them to correct path using updateDeploymentObj
  * the shape of areguments passed to updateDeploymentObj changed after this module was created, so there are unnecessary transformations and an internal representation of patches that doesn't make much sense
@@ -165,13 +168,16 @@ Serializers = {
             const localResourceTemplates = dt?.ResourceTemplate
             if(localResourceTemplates) {
                 for(const rt of Object.keys(localResourceTemplates)) {
-                    if(state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
-                        // we can't do this for editing blueprints
+                    /*
+                    if(dt.source && state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
+                        // this used to work here
                         // delete localResourceTemplates[rt]
                     } else {
                         // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
                         Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                     }
+                    */
+                    Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                 }
             }
 
@@ -277,6 +283,7 @@ function throwErrorsFromDeploymentUpdateResponse(...args) {
 
 export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, inputsSchema}) {
     return function(accumulator) {
+        visitMutation('updatePropertyInInstance')
         // let _propertyValue = _.cloneDeep(propertyValue)
         let _propertyValue = propertyValue // clone moved to caller
         const schemaFor = inputsSchema.properties[propertyName]
@@ -309,6 +316,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
 // I'm not sure if _sourceinfo makes sense for an environment instance, but might as well pass it through
 export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement, ...passthru}) {
     return function(accumulator) {
+        visitMutation('createEnvironmentInstance')
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
         let properties 
         try {
@@ -348,6 +356,7 @@ export function createEnvironmentInstance({type, name, title, description, depen
 
 export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}) {
     return function(accumulator) {
+        visitMutation('deleteEnvironmentInstance')
         const patch = accumulator['DeploymentEnvironment'][environmentName]
         if(delete patch.instances[templateName]) {
             if(dependentName) {
@@ -369,18 +378,28 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
 
 // TODO refactor to share implementation with updatePropertyInInstance
 export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, deploymentName, inputsSchema}) {
+    const args = arguments[0]
     return function(accumulator) {
+        visitMutation('updatePropertyInResourceTemplate')
         const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentName]
-        const result = [
-            // reference this here so we delete local resource templates as necessary
-            // may also be used if we're editing a deployment
-            {typename: 'DeploymentTemplate', target: deploymentName, patch: deploymentTemplate},
-        ]
+        const result = []
 
         // let _propertyValue = _.cloneDeep(propertyValue)
         let _propertyValue = propertyValue // clone moved to caller
 
         if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
+            if(deploymentTemplate.source) {
+                result.push(
+                    deleteResourceTemplate({templateName, deploymentTemplateName: deploymentTemplate.name})
+                )
+
+                result.push(
+                    {typename: 'ResourceTemplate', target: templateName, patch: {...deploymentTemplate.ResourceTemplate[templateName], _local: false}}
+                )
+
+                return [...result, updatePropertyInInstance(args)]
+            }
+
             // It doesn't make sense to try to encrypt envvars here.
             // We shouldn't be hitting this code path outside of editing blueprints.
             const resourceTemplate = deploymentTemplate.ResourceTemplate[templateName]
@@ -407,6 +426,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
 
 export function appendResourceTemplateInDT({templateName, deploymentTemplateName}) {
     return function(accumulator) {
+        visitMutation('appendResourceTemplateInDT')
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateName] || {}
         if(Array.isArray(patch.resourceTemplates)) patch.resourceTemplates.push(templateName)
         else patch.resourceTemplates = [templateName]
@@ -416,6 +436,7 @@ export function appendResourceTemplateInDT({templateName, deploymentTemplateName
 
 export function deleteResourceTemplateInDT({templateName, deploymentTemplateName}) {
     return function(accumulator) {
+        visitMutation('deleteResourceTemplateInDT')
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateName] || {}
         if(!patch.resourceTemplates)
             patch.resourceTemplates = []
@@ -428,6 +449,7 @@ export function deleteResourceTemplateInDT({templateName, deploymentTemplateName
 export function appendDeploymentTemplateInBlueprint({templateName}) {
     return function(accumulator) {
         // TODO should we take this as an arg?
+        visitMutation('appendDeploymentTemplateInBlueprint')
         try {
             const blueprint = Object.keys(accumulator['ApplicationBlueprint'])[0]
             const patch = accumulator['ApplicationBlueprint'][blueprint]
@@ -443,6 +465,7 @@ export function appendDeploymentTemplateInBlueprint({templateName}) {
 export function deleteDeploymentTemplate({slug, name}) {
     const target = slug || name
     return function(accumulator) {
+        visitMutation('deleteDeploymentTemplate')
         const deploymentTemplate = accumulator['DeploymentTemplate'][target]
         const result = []
         for(const resourceTemplate of deploymentTemplate.resourceTemplates) {
@@ -458,6 +481,7 @@ export function deleteDeploymentTemplate({slug, name}) {
 
 export function deleteDeploymentTemplateInBlueprint({templateName}) {
     return function(accumulator) {
+        visitMutation('deleteDeploymentTemplateInBlueprint')
         // TODO should we take this as an arg?
         const blueprint = Object.keys(accumulator['ApplicationBlueprint'])[0]
         const patch = accumulator['ApplicationBlueprint'][blueprint]
@@ -469,6 +493,7 @@ export function deleteDeploymentTemplateInBlueprint({templateName}) {
 
 export function deleteResourceTemplate({templateName, deploymentTemplateName, dependentName, dependentRequirement}) {
     return function(accumulator) {
+        visitMutation('deleteResourceTemplate')
         const result = []
         const deploymentTemplate = accumulator.DeploymentTemplate[deploymentTemplateName]
 
@@ -497,10 +522,28 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
 }
 
 export function appendResourceTemplateInDependent({templateName, dependentName, dependentRequirement, deploymentTemplateName}) {
+    const args = arguments[0]
     return function (accumulator) {
+        visitMutation('appendResourceTemplateInDependent')
         let patch, typename
+        const result = []
+
         try { 
-            patch = accumulator['DeploymentTemplate'][deploymentTemplateName]['ResourceTemplate'][dependentName]
+            const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentTemplateName]
+            patch = deploymentTemplate['ResourceTemplate'][dependentName]
+
+            if(patch && deploymentTemplate.source) {
+                result.push(
+                    deleteResourceTemplate({templateName: dependentName, deploymentTemplateName: deploymentTemplate.name})
+                )
+
+                result.push(
+                    {typename: 'ResourceTemplate', target: dependentName, patch: {...deploymentTemplate.ResourceTemplate[dependentName], _local: false}}
+                )
+
+                return [...result, appendResourceTemplateInDependent(args)]
+            }
+
             typename = 'DeploymentTemplate'
         } catch(e) {}
 
@@ -508,23 +551,27 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
             patch = accumulator['ResourceTemplate'][dependentName]
             typename = 'ResourceTemplate'
         }
+
         for(const dependency of patch.dependencies) {
             if(dependency.name == dependentRequirement) {
                 dependency.match = templateName
             }
         }
+
         if(patch._local) {
             const deploymentTemplatePatch = accumulator['DeploymentTemplate'][deploymentTemplateName]
             deploymentTemplatePatch.ResourceTemplate[patch.name] = patch
-            return [ {typename: 'DeploymentTemplate', target: deploymentTemplateName, patch: deploymentTemplatePatch}]
+            result.push({typename: 'DeploymentTemplate', target: deploymentTemplateName, patch: deploymentTemplatePatch})
         } else {
-            return [ {typename: 'ResourceTemplate', target: dependentName, patch} ]
+            result.push({typename: 'ResourceTemplate', target: dependentName, patch})
         }
+        return result
     }
 }
 
 export function deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName}) {
     return function (accumulator) {
+        visitMutation('deleteResourceTemplateInDependent')
         let patch
         let typename
 
@@ -552,8 +599,11 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
             patch = accumulator['ResourceTemplate'][dependentName]
             typename = 'ResourceTemplate'
 
-            if(patch && !clearMatch()) {
-                patch = null
+            // if(patch && !clearMatch()) {
+            // TODO template being mutated elsewhere?
+            if(patch) {
+                clearMatch()
+                // patch = null
             }
         }
 
@@ -567,6 +617,7 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
 
 export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}) {
     return function(accumulator) {
+        visitMutation('createResourceTemplate')
         const result = []
 
         if(deploymentTemplateName) {
@@ -621,6 +672,7 @@ export function createResourceTemplate({type, name, title, description, properti
 
 export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}) {
     return function(accumulator) {
+        visitMutation('createResourceTemplateInDeploymentTemplate')
         const result = []
 
         if(dependentName && dependentRequirement) {
@@ -665,6 +717,7 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
     expectParam('name', 'createDeploymentTemplate', name || slug)
     console.warn('prepared createDeploymentTemplate is untested')
     return function(accumulator) {
+        visitMutation('createDeploymentTemplate')
         const result = []
 
         const type = primaryType
