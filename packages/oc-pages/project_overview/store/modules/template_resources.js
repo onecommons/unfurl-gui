@@ -369,7 +369,7 @@ const actions = {
                     {root: true}
                 )
             }
-            else if (state.context == 'blueprint') {
+            else if (state.context == 'blueprint' && (directAncestor._local || target.type.implementation_requirements.length > 0)) {
                 commit(
                     'pushPreparedMutation',
                     createResourceTemplateInDeploymentTemplate({
