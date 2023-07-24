@@ -167,8 +167,31 @@ const actions = {
             commit('addRepositoryDependencies', [upstreamProjectPath])
         }
 
+
+        let deploymentDependencies
+
+        if(rootGetters.getCurrentProjectPath) {
+            deploymentDependencies = state.repositoryDependencies
+        } else {
+            const deploymentDict = rootGetters.getDeploymentDictionary(
+                parameters.deploymentName,
+                parameters.environmentName
+            )
+
+            deploymentDependencies = [
+                Object.values(deploymentDict.DeploymentTemplate)[0].projectPath,
+                ...Object.values(deploymentDict.repositories).map(repo => {
+                    try {
+                        return (new URL(repo.url)).pathname.slice(1)
+                    } catch(e) {}
+                })
+            ].filter(repo => !!repo)
+
+            deploymentDependencies = _.uniq(deploymentDependencies)
+        }
+
         const projects = await Promise.all(
-            state.repositoryDependencies.map(
+            deploymentDependencies.map(
                 dep => fetchProjectInfo(encodeURIComponent(dep))
                     .catch(e => {
                         commit(
@@ -185,30 +208,27 @@ const actions = {
         const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
 
         let writableBlueprintProjectUrl, blueprintToken
-        const dependencies = state.repositoryDependencies
-            .reduce(
-                (acc, v, i) => {
-                    const project = projects[i]
-                    if(project.visibility == 'public') return acc
-                    const variableName = toDepTokenEnvKey(project.id)
+        const dependencies = deploymentDependencies
+            .reduce((acc, v, i) => {
+                const project = projects[i]
+                if(project.visibility == 'public') return acc
+                const variableName = toDepTokenEnvKey(project.id)
 
-                    // TODO move this side effect out of a reduce
-                    if((new URL(parameters.projectUrl)).pathname == (`/${v}.git`)) {
-                        writableBlueprintProjectUrl = new URL(parameters.projectUrl)
-                        writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
-                        writableBlueprintProjectUrl.password = '$' + variableName
-                        writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
-                        blueprintToken = variableName
-                    }
+                // TODO move this side effect out of a reduce
+                if((new URL(parameters.projectUrl)).pathname == (`/${v}.git`)) {
+                    writableBlueprintProjectUrl = new URL(parameters.projectUrl)
+                    writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
+                    writableBlueprintProjectUrl.password = '$' + variableName
+                    writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
+                    blueprintToken = variableName
+                }
 
-                    if(!getters.lookupVariableByEnvironment(variableName, '*')) {
-                        acc[v] = variableName
-                    }
+                if(!getters.lookupVariableByEnvironment(variableName, '*')) {
+                    acc[v] = variableName
+                }
 
-                    return acc
-                },
-                {}
-            )
+                return acc
+            }, {})
 
         const deployVariables = await prepareVariables({
             ...parameters,

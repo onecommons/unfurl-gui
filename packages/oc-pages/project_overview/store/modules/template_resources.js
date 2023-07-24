@@ -1129,7 +1129,7 @@ const getters = {
     },
 
     getCurrentProjectPath(state) {
-        return state.deploymentTemplate.projectPath
+        return state.deploymentTemplate?.projectPath
     }
 };
 
