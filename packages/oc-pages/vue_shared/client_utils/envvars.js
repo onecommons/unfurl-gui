@@ -134,7 +134,7 @@ export async function fetchEnvironmentVariables(fullPath) {
 
     let cachedCopy
     if(cachedCopy = variablesByPath[fullPath]) {
-        return cachedCopy
+        return _.cloneDeep(cachedCopy)
     }
 
     const endpoint = `/${fullPath}/-/variables`
