@@ -86,6 +86,8 @@ const actions = {
             deploymentObj.DeploymentTemplate = { [newDeploymentName]: deploymentObj.DeploymentTemplate[prevDeploymentName] }
             renameDeploymentTemplate(deploymentObj.DeploymentTemplate[newDeploymentName], newDeploymentName, newDeploymentTitle)
 
+            delete deploymentObj.DeploymentTemplate[newDeploymentName].ResourceTemplate
+
             const variables = environmentVariableDependencies(deploymentObj)
             const usePrefix = false
             const substitutions = [
