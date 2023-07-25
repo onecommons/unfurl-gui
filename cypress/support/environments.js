@@ -168,14 +168,15 @@ function uncheckedCreateRoute53DNS(zone) {
   cy.get('[data-testid="resource-selection-Route53DNSZone"]').click()
   cy.contains("button", "Next").click()
   const awsName = slugify(AWS_DNS_TYPE)
-  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-access_key_id"]`).type(
-    AWS_ACCESS_KEY
-  )
-  cy.wait(100) // cypress keeps typing true before the key
+
+  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-access_key_id"]`).should('exist')
+  cy.wait(BASE_TIMEOUT / 10)
+
+  cy.wait(BASE_TIMEOUT / 10) // cypress keeps typing true before the key
   cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-access_key_id"]`).invoke('val', '').type(
     AWS_ACCESS_KEY
   )
-  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-secret_access_key"]`).type(
+  cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-secret_access_key"]`).invoke('val', '').type(
     AWS_SECRET_ACCESS_KEY
   )
   cy.getInputOrTextarea(`[data-testid="oc-input-${awsName}-name"]`).type(
