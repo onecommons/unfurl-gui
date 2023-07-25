@@ -248,7 +248,7 @@ const actions = {
                 const origin = url.origin
 
                 if(window.location.origin == origin) {
-                    commit('addRepositoryDependencies', [url.pathname.slice(1).replace('.git', '')], {root: true})
+                    commit('addRepositoryDependencies', [url.pathname.slice(1).replace(/\.git$/, '')], {root: true})
                 }
             }
         }

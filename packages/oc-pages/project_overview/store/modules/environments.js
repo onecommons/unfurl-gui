@@ -182,7 +182,7 @@ const actions = {
                 Object.values(deploymentDict.DeploymentTemplate)[0].projectPath,
                 ...Object.values(deploymentDict.repositories).map(repo => {
                     try {
-                        return (new URL(repo.url)).pathname.slice(1)
+                        return (new URL(repo.url)).pathname.slice(1).replace(/\.git$/, '')
                     } catch(e) {}
                 })
             ].filter(repo => !!repo)
