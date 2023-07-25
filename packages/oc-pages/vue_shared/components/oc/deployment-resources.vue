@@ -1,6 +1,6 @@
 <script>
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox, GlTabs} from '@gitlab/ui';
-import _, { cloneDeep } from 'lodash';
+import _ from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from '~/flash';
 import axios from '~/lib/utils/axios_utils';
@@ -224,6 +224,11 @@ export default {
             }
 
             return mapping
+        },
+
+        baseTypes() {
+            // ensure Other is last
+            return _.uniq(['Other', ...Object.keys(this.mappedAvailableTypes || {})]).reverse()
         },
 
         availableProviderTypes() {
@@ -644,19 +649,19 @@ export default {
             @cancel="cleanModalResource"
             v-model="selectingTopLevel"
         >
+            <div style="min-height: 500px">
+                <gl-tabs>
+                    <oc-tab :title="baseType" :key="baseType" :title-testid="'external-resource-tab-' + mappedAvailableTypes[baseType][0].extends[1]" :title-count="mappedAvailableTypes[baseType].length" v-for="baseType in baseTypes">
+                        <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[baseType]"/>
+                    </oc-tab>
 
-            <gl-tabs>
-                <oc-tab :title="baseType" :key="baseType" :title-testid="'external-resource-tab-' + mappedAvailableTypes[baseType][0].extends[1]" :title-count="mappedAvailableTypes[baseType].length" v-for="baseType in Object.keys(mappedAvailableTypes || {})">
-                    <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[baseType]"/>
-                </oc-tab>
+                </gl-tabs>
 
-            </gl-tabs>
-
-            <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
-                <small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
-            </gl-form-group>
-
+                <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
+                    <gl-form-input id="input2" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                    <small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                </gl-form-group>
+            </div>
 
         </gl-modal>
 
