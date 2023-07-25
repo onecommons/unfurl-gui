@@ -59,7 +59,7 @@ describe('Cloning and deploying drafts', () => {
   it('Can clone and deploy drafts for nextcloud', () => {
     const ogTitle = deploymentName('Clone test original')
     const cloneTitle = deploymentName('Clone test')
-    const fixture = 'generated/deployments/_az__nextcloud__nextcloud'
+    const fixture = 'generated/deployments/_az__nextcloud__pg'
     cloneAndDeployDraft(ogTitle, cloneTitle, fixture)
   })
 })
