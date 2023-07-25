@@ -168,7 +168,7 @@ const actions = {
         }
 
 
-        let deploymentDependencies
+        let deploymentDependencies = []
 
         if(rootGetters.getCurrentProjectPath) {
             deploymentDependencies = state.repositoryDependencies
@@ -178,16 +178,24 @@ const actions = {
                 parameters.environmentName
             )
 
-            deploymentDependencies = [
-                Object.values(deploymentDict.DeploymentTemplate)[0].projectPath,
-                ...Object.values(deploymentDict.repositories).map(repo => {
-                    try {
-                        return (new URL(repo.url)).pathname.slice(1).replace(/\.git$/, '')
-                    } catch(e) {}
-                })
-            ].filter(repo => !!repo)
+            try {
+                deploymentDependencies = [
+                    Object.values(deploymentDict.DeploymentTemplate)[0].projectPath,
+                    ...Object.values(deploymentDict.repositories).map(repo => {
+                        try {
+                            return (new URL(repo.url)).pathname.slice(1).replace(/\.git$/, '')
+                        } catch(e) {}
+                    })
+                ].filter(repo => !!repo)
 
-            deploymentDependencies = _.uniq(deploymentDependencies)
+                deploymentDependencies = _.uniq(deploymentDependencies)
+            } catch(e) {
+                console.error(
+                    `Can't get deployment dependencies for ${JSON.stringify(parameters, null, 2)}`,
+                    e,
+                    'This is probably a GCP OAUTH flow environment'
+                )
+            }
         }
 
         const projects = await Promise.all(
