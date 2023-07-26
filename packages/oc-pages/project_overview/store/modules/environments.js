@@ -169,8 +169,9 @@ const actions = {
 
 
         let deploymentDependencies = []
+        let projectPath
 
-        if(rootGetters.getCurrentProjectPath) {
+        if(projectPath = rootGetters.getCurrentProjectPath) {
             deploymentDependencies = state.repositoryDependencies
         } else {
             const deploymentDict = rootGetters.getDeploymentDictionary(
@@ -179,14 +180,16 @@ const actions = {
             )
 
             try {
+                // result can contain null values; will filter out later
+                projectPath = Object.values(deploymentDict.DeploymentTemplate)[0].projectPath
                 deploymentDependencies = [
-                    Object.values(deploymentDict.DeploymentTemplate)[0].projectPath,
+                    projectPath,
                     ...Object.values(deploymentDict.repositories).map(repo => {
                         try {
                             return (new URL(repo.url)).pathname.slice(1).replace(/\.git$/, '')
                         } catch(e) {}
                     })
-                ].filter(repo => !!repo)
+                ]
 
                 deploymentDependencies = _.uniq(deploymentDependencies)
             } catch(e) {
@@ -218,12 +221,14 @@ const actions = {
         let writableBlueprintProjectUrl, blueprintToken
         const dependencies = deploymentDependencies
             .reduce((acc, v, i) => {
+                // v left null instead of filtered out so we can zip here
+                if(!v) return acc
                 const project = projects[i]
                 if(project.visibility == 'public') return acc
                 const variableName = toDepTokenEnvKey(project.id)
 
                 // TODO move this side effect out of a reduce
-                if((new URL(parameters.projectUrl)).pathname == (`/${v}.git`)) {
+                if(v == projectPath && parameters.projectUrl) {
                     writableBlueprintProjectUrl = new URL(parameters.projectUrl)
                     writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
                     writableBlueprintProjectUrl.password = '$' + variableName
