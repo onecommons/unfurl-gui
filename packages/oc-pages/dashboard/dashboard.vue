@@ -27,6 +27,7 @@ export default {
             'setCurrentNamespace',
             'setDashboardName',
             'initUserSettings',
+            'createError',
         ])
     },
     computed: {
@@ -76,8 +77,16 @@ export default {
         if(sessionStorage['trigger-deployment']) {
             // we need to await this because our updates all have a shared global state
             // the user can potentially initiate other update operations while one or more of this trigger's subrequests are in flight
-            await this.deployInto(JSON.parse(sessionStorage['trigger-deployment']))
-            delete sessionStorage['trigger-deployment']
+            try {
+                const context = JSON.parse(sessionStorage['trigger-deployment'])
+                await this.deployInto(context)
+                delete sessionStorage['trigger-deployment']
+            } catch(e) {
+                this.createError({
+                    message: `Failed to trigger queued deployment: ${e.message}`,
+                    context,
+                })
+            }
         }
 
         this.isLoaded = true
