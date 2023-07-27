@@ -210,7 +210,20 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
 
     if(includeDeployments) {
         const deploymentErrors = []
+
+        // that filter is expected to be obsolete
         const deployments = data.deployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
+        // temporary error before removal so this goes loud
+        if(deployments.length != data.deployments.length) {
+            result.errors.push({
+                message: 'Assertion failed: An obsolete filter removed a deployment',
+                context: {
+                    filtered: _.cloneDeep(deployments),
+                    unfiltered: _.cloneDeep(data.deployments)
+                },
+                severity: 'minor'
+            })
+        }
 
         deployments.forEach(deployment => {
             if(deployment.error) {

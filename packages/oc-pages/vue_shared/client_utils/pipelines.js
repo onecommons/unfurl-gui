@@ -67,7 +67,8 @@ export async function prepareVariables({
     upstreamCommit,
     upstreamBranch,
     upstreamProject,
-    upstreamProjectPath
+    upstreamProjectPath,
+    ...extraVars
 }) {
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
@@ -93,7 +94,8 @@ export async function prepareVariables({
         UNFURL_LOGGING: (mockDeploy || UNFURL_TRACE) && 'trace',
         UNFURL_VALIDATION_MODE,
         DEPLOY_IMAGE,
-        USE_DEPLOYMENT_BLUEPRINT: deploymentBlueprint? null : "--use-deployment-blueprint ''"
+        USE_DEPLOYMENT_BLUEPRINT: deploymentBlueprint? null : "--use-deployment-blueprint ''",
+        ...extraVars
     }).concat(
         toGlVariablesAttributes({
             WRITABLE_BLUEPRINT_PROJECT_URL: writableBlueprintProjectUrl ?? null,
