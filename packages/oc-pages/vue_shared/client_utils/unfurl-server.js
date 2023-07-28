@@ -131,20 +131,23 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 }
 
 export function repoToExportParams(repo) {
-    const url = new URL(repo)
+    const url = new URL(repo.url)
     const projectPath = url.pathname.slice(1).replace(/\.git$/, '')
-    const branch = url.hash?.slice(1) || 'main'
+
+    const [_branch, _file] = (url.hash?.slice(1) || '').split(':')
+    const branch = _branch || 'main'
+    const file = repo.file || _file
+
     const result = {branch: branch, projectPath}
 
-    // FIXME we need to know which file this is
-    if(projectPath != 'onecommons/unfurl-types') {
-        result['file'] = 'ensemble-template.yaml'
+    if(file) {
+        result.file = file
     }
 
     return result
 }
 
-export function reposAreEqual(a, b) {
+export function importsAreEqual(a, b) {
     return _.isEqual(repoToExportParams(a), repoToExportParams(b))
 }
 

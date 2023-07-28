@@ -14,7 +14,7 @@ import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-temp
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import {slugify} from 'oc_vue_shared/util.mjs'
-import { fetchTypeRepositories, reposAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
+import { fetchTypeRepositories, importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 
@@ -559,18 +559,23 @@ const actions = {
         commit('setAdditionalProviders', dashboardProviders)
     },
 
-    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, params}) {
-        const currentEnvironmentRepositories = getters.currentEnvironmentRepositories(environmentName)
+    // optional deployment name
+    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, deploymentName, params}) {
+        const currentEnvironmentRepositories = getters.currentEnvironmentRepositories(
+            environmentName,
+            deploymentName
+        )
 
         const types = await fetchTypeRepositories(
             currentEnvironmentRepositories,
             params
         )
 
+        const currentTypes = state.resourceTypeDictionaries[environmentName]
+
         Object.entries(types).forEach(([name, type]) => {
             try {
-                if(! currentEnvironmentRepositories.some(repo => reposAreEqual(repo, type._sourceinfo.url))) {
-                    console.log(`removing ${type.name} from repo ${type._sourceinfo.url}`)
+                if(currentTypes[name] && type._sourceinfo.incomplete) {
                     delete types[name]
                 }
             } catch(e) { console.warn(`Can't read repository url from source info: ${e.message}`) }
@@ -581,7 +586,7 @@ const actions = {
         commit(
             'setResourceTypeDictionary',
             // prioritize types that are already defined
-            {environment: environmentName, dict: {...types, ...state.resourceTypeDictionaries[environmentName]}}
+            {environment: environmentName, dict: {...types, ...currentTypes}}
         )
     }
 
@@ -750,7 +755,14 @@ const getters = {
             const environmentName = environment?.name || environment
             {
                 const environment = getters.lookupEnvironment(environmentName)
-                return Object.values(environment.repositories || {}).map(repo => repo.url)
+
+                if(environment.repositories.types) {
+                    return [environment.repositories.types]
+                }
+                return []
+
+                // call types on unique repositories
+                // return Object.values(environment.repositories || {})
             }
         }
     },
@@ -767,12 +779,20 @@ const getters = {
 
     additionalDashboardProviders(state) { return state.additionalDashboardProviders },
 
-    currentEnvironmentRepositories(state, getters) {
-        return function(environmentName) {
+    currentEnvironmentRepositories(state, getters, _, rootGetters) {
+        return function(environmentName, deploymentName) {
+            let repos = getters.environmentTypeRepositories(environmentName)
+            if(deploymentName) {
+                const deployPath = getters.lookupDeployPath(deploymentName, environmentName)
+                repos = [{
+                    url: `${window.location.origin}/${rootGetters.getHomeProjectPath}.git`,
+                    file: `${deployPath.name}/ensemble.yaml`
+                }]
+            }
             return [
-                getters.environmentTypeRepositories(environmentName),
-                state.tempRepositories
-            ].flat()
+                ...repos,
+                ...state.tempRepositories
+            ]
 
         }
     }

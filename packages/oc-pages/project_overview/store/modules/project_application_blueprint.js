@@ -550,7 +550,9 @@ const getters = {
     },
 
     blueprintRepositories(state) {
-        return Object.values(state.repositories || {}).map(repo => repo.url)
+        return []
+        // call types on unique blueprint repositories
+        // return Object.values(state.repositories)
     },
 }
 

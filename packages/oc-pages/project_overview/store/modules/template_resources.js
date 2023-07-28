@@ -5,7 +5,7 @@ import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
-import { reposAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
+import { importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import Vue from 'vue'
@@ -310,12 +310,19 @@ const actions = {
         }
     },
 
-    async fetchTypesForParams({getters, commit, dispatch}, {params}={}) {
+    async fetchTypesForParams({getters, commit, dispatch, rootGetters}, {params}={}) {
         const environmentName = getters.getCurrentEnvironmentName
+
+        // we'll have a deployment name if we've called create_ensemble
+        const deploymentName = rootGetters.lookupDeploymentOrDraft(
+            getters.getDeploymentTemplate.name,
+            environmentName
+        )?.name
+
         if(params) {
             await Promise.all([
-                dispatch('blueprintFetchTypesWithParams', {params}),
-                environmentName && dispatch('environmentFetchTypesWithParams', {environmentName, params})
+                dispatch('blueprintFetchTypesWithParams', {params}), // currently does nothing
+                environmentName && dispatch('environmentFetchTypesWithParams', {environmentName, deploymentName, params})
             ])
         }
 
@@ -335,8 +342,8 @@ const actions = {
         try {
             let target
 
-            if(!getters.repositoryInScope(selection._sourceinfo)) {
-                commit('addTempRepository', selection._sourceinfo.url)
+            if(selection._sourceinfo.incomplete) {
+                commit('addTempRepository', selection._sourceinfo)
                 const environmentName = getters.getCurrentEnvironmentName
                 const implementation_requirements = environmentName && rootGetters.providerTypesForEnvironment(environmentName)
                 const params = {
@@ -1183,7 +1190,7 @@ const getters = {
     repositoryInScope(_, getters) {
         return function (repo) {
             try {
-                return getters.getCurrentRepositories.some(currentRepo => reposAreEqual(currentRepo, repo?.url ?? repo))
+                return getters.getCurrentRepositories.some(currentRepo => importsAreEqual(currentRepo, repo))
             } catch(e) {
                 console.warn(`Can't read repository url from source info: ${e.message}`)
                 return true  // just assume that local file paths in url are already in scope
