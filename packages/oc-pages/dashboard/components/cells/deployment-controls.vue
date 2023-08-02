@@ -1,5 +1,5 @@
 <script>
-import {GlIcon, GlDropdown} from '@gitlab/ui'
+import {GlDropdown, GlButtonGroup} from '@gitlab/ui'
 import {mapGetters} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
 import ControlButtons from './deployment-controls/control-buttons.vue'
@@ -16,8 +16,8 @@ export default {
         }
     },
     components: {
-        GlIcon,
         GlDropdown,
+        GlButtonGroup,
         ControlButtons,
     },
     computed: {
@@ -94,7 +94,9 @@ export default {
                 result.push('local-deploy')
             }
 
-            result.push('rename-deployment')
+            if(this.userCanEdit) {
+                result.push('rename-deployment')
+            }
 
             result.push('view-in-repository')
 
@@ -189,64 +191,56 @@ export default {
 <template>
 <div class="deployment-controls-outer">
     <div class="deployment-controls">
-        <control-buttons 
-         :deployment="deployment"
-         :environment="environment"
-         :view-deployment-target="viewDeploymentTarget"
-         :resume-editing-target="resumeEditingTarget"
-         :view-jobs-link="viewJobsLink"
-         :view-artifacts-link="deploymentItem.artifactsLink"
-         :control-buttons="primaryControlButtons"
-         :view-in-repository-link="viewInRepositoryLink"
-         :disabled-buttons="disabledButtons"
-         @renameDeployment="renameDeployment"
-         @deleteDeployment="deleteDeployment"
-         @stopDeployment="stopDeployment"
-         @startDeployment="startDeployment"
-         @cloneDeployment="cloneDeployment"
-         @incRedeploy="incRedeploy"
-         @cancelJob="cancelJob"
-         @localDeploy="localDeploy"
-         @edit="edit"
-        />
-        <gl-dropdown style="margin: 0 -0.5em;" v-if="contextMenuControlButtons.length" variant="link" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
-            <template #button-content>
-                <gl-icon style="padding-left: 0!important; padding-right: 0 !important; color: black" name="ellipsis_v" :size="24" class="p-1"/>
-            </template>
-            <control-buttons
+        <gl-button-group>
+            <control-buttons 
              :deployment="deployment"
              :environment="environment"
+             :view-deployment-target="viewDeploymentTarget"
              :resume-editing-target="resumeEditingTarget"
              :view-jobs-link="viewJobsLink"
-             :view-deployment-target="viewDeploymentTarget"
              :view-artifacts-link="deploymentItem.artifactsLink"
-             :control-buttons="contextMenuControlButtons"
+             :control-buttons="primaryControlButtons"
              :view-in-repository-link="viewInRepositoryLink"
              :disabled-buttons="disabledButtons"
-             :issues-link-args="issuesLinkArgs"
-             component="gl-dropdown-item"
              @renameDeployment="renameDeployment"
              @deleteDeployment="deleteDeployment"
              @stopDeployment="stopDeployment"
              @startDeployment="startDeployment"
              @cloneDeployment="cloneDeployment"
-             @cancelJob="cancelJob"
              @incRedeploy="incRedeploy"
+             @cancelJob="cancelJob"
              @localDeploy="localDeploy"
              @edit="edit"
-             />
-        </gl-dropdown>
+            />
+            <gl-dropdown v-if="contextMenuControlButtons.length" right :popper-opts="{ positionFixed: true }">
+                <control-buttons
+                 :deployment="deployment"
+                 :environment="environment"
+                 :resume-editing-target="resumeEditingTarget"
+                 :view-jobs-link="viewJobsLink"
+                 :view-deployment-target="viewDeploymentTarget"
+                 :view-artifacts-link="deploymentItem.artifactsLink"
+                 :control-buttons="contextMenuControlButtons"
+                 :view-in-repository-link="viewInRepositoryLink"
+                 :disabled-buttons="disabledButtons"
+                 :issues-link-args="issuesLinkArgs"
+                 component="gl-dropdown-item"
+                 @renameDeployment="renameDeployment"
+                 @deleteDeployment="deleteDeployment"
+                 @stopDeployment="stopDeployment"
+                 @startDeployment="startDeployment"
+                 @cloneDeployment="cloneDeployment"
+                 @cancelJob="cancelJob"
+                 @incRedeploy="incRedeploy"
+                 @localDeploy="localDeploy"
+                 @edit="edit"
+                 />
+            </gl-dropdown>
+        </gl-button-group>
     </div>
-    <!--gl-dropdown ref="previousJobs" v-if="pipelines.length > 1" id="jobs-dropdown" toggle-class="text-decoration-none" no-caret right :popper-opts="{ positionFixed: true }">
-        <gl-dropdown-item :href="pipelineToJobsLink(pipeline)" :key="pipeline.id" v-for="(pipeline, n) in pipelines.slice(0, -1)">
-            <pipeline-dropdown-item :deployment-item="deploymentItem" :pipeline-index="n"/>
-        </gl-dropdown-item>
-    </gl-dropdown-->
 </div>
 </template>
 <style scoped>
-#jobs-dropdown { position: absolute; } 
-#jobs-dropdown >>> .dropdown-toggle { padding: 0; } 
 .deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
 .deployment-controls > * { display: flex; margin: 0 0.25em;}
 </style>
