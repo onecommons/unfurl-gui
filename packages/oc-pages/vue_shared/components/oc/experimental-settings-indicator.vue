@@ -91,7 +91,11 @@ export default {
     },
     mounted() {
         document.addEventListener('keyup', e => {
-            if(e.ctrlKey && e.key == '?') this.modal = true
+            if(e.ctrlKey &&
+                e.shiftKey &&
+                // keycode is deprecated, but it's not depended on here for latin keyboards
+                (['?', '/'].includes(e.key) || e.keyCode == 191)
+            ) this.modal = true
         })
     }
 }
