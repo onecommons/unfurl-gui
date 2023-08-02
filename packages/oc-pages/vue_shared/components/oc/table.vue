@@ -155,7 +155,8 @@ export default {
     },
     hideFilter: { type: Boolean, default: false },
     noMargin: { type: Boolean, default: false },
-    rowClass: [Object, Function]
+    rowClass: [Object, Function],
+    startExpanded: Boolean
   },
   directives: {
     GlTooltip: GlTooltipDirective,
@@ -292,6 +293,12 @@ export default {
         });
       }
     }, 1000)
+  },
+
+  created() {
+    if(this.startExpanded) {
+      this.toggleAll()
+    }
   }
 };
 </script>
