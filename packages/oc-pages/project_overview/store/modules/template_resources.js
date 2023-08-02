@@ -1032,22 +1032,15 @@ const getters = {
         return state.context
     },
 
-    editingDeployed(state, _a, _b, rootGetters) {
-        try {
-            const deployment = rootGetters.resolveDeployment(state.deploymentTemplate.name)
-            return  deployment.__typename == 'Deployment' && state.context == 'template' && deployment.hasOwnProperty('status')
-        }
-        catch(e) {
-            return false
-        }
+    editingDeployed(state, getters, _b, rootGetters) {
+        const deployment = rootGetters.resolveDeployment(state.deploymentTemplate.name)
+        return !!deployment?.workflow
     },
 
     editingTorndown(_a, getters, _b, rootGetters) {
         // TODO use deployment status
-        return getters.editingDeployed && rootGetters.lookupDeployPath(
-            rootGetters.getDeployment?.name,
-            getters.getCurrentEnvironmentName
-        )?.pipeline?.variables?.WORKFLOW == 'undeploy'
+        const deployment = rootGetters.resolveDeployment(state.deploymentTemplate.name)
+        return deployment?.workflow == 'undeploy'
     },
 
     getValidationStatuses(state) {

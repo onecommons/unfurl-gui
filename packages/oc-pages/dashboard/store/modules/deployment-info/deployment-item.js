@@ -130,10 +130,10 @@ export default class DeploymentItem {
         return this.deployment.__typename == 'DeploymentTemplate'
     }
     get isUndeployed() {
-        return this.deployment.__typename == 'Deployment' && !this.isDeployed && (this.deployment?.status != 3)
+        return this.deployment?.workflow == 'undeploy'
     }
     get isDeployed() {
-        return this.deployment.__typename == 'Deployment' && (this.deployment?.status == 1)
+        return !!this.deployment?.workflow
     }
     get isIncremental() {
         return this.deployPath?.incremental_deploy ?? false

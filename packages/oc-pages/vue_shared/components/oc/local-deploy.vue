@@ -42,6 +42,11 @@ export default {
             'lookupVariableByEnvironment',
             'lookupDeployPath'
         ]),
+        deployPath() {
+            const deploymentName = this.deployment.name
+            const environmentName = this.environment.name
+            return this.lookupDeployPath(deploymentName, environmentName)
+        },
         blueprintCredentials() {
             const empty = {username: null, password: null}
             if(!this.blueprintProjectInfo) return empty
@@ -77,7 +82,7 @@ export default {
             const projectName = this.getHomeProjectPath.split('/').pop()            
             const deploymentName = this.deployment.name
             const environmentName = this.environment.name
-            const deployPath = this.lookupDeployPath(deploymentName, environmentName)?.name
+            const deployPath = this.deployPath?.name
             const blueprint = this.deployment.blueprint
             const blueprintUrl = this.blueprintUrl
             return { protocol, username, token, server, projectName, projectPath, projectId, environmentName, deploymentName, deployPath, blueprint, blueprintUrl }
@@ -90,7 +95,8 @@ export default {
         },
         localDeployInvocation() {
             const deploymentName = this.deployment.name
-            return `unfurl deploy --commit --push ${deploymentName}`
+            const extraArgs = this.deployPath?.pipeline?.variables?.EXTRA_WORKFLOW_ARGS || ''
+            return `unfurl deploy${extraArgs && ' ' + extraArgs} --commit --push ${deploymentName}`
         },
         deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' }
     },
