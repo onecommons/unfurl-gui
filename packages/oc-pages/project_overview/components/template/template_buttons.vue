@@ -45,8 +45,8 @@ export default {
         }, 3000),
 
 
-        triggerLocalDeploy: _.throttle(function () {
-            this.$emit('triggerLocalDeploy');
+        triggerLocalDeploy: _.throttle(function (...args) {
+            this.$emit('triggerLocalDeploy', ...args);
         }, 3000),
 
         launchModalDeleteTemplate() {
@@ -126,7 +126,6 @@ export default {
                     :title="!saveTooltip && 'Save Changes'"
                     :aria-label="__('Save Changes')"
                     type="button"
-                    variant="confirm"
                     icon="doc-new"
                     :disabled="saveStatus == 'disabled'"
                     class=""

@@ -67,16 +67,26 @@ export async function prepareVariables({
     upstreamCommit,
     upstreamBranch,
     upstreamProject,
-    upstreamProjectPath
+    upstreamProjectPath,
+    forceCheck,
+    ...extraVars
 }) {
 
     const UNFURL_TRACE = !!Object.keys(sessionStorage).find(key => key == 'unfurl-trace') // TODO propagate this from misc store
     const DEPLOY_IMAGE = sessionStorage['deploy-image']
     const UNFURL_VALIDATION_MODE = sessionStorage['unfurl-validation-mode']
 
+    let EXTRA_WORKFLOW_ARGS = []
+
+    if(forceCheck) {
+        EXTRA_WORKFLOW_ARGS.push('--check')
+    }
+
+    EXTRA_WORKFLOW_ARGS = EXTRA_WORKFLOW_ARGS.join('') || false
+
     //const UNFURL_ACCESS_TOKEN = await generateAccessToken('UNFURL_ACCESS_TOKEN') currently saving this in the environment
 
-    // falsey values will be filtered out
+    // non-string falsey values will be filtered out
     return toGlVariablesAttributes({
         WORKFLOW: workflow,
         DEPLOY_ENVIRONMENT: environmentName,
@@ -93,7 +103,9 @@ export async function prepareVariables({
         UNFURL_LOGGING: (mockDeploy || UNFURL_TRACE) && 'trace',
         UNFURL_VALIDATION_MODE,
         DEPLOY_IMAGE,
-        USE_DEPLOYMENT_BLUEPRINT: deploymentBlueprint? null : "--use-deployment-blueprint ''"
+        USE_DEPLOYMENT_BLUEPRINT: deploymentBlueprint? null : "--use-deployment-blueprint ''",
+        EXTRA_WORKFLOW_ARGS,
+        ...extraVars
     }).concat(
         toGlVariablesAttributes({
             WRITABLE_BLUEPRINT_PROJECT_URL: writableBlueprintProjectUrl ?? null,

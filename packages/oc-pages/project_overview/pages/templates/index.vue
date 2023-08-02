@@ -620,7 +620,7 @@ export default {
       }
     },
 
-    triggerLocalDeploy: _.debounce(async function() {
+    triggerLocalDeploy: _.debounce(async function({forceCheck}) {
       // TODO consolodate implementation with triggerDeployment
 
       this.createFlash({
@@ -645,7 +645,8 @@ export default {
         deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
         deployOptions: {
             schedule: 'defer'
-        }
+        },
+        forceCheck
       })
 
       if(this.hasCriticalErrors) return
@@ -665,7 +666,7 @@ export default {
       window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
     }, 250),
 
-    triggerDeployment: _.debounce(async function() {
+    triggerDeployment: _.debounce(async function({forceCheck}) {
       this.createFlash({
         message: __('Starting deployment...'),
         type: FLASH_TYPES.SUCCESS,
@@ -685,7 +686,8 @@ export default {
         projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
         deployPath: this.deploymentDir,
         deploymentName: this.$route.params.slug,
-        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source
+        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        forceCheck
       })
 
       if(this.hasCriticalErrors) return
