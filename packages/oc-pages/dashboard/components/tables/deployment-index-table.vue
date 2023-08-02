@@ -9,6 +9,7 @@ import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import Vue from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
@@ -158,7 +159,8 @@ export default {
             'undeployFrom',
             'cloneDeployment',
             'addUrlPoll',
-            'renameDeployment'
+            'renameDeployment',
+            'createFlash'
         ]),
         ...mapMutations(['createError']),
         async deploy() {
@@ -251,6 +253,11 @@ export default {
                     return
                 case 'clone':
                     const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment?.name)
+                    this.createFlash({
+                        message: `Cloning ${deployment?.title}...`,
+                        type: FLASH_TYPES.SUCCESS,
+                        duration: 5000
+                    })
                     const clonedDeploymentName = await this.cloneDeployment({
                         deployment,
                         environment,
@@ -258,6 +265,11 @@ export default {
                         targetEnvironment,
                     })
                     if(this.hasCriticalErrors) return
+                    this.createFlash({
+                        message: `Clone complete - redirecting`,
+                        type: FLASH_TYPES.SUCCESS,
+                        duration: 5000
+                    })
                     const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
