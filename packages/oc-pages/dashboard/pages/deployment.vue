@@ -1,25 +1,33 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import DeploymentResources from 'oc_vue_shared/components/oc/deployment-resources.vue'
+import {OcTab, DeploymentResources} from 'oc_vue_shared/components/oc'
+import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import ShareResourceToggle from '../components/share-resource-toggle.vue'
 import JobSummary from '../components/job-summary.vue'
 import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
 import {cloneDeep} from 'lodash'
-import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
-import {OcTab} from 'oc_vue_shared/components/oc'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
 import {FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
-import Vue from 'vue'
 
 export default {
-    components: {DeploymentResources, DashboardBreadcrumbs, ConsoleWrapper, GlTabs, OcTab, DeploymentIndexTable, ShareResourceToggle, GlLoadingIcon, JobSummary},
+    components: {
+        DeploymentResources,
+        DashboardBreadcrumbs,
+        ConsoleWrapper,
+        GlTabs,
+        OcTab,
+        DeploymentIndexTable,
+        ShareResourceToggle,
+        GlLoadingIcon,
+        JobSummary,
+    },
     data() {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
@@ -203,8 +211,8 @@ export default {
             <oc-tab ref="consoleTab" v-if="jobsData" title="Console">
                 <div id="ensure-console-tab-mounted" />
             </oc-tab>
-            <oc-tab v-if="getJobSummary" title="Job Summary">
-                <job-summary />
+            <oc-tab v-if="getJobSummary && jobsData" title="Job Summary">
+                <job-summary :jobs-data="jobsData" />
             </oc-tab>
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
