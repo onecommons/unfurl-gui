@@ -194,7 +194,20 @@ const actions = {
                 if(projectPath && !deploymentTemplate.projectPath) {
                     deploymentTemplate.projectPath = projectPath
                 }
+                if(deploymentTemplate.source) {
+                    if(!deploymentTemplate.ResourceTemplate) {
+                        deploymentTemplate.ResourceTemplate = {}
+                    }
 
+                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate.source)?.ResourceTemplate || {}).forEach(([name, rt]) => {
+                        if(
+                            (root.ResourceTemplate[name] && root.ResourceTemplate[name].directives.includes('default')) &&
+                            (!deploymentTemplate.ResourceTemplate[name])
+                        ) {
+                            deploymentTemplate.ResourceTemplate[name] = rt
+                        }
+                    })
+                }
                 deploymentTemplate.__typename = 'DeploymentTemplate'
                 localNormalize(deploymentTemplate, 'DeploymentTemplate', root)
             },

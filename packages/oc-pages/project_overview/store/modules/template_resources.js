@@ -400,14 +400,16 @@ const actions = {
                 delete target.requirements;
             }
 
-            target.dependentName = dependentName, target.dependentRequirement = dependentRequirement;
+            target.dependentName = dependentName
+            target.dependentRequirement = dependentRequirement
+
             target.id = btoa(target.name).replace(/=/g, '');
 
             // FIXME these create helpers should accept meta args in a different object than target so they can be passed through as is
             if(state.context == 'environment') {
                 commit(
                     'pushPreparedMutation',
-                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName, dependentName, dependentRequirement}),
+                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName}),
                     {root: true}
                 )
             }
@@ -415,7 +417,7 @@ const actions = {
                 commit(
                     'pushPreparedMutation',
                     createResourceTemplateInDeploymentTemplate({
-                        ...target, dependentName, dependentRequirement, deploymentTemplateName: _state.lastFetchedFrom.templateSlug
+                        ...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug
                     }),
                     {root: true}
                 )

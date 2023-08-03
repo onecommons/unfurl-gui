@@ -168,16 +168,11 @@ Serializers = {
             const localResourceTemplates = dt?.ResourceTemplate
             if(localResourceTemplates) {
                 for(const rt of Object.keys(localResourceTemplates)) {
-                    /*
-                    if(dt.source && state.ResourceTemplate.hasOwnProperty(rt) && !state.ResourceTemplate[rt]?.directives?.includes('default')) {
-                        // this used to work here
-                        // delete localResourceTemplates[rt]
+                    if(dt.source) {
+                        delete localResourceTemplates[rt]
                     } else {
-                        // this shouldn't need to be serialized because we're not supposed to depend on blueprint export after the ensemble has been created
                         Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                     }
-                    */
-                    Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                 }
             }
 
