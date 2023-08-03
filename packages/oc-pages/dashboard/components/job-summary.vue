@@ -10,8 +10,8 @@ export default {
     },
     fields: [
         { key: 'template', label: 'Template', textValue: item => `${item.template}: ${item.type}`},
-        { key: 'status', label: 'Status'},
-        { key: 'target', label: 'Target'},
+        { key: 'status', label: 'Statuses', s: 'Status'},
+        { key: 'target', label: 'Targets', s: 'Target'},
         { key: 'operation', label: 'Operations', s: 'Operation', textValue: (item) => item, groupBy: (item) => item.operation},
         { key: 'targetStatus', label: 'Target Statuses', s: 'Target Status'},
         { key: 'artifact', label: 'Artifacts', s: 'Artifact', groupBy: (item) => item.artifact?.url},
