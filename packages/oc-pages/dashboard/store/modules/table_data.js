@@ -75,6 +75,12 @@ const actions = {
                     deployment = Object.values(frozenDeploymentDict.DeploymentTemplate)[0]
                 }
 
+                const deployPath = rootGetters.lookupDeployPath(deployment.name, environmentName)
+
+                if(deployPath.pipeline?.variables?.SYSTEM_DEPLOYMENT) {
+                    continue
+                }
+
                 dispatch('addUrlPoll', {deployment, environment}, {root: true})
 
                 const i = ++iterationCounter
