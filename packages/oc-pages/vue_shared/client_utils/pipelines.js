@@ -68,10 +68,7 @@ export async function prepareVariables({
     upstreamBranch,
     upstreamProject,
     upstreamProjectPath,
-<<<<<<< HEAD
     forceCheck,
-=======
->>>>>>> gcp-system-deployment
     ...extraVars
 }) {
 
@@ -107,10 +104,7 @@ export async function prepareVariables({
         UNFURL_VALIDATION_MODE,
         DEPLOY_IMAGE,
         USE_DEPLOYMENT_BLUEPRINT: deploymentBlueprint? null : "--use-deployment-blueprint ''",
-<<<<<<< HEAD
         EXTRA_WORKFLOW_ARGS,
-=======
->>>>>>> gcp-system-deployment
         ...extraVars
     }).concat(
         toGlVariablesAttributes({
