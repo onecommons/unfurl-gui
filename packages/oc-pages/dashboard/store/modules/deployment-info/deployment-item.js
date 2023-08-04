@@ -127,13 +127,16 @@ export default class DeploymentItem {
         return (!this.isDeployed) && (this.isDraft || this.jobStatusIsEditable)
     }
     get isDraft() {
-        return this.deployment.__typename == 'DeploymentTemplate'
+        return this.deployment.__typename == 'DeploymentTemplate' && !this.pipeline
     }
     get isUndeployed() {
         return this.deployment?.workflow == 'undeploy'
     }
     get isDeployed() {
         return !!this.deployment?.workflow
+    }
+    get isRunning() {
+        return this.isDeployed && !this.isUndeployed && this.deployment.status == 1
     }
     get isIncremental() {
         return this.deployPath?.incremental_deploy ?? false
