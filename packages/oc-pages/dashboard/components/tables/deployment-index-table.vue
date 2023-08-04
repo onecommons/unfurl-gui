@@ -32,7 +32,7 @@ const tabFilters = [
     },
     {
         title: 'Running',
-        filter(item) { return item.isDeployed }
+        filter(item) { return item.isRunning}
     },
     {
         title: 'In Progress',
@@ -58,9 +58,7 @@ const tabFilters = [
         filter(item) {
             return (
                 item.jobStatusIsUnsuccessful &&
-                !item.isDeployed &&
-                !item.isDraft &&
-                !item.isUndeployed
+                !item.isRunning
             )
         }
     },
@@ -522,7 +520,7 @@ export default {
             return this.itemsSorted
         },
         deleteWarning() {
-            return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isDeployed')
+            return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isRunning')
         },
         provider() {
             return this.target?.environment?.primary_provider?.type ?? null
@@ -557,7 +555,7 @@ export default {
             handler(val) {
                 for(const item of val) {
                     const deploymentItem = this.deploymentItemDirect({deployment: item.deployment, environment: item.environment})
-                    if(deploymentItem?.isDeployed && item.deployment?.url) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
+                    if(deploymentItem?.isRunning && item.deployment?.url) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
                 }
             }
         },

@@ -61,7 +61,7 @@ export default {
         controlButtons() {
             const result = []
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
-            if(this.deploymentItem?.isDeployed && this.deployment?.url) result.push('open')
+            if(this.deploymentItem?.isRunning && this.deployment?.url) result.push('open')
                 if(!this.deploymentItem?.isJobCancelable) {
 
                 if(this.deploymentItem?.isDraft) {
