@@ -932,12 +932,12 @@ const getters = {
     resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
             const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
-            if(environmentResourceType) return environmentResourceType
+            if(environmentResourceType && !environmentResourceType._sourceinfo?.incomplete) return environmentResourceType
 
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
             if(dictionaryResourceType) return dictionaryResourceType
 
-            return null
+            return environmentResourceType ?? null
         }
     },
 
