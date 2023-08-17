@@ -1,5 +1,5 @@
 import Api from '~/api';
-import createFlash from '~/flash';
+import createFlash from 'oc_vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
 import * as types from './mutation_types';

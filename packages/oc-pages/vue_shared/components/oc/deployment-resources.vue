@@ -2,7 +2,7 @@
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox, GlTabs} from '@gitlab/ui';
 import _ from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';

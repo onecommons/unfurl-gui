@@ -88,8 +88,8 @@ export async function fetchLastCommit(projectId, _branch) {
         fetchBranches(projectId)
     ])
 
-    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main')
-    const {id, created_at} = commit
+    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
+    const {id, created_at} = commit || {}
 
     let lastInSessionStorage
     try {
@@ -103,7 +103,7 @@ export async function fetchLastCommit(projectId, _branch) {
         return [lastInSessionStorage.commit, branch]
     }
 
-    return [id, name]
+    return [id, name || 'main']
 }
 
 export async function fetchBranch(projectId, branch) {

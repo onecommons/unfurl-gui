@@ -1,8 +1,16 @@
-import glCreateFlash, { FLASH_TYPES, hideFlash } from '~/flash';
-export { hideFlash, FLASH_TYPES } from '~/flash'
+import { createAlert as glCreateFlash, VARIANT_DANGER, VARIANT_SUCCESS, VARIANT_WARNING, VARIANT_INFO} from '~/alert';
 import {generateGitLabIssueSync} from './gitlab-issues'
 
+export function hideFlash() {} // todo
+
 let lastOCFlash
+
+export const FLASH_TYPES = {
+    ALERT: VARIANT_DANGER,
+    SUCCESS: VARIANT_SUCCESS,
+    WARNING: VARIANT_WARNING,
+    NOTICE: VARIANT_INFO
+}
 
 export function hideLastFlash() {
     if(lastOCFlash) {
@@ -51,3 +59,5 @@ export function createFlash(options) {
     lastOCFlash = result
     return result
 }
+
+export default createFlash

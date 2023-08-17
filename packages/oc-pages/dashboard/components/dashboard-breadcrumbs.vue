@@ -1,12 +1,11 @@
 <script>
 import {mapGetters} from 'vuex'
 import {GlIcon, GlBreadcrumb} from '@gitlab/ui'
-import BreadcrumbAvatar from './breadcrumb-avatar.vue'
 import * as routes from '../router/constants'
 
 export default {
     name: 'DashboardBreadcrumbs',
-    components: {GlBreadcrumb, GlIcon, BreadcrumbAvatar},
+    components: {GlBreadcrumb, GlIcon},
     props: {
         items: {
             type: Array,
@@ -17,7 +16,7 @@ export default {
         ...mapGetters(['getHomeProjectName']),
         _items() {
             return [
-                {text: this.getHomeProjectName, to: {name: routes.OC_DASHBOARD_HOME, query: {}}},
+                {avatarPath: document.querySelector('.project-avatar')?.src, text: this.getHomeProjectName, to: {name: routes.OC_DASHBOARD_HOME, query: {}}},
                 ...this.items
             ]
         }
@@ -25,12 +24,12 @@ export default {
 }
 </script>
 <template>
-    <gl-breadcrumb :items="_items">
-        <template #avatar>
-            <breadcrumb-avatar />
-        </template>
-        <template #separator>
-            <gl-icon name="chevron-right" />
-        </template>
-    </gl-breadcrumb>
+    <gl-breadcrumb class="oc-breadcrumbs" :items="_items" />
 </template>
+<style>
+.oc-breadcrumbs img.gl-avatar {
+    border-radius: 50% !important;
+    width: 12px;
+    height: 12px;
+}
+</style>

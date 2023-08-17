@@ -349,7 +349,7 @@ export default {
                 }
                 return result
               }
-            } 
+            }
           })
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
@@ -436,14 +436,14 @@ export default {
       }
     })
     this.form = form
-    
+
     for(const input of this.mainInputs) {
       if(input.dirty) {
         this.triggerSave(input, input.value ?? input.initialValue, true)
       }
     }
     const container = this.$refs.container
-    
+
     form.onMount = async () => {
       // we have to wait for the components to exist for formily to validate?
       await fields()
@@ -487,10 +487,13 @@ export default {
   display: inline-flex;
   flex-direction: column;
 }
-.formily-element-form-default > :global(*) {
+
+.formily-element-form-default >>> :not([role="tooltip"], [role="button"]) {
+}
+
+.formily-element-form-default >>> [class^="formily-element-form-item"] {
   display: inline-flex !important;
   justify-content: space-between;
-  margin-bottom: 2.2em;
   flex-wrap: wrap;
 }
 
@@ -515,11 +518,11 @@ export default {
   margin: 0 0 0 4px;
 }
 
-.gl-dark >>> .formily-element-form-item-label-content > label { 
+.gl-dark >>> .formily-element-form-item-label-content > label {
   color: white;
 }
 
-.gl-dark >>> .formily-element-form-item-colon { 
+.gl-dark >>> .formily-element-form-item-colon {
   color: white;
 }
 
@@ -532,14 +535,15 @@ export default {
   max-height: 2.2em;
   overflow: hidden;
   margin-top: 0.1em;
+  bottom: 0;
 }
 
-.oc-inputs >>> .formily-element-form-item-control-content-component { 
+.oc-inputs >>> .formily-element-form-item-control-content-component {
   width: 300px !important;
   max-width: 300px;
 }
 @media only screen and (min-width: 430px) {
-    .oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component { 
+    .oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component {
       width: 150px;
       max-width: 150px;
       margin-right: 150px;
@@ -549,6 +553,8 @@ export default {
 .oc-inputs >>> .formily-element-form-item {
   font-size: 1rem !important;
   position: relative;
+  padding-bottom: 1.6em;
+  margin-bottom: 1em;
 }
 .oc-inputs >>> .formily-element-form-item-control .formily-element-form-item-control-content .formily-element-form-item-addon-after {
   margin-left: 0;

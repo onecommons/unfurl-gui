@@ -13,7 +13,7 @@ import { __ } from '~/locale';
 export default {
     name: "OcCard",
     directives: {
-        GlTooltip: GlTooltipDirective, 
+        GlTooltip: GlTooltipDirective,
     },
     components: {
         GlButton,
@@ -174,7 +174,7 @@ export default {
         adaptWidth() {
             const container = this.$refs.container
             if(!this.expanded) {
-                container.style.marginTop = `-${container.offsetHeight}px` 
+                container.style.marginTop = `-${container.offsetHeight}px`
             } else {
                 container.style.marginTop = '0px'
             }
@@ -185,8 +185,8 @@ export default {
                 this.adaptWidth()
                 requestAnimationFrame(this.toggleCard)
                 this.setHeight = true
-                return 
-            } 
+                return
+            }
             this.expanded = !this.expanded
             this.adaptWidth()
         }
@@ -304,7 +304,7 @@ export default {
 @media only screen and (max-width: 768px) {
     .card-content-container {
         padding: 1em 0;
-    }    
+    }
     .card-toggle {
         margin-left: 0;
     }
@@ -331,7 +331,7 @@ export default {
 }
 
 .oc-card:not(.primary) >>> .gl-card-body {
-    background-color: white; 
+    background-color: white;
     /* sorry Mathew */
 }
 .gl-dark .oc-card:not(.primary) >>> .gl-card-body {
@@ -361,8 +361,8 @@ export default {
 .gl-dark .oc-card {
     border-color: #777 !important;
 }
-:global(.gl-dark) .oc-inputs >>> label {
-    color: #999 !important;  
+:global(.gl-dark .oc-inputs label) {
+    color: #999 !important;
 }
 
 .card-content-container.active {

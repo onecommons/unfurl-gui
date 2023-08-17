@@ -2,7 +2,7 @@
 /* eslint-disable vue/no-v-html */
 import { GlIcon, GlButton } from '@gitlab/ui';
 import OverviewShareModal from './header/overview-share-modal.vue'
-import createFlash, { FLASH_TYPES } from '~/flash';
+import createFlash from 'oc_vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
 import {mapGetters, mapState} from 'vuex'
 import { __ } from '~/locale';

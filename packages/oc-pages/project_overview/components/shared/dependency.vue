@@ -18,7 +18,7 @@ export default {
 
     },
     directives: {
-        GlTooltip: GlTooltipDirective, 
+        GlTooltip: GlTooltipDirective,
     },
     data() {
         return {
@@ -127,7 +127,7 @@ export default {
             if(this.hasRequirementsSetter) {
                 this.setRequirementSelected({requirement, titleKey: this.titleKey});  // TODO trying to make this redundant
             }
-            
+
             bus.$emit('placeTempRequirement', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'create'});
         },
         openDeleteModal(action=__("Remove")) {
@@ -169,11 +169,8 @@ export default {
                 <span v-if="matchIsValid" class=" oc_resource-details">
 
                     <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
-                        <span v-if="displayStatus">
-                            <status-icon :status="cardStatus(dependency.target)" />
-                        </span>
-
-                        {{ resolveRequirementMatchTitle(dependency) }}
+                      <status-icon v-if="displayStatus" class="mr-1" :status="cardStatus(dependency.target)" />
+                      {{ resolveRequirementMatchTitle(dependency) }}
                     </a>
                 </span>
             </div>
@@ -188,14 +185,10 @@ export default {
                 v-bind="statusIconProps"
             />
 
-            <span v-if="matchIsValid" class=" oc_resource-details">
-
+            <span v-if="matchIsValid" class="oc_resource-details">
                 <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
-                    <span v-if="displayStatus">
-                        <status-icon :status="cardStatus(dependency.target)" />
-                    </span>
-
-                    {{ resolveRequirementMatchTitle(dependency) }}
+                  <status-icon v-if="displayStatus" class="mr-1" :status="cardStatus(dependency.target)" />
+                  {{ resolveRequirementMatchTitle(dependency) }}
                 </a>
             </span>
         </div>
@@ -266,8 +259,8 @@ export default {
     display: contents;
 }
 .oc_requirement_title {
-    line-height: 0; 
-    font-weight: bold; 
+    line-height: 0;
+    font-weight: bold;
     color: #353545;
 }
 .gl-dark .oc_requirement_title {
@@ -283,7 +276,7 @@ export default {
 }
 /* TODO fix formily label color
 .gl-dark .oc-inputs >>> label {
-    color: #999 !important;  
+    color: #999 !important;
 }
 */
 
@@ -294,6 +287,17 @@ export default {
 }
 .gl-dark .oc-table-section {
     border-color: #777;
-    
+
+}
+</style>
+
+<style>
+.oc_resource-details {
+  display: flex;
+  align-items: center;
+}
+
+.oc_resource-details > a {
+  display: contents;
 }
 </style>
