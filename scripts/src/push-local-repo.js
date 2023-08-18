@@ -16,6 +16,7 @@ function constructTargetURL(projectPath, username=process.env.OC_USERNAME, passw
   return targetURL
 }
 
+// TODO check that localRepoPath exists
 function pushLocalRepo(localRepoPath, projectPath, options) {
   const {
     force,
@@ -56,9 +57,15 @@ function pushLocalRepo(localRepoPath, projectPath, options) {
 
   console.log('git', ...args)
   const cmdOpts = {cwd: localRepoPath, encoding: 'utf-8'}
-  const {status, stdout, stderr} = spawnSync('git', args, cmdOpts)
+  const result = spawnSync('git', args, cmdOpts)
+  const {status, stdout, stderr, error} = result 
+
+  if(error) {
+    throw new Error(error.message)
+  }
+
   if(stderr) console.error(stderr)
-  if(stderr.includes('fatal: not a git repository')) {
+  if(stderr && stderr.includes('fatal: not a git repository')) {
     const {stderr} = spawnSync('git', ['init', '--initial-branch=main'], cmdOpts)
     if(stderr && stderr.includes('error: unknown option')) {
       return false
