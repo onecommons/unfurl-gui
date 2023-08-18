@@ -99,6 +99,9 @@ const verificationRoutines = {
     cb({command, timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG})
   },
 
+  skip({cb}) {
+    cb({command: '/bin/true', timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG})
+  }
 }
 
 function verifyDeployment({deployment, env, dnsZone, sub, expectExisting, verificationRoutine}, verificationArgs) {

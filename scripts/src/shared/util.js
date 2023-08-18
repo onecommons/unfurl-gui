@@ -1,9 +1,11 @@
 const path = require('path')
-const authenticityTokenRegex = /name="csrf-token"\s+content="(([A-Za-z0-9+/=])+)"/i
+const authenticityTokenRegex = /name="csrf-token"\s+content="([^"]+)"/i
 function extractCsrf(document){
   try {
-    return document.match(authenticityTokenRegex)[1]
+    const match = document.match(authenticityTokenRegex)
+    return match[1]
   } catch(e) {
+    console.error(e.message)
     throw new Error('Could not read authenticity token')
   }
 }

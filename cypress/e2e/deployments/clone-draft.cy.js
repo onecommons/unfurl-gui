@@ -32,13 +32,19 @@ function shouldDeploy(deploymentTemplateTitle) {
   })
 }
 
-function cloneAndDeployDraft(ogTitle, cloneTitle, fixture) {
-  cy.recreateDeployment({
-    title: ogTitle,
-    fixture,
-    shouldSave: true
+function editAndDeploy(title) {
+  cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=drafts`)
+
+  cy.contains('tr', title).should('exist')
+
+  cy.contains('tr', title).within(() => {
+    cy.contains('a', 'Edit Draft').click()
   })
 
+  shouldDeploy(title)
+}
+
+function cloneDeployment(ogTitle, cloneTitle) {
   cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=drafts`)
 
   cy.contains('tr', ogTitle).within(() => {
@@ -49,17 +55,42 @@ function cloneAndDeployDraft(ogTitle, cloneTitle, fixture) {
   cy.get('.modal-body input').clear().type(cloneTitle)
   cy.contains('button', 'Confirm').click()
 
-  cy.contains('tr', cloneTitle).should('exist')
-  cy.contains('a', 'Edit Draft').click()
-
-  shouldDeploy(cloneTitle)
+  cy.url().should('contain', `/${NAMESPACE}/dashboard/-/deployments/`)
 }
 
 describe('Cloning and deploying drafts', () => {
   it('Can clone and deploy drafts for nextcloud', () => {
+
     const ogTitle = deploymentName('Clone test original')
     const cloneTitle = deploymentName('Clone test')
     const fixture = 'generated/deployments/_az__nextcloud__pg'
-    cloneAndDeployDraft(ogTitle, cloneTitle, fixture)
+
+    cy.recreateDeployment({
+      title: ogTitle,
+      fixture,
+      shouldSave: true
+    })
+
+    cloneDeployment(ogTitle, cloneTitle)
+
+    editAndDeploy(cloneTitle)
   })
+
+  it('Can deploy and then clone', () => {
+
+    const ogTitle = deploymentName('Clone test original')
+    const cloneTitle = deploymentName('Clone test')
+    const fixture = 'generated/deployments/_az__nextcloud__pg'
+
+    cy.recreateDeployment({
+      title: ogTitle,
+      fixture,
+      verificationRoutine: 'skip'
+    })
+
+    cloneDeployment(ogTitle, cloneTitle)
+
+    editAndDeploy(cloneTitle)
+  })
+
 })
