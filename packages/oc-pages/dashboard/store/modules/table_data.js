@@ -24,15 +24,15 @@ const actions = {
     async loadDashboard({commit, dispatch, rootGetters}, options={}) {
         const {fetchPolicy} = options
         commit('setDashboardLoaded', false)
-        
+
         await useImportedStateOnBreakpointOrElse('loadDashboard', async() => {
             await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
         })
 
         const items = [];
         let deployments = 0
-        let applications = 0 
-        let environments = 0 
+        let applications = 0
+        let environments = 0
         let totalDeployments = 0
         let applicationNames = {}
 
@@ -77,7 +77,7 @@ const actions = {
 
                 const deployPath = rootGetters.lookupDeployPath(deployment.name, environmentName)
 
-                if(deployPath.pipeline?.variables?.SYSTEM_DEPLOYMENT) {
+                if(deployPath?.pipeline?.variables?.SYSTEM_DEPLOYMENT) {
                     continue
                 }
 
@@ -106,7 +106,7 @@ const actions = {
                     }
                 }
 
-                deepFreeze(application) 
+                deepFreeze(application)
 
                 applicationNames[application.name] = true
                 context.application = application
