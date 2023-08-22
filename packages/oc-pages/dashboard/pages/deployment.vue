@@ -1,5 +1,6 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
+import Vue from 'vue'
 import {OcTab, DeploymentResources} from 'oc_vue_shared/components/oc'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
@@ -7,7 +8,7 @@ import ShareResourceToggle from '../components/share-resource-toggle.vue'
 import JobSummary from '../components/job-summary.vue'
 import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
-import {cloneDeep} from 'lodash'
+import {debounce, cloneDeep} from 'lodash'
 import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
@@ -31,7 +32,7 @@ export default {
     data() {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
-        return {bus, jobsData: null, viewReady: false, currentTab: 0, environmentName, deploymentName}
+        return {bus, jobsData: null, viewReady: false, currentTab: 0, currentTabDebounced: 0, environmentName, deploymentName}
     },
     computed: {
         ...mapGetters([
@@ -103,7 +104,8 @@ export default {
                 this.setTabToConsoleIfNeeded()
             }
         },
-        currentTab(tab) {
+
+        currentTabDebounced(tab, prev) {
             let hash = this.$route.hash
             let query = this.$route.query
             const lineNo = hash.match(/L\d+/)
@@ -123,6 +125,13 @@ export default {
 
             this.$router.push({...this.$route, hash, query})
         },
+
+        currentTab: debounce(function (val) {
+            if(val != this.currentTabDebounced) {
+                this.currentTabDebounced = val
+            }
+        }, 100),
+
         deploymentItem: {
             immediate: true,
             async handler(val) {
@@ -136,7 +145,11 @@ export default {
                 }
             }
         },
-        jobsData(val) {
+        async jobsData(val) {
+            // imagine my surprise when the tabs are reordering themselves
+            await sleep(100)
+            await Vue.nextTick()
+
             this.setTabToConsoleIfNeeded()
         }
     },
@@ -206,12 +219,12 @@ export default {
     <div id="deployment-view-container">
         <dashboard-breadcrumbs style="overflow-anchor: auto" :items="breadcrumbItems" />
         <deployment-index-table :items="tableItems" hide-filter />
-        <gl-tabs class="mt-4" v-model="currentTab">
-            <oc-tab title="Deployment" />
-            <oc-tab ref="consoleTab" v-if="jobsData" title="Console">
+        <gl-tabs ref="tabs" class="mt-4" v-model="currentTab">
+            <oc-tab title="Deployment" key="0"/>
+            <oc-tab ref="consoleTab" v-if="jobsData" title="Console" key="1">
                 <div id="ensure-console-tab-mounted" />
             </oc-tab>
-            <oc-tab v-if="getJobSummary && jobsData" title="Job Summary">
+            <oc-tab v-if="getJobSummary && jobsData" title="Job Summary" key="2">
                 <job-summary :jobs-data="jobsData" />
             </oc-tab>
         </gl-tabs>
