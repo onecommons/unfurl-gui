@@ -25,10 +25,10 @@ export function createFlash(options) {
         if(!type) {type = FLASH_TYPES.ALERT}
         //message = `${message}<div>${options.issue}</div>`
     }
-    const result = glCreateFlash({...options, message, type})
+    const result = glCreateFlash({...options, message, variant: type})
     if(options.linkTo && options.linkText) {
         window.requestAnimationFrame(() => {
-            const flashText = result.querySelector('.flash-container .flash-text')
+            const flashText = result.$el
             const link = document.createElement('A')
             const linkContainer = document.createElement('DIV')
             link.textContent = options.linkText
@@ -55,7 +55,7 @@ export function createFlash(options) {
 
             flashText.appendChild(issueContainer)
         })
-    } 
+    }
     lastOCFlash = result
     return result
 }
