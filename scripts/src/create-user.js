@@ -69,7 +69,7 @@ async function createUserBySignup(o) {
 
     const form = new FormData()
 
-    Object.entries(data).forEach(([key, value]) => form.append(key, value))
+    Object.entries(data).forEach(([key, value]) => value && form.append(key, value))
 
     const headers = {
       ...form.getHeaders(),
