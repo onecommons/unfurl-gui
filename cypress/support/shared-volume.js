@@ -22,7 +22,7 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
 
 
   cy.get(`[data-testid="${cardTestId}"]`).within(() => {
-    cy.contains("button", "Share").click()
+    cy.contains("button", "Share").scrollIntoView().click()
     cy.contains("button", "Share in current environment").click()
   })
 
@@ -43,7 +43,7 @@ export function deploySharedVolume2(dep1, dep2, fixture, cardTestId) {
   cy.contains("a", dep1).click()
 
   cy.get(`[data-testid="${cardTestId}"]`).within(() => {
-    cy.contains("button", "Shared").click()
+    cy.contains("button", "Shared").scrollIntoView().click()
     cy.contains("button", "Stop sharing").click()
   })
 
