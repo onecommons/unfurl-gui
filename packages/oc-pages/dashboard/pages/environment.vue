@@ -62,7 +62,7 @@ export default {
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0, fetchedConnectable: false}
+        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0, fetchedConnectable: false, fetchedProviders: false}
     },
     computed: {
         ...mapGetters([
@@ -259,7 +259,7 @@ export default {
                         [environment.name]: environment,
                         defaults: this.getEnvironmentDefaults
                     },
-                    ResourceType 
+                    ResourceType
                 })
                 this.useProjectState({root})
                 this.useBaseState(root)
@@ -267,7 +267,7 @@ export default {
         },
         async onDelete() {
             const environment = this.environment
-            
+
             this.setUpdateObjectProjectPath(window.gon.projectPath)
             this.setUpdateType('delete-environment')
 
@@ -318,7 +318,10 @@ export default {
             const connections = _.cloneDeep(Object.values(environment.connections))
 
             await Promise.all(
-                instances.map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot}))
+                [
+                    ...instances.map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot})),
+                    this.$route.query.hasOwnProperty('newProvider')? this.fetchProviders(): null
+                ]
             )
             // TODO implement and test normalization for connections - this should account better for users making manual changes
 
@@ -339,6 +342,23 @@ export default {
                 e.preventDefault()
             }
             this.showingProviderModal = false
+        },
+
+        async fetchProviders() {
+            if(!this.fetchedProviders) {
+                try {
+                    await this.environmentFetchTypesWithParams({environmentName: this.environment.name, params: {extends: "tosca.relationships.ConnectsTo"}})
+                    this.fetchedProviders = true
+                } catch(e) {
+                    console.error(e)
+                }
+            }
+        },
+
+        async addProvider() {
+            await this.fetchProviders()
+
+            this.$refs.deploymentResources.promptAddProvider()
         },
 
         async addExternalResources() {
@@ -415,7 +435,7 @@ export default {
             </template>
         </oc-properties-list>
         <div v-if="userCanEdit" class="mt-3">
-            <gl-button variant="confirm" @click="() => $refs.deploymentResources.promptAddProvider()">
+            <gl-button variant="confirm" @click="addProvider">
                 <div>
                     <gl-icon name="plus"/>
                     {{__('Add a Provider')}}
