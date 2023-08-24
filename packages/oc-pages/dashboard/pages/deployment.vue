@@ -234,7 +234,7 @@ export default {
             </template>
 
             <template v-if="showStartingUpStatus" #status>
-                <div class="d-inline-flex align-items-center">
+                <div class="d-inline-flex align-items-center ml-3">
                     <gl-loading-icon class="mr-1"/>
                     <span>Waiting for <b>{{deployment.title}}</b> to go live (eta: {{formattedDeploymentEta(deployment.name)}})</span>
                 </div>

@@ -1,6 +1,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
+import {GlBadge} from '@gitlab/ui'
 import {Tooltip as ElTooltip} from 'element-ui'
 
 export default {
@@ -9,7 +10,9 @@ export default {
         card: Object
     },
     components: {
-        DetectIcon
+        DetectIcon,
+        GlBadge,
+        ElTooltip
     },
     computed: {
         ...mapGetters(['getHomeProjectPath', 'lookupDeployment']),
@@ -39,14 +42,18 @@ export default {
 
 </script>
 <template>
-    <el-tooltip v-if="show">
-        <template #content>
-            Shared from <a class="inverted-link" target="_blank" :href="deploymentLink">{{deploymentTitle}}</a> in <a class="inverted-link" target="_blank" :href="environmentLink">{{environmentName}}</a>
-        </template>
-        <div class="d-flex align-items-center">
-            <a style="color: inherit; display: contents;" :href="deploymentLink" target="blank"><detect-icon :size="18" name="share" /></a>
-        </div>
-    </el-tooltip>
+    <gl-badge size="md" v-if="show">
+
+        <a style="color: inherit; display: contents;" :href="deploymentLink" target="blank"><detect-icon :size="16" name="connected" /></a>
+        <el-tooltip v-if="show" class="d-content">
+            <template #content>
+                Shared from <a class="inverted-link" target="_blank" :href="deploymentLink">{{deploymentTitle}}</a> in <a class="inverted-link" target="_blank" :href="environmentLink">{{environmentName}}</a>
+            </template>
+            <div class="ml-1">Shared</div>
+        </el-tooltip>
+
+    </gl-badge>
+
 
 </template>
 <style scoped>

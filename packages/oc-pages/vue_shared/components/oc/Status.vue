@@ -1,47 +1,42 @@
 <template>
-  <div class="d-inline-flex align-items-center justify-content-center">
-    <div v-if="status < StatusIndicators.length" class="gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
-      <!-- 
-        standard gl-icon doesn't support variants
-        standard gl-badge doesn't have good adequate control
-        normally just gl-icon would be enough with proper variants
-      -->
-      <detect-icon
-        v-if="!noTooltip"
-        :variant="StatusIndicators[status][0]"
-        :name="StatusIndicators[status][1]"
-        class="status-icon"
-        :class="iconClass"
-        :size="size"
-        :title="__(StatusIndicators[status][2])"
-        v-gl-tooltip.hover
-      />
-      <detect-icon v-else
-        :variant="StatusIndicators[status][0]"
-        :name="StatusIndicators[status][1]"
-        class="status-icon"
-        :class="iconClass"
-        :size="size"
-        :title="__(StatusIndicators[status][2])"
-      />
-    </div>
-    <detect-icon v-gl-tooltip.hover class="gl-ml-1" v-if="isProtected" title="Protected" name="protected" :size="size" />
-    <import-link v-if="card" :card="card"/>
-    <div v-if="text || displayText" class="ml-1">{{_text}}</div>
-    <!-- ignoring state for now -->
-    <!--div v-if="state == 5">
-      {{__(StateNames[state])}}
-      <div style="position: relative; display: inline-block; height: 100%;">
-        <svg class="spinner" viewBox="0 0 50 50">
-          <circle class="path" cx="25" cy="25" r="20" fill="none" stroke="black" stroke-width="5"></circle>
-        </svg>
+  <div class="d-inline-flex align-items-center justify-content-center status-container">
+    <component v-if="status !== undefined" :is="badgeComponent" size="md" class="gl-mr-3">
+      <div v-if="status < StatusIndicators.length" class="icon-only gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
+        <!--
+          standard gl-icon doesn't support variants
+          standard gl-badge doesn't have good adequate control
+          normally just gl-icon would be enough with proper variants
+        -->
+        <detect-icon
+            v-if="!noTooltip"
+            :variant="StatusIndicators[status][0]"
+            :name="StatusIndicators[status][1]"
+            class="status-icon"
+            :class="iconClass"
+            :size="size"
+            :title="__(StatusIndicators[status][2])"
+            v-gl-tooltip.hover
+            />
+        <detect-icon v-else
+           :variant="StatusIndicators[status][0]"
+           :name="StatusIndicators[status][1]"
+           class="status-icon"
+           :class="iconClass"
+           :size="size"
+           :title="__(StatusIndicators[status][2])"
+           />
       </div>
-    </div>
-    <div v-else-if="StateNames[state]">{{__(StateNames[state])}}</div-->
+    <div v-if="_displayText" class="ml-1">{{_text}}</div>
+    </component>
+    <component :is="badgeComponent" v-if="isProtected" size="md" :class="_displayText? 'gl-mr-3': ''">
+      <detect-icon v-gl-tooltip.hover class="gl-ml-1" title="Protected" name="protected" :size="size" />
+      <div v-if="_displayText" class="ml-1">Protected</div>
+    </component>
+    <import-link v-if="card" :card="card" />
   </div>
 </template>
 <script>
-import { GlIcon } from '@gitlab/ui';
+import { GlBadge } from '@gitlab/ui';
 import DetectIcon from './detect-icon.vue'
 import ImportLink from './import-link.vue'
 
@@ -122,27 +117,39 @@ export default {
       if(!this.status) return null
       const result = StatusIndicators[this.status][2]
       if(result == 'Absent' && ['Deleting', 'Deleted', 'Error'].includes(StateNames[this.state])) return 'Deleted'
-      if(this.isProtected) {
-        return `Protected (${result})`
-      }
       return result
     },
-    
+
+    _displayText() {
+      return this.text || this.displayText
+    },
+
+    badgeComponent() {
+      if(this._displayText) {
+        return GlBadge
+      }
+      return 'span'
+    }
+
   },
   components: {
     DetectIcon,
-    ImportLink
+    ImportLink,
+    GlBadge
   }
 };
 </script>
 <style scoped>
+.status-container > :not(.badge) {
+  display: contents;
+}
 
 .status-icon {
   /*TODO maybe add an option to support this*/
   /*padding: 4px !important;*/
   padding: 0px !important;
 }
-.gl-badge {
+.gl-badge.icon-only {
   border-radius: 100%;
   padding: 0;
 }

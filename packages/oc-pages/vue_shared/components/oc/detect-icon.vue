@@ -55,7 +55,7 @@ function applyTypeToMapping(type, mapping) {
     let result
     result = applyTypeToMapping(type?.name, mapping)
     if(result) return result
-    
+
     if(Array.isArray(type.extends)) {
         for(const tn of type.extends) {
             result = applyTypeToMapping(tn, mapping)
@@ -127,7 +127,7 @@ export default {
                 return {
                     'font-size': this.$attrs.size + 'px'
                 }
-            } 
+            }
             return {
                 'font-size': '16px'
             }
@@ -151,13 +151,13 @@ export default {
 </template>
 <style scoped>
 .custom-icon {
-    display: inline-block;
+    display: inline-flex;
     width: 1em; height: 1em; position: relative;
 }
 .custom-icon > img {
     width: 1em;
     height: 1em;
-    position: absolute;
+    /*position: absolute;*/
 }
 
 .gl-dark .custom-icon > img:not([src$="no-invert"]) {
