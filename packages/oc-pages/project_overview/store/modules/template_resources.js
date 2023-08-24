@@ -165,7 +165,7 @@ const actions = {
         let _syncState = syncState
         let blueprint = rootGetters.getApplicationBlueprint;
         let deploymentTemplate
-        function setdt() { 
+        function setdt() {
             deploymentTemplate = rootGetters.resolveDeploymentTemplate(templateSlug)
         }
         setdt()
@@ -220,8 +220,8 @@ const actions = {
             }, {root: true});
             if(renameDeploymentTemplate) {
                 commit(
-                    'pushPreparedMutation', 
-                    appendDeploymentTemplateInBlueprint({templateName: deploymentTemplate.name}), 
+                    'pushPreparedMutation',
+                    appendDeploymentTemplateInBlueprint({templateName: deploymentTemplate.name}),
                     {root: true}
                 );
             }
@@ -610,7 +610,7 @@ const actions = {
             clearTimeout(oldHandle)
         }
         timeouts[_key] = handle
-    },    
+    },
     updateCardInputValidStatus({commit, dispatch}, {card, status, debounce}) {
         if(debounce) {
             const key = `card:${card.name}`
@@ -833,10 +833,10 @@ const getters = {
         return !!getters.resolveRequirementMatchTitle(requirement)
     },
 
-    resolveRequirementMatchTitle: (_state, getters, _, rootGetters) => function(requirement) { 
+    resolveRequirementMatchTitle: (_state, getters, _, rootGetters) => function(requirement) {
         const match = typeof requirement == 'string'? requirement:
             state.context == 'deployment' ? requirement.target : requirement.match
-        const matchInResourceTemplates = _state.resourceTemplates[match]?.title; 
+        const matchInResourceTemplates = _state.resourceTemplates[match]?.title;
         if(matchInResourceTemplates) return matchInResourceTemplates;
         // TODO figure out how to handle resources of a service
         return state.context != 'environment' && rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
@@ -860,7 +860,7 @@ const getters = {
                 }
             }
         }
-        return children 
+        return children
     },
     cardInputsAreValid(state) {
         return function(_card) {
@@ -932,6 +932,7 @@ const getters = {
     resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
             const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
+            debugger
             if(environmentResourceType && !environmentResourceType._sourceinfo?.incomplete) return environmentResourceType
 
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
@@ -1016,12 +1017,12 @@ const getters = {
 
             if(type?.inputsSchema) {
                 applyInputsSchema(type, getters.calculateParentConstraint(resourceTemplate)?.inputsSchema)
-            } 
+            }
 
             return type?.inputsSchema
         }
     },
-  
+
     lookupEnvironmentVariable(state, _a, _b, rootGetters) {
         return function(variableName) {
             const _variableName = Array.isArray(variableName)? variableName[0]: variableName
@@ -1036,7 +1037,7 @@ const getters = {
         return function(dependencyName) {
             console.warn('Do not use getParentDependency - a template may fill multiple dependencies')
             if(!dependencyName) return null
-            let primaryName = state.deploymentTemplate.primary 
+            let primaryName = state.deploymentTemplate.primary
             if (dependencyName === primaryName) return null
 
             let dependency = state.resourceTemplates[dependencyName]
@@ -1049,7 +1050,7 @@ const getters = {
         return function(dependencyName) {
             console.warn('Do not use getDependent - a template may fill multiple dependencies')
             if(!dependencyName) return null
-            let primaryName = state.deploymentTemplate.primary 
+            let primaryName = state.deploymentTemplate.primary
             if (dependencyName === primaryName) return null
 
             const dependency = state.resourceTemplates[dependencyName]

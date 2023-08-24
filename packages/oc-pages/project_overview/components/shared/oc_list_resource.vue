@@ -46,7 +46,7 @@ export default {
                 return this.value;
             },
             set(val) {
-                this.$emit("input", val); 
+                this.$emit("input", val);
             }
         },
 
@@ -89,7 +89,7 @@ export default {
 <template>
     <div class="ci-table" role="grid">
         <div
-            v-for="(resource) in validResourceTypes"
+            v-for="(resource) in validResourceTypes.filter(r => !!r)"
             :key="resource.name"
             class="gl-responsive-table-row oc_table_row"
         >

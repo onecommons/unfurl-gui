@@ -244,7 +244,10 @@ export default {
         },
 
         availableProviderTypes() {
-            return ['unfurl.relationships.ConnectsTo.K8sCluster', 'unfurl.relationships.ConnectsTo.DigitalOcean'].map(this.resolveResourceTypeFromAny)
+            if(this.selectingProvider) { // force recompute when modal opens
+                return ['unfurl.relationships.ConnectsTo.K8sCluster', 'unfurl.relationships.ConnectsTo.DigitalOcean'].map(this.resolveResourceTypeFromAny)
+            }
+            return []
         },
 
         presentableCards() {
@@ -385,7 +388,7 @@ export default {
         },
 
         scrollDown(elId, timeOut=500) {
-            clearTimeout(this.uiTimeout);  
+            clearTimeout(this.uiTimeout);
             const anchorId = btoa(elId.replace('#', '')).replace(/=/g, '');
             this.uiTimeout = setTimeout(
                 () => {
@@ -494,7 +497,7 @@ export default {
 
         async onSubmitModalConnect() {
             //throw new Error('connectNodeResource needs to be reimplemented')
-            try { 
+            try {
                 const { name } = this.selectedServiceToConnect;
                 await this.connectNodeResource({ nodeResource: name, ...this.connectNodeResourceData });
             }catch(e) {
@@ -622,7 +625,7 @@ export default {
                                     :deployment-template="getDeploymentTemplate"
                                     :level="idx"
                                     :title-key="card.title"
-                                    :show-type-first="true" 
+                                    :show-type-first="true"
                                     :readonly="readonly"
                                     :card="card"
                                     />
@@ -636,7 +639,7 @@ export default {
         <!-- End Content -->
 
         <!-- Buttons -->
-        <template-buttons 
+        <template-buttons
             :loading-deployment="loadingDeployment"
             :deploy-button="deployButton"
             :save-status="saveStatus"
