@@ -25,7 +25,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
     field.textValue(group[0]) :
       group[0][columnName]
 
-      let parentRow = { 
+      let parentRow = {
         [columnName]: columnTarget,
         tooltips: group[0].tooltips,
         context: group[0].context,
@@ -197,7 +197,7 @@ export default {
         if(field.index !== undefined) {
           result[field.key] = field.index;
         }
-      } 
+      }
       return result;
     },
 
@@ -386,7 +386,7 @@ export default {
                 <!--span v-else>{{scope.item.childrenOfGroup(scope.field.key)}} {{scope.field.label}}</span-->
               <span v-else>{{pluralize(scope)}}</span>
             </span>
-            <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}"> 
+            <span v-else-if="scope.item[scope.field.key]" :class="{'indent-to-widget': scope.field.index > 0 && scope.item._depth == scope.field.index}">
               <div v-if="tooltip(scope)" :title="tooltip(scope)" v-gl-tooltip.hover style="position: absolute; bottom: 0; left: 0; height: 100%; width: 100%; z-index: 1"/>
               <slot :name="scope.field.key" v-bind="scope"> {{scope.item[scope.field.key]}} </slot>
             </span>
@@ -548,7 +548,7 @@ th .control-cell {
 }
 .control-cell.left { border-right-style: solid; }
 
-.control-cell.right { border-left-style: solid; } 
+.control-cell.right { border-left-style: solid; }
 
 .oc-table >>> .collapsable {
   margin-left: -0.5em;
@@ -587,7 +587,6 @@ th .control-cell {
 
 .no-margin { margin: -1px; }
 .no-margin >>> table { border-bottom-width: 0; }
-.no-margin >>> .gl-table { margin-bottom: -1px; }
 
 </style>
 
