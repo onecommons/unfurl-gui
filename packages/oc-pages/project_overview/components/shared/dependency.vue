@@ -188,7 +188,7 @@ export default {
             <span v-if="matchIsValid" class="oc_resource-details">
                 <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
                   <status-icon v-if="displayStatus" class="mr-1" :status="cardStatus(dependency.target)" />
-                  {{ resolveRequirementMatchTitle(dependency) }}
+                  <span style="margin-bottom: -0.1em"> {{ resolveRequirementMatchTitle(dependency) }} </span>
                 </a>
             </span>
         </div>

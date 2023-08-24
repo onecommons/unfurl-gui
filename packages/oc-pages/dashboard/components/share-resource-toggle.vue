@@ -71,21 +71,21 @@ export default {
     methods: {
         ...mapActions(['updateResourceSharedState', 'unshareResource', 'loadDashboard']),
         async shareWithEnvironment() {
-            const 
+            const
                 environmentName = this.getCurrentEnvironment.name,
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name,
                 shareState = 'environment'
 
             const release = await acquireLock()
-        
+
             await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
             await this.loadDashboard()
 
             release()
         },
         async shareWithDashboard() {
-            const 
+            const
                 environmentName = this.getCurrentEnvironment.name,
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name,
@@ -99,7 +99,7 @@ export default {
             release()
         },
         async stopSharing() {
-            const 
+            const
                 environmentName = this.getCurrentEnvironment.name,
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name
@@ -151,7 +151,7 @@ export default {
             </div>
         </template>
         <template #button-content>
-            <div class="d-flex">
+            <div class="d-flex align-items-center">
                 <detect-icon name="share" :size="18" /> <span>{{dropdownText}}</span>
             </div>
         </template>

@@ -119,7 +119,7 @@ export default {
             const isValid = this.cardIsValid(card)
 
             const size = this.isPrimary? 24: 16
-            const className = ['gl-ml-3']
+            const className = []
             if(isValid && this._displayValidation) className.push('icon-green')
             let title
             if (this._displayValidation && !this.tooltip) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
@@ -198,11 +198,13 @@ export default {
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
             <div :id="id" :data-testid="card && ('card-' + card.name)" class="d-flex position-relative w-100 justify-content-between">
-                <div class="mr-4 d-flex">
+                <div class="d-flex oc-card-header justify-content-between w-100">
                     <slot name="header">
-                        <div v-if="card" class="header-inner align_left gl-display-flex align-items-center flex-one gl-pt-1 m-1">
-                            <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-3 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
-                            <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
+                        <div v-if="card" class="align_left gl-display-flex align-items-center flex-one flex-wrap">
+                            <div class="d-flex pt-1 pb-1 gl-mr-3">
+                                <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
+                                <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
+                            </div>
                             <el-tooltip :disabled="!tooltip">
                                 <template #content>
                                     <div>
@@ -212,30 +214,35 @@ export default {
 
                                 <detect-icon v-if="_displayValidation" v-bind="statusIconProps" />
                             </el-tooltip>
-                            <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="sm" class="gl-tab-counter-badge gl-ml-3 badge-oc-card" >{{ badgeHeaderText }}</gl-badge >
-                        </div>
-                        <div class="d-flex m-1" v-if="card && _displayStatus">
-                            <slot name="status">
-                                <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
-                            </slot>
-                        </div>
-                    </slot>
-                </div>
+                            <div v-if="_displayStatus" class="d-flex pt-1 pb-1 badges-container">
+                                <slot name="status">
+                                    <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="md" class="gl-tab-counter-badge gl-mr-3" >
+                                        <detect-icon :size="16" name="tag"/>
+                                        <div class="ml-1">{{ badgeHeaderText }}</div>
 
-                <div class="d-flex align-items-center">
-                    <slot name="controls" v-bind="card">
-                        <gl-button v-if="card && !isPrimary && !_readonly && !card._permanent && !card._deployed" @click="openDeletemodal" class="controls">
-                            <div class="d-flex align-items-center">
-                                <gl-icon name="remove" />
-                                <div> {{__('Remove')}} </div>
+                                    </gl-badge>
+                                    <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
+                                </slot>
                             </div>
-                        </gl-button>
+                        </div>
 
                     </slot>
-                    <span class="card-toggle" @click="toggleCard" v-if="!isPrimary">
-                        <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
-                    </span>
+                    <div class="d-flex align-items-center">
+                        <slot name="controls" v-bind="card">
+                            <gl-button v-if="card && !isPrimary && !_readonly && !card._permanent && !card._deployed" @click="openDeletemodal" class="controls">
+                                <div class="d-flex align-items-center">
+                                    <gl-icon name="remove" />
+                                    <div> {{__('Remove')}} </div>
+                                </div>
+                            </gl-button>
+
+                        </slot>
+                        <span class="card-toggle" @click="toggleCard" v-if="!isPrimary">
+                            <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
+                        </span>
+                    </div>
                 </div>
+
             </div>
         </template>
         <div ref="containerOuter" class="card-content-outer" :class="{active: setHeight}">
@@ -267,14 +274,8 @@ export default {
 .primary-card ~ .gl-card-body {
 	background-color: #EEEEEE38 !important;
 }
-.header-inner {height: 24px;}
 .primary-card .oc_card_title {
 	font-size: 18px !important;
-}
-.badge-oc-card {
-    background: #DBDBDB !important;
-    color: #525252;
-    font-weight: normal !important;
 }
 </style>
 
@@ -323,11 +324,6 @@ export default {
     .gl-dark .oc-card.primary >>> .gl-card-footer {
         background:  transparent !important;
     }
-
-    .oc-card.primary h4 {
-        line-height: 1 !important;
-    }
-
 }
 
 .oc-card:not(.primary) >>> .gl-card-body {
@@ -341,12 +337,13 @@ export default {
 
 .oc-card:not(.primary) h4 {
     font-size: 1rem !important;
-    line-height: 1rem !important;
 }
 
 .oc-card.primary h4 {
     font-size: 1.25rem;
-    line-height: 1;
+    margin-bottom: -0.1em;
+    display: inline-flex;
+    align-items: center;
 }
 
 .oc-card >>> .gl-card-body {
@@ -384,5 +381,26 @@ export default {
     margin: 0 0.25em;
 }
 
+.oc-card >>> .oc-card-header > * {
+  min-height: 32px;
+  margin-bottom: -0.914px;
+}
+
+.oc-card >>> .oc-card-header .gl-badge.md {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
+}
+
+.oc-card >>> .gl-card-header {
+  display: flex;
+  align-items: center;
+}
+
+.oc-card.primary > .gl-card-header .badges-container {
+    transform: scale(1.1);
+    border-style: solid;
+    border-width: 0 1em;
+    border-color: transparent;
+}
 
 </style>
