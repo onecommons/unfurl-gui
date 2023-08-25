@@ -24,6 +24,8 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
   cy.get(`[data-testid="${cardTestId}"]`).within(() => {
     cy.contains("button", "Share").scrollIntoView().click()
     cy.contains("button", "Share in current environment").click()
+    cy.contains("button", "Shared").should('exist')
+    cy.wait(BASE_TIMEOUT / 2)
   })
 
   cy.undeploy(dep)
@@ -45,6 +47,7 @@ export function deploySharedVolume2(dep1, dep2, fixture, cardTestId) {
   cy.get(`[data-testid="${cardTestId}"]`).within(() => {
     cy.contains("button", "Shared").scrollIntoView().click()
     cy.contains("button", "Stop sharing").click()
+    cy.contains("button", "Share").should('exist')
   })
 
 }
