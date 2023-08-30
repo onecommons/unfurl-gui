@@ -23,9 +23,14 @@ export default{
 }
 </script>
 <template>
-    <div class="position-relative">
+    <div class="position-relative ufgui-code-clipboard">
         <pre><code ref="code"><slot></slot></code></pre>
         <gl-icon v-gl-tooltip.hover @mouseenter="clipboardTitle = CLIPBOARD_TITLE_COPY" @click="copyLocalCloneInvocation" class="position-absolute" style="bottom: 8px; right: 8px; cursor: pointer;" :size="18" :title="clipboardTitle" name="copy-to-clipboard" />
     </div>
 
 </template>
+<style scoped>
+.ufgui-code-clipboard code {
+    background: inherit;
+}
+</style>
