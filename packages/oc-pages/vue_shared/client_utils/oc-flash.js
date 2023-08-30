@@ -25,7 +25,7 @@ export function createFlash(options) {
         if(!type) {type = FLASH_TYPES.ALERT}
         //message = `${message}<div>${options.issue}</div>`
     }
-    const result = glCreateFlash({...options, message, variant: type})
+    const result = glCreateFlash({...options, message, variant: type}).$el
     if(options.linkTo && options.linkText) {
         window.requestAnimationFrame(() => {
             const flashText = result.$el
@@ -39,7 +39,7 @@ export function createFlash(options) {
         })
     } else if(options.issue || type == FLASH_TYPES.ALERT) {
         window.requestAnimationFrame(async () => {
-            const flashText = result.querySelector('.flash-container .flash-text')
+            const flashText = result.querySelector('.gl-alert-content')
             const issueContext = document.createElement('SPAN')
             const issueContainer = document.createElement('DIV')
             const createIssueLink = document.createElement('A')
