@@ -1,7 +1,7 @@
 import { cloneDeep, create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util.mjs';
+import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
@@ -338,110 +338,141 @@ const actions = {
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
     // TODO use dependenciesFromResourceType here
-    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, action}) {
-        try {
-            let target
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, recursiveInstantiate}) {
+        const deferred = []
+        let target
 
-            if(selection._sourceinfo.incomplete) {
-                commit('addTempRepository', selection._sourceinfo)
-                const environmentName = getters.getCurrentEnvironmentName
-                const implementation_requirements = environmentName && rootGetters.providerTypesForEnvironment(environmentName)
-                const params = {
-                    'extends': selection.name,
-                    implementation_requirements
+        function deferredRecursiveInstantiate() {
+            for(let req of target.requirements) {
+                const availableResourceTypes = getters.availableResourceTypesForRequirement({constraint: req}, true)
+                // TODO also create if the only available type is not user settable
+                if(req.visibility == 'hidden' && availableResourceTypes.length == 1) {
+                    const _name = `${req.name}-for-${name}`
+                    deferred.push(
+                        () => dispatch('createNodeResource', {
+                            dependentName: name,
+                            dependentRequirement: req.name,
+                            requirement: req,
+                            name: _name,
+                            title: _name,
+                            selection: getters.resolveResourceTypeFromAny(req.resourceType),
+                            recursiveInstantiate: true
+                        })
+                    )
                 }
-
-                await dispatch('fetchTypesForParams', {params})
-                target = cloneDeep(getters.resolveResourceTypeFromAny(selection.name))
-            } else {
-                target = cloneDeep(selection);
             }
-
-            target.type = {...target};
-            target.description = requirement?.description;
-            target._valid = true;
-            target.name = name;
-            target.title = title;
-
-            target._uncommitted = true
-            target.__typename = 'ResourceTemplate'
-            target.visibility = target.visibility || 'inherit'
-
-            const directAncestor = state.resourceTemplates[dependentName]
-
-            if(directAncestor) {
-                const ancestorDependencies = getters.getDependencies(directAncestor)
-                const inputsSchemaFromDirectAncestor = ancestorDependencies.find(dep => dep.name == dependentRequirement)?.constraint?.inputsSchema
-
-                if(inputsSchemaFromDirectAncestor) {
-                    applyInputsSchema(target, inputsSchemaFromDirectAncestor)
-                }
-
-                target._ancestors = directAncestor._ancestors.concat([[directAncestor, dependentRequirement]])
-            }
-
-            try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
-            catch { target.properties = []; }
-
-            if(target?.requirements?.length > 0) {
-                target.dependencies = target.requirements.map(req => {
-                    return {
-                        constraint: {...req, visibility: req.visibility || 'visible'},
-                        name: req.name,
-                        match: req.match || null,
-                        target: null
-                    };
-
-                });
-
-                dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
-
-
-                delete target.requirements;
-            }
-
-            target.dependentName = dependentName
-            target.dependentRequirement = dependentRequirement
-
-            target.id = btoa(target.name).replace(/=/g, '');
-
-            // FIXME these create helpers should accept meta args in a different object than target so they can be passed through as is
-            if(state.context == 'environment') {
-                commit(
-                    'pushPreparedMutation',
-                    createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName}),
-                    {root: true}
-                )
-            }
-            else if (state.context == 'blueprint' && (directAncestor._local || target.type.implementation_requirements.length > 0)) {
-                commit(
-                    'pushPreparedMutation',
-                    createResourceTemplateInDeploymentTemplate({
-                        ...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug
-                    }),
-                    {root: true}
-                )
-            } else {
-                commit(
-                    'pushPreparedMutation',
-                    createResourceTemplate({...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
-                    {root: true}
-                );
-            }
-
-            commit("createTemplateResource", target);
-
-            const fieldsToReplace = {
-                completionStatus: "created",
-                _valid: true
-            };
-
-            commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace});
-            return true;
-        } catch(err) {
-            console.error(err);
-            throw new Error(err.message);
         }
+
+        if(selection._sourceinfo.incomplete) {
+            commit('addTempRepository', selection._sourceinfo)
+            const environmentName = getters.getCurrentEnvironmentName
+            const implementation_requirements = environmentName && rootGetters.providerTypesForEnvironment(environmentName)
+            const params = {
+                // we probably want all types the cloudmap repo will access for our template instantation
+                // 'extends': selection.name,
+                implementation_requirements,
+                cloudmap: false,
+            }
+
+            // workaround for if _sourceinfo isn't included
+            // const _sourceinfo = {...selection._sourceinfo}
+            // delete _sourceinfo.incomplete
+
+            await dispatch('fetchTypesForParams', {params})
+            target = cloneDeep(getters.resolveResourceTypeFromAny(selection.name))
+            // target._sourceinfo = _sourceinfo
+
+            deferredRecursiveInstantiate()
+        } else {
+            target = cloneDeep(selection);
+
+            if(recursiveInstantiate || selection.directives?.includes('substitute')) {
+                deferredRecursiveInstantiate()
+            }
+        }
+
+        target.type = {...target};
+        target.description = requirement?.description;
+        target._valid = true;
+        target.name = name;
+        target.title = title;
+
+        target._uncommitted = true
+        target.__typename = 'ResourceTemplate'
+        target.visibility = target.visibility || 'inherit'
+
+        const directAncestor = state.resourceTemplates[dependentName]
+
+        if(directAncestor) {
+            const ancestorDependencies = getters.getDependencies(directAncestor)
+            const inputsSchemaFromDirectAncestor = ancestorDependencies.find(dep => dep.name == dependentRequirement)?.constraint?.inputsSchema
+
+            if(inputsSchemaFromDirectAncestor) {
+                applyInputsSchema(target, inputsSchemaFromDirectAncestor)
+            }
+
+            target._ancestors = (directAncestor._ancestors || []).concat([[directAncestor, dependentRequirement]])
+        }
+
+        try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
+        catch { target.properties = []; }
+
+        if(target?.requirements?.length > 0) {
+            target.dependencies = target.requirements.map(req => {
+                return {
+                    constraint: {...req, visibility: req.visibility || 'visible'},
+                    name: req.name,
+                    match: req.match || null,
+                    target: null
+                };
+
+            });
+
+            dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
+
+
+            delete target.requirements;
+        }
+
+        target.dependentName = dependentName
+        target.dependentRequirement = dependentRequirement
+
+        target.id = btoa(target.name).replace(/=/g, '');
+
+        // FIXME these create helpers should accept meta args in a different object than target so they can be passed through as is
+        if(state.context == 'environment') {
+            commit(
+                'pushPreparedMutation',
+                createEnvironmentInstance({...target, environmentName: state.lastFetchedFrom.environmentName}),
+                {root: true}
+            )
+        }
+        else if (state.context == 'blueprint' && (directAncestor._local || target.type.implementation_requirements.length > 0)) {
+            commit(
+                'pushPreparedMutation',
+                createResourceTemplateInDeploymentTemplate({
+                    ...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug
+                }),
+                {root: true}
+            )
+        } else {
+            commit(
+                'pushPreparedMutation',
+                createResourceTemplate({...target, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
+                {root: true}
+            );
+        }
+
+        commit("createTemplateResource", target);
+
+        const fieldsToReplace = {
+            completionStatus: "created",
+            _valid: true
+        };
+
+        commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace});
+        await Promise.all(deferred.map(fn => fn()))
+        return true;
     },
 
     async connectNodeResource({getters, state, rootGetters, commit}, {dependentName, dependentRequirement, externalResource, resource}) {
@@ -493,6 +524,7 @@ const actions = {
         const actionLowerCase = action.toLowerCase();
 
         let shouldRemoveCard = actionLowerCase == 'delete' || !dependentName
+        // TODO check for unfurl-gui ownership
 
         if(dependentName) {
             commit('deleteReference', {
@@ -919,10 +951,11 @@ const getters = {
         return state.availableResourceTypes.filter(rt => rt.visibility != 'hidden')
     },
 
-    availableResourceTypesForRequirement(_, getters) {
-        return function(requirement) {
+    availableResourceTypesForRequirement(state, getters) {
+        return function(requirement, all=false) {
             if(!requirement) return []
-            return getters.instantiableResourceTypes.filter(type => {
+            const types = all? state.availableResourceTypes: getters.instantiableResourceTypes
+            return types.filter(type => {
                 const isValidImplementation =  type.extends?.includes(requirement.constraint?.resourceType)
                 return isValidImplementation
             })
@@ -932,7 +965,6 @@ const getters = {
     resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
             const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
-            debugger
             if(environmentResourceType && !environmentResourceType._sourceinfo?.incomplete) return environmentResourceType
 
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)

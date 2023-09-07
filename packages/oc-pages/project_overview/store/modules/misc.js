@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { USER_HOME_PROJECT} from 'oc_vue_shared/util.mjs'
+import { USER_HOME_PROJECT} from 'oc_vue_shared/util'
 import { fetchUser } from 'oc_vue_shared/client_utils/user'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
@@ -22,7 +22,7 @@ const state = () => ({
     user: null,
     windowWidth: window.innerWidth,
     windowHeight: window.innerHeight,
-    scrollTop: document.scrollingElement.scrollTop
+    scrollTop: document?.scrollingElement?.scrollTop
 })
 
 const mutations = {
@@ -115,13 +115,13 @@ const actions = {
             commit('setWindowHeight', window.innerHeight)
         }
         function onScroll(e) {
-            commit('setScrollTop', document.scrollingElement.scrollTop)
+            commit('setScrollTop', document?.scrollingElement?.scrollTop)
         }
         window.addEventListener('resize', _.throttle(
             function(e) {
                 onResize(e)
                 onScroll(e)
-            }, 
+            },
             30
         ))
         window.addEventListener('scroll', _.throttle( onScroll, 15 ))

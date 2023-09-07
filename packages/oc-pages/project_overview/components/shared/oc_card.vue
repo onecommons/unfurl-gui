@@ -5,7 +5,7 @@ import {mapGetters} from 'vuex'
 import { bus } from 'oc_vue_shared/bus';
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
-import {generateCardId} from 'oc_vue_shared/util.mjs'
+import {generateCardId} from 'oc_vue_shared/util'
 import {Tooltip as ElTooltip} from 'element-ui'
 
 import { __ } from '~/locale';

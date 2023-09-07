@@ -1,5 +1,5 @@
 import { defineConfig } from 'cypress'
-const BASE_URL = process.env.OC_URL || 'localhost:8080'
+const BASE_URL = process.env.OC_URL || 'http://localhost:8080'
 
 export default defineConfig({
   defaultCommandTimeout: 15000,

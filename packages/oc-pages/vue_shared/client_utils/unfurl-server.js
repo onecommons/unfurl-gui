@@ -68,7 +68,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
 const unfurlTypesResponsesCache = {}
 const constraintCombinationsWithCloudmap = {}
-export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}) {
+export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}, index) {
     const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
 
     // this is rather convoluted, but we don't want to fetch last commit for a tagged release
@@ -92,11 +92,13 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
 
-    const combinationKey = JSON.stringify(params)
+    if(!params.hasOwnProperty('cloudmap')) {
+        const combinationKey = JSON.stringify(params)
 
-    if(!constraintCombinationsWithCloudmap[combinationKey]) {
-        constraintCombinationsWithCloudmap[combinationKey] = true
-        exportUrl += `&cloudmap=${cloudmapRepo()}`
+        if(!constraintCombinationsWithCloudmap[combinationKey] && index == 0) {
+            constraintCombinationsWithCloudmap[combinationKey] = true
+            exportUrl += `&cloudmap=${cloudmapRepo()}`
+        }
     }
 
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
@@ -109,7 +111,8 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     exportUrl += `&branch=${branch || _branch}`
 
     if(file) {
-        exportUrl += `&file=${file}`
+        // TODO don't split when it's working
+        exportUrl += `&file=${encodeURIComponent(file.split('#')[0])}`
     }
 
     if(latestCommit && (alwaysSendLatestCommit() || !unfurlServerUrlOverride())) {
@@ -154,13 +157,26 @@ export function importsAreEqual(a, b) {
 // just assume all repositories are public forn now
 export async function fetchTypeRepositories(repositories, params) {
     const typesDictionaries = await (Promise.all(repositories.map(
-        repo => unfurlServerGetTypes(repoToExportParams(repo), params)
+        (repo, i) => unfurlServerGetTypes(repoToExportParams(repo), params, i)
             .then(typesResponse => typesResponse.ResourceType)
     )))
 
     if(!typesDictionaries.length) return {}
     // hopefully this won't hurt too badly if fetch results are small
-    return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
+
+    const result = {}
+
+    typesDictionaries.forEach(td => {
+        Object.entries(td).forEach(([key, value]) => {
+            if(result[key] && result[key]._sourceinfo?.incomplete) {
+                return
+            }
+
+            result[key] = value
+        })
+    })
+    return _.cloneDeep(result)
+    // return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {

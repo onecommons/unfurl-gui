@@ -2,12 +2,12 @@
 import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
 import _ from 'lodash'
-import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util'
 import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider, GlFormCheckbox} from '@gitlab/ui'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/components/oc'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {token} from 'oc_vue_shared/compat.js'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'

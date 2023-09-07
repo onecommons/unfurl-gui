@@ -71,18 +71,18 @@ module.exports = {
   // ],
 
   // An array of file extensions your modules use
-  // moduleFileExtensions: [
-  //   "js",
-  //   "jsx",
-  //   "ts",
-  //   "tsx",
-  //   "json",
-  //   "node"
-  // ],
+  moduleFileExtensions: [
+    "js",
+    'mjs',
+    'ts',
+  ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
-    "~/(.*)": "<rootDir>/src/assets/javascripts/$1"
+    "^~/(.*)$": "<rootDir>/src/assets/javascripts/$1",
+    '^oc_vue_shared(.*)$': '<rootDir>/packages/oc-pages/vue_shared/$1',
+    '^oc_dashboard(.*)$': '<rootDir>/packages/oc-pages/dashboard/$1',
+    '^oc(.*)$': '<rootDir>/src/assets/javascripts/$1',
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
@@ -159,7 +159,9 @@ module.exports = {
   // ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
-  // testRegex: [],
+  testRegex: [
+    '\\.test\\.m?js$'
+  ],
 
   // This option allows the use of a custom results processor
   // testResultsProcessor: undefined,
@@ -174,13 +176,17 @@ module.exports = {
   // timers: "real",
 
   // A map from regular expressions to paths to transformers
-  // transform: undefined,
+  transform: {
+    '\\.mjs$': 'babel-jest',
+    '\\.js$': 'babel-jest',
+    '\\.ts$': 'babel-jest',
+  },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  // transformIgnorePatterns: [
+  transformIgnorePatterns: [
   //   "/node_modules/",
   //   "\\.pnp\\.[^\\/]+$"
-  // ],
+  ],
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,

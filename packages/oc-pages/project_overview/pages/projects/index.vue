@@ -12,10 +12,10 @@ import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
 import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
-import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util.mjs'
+import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
-import {lookupCloudProviderShortName} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 

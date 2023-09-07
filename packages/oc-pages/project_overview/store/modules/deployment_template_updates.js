@@ -1,7 +1,7 @@
 import { __ } from "~/locale";
 import _ from 'lodash'
-import {slugify} from 'oc_vue_shared/util.mjs'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {slugify} from 'oc_vue_shared/util'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
@@ -31,13 +31,13 @@ const visitMutation = () => {}
  * some of the normalizations done prior to committing are done to prevent errors in unfurl
 
  * there are some exported functions that are expected to be used in combination with pushPreparedMutation
- * the behavior for these is a bit unusual and if you need to directly commit an object, I'd committing pushPreparedMutation like this:   
+ * the behavior for these is a bit unusual and if you need to directly commit an object, I'd committing pushPreparedMutation like this:
           this.pushPreparedMutation(() => {
              return [{
                typename: 'DeploymentPath',
                patch: {__typename: 'DeploymentPath', environment},
                target: this.deploymentDir
-             }] 
+             }]
 
 
  * some concepts like committedNames and fetchRoot are inconsistent between targets (i.e. deployment.json vs environments.json)
@@ -200,8 +200,8 @@ Serializers = {
         })
 
         rt.properties = _.unionBy(rt.properties, rt.computedProperties, 'name')
-        
-        // This won't filter out any required properties because the user shouldn't be allowed 
+
+        // This won't filter out any required properties because the user shouldn't be allowed
         // to deploy with null required values
         rt.properties = rt.properties?.filter(prop => {
             return (prop.value ?? null) !== null
@@ -292,7 +292,7 @@ export function updatePropertyInInstance({environmentName, templateName, propert
         let instance = Array.isArray(patch.instances) ?
             patch.instances.find(i => i.name == templateName) :
             patch.instances[templateName]
-        
+
         if(!instance) {
             instance = Array.isArray(patch.connections) ?
                 patch.connections.find(i => i.name == templateName) :
@@ -313,7 +313,7 @@ export function createEnvironmentInstance({type, name, title, description, depen
     return function(accumulator) {
         visitMutation('createEnvironmentInstance')
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
-        let properties 
+        let properties
         try {
             properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
         } catch(e) { properties = [] }
@@ -500,7 +500,7 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
             result.push( {typename: 'ResourceTemplate', target: templateName, patch} )
         }
 
-        if(deploymentTemplateName) { 
+        if(deploymentTemplateName) {
             result.push(
                 deleteResourceTemplateInDT({templateName, deploymentTemplateName})//(accumulator)[0]
             )
@@ -523,7 +523,7 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
         let patch, typename
         const result = []
 
-        try { 
+        try {
             const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentTemplateName]
             patch = deploymentTemplate['ResourceTemplate'][dependentName]
 
@@ -886,7 +886,7 @@ const mutations = {
 
                     // not sure we should be committing things that are frozen to begin with
                     // currently happens while creating a deployment with developer access
-                    if(Object.isFrozen(record)) continue 
+                    if(Object.isFrozen(record)) continue
 
                     if(Serializers[typename]) {
                         const nestedPatches = Serializers[typename](record, state.accumulator)
@@ -957,14 +957,21 @@ const actions = {
             })
         }
 
+        if(o?.dryRun) {
+            console.log({patch, state})
+            return {patch, state}
+        }
+
         const projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
         const projectId = project.id
 
+
         const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
 
         const variables = {}
+
 
         if(token) {
             variables.cloud_vars_url = unfurl_cloud_vars_url({
@@ -973,13 +980,6 @@ const actions = {
                 server: window.location.host,
                 projectId
             })
-        }
-
-        if(o?.dryRun) {
-            console.log(state.committedNames)
-            console.log(variables)
-            if(Object.keys(state.env)) console.log(state.env)
-            return
         }
 
         let sync, method, path = state.path
@@ -1090,9 +1090,10 @@ const actions = {
         }
         commit('applyMutations', {dryRun})
         commit('normalizePatches')
-        await dispatch('sendUpdateSubrequests', {dryRun})
+        const result = await dispatch('sendUpdateSubrequests', {dryRun})
         commit('resetStagedChanges', {dryRun})
         commit('setIsCommitting', false)
+        return result
     }
 }
 

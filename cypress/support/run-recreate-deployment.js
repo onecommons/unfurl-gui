@@ -117,7 +117,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     if(USE_UNFURL_DNS) {
       dnsZone = `${USERNAME}.u.${USE_UNFURL_DNS}`
     }
-    
+
 
     let projectPath = dt.projectPath
     if (REPOS_NAMESPACE) {
@@ -153,17 +153,20 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.contains('button', 'Next').click()
 
     cy.get('[data-testid^="card-"]').should('exist')
-    cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
 
     function recreateTemplate(template, variant = 0) {
+      if(variant != HIDDEN) {
+        cy.get(`[data-testid^="card-${template.name}"]`).should('exist')
+      }
       cy.document().then($document => {
         if (variant != HIDDEN) {
-          if (variant != PRIMARY) {
-            if($document.querySelector(`[data-testid=tab-inputs-${template.name}]`)) {
-              cy.get(`[data-testid=tab-inputs-${template.name}]`).click()
+          // if (variant != PRIMARY) {
+            if($document.querySelector(`[data-testid="tab-inputs-${template.name}"]`)) {
+              cy.get(`[data-testid="tab-inputs-${template.name}"]`).click()
             }
-          }
+          // }
           for (const property of template.properties) {
+            cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
             let value = property.value
             let name = property.name
             if(name == 'subdomain') {
@@ -188,27 +191,31 @@ Cypress.Commands.add('recreateDeployment', options => {
               }
             }
 
-            // NOTE coupled tightly with element ui
-            let q = `
-              [data-testid="oc-input-${template.name}-${property.name}"].el-input,
-              [data-testid="oc-input-${template.name}-${property.name}"].el-input-number
-            `
-            let qChecked = `label[data-testid="oc-input-${template.name}-${property.name}"].el-checkbox`
-            let el
-            if($document.querySelector(q)) {
-              cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`)
-                .last()
-                .invoke('val', '')
-                .type(value)
-            } else if (el = $document.querySelector(qChecked)) {
-              if(el.classList.contains('is-checked') && !value) {
-                cy.get(qChecked).click()
-              } else if(!el.classList.contains('is-checked') && value) {
-                cy.get(qChecked).click()
+            cy.wait(100)
+            cy.document().then($document2 => {
+              // NOTE coupled tightly with element ui
+              let q = `
+                [data-testid="oc-input-${template.name}-${property.name}"].el-input,
+                [data-testid="oc-input-${template.name}-${property.name}"].el-input-number
+              `
+              let qChecked = `label[data-testid="oc-input-${template.name}-${property.name}"].el-checkbox`
+              let el
+              if($document2.querySelector(q)) {
+                cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`)
+                  .last()
+                  .invoke('val', '')
+                  .type(value)
+              } else if (el = $document2.querySelector(qChecked)) {
+                if(el.classList.contains('is-checked') && !value) {
+                  cy.get(qChecked).click()
+                } else if(!el.classList.contains('is-checked') && value) {
+                  cy.get(qChecked).click()
+                }
+              } else {
+                cy.log(`Could not find ${property.name} on ${template.name}`)
+                cy.log(`Used selector ${q}`)
               }
-            } else {
-              cy.log(`Could not find ${property.name} on ${template.name}`)
-            }
+            })
           }
 
         }
@@ -247,7 +254,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             .prev()
             .invoke('attr', 'disabled')
             .then((disabled) => {
-              // if button is enabled, and the env is provided, connects it 
+              // if button is enabled, and the env is provided, connects it
               if (!disabled) {
                 cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
                   .prev()

@@ -12,7 +12,7 @@ import OcListResource from '../../../project_overview/components/shared/oc_list_
 import OcTemplateHeader from '../../../project_overview/components/shared/oc_template_header.vue';
 import TemplateButtons from '../../../project_overview/components/template/template_buttons.vue';
 import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
-import { cloudProviderFriendlyName, slugify } from '../../util.mjs'
+import { cloudProviderFriendlyName, slugify } from '../../util'
 import { deleteDeploymentTemplate } from '../../../project_overview/store/modules/deployment_template_updates'
 import {bus} from 'oc_vue_shared/bus'
 

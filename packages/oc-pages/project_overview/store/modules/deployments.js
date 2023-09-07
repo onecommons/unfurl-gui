@@ -1,4 +1,4 @@
-import {slugify} from 'oc_vue_shared/util.mjs'
+import {slugify} from 'oc_vue_shared/util'
 import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'

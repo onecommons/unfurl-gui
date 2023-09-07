@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
 import {cloneDeep} from 'lodash'
-import {lookupCloudProviderAlias } from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias } from 'oc_vue_shared/util'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
@@ -13,7 +13,7 @@ import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
-import {slugify} from 'oc_vue_shared/util.mjs'
+import {slugify} from 'oc_vue_shared/util'
 import { fetchTypeRepositories, importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
@@ -383,7 +383,7 @@ const actions = {
     async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath, branch}) {
         let environments = []
         try {
-            const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath))).id
+            const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath)))?.id
 
             const result = await fetchEnvironments({
                 fullPath,
@@ -391,7 +391,7 @@ const actions = {
                 projectId,
                 includeDeployments: true
             })
-            
+
             result.errors.forEach(e => commit('createError', e, {root: true}))
 
             if(rootGetters.hasCriticalErrors) return
@@ -405,7 +405,7 @@ const actions = {
 
             commit('setDefaults', result.defaults)
             commit('setDeploymentPaths', result.deploymentPaths)
-            
+
             commit('setDeployments', result.deployments)
         }
         catch(e){
@@ -566,6 +566,7 @@ const actions = {
             deploymentName
         )
 
+        console.log({currentEnvironmentRepositories})
         const types = await fetchTypeRepositories(
             currentEnvironmentRepositories,
             params
@@ -586,7 +587,7 @@ const actions = {
         commit(
             'setResourceTypeDictionary',
             // prioritize types that are already defined
-            {environment: environmentName, dict: {...types, ...currentTypes}}
+            {environment: environmentName, dict: {...currentTypes, ...types}}
         )
     }
 
