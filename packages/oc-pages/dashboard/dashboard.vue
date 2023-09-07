@@ -1,7 +1,7 @@
 <script>
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {mapActions, mapMutations, mapGetters, mapState} from 'vuex'
-import {lookupCloudProviderAlias} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {GlLoadingIcon} from '@gitlab/ui'

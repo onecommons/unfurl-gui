@@ -8,7 +8,7 @@ import {Tooltip as ElTooltip} from 'element-ui'
 import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue_shared/components/oc'
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
-import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util.mjs'
+import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util'
 import {deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { redirectTo } from '~/lib/utils/url_utility';

@@ -1,3 +1,11 @@
+function normalizeDirectives(directives) {
+    for(let i in directives || []) {
+        if(directives[i] == 'substitution') {
+            directives[i] = 'substitute'
+        }
+    }
+}
+
 const transforms = {
     Deployment(deployment, root) {
         deployment._environment = root._environment
@@ -7,11 +15,11 @@ const transforms = {
             if(primary = root.Resource[deployment.primary]) {
                 deployment.healthCheckUrl = primary.computedProperties?.find(({name}) => name == 'health_check_url')?.value
                 if(!deployment.healthCheckUrl.match(/^\w+:\/\//)) {
-                   deployment.healthCheckUrl = 'https://' + deployment.healthCheckUrl 
+                   deployment.healthCheckUrl = 'https://' + deployment.healthCheckUrl
                 }
                 deployment.readinessEstimate = primary.computedProperties?.find(({name}) => name == 'readiness_estimate')?.value
             }
-        } catch(e) {}                   
+        } catch(e) {}
 
         try {
             if(deployment.deployTime) {
@@ -20,7 +28,7 @@ const transforms = {
                     deployTime = new Date(deployment.deployTime + 'Z')
                     deployTime.toISOString()
                 } catch(e) {
-                    deployTime = new Date(deployment.deployTime)                    
+                    deployTime = new Date(deployment.deployTime)
                 }
                 deployment.deployTime = deployTime
             }
@@ -47,10 +55,16 @@ const transforms = {
             resourceType.requirements = []
         }
 
+        normalizeDirectives(resourceType.directives)
+
         const utilization = resourceType.directives?.includes('substitute')? 0: 1
         for(const req of resourceType.requirements) {
             req._utilization = utilization
             req.title = req.title || req.name
+        }
+
+        if(resourceType.directives?.includes('substitute')) {
+            resourceType.requirements = resourceType.requirements.filter(req => !req.match)
         }
 
         resourceType._maxUtilization = 1
@@ -87,6 +101,7 @@ const transforms = {
     ResourceTemplate(resourceTemplate) {
         if(!resourceTemplate.title) resourceTemplate.title = resourceTemplate.name
         resourceTemplate.__typename = 'ResourceTemplate'
+        normalizeDirectives(resourceTemplate.directives)
 
         const utilization = resourceTemplate.directives?.includes('substitute')? 0: 1
         for(const dep of resourceTemplate.dependencies) {
