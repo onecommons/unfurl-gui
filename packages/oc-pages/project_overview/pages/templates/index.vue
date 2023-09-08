@@ -90,6 +90,7 @@ export default {
       'requirementMatchIsValid',
       'resolveRequirementMatchTitle',
       'resolveRequirementMatchChildren',
+      'dependenciesRemovableWith',
       'cardIsValid',
       'getUsername',
       'getHomeProjectPath',
@@ -111,9 +112,10 @@ export default {
       'getGlobalVars',
       'providerTypesForEnvironment',
       'blueprintRepositories',
-      'environmentTypeRepositories'
+      'environmentTypeRepositories',
+      'infallibleGetCardTitle'
     ]),
-    
+
     deploymentDir() {
         const environment = this.$route.params.environment
         // this.getDeploymentTemplate.name not loaded yet
@@ -126,7 +128,7 @@ export default {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           if(!this.mergeRequest) break
-        default: 
+        default:
           return this.hasPreparedMutations? 'enabled': 'disabled';
       }
       return 'hidden'
@@ -142,7 +144,7 @@ export default {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
-        default: 
+        default:
           return 'enabled';
       }
     },
@@ -150,7 +152,7 @@ export default {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
-        default: 
+        default:
           return 'enabled';
       }
     },
@@ -184,7 +186,7 @@ export default {
 
     getNameResourceModal() {
       return this.getRequirementSelected.requirement
-              ? this.getRequirementSelected.requirement.name 
+              ? this.getRequirementSelected.requirement.name
               : __('Resource');
     },
 
@@ -248,7 +250,7 @@ export default {
           let dependentName = this.createNodeResourceData.dependentName
           let dependent = this.getParentDependency(dependentName)
 
-          // check if dependent visible 
+          // check if dependent visible
           let primaryDependencies = this.getPrimary.dependencies
           let resourceParentName = ''
           for (const pd of primaryDependencies) {
@@ -260,7 +262,7 @@ export default {
               resourceParentName = dependent.title
             }
           }
-          
+
           this.resourceName = resourceParentName ?
             this.getRequirementSelected.requirement.constraint.title + ' for ' + resourceParentName :
             this.resolveResourceTypeFromAny(val.name)?.title || val.name
@@ -338,9 +340,9 @@ export default {
     bus.$on('deleteNode', (obj) => {
       this.deleteNodeData = obj;
       this.nodeAction = obj.action? obj.action : __('Delete');
-        
+
       this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
-      this.nodeChildren = this.resolveRequirementMatchChildren(obj.name)
+      this.nodeChildren = this.dependenciesRemovableWith(obj.name)
       this.launchModal('oc-delete-node', 500);
     });
   },
@@ -411,7 +413,7 @@ export default {
     },
 
     scrollDown(elId, timeOut=0) {
-      clearTimeout(this.uiTimeout);  
+      clearTimeout(this.uiTimeout);
       const anchorId = btoa(elId).replace(/=/g, '');
       const anchor = document.querySelector(`#${anchorId}`);
       this.uiTimeout = setTimeout(
@@ -478,9 +480,9 @@ export default {
         await this.fetchProject({projectPath, fetchPolicy: 'network-only', projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
         if(this.hasCriticalErrors) return
         const populateTemplateResult = await this.populateTemplateResources({
-          projectPath, 
-          templateSlug, 
-          renamePrimary, 
+          projectPath,
+          templateSlug,
+          renamePrimary,
           renameDeploymentTemplate,
           environmentName: this.$route.params.environment,
           syncState: this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT
@@ -528,7 +530,7 @@ export default {
             type: FLASH_TYPES.SUCCESS,
             duration: this.durationOfAlerts,
             linkText: 'Return to overview',
-            linkTo: `/${this.project.globalVars.projectPath}#${this.$route.params.slug}` // TODO 
+            linkTo: `/${this.project.globalVars.projectPath}#${this.$route.params.slug}` // TODO
           });
 
           const query = {...this.$route.query}
@@ -749,7 +751,7 @@ export default {
 
     async onSubmitModalConnect() {
       //throw new Error('connectNodeResource needs to be reimplemented')
-      try { 
+      try {
         if(this.selectedServiceToConnect?.__typename == 'Resource') {
             await this.connectNodeResource({ resource: this.selectedServiceToConnect, ...this.connectNodeResourceData });
         } else {
@@ -786,7 +788,7 @@ export default {
         }
         return nword + 'ing';
       };
-        return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>? 
+        return `Are you sure you want to ${this.nodeAction.toLowerCase()} <b>${this.nodeTitle}</b>?
         ${this.nodeChildren.length > 0 ? `<span style="text-transform: capitalize;">${gerundize(this.nodeAction)}</span> <b>${this.nodeTitle}</b> might affect other resources that are linked to it.` : ''}`;
     },
 
@@ -804,7 +806,7 @@ export default {
         if(window.location.pathname + decodeURIComponent(window.location.search) == editingTarget) {
             window.location.href = editingDraftFrom
         } else {
-            // TODO re-enable this when we're able to update the current namespace 
+            // TODO re-enable this when we're able to update the current namespace
             // https://github.com/onecommons/gitlab-oc/issues/867
             // this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
             window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug}).href
@@ -876,7 +878,7 @@ export default {
                       :deployment-template="getDeploymentTemplate"
                       :level="idx"
                       :title-key="card.title"
-                      :show-type-first="true" 
+                      :show-type-first="true"
                       :render-inputs="true"
                       :card="card"
                       />
@@ -892,7 +894,7 @@ export default {
       <!-- End Content -->
 
       <!-- Buttons -->
-      <template-buttons 
+      <template-buttons
             :loading-deployment="startedTriggeringDeployment"
             :save-status="saveStatus"
             :save-draft-status="saveDraftStatus"
@@ -943,11 +945,11 @@ export default {
       >
         <p v-html="getLegendOfModal()"></p>
         <ul>
-          <li v-for="(child, idx) in this.nodeChildren" :key="idx">
-            {{ child }}
+          <li v-for="child in this.nodeChildren" :key="child">
+            {{ infallibleGetCardTitle(child) }}
           </li>
         </ul>
-      </gl-modal> 
+      </gl-modal>
 
       <!-- Modal Connect -->
       <gl-modal

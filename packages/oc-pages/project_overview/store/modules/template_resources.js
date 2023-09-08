@@ -401,6 +401,8 @@ const actions = {
         target.__typename = 'ResourceTemplate'
         target.visibility = target.visibility || 'inherit'
 
+        target.metadata = {...target.metadata, created_by: 'unfurl-gui'}
+
         const directAncestor = state.resourceTemplates[dependentName]
 
         if(directAncestor) {
@@ -489,7 +491,17 @@ const actions = {
 
             const name = existsLocally? externalResource: `__${externalResource}`
 
-            resourceTemplateNode = {...resourceTemplate, name, dependentName, directives: [], dependentRequirement, deploymentTemplateName, readonly: true, __typename: 'ResourceTemplate'}
+            resourceTemplateNode = {
+                ...resourceTemplate,
+                name,
+                dependentName,
+                directives: [],
+                dependentRequirement,
+                deploymentTemplateName,
+                readonly: true,
+                __typename: 'ResourceTemplate',
+                metadata: {created_by: 'unfurl-gui'}
+            }
 
             if(! existsLocally) {
                 //copy
@@ -519,32 +531,28 @@ const actions = {
         }
     },
 
-    deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement}) {
-        if(!getters.getCardsStacked.find(card => card.name == name)) return
+    deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement, recurse=true, shouldRemoveCard=undefined}) {
+        if(!state.resourceTemplates[name]) return
+        if(!getters.getCardsStacked.find(card => card.name == name) && state.resourceTemplates[name].metadata?.created_by != 'unfurl-gui') return
         const actionLowerCase = action.toLowerCase();
 
-        let shouldRemoveCard = actionLowerCase == 'delete' || !dependentName
-        // TODO check for unfurl-gui ownership
+        const _shouldRemoveCard = shouldRemoveCard ?? getters.directAncestors(name).length <= 1
 
         if(dependentName) {
             commit('deleteReference', {
                 dependentName,
                 dependentRequirement,
             });
-
-            if(getters.getDependenciesMatchingCard(name).length == 0) {
-                shouldRemoveCard = true
-            }
         }
 
-        if(shouldRemoveCard){
-            commit('removeCard', {templateName: name})
-
-            for(const {card, dependency} of getters.getDisplayableDependenciesByCard(name)) {
-                const match = dependency?.match
-                if(!match) continue
-                dispatch('deleteNode', {name: match, action, dependentName: card.name, dependentRequirement: dependency.name})
+        if(_shouldRemoveCard){
+            if(recurse) {
+                for(const templateName of getters.dependenciesRemovableWith(name)) {
+                    dispatch('deleteNode', {name: templateName, action: 'delete', recurse: false, shouldRemoveCard: true})
+                }
             }
+
+            commit('removeCard', {templateName: name})
 
             if(state.context == 'environment') {
                 commit(
@@ -1224,6 +1232,68 @@ const getters = {
                 return true  // just assume that local file paths in url are already in scope
             }
         }
+    },
+
+    directAncestors(state, getters) {
+        return function(card) {
+            const cardName = card?.name || card
+            return Object.values(state.resourceTemplates).filter(a => {
+                if(a.name == cardName) return false
+                // diverges from implementation in dependenciesRemovableWith
+                // if(rt.metadata?.created_by != 'unfurl-gui') return false
+
+                return a.dependencies?.some(dep => dep.match == cardName)
+            })
+        }
+    },
+
+    dependenciesRemovableWith(state, getters) {
+        return function(card) {
+            const cardName = card?.name || card
+
+            function* iterDisplayableDependencies(name) {
+                for(const {card, dependency} of getters.getDisplayableDependenciesByCard(name)) {
+                    const match = dependency?.match
+
+                    if(match) {
+                        yield match
+                    }
+
+                    for(const displayable of iterDisplayableDependencies(match)) {
+                        yield displayable
+                    }
+                }
+            }
+
+            const removingDisplayableDependencies = Array.from(iterDisplayableDependencies(cardName))
+
+            const wouldBeOrphaned = Object.values(state.resourceTemplates).filter(rt => {
+                if(rt.metadata?.created_by != 'unfurl-gui') return false
+
+                const directAncestors = Object.values(state.resourceTemplates).filter(a => {
+                    if(a.name == rt.name) return false
+                    if(rt.metadata?.created_by != 'unfurl-gui') return false
+
+                    return a.dependencies?.some(dep => dep.match == rt.name)
+                })
+
+                return directAncestors.filter(a => !removingDisplayableDependencies.includes(a.name)).length == 0
+            }).map(rt => rt.name)
+
+            return _.uniqBy([
+                ...removingDisplayableDependencies,
+                ...wouldBeOrphaned
+            ])
+        }
+    },
+
+    infallibleGetCardTitle(state, getters) {
+        return function(card) {
+            const cardName = card?.name || card
+
+            return state.resourceTemplates[cardName]?.title || cardName
+        }
+
     }
 };
 
