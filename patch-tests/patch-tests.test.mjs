@@ -2,6 +2,7 @@
 import fs from 'fs'
 import store from './store'
 import Snapshot from './snapshot'
+import {jest} from '@jest/globals'
 
 /*
         const projectPath = this.project.globalVars.projectPath
@@ -32,12 +33,20 @@ import Snapshot from './snapshot'
 
 const snapshots = fs.readdirSync('./patch-tests/snapshots')
 async function har() {
+  beforeEach(() => {
+    window.localStorage.clear()
+    window.sessionStorage.clear()
+    jest.clearAllMocks()
+  })
+
   for(const snapshotPath of snapshots) {
     if(!snapshotPath.match(/\.har$/)) continue
     const snapshot = new Snapshot(snapshotPath)
 
+    let after
     test(snapshotPath, () => {
-      return snapshot.test(store)
+      after = snapshot.test(store, after)
+      return after
     })
   }
 }

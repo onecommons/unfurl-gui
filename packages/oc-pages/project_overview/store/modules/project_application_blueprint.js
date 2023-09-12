@@ -2,7 +2,7 @@ import {uniq} from 'lodash'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node-filter'
-import { fetchTypeRepositories } from  'oc_vue_shared/client_utils/unfurl-server'
+import { repoToExportParams, fetchTypeRepositories, unfurlServerGetTypes } from  'oc_vue_shared/client_utils/unfurl-server'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -60,10 +60,10 @@ const mutations = {
             Vue.set(state, key, value)
         }
     },
-    
+
     loaded(state, status) {
         state.loaded = status
-        state.callbacks.forEach(cb => {if(typeof cb == 'function') {cb()} else throw new Error('application blueprint callback is not a function')})  
+        state.callbacks.forEach(cb => {if(typeof cb == 'function') {cb()} else throw new Error('application blueprint callback is not a function')})
 
         state.callbacks = []
     },
@@ -103,7 +103,7 @@ const actions = {
 
             return
         }
-        
+
 
         root.projectGlobal = projectGlobal
 
@@ -113,7 +113,7 @@ const actions = {
             })
         }
 
-        dispatch('useProjectState', {projectPath, root})
+        await dispatch('useProjectState', {projectPath, root})
         commit('loaded', true)
 
 
@@ -271,7 +271,7 @@ const actions = {
         transforms[key] && transforms[key](entry, root)
     },
 
-    useProjectState({state, commit, dispatch}, {projectPath, root, shouldMerge}) {
+    async useProjectState({state, commit, dispatch}, {projectPath, root, shouldMerge}) {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
@@ -280,6 +280,24 @@ const actions = {
 
         if(state.clean && projectPath) {
             commit('addRepositoryDependencies', [projectPath], {root: true})
+        }
+
+        const requiredSubstituteTypes = Object.values(root.ResourceTemplate || {}).filter(rt => rt.directives?.includes('substitute')).map(rt => root.ResourceType[rt.type])
+
+        const cloud = Object.values(root.DeploymentTemplate || {}).length == 1 && Object.values(root.DeploymentTemplate)[0].cloud
+
+        if(cloud) {
+            await Promise.all(requiredSubstituteTypes.map(async (st) => {
+                const exportParams = {...repoToExportParams(st._sourceinfo), file: st._sourceinfo?.file}
+
+                const implementation_requirements = [cloud]
+                const _extends = [st.name]
+                const implementations = ['create']
+
+                const fetchedTypes = (await unfurlServerGetTypes(exportParams, {implementations, implementation_requirements, 'extends': _extends})).ResourceType
+
+                Object.values(fetchedTypes).filter(t => t.directives?.includes('substitute')).forEach(t => {console.log({t});root.ResourceType[t.name] = t})
+            }))
         }
 
         // guarunteed ordering
@@ -315,11 +333,11 @@ const actions = {
             commit('setProjectState', {key, value})
         }
     },
-    
+
     async blueprintFetchTypesWithParams({state, getters, dispatch}, {params}) {
         const types = await fetchTypeRepositories(getters.blueprintRepositories, params)
 
-        dispatch(
+        await dispatch(
             'useProjectState',
             // prioritize types that are already defined
             {root: {ResourceType: {...types, ...state.ResourceType}}, shouldMerge: true}

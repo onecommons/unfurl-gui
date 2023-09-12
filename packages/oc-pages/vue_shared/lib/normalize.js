@@ -67,6 +67,8 @@ const transforms = {
             resourceType.requirements = resourceType.requirements.filter(req => !req.match)
         }
 
+        resourceType.requirements = resourceType.requirements.filter(req => req.visibility != 'hidden' || req.match)
+
         resourceType._maxUtilization = 1
 
 
@@ -101,6 +103,10 @@ const transforms = {
     ResourceTemplate(resourceTemplate) {
         if(!resourceTemplate.title) resourceTemplate.title = resourceTemplate.name
         resourceTemplate.__typename = 'ResourceTemplate'
+
+        // this is currently a vuex validation error because of local template handling in both normalization functions
+        resourceTemplate.dependencies = resourceTemplate.dependencies.filter(rt => !(rt.constraint.visibility == 'hidden' && !rt.match))
+
         normalizeDirectives(resourceTemplate.directives)
 
         const utilization = resourceTemplate.directives?.includes('substitute')? 0: 1

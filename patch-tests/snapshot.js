@@ -3,6 +3,7 @@ import axios from '~/lib/utils/axios_utils'
 import fs from 'fs'
 import TargetState from './target-state'
 import Assertions from './assertions.js'
+import {sleep} from 'oc_vue_shared/client_utils/misc'
 
 class Snapshot {
   constructor(path) {
@@ -128,7 +129,9 @@ class Snapshot {
     return new TargetState(store, this.patches)
   }
 
-  async _test(store) {
+  async _test(store, after) {
+    await after
+    await sleep(1000)
     window.gon = {current_username: this.user.username}
 
     store.commit('setCurrentNamespace', this.user.username)
@@ -148,11 +151,9 @@ class Snapshot {
             try {
               const interceptParsed = new URL(interceptUrl)
               interceptRef = interceptParsed.pathname + interceptParsed.search
-            } catch(e) {}
+            } catch(e) { }
 
-            const routesMatch = ref == interceptRef || ref == decodeURIComponent(interceptRef)
-
-            // console.log({ref, interceptRef, routesMatch})
+            const routesMatch = ref == interceptRef ||  ref == decodeURIComponent(interceptRef) || decodeURIComponent(ref) == decodeURIComponent(decodeURIComponent(interceptRef))
 
             const methodsMatch = e.request.method.toLowerCase() == method
 

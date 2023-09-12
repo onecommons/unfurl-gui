@@ -230,7 +230,7 @@ export default {
 
             this.scrollToProvider(slugify(title))
         },
-        onSaveProviderTemplate(...args) {
+        async onSaveProviderTemplate(...args) {
             this.showingProviderModal = false
             let redirect
             if(redirect = sessionStorage['redirectOnProviderSaved']) {
@@ -238,10 +238,10 @@ export default {
                 window.location.href = redirect
             }
             else {
-                this.onSaveTemplate(...args)
+                await this.onSaveTemplate(...args)
             }
         },
-        onSaveTemplate(reload=true) {
+        async onSaveTemplate(reload=true) {
             const environment = this.environment
             this.setUpdateType('environment')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
@@ -261,7 +261,7 @@ export default {
                     },
                     ResourceType
                 })
-                this.useProjectState({root})
+                await this.useProjectState({root})
                 this.useBaseState(root)
             }
         },
@@ -312,7 +312,7 @@ export default {
             }
             this.environment = environment
 
-            this.onSaveTemplate(false)
+            await this.onSaveTemplate(false)
 
             const instances = _.cloneDeep(Object.values(environment.instances))
             const connections = _.cloneDeep(Object.values(environment.connections))

@@ -156,7 +156,7 @@ const actions = {
     },
 
     // used by deploy and blueprint editing
-    populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+    async populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('resetTemplateResourceState')
         commit('setContext', environmentName? 'template': 'blueprint')
         if(!templateSlug) return false;
@@ -177,7 +177,7 @@ const actions = {
                 let dt
                 try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
                 if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
-                dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true, projectPath})
+                await dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true, projectPath})
                 _syncState = false // override sync state if we just loaded this
                 break
             }
@@ -363,8 +363,11 @@ const actions = {
             }
         }
 
-        if(selection._sourceinfo.incomplete) {
-            commit('addTempRepository', selection._sourceinfo)
+        if(selection._sourceinfo.incomplete || selection.directives?.includes('substitute')) {
+            if(selection._sourceinfo.incomplete) {
+                commit('addTempRepository', selection._sourceinfo)
+            }
+
             const environmentName = getters.getCurrentEnvironmentName
             const implementation_requirements = environmentName && rootGetters.providerTypesForEnvironment(environmentName)
             const params = {
@@ -386,7 +389,7 @@ const actions = {
         } else {
             target = cloneDeep(selection);
 
-            if(recursiveInstantiate || selection.directives?.includes('substitute')) {
+            if(recursiveInstantiate) {
                 deferredRecursiveInstantiate()
             }
         }
@@ -973,9 +976,11 @@ const getters = {
     resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
             const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
+            const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
+
+            if(dictionaryResourceType?.directives?.includes('substitute')) return dictionaryResourceType
             if(environmentResourceType && !environmentResourceType._sourceinfo?.incomplete) return environmentResourceType
 
-            const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
             if(dictionaryResourceType) return dictionaryResourceType
 
             return environmentResourceType ?? null

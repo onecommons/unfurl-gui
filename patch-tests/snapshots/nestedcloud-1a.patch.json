@@ -1,0 +1,1034 @@
+[
+  {
+    "name": "nestedcloud-gcp-2",
+    "title": "Nestedcloud GCP 2",
+    "cloud": "unfurl.relationships.ConnectsTo.GoogleCloudProject",
+    "description": "Deploy using Google Compute Engine",
+    "__typename": "DeploymentTemplate",
+    "slug": "nestedcloud-gcp-2",
+    "blueprint": "nestedcloud",
+    "primary": "the_app",
+    "resourceTemplates": [
+      "the_app",
+      "dockerhost",
+      "db-dockerhost",
+      "redis-dockerhost",
+      "k8sDefaultIngressController",
+      "dockerhost-aws-bootimage",
+      "aws_metadata",
+      "dockerhost-gcp-bootimage",
+      "gcp_metadata",
+      "unfurl_service_account",
+      "dockerhost-azure-bootimage",
+      "cachetapp",
+      "database-instance-for-cachetapp",
+      "dockerhost-for-cachetapp",
+      "compute-for-cachetapp",
+      "dns-for-cachetapp",
+      "floating-ip-for-cachetapp"
+    ],
+    "ResourceTemplate": {},
+    "environmentVariableNames": [
+      "APP_URL",
+      "APP_URL",
+      "NESTED_SUBDOMAIN",
+      "NESTED_HEALTH_CHECK_URL",
+      "NESTED_READINESS_ESTIMATE",
+      "NESTED_URL"
+    ],
+    "projectPath": "onecommons/blueprints/nestedcloud",
+    "source": "gcp"
+  },
+  {
+    "name": "nestedcloud",
+    "title": "Nestedcloud",
+    "description": "A safe home for all your data. Access & share your files, calendars, contacts, mail & more from any device, on your terms.",
+    "livePreview": null,
+    "sourceCodeUrl": null,
+    "image": null,
+    "projectIcon": null,
+    "primaryDeploymentBlueprint": "gcp",
+    "__typename": "ApplicationBlueprint",
+    "primary": "Nestedcloud",
+    "deploymentTemplates": [
+      "gcp",
+      "aws",
+      "digitalocean",
+      "azure",
+      "selfhosted",
+      "kubernetes",
+      "nestedcloud-gcp-2"
+    ]
+  },
+  {
+    "name": "the_app",
+    "type": "Nestedcloud",
+    "title": "the_app",
+    "description": "",
+    "directives": [],
+    "properties": [],
+    "dependencies": [
+      {
+        "constraint": {
+          "name": "nested",
+          "description": "",
+          "__typename": "RequirementConstraint",
+          "min": 1,
+          "max": 1,
+          "match": null,
+          "resourceType": "unfurl.nodes.WebApp",
+          "visibility": "visible",
+          "title": "nested"
+        },
+        "name": "nested",
+        "match": "cachetapp",
+        "__typename": "Requirement",
+        "title": "nested",
+        "completionStatus": "created"
+      }
+    ],
+    "computedProperties": [],
+    "__typename": "ResourceTemplate"
+  },
+  {
+    "name": "cachetapp",
+    "type": "CachetApp",
+    "title": "CachetApp",
+    "extends": [
+      "CachetApp",
+      "unfurl.nodes.WebApp",
+      "unfurl.nodes.ContainerApp",
+      "unfurl.nodes.App",
+      "tosca.nodes.Root",
+      "tosca.capabilities.Node",
+      "tosca.capabilities.Root"
+    ],
+    "implementations": [
+      "create"
+    ],
+    "implementation_requirements": [],
+    "inputsSchema": {
+      "type": "object",
+      "properties": {
+        "app_key": {
+          "title": "App Key",
+          "default": {
+            "_generate": {
+              "ranges": [
+                [
+                  48,
+                  57
+                ],
+                [
+                  97,
+                  102
+                ]
+              ],
+              "len": 32
+            }
+          },
+          "required": true,
+          "sensitive": true,
+          "user_settable": true,
+          "type": "string"
+        },
+        "cachet_version": {
+          "title": "Version Tag",
+          "default": "2.3.15",
+          "required": true,
+          "description": "Check out their Docker page for the valid tags https://hub.docker.com/r/cachethq/docker/tags",
+          "user_settable": true,
+          "type": "string"
+        },
+        "subdomain": {
+          "title": "Subdomain",
+          "default": "cachet",
+          "required": true,
+          "description": "Choose a subdomain for your deployment. A subdomain of 'www', will be at www.your.domain",
+          "user_settable": true,
+          "type": "string",
+          "pattern": "^[a-z0-9]([-a-z0-9]*[a-z0-9])*$"
+        },
+        "database_name": {
+          "title": "Database Name",
+          "default": "cachet",
+          "required": true,
+          "description": "Preferred name for Cachet database",
+          "user_settable": true,
+          "type": "string"
+        }
+      }
+    },
+    "computedPropertiesSchema": {
+      "type": "object",
+      "properties": {
+        "health_check_url": {
+          "title": "health_check_url",
+          "required": true,
+          "export": true,
+          "hidden": true,
+          "type": "string",
+          "visibility": "hidden"
+        },
+        "readiness_estimate": {
+          "title": "readiness_estimate",
+          "required": true,
+          "description": "Guesstimate when we can expect the deployed app to be ready (in seconds)",
+          "export": true,
+          "hidden": true,
+          "$toscatype": "integer",
+          "type": "number",
+          "visibility": "hidden"
+        }
+      }
+    },
+    "outputsSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "_sourceinfo": {
+      "url": "https://unfurl.cloud/onecommons/blueprints/cachet.git",
+      "file": "ensemble-template.yaml#spec/service_template"
+    },
+    "directives": [
+      "substitute"
+    ],
+    "__typename": "ResourceTemplate",
+    "metadata": {
+      "created_by": "unfurl-gui"
+    },
+    "id": "Y2FjaGV0YXBw",
+    "properties": [
+      {
+        "name": "app_key",
+        "value": {
+          "get_env": "nestedcloud_gcp_2__cachetapp__app_key"
+        }
+      },
+      {
+        "name": "cachet_version",
+        "value": "2.3.15"
+      },
+      {
+        "name": "subdomain",
+        "value": "cachet"
+      },
+      {
+        "name": "database_name",
+        "value": "cachet"
+      }
+    ],
+    "dependencies": [
+      {
+        "constraint": {
+          "name": "db",
+          "description": "External database for Cachet",
+          "__typename": "RequirementConstraint",
+          "title": "Database Instance",
+          "min": 1,
+          "max": 1,
+          "match": null,
+          "resourceType": "PostgresDB",
+          "inputsSchema": {
+            "properties": {
+              "database_name": null
+            }
+          },
+          "visibility": "visible"
+        },
+        "name": "db",
+        "match": "database-instance-for-cachetapp",
+        "target": null,
+        "completionStatus": "created"
+      },
+      {
+        "constraint": {
+          "name": "dockerhost",
+          "description": "",
+          "__typename": "RequirementConstraint",
+          "min": 1,
+          "max": 1,
+          "match": null,
+          "resourceType": "unfurl.nodes.HttpsProxyContainerComputeHost",
+          "title": "dockerhost",
+          "visibility": "visible"
+        },
+        "name": "dockerhost",
+        "match": "dockerhost-for-cachetapp",
+        "target": null,
+        "completionStatus": "created"
+      }
+    ]
+  },
+  {
+    "name": "database-instance-for-cachetapp",
+    "type": "GoogleSQLStoragePostgres",
+    "title": "Database Instance for CachetApp",
+    "badge": "Database",
+    "icon": "/onecommons/unfurl-types/-/raw/main/icons/google-cloud-sql.svg",
+    "_sourceinfo": {
+      "repository": "types",
+      "url": "https://unfurl.cloud/onecommons/unfurl-types.git#v0.4.0",
+      "file": "service-template.yaml"
+    },
+    "extends": [
+      "GoogleSQLStoragePostgres",
+      "PostgresDB",
+      "SqlDB",
+      "unfurl.nodes.SoftwareComponent",
+      "tosca.nodes.Root",
+      "GoogleSQLStorage",
+      "unfurl.nodes.GoogleCloudObject",
+      "unfurl.nodes.CloudObject",
+      "unfurl.nodes.Installer.Terraform",
+      "unfurl.nodes.Installer",
+      "unfurl.nodes.Service",
+      "tosca.capabilities.Node",
+      "tosca.capabilities.Root",
+      "unfurl.capabilities.Installer"
+    ],
+    "implementations": [
+      "check",
+      "create",
+      "default",
+      "delete"
+    ],
+    "implementation_requirements": [],
+    "inputsSchema": {
+      "type": "object",
+      "properties": {
+        "root_user": {
+          "title": "root_user",
+          "default": "root",
+          "required": true,
+          "user_settable": true,
+          "type": "string"
+        },
+        "root_password": {
+          "title": "root_password",
+          "default": {
+            "_generate": {
+              "preset": "password"
+            }
+          },
+          "required": true,
+          "sensitive": true,
+          "user_settable": true,
+          "type": "string"
+        },
+        "deletion_protection": {
+          "title": "Deletion Protection",
+          "default": true,
+          "required": true,
+          "user_settable": true,
+          "type": "boolean"
+        }
+      }
+    },
+    "computedPropertiesSchema": {
+      "type": "object",
+      "properties": {
+        "database_type": {
+          "title": "database_type",
+          "default": "POSTGRES",
+          "required": true,
+          "user_settable": false,
+          "type": "string"
+        },
+        "software_version": {
+          "title": "Software Version",
+          "default": "12",
+          "type": "string"
+        },
+        "instance_type": {
+          "title": "instance_type",
+          "default": "db-custom-1-3840",
+          "required": true,
+          "type": "string"
+        },
+        "portspecs": {
+          "title": "portspecs",
+          "required": true,
+          "description": "Ports the service should be running on.",
+          "type": "array",
+          "items": {
+            "required": true,
+            "$toscatype": "tosca.datatypes.network.PortSpec",
+            "type": "string"
+          }
+        },
+        "instance_name": {
+          "title": "instance_name",
+          "required": true,
+          "type": "string"
+        },
+        "main": {
+          "title": "main",
+          "user_settable": false,
+          "type": "string"
+        }
+      }
+    },
+    "outputsSchema": {
+      "type": "object",
+      "properties": {
+        "uri": {
+          "title": "uri",
+          "required": true,
+          "description": "Unique identifier",
+          "type": "string"
+        },
+        "name": {
+          "title": "name",
+          "required": true,
+          "description": "Human-friendly name of the resource",
+          "type": "string"
+        },
+        "console_url": {
+          "title": "console_url",
+          "description": "URL for viewing this resource in its cloud provider's console",
+          "type": "string"
+        }
+      }
+    },
+    "requirements": [],
+    "__typename": "ResourceTemplate",
+    "metadata": {
+      "created_by": "unfurl-gui"
+    },
+    "id": "ZGF0YWJhc2UtaW5zdGFuY2UtZm9yLWNhY2hldGFwcA",
+    "properties": [
+      {
+        "name": "root_user",
+        "value": "root"
+      },
+      {
+        "name": "root_password",
+        "value": {
+          "get_env": "nestedcloud_gcp_2__database_instance_for_cachetapp__root_password"
+        }
+      },
+      {
+        "name": "deletion_protection",
+        "value": true
+      }
+    ],
+    "dependencies": []
+  },
+  {
+    "name": "dockerhost-for-cachetapp",
+    "type": "unfurl.nodes.TraefikDockerComputeHost",
+    "title": "dockerhost for CachetApp",
+    "_sourceinfo": {
+      "repository": "types",
+      "url": "https://unfurl.cloud/onecommons/unfurl-types.git#v0.4.0",
+      "file": "service-template.yaml"
+    },
+    "extends": [
+      "unfurl.nodes.TraefikDockerComputeHost",
+      "unfurl.nodes.HttpsProxyContainerComputeHost",
+      "unfurl.nodes.ContainerComputeHost",
+      "unfurl.nodes.DockerHost",
+      "unfurl.nodes.ServiceHost",
+      "tosca.nodes.Root",
+      "tosca.capabilities.Node",
+      "tosca.capabilities.Root"
+    ],
+    "implementations": [
+      "configure",
+      "create"
+    ],
+    "implementation_requirements": [],
+    "inputsSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "computedPropertiesSchema": {
+      "type": "object",
+      "properties": {
+        "protocol": {
+          "title": "protocol",
+          "default": "https",
+          "required": true,
+          "type": "string"
+        },
+        "health_check_url": {
+          "title": "health_check_url",
+          "required": true,
+          "type": "string"
+        },
+        "readiness_estimate": {
+          "title": "readiness_estimate",
+          "default": 180,
+          "required": true,
+          "description": "Guestimate when we can expect the deployed app to be ready (in seconds)",
+          "$toscatype": "integer",
+          "type": "number"
+        },
+        "volume_disk": {
+          "title": "volume_disk",
+          "description": "disk device of persistent volume",
+          "computed": true,
+          "visibility": "hidden",
+          "type": "string"
+        },
+        "mountpoint": {
+          "title": "mountpoint",
+          "default": "/var/app/data",
+          "description": "disk device of persistent volume",
+          "computed": true,
+          "visibility": "hidden",
+          "type": "string"
+        },
+        "portspecs": {
+          "title": "portspecs",
+          "required": true,
+          "type": "array",
+          "items": {
+            "required": true,
+            "$toscatype": "tosca.datatypes.network.PortSpec",
+            "type": "string"
+          }
+        },
+        "container": {
+          "title": "container",
+          "$toscatype": "unfurl.datatypes.DockerContainer",
+          "type": "object",
+          "properties": {
+            "environment": {
+              "title": "environment",
+              "default": {},
+              "user_settable": true,
+              "tab_title": "Environment Variables",
+              "transform": {
+                "eval": {
+                  "to_env": {
+                    "eval": "$value"
+                  }
+                }
+              },
+              "type": "object",
+              "additionalProperties": {
+                "required": true,
+                "type": "string"
+              }
+            },
+            "container_name": {
+              "title": "container_name",
+              "type": "string"
+            },
+            "image": {
+              "title": "image",
+              "type": "string"
+            },
+            "command": {
+              "title": "command",
+              "$toscatype": "any",
+              "type": "string"
+            },
+            "volumes": {
+              "title": "volumes",
+              "type": "array",
+              "items": {
+                "required": true,
+                "type": "string"
+              }
+            },
+            "ports": {
+              "title": "ports",
+              "description": "Ports to expose (format: 80:8080)",
+              "type": "array",
+              "items": {
+                "required": true,
+                "type": "string"
+              }
+            },
+            "user": {
+              "title": "user",
+              "description": "User used to run the container process. format: <UID>[:<GID>]",
+              "type": "string"
+            },
+            "expose": {
+              "title": "expose",
+              "description": "Expose ports without publishing them to the host machine",
+              "type": "array",
+              "items": {
+                "required": true,
+                "type": "string"
+              }
+            },
+            "entrypoint": {
+              "title": "entrypoint",
+              "type": "array",
+              "items": {
+                "required": true,
+                "type": "string"
+              }
+            },
+            "privileged": {
+              "title": "privileged",
+              "type": "boolean"
+            },
+            "pull_policy": {
+              "title": "pull_policy",
+              "type": "string",
+              "enum": [
+                "always",
+                "never",
+                "missing",
+                "build"
+              ]
+            },
+            "network_mode": {
+              "title": "network_mode",
+              "description": "Use the same values as the docker client --network parameter (\"bridge\", \"host\", \"none\")",
+              "type": "string"
+            },
+            "$toscatype": {
+              "const": "unfurl.datatypes.DockerContainer"
+            }
+          }
+        },
+        "container_image": {
+          "title": "container_image",
+          "required": true,
+          "type": "string"
+        },
+        "registry_url": {
+          "title": "registry_url",
+          "type": "string"
+        },
+        "registry_user": {
+          "title": "registry_user",
+          "type": "string"
+        },
+        "registry_password": {
+          "title": "registry_password",
+          "sensitive": true,
+          "type": "string"
+        }
+      }
+    },
+    "outputsSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "__typename": "ResourceTemplate",
+    "metadata": {
+      "created_by": "unfurl-gui"
+    },
+    "id": "ZG9ja2VyaG9zdC1mb3ItY2FjaGV0YXBw",
+    "properties": [],
+    "dependencies": [
+      {
+        "constraint": {
+          "name": "host",
+          "description": "A compute instance with at least 1000MB RAM",
+          "__typename": "RequirementConstraint",
+          "title": "Compute",
+          "min": 1,
+          "max": 1,
+          "match": null,
+          "resourceType": "unfurl.nodes.Compute",
+          "inputsSchema": {
+            "properties": {
+              "portspecs": null,
+              "user_data": null,
+              "public_ports": null
+            }
+          },
+          "visibility": "visible"
+        },
+        "name": "host",
+        "match": "compute-for-cachetapp",
+        "target": null,
+        "completionStatus": "created"
+      },
+      {
+        "constraint": {
+          "name": "dns",
+          "description": "DNS provider for domain name configuration",
+          "__typename": "RequirementConstraint",
+          "title": "DNS",
+          "min": 1,
+          "max": 1,
+          "match": null,
+          "resourceType": "unfurl.nodes.DNSZone",
+          "visibility": "visible"
+        },
+        "name": "dns",
+        "match": "dns-for-cachetapp",
+        "target": null,
+        "completionStatus": "created"
+      }
+    ]
+  },
+  {
+    "name": "compute-for-cachetapp",
+    "type": "unfurl.nodes.GCPComputeInstance",
+    "title": "Compute for CachetApp",
+    "badge": "Compute",
+    "_sourceinfo": {
+      "file": "gcp/compute.yaml",
+      "url": "https://unfurl.cloud/onecommons/unfurl-types.git#v0.4.0"
+    },
+    "extends": [
+      "unfurl.nodes.GCPComputeInstance",
+      "unfurl.nodes.Compute",
+      "unfurl.nodes.ServiceHost",
+      "tosca.nodes.Root",
+      "tosca.capabilities.Node",
+      "tosca.capabilities.Root"
+    ],
+    "implementations": [
+      "check",
+      "create",
+      "default",
+      "delete",
+      "restart"
+    ],
+    "implementation_requirements": [
+      "unfurl.relationships.ConnectsTo.GoogleCloudProject"
+    ],
+    "inputsSchema": {
+      "type": "object",
+      "properties": {
+        "num_cpus": {
+          "title": "CPUs",
+          "required": true,
+          "description": "Number of CPUs for the server",
+          "$toscatype": "integer",
+          "type": "number",
+          "minimum": 1,
+          "maximum": 8
+        },
+        "mem_size": {
+          "title": "Memory",
+          "required": true,
+          "description": "Amount of RAM (in MB)",
+          "default_unit": "MB",
+          "$toscatype": "scalar-unit.size",
+          "type": "number",
+          "minimum": 1000,
+          "maximum": 20000
+        },
+        "disk_size": {
+          "title": "Storage",
+          "required": true,
+          "description": "Size of boot disk (in GB)",
+          "default_unit": "GB",
+          "$toscatype": "scalar-unit.size",
+          "type": "number",
+          "minimum": 10,
+          "maximum": 2000
+        }
+      }
+    },
+    "computedPropertiesSchema": {
+      "type": "object",
+      "properties": {
+        "boot_image": {
+          "title": "boot_image",
+          "required": true,
+          "computed": true,
+          "type": "string"
+        },
+        "machine_type": {
+          "title": "machine_type",
+          "required": true,
+          "type": "string"
+        },
+        "zone": {
+          "title": "Zone",
+          "required": true,
+          "description": "Zone in the region to create the instance in.",
+          "tfvar": true,
+          "type": "string"
+        },
+        "user_data": {
+          "title": "User Data",
+          "required": true,
+          "computed": true,
+          "visibility": "hidden",
+          "type": "string"
+        },
+        "portspecs": {
+          "title": "portspecs",
+          "default": [],
+          "required": true,
+          "type": "array",
+          "items": {
+            "required": true,
+            "$toscatype": "tosca.datatypes.network.PortSpec",
+            "type": "string"
+          }
+        },
+        "public_ports": {
+          "title": "public_ports",
+          "default": false,
+          "required": true,
+          "description": "Whether this instance should be exposed to the internet",
+          "computed": true,
+          "user_settable": false,
+          "type": "boolean"
+        },
+        "name": {
+          "title": "name",
+          "required": true,
+          "type": "string"
+        },
+        "protocol": {
+          "title": "protocol",
+          "default": "http",
+          "required": true,
+          "type": "string"
+        }
+      }
+    },
+    "outputsSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "id",
+          "required": true,
+          "type": "string"
+        }
+      }
+    },
+    "__typename": "ResourceTemplate",
+    "metadata": {
+      "created_by": "unfurl-gui"
+    },
+    "id": "Y29tcHV0ZS1mb3ItY2FjaGV0YXBw",
+    "properties": [
+      {
+        "name": "num_cpus",
+        "value": 1
+      },
+      {
+        "name": "mem_size",
+        "value": 2048
+      },
+      {
+        "name": "disk_size",
+        "value": 32
+      }
+    ],
+    "dependencies": [
+      {
+        "constraint": {
+          "name": "floating-ip",
+          "description": "",
+          "__typename": "RequirementConstraint",
+          "min": 1,
+          "max": 1,
+          "match": null,
+          "resourceType": "unfurl.nodes.FloatingIP",
+          "title": "floating-ip",
+          "visibility": "visible"
+        },
+        "name": "floating-ip",
+        "match": "floating-ip-for-cachetapp",
+        "target": null,
+        "completionStatus": "created"
+      }
+    ]
+  },
+  {
+    "name": "dns-for-cachetapp",
+    "type": "GoogleCloudDNSZone",
+    "title": "DNS for CachetApp",
+    "badge": "DNS",
+    "icon": "/onecommons/unfurl-types/-/raw/main/icons/google-cloud-dns.png",
+    "_sourceinfo": {
+      "file": "dns-services.yaml",
+      "url": "https://unfurl.cloud/onecommons/unfurl-types.git#v0.4.0"
+    },
+    "extends": [
+      "GoogleCloudDNSZone",
+      "unfurl.nodes.DNSZone",
+      "tosca.nodes.Root",
+      "unfurl.capabilities.DNSZone",
+      "tosca.capabilities.Root",
+      "tosca.capabilities.Node"
+    ],
+    "implementations": [
+      "check",
+      "configure",
+      "connect",
+      "default",
+      "delete"
+    ],
+    "implementation_requirements": [],
+    "inputsSchema": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "title": "Domain Name",
+          "required": true,
+          "description": "Top level part of the DNS name (e.g. example.com)",
+          "type": "string"
+        }
+      }
+    },
+    "computedPropertiesSchema": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "title": "provider",
+          "default": {
+            "class": "octodns.provider.googlecloud.GoogleCloudProvider",
+            "credentials_file": {
+              "get_env": "GOOGLE_APPLICATION_CREDENTIALS"
+            },
+            "project": {
+              "get_env": "CLOUDSDK_CORE_PROJECT"
+            }
+          },
+          "required": true,
+          "description": "OctoDNS provider configuration",
+          "sensitive": true,
+          "computed": true,
+          "type": "object"
+        },
+        "records": {
+          "title": "records",
+          "default": {},
+          "required": true,
+          "description": "DNS records to add to the zone",
+          "computed": true,
+          "type": "object",
+          "additionalProperties": {
+            "required": true,
+            "$toscatype": "unfurl.datatypes.DNSRecord",
+            "type": "object",
+            "properties": {
+              "type": {
+                "title": "type",
+                "required": true,
+                "type": "string"
+              },
+              "value": {
+                "title": "value",
+                "type": "string"
+              },
+              "values": {
+                "title": "values",
+                "type": "array"
+              },
+              "$toscatype": {
+                "const": "unfurl.datatypes.DNSRecord"
+              }
+            }
+          }
+        },
+        "exclusive": {
+          "title": "exclusive",
+          "default": false,
+          "required": true,
+          "description": "Zone exclusively managed by this instance (removes unrecognized records)",
+          "type": "boolean"
+        },
+        "default_ttl": {
+          "title": "Default TTL",
+          "default": 300,
+          "required": true,
+          "$toscatype": "integer",
+          "type": "number"
+        },
+        "testing": {
+          "title": "Testing",
+          "default": false,
+          "required": true,
+          "description": "Is this DNS zone being used for testing? (If set, Let's Encrypt staging will be used.)",
+          "type": "boolean"
+        }
+      }
+    },
+    "outputsSchema": {
+      "type": "object",
+      "properties": {
+        "zone": {
+          "title": "zone",
+          "required": true,
+          "description": "The records found in the zone",
+          "internal": true,
+          "type": "object"
+        },
+        "managed_records": {
+          "title": "Managed Records",
+          "description": "The records in the zone that are managed by this instance",
+          "type": "object"
+        }
+      }
+    },
+    "requirements": [],
+    "__typename": "ResourceTemplate",
+    "metadata": {
+      "created_by": "unfurl-gui"
+    },
+    "id": "ZG5zLWZvci1jYWNoZXRhcHA",
+    "properties": [
+      {
+        "name": "name",
+        "value": "deploythis.io"
+      }
+    ],
+    "dependencies": []
+  },
+  {
+    "name": "floating-ip-for-cachetapp",
+    "type": "unfurl.nodes.GCPComputeAddress",
+    "title": "floating-ip for CachetApp",
+    "_sourceinfo": {
+      "file": "gcp/compute.yaml",
+      "url": "https://unfurl.cloud/onecommons/unfurl-types.git#v0.4.0"
+    },
+    "extends": [
+      "unfurl.nodes.GCPComputeAddress",
+      "unfurl.nodes.FloatingIP",
+      "tosca.nodes.Root",
+      "tosca.capabilities.Node",
+      "tosca.capabilities.Root"
+    ],
+    "implementations": [
+      "create",
+      "default",
+      "delete"
+    ],
+    "implementation_requirements": [
+      "unfurl.relationships.ConnectsTo.GoogleCloudProject"
+    ],
+    "inputsSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "computedPropertiesSchema": {
+      "type": "object",
+      "properties": {}
+    },
+    "outputsSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "title": "id",
+          "required": true,
+          "type": "string"
+        },
+        "ip_address": {
+          "title": "ip_address",
+          "required": true,
+          "type": "string"
+        }
+      }
+    },
+    "requirements": [],
+    "__typename": "ResourceTemplate",
+    "metadata": {
+      "created_by": "unfurl-gui"
+    },
+    "id": "ZmxvYXRpbmctaXAtZm9yLWNhY2hldGFwcA",
+    "properties": [],
+    "dependencies": []
+  }
+]
