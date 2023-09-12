@@ -22,6 +22,7 @@
     "create-user": "./scripts/create-user",
     "set-repo-visibility": "./scripts/set-repo-visibility",
     "push-local-repo": "./scripts/push-local-repo",
+    "clean-har": "./scripts/src/clean-har.js",
     "membership-test": "./scripts/src/membership-test.js"
   },
   "dependencies": {

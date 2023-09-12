@@ -566,7 +566,6 @@ const actions = {
             deploymentName
         )
 
-        console.log({currentEnvironmentRepositories})
         const types = await fetchTypeRepositories(
             currentEnvironmentRepositories,
             params
