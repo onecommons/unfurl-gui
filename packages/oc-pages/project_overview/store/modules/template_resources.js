@@ -338,7 +338,7 @@ const actions = {
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
     // TODO use dependenciesFromResourceType here
-    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, recursiveInstantiate}) {
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection}) {
         const deferred = []
         let target
 
@@ -346,7 +346,18 @@ const actions = {
             for(let req of target.requirements) {
                 const availableResourceTypes = getters.availableResourceTypesForRequirement({constraint: req}, true)
                 // TODO also create if the only available type is not user settable
-                if(req.visibility == 'hidden' && availableResourceTypes.length == 1) {
+
+                if(availableResourceTypes.length != 1) continue
+
+                const type = availableResourceTypes[0]
+
+                const typeRequiresUserInteraction = (
+                    req.visibility == 'hidden' ||
+                    Object.keys(type.inputsSchema.properties).length > 0
+                )
+
+                if(!typeRequiresUserInteraction) {
+                    req.visibility = 'hidden'
                     const _name = `${req.name}-for-${name}`
                     deferred.push(
                         () => dispatch('createNodeResource', {
@@ -356,7 +367,6 @@ const actions = {
                             name: _name,
                             title: _name,
                             selection: getters.resolveResourceTypeFromAny(req.resourceType),
-                            recursiveInstantiate: true
                         })
                     )
                 }
@@ -377,22 +387,13 @@ const actions = {
                 cloudmap: false,
             }
 
-            // workaround for if _sourceinfo isn't included
-            // const _sourceinfo = {...selection._sourceinfo}
-            // delete _sourceinfo.incomplete
-
             await dispatch('fetchTypesForParams', {params})
             target = cloneDeep(getters.resolveResourceTypeFromAny(selection.name))
-            // target._sourceinfo = _sourceinfo
 
-            deferredRecursiveInstantiate()
-        } else {
-            target = cloneDeep(selection);
+        } else { target = cloneDeep(selection) }
 
-            if(recursiveInstantiate) {
-                deferredRecursiveInstantiate()
-            }
-        }
+        // always recursively instantiate
+        deferredRecursiveInstantiate()
 
         target.type = {...target};
         target.description = requirement?.description;
@@ -536,7 +537,7 @@ const actions = {
 
     deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement, recurse=true, shouldRemoveCard=undefined}) {
         if(!state.resourceTemplates[name]) return
-        if(!getters.getCardsStacked.find(card => card.name == name) && state.resourceTemplates[name].metadata?.created_by != 'unfurl-gui') return
+        if((!getters.getCardsStacked.find(card => card.name == name)) && state.resourceTemplates[name].metadata?.created_by != 'unfurl-gui') return
         const actionLowerCase = action.toLowerCase();
 
         const _shouldRemoveCard = shouldRemoveCard ?? getters.directAncestors(name).length <= 1
@@ -1282,13 +1283,16 @@ const getters = {
                     return a.dependencies?.some(dep => dep.match == rt.name)
                 })
 
-                return directAncestors.filter(a => !removingDisplayableDependencies.includes(a.name)).length == 0
+                return directAncestors.filter(a => (
+                    !removingDisplayableDependencies.includes(a.name) &&
+                    a.name != cardName
+                )).length == 0
             }).map(rt => rt.name)
 
             return _.uniqBy([
                 ...removingDisplayableDependencies,
                 ...wouldBeOrphaned
-            ])
+            ]).filter(name => name != cardName)
         }
     },
 
