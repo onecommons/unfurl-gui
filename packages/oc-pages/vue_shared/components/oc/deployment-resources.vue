@@ -233,7 +233,7 @@ export default {
 
         availableProviderTypes() {
             if(this.selectingProvider) { // force recompute when modal opens
-                return ['unfurl.relationships.ConnectsTo.K8sCluster', 'unfurl.relationships.ConnectsTo.DigitalOcean'].map(this.resolveResourceTypeFromAny)
+                return ['unfurl.relationships.ConnectsTo.K8sCluster', 'ConnectsTo.DigitalOceanEnvironment'].map(this.resolveResourceTypeFromAny)
             }
             return []
         },

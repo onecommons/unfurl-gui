@@ -15,7 +15,7 @@ const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
 const AWS = 'unfurl.relationships.ConnectsTo.AWSAccount'
 const Azure = 'ConnectsTo.AzureEnvironment'
 const K8s = 'unfurl.relationships.ConnectsTo.K8sCluster'
-const DigitalOcean = 'unfurl.relationships.ConnectsTo.DigitalOcean'
+const DigitalOcean = 'ConnectsTo.DigitalOceanEnvironment'
 const CLOUD_PROVIDER_ALIASES = {
   AWSAccount: AWS,
   aws: AWS,
@@ -36,6 +36,7 @@ const CLOUD_PROVIDER_ALIASES = {
   k8s: K8s,
   kubernetes: K8s,
   DigitalOcean,
+  DigitalOceanEnvironment: DigitalOcean,
   [DigitalOcean]: DigitalOcean,
   'Google Cloud Platform': GCP,
   'Amazon Web Services': AWS,
