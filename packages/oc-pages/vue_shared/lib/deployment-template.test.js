@@ -21,7 +21,7 @@ test('prefix environment variables', () => {
 
 })
 
-const ResourceTemplate1 = () => JSON.parse('{"name":"primary_provider","type":"unfurl.relationships.ConnectsTo.DigitalOcean","__typename":"ResourceTemplate","dependencies":[],"properties":[{"name":"DIGITALOCEAN_TOKEN","value":{"get_env":"primary_provider__DIGITALOCEAN_TOKEN"}}],"computedProperties":[]}')
+const ResourceTemplate1 = () => JSON.parse('{"name":"primary_provider","type":"ConnectsTo.DigitalOceanEnvironment","__typename":"ResourceTemplate","dependencies":[],"properties":[{"name":"DIGITALOCEAN_TOKEN","value":{"get_env":"primary_provider__DIGITALOCEAN_TOKEN"}}],"computedProperties":[]}')
 
 test('list environment variable dependencies in a resource template', () => {
     const resourceTemplate = ResourceTemplate1()

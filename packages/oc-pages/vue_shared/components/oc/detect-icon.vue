@@ -32,6 +32,7 @@ const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.azureaccount': 'Azure', 'unfurl.relationships.connectsto.azure': 'Azure', 'connectsto.azureenvironment': 'Azure', 'azure': 'Azure',
     'unfurl.relationships.connectsto.awsaccount': 'AWS', 'amazon web services': 'AWS',
     'unfurl.relationships.connectsto.digitalocean': 'DigitalOcean', 'digital ocean': 'DigitalOcean',
+    'connectsto.digitaloceanenvironment': 'DigitalOcean',
     gcpinstance: GCPInstance, 'unfurl.nodes.gcpcomputeinstance': GCPInstance,
     ec2compute: EC2Instance, 'unfurl.nodes.ec2compute': EC2Instance,
     dns: 'DnsIcon', 'unfurl.nodes.dnszone': 'DnsIcon', 'unfurl.capabilities.dnszone': 'DnsIcon',
