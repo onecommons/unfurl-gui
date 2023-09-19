@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const expect = require('expect')
+const {expect} = require('expect')
 const {GITHUB_ACCESS_TOKEN, GITHUB_USERNAME} = process.env
 const path = require('path')
 const fs = require('fs')
@@ -22,7 +22,7 @@ axios.defaults.httpsAgent = new HttpsCookieAgent({
 
 async function main({repository, identifier, liveURL}) {
   execSync(`./no-http-error.js --base-url ${liveURL}`, {stdio: 'inherit', cwd: __dirname})
-  
+
   const tmpDir = path.join(os.tmpdir(), identifier)
   console.log({repository, identifier, liveURL, tmpDir})
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const expect = require('expect')
+const {expect} = require('expect')
 const net = require('net')
 
 // Written by Sindre Sorhus, used under MIT license
