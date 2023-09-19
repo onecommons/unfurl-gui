@@ -74,7 +74,7 @@ export default {
         ...mapGetters(['lookupEnvironment', 'getHomeProjectPath', 'availableProviders', 'hasCriticalErrors']),
         environmentsList() {
             const result = Object.keys(CLUSTER_PROVIDER_NAMES)
-            
+
             if(this.allowAny) return result
 
             const cloudProviderName = lookupCloudProviderAlias(this.cloudProvider)
@@ -274,7 +274,7 @@ export default {
                         <div v-if="showExistingProviders">
                             <gl-dropdown-divider />
                             <gl-dropdown-item @click="selectedCloudProvider = provider" :key="`${provider.template.name}.${provider.environment.name}`" v-for="provider in filteredAvailableProviders">
-                                <div style="display: flex; align-items: center;"> 
+                                <div style="display: flex; align-items: center;">
                                     <detect-icon class="mr-2" :type="provider.template.type"/>
                                     <div style="white-space: pre">{{displayProvider(provider)}}</div>
                                 </div>
