@@ -344,6 +344,7 @@ const actions = {
 
         function deferredRecursiveInstantiate() {
             for(let req of target.requirements) {
+                if(req.min === 0) continue
                 const availableResourceTypes = getters.availableResourceTypesForRequirement({constraint: req}, true)
                 // TODO also create if the only available type is not user settable
 
