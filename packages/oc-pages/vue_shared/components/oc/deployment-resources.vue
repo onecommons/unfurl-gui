@@ -1,5 +1,5 @@
 <script>
-import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlFormCheckbox, GlTabs} from '@gitlab/ui';
+import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlTabs} from '@gitlab/ui';
 import _ from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
@@ -82,23 +82,16 @@ export default {
             deleteNodeData: {},
             loadingDeployment: false,
             deployButton: false,
-            requirementTemp: {},
             resourceName: '',
             userEditedResourceName: false,
             alertNameExists: null,
-            titleKey: '',
-            dataUnsaved: false,
             selectedTemplate: {},
             completedRequirements: false,
             completedMainInputs: false,
-            failedToLoad: false,
             selected: {},
-            autoSaveTime: 2000,
             nodeTitle: '',
-            nodeLevel: null,
             nodeAction: '',
             durationOfAlerts: 5000,
-            checkedNode: true,
             selectedServiceToConnect: '',
             selectingTopLevel: false,
             topLevelSelection: {},
@@ -112,7 +105,7 @@ export default {
             'getPrimaryCard',
             'primaryCardProperties',
             'getCardProperties',
-            'getCardsStacked',
+            'getCardsInTopology',
             'getDeploymentTemplate',
             'getDependencies',
             'hasPreparedMutations',
@@ -121,7 +114,6 @@ export default {
             'cardIsValid',
             'getUsername',
             'getHomeProjectPath',
-            'getCurrentEnvironment',
             'getValidEnvironmentConnections',
             'getHomeProjectPath',
             'getApplicationBlueprint',
@@ -202,10 +194,6 @@ export default {
             return this.createNodeResourceData?.requirement
         },
 
-        checkAllRequirements() {
-            return this.completedRequirements && this.completedMainInputs;
-        },
-
         primaryCardStatus() {
             if(this.displayStatus && this.getDeploymentTemplate.status == 1) {
                 return 1
@@ -251,16 +239,18 @@ export default {
         },
 
         presentableCards() {
+            const topologyCards = this.getCardsInTopology(this.getPrimaryCard.name)
             if(typeof this.filter != 'function') {
-                return this.getCardsStacked
+                return topologyCards
             } else {
-                return this.getCardsStacked.filter(this.filter)
+                return topologyCards.filter(this.filter)
             }
         },
 
         selectingProvider: {
             get() { return this.$route.query.hasOwnProperty('newProvider') },
             set(val) {
+
                 const query = {...this.$route.query}
                 if(val) { query.newProvider = null }
                 else { delete query.newProvider }
@@ -487,7 +477,6 @@ export default {
                 if(created){
                     this.cleanModalResource();
                     this.scrollDown(this.createNodeResourceData.name, 500);
-                    this.dataUnsaved = true;
                 }
             }catch (e) {
                 console.error(e);
@@ -563,6 +552,8 @@ export default {
                 :is-primary="true"
                 class="gl-mb-6"
                 @deleteNode="onDeleteNode"
+                :children="presentableCards"
+                :child-class="{'gl-mb-6': true}"
                 >
                 <template v-if="this.$slots.header" #header>
                     <slot name="header"></slot>
@@ -576,6 +567,23 @@ export default {
                 <template #footer-controls>
                     <slot name="primary-controls-footer"></slot>
                 </template>
+                <!-- slots can't be in nested templates -->
+                <template #child-controls="card">
+                    <slot name="controls" v-bind="card"></slot>
+                </template>
+                <template #child-content="card">
+                    <slot name="card-content-pre"></slot>
+
+                    <oc-list
+                            :display-validation="displayValidation"
+                            :render-inputs="renderInputs"
+                            :display-status="displayStatus"
+                            :template-dependencies="getDependencies(card.name)"
+                            :title-key="card.title"
+                            :readonly="readonly"
+                            :card="card"
+                            />
+                </template>
                 <template #content>
                     <!-- Inputs -->
                     <!--oc-inputs :card="getPrimaryCard" :main-inputs="primaryCardProperties" :component-key="1" /-->
@@ -583,7 +591,6 @@ export default {
                     <slot name="primary-pre"/>
                     <!-- Requirements List -->
                     <oc-list v-if="Object.keys(getPrimaryCard).length > 0 && (typeof filter == 'function' ? filter(getPrimaryCard) && getPrimaryCard: getPrimaryCard)"
-                        tabs-title="Dependencies"
                         :display-validation="displayValidation"
                         :render-inputs="renderInputs"
                         :display-status="displayStatus"
@@ -591,48 +598,9 @@ export default {
                         :cloud="getDeploymentTemplate.cloud"
                         :deployment-template="getDeploymentTemplate"
                         :template-dependencies="getDependencies(getPrimaryCard.name)"
-                        :level="1"
-                        :show-type-first="true"
                         :readonly="readonly"
                         :card="getPrimaryCard"
                         />
-                    <div v-if="presentableCards.length > 0">
-                        <oc-card
-                            v-for="(card, idx) in presentableCards"
-                            :key="__('levelOne-') + card.title"
-                            :display-validation="displayValidation"
-                            :display-status="displayStatus"
-                            :readonly="readonly"
-                            :card="card"
-                            :actions="true"
-                            :level="idx"
-                            class="gl-mb-6"
-                            @deleteNode="onDeleteNode"
-                            >
-                            <template #controls="card">
-                                <slot name="controls" v-bind="card"></slot>
-                            </template>
-                            <template #content>
-                                <!--oc-inputs :card="card" :main-inputs="getCardProperties(card.name)" :component-key="2" /-->
-                                <slot name="card-content-pre"></slot>
-
-                                <oc-list
-                                    tabs-title="Dependencies"
-                                    :display-validation="displayValidation"
-                                    :render-inputs="renderInputs"
-                                    :display-status="displayStatus"
-                                    :template-dependencies="getDependencies(card.name)"
-                                    :deployment-template="getDeploymentTemplate"
-                                    :level="idx"
-                                    :title-key="card.title"
-                                    :show-type-first="true"
-                                    :readonly="readonly"
-                                    :card="card"
-                                    />
-
-                            </template>
-                        </oc-card>
-                    </div>
                 </template>
             </oc-card>
         </div>
@@ -736,9 +704,6 @@ export default {
             @primary="handleDeleteNode"
             >
             <p v-html="getLegendOfModal()"></p>
-            <!--gl-form-checkbox v-model="checkedNode">
-                <b>{{ nodeTitle }}</b>
-            </gl-form-checkbox-->
         </gl-modal>
 
         <!-- Modal Connect -->

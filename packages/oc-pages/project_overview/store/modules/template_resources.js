@@ -366,7 +366,7 @@ const actions = {
                             requirement: req,
                             name: _name,
                             title: _name,
-                            selection: getters.resolveResourceTypeFromAny(req.resourceType),
+                            selection: type,
                         })
                     )
                 }
@@ -807,6 +807,20 @@ const getters = {
         }
 
         return result
+    },
+    getCardsInTopology(state, getters, _, rootGetters) {
+        return function(namespace) {
+            if(namespace == getters.getPrimaryCard.name) {
+                return getters.getCardsStacked.filter(card => !card.name.includes(':'))
+            } else {
+                return getters.getCardsStacked.filter(card => card.name.startsWith(`${namespace}:`))
+            }
+        }
+    },
+    lookupVisibleCard(state, getters, _, rootGetters) {
+        return function(cardName) {
+            return getters.getCardsStacked('*').find(card => card.name == cardName)
+        }
     },
     getDependencies: (_state, getters) => {
         return function(resourceTemplateName) {

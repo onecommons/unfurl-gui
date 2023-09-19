@@ -43,6 +43,11 @@ export default {
             type: Object,
             required: false,
         },
+        childClass: {
+            default: () => ({}),
+            required: false,
+            type: Object
+        },
         badgeHeader: {
             type: Object,
             required: false,
@@ -52,15 +57,6 @@ export default {
                     text:"",
                 }
             }
-        },
-        actions: {
-            type: Boolean,
-            required: false,
-        },
-        level: {
-            type: Number,
-            required: false,
-            default: 1,
         },
         displayValidation: {
             type: Boolean,
@@ -74,7 +70,12 @@ export default {
             type: Number,
             default: null
         },
-        tooltip: String
+        tooltip: String,
+        children: {
+            type: Array,
+            required: false,
+            default: null
+        }
     },
     data() {
         return {
@@ -103,7 +104,16 @@ export default {
         id() {
             return generateCardId(this.card?.name)
         },
-        ...mapGetters(['isMobileLayout', 'cardIsValid', 'getCardType', 'resolveResourceTypeFromAny', 'getDeployments', 'getDeploymentDictionary']),
+        ...mapGetters([
+            'isMobileLayout',
+            'cardIsValid',
+            'getCardType',
+            'resolveResourceTypeFromAny',
+            'getDeployments',
+            'getDeploymentDictionary',
+            'getDeployment',
+            'getCardsInTopology'
+        ]),
 
         badgeHeaderText() {
             const type = this.getCardType(this.card)
@@ -142,8 +152,11 @@ export default {
 
         importedResource() {
             if(!this.card?.imported) return null
-            const [deploymentName, resourceName] = this.card.imported.split(':')
-            const deployment = this.getDeployments.find(dep => dep.name == deploymentName)
+            const [deploymentName, resourceName] = this.card.imported.split(':', 2)
+            const deployment = deploymentName?
+                this.getDeployments.find(dep => dep.name == deploymentName) :
+                this.getDeployment
+
             const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
             const resource = dict['Resource'][resourceName]
 
@@ -156,15 +169,31 @@ export default {
                 return {...this.card, ...this.importedResource, imported: this.card.imported}
             }
             return this.card
+        },
+
+        childAttrs() {
+            const attrs = {}
+
+            for(const key of ['displayValidation', 'displayStatus', 'readonly', 'childClass']) {
+                attrs[key] = this[key]
+            }
+
+            return attrs
+        },
+
+        _children() {
+            return this.children ?? this.getCardsInTopology(this.card.name)
         }
-
-
     },
     methods: {
 
+        onDeleteNode(...args) {
+            this.$emit('deleteNode', ...args)
+        },
+
         openDeletemodal(title, action=__("Delete")) {
             // eslint-disable-next-line no-unused-expressions
-            const payload = {...this.card, level: this.level, action}
+            const payload = {...this.card, action}
             // TODO get rid of bus
             bus.$emit('deleteNode', payload);
 
@@ -173,6 +202,7 @@ export default {
 
         adaptWidth() {
             const container = this.$refs.container
+            if(!container) return
             if(!this.expanded) {
                 container.style.marginTop = `-${container.offsetHeight}px`
             } else {
@@ -247,7 +277,32 @@ export default {
         </template>
         <div ref="containerOuter" class="card-content-outer" :class="{active: setHeight}">
             <div ref="container" class="card-content-container" :class="{collapsed: !expanded, active: setHeight}">
-                <slot name="content"></slot>
+                <slot name="content" v-bind="card"></slot>
+
+                <div v-if="_children.length > 0">
+                    <!-- could also be v-on="$listeners" -->
+                    <oc-card
+                            v-for="card in _children"
+                            :key="card.name"
+                            :card="card"
+                            @deleteNode="onDeleteNode"
+                            v-bind="childAttrs"
+                            :class="childClass"
+                    >
+                        <template #child-controls="card">
+                            <slot name="child-controls" v-bind="card" />
+                        </template>
+                        <template #child-content="card">
+                            <slot name="child-content" v-bind="card"/>
+                        </template>
+                        <template #controls="card">
+                            <slot name="child-controls" v-bind="card" />
+                        </template>
+                        <template #content="card">
+                            <slot name="child-content" v-bind="card"/>
+                        </template>
+                    </oc-card>
+                </div>
             </div>
         </div>
         <template v-if="$slots['footer-controls']" #footer>

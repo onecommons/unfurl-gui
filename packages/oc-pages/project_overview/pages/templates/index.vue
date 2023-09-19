@@ -836,6 +836,7 @@ export default {
           :icon-title="true"
           :icon-color="checkAllRequirements() ? 'icon-green' : 'icon-red'"
           :icon-name="checkAllRequirements() ? 'check-circle-filled' : 'warning-solid'"
+          :children="[]"
           is-primary
           >
           <template #content>
@@ -868,6 +869,7 @@ export default {
                   :icon-name="card._valid ? 'check-circle-filled' : 'warning-solid'"
                   :actions="true"
                   :level="idx"
+                  :children="[]"
                   class="gl-mt-6">
                   <template #content>
                     <!--oc-inputs :card="card" :main-inputs="card.properties" :component-key="2" /-->

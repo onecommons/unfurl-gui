@@ -19,64 +19,42 @@ export default {
     mixins: [commonMethods],
 
     props: {
-        validResourceTypesByRequirement: {
-            type: Object,
-            default: () => {}
-        },
         tabsTitle: {
             type: String,
             required: false,
             default: __('List')
-        },
-        showTypeFirst: {
-            type: Boolean,
-            required: false,
-            default: false
-        },
-
-        level: {
-            type: Number,
-            required: true,
-        },
-
-        titleKey: {
-            type: String,
-            required: false,
-            default: null
         },
 
         card: {
             type: Object,
             required: true
         },
-        cloud: {
-            type: String,
-            required: false,
-        },
-        deploymentTemplate: {
-            type: Object,
-            required: true
-        },
+
         displayValidation: {
             type: Boolean,
             default: true,
         },
+
         displayStatus: {
             type: Boolean,
             default: false,
         },
+
         renderInputs: {
             type: Boolean,
             default: true
         },
+
         renderInputTabs: {
             type: Boolean,
             default: true
         },
+
         renderOutputs: {
             type: Boolean,
             default: true
         },
+
         readonly: {
             type: Boolean,
             default: null
@@ -206,8 +184,8 @@ export default {
         shouldRenderAttributes() {
             return (
                 // TODO fix these names
-                !this.customInputComponent && 
-                this.renderInputs && 
+                !this.customInputComponent &&
+                this.renderInputs &&
                 this.attributes.length
             )
         },
@@ -262,8 +240,11 @@ export default {
         },
         importedResource() {
             if(!this.card?.imported) return null
-            const [deploymentName, resourceName] = this.card.imported.split(':')
-            const deployment = this.getDeployments.find(dep => dep.name == deploymentName)
+            const [deploymentName, resourceName] = this.card.imported.split(':', 2)
+            const deployment = deploymentName?
+                this.getDeployments.find(dep => dep.name == deploymentName) :
+                this.getDeployment
+
             const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
             const resource = dict['Resource'][resourceName]
 
