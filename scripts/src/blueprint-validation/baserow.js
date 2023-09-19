@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const expect = require('expect')
+const {expect} = require('expect')
 
 const {HttpsCookieAgent} = require('http-cookie-agent')
 const axios = require('axios')

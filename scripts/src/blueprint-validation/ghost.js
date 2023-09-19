@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const expect = require('expect')
+const {expect} = require('expect')
 const assert = require('assert')
 
 const {HttpsCookieAgent} = require('http-cookie-agent')
@@ -18,7 +18,7 @@ axios.defaults.httpsAgent = new HttpsCookieAgent({
 async function isSetup(baseURL) {
   const data = (await axios.get(`${baseURL}/ghost/api/admin/authentication/setup/`)).data
   return data.setup.find(el => el.hasOwnProperty('status')).status
-} 
+}
 
 async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, registerName, expectExisting}) {
   const adminSessionEndpoint = `${baseURL}/ghost/api/admin/session`
@@ -44,10 +44,10 @@ async function main({baseURL, useAdminEmail, useAdminPassword, registerEmail, re
 
       assert.ok(await isSetup(baseURL), 'Setup should be completed')
     }
-    
+
     const userRolesFetch = await axios.get(userRolesEndpoint)
     assert.equal(userRolesFetch.data.errors, undefined, JSON.stringify(userRolesFetch.data.errors, null, 2))
-  } 
+  }
 
   /*
    * reenable this when mailu is working again
