@@ -288,7 +288,7 @@ export default {
       if(!val.length && this.createNodeResourceData.requirement) {
         const environmentName = this.$route.params.environment
         this.createError({
-          message: `No types found for ${this.createNodeResourceData.requirement.constraint?.title || this.createNodeResourceData.requirement.name}`,
+          message: `No types found for '${this.createNodeResourceData.requirement.constraint?.title || this.createNodeResourceData.requirement.name}' for the cloud providers in this environment`,
           context: {
             blueprintRepositories: this.blueprintRepositories,
             environmentRepositories: environmentName && this.environmentTypeRepositories(environmentName),
