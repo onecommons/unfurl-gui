@@ -37,7 +37,7 @@ const actions = {
                 patch: {__typename: 'DeploymentPath', environment: _environmentName},
                 target: deploymentDir
             }]
-        
+
         commit('pushPreparedMutation', mutation, {root: true})
         await dispatch('runEnvironmentSaveHooks', null, {root: true})
         await dispatch('commitPreparedMutations', {dryRun}, {root: true})
@@ -83,8 +83,16 @@ const actions = {
             const prevDeploymentName = getPreviousDeploymentName(deployPathName)
             const newDeploymentName = getNewDeploymentName(newDeploymentTitle, targetEnvironmentName)
 
+
             deploymentObj.DeploymentTemplate = { [newDeploymentName]: deploymentObj.DeploymentTemplate[prevDeploymentName] }
             renameDeploymentTemplate(deploymentObj.DeploymentTemplate[newDeploymentName], newDeploymentName, newDeploymentTitle)
+
+            for(const template of Object.values(deploymentObj.ResourceTemplate)) {
+                const type = sourceDeploymentDict.ResourceType[template.type]
+                if(type._sourceinfo) {
+                    template._sourceinfo = type._sourceinfo // not bothering to clone here
+                }
+            }
 
             delete deploymentObj.DeploymentTemplate[newDeploymentName].ResourceTemplate
 
@@ -160,12 +168,12 @@ const actions = {
         if(!subscriptionsStore) return
         const dict = JSON.parse(subscriptionsStore)
         const queued = dict?.queued
-        if(!(dict && queued)) return 
+        if(!(dict && queued)) return
         if(!dict.subscriptions) dict.subscriptions = {}
         const subscriptions = dict.subscriptions
-        
+
         const projectPathsNeedUpdate = []
-        
+
         Object.entries(queued).forEach(([projectPath, items]) => {
             let i = 0
             const _projectPath = projectPath.toLowerCase()
@@ -207,7 +215,7 @@ const actions = {
         }
 
     },
-    
+
     async runDeploymentHooks({state, dispatch}) {
         for(const hook of state.deploymentHooks) {
             let result = hook()
@@ -390,7 +398,7 @@ const getters = {
         return function(deploymentName, environmentName) {
             for(const dict of state.deployments) {
                 const deployment = (
-                    (dict.Deployment && dict.Deployment[deploymentName]) || 
+                    (dict.Deployment && dict.Deployment[deploymentName]) ||
                     (dict.DeploymentTemplate && dict.DeploymentTemplate[deploymentName])
                 )
                 if(deployment && dict._environment == environmentName) // _environment assigned on fetch in environments store
@@ -487,7 +495,7 @@ const getters = {
         const re = new RegExp(`${templateTitle} (\\d+)`)
         let max = 1
         // use below if we want to count from one for each environment
-        // for(const deployment of getters.getDeploymentsByEnvironment(environment)) { 
+        // for(const deployment of getters.getDeploymentsByEnvironment(environment)) {
         //
         // update - this used to use getDeployments but is now using getDeploymentsOrDrafts
         for(const deployment of getters.getDeploymentsOrDrafts) {
