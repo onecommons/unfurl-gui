@@ -82,7 +82,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             shouldCreateDNS: !USE_UNFURL_DNS,
           })
         })
-      } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.DigitalOcean') {
+      } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'ConnectsTo.DigitalOceanEnvironment') {
         env = DO_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE // not a mistake
         cy.whenEnvironmentAbsent(env, () => {

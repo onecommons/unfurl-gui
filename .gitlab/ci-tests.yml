@@ -1,3 +1,8 @@
+nestedcloud:
+  spec: ./cypress/e2e/blueprints/*nestedcloud*.js
+  cond: $TEST == "nestedcloud" || $TEST == "all"
+  description: Run nestedcloud tests (must be &lt;namespace&gt;/nestedcloud)
+
 nextcloud_aws:
   spec: ./cypress/e2e/blueprints/aws*nextcloud*.js
   cond: $TEST == "nextcloud" || $TEST == "nextcloud_aws" || $TEST == "all"
@@ -84,7 +89,7 @@ nextcloud_shared_volumes:
   cond: $TEST == "shared_volumes" || $TEST == "all"
   description: >
     Runs all nextcloud shared volume tests
-    
+
     The test does the following:
 
     1. Deploys nextcloud with a volume
