@@ -157,6 +157,8 @@ export default {
                 this.getDeployments.find(dep => dep.name == deploymentName) :
                 this.getDeployment
 
+            if(!deployment) return null
+
             const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
             const resource = dict['Resource'][resourceName]
 
