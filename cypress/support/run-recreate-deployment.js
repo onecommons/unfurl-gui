@@ -236,8 +236,9 @@ Cypress.Commands.add('recreateDeployment', options => {
           }
 
           cy.get(`[data-testid^=tab-requirements-]`)
-            .last()
-            .click() // this is a bit hacky
+            .each(el => el.click())
+            // .last()
+            // .click() // this is a bit hacky
 
           let dependencyCreate = $document.querySelector(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
           if(!dependencyCreate) continue
@@ -246,7 +247,8 @@ Cypress.Commands.add('recreateDeployment', options => {
             && $document.querySelector(`[data-testid=tab-extras-${template.name}]`)
           ) {
             cy.get(`[data-testid=tab-extras-${template.name}]`)
-              .click() // this is even worse
+              .each(el => el.click())
+            // .click() // this is even worse
           }
 
           // todo: use test id instead of prev
