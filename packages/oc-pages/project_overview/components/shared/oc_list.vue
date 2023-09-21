@@ -112,6 +112,7 @@ export default {
             'lookupEnvironmentVariable',
             'cardCanIncrementalDeploy',
             'getDeployments', 'getDeploymentDictionary',
+            'getDeployment',
             'resourceTemplateInputsSchema',
             'getCurrentContext'
         ]),
@@ -244,6 +245,8 @@ export default {
             const deployment = deploymentName?
                 this.getDeployments.find(dep => dep.name == deploymentName) :
                 this.getDeployment
+
+            if(!deployment) return null
 
             const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
             const resource = dict['Resource'][resourceName]
