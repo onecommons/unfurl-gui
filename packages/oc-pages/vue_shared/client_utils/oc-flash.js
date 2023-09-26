@@ -18,7 +18,8 @@ export function hideLastFlash() {
     }
 }
 
-export function createFlash(options) {
+export function createFlash(messageOrOptions, ...args) {
+    const options = typeof messageOrOptions == 'string'? Object.assign({message: messageOrOptions}, ...args): messageOrOptions
     let message = options.message || ''
     let type = options.type
     if(options.issue) {

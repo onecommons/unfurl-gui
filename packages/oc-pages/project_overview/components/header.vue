@@ -33,24 +33,31 @@ export default {
     },
 
     methods: {
-        toggleStar() {
-            axios
-                .post(this.$projectGlobal.buttonStar.endpoint)
-                .then(({ data }) => {
-                    const { star_count } = data;
-                    // // eslint-disable-next-line babel/camelcase
-                    this.star.count = star_count;
-                    // // eslint-disable-next-line babel/camelcase
-                    if (star_count > this.$projectGlobal.buttonStar.count) {
-                        this.star.text = __("Unstar");
-                        this.star.icon = 'star';
-                    } else {
-                        this.star.text = __("Star");
-                        this.star.icon = 'star-o';
-                    }
-                })
-                .catch(() => createFlash(__('Star toggle failed. Try again later.')));
+        async toggleStar() {
+            if(!window.gon.current_username) {
+                window.location.href = '/users/sign_in?redirect_to_referer=yes'
+                return false
+            }
+
+            try {
+                const {data} = (await axios.post(this.$projectGlobal.buttonStar.endpoint))
+                const { star_count } = data;
+                // // eslint-disable-next-line babel/camelcase
+                this.star.count = star_count;
+                // // eslint-disable-next-line babel/camelcase
+                if (star_count > this.$projectGlobal.buttonStar.count) {
+                    this.star.text = __("Unstar");
+                    this.star.icon = 'star';
+                } else {
+                    this.star.text = __("Star");
+                    this.star.icon = 'star-o';
+                }
+            } catch(e) {
+                console.error(e)
+                createFlash(__('Star toggle failed. Try again later.'))
+            }
         },
+
         openShareModal() {
             this.$refs.shareModal.visible = true
         },
