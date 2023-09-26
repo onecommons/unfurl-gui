@@ -72,7 +72,7 @@ const ENVIORONMENT_VARIABLE_TRANSFORMATIONS = {
       dest = `${dest}.json`
     }
     fs.copyFileSync(value, path.join(FIXTURES_TMP, dest))
-    return dest
+    return `/tmp/${dest}`
   }
 }
 
