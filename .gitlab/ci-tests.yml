@@ -1,3 +1,9 @@
+sanity:
+  spec: ./cypress/e2e/00_visitor/*.js
+  cond: $TEST == "sanity" || $TEST == "visitor" || $TEST == "all"
+  description: Sanity checks for signed out users
+  username: nobody
+
 nestedcloud:
   spec: ./cypress/e2e/blueprints/*nestedcloud*.js
   cond: $TEST == "nestedcloud" || $TEST == "all"

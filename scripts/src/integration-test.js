@@ -2,16 +2,21 @@
 
 const OC_USERNAME = process.env.OC_USERNAME
 const OC_PASSWORD = process.env.OC_PASSWORD
+const OC_URL = process.env.OC_URL
 const OC_INVITE_CODE = process.env.OC_INVITE_CODE
 const OC_DISCRIMINATOR = process.env.OC_DISCRIMINATOR
 const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
 
 const GENERATED_PASSWORD = btoa(Number.MAX_SAFE_INTEGER * Math.random())
 
+
 const {execFileSync, spawnSync} = require('child_process')
+const axios = require('axios')
 const path = require('path')
 const fs = require('fs')
 const {unfurlGuiRoot} = require('./shared/util.js')
+
+const FIXTURES_TMP = path.join(unfurlGuiRoot, 'cypress/fixtures/tmp')
 
 const READ_ARGS = {
   username: (args) => args.u || args.username,
@@ -35,19 +40,40 @@ function readArgs(args) {
   return result
 }
 
+function fetchNamespaceProjects(namespace) {
+  async function doFetch() {
+    try {
+      const projects = []
+      for(let i = 1;; i++) {
+        const children = (await axios.get(`${OC_URL}/groups/${namespace}/-/children.json?page=${i}`)).data
+        if(children.length == 0) break
+        for(const child of children) {
+          if(child.type == 'project') {
+            projects.push(child)
+          }
+        }
+      }
+      return projects
+    } catch(e) {
+      console.error(e)
+      return []
+    }
+  }
+
+  return fetchNamespaceProjects[namespace] || (fetchNamespaceProjects[namespace] = doFetch())
+}
 
 const ENVIORONMENT_VARIABLE_TRANSFORMATIONS = {
   'GOOGLE_APPLICATION_CREDENTIALS': (value) => {
-    let dest = path.join('tmp', path.basename(value))
-    
+    let dest = path.basename(value)
+
     // ci drops .json extension needed for fixtures
     if(!dest.endsWith('.json')) {
       dest = `${dest}.json`
     }
-    fs.copyFileSync(value, path.join(unfurlGuiRoot, 'cypress/fixtures', dest))
+    fs.copyFileSync(value, path.join(FIXTURES_TMP, dest))
     return dest
   }
-
 }
 
 function transformEnvironmentVariables(key, value) {
@@ -66,7 +92,8 @@ const INTERNAL_TEST_VARIALBES = [
   'GCP_ENVIRONMENT_NAME',
   'AZ_ENVIRONMENT_NAME',
   'GENERATED_PASSWORD',
-  'EXTERNAL'
+  'EXTERNAL',
+  'NAMESPACE_PROJECTS'
 ]  // always overriden
 
 const FORWARD_ENVIRONMENT_VARIABLES = [
@@ -76,8 +103,9 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
 
 
 
-function forwardedEnvironmentVariables(override) {
+async function forwardedEnvironmentVariables(override) {
   const result = {}
+
   for(const envvar of FORWARD_ENVIRONMENT_VARIABLES) {
     let value
     if(value = override[envvar] || process.env[envvar]) {
@@ -99,7 +127,7 @@ function identifierFromCurrentTime(baseId) {
 
 function createDashboardCommand(username, dashboardRepo) {
   //if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
-  const 
+  const
     file = path.join(__dirname, 'create-user.js'),
     args = ['--username', username, '--external', EXTERNAL],
     options = {stdio: 'inherit'}
@@ -145,10 +173,12 @@ async function main() {
     prepareUserCommand = createDashboardCommand(username, dashboardRepo)
 
 
-    console.log(`Created user ${username}`)  
+    console.log(`Created user ${username}`)
+  } else if (username == 'nobody') {
+    username = undefined
   }
 
-  console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)
+  if(username) console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)
 
   const GCP_ENVIRONMENT_NAME = identifierFromCurrentTime('gcp').toLowerCase()
   const AWS_ENVIRONMENT_NAME = identifierFromCurrentTime('aws').toLowerCase()
@@ -157,13 +187,23 @@ async function main() {
   const AZ_ENVIRONMENT_NAME = identifierFromCurrentTime('az').toLowerCase()
   const INTEGRATION_TEST_ARGS = JSON.stringify(parsedArgs)
 
-  let env = {OC_IMPERSONATE: username, GENERATED_PASSWORD, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, AZ_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS}
+  const NAMESPACE_PROJECTS = (await fetchNamespaceProjects(REPOS_NAMESPACE)).map(p => p.name).join(',')
+
+  fs.writeFileSync(path.join(FIXTURES_TMP, 'namespace_projects.json'), JSON.stringify(await fetchNamespaceProjects(REPOS_NAMESPACE)))
+
+  let env = {OC_IMPERSONATE: username, GENERATED_PASSWORD, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, AZ_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS, NAMESPACE_PROJECTS}
 
   if(group) {
     env.DEFAULT_NAMESPACE = group
   }
 
-  const forwardedEnv = forwardedEnvironmentVariables(env)
+  const forwardedEnv = await forwardedEnvironmentVariables(env)
+
+  if(!username) {
+    delete forwardedEnv['CYPRESS_OC_USERNAME']
+    delete forwardedEnv['CYPRESS_OC_PASSWORD']
+    delete forwardedEnv['CYPRESS_OC_IMPERSONATE']
+  }
 
   const cypressCommand = invokeCypressCommand(args._, forwardedEnv)
 

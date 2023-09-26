@@ -12,11 +12,11 @@ const ciTests = YAML.parse(ciTestsFileContents)
 const result = {}
 
 Object.entries(ciTests).forEach(([key, value]) => {
-  const {spec, cond, env} = value
+  const {spec, cond, env, username} = value
   result[key] = {
     'extends': '.tests',
     script: [
-      `${env || ''} yarn run integration-test run --namespace onecommons/blueprints -- --browser chrome -s '${spec}'`
+      `${env || ''} yarn run integration-test run ${username? `--username ${username}`: ''} --namespace $OC_NAMESPACE -- --browser chrome -s '${spec}'`
     ],
     rules: [
       { 'if': cond }

@@ -33,6 +33,7 @@ If successful the command will output the pipeline URL.
 
 | Pattern | Spec | Description |
 | ------- | ---- | ----------- |
+| <code>$TEST == "sanity" &#124;&#124; $TEST == "visitor" &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/00_visitor/&#42;.js</code> | Sanity checks for signed out users |
 | <code>$TEST == "nestedcloud" &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/&#42;nestedcloud&#42;.js</code> | Run nestedcloud tests (must be &lt;namespace&gt;/nestedcloud) |
 | <code>$TEST == "nextcloud" &#124;&#124; $TEST == "nextcloud_aws" &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/aws&#42;nextcloud&#42;.js</code> | Runs all nextcloud tests on aws |
 | <code>$TEST == "nextcloud" &#124;&#124; $TEST == "nextcloud_gcp" &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/gcp&#42;nextcloud&#42;.js</code> | Runs all nextcloud tests on gcp |
