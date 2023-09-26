@@ -14,6 +14,8 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "integration-test": "./scripts/src/integration-test.js",
+    "generate:gitlab-ci": "./scripts/src/generate-ci-tests.js",
+    "generate:readme": "./scripts/src/generate-readme.js",
     "lint": "vue-cli-service lint",
     "apollo": "vue-cli-service apollo:dev --generate-schema",
     "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",

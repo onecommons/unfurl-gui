@@ -2,9 +2,16 @@
 
 USAGE=https://raw.githubusercontent.com/onecommons/unfurl-gui/cy-tests/scripts/src/trigger-pipeline-usage.txt
 
-if [[ -z "$1" ]] || [[ $1 ==  "--help" ]]; then
-  curl -sSL $USAGE
-  exit
+function usage() {
+  curl -sSL $USAGE 1>&2
+  exit 1
+}
+
+TEST=$1
+shift
+
+if [[ -z "$TEST" ]] || [[ $TEST ==  "--help" ]]; then
+  usage
 fi
 
 if [[ -z "${TOKEN}" ]] && [[ -z "${OC_URL}" ]]; then
@@ -17,14 +24,41 @@ fi
 
 var_if_set () { test -z "${!1}" || echo -n "-F variables[$1]=${!1} " ; }
 
+while getopts "n:-:" o; do
+  case $o in
+    -)
+      case ${OPTARG} in
+        namespace)
+          namespace="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+          ;;
+        namespace=*)
+          namespace=${OPTARG#*=}
+          ;;
+        *)
+          usage
+          ;;
+      esac
+      ;;
+    n)
+      namespace=${OPTARG}
+      ;;
+    *)
+      usage
+      ;;
+  esac
+done
+
 VARIABLE_LIST=https://raw.githubusercontent.com/onecommons/unfurl-gui/cy-tests/scripts/src/forwarded-variables.json
 PROJECT_PATH=${UNFURL_GUI_PROJECT_PATH:-"onecommons/unfurl-gui"}
 GITLAB_SERVER_URL=${GITLAB_SERVER_URL:-"$OC_URL"}
+OC_NAMESPACE=${OC_NAMESPACE:-"onecommons/blueprints"}
+NAMESPACE=${namespace:-"$OC_NAMESPACE"}
 
 OUTPUT=$(curl -sSL -X POST \
   -F "ref=cy-tests" \
   -F "token=$TOKEN" \
-  -F "variables[TEST]=$1" \
+  -F "variables[TEST]=$TEST" \
+  -F "variables[OC_NAMESPACE]=$NAMESPACE" \
   $( for var in $(curl -sSL "$VARIABLE_LIST" | jq '.[]' -r) ; do var_if_set "$var" ; done ) \
   $GITLAB_SERVER_URL/api/v4/projects/$(echo -n $PROJECT_PATH | sed 's|/|%2F|g')/trigger/pipeline)
 

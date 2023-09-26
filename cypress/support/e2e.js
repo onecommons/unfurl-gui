@@ -18,12 +18,13 @@ import './commands'
 
 const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')
+const GENERATED_PASSWORD = Cypress.env('GENERATED_PASSWORD')
 const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
 const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
 const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
-const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS') 
+const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 
@@ -41,7 +42,7 @@ const origLog = Cypress.log
 Cypress.log = function (opts, ...other) {
   if ( ['fetch', 'xhr', 'wrap'].includes( opts.displayName )) {
     return
-  } 
+  }
   try {
     if ( opts.message?.includes("TypeError: ") ) {
       console.warn(opts.message)
@@ -78,8 +79,7 @@ before(() => {
             cy.visit(`/${IMPERSONATE}/dashboard`)
           }
         }
-      } else {
-        const GENERATED_PASSWORD = Cypress.env('GENERATED_PASSWORD')
+      } else if (GENERATED_PASSWORD && IMPERSONATE) {
         cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(IMPERSONATE)
         cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(GENERATED_PASSWORD)
         cy.get(`[data-qa-selector="sign_in_button"]`).click()
