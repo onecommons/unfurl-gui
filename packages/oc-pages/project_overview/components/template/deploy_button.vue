@@ -4,6 +4,7 @@ import { mapGetters } from 'vuex'
 import { Tooltip as ElTooltip } from 'element-ui'
 import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox} from '@gitlab/ui';
 import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
+import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
 
 export default {
     name: 'DeployButton',
@@ -71,6 +72,11 @@ export default {
         },
         showDeployOptionsFooter() {
             return this.userCanEdit
+        },
+        localDeployOnly() {
+            // *not* reactive
+
+            return !!getTransientUnfurlServerOverride()
         }
     }
 }
@@ -95,12 +101,12 @@ export default {
                         :icon="deployButtonIcon"
                         class="deploy-action"
                         :disabled="deployStatus == 'disabled' && !markedReady"
-                        @click.prevent="triggerDeploy"
+                        @click.prevent="localDeployOnly? triggerLocalDeploy(): triggerDeploy()"
                     >
-                        {{ deployButtonText }}
+                        {{ localDeployOnly? 'Deploy Locally': deployButtonText}}
                     </gl-button>
                     <gl-dropdown v-if="userCanEdit" :disabled="deployStatus == 'disabled'" right>
-                        <gl-dropdown-item @click="triggerLocalDeploy" variant="confirm">
+                        <gl-dropdown-item v-if="!localDeployOnly" @click="triggerLocalDeploy" variant="confirm">
                             Deploy Locally
                         </gl-dropdown-item>
 

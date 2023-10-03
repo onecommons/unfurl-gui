@@ -27,14 +27,15 @@ export function createFlash(messageOrOptions, ...args) {
         //message = `${message}<div>${options.issue}</div>`
     }
     const result = glCreateFlash({...options, message, variant: type}).$el
+    result.parentNode.style.maxWidth = '100%'
     if(options.linkTo && options.linkText) {
         window.requestAnimationFrame(() => {
-            const flashText = result.$el
+            const flashText = result
             const link = document.createElement('A')
             const linkContainer = document.createElement('DIV')
             link.textContent = options.linkText
             link.href = options.linkTo
-            link.target = '_blank'
+            link.target = options.linkTarget || '_blank'
             linkContainer.appendChild(link)
             flashText.appendChild(linkContainer)
         })

@@ -5,6 +5,7 @@ export const INTERNAL_STORAGE_KEYS = {
 export const HIDDEN_OPTION_KEYS = {
     encodedPasswordExportUrls: 'encoded-password-export-urls',
     unfurlServerUrl: 'unfurl-server-url',
+    unfurlServerUrlDev: 'unfurl-server-url-dev',
     connectWithoutCopy: 'connect-without-copy',
     sendLatestCommit: 'always-send-latest-commit',
     uploadStateBreakpoint: 'upload-state-breakpoint',
@@ -52,7 +53,7 @@ export function setLocalStorageKey(_key, value) {
     }
 
     if(value !== undefined) {
-        localStorage[key] = value
+        localStorage[key] = typeof value == 'string'? value: JSON.stringify(value)
     }
 }
 
@@ -79,8 +80,24 @@ export function shouldConnectWithoutCopy() {
     return isTruthyStorageValue(lookupKey( HIDDEN_OPTION_KEYS.connectWithoutCopy ))
 }
 
-export function unfurlServerUrlOverride() {
-    return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl )
+export function unfurlServerUrlOverride(currentProject) {
+    return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl ) || unfurlServerUrlDev(currentProject)
+}
+
+export function unfurlServerUrlDev(currentProject) {
+    const setting = lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrlDev )
+    if(setting) {
+        let {project, url} = JSON.parse(setting)
+        if(!project || project != currentProject) return
+        if(url.startsWith('localhost')) {
+            try {
+                url = new URL(`http://${url}`)
+                return url.toString()
+            } catch(e) {
+                console.error(e)
+            }
+        }
+    }
 }
 
 export function alwaysSendLatestCommit() {
