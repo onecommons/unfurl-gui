@@ -19,19 +19,24 @@ export default {
         CodeClipboard,
         GlLoadingIcon
     },
-    data() {
-        return {
-            blueprintProjectInfo: null,
-            gettingBlueprintCreds: false,
-            gettingBlueprintInfo: true,
-        }
-    },
     props: {
         environment: Object,
         deployment: Object,
         projectId: {
             type: [String, Number],
             default: () => window.gon.projectId
+        },
+        instruction: {
+            default: 'Run these shell commands to deploy this on your local machine:',
+            type: String
+        }
+
+    },
+    data() {
+        return {
+            blueprintProjectInfo: null,
+            gettingBlueprintCreds: false,
+            gettingBlueprintInfo: !this.noDeploy,
         }
     },
     computed: {
@@ -43,8 +48,8 @@ export default {
             'lookupDeployPath'
         ]),
         deployPath() {
-            const deploymentName = this.deployment.name
-            const environmentName = this.environment.name
+            const deploymentName = this.deployment?.name
+            const environmentName = this.environment?.name
             return this.lookupDeployPath(deploymentName, environmentName)
         },
         blueprintCredentials() {
@@ -61,7 +66,7 @@ export default {
             return {username, password}
         },
         blueprintUrl() {
-            let result = `${protocol}//${server}/${this.deployment.projectPath}`
+            let result = `${protocol}//${server}/${this.deployment?.projectPath}`
 
             const {username, password} = this.blueprintCredentials
             if(!(username && password)) {
@@ -79,11 +84,11 @@ export default {
             const token = this.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
             const projectPath = this.getHomeProjectPath
             const projectId = this.projectId
-            const projectName = this.getHomeProjectPath.split('/').pop()            
-            const deploymentName = this.deployment.name
-            const environmentName = this.environment.name
+            const projectName = this.getHomeProjectPath.split('/').pop()
+            const deploymentName = this.deployment?.name
+            const environmentName = this.environment?.name
             const deployPath = this.deployPath?.name
-            const blueprint = this.deployment.blueprint
+            const blueprint = this.deployment?.blueprint
             const blueprintUrl = this.blueprintUrl
             return { protocol, username, token, server, projectName, projectPath, projectId, environmentName, deploymentName, deployPath, blueprint, blueprintUrl }
         },
@@ -98,7 +103,10 @@ export default {
             const extraArgs = this.deployPath?.pipeline?.variables?.EXTRA_WORKFLOW_ARGS || ''
             return `unfurl deploy${extraArgs && ' ' + extraArgs} --commit --push ${deploymentName}`
         },
-        deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' }
+        deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' },
+        noDeploy() {
+            return !(this.deployment && this.environment)
+        }
     },
     methods: {
         ...mapActions(['tryFetchEnvironmentVariables', 'deployInto'])
@@ -114,14 +122,14 @@ export default {
                     // we don't have a deploy token for this blueprint
 
                     this.gettingBlueprintCreds = true
-                    
+
                     const environmentName = this.environment.name
                     const deploymentName = this.deployment.name
 
                     const params = {
                         environmentName,
-                        projectUrl: `${window.gon.gitlab_url}/${this.deployment.projectPath}.git`,
-                        deployPath: `environments/${environmentName}/${this.deployment.projectPath}/${deploymentName}`,
+                        projectUrl: `${window.gon.gitlab_url}/${this.deployment?.projectPath}.git`,
+                        deployPath: `environments/${environmentName}/${this.deployment?.projectPath}/${deploymentName}`,
                         deploymentName,
                         deploymentBlueprint: this.deployment.source,
                         deployOptions: {
@@ -142,7 +150,7 @@ export default {
 
     async created() {
         try {
-            this.blueprintProjectInfo = await fetchProjectInfo(encodeURIComponent(this.deployment.projectPath))
+            this.blueprintProjectInfo = await fetchProjectInfo(encodeURIComponent(this.deployment?.projectPath))
         } catch(e) {throw e}
         finally {
             this.gettingBlueprintInfo = false
@@ -156,7 +164,7 @@ export default {
     <div>
         <gl-loading-icon v-if="this.gettingBlueprintInfo" label="Loading" size="lg" style="margin-top: 5em;" />
         <div v-else>
-            <p>Run these shell commands to deploy this on your local machine:</p>
+            <p>{{instruction}}</p>
             <p>
                 Install Unfurl if needed:
                 <code-clipboard class="mt-1">python -m pip install -U unfurl</code-clipboard>
@@ -164,9 +172,9 @@ export default {
             <p >
                 Clone this Unfurl project if you haven't already:
                 <code-clipboard class="mt-1">{{localCloneInvocation}}</code-clipboard>
-                (Or if you have, run "git pull" to get latest.)
+                (Or if you have, run <code>git pull</code> to get latest.)
             </p>
-            <p>
+            <p v-if="!noDeploy">
                 Deploy the blueprint:
                 <code-clipboard class="mt-1">cd {{getHomeProjectName}}; {{localDeployInvocation}}</code-clipboard>
             </p>
