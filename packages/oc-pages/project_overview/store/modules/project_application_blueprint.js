@@ -334,8 +334,27 @@ const actions = {
         }
     },
 
-    async blueprintFetchTypesWithParams({state, getters, dispatch}, {params}) {
-        const types = await fetchTypeRepositories(getters.blueprintRepositories, params)
+    async blueprintFetchTypesWithParams({state, getters, commit, dispatch}, {params}) {
+        let types
+        try {
+            types = await fetchTypeRepositories(getters.blueprintRepositories, params)
+        } catch(e) {
+            const context = {
+                repositories: getters.blueprintRepositories,
+                params
+            }
+
+            try { Object.assign(context, e) }
+            catch(e) {console.error(e)}
+
+            commit('createError', {
+                message: `@blueprintFetchTypesWithParams: failed to fetch types (${e.message})`,
+                context,
+                severity: 'major'
+            }, {root: true})
+
+            return
+        }
 
         await dispatch(
             'useProjectState',

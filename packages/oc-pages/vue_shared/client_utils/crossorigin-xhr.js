@@ -14,6 +14,9 @@ export class XhrIFrame {
         element.className = 'd-none'
         element.src = `${XHR_JAIL_URL}?${id}`
         document.body.appendChild(element)
+        this.ready = new Promise(
+            resolve => this.element.contentWindow.addEventListener('DOMContentLoaded', resolve)
+        )
     }
 
     dispatchEvent(event) {

@@ -566,10 +566,30 @@ const actions = {
             deploymentName
         )
 
-        const types = await fetchTypeRepositories(
-            currentEnvironmentRepositories,
-            params
-        )
+        let types
+
+        try {
+            types = await fetchTypeRepositories(
+                currentEnvironmentRepositories,
+                params
+            )
+        } catch(e) {
+            const context = {
+                currentEnvironmentRepositories,
+                params,
+            }
+
+            try { Object.assign(context, e) }
+            catch(e) {console.error(e)}
+
+            commit('createError', {
+                message: `@environmentFetchTypesWithParams: failed to fetch types (${e.message})`,
+                context,
+                severity: 'major'
+            }, {root: true})
+
+            return
+        }
 
         const currentTypes = state.resourceTypeDictionaries[environmentName]
 

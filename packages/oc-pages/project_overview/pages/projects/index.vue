@@ -10,10 +10,10 @@ import EnvironmentCreationDialog from '../../components/environment-creation-dia
 import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
-import {OcTab, DetectIcon, EnvironmentSelection} from 'oc_vue_shared/components/oc'
+import LocalDevelop from '../../components/local-develop.vue'
+import {OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
-import { slugify, lookupCloudProviderAlias, USER_HOME_PROJECT } from 'oc_vue_shared/util'
-import {deleteEnvironmentByName} from 'oc_vue_shared/client_utils/environments'
+import { slugify } from 'oc_vue_shared/util'
 import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
 import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
@@ -38,7 +38,8 @@ export default {
         YourDeployments,
         OpenCloudDeployments,
         GlMarkdown,
-        NotesWrapper
+        NotesWrapper,
+        LocalDevelop
     },
     directives: {
         GlModal: GlModalDirective,
@@ -151,6 +152,7 @@ export default {
         activeTab() {
             const {availableBlueprintsTab, openCloudDeploymentsTab, yourDeploymentsTab, commentsTab} = this.$refs
             if(availableBlueprintsTab?.active) return 'availableBlueprintsTab'
+            if(developmentTab?.active) return 'developmentTab'
             if(openCloudDeploymentsTab?.active) return 'openCloudDeploymentsTab'
             if(yourDeploymentsTab?.active) return 'yourDeploymentsTab'
             if(commentsTab?.active) return 'commentsTab'
@@ -400,6 +402,19 @@ export default {
                             <TableWithoutHeader :data-rows="getTemplatesList" :editable="hasEditPermissions" />
                         </gl-card>
                     </div>
+                </oc-tab>
+                <oc-tab v-if="hasEditPermissions" ref="developmentTab" title="Develop">
+                    <gl-card>
+                        <template #header>
+                            <div class="d-flex align-items-center">
+                                <gl-icon name="archive" class="mr-2"/>
+                                    <h5 class="mb-0 mt-0">
+                                        Local Unfurl Server Development
+                                    </h5>
+                            </div>
+                        </template>
+                        <local-develop />
+                    </gl-card>
                 </oc-tab>
                 <oc-tab v-if="environmentsAreReady && yourDeployments.length > 0" ref="yourDeploymentsTab" title="Your Deployments">
                     <div class="">

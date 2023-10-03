@@ -5,6 +5,20 @@ import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo} from '../storage-keys';
 import _ from 'lodash'
 
+let transientOverride
+
+export function setTransientUnfurlServerOverride(override) {
+    transientOverride = override
+}
+
+export function getTransientUnfurlServerOverride() {
+    return transientOverride
+}
+
+function getOverride(projectPath) {
+    return transientOverride || unfurlServerUrlOverride(projectPath)
+}
+
 function createHeaders({sendCredentials, username, password}) {
     const headers = {}
     const _sendCredentials = sendCredentials ?? true
@@ -16,25 +30,27 @@ function createHeaders({sendCredentials, username, password}) {
     return headers
 }
 
-let ufsvIFrame
-if(unfurlServerUrlOverride()) { ufsvIFrame = new XhrIFrame() }
-
-async function doXhr(_method, url, body, headers) {
+async function doXhr(projectPath, _method, url, body, headers) {
     const method = _method.toUpperCase()
     if(!['GET', 'POST'].includes(method)) throw new Error(`@doXhr: unexpected method for unfurl server "${method}"`)
-    if(!unfurlServerUrlOverride()) {
+    if(!getOverride(projectPath)) {
         let response
         if(method == 'GET') { response = await axios.get(url, {headers}) }
         else if(method == 'POST') { response = await axios.post(url, body, {headers}) }
         return response?.data
     } else {
-        return await ufsvIFrame.doXhr(...arguments)
+        let ufsvIFrame = doXhr.ufsvIFrame
+        if(!doXhr.ufsvIFrame) { doXhr.ufsvIFrame = ufsvIFrame = new XhrIFrame() }
+
+        await ufsvIFrame.ready
+
+        return await ufsvIFrame.doXhr(...Array.from(arguments).slice(1))
     }
 
 }
 
 export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials}) {
-    const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
+    const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult
     const _sendCredentials = sendCredentials ?? true
@@ -55,7 +71,9 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     exportUrl += `&branch=${branch || _branch}`
     exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
 
-    if(alwaysSendLatestCommit() || !unfurlServerUrlOverride()) {
+    // if(alwaysSendLatestCommit() || !getOverride(projectPath)) {
+    // pass latest commit when it's not the repo we're developing
+    if(alwaysSendLatestCommit() || !unfurlServerUrlOverride(projectPath)) {
         exportUrl += `&latest_commit=${latestCommit}`
     }
 
@@ -63,13 +81,13 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += '&include_all_deployments=1'
     }
 
-    return await doXhr('GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
+    return await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
 }
 
 const unfurlTypesResponsesCache = {}
 const constraintCombinationsWithCloudmap = {}
 export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}, index) {
-    const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
+    const baseUrl = getOverride() || DEFAULT_UNFURL_SERVER_URL
 
     // this is rather convoluted, but we don't want to fetch last commit for a tagged release
     // this code would probably be removed once unfurl server doesn't need a last commit
@@ -115,7 +133,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
         exportUrl += `&file=${encodeURIComponent(file.split('#')[0])}`
     }
 
-    if(latestCommit && (alwaysSendLatestCommit() || !unfurlServerUrlOverride())) {
+    if(latestCommit && (alwaysSendLatestCommit() || !getOverride(projectPath))) {
         exportUrl += `&latest_commit=${latestCommit}`
     }
 
@@ -127,7 +145,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
         }
     })
 
-    const result = doXhr('GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
+    const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
     unfurlTypesResponsesCache[cacheKey] = result
 
     return await result
@@ -180,7 +198,7 @@ export async function fetchTypeRepositories(repositories, params) {
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
-    const baseUrl = unfurlServerUrlOverride() || DEFAULT_UNFURL_SERVER_URL
+    const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
     const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
     const [latestCommit, _branch] = lastCommitResult
@@ -203,7 +221,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     let data
 
     try {
-        data = await doXhr('POST', url, body, headers)
+        data = await doXhr(projectPath, 'POST', url, body, headers)
     } catch(e) {
         if(e.response?.status == 409) {
             setLastCommit(encodeURIComponent(projectPath), branch, undefined)

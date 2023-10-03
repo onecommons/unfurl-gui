@@ -32,5 +32,6 @@ export default{
 <style scoped>
 .ufgui-code-clipboard code {
     background: inherit;
+    line-height: 1.3; /* underscores aren't showing up otherwise */
 }
 </style>
