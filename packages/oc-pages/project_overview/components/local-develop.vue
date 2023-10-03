@@ -17,10 +17,8 @@ export default {
         },
         serveCommand() {
             return [
-                'env',
-                `UNFURL_CLOUD_SERVER=${window.location.origin}`,
                 'unfurl serve',
-                `--cors ${window.location.origin}`,
+                `--cloud-server ${window.location.origin}`,
                 this.likelyClonePath
             ].join(' ')
         }
