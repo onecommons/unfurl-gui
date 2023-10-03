@@ -31,7 +31,8 @@ async function login(gitlabURL, gitlabUsername, gitlabPassword, impersonate, for
       "Content-Length": form.getLengthSync()
     }
 
-    const status = (await axios.post(signInURL, form, {headers})).status
+    const response = await axios.post(signInURL, form, {headers})
+    const status = response.status
 
     result = status < 400 && status >= 200
     if(!result) return false

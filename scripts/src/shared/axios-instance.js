@@ -4,6 +4,7 @@ axios.defaults.validateStatus = () => true
 
 if(process.env['OC_TOKEN']) {
   axios.defaults.headers.common['PRIVATE-TOKEN'] = process.env['OC_TOKEN']
+  axios.defaults.headers.common['Accept-Language'] = 'en-US'
 }
 
 const { wrapper } = require('axios-cookiejar-support')
