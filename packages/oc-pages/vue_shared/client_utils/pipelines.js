@@ -69,6 +69,7 @@ export async function prepareVariables({
     upstreamProject,
     upstreamProjectPath,
     forceCheck,
+    dryRun,
     ...extraVars
 }) {
 
@@ -80,6 +81,10 @@ export async function prepareVariables({
 
     if(forceCheck) {
         EXTRA_WORKFLOW_ARGS.push('--check')
+    }
+
+    if(dryRun) {
+        EXTRA_WORKFLOW_ARGS.push('--dryrun')
     }
 
     EXTRA_WORKFLOW_ARGS = EXTRA_WORKFLOW_ARGS.join('') || false
