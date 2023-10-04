@@ -602,7 +602,7 @@ export default {
       }
     },
 
-    triggerLocalDeploy: _.debounce(async function({forceCheck}) {
+    triggerLocalDeploy: _.debounce(async function({forceCheck, dryRun}) {
       // TODO consolodate implementation with triggerDeployment
 
       this.createFlash({
@@ -628,7 +628,8 @@ export default {
         deployOptions: {
             schedule: 'defer'
         },
-        forceCheck
+        forceCheck,
+        dryRun,
       })
 
       if(this.hasCriticalErrors) return
@@ -648,7 +649,7 @@ export default {
       window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
     }, 250),
 
-    triggerDeployment: _.debounce(async function({forceCheck}) {
+    triggerDeployment: _.debounce(async function({forceCheck, dryRun}) {
       this.createFlash({
         message: __('Starting deployment...'),
         type: FLASH_TYPES.SUCCESS,
@@ -669,7 +670,8 @@ export default {
         deployPath: this.deploymentDir,
         deploymentName: this.$route.params.slug,
         deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
-        forceCheck
+        forceCheck,
+        dryRun,
       })
 
       if(this.hasCriticalErrors) return

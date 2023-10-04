@@ -16,6 +16,8 @@ export default {
     data() {
         return {
             forceCheck: false,
+            dryRun: false,
+            localDeploy: false,
         }
     },
     props: {
@@ -25,17 +27,27 @@ export default {
     methods: {
         triggerDeploy() {
             if(this.userCanEdit) {
-                this.$emit('triggerDeploy', {forceCheck: this.forceCheck})
+                if(this.localDeploy) {
+                    this.$emit('triggerLocalDeploy', {forceCheck: this.forceCheck, dryRun: this.dryRun})
+                } else {
+                    this.$emit('triggerDeploy', {forceCheck: this.forceCheck, dryRun: this.dryRun})
+                }
             } else {
                 this.$emit('mergeRequestReady', {status: !this.markedReady})
             }
         },
         triggerLocalDeploy() {
-            this.$emit('triggerLocalDeploy', {forceCheck: this.forceCheck})
+            this.$emit('triggerLocalDeploy', {forceCheck: this.forceCheck, dryRun: this.dryRun})
         },
         onInputForceCheck(val) { // val instead of an event
             this.forceCheck = val
-        }
+        },
+        onInputDryRun(val) {
+            this.dryRun = val
+        },
+        onInputLocalDeploy(val) {
+            this.localDeploy = val
+        },
     },
     computed: {
         ...mapGetters([
@@ -106,24 +118,32 @@ export default {
                         {{ localDeployOnly? 'Deploy Locally': deployButtonText}}
                     </gl-button>
                     <gl-dropdown v-if="userCanEdit" :disabled="deployStatus == 'disabled'" right>
-                        <gl-dropdown-item v-if="!localDeployOnly" @click="triggerLocalDeploy" variant="confirm">
-                            Deploy Locally
-                        </gl-dropdown-item>
+                        <div class="mt-2"/>
+                            <gl-form-checkbox data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled' && !localDeployOnly">
+                                    <template #content>
+                                        Use Unfurl to deploy this from the command line
+                                    </template>
+                                <span> Deploy Locally </span>
+                                </el-tooltip>
+                            </gl-form-checkbox>
+                            <gl-form-checkbox data-testid="toggle-force-check" @input="onInputForceCheck" style="margin: 0.25rem 1rem;" >
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'">
+                                    <template #content>
+                                        Check status of a resource before creating or updating
+                                    </template>
 
-                        <!-- spacers here make the tooltip a lot less annoying -->
-                        <div v-if="showDeployOptionsFooter" class="mb-2"/>
-                        <template v-if="showDeployOptionsFooter" #footer>
-                            <div v-if="showDeployOptionsFooter" class="mt-2"/>
-                            <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'">
-                                <template #content>
-                                    Check status of a resource before creating or updating
-                                </template>
-
-                                <gl-form-checkbox @input="onInputForceCheck" style="margin: 0 1rem;" >
-                                    <span> Force Check </span>
-                                </gl-form-checkbox>
-                            </el-tooltip>
-                        </template>
+                                <span> Force Check </span>
+                                </el-tooltip>
+                            </gl-form-checkbox>
+                            <gl-form-checkbox data-testid="toggle-dry-run" @input="onInputDryRun" style="margin: 0.25rem 1rem;" >
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'">
+                                    <template #content>
+                                        Run a workflow without provisioning any cloud resources
+                                    </template>
+                                <span> Dry Run </span>
+                                </el-tooltip>
+                            </gl-form-checkbox>
                     </gl-dropdown>
                 </gl-button-group>
                 <error-small class="position-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
