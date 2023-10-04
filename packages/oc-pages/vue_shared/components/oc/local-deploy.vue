@@ -50,7 +50,12 @@ export default {
         deployPath() {
             const deploymentName = this.deployment?.name
             const environmentName = this.environment?.name
-            return this.lookupDeployPath(deploymentName, environmentName)
+            try {
+                return this.lookupDeployPath(deploymentName, environmentName)
+            } catch(e) {
+                console.error(e)
+                return null
+            }
         },
         blueprintCredentials() {
             const empty = {username: null, password: null}
