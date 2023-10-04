@@ -150,7 +150,7 @@ export default {
         },
 
         activeTab() {
-            const {availableBlueprintsTab, openCloudDeploymentsTab, yourDeploymentsTab, commentsTab} = this.$refs
+            const {availableBlueprintsTab, developmentTab, openCloudDeploymentsTab, yourDeploymentsTab, commentsTab} = this.$refs
             if(availableBlueprintsTab?.active) return 'availableBlueprintsTab'
             if(developmentTab?.active) return 'developmentTab'
             if(openCloudDeploymentsTab?.active) return 'openCloudDeploymentsTab'
