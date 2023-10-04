@@ -34,7 +34,7 @@ export default {
         </p>
         <p>
             Clone this Unfurl project if you haven't already:
-            <code-clipboard class="mt-2">git clone '{{cloneURL}}'</code-clipboard>
+            <code-clipboard class="mt-2">unfurl clone --design '{{cloneURL}}'</code-clipboard>
             (Or if you have, run "git pull" to get latest.)
         </p>
         <p>

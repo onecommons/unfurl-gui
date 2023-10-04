@@ -56,8 +56,8 @@ export default function createRouter(base) {
     })
 
     router.afterEach(to => {
-        if(to.query.hasOwnProperty('unfurl-server-url')) {
-            const devUrl = to.query['unfurl-server-url']
+        if(to.query.hasOwnProperty('unfurl-server-url') || to.query.hasOwnProperty('unfurl-server')) {
+            const devUrl = to.query['unfurl-server-url'] || to.query['unfurl-server']
             if(devUrl) {
                 setLocalStorageKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev, {project: base, url: devUrl})
             } else {
@@ -70,7 +70,7 @@ export default function createRouter(base) {
         const url = unfurlServerUrlDev(base)
 
         if(developmentMode) {
-            const newRoute = router.resolve({...to, query: {...to.query, 'unfurl-server-url': ''}}).href
+            const newRoute = router.resolve({...to, query: {...to.query, 'unfurl-server-url': '', 'unfurl-server': undefined}}).href
             const message =  `Developing with Unfurl Server on ${url}`
             const linkTo = newRoute
             const linkTarget = '_self'

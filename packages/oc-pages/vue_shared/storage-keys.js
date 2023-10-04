@@ -90,12 +90,12 @@ export function unfurlServerUrlDev(currentProject) {
         let {project, url} = JSON.parse(setting)
         if(!project || project != currentProject) return
         if(url.startsWith('localhost')) {
-            try {
-                url = new URL(`http://${url}`)
-                return url.toString()
-            } catch(e) {
-                console.error(e)
-            }
+            url += 'localhost'
+        }
+        try {
+            return (new URL(url)).toString()
+        } catch(e) {
+            console.error(e)
         }
     }
 }
