@@ -18,6 +18,7 @@ export default {
             forceCheck: false,
             dryRun: false,
             localDeploy: false,
+            isCypress: !!window.Cypress
         }
     },
     props: {
@@ -136,7 +137,7 @@ export default {
                                 <span> Force Check </span>
                                 </el-tooltip>
                             </gl-form-checkbox>
-                            <gl-form-checkbox data-testid="toggle-dry-run" @input="onInputDryRun" style="margin: 0.25rem 1rem;" >
+                            <gl-form-checkbox v-if="isCypress" data-testid="toggle-dry-run" @input="onInputDryRun" style="margin: 0.25rem 1rem;">
                                 <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'">
                                     <template #content>
                                         Run a workflow without provisioning any cloud resources
