@@ -47,7 +47,7 @@ export default {
         GlMarkdown, GlCard, GlIcon
     },
     data() {
-        return { 
+        return {
             routes,
             //fields,
             //items: [],
@@ -90,6 +90,13 @@ export default {
             }
         }
     },
+    mounted() {
+        const cloneInstructions = document.querySelector('.gl-markdown a[href$="#clone-instructions"]')
+
+        if(cloneInstructions) {
+            cloneInstructions.href = '#clone-instructions'
+        }
+    }
 };
 
 </script>
@@ -100,14 +107,14 @@ export default {
         <dashboard-welcome v-if="totalDeploymentsCount == 0" />
         <div class="quantity-cards">
             <div class="d-flex flex-wrap justify-content-center">
-                <quantity-card 
-                    :to="{name: routes.OC_DASHBOARD_HOME}" 
-                    :count="applicationsCount" 
-                    s="Application" 
-                    p="Applications" 
+                <quantity-card
+                    :to="{name: routes.OC_DASHBOARD_HOME}"
+                    :count="applicationsCount"
+                    s="Application"
+                    p="Applications"
                     class="qcard1"
                     secondary-link="/explore/blueprints" />
-                <quantity-card 
+                <quantity-card
                     :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                     :count="environmentsCount"
                     s="Environment"
@@ -156,7 +163,7 @@ export default {
       <template #resource="scope">
         <resource-cell :environment="scope.item.context.environment" :deployment="scope.item.context.deployment" :resource="scope.item.context.resource" />
       </template>
-    </TableComponent> 
+    </TableComponent>
 
     <!-- card like on bluperint page -->
     <gl-card v-if="readme" class="mt-6 consistent-card">
