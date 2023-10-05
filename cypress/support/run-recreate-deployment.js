@@ -346,7 +346,7 @@ Cypress.Commands.add('recreateDeployment', options => {
         if(!DRYRUN) {
           cy.verifyDeployment({deployment, env, dnsZone, sub: subdomain, expectExisting, verificationRoutine}, options.verificationArgs || {})
         }
-        if(TEARDOWN && !skipTeardown) {
+        if(TEARDOWN && !skipTeardown && !DRYRUN) {
           cy.undeploy(dt.title)
         }
       })
