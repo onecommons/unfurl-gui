@@ -79,10 +79,15 @@ describe('Blueprints namespace', () => {
         cy.contains('.gl-card h5', 'README.md').should('be.visible')
       })
 
-      // was known to fail
+      thisProject("can't be developed by this user", project => {
+        cy.contains('.nav-link.gl-tab-nav-item').should('not.exist')
+      })
+
       thisProject('can click star', project => {
         cy.contains('button.toggle-star', 'Star').click()
         cy.wait(3000) // give flash a chance to trigger
+        cy.get('.flash-container .gl-alert-danger').should('not.exist')
+        cy.url().should('contain', '/users/sign_in')
       })
     })
   }
