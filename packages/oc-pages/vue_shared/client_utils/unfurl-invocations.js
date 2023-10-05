@@ -8,8 +8,11 @@ export function cloneProject({
   protocol, username, token, server, projectPath, projectId
 }) {
   const vars_url = unfurl_cloud_vars_url({ protocol, token, server, projectId });
+  const credentials = (username && token)?
+    `${username}:${token}@`: ''
+  const varsSection = token? ` --var UNFURL_CLOUD_VARS_URL '${vars_url}'`: ''
   return (
-    `unfurl clone '${protocol}//${username}:${token}@${server}/${projectPath}' --var UNFURL_CLOUD_VARS_URL '${vars_url}'`
+    `unfurl clone '${protocol}//${credentials}${server}/${projectPath}'${varsSection}`
   )
 }
 
