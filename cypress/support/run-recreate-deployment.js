@@ -326,7 +326,11 @@ Cypress.Commands.add('recreateDeployment', options => {
         cy.contains('label', 'Dry Run').click()
       }
 
-      cy.get('[data-testid="deploy-button"]:not([disabled])').click({position: 'bottomLeft'})
+      // cy.get('[data-testid="deploy-button"]:not([disabled])').click({position: 'bottomLeft'})
+      // doesn't work reliably in CI
+      // popover tooltip may partially cover when deplying DRYRUN
+
+      cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
       cy.whenUnfurlGUI(() => {
         cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
