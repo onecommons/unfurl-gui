@@ -403,7 +403,7 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab v-if="false" ref="developmentTab" title="Develop">
+                <oc-tab v-if="hasEditPermissions" ref="developmentTab" title="Develop">
                     <gl-card>
                         <template #header>
                             <div class="d-flex align-items-center">

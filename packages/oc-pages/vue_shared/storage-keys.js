@@ -90,7 +90,7 @@ export function unfurlServerUrlDev(currentProject) {
         let {project, url} = JSON.parse(setting)
         if(!project || project != currentProject) return
         if(url.startsWith('localhost')) {
-            url += 'localhost'
+            url = `http://${url}`
         }
         try {
             return (new URL(url)).toString()
@@ -120,6 +120,20 @@ export function useImportedStateOnBreakpointOrElse(breakpointName, cb) {
     } else {return cb()}
 
 }
+export function hasMatchingStorage(re) {
+    return (
+        Object.keys(localStorage).some(k => k.startsWith('unfurl_gui:') && re.test(k)) ||
+        Object.keys(sessionStorage).some(k => k.startsWith('unfurl_gui:') && re.test(k))
+    )
+}
+
+export function clearMatchingStorage(re, visit) {
+    function _visit(k) { if(typeof visit == 'function') visit(k) }
+    for(const storage of [localStorage, sessionStorage]) {
+        Object.keys(storage).filter(k => k.startsWith('unfurl_gui:') && re.test(k)).forEach(k => {_visit(k); delete storage[k]})
+    }
+}
+
 export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
 

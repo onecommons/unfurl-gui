@@ -19,7 +19,7 @@ const state = stateFn()
 
 const mutations = {
     _addUrlPoll(state, {url, name, initialStatus}) {
-        state.urlPolls[name] = () => xhrIframe.doXhr('GET', url)
+        state.urlPolls[name] = () => xhrIframe.doXhr('GET', url).then(res => res.data)
         Vue.set(state.statuses, name, initialStatus)
     },
     clearPollingStateFor(state, name) {
@@ -70,7 +70,7 @@ const actions = {
         }
 
         if(['PENDING', 'LIKELY_UP'].includes(state.statuses[deployment.name])) return
-        
+
         const readinessEstimate = deployment.readinessEstimate || DEFAULT_STARTUP_ESTIMATE
         const initialStatus = Date.now() - deployment.deployTime < readinessEstimate ? 'PENDING': 'LIKELY_UP'
 

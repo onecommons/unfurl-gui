@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
 import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
-import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo} from '../storage-keys';
+import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
 
 let transientOverride
@@ -37,14 +37,41 @@ async function doXhr(projectPath, _method, url, body, headers) {
         let response
         if(method == 'GET') { response = await axios.get(url, {headers}) }
         else if(method == 'POST') { response = await axios.post(url, body, {headers}) }
-        return response?.data
+        return response
     } else {
         let ufsvIFrame = doXhr.ufsvIFrame
-        if(!doXhr.ufsvIFrame) { doXhr.ufsvIFrame = ufsvIFrame = new XhrIFrame() }
+        if(!doXhr.ufsvIFrame) { doXhr.ufsvIFrame = ufsvIFrame = new XhrIFrame({rejectErrorCode: true}) }
 
+        // blocking forever in cypress
         await ufsvIFrame.ready
 
         return await ufsvIFrame.doXhr(...Array.from(arguments).slice(1))
+    }
+
+}
+
+export function healthCheckIfNeeded(projectPath) {
+    const url = unfurlServerUrlOverride(projectPath)
+    if(!url) return
+
+    const key = `ufsv_dev:${url}:${window.gon.current_username}:${projectPath}`
+    if(lookupKey(key)) return
+
+    if(!healthCheckIfNeeded.promise) {
+        healthCheckIfNeeded.promise = (async () => {
+            await doXhr(projectPath, 'GET', `${url}/health?start_development_session=${key}`)
+            setLocalStorageKey(key, 'unused')
+        })()
+    }
+
+    return healthCheckIfNeeded.promise
+}
+
+async function healthCheckErrorHelper(projectPath) {
+    try {
+        await healthCheckIfNeeded(projectPath)
+    } catch(e) {
+        throw new Error('Unable to reach Unfurl Server')
     }
 
 }
@@ -54,6 +81,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult
     const _sendCredentials = sendCredentials ?? true
+    await healthCheckErrorHelper(projectPath)
 
     if(!latestCommit) throw new Error('@unfurlServerExport: latestCommit is not defined')
 
@@ -81,7 +109,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += '&include_all_deployments=1'
     }
 
-    return await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
+    return (await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})))?.data
 }
 
 const unfurlTypesResponsesCache = {}
@@ -97,6 +125,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     const [lastCommitResult, password] = await Promise.all([fetchCommitPromise, fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult || [null, branch]
     const _sendCredentials = sendCredentials ?? true
+    await healthCheckErrorHelper(projectPath)
 
     const cacheKey = JSON.stringify({branch, projectPath, ...params})
 
@@ -145,7 +174,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
         }
     })
 
-    const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password}))
+    const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})).then(res => res.data)
     unfurlTypesResponsesCache[cacheKey] = result
 
     return await result
@@ -202,6 +231,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     const username = window.gon.current_username
     const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
     const [latestCommit, _branch] = lastCommitResult
+    await healthCheckErrorHelper(projectPath)
 
     if(_branch != branch) {
         await createBranch(encodeURIComponent(projectPath), branch, latestCommit)
@@ -221,7 +251,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     let data
 
     try {
-        data = await doXhr(projectPath, 'POST', url, body, headers)
+        data = (await doXhr(projectPath, 'POST', url, body, headers)).data
     } catch(e) {
         if(e.response?.status == 409) {
             setLastCommit(encodeURIComponent(projectPath), branch, undefined)
