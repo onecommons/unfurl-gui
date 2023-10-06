@@ -36,10 +36,29 @@ export class XhrIFrame {
             const handler = ({detail}) => {
                 if(this.rejectErrorCode) {
                     if(detail.status >= 200 && detail.status <= 400){
-                        resolve(detail.payload)
-                    } else { reject(detail.payload) }
+                        resolve({
+                            data: detail.payload,
+                            status: detail.status
+                        })
+                    } else {
+                        const e = new Error(
+                            detail.status == -1?
+                                detail.payload.error: `${detail.status} error`
+                        )
+                        e.response = {
+                            data: detail.payload,
+                            status: detail.status
+                        }
+
+                        reject(e)
+                    }
+                } else if(detail.status == -1) {
+                    reject(new Error(detail.payload.error))
                 } else {
-                    resolve(detail)
+                    resolve({
+                        data: detail.payload,
+                        status: detail.status
+                    })
                 }
                 document.removeEventListener(eventId, handler)
             }

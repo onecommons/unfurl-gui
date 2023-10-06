@@ -6,8 +6,8 @@ import * as routeNames from './constants.js'
 import { PageNotFound } from 'oc_vue_shared/components/oc'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
 import { FLASH_TYPES, hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
-import { HIDDEN_OPTION_KEYS, lookupKey, setLocalStorageKey, unfurlServerUrlDev, unfurlServerUrlOverride } from 'oc_vue_shared/storage-keys.js'
-import { setTransientUnfurlServerOverride, getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
+import { HIDDEN_OPTION_KEYS, lookupKey, setLocalStorageKey, clearMatchingStorage, unfurlServerUrlDev, unfurlServerUrlOverride } from 'oc_vue_shared/storage-keys.js'
+import { setTransientUnfurlServerOverride, getTransientUnfurlServerOverride, healthCheckIfNeeded } from 'oc_vue_shared/client_utils/unfurl-server'
 
 Vue.use(VueRouter);
 
@@ -55,12 +55,33 @@ export default function createRouter(base) {
         else next()
     })
 
-    router.afterEach(to => {
+    router.afterEach(async (to) => {
         if(to.query.hasOwnProperty('unfurl-server-url') || to.query.hasOwnProperty('unfurl-server')) {
             const devUrl = to.query['unfurl-server-url'] || to.query['unfurl-server']
             if(devUrl) {
-                setLocalStorageKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev, {project: base, url: devUrl})
+                let currentUrl
+                try {
+                    currentUrl = JSON.parse(lookupKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev)).url
+                } catch(e) {}
+
+                // currently not clearing session for switching users
+                if(currentUrl != devUrl) {
+                    if(currentUrl) {
+                        clearMatchingStorage(/ufsv_dev/)
+                    }
+
+                    setLocalStorageKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev, {project: base, url: devUrl})
+
+                    if(!unfurlServerUrlDev(base)) {
+                        router.app.$store.commit('createError', {
+                            message: `Failed to set Unfurl Server URL - '${devUrl}' is likely an invalid URL`,
+                            severity: 'major'
+                        })
+                        setLocalStorageKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev, undefined)
+                    }
+                }
             } else {
+                clearMatchingStorage(/ufsv_dev/)
                 setLocalStorageKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev, undefined)
             }
         }
@@ -70,17 +91,30 @@ export default function createRouter(base) {
         const url = unfurlServerUrlDev(base)
 
         if(developmentMode) {
-            const newRoute = router.resolve({...to, query: {...to.query, 'unfurl-server-url': '', 'unfurl-server': undefined}}).href
-            const message =  `Developing with Unfurl Server on ${url}`
-            const linkTo = newRoute
-            const linkTarget = '_self'
-            const linkText = 'End development session'
-            router.app.$store.dispatch('createFlash', {message, linkTo, linkText, linkTarget, type: FLASH_TYPES.WARNING})
+            try {
+                await healthCheckIfNeeded(base)
+                const newRoute = router.resolve({...to, query: {...to.query, 'unfurl-server-url': '', 'unfurl-server': undefined}}).href
+                const message =  `Developing with Unfurl Server on ${url}`
+                const linkTo = newRoute
+                const linkTarget = '_self'
+                const linkText = 'End development session'
+                router.app.$store.dispatch('createFlash', {message, linkTo, linkText, linkTarget, type: FLASH_TYPES.WARNING})
 
-            if(editView) {
-                setTransientUnfurlServerOverride(unfurlServerUrlDev(base))
+                if(editView) {
+                    setTransientUnfurlServerOverride(unfurlServerUrlDev(base))
+                }
+            } catch(e) {
+                console.error(e)
+                router.app.$store.commit('createError', {
+                    // e.message is useless
+                    message: `An error occurred while connecting to Unfurl Server: ${e.message}`,
+                    // message: `An error occurred while connecting to Unfurl Server`,
+                    context: {
+                        'Unfurl Server URL': url,
+                    },
+                    severity: 'critical'
+                })
             }
-
         }
 
     })
