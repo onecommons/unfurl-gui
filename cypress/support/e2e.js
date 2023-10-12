@@ -136,6 +136,7 @@ beforeEach(() => {
           secret_value: UNFURL_PACKAGE_RULES,
           variable_type: 'unencrypted_var',
         })
+        cy.task('log', req.data)
       })
     }
 
