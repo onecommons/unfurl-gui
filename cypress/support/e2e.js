@@ -129,7 +129,7 @@ beforeEach(() => {
     }
     if(UNFURL_PACKAGE_RULES) {
       cy.task('log', {UNFURL_PACKAGE_RULES})
-      cy.intercept(/\/-\/deployments\/new$/, (req) => {
+      cy.intercept(/^.*\/-\/deployments\/new$/, (req) => {
         req.data.pipeline.variables_attributes.push({
           key: 'UNFURL_PACKAGE_RULES',
           masked: false,
