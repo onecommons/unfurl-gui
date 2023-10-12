@@ -120,7 +120,11 @@ beforeEach(() => {
     }
     if(UNFURL_SERVER_URL) {
       cy.log(UNFURL_SERVER_URL)
-      win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
+      cy.intercept('/services/unfurl-server/*', (req) => {
+        req.url = req.url.replace(/.*services\/unfurl-server/, UNFURL_SERVER_URL)
+      })
+      // figure out how to get around cypress messing with iframe events
+      // win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
     }
     win.sessionStorage['unfurl-trace'] = 't'
   })
