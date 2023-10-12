@@ -27,6 +27,7 @@ const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
+const UNFURL_PACKAGE_RULES = Cypress.env('UNFURL_PACKAGE_RULES')
 
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
@@ -126,6 +127,18 @@ beforeEach(() => {
       // figure out how to get around cypress messing with iframe events
       // win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
     }
+    if(UNFURL_PACKAGE_RULES) {
+      cy.log({UNFURL_PACKAGE_RULES})
+      cy.intercept('/*/-/deployments/new', (req) => {
+        req.data.pipeline.variables_attributes.push({
+          key: 'UNFURL_PACKAGE_RULES',
+          masked: false,
+          secret_value: UNFURL_PACKAGE_RULES,
+          variable_type: 'unencrypted_var',
+        })
+      })
+    }
+
     win.sessionStorage['unfurl-trace'] = 't'
   })
 
