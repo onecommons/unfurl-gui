@@ -129,14 +129,13 @@ beforeEach(() => {
     }
     if(UNFURL_PACKAGE_RULES) {
       cy.task('log', {UNFURL_PACKAGE_RULES})
-      cy.intercept(/^.*\/-\/deployments\/new$/, (req) => {
-        req.data.pipeline.variables_attributes.push({
+      cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
+        req.body.pipeline.variables_attributes.push({
           key: 'UNFURL_PACKAGE_RULES',
           masked: false,
           secret_value: UNFURL_PACKAGE_RULES,
           variable_type: 'unencrypted_var',
         })
-        cy.task('log', req.data)
       })
     }
 
