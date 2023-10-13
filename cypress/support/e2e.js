@@ -143,3 +143,15 @@ beforeEach(() => {
   })
 
 })
+
+afterEach(() => {
+  cy.withStore().then(store => {
+    cy.task(
+      'writeArtifact',
+      {
+        artifactName: `${Cypress.currentTest.titlePath.join(' ')}.json`,
+        data: JSON.stringify(store.state)
+      }
+    )
+  })
+})

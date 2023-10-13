@@ -18,8 +18,9 @@
 // eslint-disable-next-line no-unused-vars
 //
 
+const fs = require('fs')
 
-const 
+const
   DIGITALOCEAN_DNS_TYPE = 'DigitalOceanDNSZone',
   GCP_DNS_TYPE = 'GoogleCloudDNSZone',
   AWS_DNS_TYPE = 'Route53DNSZone'
@@ -43,7 +44,7 @@ module.exports = (on, config) => {
     launchOptions.args.push('--js-flags=--expose-gc')
     return launchOptions
   });
-  
+
 
   config.env.OC_NAMESPACE = config.env.OC_NAMESPACE || 'demo'
   config.env.REPOS_NAMESPACE = config.env.REPOS_NAMESPACE || 'testing'
@@ -60,7 +61,7 @@ module.exports = (on, config) => {
 
   config.env.DEFAULT_NAMESPACE = config.env.DEFAULT_NAMESPACE || config.env.OC_IMPERSONATE
 
-  const 
+  const
     DIGITALOCEAN_DNS_ZONE = config.env.DIGITALOCEAN_DNS_ZONE || 'untrusted.me',
     GCP_DNS_ZONE = config.env.GCP_DNS_ZONE,
     AWS_DNS_ZONE = config.env.AWS_DNS_ZONE
@@ -76,7 +77,7 @@ module.exports = (on, config) => {
 
   const INTEGRATION_TEST_ARGS = config.env.INTEGRATION_TEST_ARGS
 
-  let 
+  let
     TEARDOWN = config.env.TEARDOWN ?? '',
     GENERATE_SUBDOMAINS = config.env.GENERATE_SUBDOMAINS ?? ''
 
@@ -88,7 +89,7 @@ module.exports = (on, config) => {
   config.env.TEARDOWN = !['0', 'false', 'no', false].includes(TEARDOWN)
   // default false
   config.env.GENERATE_SUBDOMAINS = ['1', 'true', 'yes', true].includes(GENERATE_SUBDOMAINS)
-    
+
 
   //console.log({...config.env, OC_PASSWORD: '[MASKED]'})
 
@@ -100,6 +101,9 @@ module.exports = (on, config) => {
     error (message) {
       console.error(message)
       return null
+    },
+    writeArtifact({artifactName, data}) {
+      return fs.promises.writeFile(`cypress/screenshots/${artifactName}`, data).then(x => x || null)
     }
   })
 
