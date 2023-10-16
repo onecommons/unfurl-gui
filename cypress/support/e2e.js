@@ -145,13 +145,17 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  cy.withStore().then(store => {
-    cy.task(
-      'writeArtifact',
-      {
-        artifactName: `${Cypress.currentTest.titlePath.join(' ')}.json`,
-        data: JSON.stringify(store.state)
-      }
-    )
+  cy.window().then(win => {
+    // withStore is better, this is good enough for here because we don't know which page we're on
+    // we don't want all test to fail when a suite doesn't care about frontend store
+    if(win.$store) {
+      cy.task(
+        'writeArtifact',
+        {
+          artifactName: `${Cypress.currentTest.titlePath.join(' ')}.json`,
+          data: JSON.stringify(win.$store.state)
+        }
+      )
+    }
   })
 })
