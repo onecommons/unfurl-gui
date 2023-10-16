@@ -120,7 +120,6 @@ beforeEach(() => {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
     }
     if(UNFURL_SERVER_URL) {
-      cy.task('log', UNFURL_SERVER_URL)
       cy.intercept('/services/unfurl-server/*', (req) => {
         req.url = req.url.replace(/.*services\/unfurl-server/, UNFURL_SERVER_URL)
       })
@@ -128,7 +127,6 @@ beforeEach(() => {
       // win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
     }
     if(UNFURL_PACKAGE_RULES) {
-      cy.task('log', {UNFURL_PACKAGE_RULES})
       cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
         req.body.pipeline.variables_attributes.push({
           key: 'UNFURL_PACKAGE_RULES',
