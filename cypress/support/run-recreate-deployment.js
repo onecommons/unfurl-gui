@@ -161,6 +161,7 @@ Cypress.Commands.add('recreateDeployment', options => {
       if(variant != HIDDEN) {
         cy.get(`[data-testid^="card-${template.name}"]`).should('exist')
       }
+      let inputWait = 500 // we should wait longer for the first for async components
       cy.document().then($document => {
         if (variant != HIDDEN) {
           // if (variant != PRIMARY) {
@@ -194,7 +195,9 @@ Cypress.Commands.add('recreateDeployment', options => {
               }
             }
 
-            cy.wait(100)
+            cy.wait(inputWait)
+            inputWait = 100
+
             cy.document().then($document2 => {
               // NOTE coupled tightly with element ui
               let q = `
