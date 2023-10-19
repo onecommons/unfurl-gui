@@ -104,14 +104,16 @@ const transforms = {
         if(!resourceTemplate.title) resourceTemplate.title = resourceTemplate.name
         resourceTemplate.__typename = 'ResourceTemplate'
 
+        if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
+
         // modifying dependencies is currently a vuex validation error because of local template handling in both normalization functions
 
-        resourceTemplate.dependencies.forEach(rt => {
-            const visibility = rt.constraint.visibility || rt.visibility
-            rt.constraint.visibility = rt.visibility = visibility
+        resourceTemplate.dependencies.forEach(dep => {
+            const visibility = dep.visibility || dep.constraint.visibility || 'visible'
+            dep.constraint.visibility = dep.visibility = visibility
         })
 
-        resourceTemplate.dependencies = resourceTemplate.dependencies.filter(rt => !(rt.constraint.visibility == 'hidden' && !rt.match))
+        resourceTemplate.dependencies = resourceTemplate.dependencies.filter(dep => !(dep.constraint.visibility == 'hidden' && !dep.match))
 
         normalizeDirectives(resourceTemplate.directives)
 
