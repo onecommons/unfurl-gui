@@ -1,5 +1,6 @@
 [
   "CY_COMMAND",
+  "CY_COMMAND_TIMEOUT",
   "OC_USERNAME",
   "OC_PASSWORD",
   "OC_URL",

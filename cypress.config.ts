@@ -1,8 +1,9 @@
 import { defineConfig } from 'cypress'
 const BASE_URL = process.env.OC_URL || 'http://localhost:8080'
+const defaultCommandTimeout = parseInt(process.env.CY_COMMAND_TIMEOUT) || 15000
 
 export default defineConfig({
-  defaultCommandTimeout: 15000,
+  defaultCommandTimeout,
   videoCompression: false,
   video: false,
   numTestsKeptInMemory: 1,
