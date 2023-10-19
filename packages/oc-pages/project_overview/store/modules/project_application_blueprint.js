@@ -177,11 +177,6 @@ const actions = {
                     }
                 }
 
-                if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
-                resourceTemplate.dependencies.forEach(dep => {
-                    if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
-                })
-
                 localNormalize(resourceTemplate, 'ResourceTemplate', root)
             },
             DeploymentTemplate(deploymentTemplate, root) {
@@ -225,7 +220,8 @@ const actions = {
                 resource._ancestors = lookupAncestors(resource, root, true)
 
                 resource.dependencies.forEach(dep => {
-                    if(!dep.constraint.visibility) dep.constraint.visibility = 'visible'
+                    const visibility = dep.visibility || dep.constraint.visibility || 'visible'
+                    dep.constraint.visibility = dep.visibility = visibility
                 })
 
                 for(const attribute of resource.attributes) {
