@@ -73,7 +73,7 @@ export default {
             }
 
             const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0) || []
-            
+
             return requirements.map(r => {
                 const constraint = r.dependency.constraint
                 const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
@@ -87,7 +87,7 @@ export default {
             }
 
             const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0) || []
-            
+
             return requirements.map(r => {
                 const constraint = r.dependency.constraint
                 const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
@@ -121,7 +121,7 @@ export default {
                         <h4 class="project-title gl-display-flex">
                             {{ projectInfo.title || projectInfo.name }}
                         </h4>
-                    </div> 
+                    </div>
                     <div class="subtitle-description gl-mb-4">
                         <div class="subtitle"></div>
                         <div class="live-preview">
@@ -146,7 +146,7 @@ export default {
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
-                                            <gl-badge v-if="requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge> 
+                                            <gl-badge v-if="requirement.resourceType && requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge>
                                         </div>
                                     </div>
                                     <div style="margin-left: calc(0.25rem + 12px)" class="gl-mt-2 light-gray">
@@ -169,7 +169,7 @@ export default {
                                             </div>
                                         </div>
                                         <div class="gl-display-flex">
-                                            <gl-badge v-if="requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge> 
+                                            <gl-badge v-if="requirement.resourceType && requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge>
                                         </div>
                                     </div>
                                     <div style="margin-left: calc(0.25rem + 12px)" class="gl-mt-2 light-gray">
