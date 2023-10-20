@@ -102,6 +102,7 @@ export default {
         ...mapGetters([
             'yourDeployments',
             'getApplicationBlueprint',
+            'getPrimaryDeploymentBlueprint',
             'openCloudDeployments',
             'getProjectDescription',
             'getTemplatesList',
@@ -315,7 +316,7 @@ export default {
             if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
             await this.fetchProject({projectPath});
             if(this.hasCriticalErrors) return
-            const templateSlug = this.getApplicationBlueprint?.primaryDeploymentBlueprint
+            const templateSlug = this.getPrimaryDeploymentBlueprint
             if(!templateSlug) return
             return await this.populateTemplateResources({
                 projectPath,

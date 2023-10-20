@@ -560,6 +560,10 @@ const getters = {
     },
     getApplicationBlueprint(state) { return state.applicationBlueprint },
 
+    getPrimaryDeploymentBlueprint(state, getters) {
+        return getters.getApplicationBlueprint?.primaryDeploymentBlueprint || (Object.values(state.DeploymentTemplate || {})[0])?.name
+    },
+
     getResources(state) {return Object.values(state.Resource || {})},
     getDeployment(state) {return Object.values(state.Deployment || {})[0]},
 
