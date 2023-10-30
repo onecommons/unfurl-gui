@@ -120,6 +120,7 @@ class Fixture {
   }
 
   setupAssertions(store) {
+    expect(store.state.errors.errors).toHaveLength(0)
     expect(store.getters.getCurrentEnvironmentName).toBe(this.environmentName)
     expect(store.getters.resolveDeploymentTemplate(this.templateSlug)).toHaveProperty('name')
     expect(store.getters.getDeploymentTemplate).toHaveProperty('name')
