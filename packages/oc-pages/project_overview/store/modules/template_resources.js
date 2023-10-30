@@ -155,6 +155,42 @@ const actions = {
 
     },
 
+    async recursiveInstantiate({ commit, getters, rootGetters, state: _state, dispatch}, target) {
+        const deferred = []
+        for(const dep of getters.getDependencies(target)) {
+            const req = dep.constraint
+            if(dep.match) continue
+            if(req.min === 0) continue
+            const availableResourceTypes = getters.availableResourceTypesForRequirement(dep, true)
+            // TODO also create if the only available type is not user settable
+
+            if(availableResourceTypes.length != 1) continue
+
+            const type = availableResourceTypes[0]
+
+            const typeRequiresUserInteraction = (
+                req.visibility == 'hidden' ||
+                Object.keys(type.inputsSchema.properties).length > 0
+            )
+
+            if(!typeRequiresUserInteraction) {
+                const name = `${req.name}-for-${target.name}`
+                deferred.push(
+                    dispatch('createNodeResource', {
+                        dependentName: target.name,
+                        dependentRequirement: req.name,
+                        requirement: req,
+                        name: name,
+                        title: name,
+                        visibility: 'hidden',
+                        selection: type,
+                    })
+                )
+            }
+        }
+        await Promise.all(deferred)
+    },
+
     // used by deploy and blueprint editing
     async populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('resetTemplateResourceState')
@@ -233,6 +269,8 @@ const actions = {
         commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
+        await dispatch('fetchTypesForParams', {params: {}})
+        await Promise.all(Object.values(state.resourceTemplates).map(rt => dispatch('recursiveInstantiate', rt)))
         return true;
     },
 
@@ -338,42 +376,8 @@ const actions = {
     // TODO split this into two functions (one for updating state and other for serializing resourceTemplates)
     // we can use part of this function to set app state on page load
     // TODO use dependenciesFromResourceType here
-    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection}) {
-        const deferred = []
+    async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, visibility}) {
         let target
-
-        function deferredRecursiveInstantiate() {
-            for(let req of target.requirements) {
-                if(req.min === 0) continue
-                const availableResourceTypes = getters.availableResourceTypesForRequirement({constraint: req}, true)
-                // TODO also create if the only available type is not user settable
-
-                if(availableResourceTypes.length != 1) continue
-
-                const type = availableResourceTypes[0]
-
-                const typeRequiresUserInteraction = (
-                    req.visibility == 'hidden' ||
-                    Object.keys(type.inputsSchema.properties).length > 0
-                )
-
-                if(!typeRequiresUserInteraction) {
-                    req.visibility = 'hidden'
-                    const _name = `${req.name}-for-${name}`
-                    deferred.push(
-                        () => dispatch('createNodeResource', {
-                            dependentName: name,
-                            dependentRequirement: req.name,
-                            requirement: req,
-                            name: _name,
-                            title: _name,
-                            selection: type,
-                        })
-                    )
-                }
-            }
-        }
-
         if(selection._sourceinfo.incomplete || selection.directives?.includes('substitute')) {
             if(selection._sourceinfo.incomplete) {
                 commit('addTempRepository', selection._sourceinfo)
@@ -393,9 +397,6 @@ const actions = {
 
         } else { target = cloneDeep(selection) }
 
-        // always recursively instantiate
-        deferredRecursiveInstantiate()
-
         target.type = {...target};
         target.description = requirement?.description;
         target._valid = true;
@@ -404,7 +405,7 @@ const actions = {
 
         target._uncommitted = true
         target.__typename = 'ResourceTemplate'
-        target.visibility = target.visibility || 'inherit'
+        target.visibility = visibility || target.visibility || 'inherit'
 
         target.metadata = {...target.metadata, created_by: 'unfurl-gui'}
 
@@ -478,7 +479,7 @@ const actions = {
         };
 
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace});
-        await Promise.all(deferred.map(fn => fn()))
+        await dispatch('recursiveInstantiate', target)
         return true;
     },
 
@@ -718,9 +719,13 @@ const getters = {
     },
     constraintIsHidden(state, getters) {
         return function(dependentName, dependentRequirement) {
-            const constraint = getters.getDependencies(dependentName)
+            const dep = getters.getDependencies(dependentName)
                 ?.find(dep => dep.name == dependentRequirement)
-                ?.constraint
+
+            const match = dep?.match
+            const constraint = dep?.constraint
+
+            if(match && state.resourceTemplates[match]?.visibility == 'hidden') return true
 
             switch(constraint?.visibility) {
                 case 'hidden':

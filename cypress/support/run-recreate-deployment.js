@@ -170,6 +170,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             }
           // }
           for (const property of template.properties) {
+            if(property.value == null) continue
             cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
             let value = property.value
             let name = property.name
@@ -236,7 +237,7 @@ Cypress.Commands.add('recreateDeployment', options => {
 
           if(!match) continue
 
-          if (dependency.constraint.visibility == 'hidden') {
+          if (dependency.constraint.visibility == 'hidden' || match.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)
             continue
           }

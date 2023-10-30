@@ -60,7 +60,7 @@ export default {
 
 
         try {
-            await Promise.all([this.loadDashboard(), this.populateJobsList()])
+            await Promise.all([this.loadDashboard(), this.populateJobsList().catch(e => console.error(e))])
         } catch(e) {
             if(currentNamespace != this.getUsername) {
                 notFoundError()

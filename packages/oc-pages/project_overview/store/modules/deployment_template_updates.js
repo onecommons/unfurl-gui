@@ -99,6 +99,9 @@ function normalizeUpdatedProperties(name, schema, props, envvarPrefix, pathCompo
     const _pathComponents = pathComponents.concat([name])
     if(name == '$toscatype') return
 
+    if(!schema) {
+        return
+    }
     // this doesn't currently account for additional properties
     if(schema.type == 'object' && schema.properties) {
         const innerProps = props[name]
@@ -190,11 +193,17 @@ Serializers = {
 
         excludePrefixedFields(rt)
 
-        try {
-            delete rt.visibility // do not commit template visibility
-        } catch(e) {
-            console.error(e) // seems to happen when visibility was already set?
+        if(rt.visibility != 'hidden') {
+            try {
+                delete rt.visibility // do not commit template visibility
+            } catch(e) {
+                console.error(e) // seems to happen when visibility was already set?
+            }
+        } else {
+            rt.metadata = rt.metadata || {}
+            rt.metadata.visibility = 'hidden'
         }
+
         rt.dependencies = rt.dependencies?.filter(dep => {
             return dep.match || dep.target || dep.constraint.match
         })
@@ -989,6 +998,7 @@ const actions = {
                 // infer information from the deployment object path instead of our getters
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
+                console.log({path})
                 const pathSplits = path.split('/')
                 pathSplits.shift()
                 const environmentName = pathSplits.shift()
