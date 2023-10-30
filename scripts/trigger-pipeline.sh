@@ -22,7 +22,6 @@ if [[ -z "${TOKEN}" ]] && [[ -z "${OC_URL}" ]]; then
   exit
 fi
 
-var_if_set () { test -z "${!1}" || echo -n "-F variables[$1]=${!1} " ; }
 
 while getopts "n:-:" o; do
   case $o in
@@ -54,13 +53,24 @@ GITLAB_SERVER_URL=${GITLAB_SERVER_URL:-"$OC_URL"}
 OC_NAMESPACE=${OC_NAMESPACE:-"onecommons/blueprints"}
 NAMESPACE=${namespace:-"$OC_NAMESPACE"}
 
-OUTPUT=$(curl -sSL -X POST \
+TEST_VARIABLES=""
+
+var_if_set () {
+  test -z "${!1}" || TEST_VARIABLES="$TEST_VARIABLES -F 'variables[$1]=${!1}'"
+}
+
+for var in $(curl -sSL "$VARIABLE_LIST" | jq '.[]' -r)
+  do var_if_set "$var"
+done
+
+OUTPUT=$(xargs curl -sSL -X POST \
+  $GITLAB_SERVER_URL/api/v4/projects/$(echo -n $PROJECT_PATH | sed 's|/|%2F|g')/trigger/pipeline \
   -F "ref=cy-tests" \
   -F "token=$TOKEN" \
   -F "variables[TEST]=$TEST" \
   -F "variables[OC_NAMESPACE]=$NAMESPACE" \
-  $( for var in $(curl -sSL "$VARIABLE_LIST" | jq '.[]' -r) ; do var_if_set "$var" ; done ) \
-  $GITLAB_SERVER_URL/api/v4/projects/$(echo -n $PROJECT_PATH | sed 's|/|%2F|g')/trigger/pipeline)
+  <<< $TEST_VARIABLES
+)
 
 DETAILS_PATH=$(jq '.detailed_status.details_path' -r <<< $OUTPUT)
 

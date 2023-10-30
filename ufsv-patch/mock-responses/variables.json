@@ -1,0 +1,104 @@
+{
+  "variables": [
+    {
+      "id": 4649,
+      "key": "AWS_ACCESS_KEY_ID",
+      "value": "asdf",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "aws"
+    },
+    {
+      "id": 4651,
+      "key": "AWS_DEFAULT_REGION",
+      "value": "eu-central-1",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": true,
+      "raw": false,
+      "environment_scope": "aws"
+    },
+    {
+      "id": 4650,
+      "key": "AWS_SECRET_ACCESS_KEY",
+      "value": "asdf",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "aws"
+    },
+    {
+      "id": 4648,
+      "key": "CLOUDSDK_COMPUTE_ZONE",
+      "value": "europe-central2-b",
+      "variable_type": "env_var",
+      "protected": true,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "gcp"
+    },
+    {
+      "id": 4647,
+      "key": "CLOUDSDK_CORE_PROJECT",
+      "value": "oc-staging1",
+      "variable_type": "env_var",
+      "protected": true,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "gcp"
+    },
+    {
+      "id": 4646,
+      "key": "GOOGLE_APPLICATION_CREDENTIALS",
+      "value": "{\"type\":\"service_account\",\"project_id\":\"oc-staging1\",\"private_key_id\":\"6aeb4c6ec6bcfdd38d8effb6f0a7582546bbcc58\",\"private_key\":\"-----BEGIN PRIVATE KEY-----\\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQDchg+CL24jmhpH\\n5ee0XUSZSpQUM51+hOhoHxz+NUCQmbfETG1WQ17VjFv0uajZ9qS4+d9FVTPe5qcK\\nNeUSqYqhlBm2+Q1y8XSXD+4P+I20WH/NNoHqCo2yUaRcg6fO+hdD7egZLvlSOCpX\\nQDSRUgDjQpbJxlkZR+l2KnL++4Ei/7bulF0kkCClWP3Saw8poTCJxWawGP7gsoJV\\n+IUpTI9cPStdZL10qp91u7p66X+BVmW73yZIW+RTLPEcZbL/MSovyx35EyMgmLzE\\n4wxAWIv5tO73AzhPahBu6zr3AG8Y5AKdtnry2F62cQI0+ovX/h/MvYEyXkKrH72J\\nQxDB186fAgMBAAECggEACFFBc30Qz+Sc5M+oj2vMeGWmM87bPALiSyRlRmHsIf1n\\nlM6hzxTya5Eu2gpInT6evt/5ylZ+LYQ7PPjZv3xH33PuYQbVZDD0NKBkBRPbBbgo\\nIILTn+gEU9CdfOR1p1T/x07z/UMsIdbpeJSnhur2CpxKg1NpAo7s9h6AFjBBPM3L\\nV7gOnjs3dduL1bIiugQmv4N4W7mb3IslzGYxjE+C5AU61+5l1Wtul509kHxNeiXE\\nW2HDC64wYVNnGazw0risQYVrBcUi24Ovx2GIhy2zMhwZcqObpTyuAJf5uNh1oZhr\\nljUCn3LIoPUkFf8d65OoWhJuIeS/hHduVCgVi/2aOQKBgQD0oc/KZSB1rfROefdO\\nq9+KHblzWdQtSqQzevaY+MoiwmMlpRxBvM78dquyQo97i8ibA7OZIiyIPmuSDP1A\\n7W8C73bY49TE2XWQIySRVlgmRu58JAa9yB/PvS4fliwZvmrAxBTEnjeE85I/2oOM\\nTs9boVe9+8+9YO5JQVz0y8wTyQKBgQDmxXNtn6zxOpKu5/tLYDw6hdjEaxJoPi2w\\nGZR5pOUr7/1RdlrocqFp5EX9PGMiGjD2Ax9539snT+6IvNxn9G6hBptu2kwy0OTd\\no0hR3MXt9dJIoWgOHCsSUd9jr7qDXa3MbTi/YTRAt1inIrUlnHSPe2QVlZMNY5KI\\n6oZtSbHzJwKBgQCUx3yKiWpuZ7d3qvHfpOQ1KdLJ9s32JbkrnhMwAc9dyH9oO7yt\\ntljkboAJ0DVXXDJLJLsr3P7cdaoSj1fPDxg+3siXLCkQ93hqixUIV00RKn6MfZSk\\nA3xlaZcNmtWDaq2eQyKmWdtGPqSptQngYWX3Qm8MmoNDmBoT727Las7ZEQKBgBNv\\n7hj9qgNne5Nf1rqykGAdhfSFUDeXhSGgBfF5AhSBUkTaQy3w+ceBgqOhwnfM3PLb\\nsHsDb+IPyXea8LWQ0QCfHdhoaqKdFanVZvH+Nm2kluGnNqx5kucoHji3RG5sJYdi\\na7Uy6sPIrZ7mPXu9gdPUAMoQnyIxkNYXatspqeNhAoGBAIwRretgg5pqS8f5b3Ih\\n0CW3sikK0RG//5p4nK/hWqf27rs4kDb4tuakchyMPWUAK3QlBv4D8wbqqj+XNOAB\\noKKMsU1aR4qZUNiZQSZd+JcnFhaN9tF53+9ZF8QCLnGx+3Mp66bMJMAf3l7/7TFi\\nwceyGlwiKWm3EFECaAsVNKya\\n-----END PRIVATE KEY-----\\n\",\"client_email\":\"deploy-testing@oc-staging1.iam.gserviceaccount.com\",\"client_id\":\"105699239176159368810\",\"auth_uri\":\"https://accounts.google.com/o/oauth2/auth\",\"token_uri\":\"https://oauth2.googleapis.com/token\",\"auth_provider_x509_cert_url\":\"https://www.googleapis.com/oauth2/v1/certs\",\"client_x509_cert_url\":\"https://www.googleapis.com/robot/v1/metadata/x509/deploy-testing%40oc-staging1.iam.gserviceaccount.com\"}",
+      "variable_type": "file",
+      "protected": true,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "gcp"
+    },
+    {
+      "id": 4652,
+      "key": "primary_provider__DIGITALOCEAN_TOKEN",
+      "value": "asdf",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "do"
+    },
+    {
+      "id": 4644,
+      "key": "UNFURL_PROJECT_SUBSCRIPTIONS",
+      "value": "{}",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": false,
+      "raw": false,
+      "environment_scope": "*"
+    },
+    {
+      "id": 4645,
+      "key": "UNFURL_PROJECT_TOKEN",
+      "value": "uc-iMy75yuTL636t2ZVZzkp",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": true,
+      "raw": false,
+      "environment_scope": "*"
+    },
+    {
+      "id": 4643,
+      "key": "UNFURL_VAULT_DEFAULT_PASSWORD",
+      "value": "zqaBV14SUD9jOpx",
+      "variable_type": "env_var",
+      "protected": false,
+      "masked": true,
+      "raw": false,
+      "environment_scope": "*"
+    }
+  ]
+}

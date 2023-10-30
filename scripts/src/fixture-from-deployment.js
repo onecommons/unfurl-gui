@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const path = require('path')
 const {unfurlGuiRoot} = require('./shared/util.js')
 const fs = require('fs')
@@ -23,8 +24,8 @@ function main() {
   }
   pathComponents.pop()
 
-  const fixtureName = `_${environmentName}__${blueprintName}__${deploymentName}`,
-    fixturePath = `generated/deployments/${fixtureName}`
+  const fixtureName = testName || `_${environmentName}__${blueprintName}__${deploymentName}`,
+    fixturePath = `generated/deployments/${TEST_VERSIONS}/${fixtureName}`
 
   const DeploymentPath = { [deployPath]: unfurlExport.DeploymentPath[deployPath]}
   const deployment = {
@@ -51,7 +52,6 @@ function main() {
       path.join(__dirname, 'fixture-from-deployment', 'recreate-deployment.template.js'),
       'utf-8'
     )
-      .replace('$FIXTURE_PATH', fixturePath)
       .replace('$TEST_NAME', generateTest)
 
     fs.writeFileSync(

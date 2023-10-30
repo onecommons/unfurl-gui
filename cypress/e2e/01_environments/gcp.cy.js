@@ -6,7 +6,7 @@ const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 
-const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
+const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2, matchCase: false})
 
 function authenticateWithInvalidJSON() {
   cy.url().should('not.include', `/${NAMESPACE}/dashboard/-/environments`)

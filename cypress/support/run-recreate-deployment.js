@@ -170,6 +170,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             }
           // }
           for (const property of template.properties) {
+            if(property.value == null) continue
             cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
             let value = property.value
             let name = property.name
@@ -236,7 +237,7 @@ Cypress.Commands.add('recreateDeployment', options => {
 
           if(!match) continue
 
-          if (dependency.constraint.visibility == 'hidden') {
+          if (dependency.constraint.visibility == 'hidden' || match.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)
             continue
           }
@@ -247,7 +248,10 @@ Cypress.Commands.add('recreateDeployment', options => {
             // .click() // this is a bit hacky
 
           let dependencyCreate = $document.querySelector(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
-          if(!dependencyCreate) continue
+          if(!dependencyCreate) {
+            cy.log(`Couldn't find create for ${template.name}.${dependency.name}`)
+            continue
+          }
           if(
             !dependencyCreate.offsetParent
             && $document.querySelector(`[data-testid=tab-extras-${template.name}]`)
