@@ -162,7 +162,7 @@ class Fixture {
           try {
             response = await interceptMethod(newUrl, ...args)
           } catch(e) {
-            console.error(e.response)
+            console.error(e, e.response, e.message)
             throw e
           }
           return response
