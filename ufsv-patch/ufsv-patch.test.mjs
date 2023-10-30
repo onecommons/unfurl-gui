@@ -86,6 +86,7 @@ function spawnDryrunSync(fixture) {
 async function sleepyCurl(n=2000) {
   try {
     childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
+    childProcess.execSync(`curl -v ${OC_URL}/-/health`, {stdio: 'inherit'})
   } catch(e) {
     console.error(e.message)
     await sleep(n+1000)
