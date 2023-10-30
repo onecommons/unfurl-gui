@@ -1,6 +1,6 @@
 const OC_NAMESPACE = process.env.OC_NAMESPACE || 'onecommons/blueprints'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
-const PORT = process.env.PORT
+const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
 
 import {expect, jest} from '@jest/globals'
