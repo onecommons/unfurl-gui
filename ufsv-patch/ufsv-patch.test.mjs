@@ -15,6 +15,7 @@ const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const UNFURL_SERVER_CWD = process.env.UNFURL_SERVER_CWD || '/tmp/ufsv'
 const OC_URL = process.env.OC_URL
 const PORT = process.env.PORT || '5001'
+const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
 
 const prefix = `cypress/fixtures/generated/deployments/${TEST_VERSIONS}/`
 const suffix = '.json'
@@ -87,6 +88,7 @@ async function runSpecs() {
     setupCmd()
     unfurlServer = spawnUnfurlServer()
     await sleep(2000)
+    childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
   })
 
   afterAll(() => {
