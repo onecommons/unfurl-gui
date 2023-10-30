@@ -15,7 +15,10 @@ const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const UNFURL_SERVER_CWD = process.env.UNFURL_SERVER_CWD || '/tmp/ufsv'
 const OC_URL = process.env.OC_URL
 const PORT = process.env.PORT || '5001'
-const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
+const hostname = process.env.CI ? 'docker': 'localhost'
+const UNFURL_SERVER_URL =  `http://${hostname}:${PORT}`
+
+console.log({UNFURL_SERVER_URL})
 
 const prefix = `cypress/fixtures/generated/deployments/${TEST_VERSIONS}/`
 const suffix = '.json'
