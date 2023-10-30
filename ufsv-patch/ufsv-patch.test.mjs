@@ -42,8 +42,9 @@ function setupCmd() {
 
 function spawnUnfurlServer() {
     return childProcess.spawn(
-      'unfurl',
+      '/usr/bin/env',
       [
+        'unfurl',
         'serve',  '.',
         '--cloud-server', OC_URL,
         '--port', PORT,
@@ -61,8 +62,9 @@ function spawnUnfurlServer() {
 
 function spawnDryrunSync(fixture) {
   return childProcess.spawnSync(
-    'unfurl',
+    '/usr/bin/env',
     [
+      'unfurl',
       'deploy',
       '--dryrun',
       '--use-environment', fixture.environment,
@@ -81,15 +83,25 @@ function spawnDryrunSync(fixture) {
   )
 }
 
+async function sleepyCurl(n=2000) {
+  try {
+    childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
+  } catch(e) {
+    console.error(e.message)
+    await sleep(n+1000)
+    await sleepyCurl()
+  }
+}
+
 async function runSpecs() {
   let unfurlServer
 
   beforeAll(async () => {
     setupCmd()
     unfurlServer = spawnUnfurlServer()
-    await sleep(2000)
-    childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
-  })
+    await sleep(1000)
+    await sleepyCurl()
+  }, 30 * 1000)
 
   afterAll(() => {
     unfurlServer.kill(2)
