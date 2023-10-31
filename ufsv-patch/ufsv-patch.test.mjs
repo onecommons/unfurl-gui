@@ -49,7 +49,7 @@ function testToDryrunLogPath(testName) {
 }
 
 function testToArtifactPath(testName) {
-  return `/tmp/${testName}-ufartifacts`
+  return `/tmp/ufartifacts/${testName}`
 }
 
 function spawnUnfurlServer(testName) {
@@ -183,6 +183,10 @@ async function runSpecs() {
       const dryrun = spawnDryrunSync(fixture)
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
+
+      try {
+        fs.mkdirSync('/tmp/ufartifacts')
+      } catch(e) { }
 
       fs.renameSync(`/tmp/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
       expect(dryrun.status).toBe(0)
