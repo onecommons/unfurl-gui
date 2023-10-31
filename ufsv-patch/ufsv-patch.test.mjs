@@ -40,7 +40,12 @@ function setupCmd() {
     }
 }
 
-function spawnUnfurlServer() {
+function testToUfsvLogPath(testName) {
+  return `/tmp/${testName}-ufsv.log`
+}
+
+function spawnUnfurlServer(testName) {
+    const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
     return childProcess.spawn(
       '/usr/bin/env',
       [
@@ -56,7 +61,11 @@ function spawnUnfurlServer() {
           ...process.env
         },
         cwd: UNFURL_SERVER_CWD,
-        stdio: 'inherit' // exciting
+        stdio: [
+          'inherit',
+          outfile,
+          outfile
+        ]
     })
 }
 
@@ -84,42 +93,44 @@ function spawnDryrunSync(fixture) {
 }
 
 async function sleepyCurl(n=2000) {
+  await sleep(n)
   try {
     childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
     childProcess.execSync(`curl -v ${OC_URL}/-/health`, {stdio: 'inherit'})
   } catch(e) {
     console.error(e.message)
-    await sleep(n+1000)
-    await sleepyCurl()
+    await sleepyCurl(n+1000)
   }
 }
 
 async function runSpecs() {
   let unfurlServer
 
-  beforeAll(async () => {
+  beforeEach(async () => {
+    const testName = (expect.getState().currentTestName).split('/').pop()
+    console.log(`\\e[0Ksection_start:${testName}\\r\\e[0K${testName}`)
+    window.localStorage.clear()
+    window.sessionStorage.clear()
     setupCmd()
-    unfurlServer = spawnUnfurlServer()
-    await sleep(1000)
+    unfurlServer = spawnUnfurlServer(testName)
     await sleepyCurl()
   }, 30 * 1000)
 
-  afterAll(() => {
+  afterEach(() => {
+    console.log(`\\e[0Ksection_end:${testName}\\r\\e[0K`)
     unfurlServer.kill(2)
-  })
-
-  beforeEach(() => {
-    window.localStorage.clear()
-    window.sessionStorage.clear()
-    jest.resetAllMocks()
-    setupCmd()
   })
 
   for(const path of fixtures) {
     const fixture = new Fixture(path)
     test(fixture.name, async () => {
       await fixture.test(store)
+
+      const sectionName = `${fixture.name}.dryrun`
+      console.log(`\\e[0Ksection_start:${sectionName}\\r\\e[0K${sectionName}`)
       const dryrun = spawnDryrunSync(fixture)
+      console.log(`\\e[0Ksection_end:${sectionName}\\r\\e[0K`)
+
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
   }

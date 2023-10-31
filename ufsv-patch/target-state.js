@@ -14,20 +14,17 @@ glob.sync('./ufsv-patch/overwrite-templates/*.json').forEach(overwrite => {
 
 class TargetState {
   constructor(store, fixture) {
-    console.log(Object.keys(overwrites))
 
     for(const template of Object.values(fixture.ResourceTemplate)) {
       for(const dependency of template.dependencies) {
         const type = dependency.constraint.resourceType
         const match = dependency.match
-        console.log({match, type})
         if(match && overwrites[type]) {
           fixture.ResourceTemplate[match] = {
             ...JSON.parse(overwrites[type]),
             name: match
           }
 
-          console.log(fixture.ResourceTemplate[match])
         }
       }
     }
@@ -66,7 +63,6 @@ class TargetState {
 
     for(const dependencyB of b?.dependencies || []) {
       const recurse = async () => {
-        // console.log('recurse', dependencyB)
         await this.setProperties(dependencyB.match)
         await this.recursiveCreateDependencies(dependencyB.match)
       }
@@ -78,12 +74,9 @@ class TargetState {
       }
       if(!(dependencyA?.match || dependencyB.match)) continue
 
-      // async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, recursiveInstantiate}) {
-
       if(! this.store.getters.constraintIsHidden(templateName, dependencyB.name) && !dependencyA?.match) {
         const requiredType = dependencyB.constraint.resourceType
         const environmentName = this.store.getters.getCurrentEnvironmentName
-        // console.log(environmentName, this.store.getters.getCurrentEnvironment)
         const implementation_requirements = this.store.getters.providerTypesForEnvironment(environmentName)
         const params = {'extends': requiredType, implementation_requirements}
 
@@ -97,9 +90,6 @@ class TargetState {
             title: this.ResourceTemplate[dependencyB.match].title,
             selection: this.store.getters.resolveResourceTypeFromAny(this.ResourceTemplate[dependencyB.match].type)
         }
-        // console.log(Object.keys(this.store.state.templateResources.resourceTemplates))
-        // console.log('creating', toBeCreated)
-        // TODO support connect
         await this.store.dispatch('createNodeResource',
           toBeCreated
         )

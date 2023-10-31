@@ -157,7 +157,6 @@ class Fixture {
             .replace(/auth_project=jest%2Fdashboard(&)?/, '')
           const {headers} = method == 'get'? args[0]: args[1]
           delete headers['x-git-credentials']
-          // console.log({newUrl, method})
 
           let response
           try {
@@ -167,7 +166,6 @@ class Fixture {
             throw e
           }
           return response
-          // return await axiosGet(newUrl)
         }
         return interceptWithMock(interceptUrl) || await interceptMethod(interceptUrl, ...args)
       }
