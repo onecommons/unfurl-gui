@@ -103,20 +103,20 @@ async function sleepyCurl(n=2000) {
   }
 }
 
-function ciWrite(...args) {
+function writeLine(...args) {
   process.stderr.write(args.join(' ') + '\n', 'utf8')
 }
 
 function sectionStart(name) {
   const now = Math.floor(Date.now() / 1000)
   const esc = '\033' // literal can't be used in template string
-  ciWrite(`${esc}[0Ksection_start:${now}:${name}\r${esc}[0K${name}`)
+  writeLine(`${esc}[0Ksection_start:${now}:${name}\r${esc}[0K${name}`)
 }
 
 function sectionEnd(name) {
   const now = Math.floor(Date.now() / 1000)
   const esc = '\033' // literal can't be used in template string
-  ciWrite(`${esc}[0Ksection_end:${now}:${name}\r${esc}[0K`)
+  writeLine(`${esc}[0Ksection_end:${now}:${name}\r${esc}[0K`)
 }
 
 async function runSpecs() {
