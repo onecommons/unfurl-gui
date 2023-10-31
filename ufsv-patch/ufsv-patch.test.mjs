@@ -103,10 +103,8 @@ async function sleepyCurl(n=2000) {
   }
 }
 
-function writeLine(...args) {
-  // fs.writeFileSync(0, args.join(' ') + '\n') // doesn't work in CI?
-  // process.stdin.write(args.join(' ') + '\n', 'utf8')
-  childProcess.execSync('echo', [...args], {stdio: 'inherit'})
+function ciWrite(...args) {
+  process.stderr.write(args.join(' ') + '\n', 'utf8')
 }
 
 async function runSpecs() {
@@ -114,7 +112,7 @@ async function runSpecs() {
 
   beforeEach(async () => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    writeLine(`\\e[0Ksection_start:${testName}\\r\\e[0K${testName}`)
+    ciWrite(`\\e[0Ksection_start:${testName}\\r\\e[0K${testName}`)
     window.localStorage.clear()
     window.sessionStorage.clear()
     setupCmd()
@@ -124,7 +122,7 @@ async function runSpecs() {
 
   afterEach(() => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    writeLine(`\\e[0Ksection_end:${testName}\\r\\e[0K`)
+    ciWrite(`\\e[0Ksection_end:${testName}\\r\\e[0K`)
     unfurlServer.kill(2)
   })
 
@@ -134,9 +132,9 @@ async function runSpecs() {
       await fixture.test(store)
 
       const sectionName = `${fixture.name}.dryrun`
-      writeLine(`\\e[0Ksection_start:${sectionName}\\r\\e[0K${sectionName}`)
+      ciWrite(`\\e[0Ksection_start:${sectionName}\\r\\e[0K${sectionName}`)
       const dryrun = spawnDryrunSync(fixture)
-      writeLine(`\\e[0Ksection_end:${sectionName}\\r\\e[0K`)
+      ciWrite(`\\e[0Ksection_end:${sectionName}\\r\\e[0K`)
 
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
