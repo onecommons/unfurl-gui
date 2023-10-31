@@ -109,13 +109,16 @@ function writeLine(...args) {
 
 function sectionStart(name) {
   const now = Math.floor(Date.now() / 1000)
-  const esc = '\033' // literal can't be used in template string
+  // strict mode doesn't allow octal literal at all?
+  // const esc = '\033' // literal can't be used in template string
+  const esc = atob('Gw==')
   writeLine(`${esc}[0Ksection_start:${now}:${name}\r${esc}[0K${name}`)
 }
 
 function sectionEnd(name) {
   const now = Math.floor(Date.now() / 1000)
-  const esc = '\033' // literal can't be used in template string
+  // const esc = '\033' // literal can't be used in template string
+  const esc = atob('Gw==')
   writeLine(`${esc}[0Ksection_end:${now}:${name}\r${esc}[0K`)
 }
 
