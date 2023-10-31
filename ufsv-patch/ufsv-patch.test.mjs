@@ -53,27 +53,32 @@ function testToArtifactPath(testName) {
 }
 
 function spawnUnfurlServer(testName) {
-    const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
-    return childProcess.spawn(
-      '/usr/bin/env',
-      [
-        'unfurl',
-        'serve',  '.',
-        '--cloud-server', OC_URL,
-        '--port', PORT,
-        '--clone-root', '/tmp/repos'
-      ],
-      {
-        env: {
-          ...UNFURL_DEFAULT_ENV,
-          ...process.env
-        },
-        cwd: UNFURL_SERVER_CWD,
-        stdio: [
-          'inherit',
-          outfile,
-          outfile
-        ]
+  const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
+  const cmd = '/usr/bin/env'
+  const args = [
+      'unfurl',
+      'serve',  '.',
+      '--cloud-server', OC_URL,
+      '--port', PORT,
+      '--clone-root', '/tmp/repos'
+  ]
+
+  writeLine('serve command: ', [cmd, ...args].join(' '))
+
+  return childProcess.spawn(
+    cmd,
+    args,
+    {
+      env: {
+        ...UNFURL_DEFAULT_ENV,
+        ...process.env
+      },
+      cwd: UNFURL_SERVER_CWD,
+      stdio: [
+        'inherit',
+        outfile,
+        outfile
+      ]
     })
 }
 
@@ -90,10 +95,9 @@ function spawnDryrunSync(fixture) {
       outfile
     ]
   }
+  const cmd = '/usr/bin/env'
 
-  return childProcess.spawnSync(
-    '/usr/bin/env',
-    [
+  const args = [
       'unfurl',
       'deploy',
       '--dryrun',
@@ -101,7 +105,13 @@ function spawnDryrunSync(fixture) {
       '--approve',
       '--jobexitcode', 'error',
       fixture.deploymentDir
-    ],
+  ]
+
+  writeLine('deploy command: ', [cmd, ...args].join(' '))
+
+  return childProcess.spawnSync(
+    cmd,
+    args,
     {
       env: {
         ...UNFURL_DEFAULT_ENV,
@@ -188,7 +198,10 @@ async function runSpecs() {
         fs.mkdirSync('/tmp/ufartifacts')
       } catch(e) { }
 
-      fs.renameSync(`/tmp/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
+      try {
+        fs.renameSync(`/tmp/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
+      } catch(e) { console.error(e.message) }
+
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
   }
