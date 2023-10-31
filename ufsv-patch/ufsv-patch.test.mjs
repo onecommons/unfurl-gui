@@ -112,7 +112,7 @@ async function runSpecs() {
 
   beforeEach(async () => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    ciWrite(`\\e[0Ksection_start:${testName}\\r\\e[0K${testName}`)
+    ciWrite(`\e[0Ksection_start:${testName}\r\e[0K${testName}`)
     window.localStorage.clear()
     window.sessionStorage.clear()
     setupCmd()
@@ -122,7 +122,7 @@ async function runSpecs() {
 
   afterEach(() => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    ciWrite(`\\e[0Ksection_end:${testName}\\r\\e[0K`)
+    ciWrite(`\e[0Ksection_end:${testName}\r\e[0K`)
     unfurlServer.kill(2)
   })
 
@@ -132,9 +132,9 @@ async function runSpecs() {
       await fixture.test(store)
 
       const sectionName = `${fixture.name}.dryrun`
-      ciWrite(`\\e[0Ksection_start:${sectionName}\\r\\e[0K${sectionName}`)
+      ciWrite(`\e[0Ksection_start:${sectionName}\r\e[0K${sectionName}`)
       const dryrun = spawnDryrunSync(fixture)
-      ciWrite(`\\e[0Ksection_end:${sectionName}\\r\\e[0K`)
+      ciWrite(`\e[0Ksection_end:${sectionName}\r\e[0K`)
 
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
