@@ -107,12 +107,13 @@ function writeLine(...args) {
   process.stderr.write(args.join(' ') + '\n', 'utf8')
 }
 
-function sectionStart(name) {
+function sectionStart(name, collapsed=false) {
   const now = Math.floor(Date.now() / 1000)
   // strict mode doesn't allow octal literal at all?
   // const esc = '\033' // literal can't be used in template string
   const esc = atob('Gw==')
-  writeLine(`${esc}[0Ksection_start:${now}:${name}\r${esc}[0K${name}`)
+  const _collapsed = collapsed? '[collapsed=true]': ''
+  writeLine(`${esc}[0Ksection_start:${now}:${name}${_collapsed}\r${esc}[0K${name}`)
 }
 
 function sectionEnd(name) {
@@ -146,9 +147,10 @@ async function runSpecs() {
     test(fixture.name, async () => {
       await fixture.test(store)
 
-      const sectionName = `${fixture.name}.dryrun`
-      sectionStart(sectionName)
+      const sectionName = `${fixture.name.split('/').pop()}.dryrun`
+      sectionStart(sectionName, true)
       const dryrun = spawnDryrunSync(fixture)
+      await sleep(1000) // logs are buffering weird?
       sectionEnd(sectionName)
 
       expect(dryrun.status).toBe(0)
