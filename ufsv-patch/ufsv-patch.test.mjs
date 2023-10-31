@@ -103,12 +103,16 @@ async function sleepyCurl(n=2000) {
   }
 }
 
+function writeLine(...args) {
+  fs.writeFileSync(0, args.join(' ') + '\n')
+}
+
 async function runSpecs() {
   let unfurlServer
 
   beforeEach(async () => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    console.log(`\\e[0Ksection_start:${testName}\\r\\e[0K${testName}`)
+    writeLine(`\\e[0Ksection_start:${testName}\\r\\e[0K${testName}`)
     window.localStorage.clear()
     window.sessionStorage.clear()
     setupCmd()
@@ -117,7 +121,8 @@ async function runSpecs() {
   }, 30 * 1000)
 
   afterEach(() => {
-    console.log(`\\e[0Ksection_end:${testName}\\r\\e[0K`)
+    const testName = (expect.getState().currentTestName).split('/').pop()
+    writeLine(`\\e[0Ksection_end:${testName}\\r\\e[0K`)
     unfurlServer.kill(2)
   })
 
@@ -127,9 +132,9 @@ async function runSpecs() {
       await fixture.test(store)
 
       const sectionName = `${fixture.name}.dryrun`
-      console.log(`\\e[0Ksection_start:${sectionName}\\r\\e[0K${sectionName}`)
+      writeLine(`\\e[0Ksection_start:${sectionName}\\r\\e[0K${sectionName}`)
       const dryrun = spawnDryrunSync(fixture)
-      console.log(`\\e[0Ksection_end:${sectionName}\\r\\e[0K`)
+      writeLine(`\\e[0Ksection_end:${sectionName}\\r\\e[0K`)
 
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
