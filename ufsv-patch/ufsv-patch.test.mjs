@@ -109,12 +109,12 @@ function ciWrite(...args) {
 
 function sectionStart(name) {
   const now = Math.floor(Date.now() / 1000)
-  ciWrite(`[0Ksection_start${now}:${name}\r[0K${name}`)
+  ciWrite(`\033[0Ksection_start${now}:${name}\r\033[0K${name}`)
 }
 
 function sectionEnd(name) {
   const now = Math.floor(Date.now() / 1000)
-  ciWrite(`[0Ksection_end${now}:${name}\r[0K`)
+  ciWrite(`\033[0Ksection_end${now}:${name}\r\033[0K`)
 }
 
 async function runSpecs() {
@@ -132,7 +132,7 @@ async function runSpecs() {
 
   afterEach(() => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    sectionName(testName)
+    sectionEnd(testName)
     unfurlServer.kill(2)
   })
 
