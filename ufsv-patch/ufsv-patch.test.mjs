@@ -105,7 +105,8 @@ async function sleepyCurl(n=2000) {
 
 function writeLine(...args) {
   // fs.writeFileSync(0, args.join(' ') + '\n') // doesn't work in CI?
-  process.stdin.write(args.join(' ') + '\n', 'utf8')
+  // process.stdin.write(args.join(' ') + '\n', 'utf8')
+  childProcess.execSync('echo', [...args])
 }
 
 async function runSpecs() {
