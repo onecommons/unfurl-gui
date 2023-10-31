@@ -44,6 +44,10 @@ function testToUfsvLogPath(testName) {
   return `/tmp/${testName}-ufsv.log`
 }
 
+function testToDryrunLogPath(testName) {
+  return `/tmp/${testName}-ufdryrun.log`
+}
+
 function spawnUnfurlServer(testName) {
     const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
     return childProcess.spawn(
@@ -74,7 +78,7 @@ function spawnDryrunSync(fixture) {
 
   if(process.env.CI) {
     const testName = fixture.name.split('/').pop()
-    const logName = `/tmp/${testName}-ufdryrun.log`
+    const logName = testToDryrunLogPath(testName)
     const outfile = fs.openSync(logName, 'w')
     stdio = [
       'inherit',
@@ -153,6 +157,16 @@ async function runSpecs() {
     const testName = (expect.getState().currentTestName).split('/').pop()
     sectionEnd(testName)
     unfurlServer.kill(2)
+
+    if(process.env.CI) {
+      const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
+      writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)
+    }
+
+    if(process.env.CI && fs.existsSync(testToDryrunLogPath(testName))) {
+      const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
+      writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
+    }
   })
 
   for(const path of fixtures) {
@@ -160,11 +174,6 @@ async function runSpecs() {
     test(fixture.name, async () => {
       await fixture.test(store)
       const testName = fixture.name.split('/').pop()
-      if(process.env.CI) {
-        const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
-        writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)
-      }
-
 
       const sectionName = `${testName}.dryrun`
       // sectionStart(sectionName, true)
@@ -172,10 +181,6 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
-      if(process.env.CI) {
-        const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
-        writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
-      }
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
   }
