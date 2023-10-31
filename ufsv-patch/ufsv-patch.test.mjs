@@ -159,12 +159,12 @@ async function runSpecs() {
     const fixture = new Fixture(path)
     test(fixture.name, async () => {
       await fixture.test(store)
+      const testName = fixture.name.split('/').pop()
       if(process.env.CI) {
         const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
         writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)
       }
 
-      const testName = fixture.name.split('/').pop()
 
       const sectionName = `${testName}.dryrun`
       // sectionStart(sectionName, true)
@@ -172,11 +172,11 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
-      expect(dryrun.status).toBe(0)
       if(process.env.CI) {
         const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
         writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
       }
+      expect(dryrun.status).toBe(0)
     }, 120 * 1000)
   }
 }
