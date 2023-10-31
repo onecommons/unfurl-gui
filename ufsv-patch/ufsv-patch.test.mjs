@@ -70,6 +70,19 @@ function spawnUnfurlServer(testName) {
 }
 
 function spawnDryrunSync(fixture) {
+  let stdio = 'inherit'
+
+  if(process.env.CI) {
+    const testName = fixture.name.split('/').pop()
+    const logName = `/tmp/${testName}-ufdryrun.log`
+    const outfile = fs.openSync(logName, 'w')
+    stdio = [
+      'inherit',
+      outfile,
+      outfile
+    ]
+  }
+
   return childProcess.spawnSync(
     '/usr/bin/env',
     [
@@ -87,7 +100,7 @@ function spawnDryrunSync(fixture) {
         ...process.env
       },
       cwd: UNFURL_SERVER_CWD,
-      stdio: 'inherit' // exciting
+      stdio
     }
   )
 }
@@ -128,7 +141,7 @@ async function runSpecs() {
 
   beforeEach(async () => {
     const testName = (expect.getState().currentTestName).split('/').pop()
-    sectionStart(testName)
+    sectionStart(testName, true)
     window.localStorage.clear()
     window.sessionStorage.clear()
     setupCmd()
@@ -148,10 +161,10 @@ async function runSpecs() {
       await fixture.test(store)
 
       const sectionName = `${fixture.name.split('/').pop()}.dryrun`
-      sectionStart(sectionName, true)
+      // sectionStart(sectionName, true)
       const dryrun = spawnDryrunSync(fixture)
-      await sleep(1000) // logs are buffering weird?
-      sectionEnd(sectionName)
+      // await sleep(1000) // logs are buffering weird?
+      // sectionEnd(sectionName)
 
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
