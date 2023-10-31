@@ -48,6 +48,10 @@ function testToDryrunLogPath(testName) {
   return `/tmp/${testName}-ufdryrun.log`
 }
 
+function testToArtifactPath(testName) {
+  return `/tmp/${testName}-ufartifacts`
+}
+
 function spawnUnfurlServer(testName) {
     const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
     return childProcess.spawn(
@@ -161,11 +165,10 @@ async function runSpecs() {
     if(process.env.CI) {
       const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
       writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)
-    }
 
-    if(process.env.CI && fs.existsSync(testToDryrunLogPath(testName))) {
-      const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
-      writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
+      if(fs.existsSync(testToDryrunLogPath(testName))) {
+        writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
+      }
     }
   })
 
@@ -181,6 +184,7 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
+      fs.renameSync(`/tmp/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
   }
