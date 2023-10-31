@@ -164,10 +164,10 @@ async function runSpecs() {
 
     if(process.env.CI) {
       const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
-      writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)
+      writeLine(`curl -s -H "PRIVATE-TOKEN: $TOKEN" ${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)
 
       if(fs.existsSync(testToDryrunLogPath(testName))) {
-        writeLine(`${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
+        writeLine(`curl -s -H "PRIVATE-TOKEN: $TOKEN" ${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufdryrun.log`)
       }
     }
   })
