@@ -174,6 +174,9 @@ class Fixture {
     jest.spyOn(axios, 'get').mockImplementation(axiosIntercept('get'))
     jest.spyOn(axios, 'post').mockImplementation(axiosIntercept('post'))
     jest.spyOn(axios, 'patch').mockImplementation(axiosIntercept('patch'))
+    jest.spyOn(axios, 'patch').mockImplementation(axiosIntercept('patch'))
+
+    jest.spyOn(console, 'warn').mockImplementation((...args) => console.log('WARN', ...args)) // jest prints out trace for normal console.warn
 
     await this.initStore(store)
 

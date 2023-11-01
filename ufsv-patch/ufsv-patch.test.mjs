@@ -199,6 +199,10 @@ async function runSpecs() {
       } catch(e) { }
 
       try {
+        fs.rmSync(testToArtifactPath(testName), {recursive: true, force: true})
+      } catch(e) {}
+
+      try {
         fs.renameSync(`/tmp/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
       } catch(e) { console.error(e.message) }
 

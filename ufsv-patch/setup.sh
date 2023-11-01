@@ -10,7 +10,7 @@ tar xvf ufsv-patch/test-dashboard.tgz -C $UNFURL_SERVER_CWD
 back=$PWD
 cd $UNFURL_SERVER_CWD
 git checkout .
-git remote remove origin
+git remote remove origin || /bin/true
 default_oc_url=https://unfurl.cloud
 # git remote add origin ${OC_URL:-$default_oc_url}/jest/dashboard
 cd $back

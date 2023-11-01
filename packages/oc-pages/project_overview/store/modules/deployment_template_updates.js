@@ -821,7 +821,6 @@ const mutations = {
         state.environmentScope = environmentScope
     },
     setCommitBranch(state, branch) {
-        console.log('setCommitBranch', branch)
         state.branch = branch
     },
     setUpdateType(state, updateType) {
@@ -998,7 +997,6 @@ const actions = {
                 // infer information from the deployment object path instead of our getters
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
-                console.log({path})
                 const pathSplits = path.split('/')
                 pathSplits.shift()
                 const environmentName = pathSplits.shift()
