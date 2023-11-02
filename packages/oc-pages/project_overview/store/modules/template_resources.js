@@ -357,12 +357,17 @@ const actions = {
             environmentName
         )?.name
 
+
         if(params) {
-            await Promise.all([
-                dispatch('blueprintFetchTypesWithParams', {params}), // currently does nothing
-                environmentName && dispatch('environmentFetchTypesWithParams', {environmentName, deploymentName, params})
-            ])
+            // for now we are assuming that these two fetches are redundant
+            // we always prefer environment repositories when the environment is available
+            const fetchPromise = environmentName?
+                dispatch('environmentFetchTypesWithParams', {environmentName, deploymentName, params}):
+                dispatch('blueprintFetchTypesWithParams', {params})
+
+            await fetchPromise
         }
+
 
         // this can go to the receiver since all this information is local to the store
         commit('setAvailableResourceTypes', getters.lookupConfigurableTypes(

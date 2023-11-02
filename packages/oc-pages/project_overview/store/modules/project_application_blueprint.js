@@ -600,9 +600,7 @@ const getters = {
     },
 
     blueprintRepositories(state) {
-        return []
-        // call types on unique blueprint repositories
-        // return Object.values(state.repositories)
+        return Object.values(state.repositories)
     },
 }
 
