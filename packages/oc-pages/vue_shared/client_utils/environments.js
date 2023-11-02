@@ -14,12 +14,11 @@ export async function fetchGitlabEnvironments(projectPath, environmentName) {
     // #!if false
 
     const {data} = await axios.get(`/${projectPath}/-/environments.json`)
-    console.log(data)
     result = data?.environments || result
 
     // #!endif
     return result
-} 
+}
 
 export async function lookupEnvironmentId(projectPath, environmentName) {
     let result = 0
@@ -205,7 +204,7 @@ export async function fetchEnvironments({fullPath, includeDeployments, branch}) 
         })
         .map(([_, env]) => {env._dashboard = fullPath; return env})
 
-    for(const env of environments) { 
+    for(const env of environments) {
         env._dashboard = fullPath
         Object.entries(env.instances).forEach(([key, value]) => {
             const title = value.title || value.metadata?.title || key

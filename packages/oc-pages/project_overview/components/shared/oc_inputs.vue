@@ -387,7 +387,6 @@ export default {
       const properties = this.card.properties || []
 
       for (const [name, definition] of Object.entries(this.fromSchema)) {
-        console.log(name, definition)
         try {
           if(definition.sensitive && !this.userCanEdit) continue
           let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))

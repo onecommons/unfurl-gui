@@ -114,7 +114,10 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
 const unfurlTypesResponsesCache = {}
 const constraintCombinationsWithCloudmap = {}
-export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}, index) {
+// export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}, index) {
+export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, _params={}, index) {
+    // TODO remove when unfurl server types supports params
+    const params = {}
     const baseUrl = getOverride() || DEFAULT_UNFURL_SERVER_URL
 
     // this is rather convoluted, but we don't want to fetch last commit for a tagged release

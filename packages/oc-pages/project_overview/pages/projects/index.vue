@@ -228,7 +228,7 @@ export default {
         // async, not awaiting
         fetchProjectPermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
         this.fetchCommentsIssue()
-        this.populateJobsList()
+        this.populateJobsList().catch(e => console.error('failed to lookup jobs: ', e.message))
         //
 
         await this.loadPrimaryDeploymentBlueprint()
