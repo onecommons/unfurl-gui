@@ -158,6 +158,30 @@ class Fixture {
           const {headers} = method == 'get'? args[0]: args[1]
           delete headers['x-git-credentials']
 
+          if(method == 'post') {
+            const body = args[0]
+            const patch = body.patch
+
+            for(const entry of patch) {
+              if(entry.__typename == 'ResourceTemplate') {
+                for(const prop of entry.properties) {
+                  if(prop.value.get_env) {
+                    if(prop.name.includes('password')) {
+                      prop.value = '1169336476639707207aA?'
+                    }
+                    else if (prop.name.includes('app_key')) {
+                      prop.value = 'f977e482cc6e585b4e684e434f1dd878'
+                    }
+                    else {
+                      prop.value = '_REDACTED_'
+                      console.warn(`Need a substitution for ${prop.name}`)
+                    }
+                  }
+                }
+              }
+            }
+          }
+
           let response
           try {
             response = await interceptMethod(newUrl, ...args)
@@ -187,6 +211,7 @@ class Fixture {
     await targetState.createAll()
 
     expect(store.getters.cardIsValid(store.getters.getPrimaryCard))
+
     await store.dispatch('commitPreparedMutations')
 
     expect(store.state.errors.errors).toHaveLength(0)

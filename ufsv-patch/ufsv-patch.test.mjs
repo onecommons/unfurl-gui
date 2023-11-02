@@ -172,6 +172,9 @@ async function runSpecs() {
     sectionEnd(testName)
     unfurlServer.kill(2)
 
+    store.state.errors.errors = []
+    store.state.errors.errorsClearedTo = 0
+
     if(process.env.CI) {
       const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
       writeLine(`curl -s -H "PRIVATE-TOKEN: $TOKEN" ${CI_SERVER_URL}/api/v4/projects/${CI_PROJECT_ID}/jobs/${CI_JOB_ID}/artifacts/logs/${testName}-ufsv.log`)

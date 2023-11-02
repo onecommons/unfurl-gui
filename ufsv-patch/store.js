@@ -10,12 +10,12 @@ import misc from '../packages/oc-pages/project_overview/store/modules/misc'
 
 Vue.use(Vuex)
 
-const store = new  Vuex.Store({
+const store = new Vuex.Store({
   modules: {
     environments, deployments, deployment_template_updates, templateResources,
     project_application_blueprint, errors, misc
   },
-  strict: true
+  strict: false
 })
 
 export default store

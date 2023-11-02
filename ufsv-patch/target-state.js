@@ -27,6 +27,7 @@ class TargetState {
 
         }
       }
+
     }
     Object.assign(this, fixture)
 
