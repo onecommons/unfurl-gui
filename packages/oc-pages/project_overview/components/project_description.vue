@@ -39,7 +39,7 @@ export default {
             'getPrimaryCard',
             'resolveResourceTypeFromAny',
             'requirementsForType',
-            'getProjectDescription'
+            'getProjectDescription',
         ]),
         ...mapState(['project']),
 
