@@ -245,7 +245,7 @@ export default {
                   remove: {
                     type: 'void',
                     'x-decorator': 'FormItem',
-                    'x-component': 'ArrayItems.Remove'
+                    'x-component': 'ArrayItems.Remove',
                   }
                 }
               }
@@ -454,7 +454,7 @@ export default {
 }
 </script>
 <template>
-<el-card ref="container" v-if="!card.properties.length == 0" class="oc-inputs" style="overflow-x: auto; max-width: 100%;" data-testid="oc_inputs">
+<el-card ref="container" v-if="!card.properties.length == 0" class="oc-inputs" data-testid="oc_inputs">
   <FormProvider v-if="form" :form="form">
     <FormLayout
         :breakpoints="[680]"
@@ -478,7 +478,7 @@ export default {
     opacity: 0.7;
 }
 .oc-inputs {
-  max-width: 100%;
+  max-width: max(100%, 800px);
   overflow: hidden;
 }
 
@@ -542,8 +542,29 @@ export default {
   max-width: 300px;
 }
 
-.oc-inputs >>> .formily-element-form-item-control-content-component > * {
+.oc-inputs>>> .formily-element-array-items-card {
+  padding: 0;
+}
+
+.oc-inputs >>> .formily-element-array-base-addition {
+  margin-bottom: 8px;
+}
+
+.oc-inputs >>> .formily-element-form-item-control-content-component > :not(.formily-element-array-base-remove) {
   width: 100%;
+}
+
+.oc-inputs >>> .el-card__body {
+  overflow: hidden;
+}
+
+.oc-inputs >>> .gl-dark
+    :is(
+      .formily-element-array-items-card .formily-element-form-item:not(.formily-element-form-item-feedback-layout-popover) .formily-element-form-item-help,
+      .formily-element-array-items .formily-element-array-base-addition:is(:hover, :focus) /*TODO change this value for element-ui so it's not #FFFFFF (and then delete this selector)*/
+    )
+  {
+  background-color: #DDDDDD
 }
 
 @media only screen and (min-width: 430px) {
