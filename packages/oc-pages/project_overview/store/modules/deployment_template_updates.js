@@ -115,7 +115,7 @@ function normalizeUpdatedProperties(name, schema, props, envvarPrefix, pathCompo
         // allow 0 and empty strings unless the input is required
         if(schema.required && value === '') value = null
         if((value ?? null) !== null) {
-            if(schema.sensitive) {
+            if(schema.sensitive && !value[SECRET_DIRECTIVE]) {
                 env[envKey] = value
                 props[name] = {[SECRET_DIRECTIVE]: envKey}
             }
