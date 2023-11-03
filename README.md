@@ -17,6 +17,17 @@ gitlab-ui wraps https://bootstrap-vue.org/ which wraps bootstrap 4
 It also depends on https://portal-vue.linusb.org/ which we could use to build a vs-code like minimap of a view using http://asvd.github.io/syncscroll/ or similar.
 
 
+# Fixture/spec generation
+
+Most integration tests hosted in this repository are based off of completed deployments or deployment drafts.
+
+The easiest way to generate fixtures is to fill out a blueprint on [unfurl.cloud](https://unfurl.cloud) and export the deployment via Unfurl cli.
+
+1. Navigate to https://unfurl.cloud/home#clone-instructions or `https://unfurl.cloud/<your-username>/dashboard#clone-instructions`
+2. Copy and execute the command line snippet for "Clone this Unfurl project if you haven't already"
+3. Run `unfurl export --format deployment --file  <path-to-unfurl-gui>/cypress/fixtures/generated/deployments/v2/<export-name>.json <path-to-ensemble-yaml>`
+
+
 # Jest patch/dryrun test
 
 The test titled `ufsv-patch` mimics the workflow of a user filling out a deployment blueprint and triggering a dryrun deployment.
@@ -71,6 +82,8 @@ Example:
 `curl https://raw.githubusercontent.com/onecommons/unfurl-gui/cy-tests/scripts/trigger-pipeline.sh | bash -s baserow` will trigger the pipeline with `$TEST` set to `baserow`.
 
 If successful the command will output the pipeline URL.
+
+
 
 
 # Cypress tests
