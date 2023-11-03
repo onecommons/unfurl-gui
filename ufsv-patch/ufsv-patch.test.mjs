@@ -12,8 +12,8 @@ const globSync = glob.sync
 
 const SPEC_GLOBS = process.env.SPEC_GLOBS || ''
 const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
-const UNFURL_SERVER_CWD = process.env.UNFURL_SERVER_CWD || '/tmp/ufsv'
-const OC_URL = process.env.OC_URL
+const UNFURL_SERVER_CWD = '/tmp/ufsv'
+const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
 
@@ -27,6 +27,8 @@ const fixtures = SPEC_GLOBS.split(/\s+/).map(
   }
 ).flat()
 
+
+// Update 1_jest-ufcloud-emulation.md when I change
 const UNFURL_DEFAULT_ENV = {
   UNFURL_LOGGING: 'trace',
   UNFURL_HOME: '',
@@ -154,6 +156,14 @@ function sectionEnd(name) {
   writeLine(`${esc}[0Ksection_end:${now}:${name}\r${esc}[0K`)
 }
 
+function setupTestDirectories() {
+  for(const requiredDir of ['/tmp/ufsv', '/tmp/ufartifacts', '/tmp/repos']) {
+    try {
+        fs.mkdirSync(requiredDir)
+    } catch(e) {}
+  }
+}
+
 async function runSpecs() {
   let unfurlServer
 
@@ -197,9 +207,7 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
-      try {
-        fs.mkdirSync('/tmp/ufartifacts')
-      } catch(e) { }
+
 
       try {
         fs.rmSync(testToArtifactPath(testName), {recursive: true, force: true})
@@ -214,4 +222,5 @@ async function runSpecs() {
   }
 }
 
+setupTestDirectories()
 runSpecs()
