@@ -30,7 +30,7 @@ export default {
         <p> Run these shell commands to start an Unfurl Server development session locally on your machine: </p>
         <p>
             Install Unfurl if needed:
-            <code-clipboard class="mt-2">python -m pip install -U unfurl</code-clipboard>
+            <code-clipboard class="mt-2">python -m pip install -U unfurl[full]</code-clipboard>
         </p>
         <p>
             Clone this Unfurl project if you haven't already:
