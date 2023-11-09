@@ -17,10 +17,11 @@ describe('_env-test-gcp-2022-09-07t04-37-10__container-webapp5__container-webapp
         cy.exec(deleteRepo, {failOnNonZeroExit: false})
       })
 
-      const fork = `curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" https://api.github.com/repos/AjBreidenbach/buildpack-test-app/forks` 
+      const fork = `curl -X POST -H "Accept: application/vnd.github+json" -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" https://api.github.com/repos/AjBreidenbach/buildpack-test-app/forks`
 
       // putting the name in the fork payload wasn't working as expected
-      const rename = `curl -X PATCH -H "Accept: application/vnd.github+json" -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -H "Content-Type: application/json" -d '{"name": "${repoName}"}' https://api.github.com/repos/${GITHUB_USERNAME}/buildpack-test-app`
+      // we're also going to set this private
+      const rename = `curl -X PATCH -H "Accept: application/vnd.github+json" -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" -H "Content-Type: application/json" -d '{"name": "${repoName}", "visibility": "private"}' https://api.github.com/repos/${GITHUB_USERNAME}/buildpack-test-app`
 
       console.log({fork, rename, deleteRepo})
       cy.exec(fork)

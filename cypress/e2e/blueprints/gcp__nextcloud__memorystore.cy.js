@@ -1,5 +1,6 @@
-describe('_gcp-2022-09-08t16-51-09__nextcloud__memorystore', () => {
+import {deploymentFixturePath} from '../../support/deployment-fixture'
+describe('gcp__nextcloud__memorystore', () => {
   it('Can recreate deployment', () => {
-    cy.recreateDeployment('generated/deployments/_gcp-2022-09-08t16-51-09__nextcloud__memorystore')
+    cy.recreateDeployment(deploymentFixturePath('gcp__nextcloud__memorystore'))
   })
 })
