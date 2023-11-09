@@ -172,7 +172,7 @@ export default {
             <p>{{instruction}}</p>
             <p>
                 Install Unfurl if needed:
-                <code-clipboard class="mt-1">python -m pip install -U unfurl</code-clipboard>
+                <code-clipboard class="mt-1">python -m pip install -U unfurl[full]</code-clipboard>
             </p>
             <p >
                 Clone this Unfurl project if you haven't already:
