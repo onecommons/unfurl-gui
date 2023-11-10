@@ -22,11 +22,10 @@ const mutations = {
 }
 const actions = {
     async loadDashboard({commit, dispatch, rootGetters}, options={}) {
-        const {fetchPolicy} = options
         commit('setDashboardLoaded', false)
 
         await useImportedStateOnBreakpointOrElse('loadDashboard', async() => {
-            await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath, fetchPolicy});
+            await dispatch('ocFetchEnvironments', {fullPath: rootGetters.getHomeProjectPath});
         })
 
         const items = [];

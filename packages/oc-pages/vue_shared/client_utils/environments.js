@@ -151,7 +151,12 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments({fullPath, includeDeployments, branch}) {
+export async function fetchEnvironments(options) {
+    const {fullPath, includeDeployments, branch} = {
+        includeDeployments: true,
+        ...options
+    }
+
     const projectPath = fullPath
     const format = 'environments'
     const errors = []

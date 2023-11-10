@@ -3,6 +3,8 @@ import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
+import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 import _ from 'lodash'
 import axios from '~/lib/utils/axios_utils'
@@ -45,7 +47,7 @@ const actions = {
 
     async cloneDeployment({getters, dispatch, rootGetters, commit}, {deployment, environment, newDeploymentTitle, targetEnvironment, dryRun}) {
         if(rootGetters.hasPreparedMutations) {
-            dispatch('createError', {
+            commit('createError', {
                 message: "Can't clone deployment - there are prepared changes that haven't been committed. This is a bug.",
                 context: arguments[1],
                 severity: 'critical'
@@ -391,7 +393,70 @@ const actions = {
         commit('pushPreparedMutation', updateTitleInDeploymentTemplate, {root: true})
 
         await dispatch('commitPreparedMutations')
+    },
+
+    async fetchDeployment({state, getters, commit, rootGetters, dispatch}, {deploymentName, environmentName, projectPath, branch}) {
+
+        let deployment
+
+        const format = 'deployment'
+        const deploymentPath = rootGetters.lookupDeployPath(deploymentName, environmentName).name
+
+        try {
+            deployment = await unfurlServerExport({
+                format,
+                projectPath,
+                deploymentPath,
+                branch,
+            })
+        } catch(e) {
+            const responseData = e.response?.data
+            commit('createError', {
+                message: `@fetchDeployment: An error occurred during an export request (${e.message})`,
+                context: {
+                    error: e.message,
+                    format,
+                    deploymentPath,
+                    projectPath,
+                    branch,
+                    ...(typeof responseData == 'object'? responseData: null)
+                },
+                severity: 'critical'
+            })
+            return
+        }
+
+
+        if(deployment.error) {
+            commit('createError', {
+                detail: `Error occured while exporting a deployment`,
+                deployment: deployment.deployment,
+                url: deployment.deployment.replace(/^(..\/)*/, window.location.origin + '/'),
+                error: deployment.error
+            })
+        }
+
+        try {
+            const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
+
+            deployment._environment = environmentName
+
+            if(deployment.ResourceType) {
+                Object.values(deployment.ResourceType).forEach(rt => localNormalize(rt, 'ResourceType', deployment))
+            }
+
+            localNormalize(deploymentObject, 'Deployment', deployment)
+        } catch(e) {
+            commit('createError', {
+                deployment: Object.values(deployment.Deployment)[0].title,
+                detail: 'Unexpected shape for deployment',
+                error: e.message,
+            })
+        }
+
+        commit('setDeployments', [...state.deployments, deployment])
     }
+
 };
 const getters = {
     getDeploymentDictionary(state) {
@@ -555,8 +620,7 @@ const getters = {
 
             return result
         }
-    }
-
+    },
 };
 
 
