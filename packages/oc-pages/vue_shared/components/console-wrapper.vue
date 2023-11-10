@@ -38,7 +38,7 @@ export default {
         },
         async onComplete() {
             await Promise.all([
-                this.loadDashboard({fetchPolicy: 'network-only'}),
+                this.loadDashboard(),
                 this.populateJobsList()
             ])
 
@@ -95,7 +95,7 @@ export default {
                 const consoleContainer = document.querySelector('#console-container')
                 for(const jobLogSection of state.jobLog) {
                     const newConsoleLength = this.visitJobLogSection(jobLogSection, this.linesRead)
-                    
+
                     if(this.shouldScroll && newConsoleLength > this.linesRead) {
                         consoleContainer.scrollTop = consoleContainer.scrollHeight - consoleContainer.offsetHeight
                     }
@@ -128,7 +128,7 @@ export default {
         consoleContainer.appendChild(element)
         consoleContainer.classList.add('loaded')
         consoleContainer.onscroll = () => {
-            const difference = Math.abs(consoleContainer.scrollHeight - consoleContainer.offsetHeight - consoleContainer.scrollTop) 
+            const difference = Math.abs(consoleContainer.scrollHeight - consoleContainer.offsetHeight - consoleContainer.scrollTop)
             this.autoscroll = difference <= 25
         }
 
