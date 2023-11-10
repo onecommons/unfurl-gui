@@ -76,7 +76,7 @@ async function healthCheckErrorHelper(projectPath) {
 
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials}) {
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath}) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult
@@ -107,6 +107,12 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     if(includeDeployments) {
         exportUrl += '&include_all_deployments=1'
+    }
+
+    if(format == 'deployment') {
+        if(! deploymentPath) throw new Error('Deployment path is required when exporting a deployment')
+
+        exportUrl += `&deployment_path=${deploymentPath}`
     }
 
     return (await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})))?.data

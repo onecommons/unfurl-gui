@@ -3,18 +3,14 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import gql from 'graphql-tag'
 import graphqlClient from '../graphql';
-
-
-const ERROR_CONTEXT = {
-    fetchProjectInfo: 'Failed to load project'
-}
+import * as routes from '../router/constants'
 
 export default {
     name: 'MainComponent',
     // TODO move this into page level components
     async beforeCreate() {
-        let errorContext
 
+        let completePromise
         this.$store.commit('initUserSettings', {username: this.$store.getters.getUsername})
 
         this.$store.dispatch('syncGlobalVars', this.$projectGlobal)
@@ -32,40 +28,79 @@ export default {
 
         if(gon.current_user_id) {
             this.$store.dispatch('populateCurrentUser').catch(() => {})
-            errorContext = 'ocFetchEnvironments'
-            this.$store.dispatch('ocFetchEnvironments', {projectPath: this.$store.getters.getHomeProjectPath, branch: this.$route.query.branch || 'main'})
-                .catch((err) => {
+
+            const includeDeployments = ![
+                routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT, routes.OC_PROJECT_VIEW_EDIT_DEPLOYMENT
+            ].includes(this.$route.name)
+
+            const projectPath = this.$store.getters.getHomeProjectPath
+            const branch = this.$route.query.branch || 'main'
+
+            const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments})
+                .catch(err => {
                     console.error('@main.vue', err)
-                    this.$store.dispatch(
-                        'createFlash',
+                    this.$store.commit(
+                        'createError',
                         {
                             message: err.message,
-                            type: FLASH_TYPES.ALERT,
-                            issue: ERROR_CONTEXT[errorContext] || errorContext,
-                            projectPath: this.$projectGlobal?.projectPath
+                            context: {
+                                projectPath,
+                                branch,
+                                includeDeployments
+                            },
+                            severity: 'critical'
                         },
                         {root: true}
-                    );
+                    )
                 })
+
+            completePromise = fetchEnvironments
+
+            if(!includeDeployments) {
+                const environmentName = this.$route.params.environment
+                const deploymentName = this.$route.params.slug
+                completePromise = fetchEnvironments
+                    .then(() => {
+                        if(this.$store.getters.lookupDeployPath(deploymentName, environmentName)) {
+                            return this.$store.dispatch('fetchDeployment', {projectPath, branch, deploymentName, environmentName})
+                        }
+                    })
+                    .catch(err => {
+                        console.error('@main.vue', err)
+                        this.$store.commit(
+                            'createError',
+                            {
+                                message: err.message,
+                                context: {
+                                    projectPath,
+                                    branch,
+                                    includeDeployments,
+                                    environmentName,
+                                    deploymentName
+                                },
+                                severity: 'critical'
+                            },
+                            {root: true}
+                        )
+                    })
+            }
         }
         try {
             const {projectPath} = this.$projectGlobal
             // TODO do everything in one query?
-            errorContext = 'handleResize'
             this.$store.dispatch('handleResize')
         } catch(err) {
             console.error('@main.vue', err)
-            return this.$store.dispatch(
-              'createFlash',
+            return this.$store.commit(
+              'createError',
               {
                 message: err.message,
-                type: FLASH_TYPES.ALERT,
-                issue: ERROR_CONTEXT[errorContext] || errorContext,
-                projectPath: this.$projectGlobal?.projectPath
+                severity: 'major'
               }
             );
-        } finally { 
-            this.fetchingComplete = true 
+        } finally {
+            await completePromise
+            this.fetchingComplete = true
         }
     },
 
@@ -88,7 +123,7 @@ export default {
     <div id="OcAppDeployments">
         <oc-experimental-settings-indicator />
         <oc-unfurl-gui-errors />
-        <router-view />
+        <router-view v-if="fetchingComplete"/>
     </div>
 </template>
 <style>

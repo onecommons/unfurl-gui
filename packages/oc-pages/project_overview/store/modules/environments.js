@@ -380,7 +380,8 @@ const actions = {
         commit("SET_ENVIRONMENT_NAME", { envName });
     },
 
-    async fetchProjectEnvironments({commit, dispatch, rootGetters}, {fullPath, branch}) {
+    async fetchProjectEnvironments({commit, dispatch, rootGetters}, options) {
+        const {fullPath, branch, includeDeployments} = {includeDeployments: true, ...options}
         let environments = []
         try {
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath)))?.id
@@ -389,7 +390,7 @@ const actions = {
                 fullPath,
                 branch: branch || 'main',
                 projectId,
-                includeDeployments: true
+                includeDeployments
             })
 
             result.errors.forEach(e => commit('createError', e, {root: true}))
@@ -406,7 +407,9 @@ const actions = {
             commit('setDefaults', result.defaults)
             commit('setDeploymentPaths', result.deploymentPaths)
 
-            commit('setDeployments', result.deployments)
+            if(includeDeployments) {
+                commit('setDeployments', result.deployments)
+            }
         }
         catch(e){
             if(window.gon.current_username) {
@@ -484,7 +487,12 @@ const actions = {
         }
     },
 
-    async ocFetchEnvironments({ commit, dispatch, rootGetters }, {fullPath, projectPath, branch, fetchPolicy}) {
+    async ocFetchEnvironments({ commit, dispatch, rootGetters }, options) {
+        const {fullPath, projectPath, branch, includeDeployments} = {
+            includeDeployments: true,
+            ...options
+        }
+
         const _projectPath = fullPath || projectPath || rootGetters.getHomeProjectPath
         commit('setProjectPath', _projectPath)
         await Promise.all([
@@ -499,7 +507,7 @@ const actions = {
                     console.warn('@ocFetchProjectEnvironments: Could not read/write envvars', e)
                 }
             })(),
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, fetchPolicy})
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, includeDeployments})
         ])
 
         commit('setReady', true)
@@ -707,8 +715,9 @@ const getters = {
     // TODO rename to lookupDeployPathByEnvironment?
     lookupDeployPath(state) {
         return function(deploymentName, environmentName) {
-            const result = state.deploymentPaths.find(dp => dp.name?.startsWith(`environments/${environmentName}`) && dp.name?.endsWith(`/${deploymentName}`))
-            return result
+            const prefix = `environments/${environmentName}`
+            const suffix = `/${deploymentName}`
+            return state.deploymentPaths.find(dp => dp.name?.startsWith(prefix) && dp.name?.endsWith(suffix))
         }
     },
     hasDeployPathKey(state) {

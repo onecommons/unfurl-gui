@@ -477,7 +477,7 @@ export default {
           this.setEnvironmentScope(environmentName)
         }
         // TODO see if we can get rid of this, since it's probably already loaded
-        await this.fetchProject({projectPath, fetchPolicy: 'network-only', projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
+        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
         if(this.hasCriticalErrors) return
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath,
