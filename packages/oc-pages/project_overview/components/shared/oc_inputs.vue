@@ -333,8 +333,15 @@ export default {
       let triggerFn
       if(!(triggerFn = this.saveTriggers[propertyName])) {
         this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value, disregardUncommitted=false) {
+          let schemaDefinition
+          try {
+            schemaDefinition = this.schema.properties[field.name]
+          } catch(e) {
+            console.warn(`Couldn't look up schema definition for ${field.name}`)
+          }
+
           // TODO move cloneDeep/serializer into another function
-          const propertyValue = _.cloneDeepWith(value, function(value) {
+          let propertyValue = _.cloneDeepWith(value, function(value) {
             if(Array.isArray(value)) {
               if (value.length == 0) {
                 return null
@@ -344,13 +351,19 @@ export default {
                 return value.map(o => o?.input ?? o)
               } else if (value.some(o => o?.key !== undefined)) {
                 const result = {}
+                const defaultValue = schemaDefinition?.additionalProperties?.type == 'string'? '': undefined
                 for(const entry of value)  {
-                  result[entry.key] = entry.value
+                  result[entry.key] = entry.value ?? defaultValue
                 }
                 return result
               }
             }
           })
+
+          if(_.isEqual(propertyValue, [{}]) && schemaDefinition?.additionalProperties) {
+            propertyValue = {}
+          }
+
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, nestedPropName: this.nestedProp?.name})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
