@@ -218,7 +218,7 @@ export async function fetchTypeRepositories(repositories, params) {
 
     typesDictionaries.forEach(td => {
         Object.entries(td).forEach(([key, value]) => {
-            if(result[key] && result[key]._sourceinfo?.incomplete) {
+            if(result[key] && value._sourceinfo?.incomplete) {
                 return
             }
 
