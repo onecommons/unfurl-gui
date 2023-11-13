@@ -1,5 +1,7 @@
+import {deploymentFixturePath} from '../../support/deployment-fixture'
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+const fixture = deploymentFixturePath('az__nextcloud__sh')
 
 function deploymentName(baseTitle) {
   return `Cy ${baseTitle} ${Date.now().toString(36).slice(4) + Math.random().toString().slice(-4)}`
@@ -63,7 +65,6 @@ describe('Cloning and deploying drafts', () => {
 
     const ogTitle = deploymentName('Clone test original')
     const cloneTitle = deploymentName('Clone test')
-    const fixture = 'generated/deployments/_az__nextcloud__pg'
 
     cy.recreateDeployment({
       title: ogTitle,
@@ -80,7 +81,6 @@ describe('Cloning and deploying drafts', () => {
 
     const ogTitle = deploymentName('Clone test original')
     const cloneTitle = deploymentName('Clone test')
-    const fixture = 'generated/deployments/_az__nextcloud__pg'
 
     cy.recreateDeployment({
       title: ogTitle,

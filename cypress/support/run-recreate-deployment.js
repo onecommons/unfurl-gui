@@ -248,7 +248,10 @@ Cypress.Commands.add('recreateDeployment', options => {
             // .click() // this is a bit hacky
 
           let dependencyCreate = $document.querySelector(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
-          if(!dependencyCreate) continue
+          if(!dependencyCreate) {
+            cy.log(`Couldn't find create for ${template.name}.${dependency.name}`)
+            continue
+          }
           if(
             !dependencyCreate.offsetParent
             && $document.querySelector(`[data-testid=tab-extras-${template.name}]`)

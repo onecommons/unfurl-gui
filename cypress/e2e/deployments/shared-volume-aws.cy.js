@@ -1,8 +1,9 @@
+import {deploymentFixturePath} from '../../support/deployment-fixture'
 import {deploymentNames, deploySharedVolume1, deploySharedVolume2} from '../../support/shared-volume'
 
 describe('AWS shared volume', () => {
   const [dep1, dep2] = deploymentNames('Sharing', 'Borrowing')
-  const fixture = 'generated/deployments/_aws-20230131t192328579z__nextcloud__volume.json'
+  const fixture = deploymentFixturePath('aws__nextcloud__volume')
   const cardTestId = 'card-aws-elastic-block-storage-volume'
 
   it('Can deploy a volume (aws)', () => {

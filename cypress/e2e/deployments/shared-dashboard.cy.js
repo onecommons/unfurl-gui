@@ -1,5 +1,6 @@
+import {deploymentFixturePath} from '../../support/deployment-fixture'
 import slugify from '../../../packages/oc-pages/vue_shared/slugify'
-const FIXTURE = 'generated/deployments/_production-gcp__nextcloud__only-mail.json'
+const FIXTURE = deploymentFixturePath('gcp__memos__memos')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
