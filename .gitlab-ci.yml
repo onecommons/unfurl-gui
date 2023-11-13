@@ -1,6 +1,7 @@
 variables:
   KUBERNETES_CPU_REQUEST: 2
   RUNNER_REQUEST_CONCURRENCY: 2 # I think KUBERNETES_CPU_REQUEST x RUNNER_REQUEST_CONCURRENCY should be less than 8
+  KUBERNETES_MEMORY_LIMIT: 4Gi
   KUBERNETES_MEMORY_REQUEST: 4Gi
 
   # DOCKER_TLS_CERTDIR: "/certs"
@@ -16,9 +17,8 @@ cache:
       - yarn.lock
 
   paths:
-    - .cache/*
     - cache/Cypress
-    - node_modules
+    - .yarn/cache
     - build
 
 stages:
@@ -27,16 +27,26 @@ stages:
 
 build:
   stage: build
-  # use podman to build without needing DIND / docker daemon service
-  image: quay.io/podman/stable
+  image: docker:cli
+  services:
+    - name: docker:dind
+      alias: docker
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+  before_script:
+    # wait for docker service to be ready
+    - i=0; while [ "$i" -lt 12 ]; do docker info >/dev/null && break; sleep 5; i=$(( i + 1 )) ; done
   script:
-    - podman login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
-    - podman build -f docker/e2e.Dockerfile -t $CI_REGISTRY_IMAGE:latest .
-    - podman push $CI_REGISTRY_IMAGE:latest
+    - docker login -u $CI_REGISTRY_USER -p $CI_REGISTRY_PASSWORD $CI_REGISTRY
+    - docker build -f docker/e2e.Dockerfile -t $CI_REGISTRY_IMAGE:latest .
+    - docker push $CI_REGISTRY_IMAGE:latest
   rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $TEST == ""
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $TEST == null
       changes: # I don't see this working?
         - docker/e2e.Dockerfile
+        - yarn.lock
 
 .tests:
   stage: test
