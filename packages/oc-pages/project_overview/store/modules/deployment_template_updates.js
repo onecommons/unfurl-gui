@@ -697,11 +697,12 @@ export function createResourceTemplateInDeploymentTemplate({type, name, title, d
             __typename: "ResourceTemplate",
         }
 
-        if(!accumulator.DeploymentTemplate.ResourceTemplate) {
-            accumulator.DeploymentTemplate.ResourceTemplate = {}
+        const patch = accumulator.DeploymentTemplate[deploymentTemplateName]
+
+        if(!patch.ResourceTemplate) {
+            patch.ResourceTemplate = {}
         }
 
-        const patch = accumulator.DeploymentTemplate[deploymentTemplateName]
         patch.ResourceTemplate[name] = newResourceTemplate
 
         result.push({patch, target: name, typename: "DeploymentTemplate"})
