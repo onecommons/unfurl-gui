@@ -55,6 +55,10 @@ const transforms = {
             resourceType.requirements = []
         }
 
+        if(resourceType.metadata?.alias) {
+            resourceType.extends = []
+        }
+
         normalizeDirectives(resourceType.directives)
 
         const utilization = resourceType.directives?.includes('substitute')? 0: 1
