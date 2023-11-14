@@ -1,7 +1,7 @@
 import {deploymentFixturePath} from '../../support/deployment-fixture'
 
 const SPEC = 'aws__container-webapp__dockerhub'
-describe(, () => {
+describe(SPEC, () => {
   it('Can recreate deployment', () => {
     cy.recreateDeployment()
   })

@@ -11,7 +11,7 @@ const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
-const 
+const
   DIGITALOCEAN_DNS_TYPE = 'DigitalOceanDNSZone',
   GCP_DNS_TYPE = 'GoogleCloudDNSZone',
   AWS_DNS_TYPE = 'Route53DNSZone'
@@ -50,7 +50,7 @@ Cypress.Commands.add('environmentShouldNotExist', environmentName => {
 })
 
 Cypress.Commands.add('clickCreateEnvironmentButton', () => {
-  cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false}).click()
+  cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2, matchCase: false}).click()
 })
 
 Cypress.Commands.add('completeEnvironmentDialog', options => {

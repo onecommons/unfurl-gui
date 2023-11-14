@@ -89,6 +89,7 @@ class Fixture {
     store.commit('setUpdateObjectPath', this.deploymentDir)
     store.commit('setUpdateObjectProjectPath', this.dashboardProjectPath)
     store.commit('setEnvironmentScope', this.environment)
+    store.commit('setCurrentNamespace', this.user.username)
 
 
     await store.dispatch('fetchProject', {projectPath: this.projectPath})
@@ -138,8 +139,6 @@ class Fixture {
     const axiosGet = axios.get
     const axiosPost = axios.post
     const axiosPatch = axios.patch
-
-    store.commit('setCurrentNamespace', this.user.username)
 
     const axiosIntercept = (method) => {
       const interceptMethod = {
