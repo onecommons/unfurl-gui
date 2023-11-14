@@ -83,7 +83,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     const _sendCredentials = sendCredentials ?? true
     await healthCheckErrorHelper(projectPath)
 
-    if(!latestCommit) throw new Error('@unfurlServerExport: latestCommit is not defined')
+    if(!latestCommit) throw new Error(`@unfurlServerExport: latestCommit is not defined for ${projectPath}#${branch}`)
 
     const username = window.gon.current_username
 

@@ -13,7 +13,7 @@ import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
-import {setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserHasWritePermissions, setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
 import * as routes from '../../router/constants'
 
 
@@ -140,20 +140,23 @@ export default {
            (this.hasPreparedMutations? 'enabled': 'disabled')
         ) : 'hidden'
     },
+    // TODO support me
     deleteStatus() {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
         default:
-          return 'enabled';
+          return 'hidden'
       }
     },
+    // TODO support me
+    // not sure what this is supposed to do?
     mergeStatus() {
       switch(this.$route.name) {
         case routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
           return 'hidden';
         default:
-          return 'enabled';
+          return 'hidden';
       }
     },
     deployStatus() {
@@ -435,8 +438,16 @@ export default {
       try {
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
+
+        const projectPath = this.project.globalVars.projectPath
+
+        // call API instread of relying on environment when we're editing a blueprint
+        const userCanEdit = this.$route.name == routes.OC_PROJECT_VIEW_CREATE_TEMPLATE?
+          await fetchUserHasWritePermissions(projectPath):
+          this.userCanEdit
+
         if(this.branch == 'main') {
-          if(!this.userCanEdit) {
+          if(!userCanEdit) {
             // computed setter
             const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
             this.setCommitBranch(this.branch)
@@ -465,7 +476,6 @@ export default {
           this.acknowledge(key)
         }
 
-        const projectPath = this.project.globalVars.projectPath
         if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
         const templateSlug =  this.$route.query.ts || this.$route.params.slug;
         const renamePrimary = this.$route.query.rtn;

@@ -766,6 +766,7 @@ const getters = {
     },
     userCanEdit(_, getters) {
         // we can't read or set UNFURL_VAULT_DEFAULT_PASSWORD if we're not a maintainer
+        // NOTE this criteria is meaningless when we're editing a blueprint
         return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     },
 

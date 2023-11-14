@@ -14,7 +14,7 @@ import LocalDevelop from '../../components/local-develop.vue'
 import {OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
-import {fetchProjectPermissions} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserHasWritePermissions} from 'oc_vue_shared/client_utils/projects'
 import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
@@ -226,7 +226,7 @@ export default {
         const projectPath = this.$projectGlobal.projectPath
 
         // async, not awaiting
-        fetchProjectPermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
+        fetchUserHasWritePermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
         this.fetchCommentsIssue()
         this.populateJobsList().catch(e => console.error('failed to lookup jobs: ', e.message))
         //
