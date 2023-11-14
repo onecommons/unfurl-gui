@@ -176,6 +176,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     }
 
     Object.entries(params).forEach(([key, value]) => {
+        if(value === undefined) return
         if(Array.isArray(value)) {
             value.forEach(value => exportUrl += `&${key}=${encodeURIComponent(value)}`)
         } else {
