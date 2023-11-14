@@ -26,7 +26,7 @@ export default {
           this.$store.commit('setDashboardName', dashboardName)
         }
 
-        if(gon.current_user_id) {
+        if(gon.current_user_id && this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE ) {
             this.$store.dispatch('populateCurrentUser').catch(() => {})
 
             const includeDeployments = ![
@@ -100,6 +100,14 @@ export default {
             );
         } finally {
             await completePromise
+
+            // declare environment as ready
+            // environment readiness doesn't make sense in the context of editing a blueprint
+            // this should be refactored
+            if(this.$route.name == routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
+                this.$store.commit('setReady', true)
+            }
+
             this.fetchingComplete = true
         }
     },
