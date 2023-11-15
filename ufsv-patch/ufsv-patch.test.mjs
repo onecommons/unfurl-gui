@@ -182,8 +182,10 @@ async function runSpecs() {
     sectionEnd(testName)
     unfurlServer.kill(2)
 
+    // prevent failure snowball
     store.state.errors.errors = []
     store.state.errors.errorsClearedTo = 0
+    store.commit('resetStagedChanges')
 
     if(process.env.CI) {
       const {CI_SERVER_URL, CI_PROJECT_ID, CI_JOB_ID} = process.env
