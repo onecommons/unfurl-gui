@@ -91,6 +91,10 @@ const transforms = {
             if(expression?.abspath || expression?.get_dir) {
                 property.input_type = 'file'
             }
+
+            if(property.type == 'object' /* && property.additionalProperties */) {
+                property.tab_title = property.tab_title || property.title?.split(' ').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ')
+            }
         }
         ['inputsSchema', 'computedPropertiesSchema', 'outputsSchema'].forEach(schemaType => {
             let properties
