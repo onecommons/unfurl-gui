@@ -611,12 +611,18 @@ const actions = {
 
         return true
     },
-    updateProperty({state, getters, commit, dispatch}, {deploymentName, templateName, propertyName, propertyValue, debounce, nestedPropName}) {
+    updateProperty({state, getters, commit, dispatch}, options) {
+        const {deploymentName, templateName, propertyName, propertyValue, propertyPath, debounce} = {
+            propertyPath: [],
+            debounce: false,
+            ...options
+        }
+
         if(debounce) {
             const handle = setTimeout(() => {
                 dispatch(
                     'updateProperty',
-                    {deploymentName, templateName, propertyName, propertyValue, nestedPropName}
+                    {...options, debounce: false}
                 )
             }, debounce)
             dispatch('updateTimeout', {deploymentName, templateName, propertyName, handle})
@@ -624,23 +630,44 @@ const actions = {
         }
         const template = state.resourceTemplates[templateName]
 
-        const templatePropertyValue = template.properties.find(prop => prop.name == (nestedPropName || propertyName))?.value
+        const fullPropertyPath = [...propertyPath, propertyName]
+        const templatePropertyValue = template.properties.find(prop => prop.name == propertyPath[0])?.value
 
-        const update = {}
-        update.propertyValue = propertyValue
-        update.propertyName = nestedPropName || propertyName
+        const firstComponent = fullPropertyPath.shift()
 
-        if(nestedPropName) {
-            update.propertyValue = {...templatePropertyValue, [propertyName]: propertyValue}
+        let templateNestedValue = templatePropertyValue
+
+        for(const component of fullPropertyPath) {
+            templateNestedValue = (templateNestedValue || {})[component]
         }
 
+        if(_.isEqual(templateNestedValue ?? null, propertyValue ?? null)) return
+
+        const update = {}
+        update.propertyName = firstComponent
+
+        if(propertyPath.length > 0) {
+            update.propertyValue = _.cloneDeep(templatePropertyValue)
+
+            let mutProperty = update.propertyValue
+            for(const component of propertyPath.slice(1)) {
+                if(!mutProperty[component]) {
+                    mutProperty[component] = {}
+                }
+
+                mutProperty = mutProperty[component]
+            }
+
+
+            mutProperty[propertyName] = propertyValue
+        } else {
+            update.propertyValue = _.cloneDeep(propertyValue)
+        }
+
+        console.log(update)
         const inputsSchema = getters.resourceTemplateInputsSchema(templateName)
 
-        if(_.isEqual(templatePropertyValue ?? null, update.propertyValue ?? null)) return
-
-        update.propertyValue = _.cloneDeep(update.propertyValue)
-
-        commit('templateUpdateProperty', {templateName, ...update, nestedPropName})
+        commit('templateUpdateProperty', {templateName, ...update})
         if(state.context == 'environment') {
             commit(
                 'pushPreparedMutation',

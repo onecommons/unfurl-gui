@@ -22,7 +22,7 @@ export default {
 }
 </script>
 <template>
-    <gl-tab ref="tab" class="gl-mt-3" >
+    <gl-tab ref="tab" class="gl-mt-3" v-on="$listeners">
         <template slot="title">
             <span :data-testid="titleTestid">{{ __(title)}}</span>
             <gl-badge v-if="!(isNaN(parseInt(titleCount)))" size="sm" class="gl-tab-counter-badge">
