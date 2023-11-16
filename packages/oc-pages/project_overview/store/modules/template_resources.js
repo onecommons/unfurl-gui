@@ -664,7 +664,6 @@ const actions = {
             update.propertyValue = _.cloneDeep(propertyValue)
         }
 
-        console.log(update)
         const inputsSchema = getters.resourceTemplateInputsSchema(templateName)
 
         commit('templateUpdateProperty', {templateName, ...update})

@@ -9,6 +9,7 @@ export default {
             type: String,
         },
         titleCount: [Number, String],
+        noCountZero: Boolean,
         titleTestid: {
             type: String,
             default: () => null
@@ -17,6 +18,13 @@ export default {
     computed: {
         active() {
             return this.$refs.tab.$children[0]?.localActive
+        },
+        showCount() {
+            const parsed = parseInt(this.titleCount)
+            if(this.noCountZero && parsed === 0) {
+                return false
+            }
+            return !isNaN(parsed)
         }
     }
 }
@@ -25,7 +33,7 @@ export default {
     <gl-tab ref="tab" class="gl-mt-3" v-on="$listeners">
         <template slot="title">
             <span :data-testid="titleTestid">{{ __(title)}}</span>
-            <gl-badge v-if="!(isNaN(parseInt(titleCount)))" size="sm" class="gl-tab-counter-badge">
+            <gl-badge v-if="showCount" size="sm" class="gl-tab-counter-badge">
                 {{ titleCount }}
             </gl-badge>
         </template>
