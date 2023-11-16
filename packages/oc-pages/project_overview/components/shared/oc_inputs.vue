@@ -408,6 +408,8 @@ export default {
       for (const [name, definition] of Object.entries(this.fromSchema)) {
         try {
           if(definition.sensitive && !this.userCanEdit) continue
+          if(definition.tab_title && !this.isNested) continue
+          if(name == '$toscatype') continue
 
           const fullPropertyPath = [...this.propertyPath, name]
           const firstComponent = fullPropertyPath.shift()
@@ -452,7 +454,17 @@ export default {
           console.error(e)
         }
       }
-      this.$emit('setInputLength', result.length)
+
+      let len = 0
+      for(const item of result) {
+        if(item.name == '$additionalProperties') {
+          len += item.value.length
+        } else {
+          len += 1
+        }
+      }
+
+      this.$emit('setInputLength', len)
       return result
     }
   },
