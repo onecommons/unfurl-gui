@@ -36,10 +36,10 @@ jobs:
       - name: Install yarn dependencies
         run: yarn install
       - name: Appease git
-        run: git config --global --add safe.directory $CI_PROJECT_DIR
+        run: git config --global --add safe.directory /tmp/ufsv
       - name: Run unit tests
         run: yarn test packages
-      - name: Run unit tests
+      - name: Run patch tests
         run: yarn test ufsv-patch -- --runInBand
 
       # currently broken from making jest happy
