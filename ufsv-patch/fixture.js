@@ -1,7 +1,8 @@
 const OC_NAMESPACE = process.env.OC_NAMESPACE || 'onecommons/blueprints'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
-const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
+const host = process.env.GITHUB_ACTIONS? '127.0.0.1': 'localhost'
+const UNFURL_SERVER_URL =  `http://${host}:${PORT}`
 
 import {expect, jest} from '@jest/globals'
 import axios from '~/lib/utils/axios_utils'
