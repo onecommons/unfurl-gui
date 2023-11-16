@@ -2,19 +2,42 @@ name: Cypress CI
 
 on: [push]
 
+#TF_PLUGIN_CACHE_DIR=/tmp/plugincache/ TF_DATA_DIR=/tmp/.terraform TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE=1 GOOGLE_APPLICATION_CREDENTIALS=/home/amdrew/Downloads/oc-staging1-6aeb4c6ec6bc.json SPEC_GLOBS='aws__wordpress__sh' OC_URL=https://unfurl.cloud OC_NAMESPACE=onecommons/blueprints UNFURL_PACKAGE_RULES="gitlab.com/onecommons/* unfurl.cloud/onecommons/* unfurl.cloud/onecommons/* #main" TEST_VERSIONS=v1  yarn test ufsv-patch -- --runInBan
 jobs:
-  build:
+  test:
     name: Test
+    env:
+      TF_PLUGIN_CACHE_DIR: /tmp/plugincache
+      TF_DATA_DIR: /tmp/.terraform
+      TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE: 1
+      GOOGLE_APPLICATION_CREDENTIALS: /tmp/imaginary-gcp.json
+      UNFURL_PACKAGE_RULES: "gitlab.com/onecommons/* unfurl.cloud/onecommons/* unfurl.cloud/onecommons/* #main"
+      UNFURL_REF: main
+      TEST_VERSIONS: v1
+      OC_URL: https://unfurl.cloud
+      SPEC_GLOBS: >
+        *baserow*
+        *nextcloud*
+        *mediawiki*
+        *wordpress*
+        *minecraft*
+
     runs-on: ubuntu-latest
+    container: registry.unfurl.cloud/onecommons/unfurl-gui
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/cache@v3
+        id: yarn-cache
         with:
-          node-version: 16
+          path: .yarn/cache
+          key: yarn.lock
+      - name: Install unfurl
+        run: pip3 install "git+https://github.com/onecommons/unfurl.git@$UNFURL_REF#egg=unfurl
       - name: Install yarn dependencies
-        run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+        run: yarn install
       - name: Run unit tests
-        run: yarn test
+        run: yarn jest ufsv-patch/ packages/
+
       # currently broken from making jest happy
       # - name: Compile
       #   run: yarn build --mode dev
