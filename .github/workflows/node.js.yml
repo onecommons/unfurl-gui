@@ -35,8 +35,12 @@ jobs:
         run: pip3 install "git+https://github.com/onecommons/unfurl.git@$UNFURL_REF#egg=unfurl"
       - name: Install yarn dependencies
         run: yarn install
+      - name: Appease git
+        run: git config --global --add safe.directory $CI_PROJECT_DIR
       - name: Run unit tests
-        run: yarn jest ufsv-patch/ packages/
+        run: yarn test packages
+      - name: Run unit tests
+        run: yarn test ufsv-patch -- --runInBand
 
       # currently broken from making jest happy
       # - name: Compile
