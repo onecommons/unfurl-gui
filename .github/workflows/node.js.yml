@@ -32,7 +32,7 @@ jobs:
           path: .yarn/cache
           key: yarn.lock
       - name: Install unfurl
-        run: pip3 install "git+https://github.com/onecommons/unfurl.git@$UNFURL_REF#egg=unfurl
+        run: pip3 install "git+https://github.com/onecommons/unfurl.git@$UNFURL_REF#egg=unfurl"
       - name: Install yarn dependencies
         run: yarn install
       - name: Run unit tests
