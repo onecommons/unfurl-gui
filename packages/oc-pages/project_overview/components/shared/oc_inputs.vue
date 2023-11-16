@@ -5,14 +5,17 @@ import Vue from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {Card as ElCard} from 'element-ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
-import {FakePassword, FileSelector, getCustomTooltip, getUiDirective} from './oc_inputs'
+import {fields, schemaFieldComponents, FormProvider, FormLayout, getCustomTooltip, getUiDirective} from './oc_inputs'
 import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
+import { GlTabs } from '@gitlab/ui';
+
+import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
 
 
 const ComponentMap = {
   string: 'Input',
   textarea: 'Input',
-  file: FileSelector,
+  file: 'FileSelector',
   boolean: 'Checkbox',
   number: 'InputNumber',
   enum: 'Select',
@@ -21,66 +24,29 @@ const ComponentMap = {
   password: 'FakePassword',
 };
 
-const formilyElement = async function() {
-    if(!formilyElement.promise) {
-        formilyElement.promise = import('@formily/element')
-    }
-    const {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = await formilyElement.promise
-    return {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space}
-}
-
-const formilyVue = async function() {
-    if(!formilyVue.promise) {
-        formilyVue.promise = import('@formily/vue')
-    }
-    const {FormProvider, createSchemaField} = await formilyVue.promise
-    return {FormProvider, createSchemaField}
-}
-
-const fields =  async function() {
-    const [_formilyVue, _formilyElement] = await Promise.all([
-        formilyVue(),
-        formilyElement(),
-    ])
-
-    const {createSchemaField} = _formilyVue
-    const {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = _formilyElement
-
-    return createSchemaField({
-      components: {
-        FormItem,
-        ArrayItems,
-        Space,
-        Input,
-        InputNumber, Checkbox, Select, FakePassword, Editable
-      }
-    })
-}
-
-
-const FormProvider = async() => (await formilyVue()).FormProvider
-const FormLayout = async() => (await formilyElement()).FormLayout
-
-const schemaFieldComponents = {}
-for(const schemaFieldComponentName of ['SchemaField', 'FormItem', 'ArrayItems', 'Input', 'InputNumber', 'Checkbox', 'Select', 'Editable', 'Space']) {
-    schemaFieldComponents[schemaFieldComponentName] = async() => (await fields())[schemaFieldComponentName]
-}
-
-
 export default {
   name: 'OcInputs',
   components: {
     FormProvider,
     FormLayout,
+    OcTab,
+    GlTabs,
     ElCard,
     ...schemaFieldComponents
   },
 
   props: {
-    tab: String,
+    propertyPath: {
+      type: Array,
+      default: () => []
+    },
     card: {
       type: Object
     },
+    wrapper: {
+      type: String,
+      default: () => 'el-card'
+    }
   },
 
   data() {
@@ -88,27 +54,39 @@ export default {
       form: null,
       mainInputs: [],
       saveTriggers: {},
+      currentTabTitle: null,
     }
   },
+
   computed: {
     ...mapGetters(['resourceTemplateInputsSchema', 'resolveResourceTemplateType', 'cardInputsAreValid', 'lookupEnvironmentVariable', 'userCanEdit']),
 
-    inputsSchema() {
-        return this.resourceTemplateInputsSchema(this.card)
+    isNested() {
+      return this.propertyPath.length > 0
     },
 
-    // we want this to recurse eventually
-    nestedProp() {
-      const properties = this.inputsSchema?.properties || {}
-      if(this.tab) {
-        const [name, prop] = Object.entries(properties).find(([name, prop]) => prop.tab_title == this.tab)
-        return {...prop, name}
+    inputsSchema() {
+      let schema = this.resourceTemplateInputsSchema(this.card)
+      for(const component of this.propertyPath) {
+        schema = schema.properties[component]
       }
-      return null
+
+      return schema
     },
 
     fromSchema() {
-      return this.nestedProp?.properties || this.inputsSchema?.properties || {}
+      const schema = _.cloneDeep(this.inputsSchema)
+
+      if(schema.additionalProperties) {
+        schema.properties['$additionalProperties'] = {
+          additionalProperties: schema.additionalProperties,
+          default: {}, // TODO filter existing props out and use the real default
+          title: '',
+          type: 'object'
+
+        }
+      }
+      return schema.properties
     },
 
     formValues() {
@@ -124,6 +102,21 @@ export default {
       }
     },
 
+    innerTabs() {
+      if(!this.isNested) return []
+      const tabs = Object.entries(this.fromSchema).filter(([_, value]) => value.tab_title
+      ).map(([name, value]) => ({[name]: value}))
+
+      return Object.assign({}, ...tabs)
+    },
+
+    tabTitles() {
+      return Object.assign({}, ...Object.entries(this.innerTabs).map(([name, value]) => ({[value.tab_title]: name})))
+    },
+
+    displayForm() {
+      return this.form && this.currentTabTitle == null
+    }
   },
 
   methods: {
@@ -145,10 +138,8 @@ export default {
           try { formField = this.form.fields[key] }
           catch(e) {}
           if (formField) {
-            path = key
-            if(this.nestedProp) {
-              path = `${this.nestedProp.name}.${path}`
-            }
+            path = [...this.propertyPath, key].join('.')
+
             const {data, value} = formField
             if(value?.length === 0 && data.required && data.type == 'object' && data.additionalProperties?.required) {
               // skip validating empty required object
@@ -193,7 +184,7 @@ export default {
           currentValue['x-decorator-props'].tooltip = {...getCustomTooltip(name), f: () => ({$store: this.$store, card: this.card})}
         }
         if(currentValue.default?._generate) {
-          currentValue['x-decorator-props'].addonAfter = {...getUiDirective('generate'), f: () => ({$store: this.$store, card: this.card, property: currentValue, inputsSchema: this.nestedProp || this.inputsSchema})}
+          currentValue['x-decorator-props'].addonAfter = {...getUiDirective('generate'), f: () => ({$store: this.$store, card: this.card, property: currentValue, inputsSchema: this.inputsSchema})}
         }
 
         currentValue.default = undefined
@@ -213,7 +204,7 @@ export default {
           currentValue['x-component-props']['type'] = currentValue.input_type
         }
 
-        if (!this.tab && currentValue.tab_title) {
+        if (currentValue.tab_title) {
           // we haven't figured out recursion yet
           return null;
         }
@@ -364,7 +355,22 @@ export default {
             propertyValue = {}
           }
 
-          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName: field.name, propertyValue, nestedPropName: this.nestedProp?.name})
+
+          const propertyPath = [...this.propertyPath]
+          let propertyName = field.name
+
+          if(propertyName == '$additionalProperties') {
+            const values = {...this.form.values}
+
+            delete values.$toscatype
+            delete values.$additionalProperties
+
+            propertyName = propertyPath.pop()
+
+            propertyValue = {...propertyValue, ...values}
+          }
+
+          this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName, propertyValue, propertyPath})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
         }).bind(this), 200)
@@ -402,11 +408,33 @@ export default {
       for (const [name, definition] of Object.entries(this.fromSchema)) {
         try {
           if(definition.sensitive && !this.userCanEdit) continue
-          let property = properties.find(prop => prop.name == (this.nestedProp?.name || name))
 
-          if(this.nestedProp) {
-            property = {value: (property?.value && property.value[name]) ?? null, name}
+          const fullPropertyPath = [...this.propertyPath, name]
+          const firstComponent = fullPropertyPath.shift()
+
+          let firstComponentProperty
+          let property = firstComponentProperty = properties.find(prop => prop.name == firstComponent)?.value
+
+          for(const component of fullPropertyPath) {
+            property = (property || {})[component]
           }
+
+          if(name == '$additionalProperties') {
+            let baseProp = firstComponentProperty
+            for(const component of this.propertyPath.slice(1)) {
+              baseProp = baseProp[component]
+            }
+
+            baseProp = {...baseProp}
+
+            for(const field of Object.keys(this.fromSchema)) {
+              delete baseProp[field]
+            }
+
+            property = baseProp
+          }
+
+          property = {fullPropertyPath: [...this.propertyPath, name], value: property, name, definition}
 
           const next = {...property, ...definition}
 
@@ -467,8 +495,12 @@ export default {
 }
 </script>
 <template>
-<el-card ref="container" v-if="!card.properties.length == 0" class="oc-inputs" data-testid="oc_inputs">
-  <FormProvider v-if="form" :form="form">
+<component :is="wrapper" ref="container" v-if="!card.properties.length == 0" class="oc-inputs" data-testid="oc_inputs">
+  <gl-tabs v-if="Object.keys(tabTitles).length > 0">
+    <oc-tab title="Properties" @click="currentTabTitle = null"/>
+    <oc-tab v-for="title in Object.keys(tabTitles)" :key="title" :title="title" @click="currentTabTitle = title"/>
+  </gl-tabs>
+  <FormProvider v-if="displayForm" :form="form">
     <FormLayout
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"
@@ -480,7 +512,11 @@ export default {
       <SchemaField :schema="schema"/>
     </FormLayout>
   </FormProvider>
-</el-card>
+
+  <div v-for="title in Object.keys(tabTitles)" :key="title" >
+    <oc-inputs v-if="currentTabTitle == title" :card="card" :property-path="[...propertyPath, tabTitles[title]]" wrapper="div"/>
+  </div>
+</component>
 </template>
 <style scoped>
 .oc-inputs >>> .formily-element-array-items-card {
