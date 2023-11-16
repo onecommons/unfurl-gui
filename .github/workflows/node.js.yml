@@ -12,6 +12,7 @@ jobs:
       TF_PLUGIN_CACHE_MAY_BREAK_DEPENDENCY_LOCK_FILE: 1
       GOOGLE_APPLICATION_CREDENTIALS: /tmp/imaginary-gcp.json
       UNFURL_PACKAGE_RULES: "gitlab.com/onecommons/* unfurl.cloud/onecommons/* unfurl.cloud/onecommons/* #main"
+      UNFURL_SERVER_HOST: http://127.0.0.1
       UNFURL_REF: main
       TEST_VERSIONS: v1
       OC_URL: https://unfurl.cloud

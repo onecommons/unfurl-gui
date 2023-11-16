@@ -15,8 +15,8 @@ const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const UNFURL_SERVER_CWD = '/tmp/ufsv'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
-const host = process.env.GITHUB_ACTIONS? '127.0.0.1': 'localhost'
-const UNFURL_SERVER_URL =  `http://${host}:${PORT}`
+const UNFURL_SERVER_HOST = process.env.UNFURL_SERVER_HOST || 'http://localhost'
+const UNFURL_SERVER_URL = `${UNFURL_SERVER_HOST}:${PORT}`
 
 const prefix = `cypress/fixtures/generated/deployments/${TEST_VERSIONS}/`
 const suffix = '.json'
