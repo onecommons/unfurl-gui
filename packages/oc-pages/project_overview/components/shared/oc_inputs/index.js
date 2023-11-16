@@ -34,5 +34,50 @@ export function getUiDirective(type) {
     return uiDirectives[type] ?? null
 }
 
-export {default as FakePassword} from './formily-fake-password'
-export {default as FileSelector} from './formily-file-selector.js'
+import FakePassword from './formily-fake-password'
+import FileSelector from './formily-file-selector'
+
+const formilyElement = async function() {
+    if(!formilyElement.promise) {
+        formilyElement.promise = import('@formily/element')
+    }
+    const {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = await formilyElement.promise
+    return {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space}
+}
+
+const formilyVue = async function() {
+    if(!formilyVue.promise) {
+        formilyVue.promise = import('@formily/vue')
+    }
+    const {FormProvider, createSchemaField} = await formilyVue.promise
+    return {FormProvider, createSchemaField}
+}
+
+export const fields =  async function() {
+    const [_formilyVue, _formilyElement] = await Promise.all([
+        formilyVue(),
+        formilyElement(),
+    ])
+
+    const {createSchemaField} = _formilyVue
+    const {FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = _formilyElement
+
+    return createSchemaField({
+      components: {
+        FormItem,
+        ArrayItems,
+        Space,
+        Input,
+        InputNumber, Checkbox, Select, FakePassword, Editable
+      }
+    })
+}
+
+
+export const FormProvider = async() => (await formilyVue()).FormProvider
+export const FormLayout = async() => (await formilyElement()).FormLayout
+
+export const schemaFieldComponents = {}
+for(const schemaFieldComponentName of ['SchemaField', 'FormItem', 'ArrayItems', 'Input', 'InputNumber', 'Checkbox', 'Select', 'Editable', 'Space']) {
+    schemaFieldComponents[schemaFieldComponentName] = async() => (await fields())[schemaFieldComponentName]
+}
