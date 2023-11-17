@@ -381,7 +381,7 @@ const actions = {
     },
 
     async fetchProjectEnvironments({commit, dispatch, rootGetters}, options) {
-        const {fullPath, branch, includeDeployments} = {includeDeployments: true, ...options}
+        const {fullPath, branch, includeDeployments, only} = {includeDeployments: true, ...options}
         let environments = []
         try {
             const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath)))?.id
@@ -390,7 +390,8 @@ const actions = {
                 fullPath,
                 branch: branch || 'main',
                 projectId,
-                includeDeployments
+                includeDeployments,
+                only
             })
 
             result.errors.forEach(e => commit('createError', e, {root: true}))
@@ -488,7 +489,7 @@ const actions = {
     },
 
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, options) {
-        const {fullPath, projectPath, branch, includeDeployments} = {
+        const {fullPath, projectPath, branch, includeDeployments, only} = {
             includeDeployments: true,
             ...options
         }
@@ -507,7 +508,7 @@ const actions = {
                     console.warn('@ocFetchProjectEnvironments: Could not read/write envvars', e)
                 }
             })(),
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, includeDeployments})
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, includeDeployments, only})
         ])
 
         commit('setReady', true)

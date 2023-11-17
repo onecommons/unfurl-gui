@@ -152,7 +152,7 @@ export function connectionsToArray(environment) {
 }
 
 export async function fetchEnvironments(options) {
-    const {fullPath, includeDeployments, branch} = {
+    const {fullPath, includeDeployments, branch, only} = {
         includeDeployments: true,
         ...options
     }
@@ -171,6 +171,7 @@ export async function fetchEnvironments(options) {
             format,
             projectPath,
             includeDeployments,
+            environment: only,
             branch,
         })
     } catch(e) {
