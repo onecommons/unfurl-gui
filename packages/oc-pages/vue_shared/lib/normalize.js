@@ -92,8 +92,10 @@ const transforms = {
                 property.input_type = 'file'
             }
 
-            if(property.type == 'object' /* && property.additionalProperties */) {
+            if(property.type == 'object' && property.additionalProperties) {
                 property.tab_title = property.tab_title || property.title?.split(' ').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ')
+                property.metadata = property.metadata || {}
+                property.additionalPropertiesAddLabel = property.additionalPropertiesAddLabel || property.metadata.additionalPropertiesAddLabel
             }
         }
         ['inputsSchema', 'computedPropertiesSchema', 'outputsSchema'].forEach(schemaType => {
