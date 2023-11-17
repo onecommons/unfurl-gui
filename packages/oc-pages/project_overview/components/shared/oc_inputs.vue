@@ -74,15 +74,16 @@ export default {
       return schema
     },
 
-    fromSchema() {
+    schemaFields() {
       const schema = _.cloneDeep(this.inputsSchema)
 
       if(schema.additionalProperties) {
-        schema.properties['$additionalProperties'] = {
+        (schema.properties || {})['$additionalProperties'] = {
           additionalProperties: schema.additionalProperties,
-          default: {}, // TODO filter existing props out and use the real default
+          default: {}, // This default should be fine because we are using the base prop (or it's default) to determine the current value
           title: '',
-          type: 'object'
+          type: 'object',
+          additionalPropertiesAddLabel: schema.additionalPropertiesAddLabel
 
         }
       }
@@ -98,13 +99,13 @@ export default {
     schema() {
       return {
         type: this.inputsSchema?.type,
-        properties: this.convertProperties(this.fromSchema),
+        properties: this.convertProperties(this.schemaFields),
       }
     },
 
     innerTabs() {
       if(!this.isNested) return []
-      const tabs = Object.entries(this.fromSchema).filter(([_, value]) => value.tab_title
+      const tabs = Object.entries(this.schemaFields).filter(([_, value]) => value.tab_title
       ).map(([name, value]) => ({[name]: value}))
 
       return Object.assign({}, ...tabs)
@@ -116,6 +117,12 @@ export default {
 
     displayForm() {
       return this.form && this.currentTabTitle == null
+    },
+
+    tabTooltip() {
+      const last = _.last(this.propertyPath)
+      if(!getCustomTooltip(last)) return null
+      return {...getCustomTooltip(last), f: () => ({$store: this.$store, card: this.card, large: true})}
     }
   },
 
@@ -245,7 +252,7 @@ export default {
           currentValue.properties = {
             add: {
               type: 'void',
-              title: 'Add',
+              title: currentValue.additionalPropertiesAddLabel || 'Add',
               'x-component': 'ArrayItems.Addition'
             }
           }
@@ -405,7 +412,7 @@ export default {
 
       const properties = this.card.properties || []
 
-      for (const [name, definition] of Object.entries(this.fromSchema)) {
+      for (const [name, definition] of Object.entries(this.schemaFields)) {
         try {
           if(definition.sensitive && !this.userCanEdit) continue
           if(definition.tab_title && !this.isNested) continue
@@ -429,7 +436,7 @@ export default {
 
             baseProp = {...baseProp}
 
-            for(const field of Object.keys(this.fromSchema)) {
+            for(const field of Object.keys(this.schemaFields)) {
               delete baseProp[field]
             }
 
@@ -500,7 +507,8 @@ export default {
       // we have to wait for the components to exist for formily to validate?
       await fields()
       await Vue.nextTick()
-      container.$el.querySelectorAll('.formily-element-form-item-extra').forEach(el => el.innerHTML = parseMarkdown(el.textContent))
+      // we're somehow now always getting the element here
+      container.$el?.querySelectorAll('.formily-element-form-item-extra').forEach(el => el.innerHTML = parseMarkdown(el.textContent))
       this.validate()
     }
   }
@@ -508,6 +516,8 @@ export default {
 </script>
 <template>
 <component :is="wrapper" ref="container" v-if="!card.properties.length == 0" class="oc-inputs" data-testid="oc_inputs">
+  <component :is="tabTooltip" v-if="tabTooltip" />
+  <!-- TODO display description here as well -->
   <gl-tabs v-if="Object.keys(tabTitles).length > 0">
     <oc-tab title="Properties" @click="currentTabTitle = null"/>
     <oc-tab v-for="title in Object.keys(tabTitles)" :key="title" :title="title" @click="currentTabTitle = title"/>
@@ -608,6 +618,10 @@ export default {
 }
 
 .oc-inputs >>> .formily-element-array-base-addition {
+  margin-bottom: 8px;
+}
+
+.oc-inputs >>> .formily-element-form-item-addon-after {
   margin-bottom: 8px;
 }
 
