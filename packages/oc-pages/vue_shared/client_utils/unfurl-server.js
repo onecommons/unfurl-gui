@@ -76,7 +76,7 @@ async function healthCheckErrorHelper(projectPath) {
 
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath}) {
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment}) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
     const [latestCommit, _branch] = lastCommitResult
@@ -107,6 +107,8 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     if(includeDeployments) {
         exportUrl += '&include_all_deployments=1'
+    } else if(environment) {
+        exportUrl += `&environment=${environment}`
     }
 
     if(format == 'deployment') {

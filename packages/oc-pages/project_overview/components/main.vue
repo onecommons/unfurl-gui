@@ -36,7 +36,7 @@ export default {
             const projectPath = this.$store.getters.getHomeProjectPath
             const branch = this.$route.query.branch || 'main'
 
-            const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments})
+            const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments, only: !includeDeployments && this.$route.params.environment})
                 .catch(err => {
                     console.error('@main.vue', err)
                     this.$store.commit(
