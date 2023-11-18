@@ -77,8 +77,9 @@ export default {
     schemaFields() {
       const schema = _.cloneDeep(this.inputsSchema)
 
+      if(!schema.properties) schema.properties = {}
       if(schema.additionalProperties) {
-        (schema.properties || {})['$additionalProperties'] = {
+        schema.properties['$additionalProperties'] = {
           additionalProperties: schema.additionalProperties,
           default: {}, // This default should be fine because we are using the base prop (or it's default) to determine the current value
           title: '',
