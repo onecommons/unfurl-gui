@@ -382,7 +382,7 @@ const actions = {
     // we can use part of this function to set app state on page load
     // TODO use dependenciesFromResourceType here
     async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, visibility}) {
-        let target
+        let targetType
         if(selection._sourceinfo.incomplete || selection.directives?.includes('substitute')) {
             if(selection._sourceinfo.incomplete) {
                 commit('addTempRepository', selection._sourceinfo)
@@ -398,11 +398,11 @@ const actions = {
             }
 
             await dispatch('fetchTypesForParams', {params})
-            target = cloneDeep(getters.resolveResourceTypeFromAny(selection.name))
+            targetType = cloneDeep(getters.resolveResourceTypeFromAny(selection.name))
 
-        } else { target = cloneDeep(selection) }
+        } else { targetType = cloneDeep(selection) }
 
-        target.type = {...target};
+        const target = {type: targetType}
         target.description = requirement?.description;
         target._valid = true;
         target.name = name;
@@ -410,9 +410,9 @@ const actions = {
 
         target._uncommitted = true
         target.__typename = 'ResourceTemplate'
-        target.visibility = visibility || target.visibility || 'inherit'
+        target.visibility = visibility || targetType.visibility || 'inherit'
 
-        target.metadata = {...target.metadata, created_by: 'unfurl-gui'}
+        target.metadata = {...targetType.metadata, created_by: 'unfurl-gui'}
 
         const directAncestor = state.resourceTemplates[dependentName]
 
@@ -421,17 +421,17 @@ const actions = {
             const inputsSchemaFromDirectAncestor = ancestorDependencies.find(dep => dep.name == dependentRequirement)?.constraint?.inputsSchema
 
             if(inputsSchemaFromDirectAncestor) {
-                applyInputsSchema(target, inputsSchemaFromDirectAncestor)
+                applyInputsSchema(target.type, inputsSchemaFromDirectAncestor)
             }
 
             target._ancestors = (directAncestor._ancestors || []).concat([[directAncestor, dependentRequirement]])
         }
 
-        try { target.properties = Object.entries(target.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
+        try { target.properties = Object.entries(targetType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
         catch { target.properties = []; }
 
-        if(target?.requirements?.length > 0) {
-            target.dependencies = target.requirements.map(req => {
+        if(targetType.requirements?.length > 0) {
+            target.dependencies = targetType.requirements.map(req => {
                 return {
                     constraint: {...req, visibility: req.visibility || 'visible'},
                     name: req.name,
@@ -442,9 +442,6 @@ const actions = {
             });
 
             dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
-
-
-            delete target.requirements;
         }
 
         target.dependentName = dependentName
@@ -460,7 +457,7 @@ const actions = {
                 {root: true}
             )
         }
-        else if (state.context == 'blueprint' && (directAncestor._local || target.type.implementation_requirements.length > 0)) {
+        else if (state.context == 'blueprint' && (directAncestor._local || targetType.implementation_requirements.length > 0)) {
             commit(
                 'pushPreparedMutation',
                 createResourceTemplateInDeploymentTemplate({
