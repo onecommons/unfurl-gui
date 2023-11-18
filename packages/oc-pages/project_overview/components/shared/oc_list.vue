@@ -233,7 +233,7 @@ export default {
             const result = []
             for(const [name, value] of Object.entries(this.inputsSchema.properties)) {
                 if(value.tab_title) {
-                    const count = Object.keys(value.properties).filter(key => key != '$toscatype').length
+                    const count = Object.keys(value.properties || {}).filter(key => key != '$toscatype').length
                     result.push({name, tab_title: value.tab_title, value, count})
                 }
             }
