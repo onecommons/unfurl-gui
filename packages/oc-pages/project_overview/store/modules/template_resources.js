@@ -197,28 +197,9 @@ const actions = {
         commit('setContext', environmentName? 'template': 'blueprint')
         if(!templateSlug) return false;
 
-
-        let _syncState = syncState
         let blueprint = rootGetters.getApplicationBlueprint;
-        let deploymentTemplate
-        function setdt() {
-            deploymentTemplate = rootGetters.resolveDeploymentTemplate(templateSlug)
-        }
-        setdt()
-        let primary
-        let deploymentDict
-        if(!deploymentTemplate) { // let's look up the deployment template from the deployment
-            for(const dict of rootGetters.getDeploymentDictionaries) {
-                if(dict._environment != environmentName) continue
-                let dt
-                try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
-                if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
-                await dispatch('useProjectState', {root: _.cloneDeep(dict), shouldMerge: true, projectPath})
-                _syncState = false // override sync state if we just loaded this
-                break
-            }
-            setdt()
-        }
+        let deploymentTemplate = rootGetters.resolveDeploymentTemplate(templateSlug)
+
         deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
         blueprint = {...blueprint, projectPath} // maybe we want to do it here
 
@@ -238,10 +219,8 @@ const actions = {
         }
         commit('updateLastFetchedFrom', {projectPath, templateSlug: deploymentTemplate.name, environmentName, sourceDeploymentTemplate});
 
-        primary = getters.dtResolveResourceTemplate(deploymentTemplate.primary)
+        const primary = getters.dtResolveResourceTemplate(deploymentTemplate.primary)
         if(!primary) return false;
-        primary = {...primary}
-        // NOTE sometimes this is failing and as a bandaid I'm also doing it in project_application_blueprint
 
         if(renamePrimary) {
             deploymentTemplate.primary = slugify(renamePrimary);
@@ -249,7 +228,7 @@ const actions = {
             primary.title = renamePrimary;
         }
 
-        if(_syncState) {
+        if(syncState) {
             commit('pushPreparedMutation', (accumulator) => {
                 const patch = {...deploymentTemplate};
                 return [{target: deploymentTemplate.name, patch, typename: 'DeploymentTemplate'}];

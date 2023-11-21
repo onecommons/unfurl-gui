@@ -113,7 +113,8 @@ export default {
       'providerTypesForEnvironment',
       'blueprintRepositories',
       'environmentTypeRepositories',
-      'infallibleGetCardTitle'
+      'infallibleGetCardTitle',
+      'getDeploymentDictionaries'
     ]),
 
     deploymentDir() {
@@ -405,7 +406,8 @@ export default {
       'createDeploymentPathPointer',
       'createFlash',
       'acknowledge',
-      'fetchTypesForParams'
+      'fetchTypesForParams',
+      'useProjectState'
     ]),
 
     unloadHandler(e) {
@@ -486,16 +488,41 @@ export default {
           this.setUpdateObjectProjectPath(this.getHomeProjectPath);
           this.setEnvironmentScope(environmentName)
         }
-        // TODO see if we can get rid of this, since it's probably already loaded
-        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars}); // NOTE this.project.globalVars
+
+        let syncState = this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT
+        let deployRoot
+
+        for(const dict of this.getDeploymentDictionaries) {
+          if(dict._environment != environmentName) continue
+
+          let dt
+          try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
+          if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
+
+          deployRoot = _.cloneDeep(dict)
+
+          // add deployment to the dictionary immediately so it can be used to look up repository information
+          await this.useProjectState({root: {Deployment: deployRoot.Deployment}, shouldMerge: false, projectPath})
+          syncState = false // override sync state if we just loaded this
+          break
+        }
+
         if(this.hasCriticalErrors) return
+
+        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars, shouldMerge: true}); // NOTE this.project.globalVars
+        if(this.hasCriticalErrors) return
+
+        if(deployRoot) {
+          await this.useProjectState({root: deployRoot, shouldMerge: true, projectPath})
+        }
+
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath,
           templateSlug,
           renamePrimary,
           renameDeploymentTemplate,
           environmentName: this.$route.params.environment,
-          syncState: this.$route.name == routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT
+          syncState
         })
 
         this.fetchTypesForParams()

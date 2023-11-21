@@ -79,7 +79,7 @@ async function healthCheckErrorHelper(projectPath) {
 export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment}) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
-    const [latestCommit, _branch] = lastCommitResult
+    const [latestCommit, inferredBranch] = lastCommitResult || []
     const _sendCredentials = sendCredentials ?? true
     await healthCheckErrorHelper(projectPath)
 
@@ -96,13 +96,18 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += `&private_token=${password}`
     }
 
-    exportUrl += `&branch=${branch || _branch}`
+    if(branch) {
+        exportUrl += `&branch=${branch}`
+    }
+
     exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
 
     // if(alwaysSendLatestCommit() || !getOverride(projectPath)) {
     // pass latest commit when it's not the repo we're developing
     if(alwaysSendLatestCommit() || !unfurlServerUrlOverride(projectPath)) {
-        exportUrl += `&latest_commit=${latestCommit}`
+        if(branch && branch == inferredBranch) {
+            exportUrl += `&latest_commit=${latestCommit}`
+        }
     }
 
     if(includeDeployments) {
@@ -134,7 +139,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     const fetchCommitPromise = (branch && !branch.startsWith('v'))? fetchLastCommit(encodeURIComponent(projectPath), branch): null
     const [lastCommitResult, password] = await Promise.all([fetchCommitPromise, fetchUserAccessToken()])
-    const [latestCommit, _branch] = lastCommitResult || [null, branch]
+    const [latestCommit, inferredBranch] = lastCommitResult || []
     const _sendCredentials = sendCredentials ?? true
     await healthCheckErrorHelper(projectPath)
 
@@ -166,7 +171,9 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
         exportUrl += `&private_token=${password}`
     }
 
-    exportUrl += `&branch=${branch || _branch}`
+    if(branch) {
+        exportUrl += `&branch=${branch}`
+    }
 
     if(file) {
         // TODO don't split when it's working
@@ -174,7 +181,9 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     }
 
     if(latestCommit && (alwaysSendLatestCommit() || !getOverride(projectPath))) {
-        exportUrl += `&latest_commit=${latestCommit}`
+        if(branch && branch == inferredBranch) {
+            exportUrl += `&latest_commit=${latestCommit}`
+        }
     }
 
     Object.entries(params).forEach(([key, value]) => {
@@ -196,11 +205,10 @@ export function repoToExportParams(repo) {
     const url = new URL(repo.url)
     const projectPath = url.pathname.slice(1).replace(/\.git$/, '')
 
-    const [_branch, _file] = (url.hash?.slice(1) || '').split(':')
-    const branch = _branch || 'main'
+    const [branch, _file] = (url.hash?.slice(1) || '').split(':')
     const file = repo.file || _file
 
-    const result = {branch: branch, projectPath}
+    const result = {branch, projectPath}
 
     if(file) {
         result.file = file
