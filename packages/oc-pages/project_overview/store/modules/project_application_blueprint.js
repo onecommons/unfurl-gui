@@ -71,18 +71,27 @@ const mutations = {
 
 }
 const actions = {
-    async fetchProject({commit, dispatch, rootGetters}, params) {
-        const {projectPath, projectGlobal} = params
+    async fetchProject({state, commit, dispatch, rootGetters}, params) {
+        const {projectPath, projectGlobal, shouldMerge} = {shouldMerge: false, ...params}
         const format = 'blueprint'
         commit('loaded', false)
+
+        let branch
+        const deployment = Object.values(state.Deployment || {})[0]
+
+        if(deployment) {
+            try {
+                branch = deployment.packages[projectPath].version
+            } catch(e) {}
+        }
 
         let root
         try {
             root = await unfurlServerExport({
                 format,
                 projectPath,
-                sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public')
-                //TODO pass branch
+                sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public'),
+                branch
             })
         } catch(e) {
             // TODO handle this from the caller
@@ -113,7 +122,7 @@ const actions = {
             })
         }
 
-        await dispatch('useProjectState', {projectPath, root})
+        await dispatch('useProjectState', {projectPath, root, shouldMerge})
         commit('loaded', true)
 
 

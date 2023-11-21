@@ -583,6 +583,7 @@ const actions = {
                 params
             )
         } catch(e) {
+            console.error(e)
             const context = {
                 currentEnvironmentRepositories,
                 params,
