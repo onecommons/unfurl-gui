@@ -644,7 +644,7 @@ const actions = {
         update.propertyName = firstComponent
 
         if(propertyPath.length > 0) {
-            update.propertyValue = _.cloneDeep(templatePropertyValue)
+            update.propertyValue = _.cloneDeep(templatePropertyValue || {})
 
             let mutProperty = update.propertyValue
             for(const component of propertyPath.slice(1)) {
