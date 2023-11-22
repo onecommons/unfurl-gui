@@ -103,7 +103,9 @@ module.exports = (on, config) => {
       return null
     },
     async writeArtifact({artifactName, data}) {
-      await fs.promises.mkdir('cypress/screenshots').catch()
+      try {
+        await fs.promises.mkdir('cypress/screenshots')
+      } catch(e) {}
       return fs.promises.writeFile(`cypress/screenshots/${artifactName}`, data).then(x => x || null)
     }
   })
