@@ -67,11 +67,11 @@ export default {
             const deployPath = this.lookupDeployPath(this.deploymentName, this.environmentName)
             return deployPath?.project_id || deployPath?.projectId // project_id will be used on DeploymentPath records going forward
         },
-        pipelineId() {
-            return this.lookupDeployPath(this.deploymentName, this.environmentName)?.pipeline?.id
-        },
         deploymentItem() {
             return this.deploymentItemDirect({environment: this.environmentName, deployment: this.deploymentName})
+        },
+        pipelineId() {
+            return this.deploymentItem.pipeline?.id
         },
         state() {
             if(! this.environmentsAreReady) return null

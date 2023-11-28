@@ -45,7 +45,8 @@ export default {
             'getHomeProjectName',
             'getHomeProjectPath',
             'lookupVariableByEnvironment',
-            'lookupDeployPath'
+            'lookupDeployPath',
+            'deploymentItemDirect'
         ]),
         deployPath() {
             const deploymentName = this.deployment?.name
@@ -104,8 +105,15 @@ export default {
             return cloneProject(this._localCloneOptions)
         },
         localDeployInvocation() {
-            const deploymentName = this.deployment.name
-            const extraArgs = this.deployPath?.pipeline?.variables?.EXTRA_WORKFLOW_ARGS || ''
+            const deployment = this.deployment
+            const environment = this.environment
+            const deploymentName = deployment.name
+
+            // attempting to make this consistent for autostop
+            // this may or not make sense for local deploy?
+            const deploymentItem = this.deploymentItemDirect({deployment, environment})
+
+            const extraArgs = deploymentItem?.pipeline?.variables?.EXTRA_WORKFLOW_ARGS || ''
             return `unfurl deploy${extraArgs && ' ' + extraArgs} --commit --push ${deploymentName}`
         },
         deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' },

@@ -55,7 +55,12 @@ const mutations = {
 const actions = {
     async addUrlPoll({state, commit, dispatch, rootGetters}, {deployment, environment}) {
         const deployPath = rootGetters.lookupDeployPath(deployment.name, environment.name)
-        const lastWorkflow = deployPath?.pipeline?.variables?.WORKFLOW
+        const deploymentItem = rootGetters.deploymentItemDirect({deployment, environment})
+        const lastWorkflow = deploymentItem?.pipeline?.variables?.WORKFLOW
+
+        if(!lastWorkflow) {
+            console.error(`No last workflow for ${deployPath.name}`)
+        }
         if(!( //NOT
             deployment.status &&
             ![3,5].includes(deployment.status) &&

@@ -19,7 +19,7 @@ import MergeRequestsTable from './merge-requests-table.vue'
 
 
 function deploymentGroupBy(item) {
-    let result 
+    let result
     try{
         result = `${item.deployment.name}:${item.application.name}:${item.environment.name}`
     } catch(e) { return }
@@ -166,7 +166,7 @@ export default {
             if(this.hasCriticalErrors) return
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
-                name: routes.OC_DASHBOARD_DEPLOYMENTS, 
+                name: routes.OC_DASHBOARD_DEPLOYMENTS,
                 params: {
                     name: deployment.name,
                     environment: environment.name
@@ -181,7 +181,7 @@ export default {
             if(this.hasCriticalErrors) return
             const {deployment, environment} = this.target
             window.location.href = this.$router.resolve({
-                name: routes.OC_DASHBOARD_DEPLOYMENTS, 
+                name: routes.OC_DASHBOARD_DEPLOYMENTS,
                 params: {
                     name: deployment.name,
                     environment: environment.name
@@ -193,7 +193,7 @@ export default {
         },
         statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
         resumeEditingLink(scope) {
-            const 
+            const
                 application = scope.item.context.application,
                 deployment = scope.item.context.deployment,
                 environment = scope.item.context.environment,
@@ -334,7 +334,7 @@ export default {
         },
 
         hasDeployPath(scope) {
-            return !this.lookupDeployPath(scope.item.context.deployment?.name, scope.item.context.environment?.name)?.pipeline?.id
+            return !this.deploymentItem?.pipeline?.id
         },
         rowClass(item, type) {
             if (type !== 'row') return
@@ -352,7 +352,7 @@ export default {
         pluralizeResources(count, item) {
           if(count != 0) return
           const deploymentItem = this.deploymentItem({item})
-          if(deploymentItem?.isDraft) return 'Not yet deployed' 
+          if(deploymentItem?.isDraft) return 'Not yet deployed'
           //if(deploymentItem?.jobStatusIsUnsuccessful) return  ''
           return 'No resources'
 
@@ -622,8 +622,8 @@ export default {
                     <li v-for="reason in intentToDeletePreventedBy" :key="reason" v-html="reason" />
                 </ol>
             </div>
-            <div 
-                v-else-if="deleteWarning" 
+            <div
+                v-else-if="deleteWarning"
                 class="m-3"
                 >
                 <div style="color: red">
@@ -633,7 +633,7 @@ export default {
                     Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
                 </div>
             </div>
-            <div 
+            <div
                 v-if="intent == 'undeploy' && !ableToUndeploy"
                 class="m-3">
                 <ol>
@@ -643,7 +643,7 @@ export default {
             <div v-if="['clone', 'rename'].includes(intent)">
                 <gl-form-group class="m-3" label="New deployment title">
                     <gl-form-input v-model="newDeploymentTitle"/>
-                    <environment-selection 
+                    <environment-selection
                         v-if="intent == 'clone'"
                         class="mt-2"
                         v-model="cloneTargetEnvironment"

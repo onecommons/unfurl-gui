@@ -37,10 +37,10 @@ export default {
         },
         deployPath() { return this.lookupDeployPath(this.deployment?.name, this.environment?.name) },
         pipeline() {
-            return this.deployPath?.pipeline
+            return this.deploymentItem?.pipeline
         },
         pipelines() {
-            return this.deployPath?.pipelines || []
+            return this.deploymentItem?.pipelines || []
         },
         createdAt() {
             const date = this.pipeline?.commit?.created_at
@@ -52,7 +52,7 @@ export default {
         createdAtDate() { return this.createdAt?.toLocaleDateString() },
         createdAtTime() { return this.createdAt?.toLocaleTimeString() },
         createdAtText() {
-            const today = (new Date(Date.now())).getDate() 
+            const today = (new Date(Date.now())).getDate()
             if(this.createdAt.getDate() != today) {
                 return 'on ' + this.createdAtDate
             }
@@ -61,8 +61,9 @@ export default {
         controlButtons() {
             const result = []
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
+            if(this.deploymentItem?.isAutostopCancelable) result.push('cancel-autostop')
             if(this.deploymentItem?.isRunning && this.deployment?.url) result.push('open')
-                if(!this.deploymentItem?.isJobCancelable) {
+            if(!this.deploymentItem?.isJobCancelable) {
 
                 if(this.deploymentItem?.isDraft) {
                     if(this.userCanEdit) result.push('edit-draft')
@@ -85,7 +86,7 @@ export default {
             const pipeline = this.deploymentItem?.pipeline
             if(pipeline?.upstream_pipeline_id && pipeline?.upstream_project_id) {
                 result.push('view-artifacts')
-            } 
+            }
 
             if(window.gon.projectId && this.userCanEdit) {
                 //temporary limitation (restrict to dashboard app)
@@ -173,6 +174,10 @@ export default {
             await this.deploymentItem.cancelJob()
             window.location.reload()
         },
+        async cancelAutostop() {
+            await this.deploymentItem.cancelAutostop()
+            window.location.reload()
+        },
         pipelineToJobsLink(pipeline) {
             if(!pipeline) return
             const jobId = this.jobByPipelineId(pipeline.id)?.id
@@ -192,7 +197,7 @@ export default {
 <div class="deployment-controls-outer">
     <div class="deployment-controls">
         <gl-button-group>
-            <control-buttons 
+            <control-buttons
              :deployment="deployment"
              :environment="environment"
              :view-deployment-target="viewDeploymentTarget"
@@ -209,6 +214,7 @@ export default {
              @cloneDeployment="cloneDeployment"
              @incRedeploy="incRedeploy"
              @cancelJob="cancelJob"
+             @cancelAutostop="cancelAutostop"
              @localDeploy="localDeploy"
              @edit="edit"
             />
@@ -231,6 +237,7 @@ export default {
                  @startDeployment="startDeployment"
                  @cloneDeployment="cloneDeployment"
                  @cancelJob="cancelJob"
+                 @cancelAutostop="cancelAutostop"
                  @incRedeploy="incRedeploy"
                  @localDeploy="localDeploy"
                  @edit="edit"

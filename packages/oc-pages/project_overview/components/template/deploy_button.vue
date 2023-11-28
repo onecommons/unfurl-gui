@@ -121,7 +121,7 @@ export default {
                     <gl-dropdown v-if="userCanEdit" :disabled="deployStatus == 'disabled'" right>
                         <div class="mt-2"/>
                             <gl-form-checkbox data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled' && !localDeployOnly">
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled' && !localDeployOnly" placement="right">
                                     <template #content>
                                         Use Unfurl to deploy this from the command line
                                     </template>
@@ -129,7 +129,7 @@ export default {
                                 </el-tooltip>
                             </gl-form-checkbox>
                             <gl-form-checkbox data-testid="toggle-force-check" @input="onInputForceCheck" style="margin: 0.25rem 1rem;" >
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'">
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'" placement="right">
                                     <template #content>
                                         Check status of a resource before creating or updating
                                     </template>
@@ -138,7 +138,7 @@ export default {
                                 </el-tooltip>
                             </gl-form-checkbox>
                             <gl-form-checkbox v-if="isCypress" data-testid="toggle-dry-run" @input="onInputDryRun" style="margin: 0.25rem 1rem;">
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'">
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'" placement="right">
                                     <template #content>
                                         Run a workflow without provisioning any cloud resources
                                     </template>

@@ -17,7 +17,8 @@ export default {
             'populateDashboardProject',
             'fetchMergeRequests',
             'deployInto',
-            'createFlash'
+            'createFlash',
+            'addUrlPoll'
         ]),
         ...mapMutations([
             'setCurrentNamespace',
@@ -73,6 +74,11 @@ export default {
         this.fetchMergeRequests() // not awaiting
 
         this.populateDeploymentItems(this.getDashboardItems)
+
+        for(const {environment, deployment} of this.getDashboardItems) {
+            this.addUrlPoll({deployment, environment})
+        }
+
         this.handleResize()
 
         const flash = sessionStorage['oc_flash']
