@@ -23,32 +23,6 @@ const PROP_MAP = {
     AWS_ACCESS_KEY_ID(value) { return {name: 'Access key', value}}
 }
 
-function mapCloudProviderProps(ci_variables) {
-    const result = []
-    for(const variable in ci_variables) {
-        const mapping = PROP_MAP[variable]
-        if(typeof mapping == 'function') {
-            const value = ci_variables[variable]
-            const newProp = mapping(value)
-            if(newProp) result.push(newProp)
-        }
-    }
-
-    const deployPath = this.lookupDeployPath('primary_provider', this.environmentName)
-    if(deployPath) {
-        const jobId = this.jobByPipelineId(deployPath.pipeline?.id)?.id
-        if(jobId) {
-            result.push({
-                name: 'Created in',
-                value: `Job #${jobId}`,
-                url: `/${this.getHomeProjectPath}/-/jobs/${jobId}`,
-            })
-        }
-    }
-
-    return result
-}
-
 export default {
     name: 'Environment',
     components: {
@@ -83,6 +57,7 @@ export default {
             'resolveResourceType',
             'getApplicationRoot',
             'providerTypesForEnvironment',
+            'deploymentItemDirect',
         ]),
         resourcesTabIndex() {
             return 0
@@ -104,7 +79,7 @@ export default {
             ]
         },
         providerProps() {
-            return mapCloudProviderProps.bind(this)({
+            return this.mapCloudProviderProps({
                 ...this.$store.state.ci_variables,
                 ...this.getVariables(this.environment)
             })
@@ -373,6 +348,37 @@ export default {
             }
 
             this.$refs.deploymentResources.promptAddExternalResource()
+        },
+        mapCloudProviderProps(ci_variables) {
+            const result = []
+            for(const variable in ci_variables) {
+                const mapping = PROP_MAP[variable]
+                if(typeof mapping == 'function') {
+                    const value = ci_variables[variable]
+                    const newProp = mapping(value)
+                    if(newProp) result.push(newProp)
+                }
+            }
+
+
+            const deploymentItem = this.deploymentItemDirect({
+                deployment: 'primary_provider',
+                environment: this.environmentName
+            })
+
+            if(deploymentItem) {
+                const pipeline = deploymentItem.pipeline
+                const jobId = this.jobByPipelineId(pipeline?.id)?.id
+                if(jobId) {
+                    result.push({
+                        name: 'Created in',
+                        value: `Job #${jobId}`,
+                        url: `/${this.getHomeProjectPath}/-/jobs/${jobId}`,
+                    })
+                }
+            }
+
+            return result
         }
 
     },

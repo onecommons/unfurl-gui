@@ -41,6 +41,9 @@ export default {
         cancelJob() {
             this.$emit('cancelJob')
         },
+        cancelAutostop() {
+            this.$emit('cancelAutostop')
+        },
         showPreviousJobs() {
             this.$emit('showPreviousJobs')
         },
@@ -67,8 +70,12 @@ export default {
 </script>
 <template>
 <div class="control-button-container">
+    <component :is='component' v-if="hasButton('cancel-autostop')" @click="cancelAutostop">
+        <gl-icon :size="16" name="cancel"/>
+        {{__('Cancel Autostop')}}
+    </component>
     <component :is='component' v-if="hasButton('cancel-job')" @click="cancelJob">
-        <gl-icon :size="16" name="cancel"/> 
+        <gl-icon :size="16" name="cancel"/>
         {{__('Cancel Job')}}
     </component>
     <open-live-app :component="component" v-if="hasButton('open')" :deployment="deployment" />
@@ -90,13 +97,13 @@ export default {
     </component>
     <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
     <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
-    <!-- View Deployment History is too long when this is the primary action --> 
+    <!-- View Deployment History is too long when this is the primary action -->
     <component :is='component' v-if="hasButton('job-history')" :disabled="hasDisabledButton('job-history')" :href="viewJobsLink">
-        <gl-icon :size="16" name="history"/> 
+        <gl-icon :size="16" name="history"/>
         {{component == 'gl-button'? __("Deploy History"): __('View Deployment History')}}
     </component>
     <component :is='component' v-if="hasButton('view-artifacts')" :href="viewArtifactsLink">
-        <gl-icon :size="16" name="archive"/> 
+        <gl-icon :size="16" name="archive"/>
         {{__('View Artifacts')}}
     </component>
     <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>

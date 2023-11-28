@@ -1,6 +1,7 @@
 import DeploymentItem from './deployment-info/deployment-item'
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql'
+import _ from 'lodash'
 
 const LOOKUP_JOBS = gql`
     query lookupJobs($fullPath: ID!){
@@ -16,6 +17,7 @@ const LOOKUP_JOBS = gql`
                             id
                             status
                             cancelable
+                            scheduledAt
                         }
                     }
                 }
@@ -79,7 +81,21 @@ const actions = {
 
                     if(!context.deployPath) throw new Error(`Couldn't look up deploy path for ${context.deployment.name} in ${context.environment.name}`)
 
-                    context.job = getters.jobByPipelineId(context.deployPath?.pipeline?.id)
+                    let [pipeline, jobInfo] = context.deployPath?.pipelines
+                        .map(p => [p, getters.jobByPipelineId(p.id)])
+                        .filter(([_, jobInfo]) => jobInfo && !['SCHEDULED', 'MANUAL'].includes(jobInfo.status))
+                        .pop() || []
+
+
+                    const lastPipeline = _.last(context.deployPath?.pipelines)
+
+                    if(lastPipeline?.variables?.WORKFLOW == 'undeploy' && pipeline.id != lastPipeline.id) {
+                        context.autostop = lastPipeline
+                        context.autostopJob = getters.jobByPipelineId(lastPipeline.id)
+                    }
+
+                    context.job = jobInfo || jobsByPipelineId(lastPipeline?.id)
+                    context.pipeline = pipeline  || lastPipeline
                     context.projectPath = rootGetters.getHomeProjectPath
                     context.namespace = rootGetters.getCurrentNamespace
                     dict[itemKey] = new DeploymentItem(context)

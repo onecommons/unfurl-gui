@@ -19,6 +19,7 @@ export {default as UnfurlGuiErrors} from 'oc_vue_shared/components/oc/ufgui-erro
 export {default as ExperimentalSettingsIndicator} from 'oc_vue_shared/components/oc/experimental-settings-indicator.vue'
 export {default as MarkdownView} from 'oc_vue_shared/components/oc/markdown-view.vue'
 export {default as CardDropdownOptions} from 'oc_vue_shared/components/oc/card-dropdown-options.vue'
+export {default as Autostop} from 'oc_vue_shared/components/oc/autostop.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error.js'

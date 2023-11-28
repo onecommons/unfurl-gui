@@ -64,7 +64,7 @@ const mutations = {
         deploymentPaths.forEach(
             dp => {
                 if(Array.isArray(dp.pipelines)) {
-                    dp.pipeline = dp.pipelines[dp.pipelines.length - 1]
+                    // dp.pipeline = dp.pipelines[dp.pipelines.length - 1]
                 }
             }
         )
@@ -85,6 +85,11 @@ const mutations = {
 
     setUpstreamBranch(state, upstreamBranch) {
         state.upstreamBranch = upstreamBranch
+    },
+
+
+    setAutostop(state, autostop) {
+        state.autostop = autostop
     },
 
     setIncrementalDeployment(state, incrementalDeploymentEnabled) {
@@ -269,6 +274,7 @@ const actions = {
                 {
                     variables: deployVariables,
                     dependencies,
+                    schedule: parameters.schedule || 'now',
                     ...parameters.deployOptions
                 }
             )
@@ -292,7 +298,8 @@ const actions = {
 
         const pipelines = [...(dp?.pipelines || [])]
 
-        const pipeline = data?
+        function dataToPipelineObj(data, deployVariables) {
+            return data?
             {
                 id: data.id,
                 flags: data.flags,
@@ -305,35 +312,56 @@ const actions = {
                 'upstream_branch': state.upstreamBranch
             } :
             null
+        }
 
+        const pipeline = dataToPipelineObj(data, deployVariables)
         if(pipeline) {pipelines.push(pipeline)}
 
-        commit('setUpdateType', 'environment', {root: true})
-        commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
-        const commitMessage = parameters.workflow == 'undeploy'?
-            `Undeploy ${parameters.deploymentName} from ${parameters.environmentName}`:
-            `Deploy ${parameters.deploymentName} into ${parameters.environmentName}`
+        if(state.autostop && parameters.workflow == 'deploy') {
+            const {pipelineData, deployVariables} = (await dispatch(
+                'undeployFrom',
+                {
+                    ...parameters,
+                    schedule: `${state.autostop} seconds`,
+                    skipCommit: true
+                }
+            ))
 
-        commit('setCommitMessage', commitMessage)
+            const autostopPipeline = dataToPipelineObj(pipelineData, deployVariables)
+            if(autostopPipeline) {
+                pipelines.push(autostopPipeline)
+            }
+        }
 
-        commit('pushPreparedMutation', () => {
-            return [{
-                typename: 'DeploymentPath',
-                patch: {
-                    __typename: 'DeploymentPath',
-                    environment: parameters.environmentName,
-                    'project_id': data?.project?.id,
-                    pipelines,
-                    'incremental_deploy': state.incrementalDeploymentEnabled ?? false,
-                },
-                target: parameters.deployPath
-            }]
-        })
+        if(!parameters.skipCommit) {
+            commit('setUpdateType', 'environment', {root: true})
+            commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
+            const commitMessage = parameters.workflow == 'undeploy'?
+                `Undeploy ${parameters.deploymentName} from ${parameters.environmentName}`:
+                `Deploy ${parameters.deploymentName} into ${parameters.environmentName}`
 
-        await dispatch('commitPreparedMutations', {}, {root: true})
-        commit('clearUpstream')
-        commit('clearRepositoryDependencies', null)
-        return {pipelineData: data}
+            commit('setCommitMessage', commitMessage)
+
+            commit('pushPreparedMutation', () => {
+                return [{
+                    typename: 'DeploymentPath',
+                    patch: {
+                        __typename: 'DeploymentPath',
+                        environment: parameters.environmentName,
+                        'project_id': data?.project?.id,
+                        pipelines,
+                        'incremental_deploy': state.incrementalDeploymentEnabled ?? false,
+                    },
+                    target: parameters.deployPath
+                }]
+            })
+
+            await dispatch('commitPreparedMutations', {}, {root: true})
+            commit('clearUpstream')
+            commit('clearRepositoryDependencies', null)
+        }
+
+        return {pipelineData: data, deployVariables}
     },
     deployInto({dispatch}, parameters) {
         return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'deploy'})
@@ -720,6 +748,13 @@ const getters = {
             const prefix = `environments/${environmentName}`
             const suffix = `/${deploymentName}`
             return state.deploymentPaths.find(dp => dp.name?.startsWith(prefix) && dp.name?.endsWith(suffix))
+        }
+    },
+    // do not use if the pipeline may have not been started yet
+    lookupLastRecordedPipeline(state, getters) {
+        return function(deploymentName, environmentName) {
+            const deployPath = getters.lookupDeployPath(deploymentName, environmentName)
+            return _.last(deployPath?.pipelines)
         }
     },
     hasDeployPathKey(state) {

@@ -7,10 +7,6 @@ export default class DeploymentItem {
         this.commitPromises = []
     }
 
-    get pipeline() {
-        return this.deployPath?.pipeline
-    }
-
     get pipelines() {
         return this.deployPath?.pipelines
     }
@@ -18,7 +14,7 @@ export default class DeploymentItem {
     get projectId() {
         return this.deployPath?.project_id || this.deployPath?.projectId // project_id will be used on DeploymentPath records going forward
     }
-    
+
     get commitId() {
         return this.pipeline?.commit?.id || this.pipeline?.commit_id
     }
@@ -98,7 +94,7 @@ export default class DeploymentItem {
                 return false
         }
     }
-    
+
     get jobStatusMessage() {
         switch(this.jobStatus) {
             case 'canceled':
@@ -109,7 +105,7 @@ export default class DeploymentItem {
                 return ''
         }
     }
-    
+
     get readonlyLink() { return `/${this.projectPath}/-/deployments/${this.environment.name}/${this.deployment.name}`}
     get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
     get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
@@ -145,9 +141,31 @@ export default class DeploymentItem {
         return this.job?.cancelable ?? false
     }
 
-
     async cancelJob() {
         if(!this.isJobCancelable) throw new Error(`Job ${this.job?.id || -1} is not cancelable`)
         await axios.post(this.cancelLink)
+    }
+
+
+    get autostopScheduled() {
+        return this.autostopJob && new Date(this.autostopJob.scheduledAt)
+    }
+    get isAutostopCancelable() {
+        return this.autostopJob?.status == 'SCHEDULED'
+    }
+    get autostopConsoleLink() {
+        if(this.projectPath && this.autostopJob) {
+            return `/${this.projectPath}/-/jobs/${this.autostopJob.id}`
+        }
+    }
+    get autostopCancelLink() {
+        if(this.projectPath && this.autostopJob) {
+            return `${this.autostopConsoleLink}/unschedule`
+        }
+    }
+
+    async cancelAutostop() {
+        if(!this.isAutostopCancelable) throw new Error(`Job ${this.autostopJob?.id || -1} is not cancelable`)
+        await axios.post(this.autostopCancelLink)
     }
 }
