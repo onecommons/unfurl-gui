@@ -17,6 +17,10 @@ import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
 
+const ONE_DAY = 24 * 60 * 60
+const ONE_HOUR = 60 * 60
+const ONE_MINUTE = 60
+
 export default {
     components: {
         DeploymentResources,
@@ -32,7 +36,7 @@ export default {
     data() {
         const environmentName = this.$route.params.environment
         const deploymentName = this.$route.params.name
-        return {bus, jobsData: null, viewReady: false, currentTab: 0, currentTabDebounced: 0, environmentName, deploymentName}
+        return {bus, jobsData: null, viewReady: false, currentTab: 0, currentTabDebounced: 0, environmentName, deploymentName, now: Date.now(), counter: 0}
     },
     computed: {
         ...mapGetters([
@@ -87,6 +91,46 @@ export default {
         },
         showStartingUpStatus() {
             return this.pollingStatus(this.deployment.name) == 'PENDING'
+        },
+
+        autostopRemainingTime() {
+            if(!this.deploymentItem?.autostopScheduled) return 0
+            return (this.deploymentItem.autostopScheduled - this.now) / 1000 - this.counter
+        },
+
+        autostopRemainingDays() {
+            if(this.autostopRemainingTime >= ONE_DAY) {
+                return Math.floor(this.autostopRemainingTime / ONE_DAY)
+            }
+        },
+
+        autostopRemainingHours() {
+            if(this.autostopRemainingTime >= ONE_HOUR) {
+                return Math.floor(this.autostopRemainingTime % ONE_DAY / ONE_HOUR).toString().padStart(2, '0')
+            }
+        },
+
+        autostopRemainingMinutes() {
+            if(this.autostopRemainingTime >= ONE_MINUTE) {
+                return Math.floor(this.autostopRemainingTime % ONE_HOUR / ONE_MINUTE).toString().padStart(2, '0')
+            }
+        },
+
+        autostopRemainingSeconds() {
+            return (Math.floor(this.autostopRemainingTime) % ONE_MINUTE).toString().padStart(2, '0')
+        },
+
+        autostopRemainingTimeDisplay() {
+            return [
+                this.autostopRemainingDays,
+                this.autostopRemainingHours,
+                this.autostopRemainingMinutes,
+                this.autostopRemainingSeconds
+            ].filter(t => !isNaN(parseInt(t))).join(':')
+        },
+
+        overrideStatus() {
+            return this.showStartingUpStatus || this.autostopScheduled
         }
     },
     watch: {
@@ -212,6 +256,8 @@ export default {
             this.jobsData = await getJobsData({projectId: this.projectId, id: this.pipelineId})
         }
 
+        setInterval(() => ++this.counter, 1000)
+
     },
 }
 </script>
@@ -233,8 +279,12 @@ export default {
                 <share-resource-toggle class="mr-1" :card="card" />
             </template>
 
-            <template v-if="showStartingUpStatus" #status>
-                <div class="d-inline-flex align-items-center ml-3">
+            <template v-if="overrideStatus" #status>
+                <div v-if="deploymentItem.autostopScheduled" class="d-inline-flex align-items-center ml-3">
+                    Deployment will be automatically stopped in {{autostopRemainingTimeDisplay}}
+                </div>
+
+                <div v-else-if="showStartingUpStatus" class="d-inline-flex align-items-center ml-3">
                     <gl-loading-icon class="mr-1"/>
                     <span>Waiting for <b>{{deployment.title}}</b> to go live (eta: {{formattedDeploymentEta(deployment.name)}})</span>
                 </div>

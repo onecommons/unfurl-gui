@@ -148,7 +148,7 @@ export default class DeploymentItem {
 
 
     get autostopScheduled() {
-        return this.autostopJob && new Date(this.autostopJob.scheduledAt)
+        return this.autostopJob?.status == 'SCHEDULED' && new Date(this.autostopJob.scheduledAt)
     }
     get isAutostopCancelable() {
         return this.autostopJob?.status == 'SCHEDULED'
