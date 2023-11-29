@@ -17,16 +17,20 @@ export default {
             if(typeof this.pollingStatus != 'function') return false
             const pollingStatus = this.pollingStatus(this.deployment?.name)
             return pollingStatus == 'PENDING'
+        },
+        title() {
+            if(this.disabled) {
+                return 'Application is not currently reachable'
+            }
         }
-
     }
 }
 </script>
 <template>
-    <component :is="component" :disabled="disabled" target="_blank" rel="noopener noreferrer" :href ="deployment.url" variant="confirm">
+    <component :is="component" v-gl-tooltip.hover :title="title" :disabled="disabled" target="_blank" rel="noopener noreferrer" :href ="deployment.url" variant="confirm">
 
-        <gl-loading-icon v-if="disabled" class="mr-1"/>
-        <gl-icon v-else :size="16" name="external-link"/> 
+        <gl-loading-icon v-if="disabled && component != 'gl-dropdown-item'" class="mr-1"/>
+        <gl-icon v-else :size="16" name="external-link"/>
         {{__('Open Live App')}}
     </component>
 </template>

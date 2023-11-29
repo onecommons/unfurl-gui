@@ -54,6 +54,12 @@ const tabFilters = [
         filter(item) { return false }
     },
     {
+        title: 'Autostop Scheduled',
+        filter(item) {
+            return item.autostopScheduled
+        }
+    },
+    {
         title: 'Failed',
         filter(item) {
             return (
@@ -65,7 +71,7 @@ const tabFilters = [
     {
         title: 'Destroyed',
         filter(item) { return item.isUndeployed }
-    }
+    },
 ]
 
 export default {
@@ -229,6 +235,7 @@ export default {
         async onModalConfirmed() {
             const intent = this.intent
             const {deployment, environment} = this.target
+            const deploymentItem = this.deploymentItemDirect({deployment, environment})
 
             await Vue.nextTick() // wait until modal is closed before doing anything
 
@@ -239,6 +246,9 @@ export default {
                     if(! this.hasCriticalErrors) window.location.reload()
                     return
                 case 'undeploy':
+                    if(deploymentItem.isAutostopCancelable) {
+                        await deploymentItem.cancelAutostop()
+                    }
                     this.undeploy()
                     return
                 case 'deploy':
@@ -272,7 +282,6 @@ export default {
                     window.location.href = redirectLocation
                     return
                 case 'incRedeploy':
-                    const deploymentItem = this.deploymentItemDirect({deployment, environment})
                     const variables = deploymentItem.pipeline.variables
                     const upstreamBranch = deploymentItem.pipeline.upstream_branch
                     const upstreamCommit = deploymentItem.pipeline.upstream_commit_id
