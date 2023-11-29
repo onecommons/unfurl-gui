@@ -94,7 +94,7 @@ const actions = {
                         context.autostopJob = getters.jobByPipelineId(lastPipeline.id)
                     }
 
-                    context.job = jobInfo || jobsByPipelineId(lastPipeline?.id)
+                    context.job = jobInfo || getters.jobByPipelineId(lastPipeline?.id)
                     context.pipeline = pipeline  || lastPipeline
                     context.projectPath = rootGetters.getHomeProjectPath
                     context.namespace = rootGetters.getCurrentNamespace
