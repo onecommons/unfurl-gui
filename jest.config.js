@@ -75,6 +75,7 @@ module.exports = {
     "js",
     'mjs',
     'ts',
+    'vue'
   ],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
@@ -180,6 +181,7 @@ module.exports = {
     '\\.mjs$': 'babel-jest',
     '\\.js$': 'babel-jest',
     '\\.ts$': 'babel-jest',
+    ".*\\.(vue)$": "vue-jest"
   },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
