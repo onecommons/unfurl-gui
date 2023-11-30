@@ -68,7 +68,7 @@ export const fields =  async function() {
         ArrayItems,
         Space,
         Input,
-        InputNumber, Checkbox, Select, FakePassword, Editable
+        InputNumber, Checkbox, Select, FakePassword, FileSelector, Editable
       }
     })
 }

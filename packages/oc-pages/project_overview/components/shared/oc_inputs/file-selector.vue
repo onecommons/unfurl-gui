@@ -15,7 +15,7 @@ function readExpressionValue(property, index=0) {
 
 
 function getMime(fileName) {
-    if(fileName.endsWith('/')) return 'directory'
+    if(fileName?.endsWith('/')) return 'directory'
 
     const result = mime.lookup(fileName) || null // false to null
 
@@ -240,6 +240,7 @@ export default {
         mimeTypes() {
             if(this.schema.file_types) return this.schema.file_types.map(getMime)
             if(this.schemaDefaultMimeType) return [this.schemaDefaultMimeType]
+            if(!this.expressionFile) return []
             return [getMime(this.expressionFile)]
         },
         schemaDefaultMimeType() {
