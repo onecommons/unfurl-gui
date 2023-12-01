@@ -65,7 +65,6 @@ export default {
     },
     data() {
         return {
-            projectFiles: [],
             treeOptions: {
                 events: {
                     checked: {
@@ -74,12 +73,17 @@ export default {
                     }
                 }
             },
+            filesList: [],
             selecting: false,
             fileSelection: null,
             showAllFiles: false,
+            nonExistantPath: false,
         }
     },
     methods: {
+        async fetchFilesList() {
+            this.filesList = await listProjectFiles(this.fileRepository)
+        },
         treeFromProjectFiles(projectFilesList) {
             const result = {}
 
@@ -108,7 +112,7 @@ export default {
 
         handleSelect(path, val) {
             if(val) {
-                this.fileSelection = path.slice(this.schemaDefaultPrefix.length + 2)
+                this.fileSelection = path.replace(/\/+/, '/').slice(this.schemaDefaultPrefix.length + 1)
             } else {
                 this.fileSelection = null
             }
@@ -136,7 +140,7 @@ export default {
                 eval: {
                     abspath: [
                         this.fileSelection,
-                        this.schemaUnfurlPrefix
+                        this.schemaDefaultLocation
                     ]
                 }
             })
@@ -145,30 +149,6 @@ export default {
         clear() {
             const value = this.schema.required? null: ''
             this.$emit('change', value)
-        },
-
-        async fetchAndFilterFiles() {
-            this.projectFiles = []
-            const filesList = await listProjectFiles(this.fileRepository)
-
-            const prefixExpression = new RegExp(`^${this.schemaDefaultPrefix}`)
-
-            const strippedFiles = filesList
-                .filter(prefixExpression.test.bind(prefixExpression))
-                .map(file => file.replace(prefixExpression, ''))
-
-            // we don't want to trim down this list here if it will remove directories that might need to be chosen
-            const shouldFilterFilesList = !this.showAllFiles && this.mimeTypes.length && !this.mimeTypes.includes('directory')
-
-            const matchingFileTypes = shouldFilterFilesList? strippedFiles.filter(
-                f => {
-                    const m = getMime(f)
-                    return !m || this.mimeTypes.includes(m)
-                }
-            ) : strippedFiles
-
-
-            this.projectFiles = this.treeFromProjectFiles(matchingFileTypes)
         },
 
         parseExpressionFile(expr) {
@@ -182,7 +162,7 @@ export default {
 
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath', 'getCurrentEnvironmentName', 'getCurrentProjectPath']),
+        ...mapGetters(['getHomeProjectPath', 'getCurrentEnvironmentName', 'getCurrentProjectPath', 'getDeploymentTemplate']),
         treeDisplayData() {
             // this also serves to clean up vendor tree state
             if(!this.selecting) return []
@@ -247,7 +227,7 @@ export default {
             if(this.schemaDefaultExpression?.get_dir) return 'directory'
             return getMime(this.schemaDefaultExpressionFile)
         },
-        schemaUnfurlPrefix() {
+        schemaDefaultLocation() {
             let result, expressionParams
 
             if(expressionParams = this.schemaDefaultExpression?.abspath) {
@@ -256,14 +236,20 @@ export default {
                 result = readExpressionValue(expressionParams, 0)
             }
 
-            return result || '.'
+            result = result || '.'
+
+            if(this.nonExistantPath && result == '.') {
+                return 'project'
+            }
+
+            return result
         },
         schemaDefaultPrefix() {
-            if(['spec', 'project'].includes(this.schemaUnfurlPrefix)) {
+            if(['spec', 'project'].includes(this.schemaDefaultLocation)) {
                 return ''
             } else {
                 // default to ensemble dir
-                return `environments/${this.getCurrentEnvironmentName}`
+                return `environments/${this.getCurrentEnvironmentName}/${this.getCurrentProjectPath}/${this.getDeploymentTemplate.name}`
             }
         },
         directoriesAllowed() {
@@ -277,11 +263,33 @@ export default {
         },
 
         fileRepository() {
-            if(['.', 'project'].includes(this.schemaUnfurlPrefix)) {
+            if(['.', 'project'].includes(this.schemaDefaultLocation)) {
                 return this.getHomeProjectPath
-            } else if(this.schemaUnfurlPrefix == 'spec') {
+            } else if(this.schemaDefaultLocation == 'spec') {
                 return this.getCurrentProjectPath
             }
+        },
+
+        filteredFiles() {
+            const prefixExpression = new RegExp(`^${this.schemaDefaultPrefix}`)
+
+            const strippedFiles = this.filesList
+                .filter(prefixExpression.test.bind(prefixExpression))
+                .map(file => file.replace(prefixExpression, ''))
+
+            // we don't want to trim down this list here if it will remove directories that might need to be chosen
+            const shouldFilterFilesList = !this.showAllFiles && this.mimeTypes.length && !this.mimeTypes.includes('directory')
+
+            return shouldFilterFilesList? strippedFiles.filter(
+                f => {
+                    const m = getMime(f)
+                    return !m || this.mimeTypes.includes(m)
+                }
+            ) : strippedFiles
+        },
+
+        projectFiles() {
+            return this.treeFromProjectFiles(this.filteredFiles)
         }
     },
     watch: {
@@ -292,12 +300,18 @@ export default {
         fileRepository: {
             immediate: true,
             handler(val) {
-                if(val) return this.fetchAndFilterFiles()
+                if(val) return this.fetchFilesList()
             }
         },
 
         showAllFiles() {
-            return this.fetchAndFilterFiles()
+            return this.fetchFilesList()
+        },
+
+        filteredFiles(val) {
+            if(val.length == 0 && this.filesList != 0) {
+                this.nonExistantPath = true
+            }
         }
     },
 }
