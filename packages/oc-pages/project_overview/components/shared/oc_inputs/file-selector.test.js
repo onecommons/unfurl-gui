@@ -9,6 +9,8 @@ localVue.use(Vuex)
 const HOME_PROJECT_PATH = 'jest/dashboard'
 const CURRENT_ENVIRONMENT_NAME = 'gcp'
 const CURRENT_PROJECT_PATH = 'onecommons/blueprints/nextcloud'
+const DEPLOYMENT_NAME = 'baserow-azure-1'
+const ENSEMBLE_DIR = `environments/${CURRENT_ENVIRONMENT_NAME}/${CURRENT_PROJECT_PATH}/${DEPLOYMENT_NAME}`
 
 const store = new  Vuex.Store({
   getters: {
@@ -20,6 +22,9 @@ const store = new  Vuex.Store({
     },
     getCurrentProjectPath() {
       return CURRENT_PROJECT_PATH
+    },
+    getDeploymentTemplate() {
+      return {name: DEPLOYMENT_NAME}
     }
   }
 })
@@ -61,8 +66,8 @@ const testCases = {
       mimeTypes: [],
       directoriesAllowed: true,
       fileRepository: HOME_PROJECT_PATH,
-      schemaUnfurlPrefix: '.',
-      schemaDefaultPrefix: `environments/${CURRENT_ENVIRONMENT_NAME}`
+      schemaDefaultLocation: '.',
+      schemaDefaultPrefix: ENSEMBLE_DIR
     }
   },
 
@@ -78,7 +83,7 @@ const testCases = {
       mimeTypes: ['directory'],
       directoriesAllowed: true,
       fileRepository: CURRENT_PROJECT_PATH,
-      schemaUnfurlPrefix: 'spec',
+      schemaDefaultLocation: 'spec',
       schemaDefaultPrefix: ''
     }
   },
@@ -95,7 +100,7 @@ const testCases = {
       mimeTypes: ['directory'],
       directoriesAllowed: true,
       fileRepository: CURRENT_PROJECT_PATH,
-      schemaUnfurlPrefix: 'spec',
+      schemaDefaultLocation: 'spec',
       schemaDefaultPrefix: ''
     }
 
@@ -113,7 +118,7 @@ const testCases = {
       mimeTypes: ['text/markdown'],
       directoriesAllowed: false,
       fileRepository: CURRENT_PROJECT_PATH,
-      schemaUnfurlPrefix: 'spec',
+      schemaDefaultLocation: 'spec',
       schemaDefaultPrefix: ''
     }
 
@@ -131,8 +136,8 @@ const testCases = {
       mimeTypes: ['text/markdown'],
       directoriesAllowed: false,
       fileRepository: HOME_PROJECT_PATH,
-      schemaUnfurlPrefix: 'project',
-      schemaDefaultPrefix: ''
+      schemaDefaultLocation: 'project',
+      schemaDefaultPrefix: '',
     }
 
   },
@@ -171,9 +176,28 @@ const testCases = {
     }
   },
 
+  'select <ensemble-dir>/README.md': {
+    props: {
+      schema: {
+        ...baseSchema,
+        default: evalGetdir('.')
+      },
+      value: evalGetdir('.')
+    },
+    select: `${ENSEMBLE_DIR}/README.md`,
+    output: {
+      eval: {
+        abspath: [
+          'README.md',
+          '.'
+        ]
+      }
+    }
+  },
+
 }
 
-describe('file selector shit', () => {
+describe('file selector component', () => {
   Object.entries(testCases).forEach(([caseName, caseData]) => {
     it(caseName, async () => {
       const {expected, props, select, output} = caseData
