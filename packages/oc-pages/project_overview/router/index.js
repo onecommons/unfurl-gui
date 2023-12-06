@@ -86,7 +86,7 @@ export default function createRouter(base) {
             }
         }
 
-        const editView = [routeNames.OC_PROJECT_VIEW_EDIT_DEPLOYMENT, routeNames.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT].includes(to.name)
+
         const developmentMode = unfurlServerUrlDev(base) && !unfurlServerUrlOverride()
         const url = unfurlServerUrlDev(base)
 
@@ -100,7 +100,10 @@ export default function createRouter(base) {
                 const linkText = 'End development session'
                 router.app.$store.dispatch('createFlash', {message, linkTo, linkText, linkTarget, type: FLASH_TYPES.WARNING})
 
-                if(editView) {
+                // Uncomment to restore previous behavior of using local server only while editing.
+                // const editView = [routeNames.OC_PROJECT_VIEW_EDIT_DEPLOYMENT, routeNames.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT].includes(to.name)
+                // if(editView) {
+                if(true) {
                     setTransientUnfurlServerOverride(unfurlServerUrlDev(base))
                 }
             } catch(e) {

@@ -131,7 +131,7 @@ const constraintCombinationsWithCloudmap = {}
 export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, _params={}, index) {
     // TODO remove when unfurl server types supports params
     const params = {implementation_requirements: _params.implementation_requirements}
-    const baseUrl = getOverride() || DEFAULT_UNFURL_SERVER_URL
+    const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
 
     // this is rather convoluted, but we don't want to fetch last commit for a tagged release
     // this code would probably be removed once unfurl server doesn't need a last commit
