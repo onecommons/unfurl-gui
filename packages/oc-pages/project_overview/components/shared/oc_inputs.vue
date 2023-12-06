@@ -599,7 +599,7 @@ export default {
 
 .oc-inputs >>> .formily-element-form-item-control-content { justify-content: flex-end; }
 .oc-inputs >>> .formily-element-form-item-extra {
-  left: calc(100% - 300px);
+  left: calc(100% - 350px);
   position: absolute;
   font-size: 0.8em;
   line-height: 1.1;
@@ -610,8 +610,8 @@ export default {
 }
 
 .oc-inputs >>> .formily-element-form-item-control-content-component {
-  width: 300px !important;
-  max-width: 300px;
+  width: 350px !important;
+  max-width: 350px;
 }
 
 .oc-inputs>>> .formily-element-array-items-card {
@@ -647,7 +647,7 @@ export default {
     .oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component {
       width: 150px !important;
       max-width: 150px;
-      margin-right: 150px;
+      margin-right: 200px;
     }
 }
 
