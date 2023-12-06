@@ -24,7 +24,14 @@ export default {
     },
     methods: {
         assignGenerated(force=false) {
-            const el = document.querySelector(`[data-testid="${this.property['x-component-props']['data-testid']}"] input`)
+            let sharedAncestor = this.$el.parentNode
+
+            while(!sharedAncestor.classList.contains('formily-element-form-item-control-content')) {
+                sharedAncestor = sharedAncestor.parentNode
+            }
+
+            const el = sharedAncestor.querySelector(`[data-testid="${this.property['x-component-props']['data-testid']}"] input`)
+
             if((!force) && el.value) {
                 this.showModal = true
                 return

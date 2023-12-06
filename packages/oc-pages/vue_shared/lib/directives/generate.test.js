@@ -45,7 +45,7 @@ test('abcdEF', () => {
         if(resolved[i].toLowerCase() == resolved[i]) lowercaseCount++
     }
     expect(lowercaseCount).toBeGreaterThan(40)
-    
+
     expect(resolved).toMatch(/^[abcdEF]{80}$/)
 })
 
@@ -66,6 +66,11 @@ test('numbers', () => {
 
 test('password', () => {
     const password = resolve({ranges: [[48, 57], [65, 90], [97, 122]], len: 15})
+    expect(password).toMatch(/^[A-Za-z0-9]{15}$/)
+})
+
+test('password chars', () => {
+    const password = resolve({ranges: [['0', '9'], ['a', 'z'], ['A', 'Z']], len: 15})
     expect(password).toMatch(/^[A-Za-z0-9]{15}$/)
 })
 
