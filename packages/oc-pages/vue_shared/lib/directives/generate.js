@@ -1,6 +1,13 @@
+function asNumber(n) {
+    if(typeof n == 'string') {
+        return n.charCodeAt(0)
+    }
+
+    return n
+}
 
 function rangeLength(range) {
-    return range[1] - range[0] + 1
+    return asNumber(range[1]) - asNumber(range[0]) + 1
 
 }
 function totalRangesLength(ranges) {
@@ -18,7 +25,7 @@ function getRandomCode(ranges) {
         const accumulated = totalRangesLength(ranges.slice(0, i + 1))
         if(r < accumulated) {
             const indexInRange = r - lastAccumulated
-            return ranges[i][0] + indexInRange
+            return asNumber(ranges[i][0]) + indexInRange
         }
         lastAccumulated = accumulated
     }
@@ -31,7 +38,7 @@ export default function resolve(params) {
         let password = resolve({ranges: [[48, 57], [65, 90], [97, 122]], len: len})
         if(!password.match(/\d/)) {
             const num = resolve({preset: 'number', len: 1})
-            const index = Math.floor(Math.random() * len) 
+            const index = Math.floor(Math.random() * len)
             password = password.slice(0, index) + num + password.slice(index+1)
         }
         return password

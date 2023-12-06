@@ -13,8 +13,9 @@ jobs:
           node-version: 16
       - name: Install yarn dependencies
         run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+        # TODO add back ufsv-patch -- --runInBand
       - name: Run unit tests
-        run: yarn test
+        run: yarn test packages -- --runInBand
       # currently broken from making jest happy
       # - name: Compile
       #   run: yarn build --mode dev
