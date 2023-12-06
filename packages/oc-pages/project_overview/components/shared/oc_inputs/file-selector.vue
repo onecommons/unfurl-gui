@@ -1,10 +1,11 @@
 <script>
 import Tree from 'vuejs-tree'
-import { mapGetters } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
 import { listProjectFiles } from 'oc_vue_shared/client_utils/projects'
-import { Button as ElButton } from 'element-ui'
+import { Button as ElButton, Select as ElSelect, Option as ElOption } from 'element-ui'
 import _ from 'lodash'
 import * as mime from 'mime-types'
+import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 
 // ?.input selections are to play nice with a formily workaround
 function readExpressionValue(property, index=0) {
@@ -29,11 +30,12 @@ function getMime(fileName) {
 export default {
     name: 'FileSelector',
     components: {
-      ElButton, Tree,
+        ElButton, Tree,
+        ElSelect, ElOption,
     },
     treeStyles: {
         row: {
-            width: '290px',
+            width: '340px',
             child: {
                 style: {
                     height: '30px',
@@ -77,10 +79,12 @@ export default {
             selecting: false,
             fileSelection: null,
             showAllFiles: false,
-            nonExistantPath: false,
+            chosenLocation: null,
+            forbidEnsembleDirectory: false,
         }
     },
     methods: {
+        ...mapActions(['createFlash']),
         async fetchFilesList() {
             this.filesList = await listProjectFiles(this.fileRepository)
         },
@@ -140,7 +144,7 @@ export default {
                 eval: {
                     abspath: [
                         this.fileSelection,
-                        this.schemaDefaultLocation
+                        this.location
                     ]
                 }
             })
@@ -236,16 +240,18 @@ export default {
                 result = readExpressionValue(expressionParams, 0)
             }
 
-            result = result || '.'
-
-            if(this.nonExistantPath && result == '.') {
-                return 'project'
+            return result || '.'
+        },
+        location: {
+            get() {
+                return this.chosenLocation || this.schemaDefaultLocation
+            },
+            set(value) {
+                this.chosenLocation = value
             }
-
-            return result
         },
         schemaDefaultPrefix() {
-            if(['spec', 'project'].includes(this.schemaDefaultLocation)) {
+            if(['spec', 'project'].includes(this.location)) {
                 return ''
             } else {
                 // default to ensemble dir
@@ -256,16 +262,18 @@ export default {
             return this.mimeTypes.length == 0 || this.mimeTypes.includes('directory')
         },
         displayValue() {
-            return `${this.schemaDefaultPrefix}/${this.expressionFile}`
+            return `${this.schemaDefaultPrefix}${this.expressionFile}` || '/'
         },
         linkForDisplayValue() {
             return `/${this.fileRepository}/-/blob/main/${this.displayValue}`
         },
-
+        linkForViewInRepository() {
+            return `/${this.fileRepository}/-/tree/main/${this.schemaDefaultPrefix}`
+        },
         fileRepository() {
-            if(['.', 'project'].includes(this.schemaDefaultLocation)) {
+            if(['.', 'project'].includes(this.location)) {
                 return this.getHomeProjectPath
-            } else if(this.schemaDefaultLocation == 'spec') {
+            } else if(this.location == 'spec') {
                 return this.getCurrentProjectPath
             }
         },
@@ -309,8 +317,13 @@ export default {
         },
 
         filteredFiles(val) {
-            if(val.length == 0 && this.filesList != 0) {
-                this.nonExistantPath = true
+            if(val.length == 0 && this.filesList != 0 && this.location == '.') {
+                // TODO add a flash for this
+                if(this.selecting) {
+                    this.createFlash({ message: 'No files were found relative to ensemble - switching to dashboard root.', type: FLASH_TYPES.ALERT})
+                }
+                this.forbidEnsembleDirectory = true
+                this.location = 'project'
             }
         }
     },
@@ -326,13 +339,27 @@ export default {
                 </a>
                 <el-button @click="clear" icon="el-icon-close" round class="p-1" style="font-size: 12px;"/>
             </div>
-            <el-button v-else-if="!selecting" @click="selecting=true" class="p-2 w-100">Choose file</el-button>
+            <div v-else-if="!selecting">
+                <label style="font-size: 0.85em;" class="mb-4">
+                    Relative to:
+                    <el-select v-model="location">
+                        <el-option label="Dashboard root" value="project" />
+                        <el-option v-if="!forbidEnsembleDirectory" label="Ensemble directory" value="." />
+                        <el-option label="Blueprint repository root" value="spec" />
+                    </el-select>
+                </label>
+                <el-button @click="selecting=true" class="p-2 w-100">Choose file</el-button>
+            </div>
             <div v-if="value || !selecting" class="mb-4"/> <!--spacer-->
         </div>
         <div v-if="selecting && mimeTypes.length > 0" class="mb-0">
             <label> Show all files <input v-model="showAllFiles" type="checkbox"> </label>
         </div>
         <div v-if="selecting">
+            <div class="d-flex justify-content-between align-items-center ml-3">
+                <a style="font-size: 0.9em;" title="View and make changes to repository files" :href="linkForViewInRepository" target="_blank">View in repository tree</a>
+                <el-button title="Check for new files" icon="el-icon-refresh" style="padding: 6px; font-size: 1em;" circle @click="fetchFilesList"></el-button>
+            </div>
             <tree ref="stupidTree" v-if="treeDisplayData.length > 0" :custom-styles="$options.treeStyles" :custom-options="treeOptions" :nodes="treeDisplayData"/>
 
             <div class="d-flex">
