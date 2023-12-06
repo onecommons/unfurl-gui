@@ -128,7 +128,7 @@ export default {
                     <td class="name-column">{{formatName(property)}}</td>
                     <td :style="property.valueStyle" class="value-column">
                         <div style="display: flex; justify-content: space-between;">
-                            <slot :name="property.name" v-bind="property.value">
+                            <slot :name="property.name" v-bind="{[property.name]: property.value}">
                                 <div v-if="property.status" style="margin-left: calc(-12px - 0.25rem)">
                                     <Status :status="property.status" :state="property.state" :size="14" display-text />
                                 </div>

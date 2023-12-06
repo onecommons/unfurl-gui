@@ -3,6 +3,7 @@ import Vue from 'vue'
 import {mapGetters, mapMutations} from 'vuex'
 import {defaultSeverityLevel} from '../../storage-keys'
 import {GlAlert, GlTabs, GlPagination} from '@gitlab/ui'
+import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
 
 const ERROR_LEVELS = ['minor', 'major', 'critical']
 
@@ -10,7 +11,8 @@ const PER_PAGE = 5
 export default {
     name: 'UnfurlGuiErrors',
     components: {
-        GlAlert, GlTabs, GlPagination
+        GlAlert, GlTabs, GlPagination,
+        CodeClipboard
     },
     data() {
         const headerElement = document.querySelector('[data-qa-selector="navbar"]')
@@ -70,10 +72,14 @@ export default {
                 :properties="Object.entries(error).map(([name, value]) => ({name, value}))"
                 container-style="width: 100%"
                 start-collapsed
-            />
+            >
+                <template #traceback="{traceback}">
+                    <code-clipboard>{{traceback}}</code-clipboard>
+                </template>
+            </oc-properties-list>
             <gl-pagination v-if="presentableErrors.length > PER_PAGE" v-model="page" :per-page=PER_PAGE :total-items="presentableErrors.length" />
         </gl-alert >
         <div v-else />
     </div>
-    
+
 </template>
