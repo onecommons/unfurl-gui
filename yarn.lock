@@ -6369,6 +6369,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@vue/test-utils@npm:^1.3.0":
+  version: 1.3.6
+  resolution: "@vue/test-utils@npm:1.3.6"
+  dependencies:
+    dom-event-types: ^1.0.0
+    lodash: ^4.17.15
+    pretty: ^2.0.0
+  peerDependencies:
+    vue: 2.x
+    vue-template-compiler: ^2.x
+  checksum: 9e397fad618c81126180e743bc69acf94a93f80d45cc6182c2a7178a145e92ea26bd1ea2e51c07312907e0c356a1a672bba68c27ffa1b46123c03c3a1c72b321
+  languageName: node
+  linkType: hard
+
 "@vue/web-component-wrapper@npm:^1.2.0":
   version: 1.2.0
   resolution: "@vue/web-component-wrapper@npm:1.2.0"
@@ -9813,6 +9827,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"condense-newlines@npm:^0.2.1":
+  version: 0.2.1
+  resolution: "condense-newlines@npm:0.2.1"
+  dependencies:
+    extend-shallow: ^2.0.1
+    is-whitespace: ^0.3.0
+    kind-of: ^3.0.2
+  checksum: 3c20ff6ee88b5d2e81c122f33b5ba5d6976cdf86d83527fadea308b3020ed70af7ed98c2e2d94d36f27fcd723a7a477941c19575e0d2c8db6afc4aac6926a54e
+  languageName: node
+  linkType: hard
+
 "config-chain@npm:^1.1.12":
   version: 1.1.12
   resolution: "config-chain@npm:1.1.12"
@@ -11027,6 +11052,13 @@ __metadata:
   dependencies:
     utila: ~0.4
   checksum: ea52fe303f5392e48dea563abef0e6fb3a478b8dbe3c599e99bb5d53981c6c38fc4944e56bb92a8ead6bb989d10b7914722ae11febbd2fd0910e33b9fc4aaa77
+  languageName: node
+  linkType: hard
+
+"dom-event-types@npm:^1.0.0":
+  version: 1.1.0
+  resolution: "dom-event-types@npm:1.1.0"
+  checksum: 58bb4d4b3a0caf719ce42ab8445576b6309d43a3db3ca45ca3dabaa4d69d99472e75b89127c25a177fe8fd7b390530fc43cb1252d57ab25d7e4845ed647cb159
   languageName: node
   linkType: hard
 
@@ -15295,6 +15327,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"is-whitespace@npm:^0.3.0":
+  version: 0.3.0
+  resolution: "is-whitespace@npm:0.3.0"
+  checksum: dac8fc9a9b797afeef703f625269601715552883790d1385d6bb27dd04ffdafd5fddca8f2d85ee96913850211595da2ba483dac1f166829c4078fb58ce815140
+  languageName: node
+  linkType: hard
+
 "is-windows@npm:^1.0.1, is-windows@npm:^1.0.2":
   version: 1.0.2
   resolution: "is-windows@npm:1.0.2"
@@ -15998,7 +16037,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"js-beautify@npm:^1.6.14":
+"js-beautify@npm:^1.6.12, js-beautify@npm:^1.6.14":
   version: 1.14.11
   resolution: "js-beautify@npm:1.14.11"
   dependencies:
@@ -19506,6 +19545,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pretty@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "pretty@npm:2.0.0"
+  dependencies:
+    condense-newlines: ^0.2.1
+    extend-shallow: ^2.0.1
+    js-beautify: ^1.6.12
+  checksum: 9c41ae0559195af2fb2496d84c6f442843e045d269d4008a6dd336f8372d7481395ed5ab23e5711b6172682c27cb0542e1ab3ca11b38da48f1109c0b701d0ef9
+  languageName: node
+  linkType: hard
+
 "process-nextick-args@npm:~2.0.0":
   version: 2.0.1
   resolution: "process-nextick-args@npm:2.0.1"
@@ -22722,6 +22772,7 @@ __metadata:
     "@vue/composition-api": ^1.4.3
     "@vue/eslint-config-prettier": ^6.0.0
     "@vue/eslint-config-typescript": ^5.0.2
+    "@vue/test-utils": ^1.3.0
     axios: ^0.20.0
     axios-cookiejar-support: ^2.0.4
     babel-core: ^7.0.0-bridge.0
