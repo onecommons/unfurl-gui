@@ -1,3 +1,5 @@
+// NOTE this test is currently broken on v2
+import {deploymentFixturePath} from '../../support/deployment-fixture'
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 function deploymentName(baseTitle) {
@@ -33,7 +35,7 @@ function mariaDBSaves(title, fixture) {
 describe('Drafts', () => {
   it('Can retain dependencies', () => {
     const title = deploymentName('GCP Drafts Test')
-    const fixture = 'generated/deployments/_production-gcp__ghost__mariadb-draft-gcp'
+    const fixture = deploymentFixturePath('gcp__wordpress__draft')
     mariaDBSaves(title, fixture)
 
     cy.get('[data-testid="tab-requirements-self-hosted-mariadb"]').should('exist')

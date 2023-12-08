@@ -27,6 +27,7 @@ const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
+const UNFURL_PACKAGE_RULES = Cypress.env('UNFURL_PACKAGE_RULES')
 
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
@@ -119,10 +120,40 @@ beforeEach(() => {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
     }
     if(UNFURL_SERVER_URL) {
-      cy.log(UNFURL_SERVER_URL)
-      win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
+      cy.intercept('/services/unfurl-server/*', (req) => {
+        req.url = req.url.replace(/.*services\/unfurl-server/, UNFURL_SERVER_URL)
+      })
+      // figure out how to get around cypress messing with iframe events
+      // win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
     }
+    if(UNFURL_PACKAGE_RULES) {
+      cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
+        req.body.pipeline.variables_attributes.push({
+          key: 'UNFURL_PACKAGE_RULES',
+          masked: false,
+          secret_value: UNFURL_PACKAGE_RULES,
+          variable_type: 'unencrypted_var',
+        })
+      })
+    }
+
     win.sessionStorage['unfurl-trace'] = 't'
   })
 
+})
+
+afterEach(() => {
+  cy.window().then(win => {
+    // withStore is better, this is good enough for here because we don't know which page we're on
+    // we don't want all test to fail when a suite doesn't care about frontend store
+    if(win.$store) {
+      cy.task(
+        'writeArtifact',
+        {
+          artifactName: `${Cypress.currentTest.titlePath.join(' ')}.json`,
+          data: JSON.stringify(win.$store.state)
+        }
+      )
+    }
+  })
 })

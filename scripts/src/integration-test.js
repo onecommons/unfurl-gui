@@ -45,7 +45,11 @@ function fetchNamespaceProjects(namespace) {
     try {
       const projects = []
       for(let i = 1;; i++) {
-        const children = (await axios.get(`${OC_URL}/groups/${namespace}/-/children.json?page=${i}`)).data
+        const url = `${OC_URL}/groups/${namespace}/-/children.json?page=${i}`
+        const children = (await axios.get(url)).data
+        if(children.length > 100) {
+          throw new Error(`Encountered more than 100 "projects" on a page - "${namespace}" probably has a typo`)
+        }
         if(children.length == 0) break
         for(const child of children) {
           if(child.type == 'project') {
@@ -146,6 +150,7 @@ function createDashboardCommand(username, dashboardRepo) {
   return () => {
     try {
       execFileSync(file, args, options)
+      console.log(`Dashboard created for ${username}`)
     } catch(e) {
       console.error(e.message)
     }
@@ -171,9 +176,6 @@ async function main() {
     // we need to create a new user
     username = identifierFromCurrentTime('user')
     prepareUserCommand = createDashboardCommand(username, dashboardRepo)
-
-
-    console.log(`Created user ${username}`)
   } else if (username == 'nobody') {
     username = undefined
   }

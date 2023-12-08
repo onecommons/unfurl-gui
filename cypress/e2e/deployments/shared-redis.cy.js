@@ -1,4 +1,5 @@
-const FIXTURE = 'generated/deployments/_production-gcp__nextcloud__redis-mail-pg'
+import {deploymentFixturePath} from '../../support/deployment-fixture'
+const FIXTURE = deploymentFixturePath('gcp__nextcloud__fullsh')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')

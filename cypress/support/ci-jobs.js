@@ -46,7 +46,8 @@ function withJob(cb) {
 
 function assertDeploymentRunning(deploymentTitle) {
   cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
-  cy.contains('td', deploymentTitle).within(() => {
+  // this becomes slow after a deployment completes on large dashboards
+  cy.contains('td', deploymentTitle, {timeout: BASE_TIMEOUT * 2}).within(() => {
     //cy.get('[data-testid="status_success_solid-icon"]').should('exist')
     cy.get('[data-testid="status_success_solid-icon"]').should('exist')
     cy.get('[data-testid="status_success_solid-icon"]').scrollIntoView()

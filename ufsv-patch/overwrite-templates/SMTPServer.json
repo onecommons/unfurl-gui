@@ -1,0 +1,31 @@
+{
+  "type": "GenericSMTPServer",
+  "name": "__mail-server",
+  "title": "Mail Server",
+  "description": "",
+  "directives": [],
+  "metadata": {
+    "created_by": "unfurl-gui"
+  },
+  "properties": [
+    {
+      "name": "host",
+      "value": "mailu.untrusted.me"
+    },
+    {
+      "name": "user_name",
+      "value": "admin@mailu.untrusted.me"
+    },
+    {
+      "name": "password",
+      "value": {
+        "get_env": "mail_server__password"
+      }
+    },
+    {
+      "name": "protocol",
+      "value": "tls"
+    }
+  ],
+  "dependencies": []
+}

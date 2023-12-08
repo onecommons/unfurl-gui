@@ -1,4 +1,5 @@
-const FIXTURE = 'generated/deployments/_staging-aws__nextcloud__only-mail'
+import {deploymentFixturePath} from '../../support/deployment-fixture'
+const FIXTURE = deploymentFixturePath('aws__minecraft__minecraft')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')

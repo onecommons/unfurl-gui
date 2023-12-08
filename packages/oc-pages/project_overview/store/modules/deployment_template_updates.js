@@ -298,6 +298,9 @@ export function updatePropertyInInstance({environmentName, templateName, propert
         _propertyValue = props[propertyName]
 
         const patch = accumulator['DeploymentEnvironment'][environmentName]
+
+        if(!patch.instances) patch.instances = []
+
         let instance = Array.isArray(patch.instances) ?
             patch.instances.find(i => i.name == templateName) :
             patch.instances[templateName]
@@ -388,8 +391,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentName]
         const result = []
 
-        // let _propertyValue = _.cloneDeep(propertyValue)
-        let _propertyValue = propertyValue // clone moved to caller
+        let _propertyValue = propertyValue // cloned at caller
 
         if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
             if(deploymentTemplate.source) {
@@ -401,7 +403,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
                     {typename: 'ResourceTemplate', target: templateName, patch: {...deploymentTemplate.ResourceTemplate[templateName], _local: false}}
                 )
 
-                return [...result, updatePropertyInInstance(args)]
+                return [...result, updatePropertyInResourceTemplate(args)]
             }
 
             // It doesn't make sense to try to encrypt envvars here.

@@ -16,6 +16,7 @@ const USE_UNFURL_DNS = Cypress.env('USE_UNFURL_DNS')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const TEARDOWN = Cypress.env('TEARDOWN')
 const CLEAR_CACHE = Cypress.env('CLEAR_CACHE')
+const DRYRUN = Cypress.env('DRYRUN')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -36,11 +37,13 @@ Cypress.Commands.add('recreateDeployment', options => {
     skipTeardown = options.skipTeardown
     expectExisting = options.expectExisting || false
     subdomain = options.subdomain,
-    verificationRoutine = options.verificationRoutine
+    // skip didn't seem to work here
+    verificationRoutine = DRYRUN? 'skip': options.verificationRoutine
 
     _dnsZone = options.dnsZone
     _env = options.env
   }
+
   cy.fixture(fixture).then(deployment => {
     const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
     const dt = Object.values(DeploymentTemplate)[0]
@@ -158,6 +161,7 @@ Cypress.Commands.add('recreateDeployment', options => {
       if(variant != HIDDEN) {
         cy.get(`[data-testid^="card-${template.name}"]`).should('exist')
       }
+      let inputWait = 500 // we should wait longer for the first for async components
       cy.document().then($document => {
         if (variant != HIDDEN) {
           // if (variant != PRIMARY) {
@@ -166,6 +170,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             }
           // }
           for (const property of template.properties) {
+            if(property.value == null) continue
             cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
             let value = property.value
             let name = property.name
@@ -191,7 +196,9 @@ Cypress.Commands.add('recreateDeployment', options => {
               }
             }
 
-            cy.wait(100)
+            cy.wait(inputWait)
+            inputWait = 100
+
             cy.document().then($document2 => {
               // NOTE coupled tightly with element ui
               let q = `
@@ -230,7 +237,7 @@ Cypress.Commands.add('recreateDeployment', options => {
 
           if(!match) continue
 
-          if (dependency.constraint.visibility == 'hidden') {
+          if (dependency.constraint.visibility == 'hidden' || match.visibility == 'hidden') {
             recreateTemplate(match, HIDDEN)
             continue
           }
@@ -241,7 +248,10 @@ Cypress.Commands.add('recreateDeployment', options => {
             // .click() // this is a bit hacky
 
           let dependencyCreate = $document.querySelector(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
-          if(!dependencyCreate) continue
+          if(!dependencyCreate) {
+            cy.log(`Couldn't find create for ${template.name}.${dependency.name}`)
+            continue
+          }
           if(
             !dependencyCreate.offsetParent
             && $document.querySelector(`[data-testid=tab-extras-${template.name}]`)
@@ -317,7 +327,17 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.wait(BASE_TIMEOUT / 50)
 
     if(shouldDeploy) {
-      cy.get('[data-testid="deploy-button"]:not([disabled])').click()
+      if(DRYRUN) {
+        cy.get('[data-testid="deploy-button"]').next().click()
+        // cy.get('[data-testid="toggle-dry-run"]').click() // covered by label
+        cy.contains('label', 'Dry Run').click()
+      }
+
+      // cy.get('[data-testid="deploy-button"]:not([disabled])').click({position: 'bottomLeft'})
+      // doesn't work reliably in CI
+      // popover tooltip may partially cover when deplying DRYRUN
+
+      cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
       cy.whenUnfurlGUI(() => {
         cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
@@ -334,8 +354,10 @@ Cypress.Commands.add('recreateDeployment', options => {
           cy.expectSuccessfulJob(job)
         })
         cy.assertDeploymentRunning(dt.title)
-        cy.verifyDeployment({deployment, env, dnsZone, sub: subdomain, expectExisting, verificationRoutine}, options.verificationArgs || {})
-        if(TEARDOWN && !skipTeardown) {
+        if(!DRYRUN) {
+          cy.verifyDeployment({deployment, env, dnsZone, sub: subdomain, expectExisting, verificationRoutine}, options.verificationArgs || {})
+        }
+        if(TEARDOWN && !skipTeardown && !DRYRUN) {
           cy.undeploy(dt.title)
         }
       })
