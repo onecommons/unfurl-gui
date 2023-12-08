@@ -10,7 +10,6 @@ import OcInputs from '../../components/shared/oc_inputs.vue'
 import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
-import {Autostop} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
@@ -31,7 +30,6 @@ export default {
     OcListResource,
     OcTemplateHeader,
     TemplateButtons,
-    Autostop,
   },
 
 
@@ -117,7 +115,6 @@ export default {
       'environmentTypeRepositories',
       'infallibleGetCardTitle',
       'getDeploymentDictionaries',
-      'autostopSeconds'
     ]),
 
     deploymentDir() {
@@ -931,7 +928,6 @@ export default {
                 </oc-card>
               </div>
             </div>
-            <autostop />
           </template>
         </oc-card>
 

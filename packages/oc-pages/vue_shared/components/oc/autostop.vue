@@ -3,24 +3,27 @@ import {
     Card as ElCard,
     DatePicker as ElDatePicker,
     TimeSelect as ElTimeSelect,
+    Tooltip as ElTooltip,
+    Popover as ElPopover,
     Input as ElInput,
 } from 'element-ui'
-import { GlFormCheckbox } from '@gitlab/ui'
+import { GlButton, GlFormCheckbox } from '@gitlab/ui'
 import {mapMutations} from 'vuex'
 
 export default {
     name: 'Autostop',
     components: {
-        ElCard, ElDatePicker, ElTimeSelect, ElInput, GlFormCheckbox
+        ElCard, ElDatePicker, ElTimeSelect, ElInput, ElPopover, ElTooltip,
+        GlFormCheckbox, GlButton,
     },
     data() {
         const d = new Date(Date.now() + 2 * 60 * 60 * 1000)
         const scheduledAutostopTime = `${('0' + d.getHours()).slice(-2)}:${('0' + d.getMinutes()).slice(-2)}`
-        console.log({scheduledAutostopTime})
         return {
             scheduledAutostop: new Date(d.getYear() + 1900, d.getMonth(), d.getDate()),
             scheduledAutostopTime, // TODO remember the user's last choice
             enabledAutostop: false,
+            popover: false,
         }
     },
 
@@ -91,7 +94,6 @@ export default {
     watch: {
         autostop: {
             handler(val) {
-                console.log({val})
                 this.setAutostop(val)
             },
             immediate: true
@@ -106,21 +108,39 @@ export default {
 }
 </script>
 <template>
-    <el-card class="gl-mt-6 autostop">
-            <gl-form-checkbox v-model="enabledAutostop">
-                Automatically stop the deployment at a specified time:
-            </gl-form-checkbox>
-            <div v-if="enabledAutostop">
-                <el-date-picker class="ml-2" type="date" v-model="scheduledAutostop" :picker-options="pickerOptions"/>
-                <!-- <el-time-select class="ml-2" v-model="scheduledAutostopTime" :picker-options="$options.timePickerOptions"/> -->
-                <el-input style="width: 220px;" type="time" v-model="scheduledAutostopTime" clearable/>
-            </div>
-    </el-card>
-</template>
-<style scoped>
-.autostop >>> .gl-form-checkbox.custom-control .custom-control-input:checked ~ .custom-control-label::before,
-.autostop >>> .gl-form-radio.custom-control .custom-control-input:checked ~ .custom-control-label::before {
-    background-color: #00D2D9 !important;
-}
+    <el-popover v-model="popover" trigger="click">
+        <div class="ml-2 m-1">
+            Automatically stop the deployment at a specified time:
+        </div>
+        <div>
+            <el-date-picker class="ml-2" type="date" v-model="scheduledAutostop" :picker-options="pickerOptions"/>
+            <el-input style="width: 220px;" type="time" v-model="scheduledAutostopTime" clearable/>
+        </div>
 
-</style>
+
+        <div v-if="popover" class="mt-2 d-flex justify-content-end">
+            <gl-button class="mr-2" @click="popover = false">Cancel</gl-button>
+            <gl-button v-if="!enabledAutostop" variant="confirm" @click="popover = false; enabledAutostop = true">Confirm</gl-button>
+            <gl-button v-else @click="popover = false; enabledAutostop = false">Unschedule</gl-button>
+        </div>
+
+
+
+        <template #reference>
+            <el-tooltip>
+                <template #content>
+                    <div> Automatically stop the deployment at a specified time </div>
+                </template>
+
+            <gl-button :variant="enabledAutostop? 'confirm': 'default'">
+                <i class="el-icon-timer"></i>
+                <span>
+                    {{enabledAutostop? 'Auto Stop Scheduled': 'Schedule Auto Stop'}}
+                </span>
+            </gl-button>
+
+            </el-tooltip>
+        </template>
+
+    </el-popover>
+</template>

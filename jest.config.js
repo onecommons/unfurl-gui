@@ -146,7 +146,8 @@ module.exports = {
 
   // Options that will be passed to the testEnvironment
   testEnvironmentOptions: {
-    url: process.env.OC_URL || 'https://unfurl.cloud'
+    url: process.env.OC_URL || 'https://unfurl.cloud',
+    customExportConditions: ["node", "node-addons"],
   },
 
   // Adds a location field to test results

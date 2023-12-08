@@ -344,7 +344,7 @@ export default {
                     Relative to:
                     <el-select v-model="location">
                         <el-option label="Dashboard root" value="project" />
-                        <el-option v-if="!forbidEnsembleDirectory" label="Ensemble directory" value="." />
+                        <el-option v-if="!forbidEnsembleDirectory" label="Deployment directory" value="." />
                         <el-option label="Blueprint repository root" value="spec" />
                     </el-select>
                 </label>

@@ -4,6 +4,7 @@ import { mapGetters } from 'vuex'
 import { Tooltip as ElTooltip } from 'element-ui'
 import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox} from '@gitlab/ui';
 import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
+import Autostop from 'oc_vue_shared/components/oc/autostop.vue'
 import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
 
 export default {
@@ -11,6 +12,7 @@ export default {
     components: {
         ElTooltip,
         ErrorSmall,
+        Autostop,
         GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox
     },
     data() {
@@ -96,13 +98,15 @@ export default {
 
 </script>
 <template>
-    <el-tooltip :disabled="!deployTooltip">
-        <template #content>
-            <div>
-                {{deployTooltip}}
-            </div>
-        </template>
-        <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper">
+    <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper position-relative">
+        <autostop v-if="userCanEdit" class="mr-2"/>
+        <el-tooltip :disabled="!deployTooltip">
+            <template #content>
+                <div>
+                    {{deployTooltip}}
+                </div>
+            </template>
+
             <div class="d-flex flex-column position-relative">
                 <gl-button-group class="deploy-button">
                     <gl-button
@@ -153,8 +157,8 @@ export default {
                     </div>
                 </error-small>
             </div>
-        </div>
-    </el-tooltip>
+        </el-tooltip>
+    </div>
 
 </template>
 <style scoped>

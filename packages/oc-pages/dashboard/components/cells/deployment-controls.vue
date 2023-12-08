@@ -171,6 +171,9 @@ export default {
             this.$emit('incRedeploy', this.deployment, this.environment)
         },
         async cancelJob() {
+            if(this.deploymentItem.isAutostopCancelable) {
+                await this.deploymentItem.cancelAutostop()
+            }
             await this.deploymentItem.cancelJob()
             window.location.reload()
         },
