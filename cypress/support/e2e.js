@@ -120,6 +120,7 @@ beforeEach(() => {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
     }
     if(UNFURL_SERVER_URL) {
+      cy.task('log', `Setting intercept for ${UNFURL_SERVER_URL}`)
       cy.intercept('/services/unfurl-server/*', (req) => {
         req.url = req.url.replace(/.*services\/unfurl-server/, UNFURL_SERVER_URL)
       })

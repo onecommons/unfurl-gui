@@ -45,7 +45,7 @@ const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
-const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS') 
+const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
@@ -66,10 +66,10 @@ function whenGitlab(cb) {
 }
 
 function withStore(cb) {
-  cy.waitUntil(() => cy.window().then(win => {
+  return cy.waitUntil(() => cy.window().then(win => {
     if(win.$store.getters.environmentsAreReady) {
       cb && cb(win.$store)
-      return win.$store
+      return cy.wrap(win.$store)
     }
     else {return false}
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
@@ -151,7 +151,7 @@ function login(impersonateUser) {
       win.sessionStorage['unfurl-trace'] = 't'
     })
     cy.visit(`/${impersonateUser || USERNAME}/dashboard`)
-  }, 
+  },
   {
     cacheAcrossSpecs: false,
     validate() {
