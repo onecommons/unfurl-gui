@@ -87,8 +87,32 @@ cloud_redis:
 # Not yet fully supported for $TEST == "all"
 multiple_workflows:
   spec: cypress/e2e/deployments/multiple-workflows*.js
-  cond: $TEST == "multiple_workflows"
-  description: Tries to run multiple deployments simultaneously (flakey)
+  cond: $TEST == "multiple_workflows" || $TEST == "misc"
+  description: Tries to run multiple deployments simultaneously
+  status: flakey
+  env: DRYRUN=true
+
+smorgasbord:
+  spec: cypress/e2e/deployments/smorgasbord*.js
+  cond: $TEST == "smorgasbord"
+  description: Test inputs in smorgasbord blueprint
+
+nodefilter:
+  spec: cypress/e2e/deployments/node-filter*.js
+  cond: $TEST == "node_filter" || $TEST == "misc"
+  description: Test node filter on baserow
+
+clonedraft:
+  spec: cypress/e2e/deployments/clone-draft*.js
+  cond: $TEST == "clone_draft" || $TEST == "misc"
+  description: Clone and deploy a draft
+  env: DRYRUN=true
+
+drafts:
+  spec: cypress/e2e/deployments/draft*.js
+  cond: $TEST == "drafts" || $TEST == "misc"
+  description: Try to trigger a state desync with drafts
+  status: v1 exclusive
 
 nextcloud_shared_volumes:
   spec: cypress/e2e/deployments/shared-volume*.js

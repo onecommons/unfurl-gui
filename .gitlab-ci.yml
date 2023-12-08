@@ -61,7 +61,7 @@ build:
     when: always
     paths:
       - cypress/videos/**/*.mp4
-      - cypress/screenshots/**/*.png
+      - cypress/screenshots/**/*
     expire_in: 1 day
 
 include: .gitlab/generated/tests.yml

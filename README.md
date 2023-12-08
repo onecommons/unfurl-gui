@@ -84,8 +84,6 @@ Example:
 If successful the command will output the pipeline URL.
 
 
-
-
 # Cypress tests
 
  Cypress tests can be automatically run through gitlab ci by setting the `$TEST` pipeline variable
@@ -108,7 +106,11 @@ If successful the command will output the pipeline URL.
 | <code>$TEST =~ /k8s/ &#124;&#124; ($TEST == "all" && $SKIP !~ /k8s/)</code> | <code>./cypress/e2e/blueprints/k8s&#42;.js</code> | Runs all kubernetes tests |
 | <code>$TEST =~ /uc_dns/ &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/aws__nextcloud__only-mail&#42;.js</code> | Runs aws nextcloud with unfurl cloud dns |
 | <code>$TEST == "cloud_redis"</code> | <code>cypress/e2e/blueprints/gcp__nextcloud__memorystore&#42;.js</code><br><code>cypress/e2e/blueprints/aws__nextcloud__memorydb&#42;.js</code> | Runs all cloud redis tests |
-| <code>$TEST == "multiple_workflows"</code> | <code>cypress/e2e/deployments/multiple-workflows&#42;.js</code> | Tries to run multiple deployments simultaneously (flakey) |
+| <code>$TEST == "multiple_workflows" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/multiple-workflows&#42;.js</code> | Tries to run multiple deployments simultaneously |
+| <code>$TEST == "smorgasbord"</code> | <code>cypress/e2e/deployments/smorgasbord&#42;.js</code> | Test inputs in smorgasbord blueprint |
+| <code>$TEST == "node_filter" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/node-filter&#42;.js</code> | Test node filter on baserow |
+| <code>$TEST == "clone_draft" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/clone-draft&#42;.js</code> | Clone and deploy a draft |
+| <code>$TEST == "drafts" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/draft&#42;.js</code> | Try to trigger a state desync with drafts |
 | <code>$TEST == "shared_volumes" &#124;&#124; $TEST == "all"</code> | <code>cypress/e2e/deployments/shared-volume&#42;.js</code> | Runs all nextcloud shared volume tests<br>The test does the following:<br>1. Deploys nextcloud with a volume<br>2. Shares the volume<br>3. Tears down the first deployment<br>4. Creates a new nextcloud deployment with the shared volume<br>5. Asserts that admin credentials are the same on the new instance<br> |
 | <code>$TEST == "command"</code> | N/A | evals <code>$CY_COMMAND</code>
 

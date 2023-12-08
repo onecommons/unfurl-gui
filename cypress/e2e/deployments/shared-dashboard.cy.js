@@ -53,7 +53,7 @@ describe('Shared dashboard test', () => {
     cy.logout()
     cy.login(Cypress.env('OC_USERNAME'), Cypress.env('OC_PASSWORD'), usernameB)
     cy.recreateDeployment({
-      fixture: 'generated/deployments/_production-gcp__nextcloud__mail-and-pg.json',
+      fixture: FIXTURE,
       env: environmentName,
       title: deploymentTitle,
       shouldSave: true,
