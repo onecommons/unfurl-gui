@@ -390,6 +390,7 @@ const actions = {
         target._uncommitted = true
         target.__typename = 'ResourceTemplate'
         target.visibility = visibility || targetType.visibility || 'inherit'
+        target._sourceinfo = targetType._sourceinfo
 
         target.metadata = {...targetType.metadata, created_by: 'unfurl-gui'}
 
