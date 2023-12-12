@@ -6,7 +6,7 @@ export default {
     name: 'JobSummary',
     components: { GlBadge, TableComponent },
     props: {
-        jobsData: Object
+        jobsData: Array
     },
     fields: [
         { key: 'template', label: 'Template', textValue: item => `${item.template}: ${item.type}`},

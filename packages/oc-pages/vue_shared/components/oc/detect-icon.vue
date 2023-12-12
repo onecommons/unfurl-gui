@@ -26,6 +26,9 @@ const DEFAULT = 'pod'
 const GL_ICON_MAPPINGS = {
 }
 
+// get rid of prop validation error for size: 18px, etc.
+delete GlIcon.props.size.validator
+
 const CUSTOM_ICON_MAPPINGS = {
     'unfurl.relationships.connectsto.googlecloudproject': 'GCP', 'google cloud platform': 'GCP',
     'unfurl.relationships.connectsto.k8scluster': 'K8s', 'kubernetes': 'K8s',

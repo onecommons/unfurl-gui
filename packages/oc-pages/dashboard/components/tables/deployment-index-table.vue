@@ -1,6 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
-import {OcTab, EnvironmentSelection, LocalDeploy} from 'oc_vue_shared/components/oc'
+import {OcTab, EnvironmentSelection, LocalDeploy, AutostopInner} from 'oc_vue_shared/components/oc'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
@@ -54,7 +54,7 @@ const tabFilters = [
         filter(item) { return false }
     },
     {
-        title: 'Autostop Scheduled',
+        title: 'Auto Stop Scheduled',
         filter(item) {
             return item.autostopScheduled
         }
@@ -85,12 +85,13 @@ export default {
         GlTabs,
         OcTab,
         EnvironmentSelection,
-        LocalDeploy,
         GlFormInput,
         GlFormGroup,
         DeploymentStatusIcon,
         DashboardRouterLink,
-        MergeRequestsTable
+        MergeRequestsTable,
+        AutostopInner,
+        LocalDeploy
     },
     props: {
         items: {
@@ -153,7 +154,7 @@ export default {
         if(currentTab == -1) currentTab = 0
 
         const intent = '', target = null, newDeploymentTitle = null, cloneTargetEnvironment = null
-        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark}
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null}
 
     },
     methods: {
@@ -164,7 +165,10 @@ export default {
             'cloneDeployment',
             'addUrlPoll',
             'renameDeployment',
-            'createFlash'
+            'createFlash',
+            'populateJobsList',
+            'loadDashboard',
+            'populateDeploymentItems',
         ]),
         ...mapMutations(['createError']),
         async deploy() {
@@ -196,6 +200,25 @@ export default {
                   show: 'console'
                 }
             }).href
+        },
+        async scheduleAutostop() {
+            const {deployment, environment} = this.target
+            const deploymentItem = this.deploymentItemDirect({deployment, environment})
+            if(deploymentItem.isAutostopCancelable) {
+                await deploymentItem.cancelAutostop()
+            }
+            await this.undeployFrom({
+                ...this.deploymentParameters,
+                schedule: `${this.autostop} seconds`
+            })
+            if(this.hasCriticalErrors) return
+
+            await Promise.all([
+                this.loadDashboard(),
+                this.populateJobsList()
+            ])
+
+            await this.populateDeploymentItems(this.getDashboardItems)
         },
         statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
         resumeEditingLink(scope) {
@@ -250,6 +273,9 @@ export default {
                         await deploymentItem.cancelAutostop()
                     }
                     this.undeploy()
+                    return
+                case 'scheduleAutostop':
+                    this.scheduleAutostop()
                     return
                 case 'deploy':
                     this.deploy()
@@ -332,6 +358,11 @@ export default {
             this.intent = 'incRedeploy'
             this.target = {deployment, environment}
         },
+        onIntentToScheduleAutostop(deployment, environment) {
+            this.intent = 'scheduleAutostop'
+            this.target = {deployment, environment}
+        },
+
         onIntentToEdit(deployment, environment) {
             this.target = {deployment, environment}
             const deploymentItem = this.deploymentItemDirect({environment, deployment})
@@ -389,7 +420,8 @@ export default {
             'deleteDeploymentPreventedBy',
             'undeployPreventedBy',
             'hasCriticalErrors',
-            'mergeRequests'
+            'mergeRequests',
+            'getDashboardItems'
         ]),
         intentToDeletePreventedBy() {
             if(this.intent != 'delete') return []
@@ -466,6 +498,15 @@ export default {
                     return `Force an update of ${targetTitle}?`
                 case 'edit':
                     return `Edit deployment '${targetTitle}'?`
+                case 'scheduleAutostop':
+                    const {deployment, environment} = this.target
+                    const deploymentItem = this.deploymentItemDirect({deployment, environment})
+
+                    if(deploymentItem.isAutostopCancelable) {
+                        return 'Reschedule Auto Stop'
+                    }
+
+                    return 'Schedule Auto Stop'
                 default:
                     return `${this.intent.toString().slice(0, 1)?.toUpperCase()}${this.intent.toString().slice(1)} ${targetTitle}?`
             }
@@ -538,8 +579,19 @@ export default {
             return {
                 text: (this.intent == 'delete' && (this.deleteWarning || !this.ableToDelete)) ? 'Delete Anyway':
                     this.intent == 'undeploy' && !this.ableToUndeploy? 'Undeploy Anyway':
-                    this.intent == 'localDeploy' ? 'OK': 'Confirm'
+                    this.intent == 'localDeploy' ? 'OK': 'Confirm',
+                attributes: {
+                    variant: 'confirm',
+                    disabled: this.modalPrimaryDisabled
+                }
             }
+        },
+        modalPrimaryDisabled() {
+            if(this.intent == 'scheduleAutostop') {
+                return !this.autostop || this.autostop <= 0
+            }
+
+            return false
         },
         actionCancel() {
             if(this.intent == 'localDeploy') return null
@@ -620,6 +672,7 @@ export default {
             :title="modalTitle"
             v-model="modal"
             :size="modalSize"
+            noFocusOnShow
             :actionPrimary="actionPrimary"
             :actionCancel="actionCancel"
             @primary="onModalConfirmed"
@@ -649,6 +702,10 @@ export default {
                     <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
                 </ol>
             </div>
+            <autostop-inner
+                v-if="intent == 'scheduleAutostop'"
+                v-model="autostop"
+            />
             <div v-if="['clone', 'rename'].includes(intent)">
                 <gl-form-group class="m-3" label="New deployment title">
                     <gl-form-input v-model="newDeploymentTitle"/>
@@ -721,7 +778,19 @@ export default {
 
             <template #controls$head> <div></div> </template>
             <template #controls$all="scope">
-                <deployment-controls @renameDeployment="onIntentToRename" @startDeployment="onIntentToStart" @stopDeployment="onIntentToStop" @deleteDeployment="onIntentToDelete" @cloneDeployment="onIntentToClone" @localDeploy="onIntentToLocalDeploy" @incRedeploy="onIntentToRedeploy" @edit="onIntentToEdit" v-if="scope.item._depth == 0" :scope="scope" />
+                <deployment-controls
+                    @renameDeployment="onIntentToRename"
+                    @startDeployment="onIntentToStart"
+                    @stopDeployment="onIntentToStop"
+                    @deleteDeployment="onIntentToDelete"
+                    @cloneDeployment="onIntentToClone"
+                    @localDeploy="onIntentToLocalDeploy"
+                    @incRedeploy="onIntentToRedeploy"
+                    @scheduleAutostop="onIntentToScheduleAutostop"
+                    @edit="onIntentToEdit"
+                    v-if="scope.item._depth == 0"
+                    :scope="scope"
+                />
             </template>
 
         </table-component>
