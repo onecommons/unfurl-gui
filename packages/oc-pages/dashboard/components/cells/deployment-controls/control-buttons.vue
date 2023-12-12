@@ -4,8 +4,7 @@ import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import OpenLiveApp from './open-live-app.vue'
 export default {
     props: {
-        deployment: Object,
-        environment: Object,
+        deploymentItem: Object,
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
         viewJobsLink: String,
@@ -72,13 +71,18 @@ export default {
 <div class="control-button-container">
     <component :is='component' v-if="hasButton('cancel-autostop')" @click="cancelAutostop">
         <gl-icon :size="16" name="cancel"/>
-        {{__('Cancel Autostop')}}
+        {{__('Cancel Auto Stop')}}
     </component>
     <component :is='component' v-if="hasButton('cancel-job')" @click="cancelJob">
         <gl-icon :size="16" name="cancel"/>
         {{__('Cancel Job')}}
     </component>
-    <open-live-app :component="component" v-if="hasButton('open')" :deployment="deployment" />
+    <open-live-app :component="component" v-if="hasButton('open')" :deployment="deploymentItem.deployment" />
+    <component :is='component' v-if="hasButton('schedule-autostop')" @click="$emit('scheduleAutostop')">
+        <i style="font-size: 17px; margin-right: 2.5px; bottom: -1px;" class="el-icon-timer"></i>
+
+        {{deploymentItem.isAutostopCancelable? __('Rechedule Auto Stop'): __('Schedule Auto Stop')}}
+    </component>
     <component :is='component' v-if="hasButton('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Draft')}}

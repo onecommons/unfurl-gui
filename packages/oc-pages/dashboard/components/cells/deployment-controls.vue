@@ -1,9 +1,22 @@
 <script>
 import {GlDropdown, GlButtonGroup} from '@gitlab/ui'
-import {mapGetters} from 'vuex'
+import {mapGetters, mapActions} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import * as routes from '../../router/constants'
+
+function emitDeploymentItemFor(eventNames) {
+    const result = {}
+
+    for(const eventName of eventNames) {
+        result[eventName] = function() {
+            this.$emit(eventName, this.deployment, this.environment)
+        }
+    }
+
+    return result
+}
+
 export default {
     props: {
         resumeEditingLink: [Object, String],
@@ -27,7 +40,8 @@ export default {
             'deploymentItemDirect',
             'jobByPipelineId',
             'userCanEdit',
-            'serviceDesk'
+            'serviceDesk',
+            'getDashboardItems'
         ]),
         deployment() {return this.scope.item.context?.deployment},
         application() {return this.scope.item.context?.application},
@@ -63,6 +77,9 @@ export default {
             if(this.deploymentItem?.isJobCancelable) result.push('cancel-job')
             if(this.deploymentItem?.isAutostopCancelable) result.push('cancel-autostop')
             if(this.deploymentItem?.isRunning && this.deployment?.url) result.push('open')
+            if(this.deploymentItem?.isRunning) {
+                result.push('schedule-autostop')
+            }
             if(!this.deploymentItem?.isJobCancelable) {
 
                 if(this.deploymentItem?.isDraft) {
@@ -145,41 +162,69 @@ export default {
                     confidential: true
                 }
             ]
+        },
+        attrs() {
+            return {
+                deploymentItem: this.deploymentItem,
+                'resume-editing-target': this.resumeEditingTarget,
+                'view-jobs-link': this.viewJobsLink,
+                'view-deployment-target': this.viewDeploymentTarget,
+                'view-artifacts-link': this.deploymentItem.artifactsLink,
+                'view-in-repository-link': this.viewInRepositoryLink,
+                'disabled-buttons': this.disabledButtons,
+            }
+
+        },
+        handlers() {
+            const result = {
+                renameDeployment: this.renameDeployment,
+                deleteDeployment: this.deleteDeployment,
+                stopDeployment: this.stopDeployment,
+                startDeployment: this.startDeployment,
+                cloneDeployment: this.cloneDeployment,
+                incRedeploy: this.incRedeploy,
+                cancelJob: this.cancelJob,
+                cancelAutostop: this.cancelAutostop,
+                scheduleAutostop: this.scheduleAutostop,
+                localDeploy: this.localDeploy,
+                edit: this.edit,
+            }
+
+            Object.values(result).forEach(handler => handler.bind(this))
+            return result
         }
     },
     methods: {
-        renameDeployment() {
-            this.$emit('renameDeployment', this.deployment, this.environment)
-        },
-        deleteDeployment() {
-            this.$emit('deleteDeployment', this.deployment, this.environment)
-        },
-        // teardown in ui
-        stopDeployment() {
-            this.$emit('stopDeployment', this.deployment, this.environment)
-        },
-        startDeployment() {
-            this.$emit('startDeployment', this.deployment, this.environment)
-        },
-        cloneDeployment() {
-            this.$emit('cloneDeployment', this.deployment, this.environment)
-        },
-        localDeploy() {
-            this.$emit('localDeploy', this.deployment, this.environment)
-        },
-        incRedeploy() {
-            this.$emit('incRedeploy', this.deployment, this.environment)
-        },
+        ...mapActions([
+            'populateJobsList',
+            'populateDeploymentItems',
+        ]),
+        ...emitDeploymentItemFor([
+            'renameDeployment',
+            'deleteDeployment',
+            'scheduleAutostop',
+            'stopDeployment',
+            'startDeployment',
+            'cloneDeployment',
+            'localDeploy',
+            'incRedeploy',
+            'edit',
+        ]),
+
         async cancelJob() {
             if(this.deploymentItem.isAutostopCancelable) {
                 await this.deploymentItem.cancelAutostop()
             }
             await this.deploymentItem.cancelJob()
-            window.location.reload()
+
+            await this.populateJobsList()
+            await this.populateDeploymentItems(this.getDashboardItems)
         },
         async cancelAutostop() {
             await this.deploymentItem.cancelAutostop()
-            window.location.reload()
+
+            await this.populateJobsList()
+            await this.populateDeploymentItems(this.getDashboardItems)
         },
         pipelineToJobsLink(pipeline) {
             if(!pipeline) return
@@ -189,10 +234,6 @@ export default {
             return result
         },
 
-        edit() {
-            this.$emit('edit', this.deployment, this.environment)
-        }
-
     },
 }
 </script>
@@ -201,49 +242,18 @@ export default {
     <div class="deployment-controls">
         <gl-button-group>
             <control-buttons
-             :deployment="deployment"
-             :environment="environment"
-             :view-deployment-target="viewDeploymentTarget"
-             :resume-editing-target="resumeEditingTarget"
-             :view-jobs-link="viewJobsLink"
-             :view-artifacts-link="deploymentItem.artifactsLink"
-             :control-buttons="primaryControlButtons"
-             :view-in-repository-link="viewInRepositoryLink"
-             :disabled-buttons="disabledButtons"
-             @renameDeployment="renameDeployment"
-             @deleteDeployment="deleteDeployment"
-             @stopDeployment="stopDeployment"
-             @startDeployment="startDeployment"
-             @cloneDeployment="cloneDeployment"
-             @incRedeploy="incRedeploy"
-             @cancelJob="cancelJob"
-             @cancelAutostop="cancelAutostop"
-             @localDeploy="localDeploy"
-             @edit="edit"
+                    v-bind="attrs"
+                    :control-buttons="primaryControlButtons"
+                    component="gl-button"
+                    v-on="handlers"
             />
             <gl-dropdown v-if="contextMenuControlButtons.length" right :popper-opts="{ positionFixed: true }">
                 <control-buttons
-                 :deployment="deployment"
-                 :environment="environment"
-                 :resume-editing-target="resumeEditingTarget"
-                 :view-jobs-link="viewJobsLink"
-                 :view-deployment-target="viewDeploymentTarget"
-                 :view-artifacts-link="deploymentItem.artifactsLink"
-                 :control-buttons="contextMenuControlButtons"
-                 :view-in-repository-link="viewInRepositoryLink"
-                 :disabled-buttons="disabledButtons"
-                 :issues-link-args="issuesLinkArgs"
-                 component="gl-dropdown-item"
-                 @renameDeployment="renameDeployment"
-                 @deleteDeployment="deleteDeployment"
-                 @stopDeployment="stopDeployment"
-                 @startDeployment="startDeployment"
-                 @cloneDeployment="cloneDeployment"
-                 @cancelJob="cancelJob"
-                 @cancelAutostop="cancelAutostop"
-                 @incRedeploy="incRedeploy"
-                 @localDeploy="localDeploy"
-                 @edit="edit"
+                        v-bind="attrs"
+                        :control-buttons="contextMenuControlButtons"
+                        :issues-link-args="issuesLinkArgs"
+                        component="gl-dropdown-item"
+                        v-on="handlers"
                  />
             </gl-dropdown>
         </gl-button-group>

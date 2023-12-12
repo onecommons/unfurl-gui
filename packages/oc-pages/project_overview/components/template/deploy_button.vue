@@ -72,6 +72,9 @@ export default {
         },
         deployButtonText() {
             if(this.userCanEdit) {
+                if(this.editingDeployed) {
+                    return 'Deploy Changes'
+                }
                 return 'Deploy'
             }
             if(this.markedReady) {
@@ -99,7 +102,7 @@ export default {
 </script>
 <template>
     <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper position-relative">
-        <autostop v-if="userCanEdit" class="mr-2"/>
+        <autostop v-if="userCanEdit && !editingDeployed && !editingTorndown" class="mr-2"/>
         <el-tooltip :disabled="!deployTooltip">
             <template #content>
                 <div>
