@@ -1,13 +1,14 @@
 import {deploymentFixturePath} from '../../support/deployment-fixture'
 
 const SPEC = 'aws__container-webapp__dockerhub'
-describe(SPEC, () => {
-  it('Can recreate deployment', () => {
-    cy.recreateDeployment()
-  })
-})
+const DRYRUN = Cypress.env('DRYRUN')
 
-describe(SPEC, () => {
+// TODO double check if this works
+// if(!DRYRUN) {
+  describe(SPEC, spec)
+// }
+
+function spec() {
   it('Can recreate deployment', () => {
     cy.recreateDeployment({
       fixture: deploymentFixturePath(SPEC),
@@ -25,4 +26,4 @@ describe(SPEC, () => {
       }
     })
   })
-})
+}

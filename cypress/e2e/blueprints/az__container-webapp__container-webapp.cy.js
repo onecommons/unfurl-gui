@@ -5,11 +5,16 @@ const SPEC = 'az__container-webapp__container-webapp'
 const GITHUB_USERNAME = Cypress.env('GITHUB_USERNAME') || 'onecommons-dummy-220819'
 const GITHUB_ACCESS_TOKEN = Cypress.env('GITHUB_ACCESS_TOKEN')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
+const DRYRUN = Cypress.env('DRYRUN')
 
 const repoName = `buildpack-test-app-${Date.now().toString(36)}`
 
 // TODO break this out into a dedicated helper
-describe(SPEC, () => {
+if(!DRYRUN) {
+  describe(SPEC, spec)
+}
+
+function spec() {
   before(() => {
     cy.exec(`curl "Accept: application/vnd.github+json" -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" https://api.github.com/users/${GITHUB_USERNAME}/repos`).then(({stdout}) => {
 
@@ -67,4 +72,4 @@ describe(SPEC, () => {
       }
     })
   })
-})
+}

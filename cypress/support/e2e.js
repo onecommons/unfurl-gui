@@ -37,6 +37,17 @@ Cypress.Cookies.defaults({
   preserve: /.*/
 })
 
+function setIntercept() {
+  if(UNFURL_SERVER_URL) {
+    cy.task('log', `Setting intercept for ${UNFURL_SERVER_URL}`)
+    cy.intercept('/services/unfurl-server/*', (req) => {
+      req.url = req.url.replace(/.*services\/unfurl-server/, UNFURL_SERVER_URL)
+    })
+    // figure out how to get around cypress messing with iframe events
+    // win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
+  }
+}
+
 const origLog = Cypress.log
 
 // don't waste memory logging XHR requests
@@ -100,9 +111,25 @@ before(() => {
       }
     }
   })
+
+  setIntercept()
+
 })
 
 beforeEach(() => {
+  setIntercept()
+
+  if(UNFURL_PACKAGE_RULES) {
+    cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
+      req.body.pipeline.variables_attributes.push({
+        key: 'UNFURL_PACKAGE_RULES',
+        masked: false,
+        secret_value: UNFURL_PACKAGE_RULES,
+        variable_type: 'unencrypted_var',
+      })
+    })
+  }
+
   cy.window().then(win => {
     if(DEPLOY_IMAGE) {
       win.sessionStorage['deploy-image'] = DEPLOY_IMAGE
@@ -119,25 +146,6 @@ beforeEach(() => {
     if(UNFURL_VALIDATION_MODE) {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
     }
-    if(UNFURL_SERVER_URL) {
-      cy.task('log', `Setting intercept for ${UNFURL_SERVER_URL}`)
-      cy.intercept('/services/unfurl-server/*', (req) => {
-        req.url = req.url.replace(/.*services\/unfurl-server/, UNFURL_SERVER_URL)
-      })
-      // figure out how to get around cypress messing with iframe events
-      // win.sessionStorage['unfurl_gui:unfurl-server-url'] = UNFURL_SERVER_URL
-    }
-    if(UNFURL_PACKAGE_RULES) {
-      cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
-        req.body.pipeline.variables_attributes.push({
-          key: 'UNFURL_PACKAGE_RULES',
-          masked: false,
-          secret_value: UNFURL_PACKAGE_RULES,
-          variable_type: 'unencrypted_var',
-        })
-      })
-    }
-
     win.sessionStorage['unfurl-trace'] = 't'
   })
 

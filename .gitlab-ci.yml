@@ -50,6 +50,7 @@ build:
 
 .tests:
   stage: test
+  timeout: 1h 30m
   image: $CI_REGISTRY_IMAGE:latest
   before_script:
     - yarn install --immutable
@@ -68,6 +69,7 @@ include: .gitlab/generated/tests.yml
 
 command:
   extends: .tests
+  timeout: 3h
   script:
     - eval $CY_COMMAND
   rules:
