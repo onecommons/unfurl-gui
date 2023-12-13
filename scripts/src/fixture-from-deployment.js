@@ -24,7 +24,7 @@ function main() {
   }
   pathComponents.pop()
 
-  const fixtureName = testName || `_${environmentName}__${blueprintName}__${deploymentName}`,
+  const fixtureName = generateTest || `_${environmentName}__${blueprintName}__${deploymentName}`,
     fixturePath = `generated/deployments/${TEST_VERSIONS}/${fixtureName}`
 
   const DeploymentPath = { [deployPath]: unfurlExport.DeploymentPath[deployPath]}
