@@ -10,19 +10,23 @@ export default {
         },
     },
     data() {
-        return {routes}
+        return {
+            projectIconSrc: null,
+        }
+    },
+    async created() {
+        this.projectIconSrc = await this.application.projectIcon
     }
 }
 </script>
 <template>
-    <!--router-link v-if="application && application.name" :to="{name: routes.OC_DASHBOARD_APPLICATIONS, params: {name: application.name}}"-->
+    <!-- TODO use router link when possible -->
     <a :href="`/${application.projectPath}`">
         <div v-if="application" class="status-item font-weight-bold">
-            <project-icon :projectIcon="application.projectIcon" />
+            <project-icon :projectIcon="projectIconSrc" />
             {{application.title}}
         </div>
     </a>
-    <!--/router-link-->
 
 </template>
 <style scoped>

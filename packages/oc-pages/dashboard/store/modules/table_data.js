@@ -98,7 +98,7 @@ const actions = {
 
                 if(!application.projectIcon) {
                     try {
-                        application.projectIcon = (await fetchProjectInfo(encodeURIComponent(application.projectPath)))?.avatar_url
+                        application.projectIcon = fetchProjectInfo(encodeURIComponent(application.projectPath)).then(projectInfo => projectInfo?.avatar_url)
                     } catch(e) {
                         commit('createError', {message: `@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, severity: 'minor', context: e})
                     }
