@@ -130,7 +130,7 @@ export default {
         },
 
         overrideStatus() {
-            return this.showStartingUpStatus || this.autostopScheduled
+            return this.showStartingUpStatus || this.deploymentItem.autostopScheduled
         }
     },
     watch: {
@@ -280,7 +280,7 @@ export default {
             </template>
 
             <template v-if="overrideStatus" #status>
-                <div v-if="deploymentItem.autostopScheduled" class="d-inline-flex align-items-center ml-3">
+                <div v-if="deploymentItem.autostopScheduled && deploymentItem.isRunning" class="d-inline-flex align-items-center ml-3">
                     Deployment will be automatically stopped in {{autostopRemainingTimeDisplay}}
                 </div>
 
