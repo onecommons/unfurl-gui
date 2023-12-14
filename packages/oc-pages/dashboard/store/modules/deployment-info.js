@@ -66,12 +66,13 @@ const mutations = {
 const actions = {
     populateDeploymentItems({state, getters, rootGetters, commit}, items) {
         const dict = {}
+        const errors = {}
         for(const item of items) {
             let itemKey
             try {
                 itemKey = `${item.context.environment.name}:${item.context.deployment.name}`
             } catch(e) {continue}
-            if(!dict[itemKey]) {
+            if(!dict[itemKey] && !errors[itemKey]) {
                 function recordDeploymentItem() {
                     const context = {}
                     context.environment = item.context.environment
@@ -87,15 +88,22 @@ const actions = {
                         .pop() || []
 
 
-                    const lastPipeline = _.last(context.deployPath?.pipelines)
-
-                    if(lastPipeline?.variables?.WORKFLOW == 'undeploy' && pipeline.id != lastPipeline.id) {
-                        context.autostop = lastPipeline
-                        context.autostopJob = getters.jobByPipelineId(lastPipeline.id)
+                    if((context.deployPath?.pipelines?.length || 0) > 0 && !pipeline) {
+                        throw new Error('Active pipeline expected, but not found')
                     }
 
-                    context.job = jobInfo || getters.jobByPipelineId(lastPipeline?.id)
-                    context.pipeline = pipeline  || lastPipeline
+                    if(pipeline) {
+                        const lastPipeline = _.last(context.deployPath?.pipelines)
+
+                        if(lastPipeline?.variables?.WORKFLOW == 'undeploy' && pipeline.id != lastPipeline.id) {
+                            context.autostop = lastPipeline
+                            context.autostopJob = getters.jobByPipelineId(lastPipeline.id)
+                        }
+
+                        context.job = jobInfo || getters.jobByPipelineId(lastPipeline?.id)
+                        context.pipeline = pipeline  || lastPipeline
+                    }
+
                     context.projectPath = rootGetters.getHomeProjectPath
                     context.namespace = rootGetters.getCurrentNamespace
                     dict[itemKey] = new DeploymentItem(context)
@@ -106,10 +114,11 @@ const actions = {
                 } catch({message}) {
                     commit(
                         'createError', {
-                            message,
+                            message: `@populateDeploymentItems(${itemKey}): ${message}`,
                             severity: 'major',
-                            context: item
+                            context: item.context
                     }, {root: true})
+                    errors[itemKey] = true
                 }
             }
         }
