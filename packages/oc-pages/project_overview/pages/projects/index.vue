@@ -228,7 +228,7 @@ export default {
         // async, not awaiting
         fetchUserHasWritePermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
         this.fetchCommentsIssue()
-        this.populateJobsList().catch(e => console.error('failed to lookup jobs: ', e.message))
+        const jobsListPromise = this.populateJobsList().catch(e => console.error('failed to lookup jobs: ', e.message))
         //
 
         await this.loadPrimaryDeploymentBlueprint()
@@ -237,7 +237,7 @@ export default {
 
         if (this.environmentsAreReady && this.yourDeployments.length && !this.triedPopulatingDeploymentItems) {
             this.triedPopulatingDeploymentItems = true
-            this.populateDeploymentItems(this.yourDeployments)
+            jobsListPromise.then(() => this.populateDeploymentItems(this.yourDeployments))
         }
         this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
