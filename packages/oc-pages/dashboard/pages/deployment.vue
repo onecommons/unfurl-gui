@@ -121,12 +121,22 @@ export default {
         },
 
         autostopRemainingTimeDisplay() {
-            return [
+            const timeComponents = [
                 this.autostopRemainingDays,
                 this.autostopRemainingHours,
                 this.autostopRemainingMinutes,
                 this.autostopRemainingSeconds
-            ].filter(t => !isNaN(parseInt(t))).join(':')
+            ].filter(t => !isNaN(parseInt(t)))
+
+            if(timeComponents.length > 1) {
+                return timeComponents.join(':')
+            } else if (this.autostopRemainingSeconds > 1) {
+                return `${this.autostopRemainingSeconds} seconds`
+            } else if (this.autostopRemainingSeconds == 1) {
+                return '01 second'
+            } else {
+                return ''
+            }
         },
 
         overrideStatus() {
@@ -195,10 +205,21 @@ export default {
             await Vue.nextTick()
 
             this.setTabToConsoleIfNeeded()
+        },
+        async autostopRemainingTime(val) {
+            if(Math.floor(val) == 1) {
+                await sleep(3000)
+                /*
+                await this.populateJobsList()
+                await this.populateDeploymentItems(this.getDashboardItems)
+                */
+
+                location.search = '?show=console'
+            }
         }
     },
     methods: {
-        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge', 'createFlash']),
+        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge', 'createFlash', 'populateDeploymentItems', 'populateJobsList',]),
         async prepareView() {
             this.viewReady = false
 
@@ -280,7 +301,7 @@ export default {
             </template>
 
             <template v-if="overrideStatus" #status>
-                <div v-if="deploymentItem.autostopScheduled && deploymentItem.isRunning" class="d-inline-flex align-items-center ml-3">
+                <div v-if="autostopRemainingTimeDisplay && deploymentItem.autostopScheduled && deploymentItem.isRunning" class="d-inline-flex align-items-center ml-3">
                     Deployment will be automatically stopped in {{autostopRemainingTimeDisplay}}
                 </div>
 
