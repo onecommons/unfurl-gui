@@ -9,11 +9,11 @@ const repoName = `buildpack-test-app-${Date.now().toString(36)}`
 
 const SPEC = 'aws__container-webapp__container-webapp'
 
-// TODO break this out into a dedicated helper
 if(!DRYRUN) {
   describe(SPEC, spec)
 }
 
+// TODO break this out into a dedicated helper
 function spec() {
   before(() => {
     cy.exec(`curl "Accept: application/vnd.github+json" -H "Authorization: token ${GITHUB_ACCESS_TOKEN}" https://api.github.com/users/${GITHUB_USERNAME}/repos`).then(({stdout}) => {
