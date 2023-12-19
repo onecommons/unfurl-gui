@@ -145,7 +145,8 @@ export default {
           let formField
           try { formField = this.form.fields[key] }
           catch(e) {}
-          if (formField) {
+          // objects that are only parents of $additionalProperties have no data and can be skipped for validation
+          if (formField && formField.data) {
             path = [...this.propertyPath, key].join('.')
 
             const {data, value} = formField
