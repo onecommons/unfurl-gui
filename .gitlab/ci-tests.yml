@@ -114,6 +114,18 @@ drafts:
   description: Try to trigger a state desync with drafts
   status: v1 exclusive
 
+dryrun_a:
+  spec: cypress/e2e/blueprints/aws*,cypress/e2e/blueprints/az*
+  cond: $TEST == "dryrun"
+  description: DRYRUN aws and azure
+  env: DRYRUN=true NO_FLAKY=1
+
+dryrun_b:
+  spec: cypress/e2e/blueprints/gcp*,cypress/e2e/blueprints/do*
+  cond: $TEST == "dryrun"
+  description: DRYRUN aws and azure
+  env: DRYRUN=true NO_FLAKY=1
+
 nextcloud_shared_volumes:
   spec: cypress/e2e/deployments/shared-volume*.js
   cond: $TEST == "shared_volumes" || $TEST == "all"

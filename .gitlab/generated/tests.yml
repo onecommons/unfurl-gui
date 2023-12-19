@@ -149,6 +149,22 @@ drafts:
       chrome -s 'cypress/e2e/deployments/draft*.js'"
   rules:
     - if: $TEST == "drafts" || $TEST == "misc"
+dryrun_a:
+  extends: .tests
+  script:
+    - DRYRUN=true NO_FLAKY=1 yarn run integration-test run  --namespace
+      $OC_NAMESPACE -- --browser chrome -s
+      'cypress/e2e/blueprints/aws*,cypress/e2e/blueprints/az*'
+  rules:
+    - if: $TEST == "dryrun"
+dryrun_b:
+  extends: .tests
+  script:
+    - DRYRUN=true NO_FLAKY=1 yarn run integration-test run  --namespace
+      $OC_NAMESPACE -- --browser chrome -s
+      'cypress/e2e/blueprints/gcp*,cypress/e2e/blueprints/do*'
+  rules:
+    - if: $TEST == "dryrun"
 nextcloud_shared_volumes:
   extends: .tests
   script:

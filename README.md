@@ -111,6 +111,8 @@ If successful the command will output the pipeline URL.
 | <code>$TEST == "node_filter" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/node-filter&#42;.js</code> | Test node filter on baserow |
 | <code>$TEST == "clone_draft" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/clone-draft&#42;.js</code> | Clone and deploy a draft |
 | <code>$TEST == "drafts" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/draft&#42;.js</code> | Try to trigger a state desync with drafts |
+| <code>$TEST == "dryrun"</code> | <code>cypress/e2e/blueprints/aws&#42;</code><br><code>cypress/e2e/blueprints/az&#42;</code> | DRYRUN aws and azure |
+| <code>$TEST == "dryrun"</code> | <code>cypress/e2e/blueprints/gcp&#42;</code><br><code>cypress/e2e/blueprints/do&#42;</code> | DRYRUN aws and azure |
 | <code>$TEST == "shared_volumes" &#124;&#124; $TEST == "all"</code> | <code>cypress/e2e/deployments/shared-volume&#42;.js</code> | Runs all nextcloud shared volume tests<br>The test does the following:<br>1. Deploys nextcloud with a volume<br>2. Shares the volume<br>3. Tears down the first deployment<br>4. Creates a new nextcloud deployment with the shared volume<br>5. Asserts that admin credentials are the same on the new instance<br> |
 | <code>$TEST == "command"</code> | N/A | evals <code>$CY_COMMAND</code>
 
