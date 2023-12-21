@@ -94,7 +94,10 @@ export default {
             type: String,
             default: null
         },
-        noDefault: Boolean
+        size: [String, Number],
+        circle: Boolean,
+        noDefault: Boolean,
+        noInvert: Boolean,
     },
     icons: {
         GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, DigitalOcean, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon,
@@ -120,21 +123,25 @@ export default {
             return this.type?.icon || detectIconCustomSVG(this.name || this.type || this._env)
         },
         customImageStyle() {
-            const styles = {}
-            if(NO_FILTER.includes(this.customIcon)) {
-                styles['filter'] = 'unset'
+            const result = {}
+            if(this.noInvert || NO_FILTER.includes(this.customIcon)) {
+                result['filter'] = 'unset'
             }
-            return styles
+
+            if(this.circle) {
+                result['border-radius'] = '50%'
+            }
+
+            return result
+
         },
         customStyle() {
-            if (this.$attrs.size) {
-                return {
-                    'font-size': this.$attrs.size + 'px'
-                }
+            const result = {'font-size': '16px', overflow: 'hidden'}
+            if (this.size) {
+                result['font-size'] =  this.size + 'px'
             }
-            return {
-                'font-size': '16px'
-            }
+
+            return result
         },
         customURL() {
             if(this.type?.icon) return this.type?.icon
@@ -148,7 +155,7 @@ export default {
 }
 </script>
 <template>
-    <span class="custom-icon" :style="customStyle" v-if="customIcon">
+    <span class="custom-icon" :class="{'no-invert': noInvert}" :style="customStyle" v-if="customIcon">
         <img :style="customImageStyle" :src="customURL">
     </span>
     <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />

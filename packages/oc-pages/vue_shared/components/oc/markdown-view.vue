@@ -29,6 +29,8 @@ export default {
     /* TODO add a class override this */
     div >>> p {
         margin-bottom: 0;
+        max-width: 100%;
+        white-space: pretty;
     }
 </style>
 
