@@ -97,7 +97,10 @@ export default {
         size: [String, Number],
         circle: Boolean,
         noDefault: Boolean,
-        noInvert: Boolean,
+        noInvert: {
+            type: Boolean,
+            default: null
+        }
     },
     icons: {
         GCP, ComputeIcon, DbIcon, LocalDevIcon, K8s, DigitalOcean, Azure, AWS, DnsIcon, MailIcon, GCPInstance, MongoDbIcon, ErrorFilled, DatabaseIcon,
@@ -124,7 +127,7 @@ export default {
         },
         customImageStyle() {
             const result = {}
-            if(this.noInvert || NO_FILTER.includes(this.customIcon)) {
+            if(this._noInvert || NO_FILTER.includes(this.customIcon)) {
                 result['filter'] = 'unset'
             }
 
@@ -150,6 +153,9 @@ export default {
             if(icon.startsWith('<svg')) {
                 return `data:image/svg+xml;charset=utf8,${encodeURIComponent(icon)}`
             } else return icon
+        },
+        _noInvert() {
+            return this.noInvert ?? this.type?.extends?.includes('unfurl.nodes.App')
         }
     }
 }
