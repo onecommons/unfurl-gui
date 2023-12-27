@@ -110,7 +110,7 @@ const mutations = {
 }
 
 const actions = {
-    // iirc used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
+    // used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
     populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
         commit('resetTemplateResourceState')
         const isDeploymentTemplate = deployment.__typename == 'DeploymentTemplate'
@@ -143,16 +143,8 @@ const actions = {
         commit('updateLastFetchedFrom', {environmentName})
         commit('setDeploymentTemplate', deploymentTemplate)
 
-        if(isDeploymentTemplate) {
-            dispatch('createMatchedResources', {resource, isDeploymentTemplate})
-            commit('createTemplateResource', resource)
-        } else {
-            // hacky workaround for broken dependency hierarchy in resources for default templates
-            for(const resource of rootGetters.getResources) {
-                commit('createTemplateResource', resource)
-            }
-        }
-
+        dispatch('createMatchedResources', {resource, isDeploymentTemplate})
+        commit('createTemplateResource', resource)
     },
 
     async recursiveInstantiate({ commit, getters, rootGetters, state: _state, dispatch}, target) {
@@ -292,7 +284,8 @@ const actions = {
                 let matchedInstance = rootGetters.lookupConnection(environmentName, dependency.match)
                 if(matchedInstance) {
                     matchedInstance = _.cloneDeep(matchedInstance)
-                    dispatch('normalizeUnfurlData', {key: 'ResourceTemplate', entry: matchedInstance})
+                    const key = isDeploymentTemplate? 'ResourceTemplate': 'Resource'
+                    dispatch('normalizeUnfurlData', {key, entry: matchedInstance, root: rootGetters.getApplicationRoot})
                     matchedInstance
                     resolvedDependencyMatch = matchedInstance
 
@@ -303,9 +296,10 @@ const actions = {
 
             let child = resolvedDependencyMatch
 
-
             if(!isDeploymentTemplate && child) {
-                child = rootGetters.resolveResource(dependency.target)
+                child = {...child, _external: true}
+                // will not be resolvable for external resources
+                child = rootGetters.resolveResource(dependency.target) || child
             }
 
             const _valid = !!(child)
@@ -475,10 +469,8 @@ const actions = {
 
         if(externalResource) {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
-            // const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
-            // TODO support connect without copy
 
-            const name = existsLocally? externalResource: `__${externalResource}`
+            const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
 
             resourceTemplateNode = {
                 ...resourceTemplate,
@@ -488,36 +480,29 @@ const actions = {
                 dependentRequirement,
                 deploymentTemplateName,
                 readonly: true,
+                _external: !existsLocally,
                 __typename: 'ResourceTemplate',
-                metadata: {created_by: 'unfurl-gui'}
             }
-
-            if(! existsLocally) {
-                //copy
-                commit(
-                    'pushPreparedMutation',
-                    () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: name}]
-                )
-            }
-
-            commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName}))
         } else if(resource) {
-            commit(
-                'pushPreparedMutation',
-                () => [{typename: 'ResourceTemplate', patch: resource, target: resource.name}]
-            )
-            commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: resource.name, dependentName, dependentRequirement, deploymentTemplateName}))
-            resourceTemplateNode = resource
+            resourceTemplateNode = {...resource, _external: !existsLocally}
         } else {
             throw new Error('connectNodeResource must be called with either "resource" or "externalResource" set')
         }
 
 
         // node might have already been created
-        commit('createReference', {dependentName, dependentRequirement, resourceTemplate: resourceTemplateNode, fieldsToReplace});
         if(! existsLocally) {
+            if(!shouldConnectWithoutCopy()) {
+                commit(
+                    'pushPreparedMutation',
+                    () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: resourceTemplateNode.name}]
+                )
+            }
             commit('createTemplateResource', resourceTemplateNode)
         }
+        commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: resourceTemplateNode.name, dependentName, dependentRequirement, deploymentTemplateName}))
+
+        commit('createReference', {dependentName, dependentRequirement, resourceTemplate: resourceTemplateNode, fieldsToReplace});
     },
 
     deleteNode({commit, dispatch, getters, state}, {name, action, dependentName, dependentRequirement, recurse=true, shouldRemoveCard=undefined}) {

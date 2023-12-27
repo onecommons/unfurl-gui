@@ -75,7 +75,8 @@ export default {
             type: Array,
             required: false,
             default: null
-        }
+        },
+        removable: Boolean
     },
     data() {
         return {
@@ -142,6 +143,18 @@ export default {
             return this.readonly || this.card?.imported || this.card?.readonly
         },
 
+        canRemove() {
+            const card = this._card
+            if(!card) return false
+            if(this.removable) return true
+            return (
+                !this.isPrimary &&
+                !this._readonly &&
+                !card._permanent &&
+                !card._deployed
+            )
+        },
+
         _displayValidation() {
             return this.displayValidation && ! this._readonly
         },
@@ -185,6 +198,20 @@ export default {
 
         _children() {
             return this.children ?? this.getCardsInTopology(this.card.name)
+        },
+
+        deleteAction() {
+            if(this._readonly) {
+                return 'Disconnect'
+            }
+            return 'Delete'
+        },
+
+        removeButtonText() {
+            if(this._readonly) {
+                return 'Disconnect'
+            }
+            return 'Remove'
         }
     },
     methods: {
@@ -193,9 +220,9 @@ export default {
             this.$emit('deleteNode', ...args)
         },
 
-        openDeletemodal(title, action=__("Delete")) {
+        openDeletemodal() {
             // eslint-disable-next-line no-unused-expressions
-            const payload = {...this.card, action}
+            const payload = {...this.card, action: this.deleteAction}
             // TODO get rid of bus
             bus.$emit('deleteNode', payload);
 
@@ -261,10 +288,10 @@ export default {
                     </slot>
                     <div class="d-flex align-items-center">
                         <slot name="controls" v-bind="card">
-                            <gl-button v-if="card && !isPrimary && !_readonly && !card._permanent && !card._deployed" @click="openDeletemodal" class="controls">
+                            <gl-button v-if="canRemove" @click="openDeletemodal" class="controls">
                                 <div class="d-flex align-items-center">
                                     <gl-icon name="remove" />
-                                    <div> {{__('Remove')}} </div>
+                                    <div> {{__(removeButtonText)}} </div>
                                 </div>
                             </gl-button>
 

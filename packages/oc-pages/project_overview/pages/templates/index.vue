@@ -909,6 +909,7 @@ export default {
                   :actions="true"
                   :level="idx"
                   :children="[]"
+                  removable
                   class="gl-mt-6">
                   <template #content>
                     <!--oc-inputs :card="card" :main-inputs="card.properties" :component-key="2" /-->
