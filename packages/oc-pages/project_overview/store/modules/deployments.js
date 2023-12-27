@@ -295,6 +295,9 @@ const actions = {
 
         const newObject = {
             name: `__${environmentName}__${deploymentName}__${resourceName}`,
+            metadata: {
+                extends: rootGetters.resolveResourceTypeFromAny(resource.type)?.extends || [],
+            },
             title: resource.title,
             directives: ['select'],
             imported: `${deploymentName}:${resource.name}`,
@@ -321,6 +324,9 @@ const actions = {
         const name = `__${environmentName}__${deploymentName}__${resourceName}`
         const newObject = {
             name,
+            metadata: {
+                extends: rootGetters.resolveResourceTypeFromAny(resource.type)?.extends || [],
+            },
             title: resource.title,
             directives: ['select'],
             imported: `${deploymentName}:${resource.name}`,
@@ -597,6 +603,20 @@ const getters = {
                 .filter(r => getters.getResourceSharedState(environmentName, deploymentName, r.name))
         }
     },
+    getSharedResource(_, getters) {
+        return function(deploymentName, environmentName, resourceName) {
+            const dictionary = getters.getDeploymentDictionary(deploymentName, environmentName)
+            return Object.values(dictionary.Resource)
+                .find(r => r.name == resourceName)
+        }
+    },
+    getSharedResourceTemplate(_, getters) {
+        return function(deploymentName, environmentName, templateName) {
+            const dictionary = getters.getDeploymentDictionary(deploymentName, environmentName)
+            return Object.values(dictionary.ResourceTemplate)
+                .find(r => r.name == templateName)
+        }
+    },
 
     deleteDeploymentPreventedBy(_, getters) {
         return function(deploymentName, environmentName) {
@@ -621,6 +641,20 @@ const getters = {
             return result
         }
     },
+    getEnvironmentForDeployment(state, _a, _b, rootGetters) {
+        return function(deploymentName, preferEnvironment) {
+            const paths = rootGetters.allDeploymentPaths
+            let result
+            if(preferEnvironment) {
+                result = paths.find(p => p.name.endsWith(`/${deploymentName}`) && p.environment == preferEnvironment)
+            }
+            if(!result) {
+                result = paths.find(p => p.name.endsWith(`/${deploymentName}`))
+            }
+
+            return result.environment
+        }
+    }
 };
 
 

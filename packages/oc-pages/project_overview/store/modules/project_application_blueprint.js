@@ -253,7 +253,7 @@ const actions = {
                 deployment.projectPath = dt?.projectPath
             },
             DeploymentEnvironment(de, root) {
-                for(const connection of Object.values(de.connections)) {
+                for(const connection of Object.values(de.connections || {})) {
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
 
                     // intentionally not cloning

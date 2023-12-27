@@ -187,7 +187,7 @@ Serializers = {
         if(rt.__typename == 'Resource') return Serializers.Resource(rt)
 
         if(rt.directives?.includes('select')) {
-            allowFields(rt, 'name', 'title', 'directives', 'imported', 'type')
+            allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', 'extends', 'metadata')
             return
         }
 
@@ -247,6 +247,8 @@ Serializers = {
 
         const newObject = {
             name: resource.name,
+            extends: resource.extends,
+            metadata: resource.metadata,
             title: resource.title,
             directives: ['select'],
             imported: `${resource._deployment}:${resource.template}`,
@@ -793,7 +795,7 @@ const getters = {
     hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) },
     safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
     isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
-
+    getCommitBranch(state) { return state.branch || 'main'}
 }
 
 const mutations = {

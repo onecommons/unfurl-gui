@@ -3,7 +3,7 @@ import {  GlFormRadio, GlIcon } from '@gitlab/ui';
 import OcListResourceIcon from './oc_list_resource/icon.vue';
 import { __ } from '~/locale';
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
-import {mapGetters} from 'vuex';
+import {mapGetters, mapActions} from 'vuex';
 
 const CLOUD_PROVIDER_NAMES = {
     [lookupCloudProviderAlias('gcp')]: __('Google Cloud Platform'),
@@ -21,7 +21,7 @@ export default {
     },
 
     data() {
-        return {}
+        return {ready: true}
     },
 
     props: {
@@ -81,13 +81,31 @@ export default {
                 alt: resource.name
             }
 
-        }
+        },
+        ...mapActions(['fetchDeploymentIfNeeded'])
+    },
+    watch: {
+        validResourceTypes: {
+            immediate: true,
+            // this works well, but is a weird place to be loading state on demand
+            async handler(val) {
+                this.ready = false
+                const promises = val.map(typeOrTemplate => {
+                    if(typeOrTemplate.imported) {
+                        return this.fetchDeploymentIfNeeded(typeOrTemplate)
+                    }
+                })
 
+                await Promise.all(promises)
+
+                this.ready = true
+            }
+        }
     }
 };
 </script>
 <template>
-    <div class="ci-table" role="grid">
+    <div v-if="ready" class="ci-table" role="grid">
         <div
             v-for="(resource) in validResourceTypes.filter(r => !!r)"
             :key="resource.name"

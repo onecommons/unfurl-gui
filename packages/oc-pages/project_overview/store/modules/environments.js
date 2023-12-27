@@ -663,8 +663,11 @@ const getters = {
         if(!environment) return []
         let result = []
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
-            const cextends = getters.environmentResolveResourceType(environmentName, conn.type)?.extends
-            return cextends && cextends.includes(constraintType)
+            const connExtends = [
+                ...(getters.environmentResolveResourceType(environmentName, conn.type)?.extends || []),
+                ...(conn.metadata?.extends || [])
+            ]
+            return connExtends?.includes(constraintType)
         })
 
         /*
@@ -862,6 +865,10 @@ const getters = {
             ]
 
         }
+    },
+
+    allDeploymentPaths(state) {
+        return Object.freeze(state.deploymentPaths)
     }
 };
 
