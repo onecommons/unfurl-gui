@@ -968,7 +968,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validResourceTypesForSelectedRequirement" :resourceType="getRequirementResourceType"/>
+          <oc-list-resource @input="e => selected = e" v-model="selected" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validResourceTypesForSelectedRequirement" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
               <gl-form-input id="input1" data-testid="create-resource-template-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
@@ -1002,7 +1002,7 @@ export default {
         :action-cancel="cancelProps"
         @primary="onSubmitModalConnect"
       >
-        <oc-list-resource v-model="selectedServiceToConnect" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validConnections"/>
+        <oc-list-resource v-model="selectedServiceToConnect" :filtered-resource-by-type="[]" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validConnections"/>
       </gl-modal>
 
       <!-- Modal to confirm the action to delete template -->

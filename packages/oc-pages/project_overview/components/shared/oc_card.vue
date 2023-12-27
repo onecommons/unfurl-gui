@@ -7,6 +7,7 @@ import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateCardId} from 'oc_vue_shared/util'
 import {Tooltip as ElTooltip} from 'element-ui'
+import templateMixin from './template-mixin'
 
 import { __ } from '~/locale';
 
@@ -24,7 +25,7 @@ export default {
         DetectIcon,
         ElTooltip
     },
-    mixins: [commonMethods],
+    mixins: [templateMixin, commonMethods],
     props: {
         isPrimary: {
             type: Boolean,
@@ -161,29 +162,6 @@ export default {
 
         _displayStatus() {
             return this.displayStatus || this._readonly
-        },
-
-        importedResource() {
-            if(!this.card?.imported) return null
-            const [deploymentName, resourceName] = this.card.imported.split(':', 2)
-            const deployment = deploymentName?
-                this.getDeployments.find(dep => dep.name == deploymentName) :
-                this.getDeployment
-
-            if(!deployment) return null
-
-            const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
-            const resource = dict['Resource'][resourceName]
-
-            // resolve the template here, since it's not in our other dictionary
-            return {...resource, template: dict['ResourceTemplate'][resource.template]}
-        },
-
-        _card() {
-            if(this.importedResource) {
-                return {...this.card, ...this.importedResource, imported: this.card.imported}
-            }
-            return this.card
         },
 
         childAttrs() {

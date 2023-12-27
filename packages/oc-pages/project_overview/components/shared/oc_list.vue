@@ -7,6 +7,7 @@ import commonMethods from '../mixins/commonMethods';
 import { mapGetters } from 'vuex'
 import Dependency from './dependency.vue'
 import {getCustomInputComponent} from './oc_inputs'
+import templateMixin from './template-mixin'
 
 export default {
     name: 'OcList',
@@ -16,7 +17,7 @@ export default {
         Dependency,
     },
 
-    mixins: [commonMethods],
+    mixins: [templateMixin, commonMethods],
 
     props: {
         tabsTitle: {
@@ -144,8 +145,8 @@ export default {
 
             const schema = {
                 ...this.inputsSchema?.properties,
-                ...resourceType.outputsSchema?.properties,
-                ...resourceType.computedPropertiesSchema?.properties
+                ...resourceType?.outputsSchema?.properties,
+                ...resourceType?.computedPropertiesSchema?.properties
             }
 
             const consoleURLIndex = attributes.findIndex(a => a.name == 'console_url')
@@ -238,28 +239,6 @@ export default {
                 }
             }
             return result
-        },
-        importedResource() {
-            if(!this.card?.imported) return null
-            const [deploymentName, resourceName] = this.card.imported.split(':', 2)
-            const deployment = deploymentName?
-                this.getDeployments.find(dep => dep.name == deploymentName) :
-                this.getDeployment
-
-            if(!deployment) return null
-
-            const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
-            const resource = dict['Resource'][resourceName]
-
-            // resolve the template here, since it's not in our other dictionary
-            return {...resource, template: dict['ResourceTemplate'][resource.template]}
-        },
-
-        _card() {
-            if(this.importedResource) {
-                return {...this.card, ...this.importedResource, imported: this.card.imported}
-            }
-            return this.card
         },
 
         inputsTitleCount() {

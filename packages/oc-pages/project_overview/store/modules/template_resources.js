@@ -111,7 +111,7 @@ const mutations = {
 
 const actions = {
     // used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
-    populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
+    async populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
         commit('resetTemplateResourceState')
         const isDeploymentTemplate = deployment.__typename == 'DeploymentTemplate'
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(
@@ -143,7 +143,7 @@ const actions = {
         commit('updateLastFetchedFrom', {environmentName})
         commit('setDeploymentTemplate', deploymentTemplate)
 
-        dispatch('createMatchedResources', {resource, isDeploymentTemplate})
+        await dispatch('createMatchedResources', {resource, isDeploymentTemplate})
         commit('createTemplateResource', resource)
     },
 
@@ -235,7 +235,7 @@ const actions = {
         }
 
 
-        dispatch('createMatchedResources', {resource: primary, isDeploymentTemplate: true});
+        await dispatch('createMatchedResources', {resource: primary, isDeploymentTemplate: true});
 
         commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
@@ -246,13 +246,24 @@ const actions = {
     },
 
 
-    // used by /dashboard/environment/<environment-name> TODO merge these actions
-    populateTemplateResources2({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, context, environmentName}) {
+    async populateEnvironmentResources({getters, rootGetters, state, commit, dispatch}, {resourceTemplates, environmentName}) {
         commit('resetTemplateResourceState')
+        commit('updateLastFetchedFrom', {environmentName, noPrimary: true});
+        commit('setContext', 'environment')
+        let promises = []
         for(const resource of resourceTemplates) {
             if(resource.name == 'primary_provider') continue
-            commit('createTemplateResource', {...(rootGetters.resolveResourceTemplate(resource.name) || resource)})
+            promises.push(dispatch('initMatched', {
+                isDeploymentTemplate: true,
+                dependentName: null,
+                dependentRequirement: null,
+                match: resource.name,
+                target: null,
+                ancestors: null
+
+            }))
         }
+        await Promise.all(promises)
         let primary_provider
         if(primary_provider = rootGetters.resolveResourceTemplate('primary_provider')) {
             commit('clientDisregardUncommitted', null, {root: true})
@@ -266,59 +277,139 @@ const actions = {
 
             commit('setDeploymentTemplate', {primary: 'primary_provider'})
         }
-        commit('updateLastFetchedFrom', {environmentName, noPrimary: true});
-        commit('setContext', context)
     },
 
-    createMatchedResources({state, commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
-        for(const dependency of resource.dependencies) {
-            if(state.resourceTemplates.hasOwnProperty(dependency.match)) {
-                console.warn(`Cannot create matched resource for ${dependency.match}: already exists in store`)
-                continue
+    async fetchDeploymentIfNeeded({getters, dispatch, rootGetters}, {imported}) {
+        let [deploymentName, ...templateName] = imported.split(':')
+        templateName = templateName.join(':')
+        const environmentName = rootGetters.getEnvironmentForDeployment(deploymentName, getters.getCurrentEnvironmentName)
+        const projectPath = rootGetters.getHomeProjectPath
+        const branch = rootGetters.getCommitBranch
+        let deploymentDict = rootGetters.getDeploymentDictionary(deploymentName, environmentName)
+
+        if(!deploymentDict) {
+            await dispatch('fetchDeployment',
+                {
+                    deploymentName,
+                    environmentName,
+                    projectPath,
+                    branch
+                })
+            deploymentDict = rootGetters.getDeploymentDictionary(deploymentName, environmentName)
+
+            const template = rootGetters.getSharedResourceTemplate(
+                deploymentName,
+                environmentName,
+                templateName
+            )
+
+            const type = deploymentDict.ResourceType[template.type]
+            if(deploymentDict) {
+                await dispatch('useProjectState', {
+                    root: {
+                        ResourceType: {
+                            [type.name]: type
+                        },
+                    },
+                    shouldMerge: true
+                })
             }
+        }
+    },
 
-            let resolvedDependencyMatch = getters.dtResolveResourceTemplate(dependency.match)
-            let environmentName = state.lastFetchedFrom?.environmentName
+    async initMatched({state, commit, getters, dispatch, rootGetters}, {match, target, isDeploymentTemplate, dependentName, dependentRequirement, ancestors}) {
+        if(state.resourceTemplates.hasOwnProperty(match)) {
+            console.warn(`Cannot create matched resource for ${match}: already exists in store`)
+            return
+        }
 
-            if(!resolvedDependencyMatch && environmentName) {
-                let matchedInstance = rootGetters.lookupConnection(environmentName, dependency.match)
-                if(matchedInstance) {
-                    matchedInstance = _.cloneDeep(matchedInstance)
-                    const key = isDeploymentTemplate? 'ResourceTemplate': 'Resource'
-                    dispatch('normalizeUnfurlData', {key, entry: matchedInstance, root: rootGetters.getApplicationRoot})
-                    matchedInstance
-                    resolvedDependencyMatch = matchedInstance
+        let resolvedDependencyMatch = getters.dtResolveResourceTemplate(match)
+        let environmentName = state.lastFetchedFrom?.environmentName
 
-                    resolvedDependencyMatch.completionStatus = 'connected'
+
+        if(!resolvedDependencyMatch && environmentName) {
+            let matchedInstance = rootGetters.lookupConnection(environmentName, match)
+            if(matchedInstance) {
+                matchedInstance = _.cloneDeep(matchedInstance)
+                const key = isDeploymentTemplate? 'ResourceTemplate': 'Resource'
+
+                dispatch(
+                    'normalizeUnfurlData', {
+                        key,
+                        entry: matchedInstance,
+                        root: rootGetters.getApplicationRoot
+                    })
+
+                resolvedDependencyMatch = matchedInstance
+
+                resolvedDependencyMatch.completionStatus = 'connected'
+                if(state.context != 'environment') {
+                    matchedInstance._external = true
                     resolvedDependencyMatch.readonly = true
                 }
             }
+        }
 
-            let child = resolvedDependencyMatch
+        let child = resolvedDependencyMatch
 
-            if(!isDeploymentTemplate && child) {
-                child = {...child, _external: true}
-                // will not be resolvable for external resources
-                child = rootGetters.resolveResource(dependency.target) || child
+        if(!isDeploymentTemplate && child) {
+            child = {...child, _external: true}
+            // will not be resolvable for external resources
+            child = rootGetters.resolveResource(target) || child
+        }
+
+        const _valid = !!(child)
+        const id = _valid && btoa(child.name).replace(/=/g, '')
+
+        if(_valid) {
+            if(child.imported) {
+                await dispatch('fetchDeploymentIfNeeded', child)
             }
 
-            const _valid = !!(child)
-            const id = _valid && btoa(child.name).replace(/=/g, '')
+            let _ancestors = null
 
-            if(_valid) {
+            if(ancestors) {
                 let _ancestors = child._ancestors
                 if(
-                    (!child._ancestors && resource._ancestors && !child.readonly) ||
-                    (Array.isArray(child._ancestors) && child._ancestors.length == 0)
+                    (!child._ancestors && ancestors && !child.readonly) ||
+                        (Array.isArray(child._ancestors) && child._ancestors.length == 0)
                 ) {
-                    _ancestors = resource._ancestors.concat([[resource, dependency.name]])
+                    _ancestors = ancestors.concat([[dependentName, match]])
                 }
-                const newResource = {...child, _ancestors}
-
-                commit('createTemplateResource', {...newResource, template: !isDeploymentTemplate && resolvedDependencyMatch, id, dependentRequirement: dependency.name, dependentName: resource.name, _valid})
-                dispatch('createMatchedResources', {resource: newResource, isDeploymentTemplate})
             }
+
+            const newResource = {...child, _ancestors}
+
+            commit('createTemplateResource', {
+                ...newResource,
+                template: !isDeploymentTemplate && resolvedDependencyMatch,
+                id,
+                dependentRequirement,
+                dependentName,
+                _valid
+            })
+
+            await dispatch('createMatchedResources', {resource: newResource, isDeploymentTemplate})
         }
+
+    },
+
+    async createMatchedResources({state, commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
+        let promises = []
+        for(const dependency of resource?.dependencies || []) {
+            promises.push(dispatch(
+                'initMatched', {
+                    isDeploymentTemplate,
+                    dependentName: resource.name,
+                    dependentRequirement: dependency.name,
+                    match: dependency.match,
+                    target: dependency.target,
+                    ancestors: resource._ancestors
+                }
+            ))
+        }
+
+        await Promise.all(promises)
     },
 
     async fetchTypesForParams({getters, commit, dispatch, rootGetters}, {params}={}) {
@@ -416,7 +507,7 @@ const actions = {
 
             });
 
-            dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
+            await dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
         }
 
         target.dependentName = dependentName
@@ -460,7 +551,7 @@ const actions = {
         return true;
     },
 
-    async connectNodeResource({getters, state, rootGetters, commit}, {dependentName, dependentRequirement, externalResource, resource}) {
+    async connectNodeResource({getters, state, rootGetters, commit, dispatch}, {dependentName, dependentRequirement, externalResource, resource}) {
         const fieldsToReplace = {completionStatus: 'connected', _valid: true};
         const {environmentName} = state.lastFetchedFrom;
         const deploymentTemplateName = state.lastFetchedFrom.templateSlug
@@ -471,6 +562,10 @@ const actions = {
             const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
 
             const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
+
+            if(resourceTemplate.imported) {
+                await dispatch('fetchDeploymentIfNeeded', resourceTemplate)
+            }
 
             resourceTemplateNode = {
                 ...resourceTemplate,

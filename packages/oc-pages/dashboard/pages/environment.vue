@@ -156,7 +156,7 @@ export default {
     methods: {
         ...mapActions([
             'useProjectState',
-            'populateTemplateResources2',
+            'populateEnvironmentResources',
             'createNodeResource',
             'commitPreparedMutations',
             'normalizeUnfurlData',
@@ -300,7 +300,7 @@ export default {
             )
             // TODO implement and test normalization for connections - this should account better for users making manual changes
 
-            this.populateTemplateResources2({
+            await this.populateEnvironmentResources({
                 resourceTemplates: [
                     ...instances,
                     ...connections
