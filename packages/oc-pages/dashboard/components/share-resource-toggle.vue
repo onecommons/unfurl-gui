@@ -38,14 +38,15 @@ export default {
              * https://github.com/onecommons/gitlab-oc/issues/1167
             */
             // const type = this.resolveResourceTypeFromAny(this.card?.type)
+            if(!this.card) return false
 
             return (
                 // type?.implementations?.includes('connect') &&
                 this.userCanEdit &&
-                this.card?.name &&
-                !(this.card?.status == 3 || this.card?.status == 5) && // status is not error or absent
-                this.card?.__typename != 'ResourceTemplate' &&
-                !this.card.name.startsWith('__') // __ prefix is a hack for unfurl-gui to track external resources
+                this.card.name &&
+                !(this.card.status == 3 || this.card?.status == 5) && // status is not error or absent
+                this.card.__typename != 'ResourceTemplate' &&
+                !this.card._external
                 // && this.card.status == 1 // require OK status
             )
         },
