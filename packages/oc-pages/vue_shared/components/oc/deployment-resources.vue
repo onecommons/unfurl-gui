@@ -267,7 +267,7 @@ export default {
         selected: function(val) {
             if(Object.keys(val).length > 0) {
                 if(!this.userEditedResourceName) {
-                    this.resourceName = this.resolveResourceTypeFromAny(val.name)?.title || val.name;
+                    this.resourceName = this.resolveResourceTypeFromAny(val.name)?.title || val._localName || val.title;
                 }
             }
         },
@@ -275,7 +275,7 @@ export default {
         topLevelSelection: function(val) {
             if(Object.keys(val).length > 0) {
                 if(!this.userEditedResourceName) {
-                    this.resourceName = val.name;
+                    this.resourceName = val._localName || val.name;
                 }
             }
         },
@@ -531,6 +531,16 @@ export default {
             this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
             this.launchModal('oc-delete-node', 500);
 
+        },
+        testId(baseType) {
+            let t = this.baseTypeExtends[baseType]
+            if(t) {
+                t = t.split('@')[0]
+            } else {
+                t = 'other'
+            }
+
+            return 'external-resource-tab-' + t
         }
     },
 };
@@ -638,7 +648,7 @@ export default {
                         v-for="baseType in baseTypes"
                         :title="baseType"
                         :key="baseType"
-                        :title-testid="'external-resource-tab-' + baseTypeExtends[baseType]"
+                        :title-testid="testId(baseType)"
                         :title-count="mappedAvailableTypes[baseType] && mappedAvailableTypes[baseType].length"
                     >
                         <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[baseType]"/>
@@ -686,7 +696,7 @@ export default {
             @cancel="cleanModalResource"
             >
 
-          <oc-list-resource @input="e => selected = e" v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(selectedRequirement)" :resourceType="selectedRequirement && selectedRequirement.type"/>
+          <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(selectedRequirement)" :resourceType="selectedRequirement && selectedRequirement.type"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
                 <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>

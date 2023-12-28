@@ -51,6 +51,8 @@ const transforms = {
         if(!resourceType.title) resourceType.title = resourceType.name
         resourceType.__typename = 'ResourceType'
 
+        resourceType._localName = resourceType.name.split('@')[0]
+
         if(! resourceType.requirements) {
             resourceType.requirements = []
         }
@@ -117,6 +119,8 @@ const transforms = {
     ResourceTemplate(resourceTemplate) {
         if(!resourceTemplate.title) resourceTemplate.title = resourceTemplate.name
         resourceTemplate.__typename = 'ResourceTemplate'
+
+        resourceTemplate._localTypeName = resourceTemplate.type.split('@')[0]
 
         if(!resourceTemplate.visibility) resourceTemplate.visibility = 'inherit'
 

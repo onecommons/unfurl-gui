@@ -269,7 +269,7 @@ export default {
 
           this.resourceName = resourceParentName ?
             this.getRequirementSelected.requirement.constraint.title + ' for ' + resourceParentName :
-            this.resolveResourceTypeFromAny(val.name)?.title || val.name
+            this.resolveResourceTypeFromAny(val.name)?.title || val._localName
         }
       }
     },
