@@ -126,7 +126,7 @@ export default {
             return this.currentTab == this.resourcesTabIndex
         },
         publicCloudResources() {
-            return this.getCardsStacked.filter(card => card.type == 'UnfurlUserDNSZone')
+            return this.getCardsStacked.filter(card => card._localTypeName == 'UnfurlUserDNSZone')
         },
         showingPublicCloudTab() {
             return this.currentTab == this.publicCloudTabIndex
