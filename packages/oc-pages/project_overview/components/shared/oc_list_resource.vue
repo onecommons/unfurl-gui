@@ -77,7 +77,7 @@ export default {
             const type = resource?.type ? this.resolveResourceTypeFromAny(resource?.type) : resource
             return {
                 type,
-                badge: type.badge,
+                badge: type?.badge,
                 alt: resource.name
             }
 
