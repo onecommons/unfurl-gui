@@ -503,7 +503,7 @@ export default {
                         </el-tooltip>
                     </h2>
                 </div>
-                <div v-else-if="showingPublicCloudTab">
+                <div v-else-if="showingPublicCloudTab" class="d-flex align-items-center">
                     <h2 style="margin: 0 1.25em">Public Cloud Resources</h2>
                 </div>
                 <div></div>
