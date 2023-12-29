@@ -297,14 +297,17 @@ const actions = {
                 })
             deploymentDict = rootGetters.getDeploymentDictionary(deploymentName, environmentName)
 
+        }
+
+        if(deploymentDict) {
             const template = rootGetters.getSharedResourceTemplate(
                 deploymentName,
                 environmentName,
                 templateName
             )
 
-            const type = deploymentDict.ResourceType[template.type]
-            if(deploymentDict) {
+            if(!getters.resolveResourceTypeFromAny(template.type)) {
+                const type = deploymentDict.ResourceType[template.type]
                 await dispatch('useProjectState', {
                     root: {
                         ResourceType: {
