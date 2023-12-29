@@ -184,11 +184,6 @@ export default {
 </template>
 
 <style scoped>
-.status-item {
-  display: flex;
-  align-items: flex-end;
-}
-
 
 /* currently unused */
 .gl-dark .consistent-card >>> .gl-card-header {

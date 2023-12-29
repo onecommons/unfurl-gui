@@ -32,6 +32,6 @@ export default {
 <style scoped>
 .status-item {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
 }
 </style>
