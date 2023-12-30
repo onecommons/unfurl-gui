@@ -155,7 +155,7 @@ export default {
             } else return icon
         },
         _noInvert() {
-            return this.noInvert ?? this.type?.extends?.includes('unfurl.nodes.App')
+            return this.noInvert ?? this.type?.extends?.find(t => t.startsWith('unfurl.nodes.App'))
         }
     }
 }
