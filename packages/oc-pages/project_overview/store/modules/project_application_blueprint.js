@@ -403,6 +403,14 @@ function storeResolver(typename) {
                 else result = entry
                 return Object.freeze(result)
             } else {
+                if(typename == 'ResourceType') {
+                    const qualifiedPrefix = `${name}@`
+                    for(const key in dictionary) {
+                        if(key.startsWith(qualifiedPrefix)) {
+                            return dictionary[key]
+                        }
+                    }
+                }
                 return null
             }
         }

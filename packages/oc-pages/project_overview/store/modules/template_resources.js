@@ -499,6 +499,14 @@ const actions = {
         try { target.properties = Object.entries(targetType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
         catch { target.properties = []; }
 
+        dispatch(
+            'normalizeUnfurlData', {
+                key: 'ResourceTemplate',
+                entry: target,
+                root: rootGetters.getApplicationRoot
+            })
+
+
         if(targetType.requirements?.length > 0) {
             target.dependencies = targetType.requirements.map(req => {
                 return {

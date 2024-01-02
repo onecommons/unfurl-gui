@@ -57,7 +57,7 @@ function applyTypeToMapping(type, mapping) {
         return mapping[type.toLowerCase()]
     }
     let result
-    result = applyTypeToMapping(type?.name, mapping)
+    result = applyTypeToMapping(type?._localName, mapping)
     if(result) return result
 
     if(Array.isArray(type.extends)) {
@@ -116,7 +116,7 @@ export default {
                 env = this.lookupEnvironment(this.env)
             }
             else env = this.env
-            return env?.primary_provider?.type || 'self-hosted'
+            return env?.primary_provider?._localTypeName || 'self-hosted'
 
         },
         detectedIcon() {

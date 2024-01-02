@@ -25,8 +25,7 @@ export default {
 <template>
     <a v-if="environment" :href="destination.href">
         <div class="status-item font-weight-bold">
-            <detect-icon :size="20" v-if="environment.primary_provider" :type="environment.primary_provider.type"/> 
-            <detect-icon :size="20" v-else name="generic"/> 
+            <detect-icon :size="20" v-if="environment.primary_provider" :env="environment"/>
             <div class="ml-1">{{environment.name}}</div>
         </div>
     </a>

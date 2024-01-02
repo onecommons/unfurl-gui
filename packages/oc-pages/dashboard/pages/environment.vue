@@ -54,7 +54,7 @@ export default {
             'getEnvironmentDefaults',
             'lookupDeployPath',
             'jobByPipelineId',
-            'resolveResourceType',
+            'resolveResourceTypeFromAny',
             'getApplicationRoot',
             'providerTypesForEnvironment',
             'deploymentItemDirect',
@@ -84,8 +84,12 @@ export default {
                 ...this.getVariables(this.environment)
             })
         },
+        primaryProvider() {
+            return this.getPrimaryCard
+        },
         cloudProviderDisplayName() {
-            return cloudProviderFriendlyName(this.environment?.primary_provider?.type) || __('Generic')
+            // NOTE: hardcoded names
+            return cloudProviderFriendlyName(this.primaryProvider?._localTypeName) || __('Generic')
         },
         saveStatus() {
             if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
@@ -100,9 +104,6 @@ export default {
         deleteStatus() {
             if(!this.userCanEdit) return 'hidden'
             else return 'display'
-        },
-        providerType() {
-            return this.environment?.primary_provider?.type
         },
         showDeploymentResources() {
             return (this.getCardsStacked.filter(this.resourceFilter)).length > 0 || this.hasPreparedMutations
@@ -126,6 +127,7 @@ export default {
             return this.currentTab == this.resourcesTabIndex
         },
         publicCloudResources() {
+            // NOTE: hardcoded names
             return this.getCardsStacked.filter(card => card._localTypeName == 'UnfurlUserDNSZone')
         },
         showingPublicCloudTab() {
@@ -142,15 +144,13 @@ export default {
             return this.$route.params.name
         },
         additionalProviders() {
-            return this.getCardsStacked.filter(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card.type))
+            return this.getCardsStacked.filter(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card._localTypeName))
         },
         editableProviders() {
-            const primary = this.getPrimaryCard
-
-            if(!primary || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(primary.type)) {
+            if(!this.primaryProvider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(this.primaryProvider._localTypeName)) {
                 return this.additionalProviders
             }
-            else return [primary, ...this.additionalProviders]
+            else return [this.primaryProvider, ...this.additionalProviders]
         }
     },
     methods: {
@@ -194,9 +194,9 @@ export default {
         async onProviderAdded({selection, title}) {
             await this.freshState()
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
-            if(selection.name == lookupCloudProviderAlias('k8s')) {
+            if(selection._localName == lookupCloudProviderAlias('k8s')) {
                 this.createNodeResource({
-                    selection: this.resolveResourceType('KubernetesIngressController'),
+                    selection: this.resolveResourceTypeFromAny('KubernetesIngressController'),
                     title: "KubernetesIngressController",
                     name: "k8sDefaultIngressController",
                 })
@@ -265,11 +265,12 @@ export default {
 
         schema(provider) {
             if(!provider) return null
-            return this.resolveResourceType(provider.type)?.inputsSchema
+            return this.resolveResourceTypeFromAny(provider.type)?.inputsSchema
         },
 
         isProvider(resource) {
-            return resource.name == 'primary_provider' || lookupCloudProviderAlias(resource.type)
+            // NOTE: hardcoded names
+            return resource.name == 'primary_provider' || lookupCloudProviderAlias(resource._localTypeName)
         },
 
         lookupCloudProviderAlias,
@@ -414,7 +415,7 @@ export default {
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :env="environment" class="mr-1"/> {{cloudProviderDisplayName}}
+                    <detect-icon :size="20" :type="primaryProvider && primaryProvider._localTypeName" class="mr-1"/> {{cloudProviderDisplayName}}
                 </div>
             </template>
         </oc-properties-list>
@@ -429,7 +430,7 @@ export default {
         >
             <template #header-text>
                 <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :type="p.type" class="mr-1"/> {{headerTitle(p)}}
+                    <detect-icon :size="20" :type="p._localTypeName" class="mr-1"/> {{headerTitle(p)}}
                 </div>
             </template>
             <template v-if="userCanEdit" #header-controls>

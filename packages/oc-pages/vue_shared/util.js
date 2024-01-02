@@ -46,7 +46,7 @@ const CLOUD_PROVIDER_ALIASES = {
 }
 
 export function lookupCloudProviderAlias(key) {
-  const result = CLOUD_PROVIDER_ALIASES[key]
+  const result = CLOUD_PROVIDER_ALIASES[key?.split('@')?.shift()]
   return result
 }
 

@@ -233,7 +233,11 @@ export default {
 
         availableProviderTypes() {
             if(this.selectingProvider) { // force recompute when modal opens
-                return ['unfurl.relationships.ConnectsTo.K8sCluster', 'ConnectsTo.DigitalOceanEnvironment'].map(this.resolveResourceTypeFromAny)
+                return [
+                    'unfurl.relationships.ConnectsTo.K8sCluster',
+                    'ConnectsTo.DigitalOceanEnvironment',
+                    'ConnectsTo.AzureEnvironment'
+                ].map(this.resolveResourceTypeFromAny)
             }
             return []
         },
@@ -283,7 +287,7 @@ export default {
         providerSelection: function(val) {
             if(Object.keys(val).length > 0) {
                 if(!this.userEditedResourceName) {
-                    this.resourceName = cloudProviderFriendlyName(val.name) || val.name;
+                    this.resourceName = cloudProviderFriendlyName(val._localName) || val._localName || val.name;
                 }
             }
         },

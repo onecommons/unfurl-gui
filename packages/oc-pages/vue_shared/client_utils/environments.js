@@ -5,7 +5,7 @@ import { unfurlServerUpdate } from './unfurl-server'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
-import { lookupCloudProviderAlias } from '../util'
+import { lookupCloudProviderAlias } from '../util.js'
 import {unfurlServerExport} from './unfurl-server'
 import {localNormalize} from '../lib/normalize'
 

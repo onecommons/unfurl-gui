@@ -2,7 +2,6 @@
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 import {ErrorSmall, DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters, mapActions} from 'vuex'
-import {fetchAvailableProviderDashboards} from 'oc_vue_shared/client_utils/environments'
 
 const DEPLOY_INTO_ENV_MIN_ACCESS = 30
 
