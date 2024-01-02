@@ -5,6 +5,14 @@ import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
 
+const pageAccessedByReload = (
+    (window.performance.navigation && window.performance.navigation.type === 1) ||
+        window.performance
+            .getEntriesByType('navigation')
+            .map((nav) => nav.type)
+            .includes('reload')
+)
+
 let transientOverride
 
 export function setTransientUnfurlServerOverride(override) {
@@ -22,6 +30,10 @@ function getOverride(projectPath) {
 function createHeaders({sendCredentials, username, password}) {
     const headers = {}
     const _sendCredentials = sendCredentials ?? true
+
+    if(pageAccessedByReload) {
+        headers['cache-control'] = 'no-cache'
+    }
 
     if(_sendCredentials && username && password) {
         headers['x-git-credentials'] = btoa(username + ':' + password)
