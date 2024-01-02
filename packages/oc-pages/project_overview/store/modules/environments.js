@@ -2,7 +2,7 @@ import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
 import {cloneDeep} from 'lodash'
-import {lookupCloudProviderAlias } from 'oc_vue_shared/util'
+import {lookupCloudProviderAlias, slugify} from 'oc_vue_shared/util.js'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
@@ -13,7 +13,6 @@ import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
-import {slugify} from 'oc_vue_shared/util'
 import { fetchTypeRepositories, importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
@@ -428,8 +427,16 @@ const actions = {
 
             environments = result.environments
 
+            Object.values(result.ResourceType).forEach(type => localNormalize(type, 'ResourceType', {ResourceType: result.ResourceType}))
             // TODO figure out if we might need ResourceType dictionary per environment
             for(const environment of environments) {
+                Object.values(environment.instances || {}).forEach(instance => localNormalize(instance, 'ResourceTemplate', {ResourceType: result.ResourceType}))
+                Object.values(environment.connections || {}).forEach(connection => localNormalize(connection, 'ResourceTemplate', {ResourceType: result.ResourceType}))
+
+                if(environment.primary_provider) {
+                    localNormalize(environment.primary_provider, 'ResourceTemplate', {ResourceType: result.ResourceType})
+                }
+
                 commit('setResourceTypeDictionary', {environment, dict: result.ResourceType})
             }
 
@@ -441,6 +448,7 @@ const actions = {
             }
         }
         catch(e){
+            console.error(e)
             if(window.gon.current_username) {
                 commit('createError', {
                     message: `Could not fetch project environments (${e})`,
@@ -722,8 +730,19 @@ const getters = {
         return function(environment, typename) {
             const environmentName = typeof environment == 'string'? environment: environment?.name
             const dict = state.resourceTypeDictionaries[environmentName]
-            if (dict) return Object.freeze(dict[typename?.name || typename])
-            return null
+            let result
+            if (dict) result = Object.freeze(dict[typename?.name || typename])
+
+            if(dict && !result) {
+                const qualifiedPrefix = `${typename?.name || typename}@`
+                for(const key in dict) {
+                    if(key.startsWith(qualifiedPrefix)) {
+                        result = dict[key]
+                    }
+                }
+            }
+
+            return result || null
         }
     },
     environmentLookupDiscoverable(state, getters) {

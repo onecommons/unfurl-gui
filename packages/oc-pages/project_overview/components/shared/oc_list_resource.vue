@@ -91,7 +91,7 @@ export default {
             async handler(val) {
                 this.ready = false
                 const promises = val.map(typeOrTemplate => {
-                    if(typeOrTemplate.imported) {
+                    if(typeOrTemplate?.imported) {
                         return this.fetchDeploymentIfNeeded(typeOrTemplate)
                     }
                 })

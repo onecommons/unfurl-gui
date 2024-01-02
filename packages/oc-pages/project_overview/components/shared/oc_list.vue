@@ -224,7 +224,8 @@ export default {
             return this.card.name.startsWith('__') || this.readonly || this.card.readonly
         },
         customInputComponent() {
-            return (!this._readonly || this.getCurrentContext === false) && getCustomInputComponent(this._card.type)
+            // NOTE: hardcoded names
+            return (!this._readonly || this.getCurrentContext === false) && getCustomInputComponent(this._card._localTypeName)
         },
         inputsSchema() {
             return this.resourceTemplateInputsSchema(this._card)
