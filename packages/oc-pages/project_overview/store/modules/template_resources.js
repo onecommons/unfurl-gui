@@ -372,7 +372,7 @@ const actions = {
             let _ancestors = null
 
             if(ancestors) {
-                let _ancestors = child._ancestors
+                _ancestors = child._ancestors
                 if(
                     (!child._ancestors && ancestors && !child.readonly) ||
                         (Array.isArray(child._ancestors) && child._ancestors.length == 0)
@@ -485,6 +485,14 @@ const actions = {
 
         const directAncestor = state.resourceTemplates[dependentName]
 
+        dispatch(
+            'normalizeUnfurlData', {
+                key: 'ResourceTemplate',
+                entry: target,
+                root: rootGetters.getApplicationRoot
+            })
+
+
         if(directAncestor) {
             const ancestorDependencies = getters.getDependencies(directAncestor)
             const inputsSchemaFromDirectAncestor = ancestorDependencies.find(dep => dep.name == dependentRequirement)?.constraint?.inputsSchema
@@ -496,16 +504,9 @@ const actions = {
             target._ancestors = (directAncestor._ancestors || []).concat([[directAncestor, dependentRequirement]])
         }
 
+        // TODO determine if this is still necessary with normalization
         try { target.properties = Object.entries(targetType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}));}
         catch { target.properties = []; }
-
-        dispatch(
-            'normalizeUnfurlData', {
-                key: 'ResourceTemplate',
-                entry: target,
-                root: rootGetters.getApplicationRoot
-            })
-
 
         if(targetType.requirements?.length > 0) {
             target.dependencies = targetType.requirements.map(req => {
@@ -1151,7 +1152,8 @@ const getters = {
 
             if(!rt._ancestors) return null
 
-            const ancestorConstraints = _.cloneDeep(rt._ancestors).map(([rt, req]) => rt.dependencies.find(dep => dep.name == req)?.constraint)
+            // TODO rt.dependencies should have been normalized to an empty array
+            const ancestorConstraints = _.cloneDeep(rt._ancestors || []).map(([rt, req]) => rt.dependencies?.find(dep => dep.name == req)?.constraint)
 
             const parentConstraint = ancestorConstraints.reduce((prev, cur) => _.merge(cur, ...(prev?.requirementsFilter || [])), null)
 
