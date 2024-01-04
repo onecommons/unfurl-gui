@@ -366,7 +366,8 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
     return function(accumulator) {
         visitMutation('deleteEnvironmentInstance')
         const patch = accumulator['DeploymentEnvironment'][environmentName]
-        if(delete patch.instances[templateName]) {
+        if(patch.instances[templateName]) {
+            delete patch.instances[templateName]
             if(dependentName) {
                 const dependent = patch.instances[dependentName]
                 const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
