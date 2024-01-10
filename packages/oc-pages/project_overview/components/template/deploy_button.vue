@@ -20,7 +20,7 @@ export default {
             forceCheck: false,
             dryRun: false,
             localDeploy: false,
-            isCypress: !!window.Cypress
+            isCypress: true//!!window.Cypress
         }
     },
     props: {

@@ -283,13 +283,14 @@ Cypress.Commands.add('recreateDeployment', options => {
               } else {
                 cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`).click()
 
-                cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
-                cy.get('[data-testid="create-resource-template-title"]')
-                  .invoke('val', '')
-                  .type(match.title)
-                cy.wait(500)
+                // cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
+                // cy.get('[data-testid="create-resource-template-title"]')
+                //   .invoke('val', '')
+                //   .type(match.title)
+                // cy.wait(500)
                 // TODO try to make cypress less flakey without this
-                cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
+                cy.get(`[data-testid="resource-selection-${match.type}"], [data-testid="resource-selection-${match.type.split('.').pop()}"]`).click()
+                cy.wait(500)
                 cy.get('[data-testid="create-resource-template-title"]')
                   .invoke('val', '')
                   .type(match.title)

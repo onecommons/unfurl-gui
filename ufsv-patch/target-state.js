@@ -19,9 +19,11 @@ class TargetState {
       for(const dependency of template.dependencies) {
         const type = dependency.constraint.resourceType
         const match = dependency.match
-        if(match && overwrites[type]) {
+        const ext = fixture.ResourceType[type]?.extends?.map(t => t.split('@').shift()) || []
+        const overwriteKey = Object.keys(overwrites).find(o => type.startsWith(`${o}@`) || ext.includes(o))
+        if(match && overwrites[overwriteKey]) {
           fixture.ResourceTemplate[match] = {
-            ...JSON.parse(overwrites[type]),
+            ...JSON.parse(overwrites[overwriteKey]),
             name: match
           }
 
@@ -47,6 +49,13 @@ class TargetState {
     for(const propertyB of b?.properties || []) {
       const propertyA = a?.properties?.find(p => p.name == b.name)
       if(_.isEqual(propertyA, propertyB)) {
+        continue
+      }
+
+      const inputsSchema = this.store.getters.resolveResourceTypeFromAny(a.type).inputsSchema
+
+      if(!inputsSchema.properties[propertyB.name]) {
+        console.warn(`${propertyB.name} not found in :${JSON.stringify(inputsSchema, null, 2)}`)
         continue
       }
 
@@ -83,13 +92,22 @@ class TargetState {
 
         await this.store.dispatch('fetchTypesForParams', {params})
 
+        const expectedType = this.ResourceTemplate[dependencyB.match].type.split('@').shift()
+
+        const selection = this.store.getters.availableResourceTypesForRequirement(dependencyA)
+          .find(t => t.name.startsWith(`${expectedType}@`) || t.name.startsWith(`${expectedType.split('.').pop()}@`))
+
+        if(!selection) {
+          throw new Error(`Could not find a match for ${expectedType} among types available for ${JSON.stringify(dependencyA, null, 2)}`)
+        }
+
         const toBeCreated = {
             dependentName: templateName,
             dependentRequirement: dependencyB.name,
             requirement: dependencyB,
             name: dependencyB.match,
             title: this.ResourceTemplate[dependencyB.match].title,
-            selection: this.store.getters.resolveResourceTypeFromAny(this.ResourceTemplate[dependencyB.match].type)
+            selection
         }
         await this.store.dispatch('createNodeResource',
           toBeCreated

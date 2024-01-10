@@ -157,6 +157,9 @@ const actions = {
 
         // TODO refactor independent transformations into vue_shared/lib/normalize
         transforms = {
+            ResourceType(resourceType) {
+                localNormalize(resourceType, 'ResourceType', root)
+            },
             ResourceTemplate(resourceTemplate) {
                 resourceTemplate.dependencies = _.uniqBy(normalizeDependencies(resourceTemplate.dependencies), 'name')
                 resourceTemplate.properties = _.uniqBy(normalizeProperties(resourceTemplate.properties), 'name')
