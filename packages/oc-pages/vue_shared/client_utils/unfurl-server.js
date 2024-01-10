@@ -1,17 +1,20 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchLastCommit, setLastCommit, createBranch } from "./projects";
+import { fetchProjectInfo, fetchLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
 
-const pageAccessedByReload = (
-    (window.performance.navigation && window.performance.navigation.type === 1) ||
-        window.performance
-            .getEntriesByType('navigation')
-            .map((nav) => nav.type)
-            .includes('reload')
-)
+let pageAccessedByReload = false
+try {
+    pageAccessedByReload= (
+        (window.performance.navigation && window.performance.navigation.type === 1) ||
+            window.performance
+                .getEntriesByType('navigation')
+                .map((nav) => nav.type)
+                .includes('reload')
+    )
+} catch(e) {}
 
 let transientOverride
 
@@ -150,9 +153,10 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     // the only other reason to hit branches would be to get the main branch
 
     const fetchCommitPromise = (branch && !branch.startsWith('v'))? fetchLastCommit(encodeURIComponent(projectPath), branch): null
-    const [lastCommitResult, password] = await Promise.all([fetchCommitPromise, fetchUserAccessToken()])
+    const fetchProjectInfoPromise = sendCredentials ?? null == null?  fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility): null
+    const [lastCommitResult, password, visibility] = await Promise.all([fetchCommitPromise, fetchUserAccessToken(), fetchProjectInfoPromise])
     const [latestCommit, inferredBranch] = lastCommitResult || []
-    const _sendCredentials = sendCredentials ?? true
+    const _sendCredentials = sendCredentials ?? visibility != 'public'
     await healthCheckErrorHelper(projectPath)
 
     const cacheKey = JSON.stringify({branch, projectPath, ...params})

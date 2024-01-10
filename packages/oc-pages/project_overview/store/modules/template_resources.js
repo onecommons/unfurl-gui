@@ -62,6 +62,7 @@ const mutations = {
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
         if(!dependentName) return
         const dependent = _state.resourceTemplates[dependentName];
+        console.assert(dependent, `Expected parent ${dependentName} to exist for ${resourceTemplate?.name}`)
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
         resourceTemplate.dependentName = dependentName;
         resourceTemplate.dependentRequirement = dependentRequirement;
@@ -429,7 +430,11 @@ const actions = {
             // for now we are assuming that these two fetches are redundant
             // we always prefer environment repositories when the environment is available
             const fetchPromise = environmentName?
-                dispatch('environmentFetchTypesWithParams', {environmentName, deploymentName, params}):
+                Promise.all([
+                    dispatch('environmentFetchTypesWithParams', {environmentName, deploymentName, params}),
+                    // don't fetch blueprint if deployment is already created
+                    deploymentName? null: dispatch('blueprintFetchTypesWithParams', {params})
+                ]):
                 dispatch('blueprintFetchTypesWithParams', {params})
 
             await fetchPromise

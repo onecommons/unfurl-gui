@@ -153,6 +153,7 @@ const transforms = {
 }
 
 export function localNormalize(object, typename=null, root) {
+    if(object._normalized) return
     if(!(object.__typename || typename)) {
         throw new Error(`Couldn't normalize ${object.name}: no typename`)
     }
@@ -160,5 +161,6 @@ export function localNormalize(object, typename=null, root) {
 
     if(typeof transforms[t] == 'function') {
         transforms[t](object, root)
+        object._normalized = true
     }
 }

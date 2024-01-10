@@ -115,7 +115,7 @@ const actions = {
                     deepFreeze(resource)
                     context.resource = resource
 
-                    context.type = frozenDeploymentDict['ResourceTemplate'][resource.template]?.type
+                    context.type = frozenDeploymentDict['ResourceTemplate'][resource.template]?.type?.split('@')?.shift()
 
                     pushContext([environmentName, deployment.name, resource.name].join('.'))
                 }
