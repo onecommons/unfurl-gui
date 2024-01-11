@@ -82,7 +82,7 @@ class Fixture {
 
     await store.dispatch('ocFetchEnvironments', {projectPath: this.dashboardProjectPath, branch: 'main'})
 
-    expect(store.state.errors.errors).toHaveLength(0)
+    expect(JSON.stringify(store.state.errors.errors, null, 2)).toBe('[]')
     expect(store.state.environments.projectEnvironments).not.toHaveLength(0)
 
     store.commit('setUpdateType', 'deployment')
@@ -184,6 +184,15 @@ class Fixture {
           let response
           try {
             response = await interceptMethod(newUrl, ...args)
+            const fnameUrl = new URL(newUrl)
+
+            fs.writeFileSync(`/tmp/ufsv-intercepted/${Date.now()}-${encodeURIComponent(fnameUrl.pathname.slice(1) + fnameUrl.search)}`, JSON.stringify({
+              req: [
+                newUrl,
+                ...args
+              ],
+              res: response
+            }))
           } catch(e) {
             console.error(e, e.response, e.message)
             throw e

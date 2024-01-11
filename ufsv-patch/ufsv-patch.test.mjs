@@ -157,7 +157,7 @@ function sectionEnd(name) {
 }
 
 function setupTestDirectories() {
-  for(const requiredDir of ['/tmp/ufsv', '/tmp/ufartifacts', '/tmp/repos']) {
+  for(const requiredDir of ['/tmp/ufsv', '/tmp/ufartifacts', '/tmp/repos', '/tmp/ufsv-intercepted']) {
     try {
         fs.mkdirSync(requiredDir)
     } catch(e) {}
