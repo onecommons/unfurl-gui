@@ -6,7 +6,7 @@ rm -r $UNFURL_SERVER_CWD/*
 
 set -e
 
-tar --owner $(id -u) --group $(id -g) -xvf ufsv-patch/test-dashboard.tgz -C $UNFURL_SERVER_CWD
+tar -xvf ufsv-patch/test-dashboard.tgz -C $UNFURL_SERVER_CWD
 back=$PWD
 cd $UNFURL_SERVER_CWD
 git checkout .
