@@ -1,18 +1,21 @@
 // import regeneratorRuntime from 'regenerator-runtime/runtime'
 import fs from 'fs'
+import path from 'path'
 import childProcess from 'child_process'
 import store from './store'
 import Fixture from './fixture'
 import {jest} from '@jest/globals'
-import {sleep} from 'oc_vue_shared/client_utils/misc'
+import { sleep } from 'oc_vue_shared/client_utils/misc'
 
 // import {globSync} from 'glob'
 import glob from 'glob'
 const globSync = glob.sync
 
+const TMP_DIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
 const SPEC_GLOBS = process.env.SPEC_GLOBS || ''
 const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
-const UNFURL_SERVER_CWD = '/tmp/ufsv'
+const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
+const UNFURL_SERVER_CWD = TMP_DIR + '/ufsv'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
@@ -43,26 +46,26 @@ function setupCmd() {
 }
 
 function testToUfsvLogPath(testName) {
-  return `/tmp/${testName}-ufsv.log`
+  return `${TMP_DIR}/${testName}-ufsv.log`
 }
 
 function testToDryrunLogPath(testName) {
-  return `/tmp/${testName}-ufdryrun.log`
+  return `${TMP_DIR}/${testName}-ufdryrun.log`
 }
 
 function testToArtifactPath(testName) {
-  return `/tmp/ufartifacts/${testName}`
+  return `${TMP_DIR}/ufartifacts/${testName}`
 }
 
 function spawnUnfurlServer(testName) {
   const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
   const cmd = '/usr/bin/env'
   const args = [
-      'unfurl',
+      UNFURL_CMD,
       'serve',  '.',
       '--cloud-server', OC_URL,
       '--port', PORT,
-      '--clone-root', '/tmp/repos'
+      '--clone-root', `${TMP_DIR}/repos`
   ]
 
   writeLine('serve command: ', [cmd, ...args].join(' '))
@@ -100,7 +103,7 @@ function spawnDryrunSync(fixture) {
   const cmd = '/usr/bin/env'
 
   const args = [
-      'unfurl',
+    UNFURL_CMD,
       'deploy',
       '--dryrun',
       '--use-environment', fixture.environment,
@@ -157,7 +160,7 @@ function sectionEnd(name) {
 }
 
 function setupTestDirectories() {
-  for(const requiredDir of ['/tmp/ufsv', '/tmp/ufartifacts', '/tmp/repos', '/tmp/ufsv-intercepted']) {
+  for(const requiredDir of [`${TMP_DIR}/ufsv`, `${TMP_DIR}/ufartifacts`, `${TMP_DIR}/repos`, `${TMP_DIR}/ufsv-intercepted`]) {
     try {
         fs.mkdirSync(requiredDir)
     } catch(e) {}
@@ -216,7 +219,7 @@ async function runSpecs() {
       } catch(e) {}
 
       try {
-        fs.renameSync(`/tmp/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
+        fs.renameSync(`${TMP_DIR}/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
       } catch(e) { console.error(e.message) }
 
       expect(dryrun.status).toBe(0)

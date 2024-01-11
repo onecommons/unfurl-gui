@@ -2,6 +2,7 @@ const OC_NAMESPACE = process.env.OC_NAMESPACE || 'onecommons/blueprints'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
+const TMP_DIR = process.env.UNFURL_TEST_TMPDIR || "./tmp"
 
 import {expect, jest} from '@jest/globals'
 import axios from '~/lib/utils/axios_utils'
@@ -186,7 +187,7 @@ class Fixture {
             response = await interceptMethod(newUrl, ...args)
             const fnameUrl = new URL(newUrl)
 
-            fs.writeFileSync(`/tmp/ufsv-intercepted/${Date.now()}-${encodeURIComponent(fnameUrl.pathname.slice(1) + fnameUrl.search)}`, JSON.stringify({
+            fs.writeFileSync(`${TMP_DIR}/ufsv-intercepted/${Date.now()}-${encodeURIComponent(fnameUrl.pathname.slice(1) + fnameUrl.search)}`, JSON.stringify({
               req: [
                 newUrl,
                 ...args
