@@ -4,6 +4,8 @@ import glob from 'glob'
 const globSync = glob.sync
 import fs from 'fs'
 
+const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
+
 
 const overwrites = {}
 
@@ -19,7 +21,7 @@ class TargetState {
       for(const dependency of template.dependencies) {
         const type = dependency.constraint.resourceType
         const match = dependency.match
-        const ext = fixture.ResourceType[type]?.extends?.map(t => t.split('@').shift()) || []
+        const ext = store.getters.resolveResourceTypeFromAny(type)?.extends?.map(t => t.split('@').shift()) || []
         const overwriteKey = Object.keys(overwrites).find(o => type.startsWith(`${o}@`) || ext.includes(o))
         if(match && overwrites[overwriteKey]) {
           fixture.ResourceTemplate[match] = {
@@ -77,7 +79,9 @@ class TargetState {
         await this.recursiveCreateDependencies(dependencyB.match)
       }
 
-      const dependencyA = a?.dependencies?.find(dep => dep.name == dependencyB.name)
+      const aDependencies = this.store.getters.getDependencies(a.name)
+      const dependencyA = _.cloneDeep(aDependencies?.find(dep => dep.name == dependencyB.name))
+      if(!dependencyA) continue
       // TODO add remove templates
       if(dependencyA?.match == dependencyB.match) {
         await recurse()
@@ -93,12 +97,20 @@ class TargetState {
         await this.store.dispatch('fetchTypesForParams', {params})
 
         const expectedType = this.ResourceTemplate[dependencyB.match].type.split('@').shift()
+        // if(TEST_VERSIONS != 'v1' && dependencyA.constraint.resourceType.startsWith('unfurl.nodes.DockerHost')) {
+        //   dependencyA.constraint.resourceType = 'ContainerHost@unfurl.cloud/onecommons/std:generic_types'
+        // }
 
         const selection = this.store.getters.availableResourceTypesForRequirement(dependencyA)
           .find(t => t.name.startsWith(`${expectedType}@`) || t.name.startsWith(`${expectedType.split('.').pop()}@`))
 
         if(!selection) {
-          throw new Error(`Could not find a match for ${expectedType} among types available for ${JSON.stringify(dependencyA, null, 2)}`)
+          const errorMessage = [
+            `Could not find a match for ${expectedType} among types available for ${JSON.stringify(dependencyA, null, 2)}`,
+            `only ${this.store.getters.availableResourceTypesForRequirement(dependencyA).map(t => t.name)}.`,
+            `Available types are: ${JSON.stringify(this.store.state.templateResources.availableResourceTypes.map(rt => rt.name))}`
+          ].join('\n')
+          throw new Error(errorMessage)
         }
 
         const toBeCreated = {
