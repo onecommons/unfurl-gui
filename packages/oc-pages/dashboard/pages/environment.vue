@@ -482,7 +482,21 @@ export default {
                 Delete Environment
             </gl-button>
         </div>
-        <deployment-resources :readonly="!userCanEdit || showingPublicCloudTab" v-show="(showingDeploymentResourceTab && showDeploymentResources)" style="margin-top: -1.5rem;" @saveTemplate="onSaveTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="resourceFilter" :delete-status="deleteStatus" @addTopLevelResource="onExternalAdded" @addProvider="onProviderAdded" ref="deploymentResources" external-status-indicator display-validation>
+        <deployment-resources
+            :readonly="!userCanEdit || showingPublicCloudTab"
+            v-show="(showingDeploymentResourceTab && showDeploymentResources)"
+            style="margin-top: -1.5rem;"
+            @saveTemplate="onSaveTemplate"
+            @deleteResource="onDelete"
+            :save-status="saveStatus"
+            :filter="resourceFilter"
+            :delete-status="deleteStatus"
+            @addTopLevelResource="onExternalAdded"
+            @addProvider="onProviderAdded"
+            ref="deploymentResources"
+            external-status-indicator
+            display-validation
+        >
             <template #header>
                 <!-- potentially tricky to translate -->
                 <div v-if="showingResourcesTab" class="d-flex align-items-center">

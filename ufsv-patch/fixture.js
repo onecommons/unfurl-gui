@@ -2,7 +2,7 @@ const OC_NAMESPACE = process.env.OC_NAMESPACE || 'onecommons/blueprints'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
-const TMP_DIR = process.env.UNFURL_TEST_TMPDIR || "./tmp"
+const TMP_DIR = process.env.UNFURL_TEST_TMPDIR || "/tmp"
 
 import {expect, jest} from '@jest/globals'
 import axios from '~/lib/utils/axios_utils'
@@ -14,7 +14,8 @@ import {sleep} from 'oc_vue_shared/client_utils/misc'
 
 const providerMap = {
   azure: 'az',
-  digitalocean: 'do'
+  digitalocean: 'do',
+  kubernetes: 'k8s'
 }
 
 class Fixture {

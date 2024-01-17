@@ -1,5 +1,6 @@
-describe('_k8s-20221012t165758423z__wordpress__wordpress', () => {
+import {deploymentFixturePath} from '../../support/deployment-fixture'
+describe('k8s__wordpress__wordpress', () => {
   it('Can recreate deployment', () => {
-    cy.recreateDeployment('generated/deployments/_k8s-20221012t165758423z__wordpress__wordpress')
+    cy.recreateDeployment(deploymentFixturePath('k8s__wordpress__wordpress'))
   })
 })

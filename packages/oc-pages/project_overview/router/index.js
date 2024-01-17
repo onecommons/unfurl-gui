@@ -117,6 +117,8 @@ export default function createRouter(base) {
                     },
                     severity: 'critical'
                 })
+                clearMatchingStorage(/ufsv_dev/)
+                clearMatchingStorage(/unfurl-server-url-dev/)
             }
         }
 

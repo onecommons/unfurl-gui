@@ -61,6 +61,9 @@ function enterK8sInfo(providerName='primary_provider') {
   if(K8S_BASE_URL) {
     cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-api_server"]`).type(K8S_BASE_URL)
   }
+
+  // cypress is bending reality without this sleep
+  cy.wait(1000)
 }
 
 function addK8sAnnotations() {

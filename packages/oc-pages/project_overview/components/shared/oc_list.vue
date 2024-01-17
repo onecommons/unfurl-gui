@@ -258,7 +258,7 @@ export default {
                     </div>
                 </div>
             </oc-tab>
-            <oc-tab v-if="shouldRenderInputs && !customInputComponent" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="inputsTitleCount">
+            <oc-tab v-if="shouldRenderInputs && !customInputComponent && inputsTitleCount" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="inputsTitleCount">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties">
                     <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="_card" /> </template>
                 </oc-properties-list>

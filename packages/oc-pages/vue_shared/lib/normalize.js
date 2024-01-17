@@ -58,7 +58,7 @@ const transforms = {
         }
 
         if(resourceType.metadata?.alias) {
-            resourceType.extends = []
+            resourceType.implementations = []
         }
 
         normalizeDirectives(resourceType.directives)
