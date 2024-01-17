@@ -11,6 +11,11 @@ back=$PWD
 cd $UNFURL_SERVER_CWD
 git checkout .
 git remote remove origin || true
+if [ -n "$UFSV_LOCAL" ]
+then
+  mkdir local
+  cp $UFSV_LOCAL local/unfurl.yaml
+fi
 default_oc_url=https://unfurl.cloud
 # git remote add origin ${OC_URL:-$default_oc_url}/jest/dashboard
 cd $back
