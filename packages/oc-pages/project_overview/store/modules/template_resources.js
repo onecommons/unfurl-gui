@@ -1325,11 +1325,11 @@ const getters = {
             const environmentName = state.lastFetchedFrom?.environmentName
 
             if(environmentName) {
-                result.push(...rootGetters.getValidEnvironmentConnections(environmentName, requirement))
+                result.push(...rootGetters.getValidEnvironmentConnections(environmentName, requirement, getters.resolveResourceTypeFromAny))
             }
 
             result.push(...Object.values(state.resourceTemplates).filter(rt => {
-                const type = rootGetters.resolveResourceType(rt.type)
+                const type = getters.resolveResourceTypeFromAny(rt.type)
                 if(! type?.extends?.includes(constraintType)) return
 
                 // type matches

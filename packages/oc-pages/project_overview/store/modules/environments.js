@@ -664,7 +664,8 @@ function envFilter(name){
 const getters = {
     getEnvironments: state => state.projectEnvironments,
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
-    getValidEnvironmentConnections: (state, getters) => function(environmentName, requirement) {
+    getValidEnvironmentConnections: (state, getters) => function(environmentName, requirement, _resolver) {
+        const resolver = _resolver? _resolver: getters.environmentResolveResourceType.bind(getters, environmentName)
         const filter = envFilter(environmentName)
         const environment = state.projectEnvironments.find(filter)
         const constraintType = constraintTypeFromRequirement(requirement)
@@ -672,7 +673,7 @@ const getters = {
         let result = []
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
             const connExtends = [
-                ...(getters.environmentResolveResourceType(environmentName, conn.type)?.extends || []),
+                ...(resolver(conn.type)?.extends || []),
                 ...(conn.metadata?.extends || [])
             ]
             return connExtends?.includes(constraintType)
