@@ -845,13 +845,12 @@ const getters = {
             {
                 const environment = getters.lookupEnvironment(environmentName)
 
-                if(environment.repositories.types) {
-                    return [environment.repositories.types]
+                if(!environment) {
+                    throw new Error(`Environment not found ${environmentName}`)
                 }
-                return []
 
                 // call types on unique repositories
-                // return Object.values(environment.repositories || {})
+                return Object.values(environment.repositories || {})
             }
         }
     },

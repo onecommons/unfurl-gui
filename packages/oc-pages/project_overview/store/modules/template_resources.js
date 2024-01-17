@@ -1105,7 +1105,7 @@ const getters = {
             const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
 
-            if(dictionaryResourceType?.directives?.includes('substitute')) return dictionaryResourceType
+            if(dictionaryResourceType?.directives?.includes('substitute') || dictionaryResourceType?.metadata?.alias) return dictionaryResourceType
             if(environmentResourceType && !environmentResourceType._sourceinfo?.incomplete) return environmentResourceType
 
             if(dictionaryResourceType) return dictionaryResourceType
@@ -1114,14 +1114,15 @@ const getters = {
         }
     },
 
-    lookupConfigurableTypes(state, _a, _b, rootGetters) {
+    lookupConfigurableTypes(state, getters, _b, rootGetters) {
         return function(environment) {
             const resolver = rootGetters.resolveResourceTypeFromAny
-            return Object.values(
+            return Object.keys(
                 {
                     ...rootGetters.blueprintResourceTypeDict,
                     ...rootGetters.environmentResourceTypeDict(environment)
                 })
+                .map(key => getters.resolveResourceTypeFromAny(key))
                 .filter(rt => isConfigurable(rt, environment, resolver))
         }
     },

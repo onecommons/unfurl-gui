@@ -90,6 +90,7 @@ export default {
             // this works well, but is a weird place to be loading state on demand
             async handler(val) {
                 this.ready = false
+                if(!val) return
                 const promises = val.map(typeOrTemplate => {
                     if(typeOrTemplate?.imported) {
                         return this.fetchDeploymentIfNeeded(typeOrTemplate)

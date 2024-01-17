@@ -54,7 +54,12 @@ class TargetState {
         continue
       }
 
-      const inputsSchema = this.store.getters.resolveResourceTypeFromAny(a.type).inputsSchema
+      // const inputsSchema = this.store.getters.resolveResourceTypeFromAny(a.type).inputsSchema
+      const inputsSchema = this.store.getters.resourceTemplateInputsSchema(a.name)
+
+      if(!inputsSchema) {
+        throw new Error(`Couldn't find inputsSchema for ${a.name}`)
+      }
 
       if(!inputsSchema.properties[propertyB.name]) {
         console.warn(`${propertyB.name} not found in :${JSON.stringify(inputsSchema, null, 2)}`)
@@ -79,6 +84,11 @@ class TargetState {
         await this.recursiveCreateDependencies(dependencyB.match)
       }
 
+      if(!a) {
+        throw new Error(
+          `Expected template '${templateName}' to exist for recursively creating dependencies`
+        )
+      }
       const aDependencies = this.store.getters.getDependencies(a.name)
       const dependencyA = _.cloneDeep(aDependencies?.find(dep => dep.name == dependencyB.name))
       if(!dependencyA) continue
