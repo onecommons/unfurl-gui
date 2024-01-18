@@ -14,7 +14,7 @@ const mutations = {
     createError(state, {severity, message, context, ...optional}) {
         const now = new Date(Date.now())
 
-        const traceback = context.details?.startsWith('Traceback')? context.details: undefined
+        const traceback = context?.details?.startsWith('Traceback')? context.details: undefined
         const err = {
             severity: severity || 'major',
             message,
