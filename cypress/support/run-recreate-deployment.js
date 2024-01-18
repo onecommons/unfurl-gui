@@ -289,7 +289,13 @@ Cypress.Commands.add('recreateDeployment', options => {
                 //   .type(match.title)
                 // cy.wait(500)
                 // TODO try to make cypress less flakey without this
-                cy.get(`[data-testid="resource-selection-${match.type}"], [data-testid="resource-selection-${match.type.split('.').pop()}"]`).click()
+                const t = match.type.split('@').shift()
+                const selectionVariants = [
+                  t,
+                  t.split('.').pop(),
+                ].map(v => `[data-testid="resource-selection-${v}"]`)
+                .join(', ')
+                cy.get(selectionVariants).click()
                 cy.wait(500)
                 cy.get('[data-testid="create-resource-template-title"]')
                   .invoke('val', '')
