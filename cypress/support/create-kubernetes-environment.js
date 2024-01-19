@@ -6,6 +6,8 @@ const K8S_INSECURE = Cypress.env('K8S_INSECURE')
 const K8S_AUTH_TOKEN = Cypress.env('K8S_AUTH_TOKEN')
 const K8S_NAMESPACE = Cypress.env('K8S_NAMESPACE')
 const K8S_BASE_URL = Cypress.env('K8S_BASE_URL')
+const K8S_ANNOTATIONS = Cypress.env('K8S_ANNOTATIONS') || ''
+const KUBECONFIG = Cypress.env('KUBECONFIG')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
@@ -67,11 +69,15 @@ function enterK8sInfo(providerName='primary_provider') {
 }
 
 function addK8sAnnotations() {
-  for(const {key, value} of [
-    {key: 'cert-manager.io/issuer', value: 'gitlab-issuer'},
-    {key: 'kubernetes.io/ingress.class', value: 'gitlab-nginx'},
-    {key: 'kubernetes.io/ingress.provider', value: 'nginx'},
-  ]) {
+  let annotations = []
+
+  try {
+    annotations = K8S_ANNOTATIONS.split(/,\s*/g).map(ann => ann.split('='))
+  } catch(e) {
+    console.error(e)
+  }
+
+  for(const [key, value] of annotations) {
     cy.contains('button.formily-element-array-base-addition', 'Add').click()
     cy.get('[placeholder="key"]').last().type(key)
     cy.get('[placeholder="value"]').last().type(value)
@@ -102,11 +108,24 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
   enterK8sInfo()
 
   cy.get('#providerModal').within(() => {
-    cy.contains('button', 'Save Changes').click()
+    // forcing because there might have been no changes
+    cy.contains('button', 'Save Changes').click({force: true})
   })
 
-  cy.wait(5000)
+  if(KUBECONFIG) {
+    cy.wait(BASE_TIMEOUT / 2)
+    // easiest way to get rid of modal
+    cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
 
+    cy.contains('a', 'Variables').click()
+    cy.get('[data-qa-selector="add_ci_variable_button"]').click()
+    cy.get('[data-qa-selector="ci_variable_key_field"] input').type('KUBECONFIG')
+    // typing out KUBECONFIG is hilariously slow
+    cy.get('[data-qa-selector="ci_variable_value_field"]').invoke('val', KUBECONFIG)
+    cy.get('[data-qa-selector="ci_variable_value_field"]').type('\n')
+    cy.get('#ci-variable-type').select('File')
+    cy.get('[data-qa-selector="ci_variable_save_button"]').click()
+  }
   cy.contains('a', 'Resources').click()
 
   addK8sAnnotations()

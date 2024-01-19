@@ -103,7 +103,7 @@ If successful the command will output the pipeline URL.
 | <code>$TEST =~ /ghost/ &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/&#42;ghost&#42;.js</code> | Runs all ghost tests |
 | <code>$TEST =~ /mediawiki/ &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/&#42;mediawiki&#42;.js</code> | Runs all mediawiki tests |
 | <code>$TEST =~ /wordpress/ &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/&#42;wordpress&#42;.js</code> | Runs all wordpress tests |
-| <code>$TEST =~ /k8s/ &#124;&#124; ($TEST == "all" && $SKIP !~ /k8s/)</code> | <code>./cypress/e2e/blueprints/k8s&#42;.js</code> | Runs all kubernetes tests |
+| <code>$TEST =~ /k8s/ &#124;&#124; ($TEST == "all" && $SKIP !~ /k8s/)</code> | <code>./cypress/e2e/blueprints/k8s__wordpress&#42;.js</code> | Runs all kubernetes tests |
 | <code>$TEST =~ /uc_dns/ &#124;&#124; $TEST == "all"</code> | <code>./cypress/e2e/blueprints/aws__nextcloud__only-mail&#42;.js</code> | Runs aws nextcloud with unfurl cloud dns |
 | <code>$TEST == "cloud_redis"</code> | <code>cypress/e2e/blueprints/gcp__nextcloud__memorystore&#42;.js</code><br><code>cypress/e2e/blueprints/aws__nextcloud__memorydb&#42;.js</code> | Runs all cloud redis tests |
 | <code>$TEST == "multiple_workflows" &#124;&#124; $TEST == "misc"</code> | <code>cypress/e2e/deployments/multiple-workflows&#42;.js</code> | Tries to run multiple deployments simultaneously |

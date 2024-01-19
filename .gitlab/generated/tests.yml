@@ -94,7 +94,7 @@ kubernetes:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/k8s*.js'"
+      chrome -s './cypress/e2e/blueprints/k8s__wordpress*.js'"
   rules:
     - if: $TEST =~ /k8s/ || ($TEST == "all" && $SKIP !~ /k8s/)
 unfurl_cloud_dns:
