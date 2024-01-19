@@ -1199,11 +1199,14 @@ const getters = {
     },
 
     resourceTemplateInputsSchema(state, getters) {
-        return function(resourceTemplate) {
+        return function(resourceTemplate, {strict}={}) {
             const rt = typeof resourceTemplate == 'string' || resourceTemplate.__typename == 'Resource'?
                 getters.dtResolveResourceTemplate(resourceTemplate?.template || resourceTemplate) :
                 resourceTemplate
 
+            if(strict && !rt) {
+                throw new Error(`Resource template '${resourceTemplate || resourceTemplate?.template}' not found`)
+            }
             // we don't have the resource template we need loaded
             // TODO figure out how to handle shared resources with node_filter
             if(!rt && resourceTemplate?.type) {
@@ -1211,6 +1214,14 @@ const getters = {
             }
 
             const type = _.cloneDeep(getters.resolveResourceTypeFromAny(rt.type))
+
+            if(strict && type?._sourceinfo?.incomplete) {
+                throw new Error(`'${type.name}' is incomplete`)
+            }
+
+            if(strict && !type?.inputsSchema) {
+                throw new Error(`Could not resolve type with inputsSchema for '${rt.type}'`)
+            }
 
             if(type?.inputsSchema) {
                 applyInputsSchema(type, getters.calculateParentConstraint(resourceTemplate)?.inputsSchema)

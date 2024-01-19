@@ -155,13 +155,13 @@ export default {
             } else return icon
         },
         _noInvert() {
-            return this.noInvert ?? this.type?.extends?.find(t => t.startsWith('unfurl.nodes.App'))
+            return this.noInvert ?? this.type?.extends?.find(t => t.startsWith('unfurl.nodes.App@') || t.startsWith('App@'))
         }
     }
 }
 </script>
 <template>
-    <span class="custom-icon" :class="{'no-invert': noInvert}" :style="customStyle" v-if="customIcon">
+    <span class="custom-icon" :style="customStyle" v-if="customIcon">
         <img :style="customImageStyle" :src="customURL">
     </span>
     <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />

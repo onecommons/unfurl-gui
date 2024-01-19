@@ -641,10 +641,18 @@ const actions = {
 
         Object.entries(types).forEach(([name, type]) => {
             try {
+                if(!type._sourceinfo) {
+                    throw new Error(`${name} has no sourceinfo`)
+                }
+
                 if(currentTypes[name] && type._sourceinfo.incomplete) {
                     delete types[name]
                 }
-            } catch(e) { console.warn(`Can't read repository url from source info: ${e.message}`) }
+            } catch(e) {
+                if(!name.startsWith('__primary@')) { // reduntant error?
+                    console.warn(`Can't read repository url from source info: ${e.message}`)
+                }
+            }
         })
 
         Object.values(types).forEach(type => localNormalize(type, 'ResourceType', {ResourceType: state.resourceTypeDictionaries[environmentName]}))

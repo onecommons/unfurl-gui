@@ -167,14 +167,23 @@ function setupTestDirectories() {
   }
 }
 
+function setupSessionStorage() {
+  window.localStorage.clear()
+  window.sessionStorage.clear()
+  const UNFURL_CLOUDMAP_PATH = process.env.UNFURL_CLOUDMAP_PATH
+
+  if(UNFURL_CLOUDMAP_PATH) {
+    sessionStorage['unfurl_gui:cloudmapRepo'] = UNFURL_CLOUDMAP_PATH
+  }
+}
+
 async function runSpecs() {
   let unfurlServer
 
   beforeEach(async () => {
     const testName = (expect.getState().currentTestName).split('/').pop()
     sectionStart(testName, true)
-    window.localStorage.clear()
-    window.sessionStorage.clear()
+    setupSessionStorage()
     setupCmd()
     unfurlServer = spawnUnfurlServer(testName)
     await sleepyCurl()

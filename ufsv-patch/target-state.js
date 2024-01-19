@@ -55,7 +55,7 @@ class TargetState {
       }
 
       // const inputsSchema = this.store.getters.resolveResourceTypeFromAny(a.type).inputsSchema
-      const inputsSchema = this.store.getters.resourceTemplateInputsSchema(a.name)
+      const inputsSchema = this.store.getters.resourceTemplateInputsSchema(a.name, {strict: true})
 
       if(!inputsSchema) {
         throw new Error(`Couldn't find inputsSchema for ${a.name}`)

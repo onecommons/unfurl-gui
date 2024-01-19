@@ -68,7 +68,9 @@ wordpress:
   description: Runs all wordpress tests
 
 kubernetes:
-  spec: ./cypress/e2e/blueprints/k8s*.js
+  # uncomment for all k8s specs
+  # spec: ./cypress/e2e/blueprints/k8s*.js
+  spec: ./cypress/e2e/blueprints/k8s__wordpress*.js
   cond: $TEST =~ /k8s/ || ($TEST == "all" && $SKIP !~ /k8s/)
   description: Runs all kubernetes tests
 

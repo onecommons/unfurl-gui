@@ -27,6 +27,7 @@ const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
+const UNFURL_CLOUDMAP_PATH = Cypress.env('UNFURL_CLOUDMAP_PATH')
 const UNFURL_PACKAGE_RULES = Cypress.env('UNFURL_PACKAGE_RULES')
 
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
@@ -145,6 +146,9 @@ beforeEach(() => {
     }
     if(UNFURL_VALIDATION_MODE) {
       win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
+    }
+    if(UNFURL_CLOUDMAP_PATH) {
+      win.sessionStorage['unfurl_gui:cloudmapRepo'] = UNFURL_CLOUDMAP_PATH
     }
     win.sessionStorage['unfurl-trace'] = 't'
   })
