@@ -54,7 +54,7 @@ const NO_FILTER = ['GCP']
 function applyTypeToMapping(type, mapping) {
     if(!type) return
     if(typeof type == 'string') {
-        return mapping[type.toLowerCase()]
+        return mapping[type.toLowerCase().split('@').shift()]
     }
     let result
     result = applyTypeToMapping(type?._localName, mapping)

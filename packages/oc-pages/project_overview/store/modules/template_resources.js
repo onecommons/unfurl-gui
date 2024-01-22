@@ -1102,15 +1102,16 @@ const getters = {
 
     resolveResourceTypeFromAny(state, getters, _b, rootGetters) {
         return function(typeName) {
-            const environmentResourceType = rootGetters?.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
+            const environmentResourceType = rootGetters.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
 
-            if(dictionaryResourceType?.directives?.includes('substitute') || dictionaryResourceType?.metadata?.alias) return dictionaryResourceType
-            if(environmentResourceType && !environmentResourceType._sourceinfo?.incomplete) return environmentResourceType
+            for(const type of [environmentResourceType, dictionaryResourceType]) {
+                if(!type) continue
+                if(type._sourceinfo?.incomplete) continue
+                if(type.directives?.includes('substitute') || type.metadata?.alias) return type
+            }
 
-            if(dictionaryResourceType) return dictionaryResourceType
-
-            return environmentResourceType ?? null
+            return (environmentResourceType || dictionaryResourceType) ?? null
         }
     },
 

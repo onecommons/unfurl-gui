@@ -73,6 +73,7 @@ const transforms = {
             resourceType.requirements = resourceType.requirements.filter(req => !req.match)
         }
 
+        // will prevent nested dependencies with visibility set from overriding parent constraint visibility
         resourceType.requirements = resourceType.requirements.filter(req => req.visibility != 'hidden' || req.match)
 
         resourceType._maxUtilization = 1
