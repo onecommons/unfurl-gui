@@ -30,6 +30,7 @@ const visitMutation = () => {}
  * some of the normalizations done prior to committing are done to prevent errors in unfurl
 
  * there are some exported functions that are expected to be used in combination with pushPreparedMutation
+ * some of these exported functions have more complex behavior for keeping things consistent [1]
  * the behavior for these is a bit unusual and if you need to directly commit an object, I'd committing pushPreparedMutation like this:
           this.pushPreparedMutation(() => {
              return [{
@@ -41,6 +42,9 @@ const visitMutation = () => {}
 
  * some concepts like committedNames and fetchRoot are inconsistent between targets (i.e. deployment.json vs environments.json)
  * this is pretty ugly and what I'd consider refactoring first
+
+
+ * [1] calls mutating resource templates such as updatePropertyInResourceTemplate, move templates from .DeploymentTemplate[<template>].ResourceTemplate to .ResourceTemplate
 */
 
 function convertFieldToDictionaryIfNeeded(node, field) {
@@ -166,15 +170,11 @@ Serializers = {
     },
     DeploymentTemplate(dt, state) {
         if(state.ResourceTemplate) {
-            // should we be serializing local templates?
             const localResourceTemplates = dt?.ResourceTemplate
             if(localResourceTemplates) {
                 for(const rt of Object.keys(localResourceTemplates)) {
-                    if(dt.source) {
-                        delete localResourceTemplates[rt]
-                    } else {
-                        Serializers.ResourceTemplate(localResourceTemplates[rt], state)
-                    }
+                    // TODO check that we haven't modified a local resource template that hasn't been edited by the user
+                    Serializers.ResourceTemplate(localResourceTemplates[rt], state)
                 }
             }
 

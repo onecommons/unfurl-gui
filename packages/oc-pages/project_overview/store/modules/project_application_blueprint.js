@@ -364,10 +364,20 @@ const actions = {
             return
         }
 
+        // prioritize types that are already defined when new type is incomplete
+        Object.entries(state.ResourceType).forEach(([name, type]) => {
+            const newType = types[name]
+
+            if(newType && !newType._sourceinfo?.incomplete) {
+                return
+            }
+
+            types[name] = type
+        })
+
         await dispatch(
             'useProjectState',
-            // prioritize types that are already defined
-            {root: {ResourceType: {...types, ...state.ResourceType}}, shouldMerge: true}
+            {root: {ResourceType: types}, shouldMerge: true}
         )
     }
 }
