@@ -247,7 +247,7 @@ export default {
                     component="gl-button"
                     v-on="handlers"
             />
-            <gl-dropdown v-if="contextMenuControlButtons.length" right :popper-opts="{ positionFixed: true }">
+            <gl-dropdown v-if="contextMenuControlButtons.length" :popper-opts="{ positionFixed: true, placement: 'bottom-end' }">
                 <control-buttons
                         v-bind="attrs"
                         :control-buttons="contextMenuControlButtons"
@@ -263,4 +263,7 @@ export default {
 <style scoped>
 .deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
 .deployment-controls > * { display: flex; margin: 0 0.25em;}
+.deployment-controls >>> .dropdown-menu {
+    top: 95px !important; /* not sure why this became necessary */
+}
 </style>
