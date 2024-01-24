@@ -1,7 +1,15 @@
+// NOTE: hardcoded names
+const GENERIC_FALLBACK = 'unfurl.relationships.ConnectsTo.ComputeMachines'
 
 function hasMatchingConnection(implementationRequirement, environment, resourceTypeResolver) {
-    return Object.values(environment.connections || {}).some(conn => {
-        // NOTE this doesn't account for duplication
+    let connections = Object.values(environment.connections || {})
+
+    // if no connections, this is a generic environment
+    if(connections.length == 0) {
+        connections = [{type: GENERIC_FALLBACK}]
+    }
+
+    return connections.some(conn => {
         const connResourceType = resourceTypeResolver(conn.type)
         return connResourceType?.extends?.includes(implementationRequirement)
     })

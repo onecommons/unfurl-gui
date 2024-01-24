@@ -699,6 +699,10 @@ const getters = {
         const result = getters.getEnvironments.filter(env => {
             const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
 
+            if(connections.length == 0 && !type) {
+                return true
+            }
+
             for(const connection of connections) {
                 if(lookupCloudProviderAlias(connection?.type) == lookupCloudProviderAlias(type)) { return true }
             }

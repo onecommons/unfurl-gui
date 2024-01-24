@@ -180,7 +180,11 @@ export default {
         },
         templateSelected: function(val) {
             if(this.templateForkedName) return
-            if(val && this.instantiateAs == 'deployment-draft') this.templateForkedName = this.getNextDefaultDeploymentName(this.getApplicationBlueprint.title + ' ' + lookupCloudProviderShortName(val.cloud))
+            if(val && this.instantiateAs == 'deployment-draft') {
+                this.templateForkedName = this.getNextDefaultDeploymentName(
+                    this.getApplicationBlueprint.title + ' ' + lookupCloudProviderShortName(val.cloud)
+                )
+            }
             else this.templateForkedName = ''
 
         },

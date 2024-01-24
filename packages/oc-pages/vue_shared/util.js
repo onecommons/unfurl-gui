@@ -59,7 +59,7 @@ export function lookupCloudProviderShortName(key) {
     [Azure]: 'Azure',
     [DigitalOcean]: 'DO'
   }
-  return dict[actual]
+  return dict[actual] || 'Self-Hosted'
 }
 
 export function cloudProviderFriendlyName(key) {
@@ -71,5 +71,5 @@ export function cloudProviderFriendlyName(key) {
         [Azure]: 'Azure',
         [DigitalOcean]: 'Digital Ocean'
     }
-    return dict[actual]
+    return dict[actual] || 'Self-Hosted'
 }
