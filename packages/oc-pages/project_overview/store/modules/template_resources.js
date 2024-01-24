@@ -910,11 +910,11 @@ const getters = {
 
         });
 
+        // always display cards capable of incrementally deploying
         for(const card of cards) {
             if(result.some(c => c.name == card.name)) continue
-            if(getters.getCardExtends(card)?.includes('ContainerImageSource')) {
+            if(getters.cardCanIncrementalDeploy(card)) {
                 result.push(card)
-                //result.push({...card, readonly: true})
             }
         }
 
@@ -1244,12 +1244,13 @@ const getters = {
 
     cardCanIncrementalDeploy(state, getters) {
         return function(card) {
-            return getters.getCardExtends(card)?.includes('ContainerImageSource')
+            // NOTE: hardcoded names
+            return getters.getCardExtends(card)?.find(e => e.startsWith('ContainerImageSource@'))
         }
     },
 
     hasIncrementalDeployOption(state, getters) {
-        return Object.values(state.resourceTemplates).some(card => getters.getCardExtends(card)?.includes('ContainerImageSource'))
+        return Object.values(state.resourceTemplates).some(card => getters.cardCanIncrementalDeploy(card))
     },
 
     getCurrentContext(state) {
