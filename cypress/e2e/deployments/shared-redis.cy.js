@@ -36,7 +36,7 @@ describe('Shared redis', () => {
 
     cy.get('[data-testid="card-self-hosted-redis"]').within(() => {
       cy.contains("button", "Share").click()
-      cy.contains("button", "Share in current environment").click()
+      cy.contains("button", "Share in current environment").click({force: true})
     })
 
     cy.recreateDeployment({

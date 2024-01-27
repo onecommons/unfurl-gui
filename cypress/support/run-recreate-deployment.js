@@ -65,7 +65,8 @@ Cypress.Commands.add('recreateDeployment', options => {
     let env = _env || Object.values(DeploymentPath)[0].environment
     let dnsZone = _dnsZone
     if(!_env) {
-      if(AWS_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
+      const cloud = dt.cloud?.split('@')?.shift()
+      if(AWS_ENVIRONMENT_NAME && cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
         env = AWS_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE
         cy.whenEnvironmentAbsent(env, () => {
@@ -75,7 +76,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             shouldCreateDNS: !USE_UNFURL_DNS,
           })
         })
-      } else if (GCP_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
+      } else if (GCP_ENVIRONMENT_NAME && cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
         env = GCP_ENVIRONMENT_NAME
         dnsZone = GCP_DNS_ZONE
         cy.whenEnvironmentAbsent(env, () => {
@@ -85,7 +86,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             shouldCreateDNS: !USE_UNFURL_DNS,
           })
         })
-      } else if (DO_ENVIRONMENT_NAME && dt.cloud == 'ConnectsTo.DigitalOceanEnvironment') {
+      } else if (DO_ENVIRONMENT_NAME && cloud == 'ConnectsTo.DigitalOceanEnvironment') {
         env = DO_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE // not a mistake
         cy.whenEnvironmentAbsent(env, () => {
@@ -95,7 +96,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             shouldCreateDNS: !USE_UNFURL_DNS,
           })
         })
-      } else if(K8S_ENVIRONMENT_NAME && dt.cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
+      } else if(K8S_ENVIRONMENT_NAME && cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
         env = K8S_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE
         cy.whenEnvironmentAbsent(env, () => {
@@ -105,7 +106,7 @@ Cypress.Commands.add('recreateDeployment', options => {
             shouldCreateDNS: !USE_UNFURL_DNS,
           })
         })
-      } else if(AZ_ENVIRONMENT_NAME && dt.cloud == 'ConnectsTo.AzureEnvironment') {
+      } else if(AZ_ENVIRONMENT_NAME && cloud == 'ConnectsTo.AzureEnvironment') {
         env = AZ_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE // not a mistake
         cy.whenEnvironmentAbsent(env, () => {
