@@ -19,8 +19,11 @@ describe('Node filter', () => {
   })
 
   it('Can apply a min constraint', () => {
-    cy.get('[data-testid="oc-input-compute-mem_size"] input').invoke('val', '').type('1999')
-    cy.get('[data-testid="oc-input-compute-mem_size"] input').blur()
+    const selector = ['ec2-instance', 'compute'].map(
+      name => `[data-testid="oc-input-${name}-mem_size"] input`
+    ).join(', ')
+    cy.get(selector).invoke('val', '').type('1999')
+    cy.get(selector).blur()
     cy.contains('The field value cannot be less than 2000').should('be.visible')
     cy.get('[data-testid="deploy-button"]').should('be.disabled')
   })
