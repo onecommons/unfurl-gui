@@ -114,6 +114,7 @@ drafts:
   spec: cypress/e2e/deployments/draft*.js
   cond: $TEST == "drafts" || $TEST == "misc"
   description: Try to trigger a state desync with drafts
+  env: DRYRUN=true
   status: v1 exclusive
 
 dryrun_a:
