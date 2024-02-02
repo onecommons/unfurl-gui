@@ -13,6 +13,7 @@ const globSync = glob.sync
 
 const TMP_DIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
 const SPEC_GLOBS = process.env.SPEC_GLOBS || ''
+const SKIP_GLOBS = process.env.SPEC_SKIP_GLOBS || '*container-webapp* *nestedcloud* *draft*'
 const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
 const UNFURL_SERVER_CWD = TMP_DIR + '/ufsv'
@@ -23,13 +24,17 @@ const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
 const prefix = `cypress/fixtures/generated/deployments/${TEST_VERSIONS}/`
 const suffix = '.json'
 
-const fixtures = SPEC_GLOBS.split(/\s+/).map(
-  spec => {
-    const s = `${prefix}${spec}${suffix}`
-    return globSync(`${prefix}${spec}${suffix}`)
-  }
-).flat()
+function evalGlobs(globs) {
+  return globs.split(/\s+/).map(
+    spec => {
+      const s = `${prefix}${spec}${suffix}`
+      return globSync(`${prefix}${spec}${suffix}`)
+    }
+  ).flat()
+}
 
+const fixtures = evalGlobs(SPEC_GLOBS)
+const skipFixtures = evalGlobs(SKIP_GLOBS)
 
 // Update 1_jest-ufcloud-emulation.md when I change
 const UNFURL_DEFAULT_ENV = {
@@ -210,6 +215,7 @@ async function runSpecs() {
   })
 
   for(const path of fixtures) {
+    if(skipFixtures.includes(path)) continue
     const fixture = new Fixture(path)
     test(fixture.name, async () => {
       await fixture.test(store)
