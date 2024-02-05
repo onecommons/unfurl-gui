@@ -15,7 +15,7 @@ function spec() {
       afterRecreateDeployment() {
         cy.contains('a', 'Container').click()
         cy.contains('.formily-element-form-item-label', 'ports').next().within(() => {
-          cy.contains('button', 'Add').click()
+          cy.contains('button:visible', 'Add').click()
           cy.get('input.el-input__inner').type('8080:80')
         })
 
