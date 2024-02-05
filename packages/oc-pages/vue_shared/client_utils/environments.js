@@ -1,12 +1,11 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, tryFetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
-import { unfurlServerUpdate } from './unfurl-server'
+import { unfurlServerUpdate, unfurlServerExport, fetchTypeRepositories } from './unfurl-server'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.js'
-import {unfurlServerExport} from './unfurl-server'
 import {localNormalize} from '../lib/normalize'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
@@ -97,6 +96,31 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 // NOTE try to keep this in sync with commitPreparedMutations
 export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
     const branch = 'main' // TODO don't hardcode main
+
+    const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider]
+
+    if(requiredTemplates.length > 0) {
+        const env = await unfurlServerExport({
+            format: 'environments',
+            branch,
+            projectPath,
+            includeDeployments: true,
+
+            // not passing environment in hopes that this is cached
+            // environment: environment.name
+        })
+
+        const repositories = Object.values(env.DeploymentEnvironment.defaults?.repositories || {})
+
+        const types = await fetchTypeRepositories(repositories)
+
+        requiredTemplates.forEach(tmpl => {
+            const type = Object.values(types).find(t => t.name == tmpl.type || t.name.startsWith(`${tmpl.type}@`))
+            if(type?._sourceinfo) {
+                tmpl._sourceinfo = type._sourceinfo
+            }
+        })
+    }
 
     const patch = [{
         ...environment,
