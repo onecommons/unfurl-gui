@@ -524,7 +524,7 @@ export default {
     <oc-tab title="Properties" @click="currentTabTitle = null"/>
     <oc-tab v-for="title in Object.keys(tabTitles)" :key="title" :title="title" @click="currentTabTitle = title"/>
   </gl-tabs>
-  <FormProvider v-if="displayForm" :form="form">
+  <FormProvider v-if="form" v-show="displayForm" :form="form">
     <FormLayout
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"
