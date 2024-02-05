@@ -329,6 +329,11 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
 
     if(typeof options.afterRecreateDeployment == 'function') options.afterRecreateDeployment()
+    if(typeof options.patchAssertions == 'function') {
+      // not sure why pathame never matches
+      // cy.intercept({method: 'POST', pathname: '**/create-ensemble'}, options.patchAssertions)
+      cy.intercept({method: 'POST', times: 1}, options.patchAssertions)
+    }
 
     // formily oninput bug
     cy.get('input:first').blur({ force: true })

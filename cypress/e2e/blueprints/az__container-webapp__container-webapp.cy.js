@@ -58,12 +58,12 @@ function spec() {
         cy.contains('button', 'Import').click({force: true})
         cy.contains('a', 'Container').click()
         cy.contains('.formily-element-form-item-label', 'environment').next().within(() => {
-          cy.contains('button', 'Add').click()
+          cy.contains('button:visible', 'Add').click()
           cy.getInputOrTextarea('[placeholder="key"]').type('PORT')
           cy.getInputOrTextarea('[placeholder="value"]').type('5000')
         })
         cy.contains('.formily-element-form-item-label', 'ports').next().within(() => {
-          cy.contains('button', 'Add').click()
+          cy.contains('button:visible', 'Add').click()
           cy.get('input.el-input__inner').type('5000:5000')
         })
         cy.contains('Redeploy every time').click()
