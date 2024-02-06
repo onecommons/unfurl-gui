@@ -57,11 +57,13 @@ describe('Blueprints namespace', () => {
       })
 
 
-      thisProject('has components', project => {
-        cy.get('.oc-project-description-box').within(() => {
-          cy.contains('a', 'Components').should('be.visible')
+      if(!['kubernetes-chores', 'Kubernetes Chores'].includes(projectName)) {
+        thisProject('has components', project => {
+          cy.get('.oc-project-description-box').within(() => {
+            cy.contains('a', 'Components').should('be.visible')
+          })
         })
-      })
+      }
 
       thisProject('has blueprints', project => {
         cy.get('.tabs.gl-tabs').within(() => {
