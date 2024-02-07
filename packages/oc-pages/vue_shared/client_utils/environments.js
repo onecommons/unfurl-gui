@@ -1,12 +1,11 @@
 import axios from '~/lib/utils/axios_utils'
 import {postFormDataWithEntries} from './forms'
 import {patchEnv, tryFetchEnvironmentVariables, deleteEnvironmentVariables} from './envvars'
-import { unfurlServerUpdate } from './unfurl-server'
+import { unfurlServerUpdate, unfurlServerExport, fetchTypeRepositories } from './unfurl-server'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.js'
-import {unfurlServerExport} from './unfurl-server'
 import {localNormalize} from '../lib/normalize'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
@@ -97,6 +96,31 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 // NOTE try to keep this in sync with commitPreparedMutations
 export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
     const branch = 'main' // TODO don't hardcode main
+
+    const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider]
+
+    const sourceInfos = {
+        'ConnectsTo.DigitalOceanEnvironment': {
+            "file": "digitalocean/compute.yaml",
+            "url": "https://unfurl.cloud/onecommons/std.git"
+        },
+        'ConnectsTo.AzureEnvironment': {
+            "file": "azure/compute.yaml",
+            "url": "https://unfurl.cloud/onecommons/std.git"
+        },
+        'KubernetesIngressController': {
+            "file": "k8s.py",
+            "url": "https://unfurl.cloud/onecommons/std.git"
+        }
+    }
+
+    // automatically add _sourceinfo for imports when necessary
+    requiredTemplates.forEach(tmpl => {
+        const [_, sourceInfo] = Object.entries(sourceInfos).find(([name]) => name == tmpl.type || name == tmpl.type.split('@').shift()) || []
+        if(sourceInfo) {
+            tmpl._sourceinfo = sourceInfo
+        }
+    })
 
     const patch = [{
         ...environment,
