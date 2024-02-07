@@ -189,6 +189,15 @@ const actions = {
                     }
                 }
 
+                // aggressively add _sourceinfo if immediately available
+                // this will not always be able to get _sourceinfo from types calls
+                if(!resourceTemplate._sourceinfo) {
+                    const type = getters.resolveResourceType(resourceTemplate.type)
+                    if(type?._sourceinfo) {
+                        resourceTemplate._sourceinfo = type._sourceinfo
+                    }
+                }
+
                 localNormalize(resourceTemplate, 'ResourceTemplate', root)
             },
             DeploymentTemplate(deploymentTemplate, root) {
