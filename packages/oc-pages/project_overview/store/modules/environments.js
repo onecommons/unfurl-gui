@@ -674,7 +674,11 @@ const getters = {
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
             const connExtends = [
                 ...(resolver(conn.type)?.extends || []),
-                ...(conn.metadata?.extends || [])
+                ...(conn.metadata?.extends || []),
+                // allow types declaring deprecates to substitute for any type they deprecate
+                ...(resolver(conn.type)?.metadata?.deprecates || [])
+                    .map(deprecated => resolver(deprecated)?.extends || [])
+                    .flat()
             ]
             return connExtends?.includes(constraintType)
         })

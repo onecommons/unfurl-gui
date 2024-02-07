@@ -57,8 +57,19 @@ const transforms = {
             resourceType.requirements = []
         }
 
-        if(resourceType.metadata?.alias) {
+        if(!resourceType.metadata) {
+            resourceType.metadata = {}
+        }
+
+        if(resourceType.metadata.alias) {
             resourceType.implementations = []
+        }
+
+        if(resourceType.metadata.deprecates) {
+            const deprecates = resourceType.metadata.deprecates
+            if(!Array.isArray(deprecates)) {
+                resourceType.metadata.deprecates = [deprecates]
+            }
         }
 
         normalizeDirectives(resourceType.directives)
