@@ -664,11 +664,12 @@ function envFilter(name){
 const getters = {
     getEnvironments: state => state.projectEnvironments,
     lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
-    getValidEnvironmentConnections: (state, getters) => function(environmentName, requirement, _resolver) {
+    getValidEnvironmentConnections: (state, getters, _, rootGetters) => function(environmentName, requirement, _resolver) {
         const resolver = _resolver? _resolver: getters.environmentResolveResourceType.bind(getters, environmentName)
         const filter = envFilter(environmentName)
         const environment = state.projectEnvironments.find(filter)
         const constraintType = constraintTypeFromRequirement(requirement)
+        const availableTypes = rootGetters.availableResourceTypesForRequirement(requirement) // types that would be available to create
         if(!environment) return []
         let result = []
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
@@ -680,7 +681,12 @@ const getters = {
                     .map(deprecated => resolver(deprecated)?.extends || [])
                     .flat()
             ]
-            return connExtends?.includes(constraintType)
+
+            return (
+                // is our create type in extends or would a deprecating type be valid to connect
+                connExtends?.includes(constraintType) ||
+                availableTypes.some(type => type.metadata.deprecates?.includes(conn.type))
+            )
         })
 
         /*
