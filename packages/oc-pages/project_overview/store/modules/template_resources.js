@@ -1093,10 +1093,26 @@ const getters = {
         return function(requirement, all=false) {
             if(!requirement) return []
             const types = all? state.availableResourceTypes: getters.instantiableResourceTypes
-            return types.filter(type => {
-                const isValidImplementation =  type.extends?.includes(requirement.constraint?.resourceType)
+            const validSubclasses = types.filter(type => {
+                const isValidImplementation = [
+                    ...(type.extends || []),
+                    // allow types declaring deprecates to substitute for any type they deprecate
+                    ...(type.metadata.deprecates || [])
+                        .map(deprecated => getters.resolveResourceTypeFromAny(deprecated)?.extends)
+                        .flat()
+                ].includes(requirement.constraint?.resourceType)
                 return isValidImplementation
             })
+
+            // if a type is marked as deprecated by another type among validSubclasses, filter it out
+            let deprecatedTypes = []
+            validSubclasses.forEach(type => {
+                if(type.metadata.deprecates) {
+                    deprecatedTypes = _.union(deprecatedTypes, type.metadata.deprecates)
+                }
+            })
+
+            return validSubclasses.filter(type => !deprecatedTypes.includes(type.name))
         }
     },
 
