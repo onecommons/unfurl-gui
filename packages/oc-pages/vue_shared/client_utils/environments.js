@@ -99,28 +99,28 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
 
     const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider]
 
-    if(requiredTemplates.length > 0) {
-        const env = await unfurlServerExport({
-            format: 'environments',
-            branch,
-            projectPath,
-            includeDeployments: true,
-
-            // not passing environment in hopes that this is cached
-            // environment: environment.name
-        })
-
-        const repositories = Object.values(env.DeploymentEnvironment.defaults?.repositories || {})
-
-        const types = await fetchTypeRepositories(repositories)
-
-        requiredTemplates.forEach(tmpl => {
-            const type = Object.values(types).find(t => t.name == tmpl.type || t.name.startsWith(`${tmpl.type}@`))
-            if(type?._sourceinfo) {
-                tmpl._sourceinfo = type._sourceinfo
-            }
-        })
+    const sourceInfos = {
+        'ConnectsTo.DigitalOceanEnvironment': {
+            "file": "digitalocean/compute.yaml",
+            "url": "https://unfurl.cloud/onecommons/std.git"
+        },
+        'ConnectsTo.AzureEnvironment': {
+            "file": "azure/compute.yaml",
+            "url": "https://unfurl.cloud/onecommons/std.git"
+        },
+        'KubernetesIngressController': {
+            "file": "k8s.py",
+            "url": "https://unfurl.cloud/onecommons/std.git"
+        }
     }
+
+    // automatically add _sourceinfo for imports when necessary
+    requiredTemplates.forEach(tmpl => {
+        const [_, sourceInfo] = Object.entries(sourceInfos).find(([name]) => name == tmpl.type || name == tmpl.type.split('@').shift()) || []
+        if(sourceInfo) {
+            tmpl._sourceinfo = sourceInfo
+        }
+    })
 
     const patch = [{
         ...environment,
