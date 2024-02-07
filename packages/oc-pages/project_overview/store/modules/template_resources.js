@@ -486,7 +486,8 @@ const actions = {
         target.directives = targetType.directives
         target._sourceinfo = targetType._sourceinfo
 
-        target.metadata = {...targetType.metadata, created_by: 'unfurl-gui'}
+        // do not pass type metadata into created templates
+        target.metadata = {created_by: 'unfurl-gui'}
 
         const directAncestor = state.resourceTemplates[dependentName]
 
