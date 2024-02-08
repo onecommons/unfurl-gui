@@ -1086,7 +1086,20 @@ const getters = {
     },
 
     instantiableResourceTypes(state) {
-        return state.availableResourceTypes.filter(rt => rt.visibility != 'hidden')
+        let result = state.availableResourceTypes.filter(rt => rt.visibility != 'hidden')
+
+        // if a type is marked as deprecated by another type among validSubclasses, filter it out
+        let deprecatedTypes = []
+        result.forEach(type => {
+            if(type.metadata.deprecates) {
+                deprecatedTypes = _.union(deprecatedTypes, type.metadata.deprecates)
+            }
+        })
+        if(deprecatedTypes.length > 0) {
+            return result.filter(type => !deprecatedTypes.includes(type.name))
+        }
+        return result
+
     },
 
     availableResourceTypesForRequirement(state, getters) {
@@ -1104,15 +1117,7 @@ const getters = {
                 return isValidImplementation
             })
 
-            // if a type is marked as deprecated by another type among validSubclasses, filter it out
-            let deprecatedTypes = []
-            validSubclasses.forEach(type => {
-                if(type.metadata.deprecates) {
-                    deprecatedTypes = _.union(deprecatedTypes, type.metadata.deprecates)
-                }
-            })
-
-            return validSubclasses.filter(type => !deprecatedTypes.includes(type.name))
+            return validSubclasses
         }
     },
 
