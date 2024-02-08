@@ -11,7 +11,10 @@ function hasMatchingConnection(implementationRequirement, environment, resourceT
 
     return connections.some(conn => {
         const connResourceType = resourceTypeResolver(conn.type)
-        return connResourceType?.extends?.includes(implementationRequirement)
+        return (
+            connResourceType?.extends?.includes(implementationRequirement) ||
+            connResourceType?.metadata?.deprecates?.includes(implementationRequirement)
+        )
     })
 }
 

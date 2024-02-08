@@ -66,7 +66,7 @@ const transforms = {
         }
 
         /*
-             * see also getValidEnvironmentConnections and availableResourceTypesForRequirement
+             * see also getValidEnvironmentConnections and instantiableResourceTypes
              * if a resource type specifies deprecates, its extends will be searched along with the extends of every type that it 'deprecates'
              * if a resource type is marked as deprecated by another type, it cannot be 'created' if its deprecating type is an option to create
              * if a resource type is marked as deprecated by another type, it can be 'connected' when its deprecating type would be connectable
@@ -78,6 +78,8 @@ const transforms = {
                - Route53DNSZone@unfurl.cloud/onecommons/unfurl-types:dns-services cannot be created when Route53DNSZone is a valid option to create
                - Route53DNSZone can always be connected when Route53DNSZone@unfurl.cloud/onecommons/unfurl-types:dns-services is also a valid option to connect
                - inversely, Route53DNSZone@unfurl.cloud/onecommons/unfurl-types:dns-services can always be connected when Route53DNSZone is also a valid option to connect
+
+             * if a provider type deprecates another provider type, the "new" provider type can always be used to fulfill implementation_requirements
         */
         if(resourceType.metadata.deprecates) {
             const deprecates = resourceType.metadata.deprecates
