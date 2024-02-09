@@ -131,6 +131,31 @@ beforeEach(() => {
     })
   }
 
+  cy.document().then(doc => {
+    const csrf = doc.querySelector('meta[name="csrf-token"]').content
+
+    cy.request({
+      method: 'PATCH',
+      url: `/${DEFAULT_NAMESPACE}/dashboard/-/variables`,
+      failOnStatusCode: false,
+      headers: {
+        'X-CSRF-Token': csrf
+      },
+      body: {
+        "variables_attributes": [
+          {
+            "key": "UNFURL_SKIP_SAVE",
+            "secret_value": "never",
+            "environment_scope": "*",
+            "variable_type": "env_var",
+            "masked": false,
+            "protected": false
+          }
+        ]
+      }
+    })
+  })
+
   cy.window().then(win => {
     if(DEPLOY_IMAGE) {
       win.sessionStorage['deploy-image'] = DEPLOY_IMAGE
