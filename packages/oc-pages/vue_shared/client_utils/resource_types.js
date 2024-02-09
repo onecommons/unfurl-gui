@@ -13,7 +13,8 @@ function hasMatchingConnection(implementationRequirement, environment, resourceT
         const connResourceType = resourceTypeResolver(conn.type)
         return (
             connResourceType?.extends?.includes(implementationRequirement) ||
-            connResourceType?.metadata?.deprecates?.includes(implementationRequirement)
+            connResourceType?.metadata?.deprecates?.includes(implementationRequirement) ||
+            resourceTypeResolver(implementationRequirement)?.metadata?.deprecates?.includes(connResourceType.name)
         )
     })
 }

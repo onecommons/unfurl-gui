@@ -79,7 +79,7 @@ const transforms = {
                - Route53DNSZone can always be connected when Route53DNSZone@unfurl.cloud/onecommons/unfurl-types:dns-services is also a valid option to connect
                - inversely, Route53DNSZone@unfurl.cloud/onecommons/unfurl-types:dns-services can always be connected when Route53DNSZone is also a valid option to connect
 
-             * if a provider type deprecates another provider type, the "new" provider type can always be used to fulfill implementation_requirements
+             * if a provider type deprecates another provider type, either provider type can always be used to fulfill implementation_requirements
         */
         if(resourceType.metadata.deprecates) {
             const deprecates = resourceType.metadata.deprecates
