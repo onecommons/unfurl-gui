@@ -91,6 +91,10 @@ const actions = {
 
             for(const template of Object.values(deploymentObj.ResourceTemplate)) {
                 const type = sourceDeploymentDict.ResourceType[template.type]
+                if(template.directives?.includes('default')) {
+                    delete deploymentObj.ResourceTemplate[template.name]
+                    continue
+                }
                 if(type._sourceinfo) {
                     template._sourceinfo = type._sourceinfo // not bothering to clone here
                 }
