@@ -766,7 +766,7 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
 function readCommittedNames(accumulator) {
     const committedNames = []
     for(const typename in accumulator) {
-        if(['ResourceTemplate', 'ApplicationBlueprint', 'DeploymentTemplate'].includes(typename)) {
+        if(['ResourceTemplate', 'ApplicationBlueprint', 'DeploymentTemplate', 'DeploymentEnvironment'].includes(typename)) {
             for(const name in accumulator[typename]) {
                 committedNames.push(`${typename}.${name}`)
             }
