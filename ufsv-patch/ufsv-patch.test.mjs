@@ -31,10 +31,11 @@ const fixtures = SPEC_GLOBS.split(/\s+/).map(
 ).flat()
 
 
-// Update 1_jest-ufcloud-emulation.md when I change
+// Update .readme/2_jest-ufcloud-emulation.md when changed
 const UNFURL_DEFAULT_ENV = {
   UNFURL_LOGGING: 'trace',
   UNFURL_HOME: '',
+  UNFURL_SKIP_SAVE: 'never',
 }
 
 function setupCmd() {
@@ -90,7 +91,7 @@ function spawnUnfurlServer(testName) {
 function spawnDryrunSync(fixture) {
   let stdio = 'inherit'
 
-  if(process.env.CI) {
+  if(process.env.CI || process.env.SAVE_DRYRUN_LOGS) {
     const testName = fixture.name.split('/').pop()
     const logName = testToDryrunLogPath(testName)
     const outfile = fs.openSync(logName, 'w')
