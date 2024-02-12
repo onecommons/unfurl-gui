@@ -388,6 +388,7 @@ const actions = {
                 ...newResource,
                 template: !isDeploymentTemplate && resolvedDependencyMatch,
                 id,
+                readonly: newResource.directives?.includes('default'),
                 dependentRequirement,
                 dependentName,
                 _valid
@@ -574,12 +575,12 @@ const actions = {
         const {environmentName} = state.lastFetchedFrom;
         const deploymentTemplateName = state.lastFetchedFrom.templateSlug
         let resourceTemplateNode
-        const existsLocally = state.resourceTemplates[externalResource || resource?.name]
+        const localCopy = getters.dtResolveResourceTemplate(externalResource || resource?.name)
 
         if(externalResource) {
-            const resourceTemplate = rootGetters.lookupConnection(environmentName, externalResource);
+            const resourceTemplate = localCopy || rootGetters.lookupConnection(environmentName, externalResource);
 
-            const name = shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
+            const name = localCopy || shouldConnectWithoutCopy()? externalResource: `__${externalResource}`
 
             if(resourceTemplate.imported) {
                 await dispatch('fetchDeploymentIfNeeded', resourceTemplate)
@@ -593,26 +594,30 @@ const actions = {
                 dependentRequirement,
                 deploymentTemplateName,
                 readonly: true,
-                _external: !existsLocally,
+                _external: !localCopy,
                 __typename: 'ResourceTemplate',
             }
         } else if(resource) {
-            resourceTemplateNode = {...resource, _external: !existsLocally}
+            resourceTemplateNode = {...resource, _external: !localCopy}
         } else {
             throw new Error('connectNodeResource must be called with either "resource" or "externalResource" set')
         }
 
 
         // node might have already been created
-        if(! existsLocally) {
+        if(! localCopy) {
             if(!shouldConnectWithoutCopy()) {
                 commit(
                     'pushPreparedMutation',
                     () => [{typename: 'ResourceTemplate', patch: resourceTemplateNode, target: resourceTemplateNode.name}]
                 )
             }
+        }
+
+        if(!getters.getCardsStacked.find(card => card.name == resourceTemplate.name)) {
             commit('createTemplateResource', resourceTemplateNode)
         }
+
         commit('pushPreparedMutation', appendResourceTemplateInDependent({templateName: resourceTemplateNode.name, dependentName, dependentRequirement, deploymentTemplateName}))
 
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate: resourceTemplateNode, fieldsToReplace});
@@ -1107,7 +1112,7 @@ const getters = {
         return function(requirement, all=false) {
             if(!requirement) return []
             const types = all? state.availableResourceTypes: getters.instantiableResourceTypes
-            const validSubclasses = types.filter(type => {
+            let result = types.filter(type => {
                 const isValidImplementation = [
                     ...(type.extends || []),
                     // allow types declaring deprecates to substitute for any type they deprecate
@@ -1118,7 +1123,21 @@ const getters = {
                 return isValidImplementation
             })
 
-            return validSubclasses
+
+            // TODO dry this up
+            if(all) {
+                let deprecatedTypes = []
+                result.forEach(type => {
+                    if(type.metadata.deprecates) {
+                        deprecatedTypes = _.union(deprecatedTypes, type.metadata.deprecates)
+                    }
+                })
+                if(deprecatedTypes.length > 0) {
+                    return result.filter(type => !deprecatedTypes.includes(type.name))
+                }
+            }
+
+            return result
         }
     },
 
@@ -1347,7 +1366,7 @@ const getters = {
         }
     },
 
-    getValidConnections(state, getters, _, rootGetters) {
+    getValidConnections(state, getters, _a, rootGetters) {
         return function(cardName, requirement) {
             const card = getters.dtResolveResourceTemplate(cardName)
             const constraintType = constraintTypeFromRequirement(requirement)
@@ -1363,7 +1382,16 @@ const getters = {
                 result.push(...rootGetters.getValidEnvironmentConnections(environmentName, requirement, getters.resolveResourceTypeFromAny))
             }
 
-            result.push(...Object.values(state.resourceTemplates).filter(rt => {
+
+            const allTemplates = _.union(
+                Object.keys(state.resourceTemplates),
+                rootGetters.topLevelTemplates,
+                rootGetters.localResourceTemplates(
+                    getters.getDeploymentTemplate?.source || getters.getDeploymentTemplate?.name
+                ),
+            ).map(getters.dtResolveResourceTemplate)
+
+            result.push(...allTemplates.filter(rt => {
                 const type = getters.resolveResourceTypeFromAny(rt.type)
                 if(! type?.extends?.includes(constraintType)) return
 
@@ -1374,6 +1402,23 @@ const getters = {
                     return true
                 }
             }))
+
+            // TODO dry this up
+
+            let deprecatedTypes = []
+
+            for(const template of result) {
+                const templateType = getters.resolveResourceTypeFromAny(template.type)
+                let deprecates
+                if(deprecates = templateType?.metadata?.deprecates) {
+                    deprecatedTypes = _.union(deprecates, deprecatedTypes)
+                }
+            }
+
+
+            if(deprecatedTypes.length) {
+                return result.filter(templ => !deprecatedTypes.includes(templ.type))
+            }
 
             return result
         }

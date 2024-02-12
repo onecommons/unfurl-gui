@@ -501,6 +501,18 @@ const getters = {
             } catch(e) {return null}
         }
     ),
+    localResourceTemplates(state) {
+        return deploymentTemplate => {
+            try {
+                return Object.values(state.DeploymentTemplate[deploymentTemplate].ResourceTemplate)
+            } catch(e) {
+                return []
+            }
+        }
+    },
+    topLevelTemplates(state) {
+        return Object.values(state.ResourceTemplate)
+    },
     resolveResource(state) {
         return name => {
             if(!name) return

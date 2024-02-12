@@ -677,7 +677,7 @@ const getters = {
         const filter = envFilter(environmentName)
         const environment = state.projectEnvironments.find(filter)
         const constraintType = constraintTypeFromRequirement(requirement)
-        const availableTypes = rootGetters.availableResourceTypesForRequirement(requirement) // types that would be available to create
+        const availableTypes = rootGetters.availableResourceTypesForRequirement(requirement, true) // types that would be available to create
         if(!environment) return []
         let result = []
         if(environment.instances) result = Object.values(environment.instances).filter(conn => {
