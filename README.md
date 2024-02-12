@@ -52,6 +52,8 @@ All Unfurl environment variables pass through to `unfurl serve` and `unfurl depl
 
 **OC_NAMESPACE:** Namespace to run tests against; in other words - where the blueprints are located. (default: onecommons/blueprints)
 
+**SAVE_DRYRUN_LOGS:**  Write dry run logs to disk.
+
 
 ## Example invocation
 ```bash
@@ -63,6 +65,7 @@ env TF_PLUGIN_CACHE_DIR=/tmp/plugincache/ TF_DATA_DIR=/tmp/.terraform TF_PLUGIN_
 const UNFURL_DEFAULT_ENV = {
   UNFURL_LOGGING: 'trace',
   UNFURL_HOME: '',
+  UNFURL_SKIP_SAVE: 'never',
 }
 ```
 
@@ -70,8 +73,8 @@ const UNFURL_DEFAULT_ENV = {
 - `/tmp/ufsv`: The location of the test dashboard.  Will be used as the working directory for `unfurl serve` and `unfurl deploy`.
 - `/tmp/repos`: The location of `--clone-root` for `unfurl serve`.
 - `/tmp/ufartifacts`: All deployments will be moved here between test runs, so as to not wipe debug information when the next spec is run.  All `ensemble.yaml` files and artifacts will be present here after the suite has finished running.
-- `/tmp/${testName}-ufsv.log`: Pattern for where `unfurl serve` logs will be written.
-- `/tmp/${testName}-ufdryrun.log`: Pattern for where `unfurl deploy` logs will be written when in CI (otherwise stdio).
+- `/tmp/${testName}-ufsv.log`: Pattern for where `unfurl serve` logs will be written. Tip: use `less -r` to view.
+- `/tmp/${testName}-ufdryrun.log`: Pattern for where `unfurl deploy` logs will be written when in CI (otherwise stdio). Tip: use `less -r` to view.
 
 
 # Triggering a test pipeline
