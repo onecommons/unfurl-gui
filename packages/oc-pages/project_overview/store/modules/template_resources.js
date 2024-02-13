@@ -614,7 +614,7 @@ const actions = {
             }
         }
 
-        if(!getters.getCardsStacked.find(card => card.name == resourceTemplate.name)) {
+        if(!getters.getCardsStacked.find(card => card.name == resourceTemplateNode.name)) {
             commit('createTemplateResource', resourceTemplateNode)
         }
 
