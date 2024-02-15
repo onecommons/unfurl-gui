@@ -1147,12 +1147,11 @@ const getters = {
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
 
             // generally prefer environmentResourceType
-            const candidates = [environmentResourceType, dictionaryResourceType]
+            const candidates = [environmentResourceType, dictionaryResourceType].filter(type => !!type)
 
 
             // immediately return a type if it is 'substitute' and not incomplete
             for(const type of candidates) {
-                if(!type) continue
                 if(type._sourceinfo?.incomplete) continue
                 if(type.directives?.includes('substitute') || type.metadata?.alias) return type
             }
