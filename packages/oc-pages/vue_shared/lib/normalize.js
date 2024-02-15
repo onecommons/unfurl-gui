@@ -144,7 +144,7 @@ const transforms = {
         })
     },
 
-    ResourceTemplate(resourceTemplate) {
+    ResourceTemplate(resourceTemplate, root) {
         if(!resourceTemplate.title) resourceTemplate.title = resourceTemplate.name
         resourceTemplate.__typename = 'ResourceTemplate'
 
@@ -167,6 +167,16 @@ const transforms = {
         resourceTemplate.dependencies = resourceTemplate.dependencies.filter(dep => !(dep.constraint.visibility == 'hidden' && !dep.match))
 
         normalizeDirectives(resourceTemplate.directives)
+
+        if(root && !resourceTemplate._sourceinfo) {
+            try {
+                const type = root.ResourceType[resourceTemplate.type]
+                resourceTemplate._sourceinfo = type._sourceinfo
+            } catch (e) {
+                console.error(`Couldn't attach sourceinfo for ${resourceTemplate.name}`)
+                console.error(e)
+            }
+        }
 
         const utilization = resourceTemplate.directives?.includes('substitute')? 0: 1
         for(const dep of resourceTemplate.dependencies) {
