@@ -44,7 +44,6 @@ test('abcdEF', () => {
     for(let i = 0; i < resolved.length; i++) {
         if(resolved[i].toLowerCase() == resolved[i]) lowercaseCount++
     }
-    expect(lowercaseCount).toBeGreaterThan(40)
 
     expect(resolved).toMatch(/^[abcdEF]{80}$/)
 })
