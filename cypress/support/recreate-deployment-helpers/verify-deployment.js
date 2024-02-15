@@ -3,16 +3,16 @@ const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const MOCK_DEPLOY = Cypress.env('MOCK_DEPLOY') || Cypress.env('UNFURL_MOCK_DEPLOY')
 
 const TIMEOUT_SHORT = 40
-const INTERVAL_SHORT = 4 
+const INTERVAL_SHORT = 4
 const TIMEOUT_LONG = 80
 const INTERVAL_LONG = 8
 
 function _dt(deployment) {
-  return Object.values(deployment.DeploymentTemplate)[0] 
+  return Object.values(deployment.DeploymentTemplate)[0]
 }
 
 function _ab(deployment) {
-  return Object.values(deployment.ApplicationBlueprint)[0] 
+  return Object.values(deployment.ApplicationBlueprint)[0]
 }
 
 function _primary(deployment) {
@@ -21,6 +21,7 @@ function _primary(deployment) {
 
 const verificationRoutines = {
   minecraft({deployment, env, dnsZone, sub, cb}) {
+    cy.contains('a', _dt(deployment).title).click()
     cy.withStore().its('getters.getCardsStacked.length').should('be.gt', 0)
     cy.withStore().then($store => {
       const compute = $store.getters.getCardsStacked[0]
@@ -66,7 +67,7 @@ const verificationRoutines = {
     const password = env + '1'
     const subdomain = sub || primary.properties.find(prop => prop.name == 'subdomain').value
     const command = `./scripts/src/blueprint-validation/baserow.js --base-url https://${subdomain}.${dnsZone} --register-email ${phoneyUserEmail} --register-password ${password}`
-    cb({command, timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG}) 
+    cb({command, timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG})
   },
 
   ghost({deployment, env, dnsZone, sub, cb}) {
@@ -87,7 +88,7 @@ const verificationRoutines = {
     const primary = _primary(deployment)
     const subdomain = sub || primary.properties.find(prop => prop.name == 'subdomain').value
 
-    const identifier = Date.now().toString(36) 
+    const identifier = Date.now().toString(36)
     const command = `./scripts/src/blueprint-validation/container-webapp.js --live-url https://${subdomain}.${dnsZone} --repository ${repository} --identifier ${identifier}`
     cb({command, timeout: BASE_TIMEOUT * TIMEOUT_LONG, interval: BASE_TIMEOUT * INTERVAL_LONG})
   },
@@ -107,7 +108,7 @@ const verificationRoutines = {
 function verifyDeployment({deployment, env, dnsZone, sub, expectExisting, verificationRoutine}, verificationArgs) {
   console.log(deployment)
   if(MOCK_DEPLOY) return
-  const ab = Object.values(deployment.ApplicationBlueprint)[0] 
+  const ab = Object.values(deployment.ApplicationBlueprint)[0]
   const routine = verificationRoutines[verificationRoutine || ab.name] || verificationRoutines['default']
 
   function cb({timeout, interval, command}) {
