@@ -111,6 +111,11 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
         'KubernetesIngressController': {
             "file": "k8s.py",
             "url": "https://unfurl.cloud/onecommons/std.git"
+        },
+        "unfurl.relationships.ConnectsTo.K8sCluster": {
+            "file": "tosca_plugins/k8s.yaml",
+            "repository": "unfurl",
+            "url": "github.com/onecommons/unfurl"
         }
     }
 
