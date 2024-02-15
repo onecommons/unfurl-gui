@@ -1146,13 +1146,20 @@ const getters = {
             const environmentResourceType = rootGetters.environmentResolveResourceType(getters.getCurrentEnvironmentName, typeName)
             const dictionaryResourceType = rootGetters.resolveResourceType(typeName)
 
-            for(const type of [environmentResourceType, dictionaryResourceType]) {
+            // generally prefer environmentResourceType
+            const candidates = [environmentResourceType, dictionaryResourceType]
+
+
+            // immediately return a type if it is 'substitute' and not incomplete
+            for(const type of candidates) {
                 if(!type) continue
                 if(type._sourceinfo?.incomplete) continue
                 if(type.directives?.includes('substitute') || type.metadata?.alias) return type
             }
 
-            return (environmentResourceType || dictionaryResourceType) ?? null
+            // prefer complete
+            let result = candidates.find(type => !type._sourceinfo?.incomplete)
+            return (result || environmentResourceType || dictionaryResourceType) ?? null
         }
     },
 
