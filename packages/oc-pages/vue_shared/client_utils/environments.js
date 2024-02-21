@@ -97,7 +97,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
     const branch = 'main' // TODO don't hardcode main
 
-    const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider]
+    const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider].filter(tmpl => !!tmpl)
 
     const sourceInfos = {
         'ConnectsTo.DigitalOceanEnvironment': {
@@ -449,7 +449,7 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
     return projects.map(p => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
 }
 
-export async function fetchDashboardProviders(projectPath) {
+export const fetchDashboardProviders = _.memoize(async function (projectPath) {
     const query = gql`
         query fetchDashboardProviders ($projectPath: ID!) {
           project(fullPath: $projectPath) {
@@ -473,4 +473,4 @@ export async function fetchDashboardProviders(projectPath) {
     if(errors) { throw new Error('@fetchDashboardProviders: ' + JSON.stringify(errors, null, 2)) }
 
     return data?.project ? new DashboardProviders({project: data.project}): null
-}
+})

@@ -3,7 +3,7 @@ import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
 import _ from 'lodash'
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util'
-import {postGitlabEnvironmentForm, initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
+import {postGitlabEnvironmentForm, initUnfurlEnvironment, declareAvailableProviders} from 'oc_vue_shared/client_utils/environments'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider, GlFormCheckbox} from '@gitlab/ui'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/components/oc'
@@ -138,7 +138,7 @@ export default {
         ...mapMutations(['createError']),
 
         async createEnvironmentWithoutCluster(instances={}) {
-            const primary_provider = this.selectedCloudProvider != LOCAL_DEV ? {
+            const primary_provider = this.selectedCloudProvider == 'Kubernetes' ? {
                 name: 'primary_provider',
                 type: this.currentType,
                 __typename: 'ResourceTemplate'
@@ -169,6 +169,13 @@ export default {
 
             await postGitlabEnvironmentForm();
 
+            if(this.selectedCloudProvider != LOCAL_DEV) {
+                await declareAvailableProviders(
+                    this.getHomeProjectPath,
+                    slugify(this.environmentName),
+                    [this.currentType]
+                )
+            }
         },
 
         async beginEnvironmentCreation(_redirectTarget) {
