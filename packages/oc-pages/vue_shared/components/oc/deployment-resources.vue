@@ -108,7 +108,7 @@ export default {
             'getCardsInTopology',
             'getDeploymentTemplate',
             'getDependencies',
-            'hasPreparedMutations',
+            'safeToNavigateAway',
             'requirementMatchIsValid',
             'resolveRequirementMatchTitle',
             'cardIsValid',
@@ -323,7 +323,7 @@ export default {
         // NOTE this doesn't work without https
         window.addEventListener('beforeunload', this.unloadHandler);
         this.setRouterHook((to, from, next) => {
-            if(this.hasPreparedMutations) {
+            if(!this.safeToNavigateAway) {
                 const result = confirm(__('You have unsaved changes.  Press OK to continue'));
                 if(!result) { next(false); return; } // never call next twice
                 this.clearPreparedMutations();
@@ -375,7 +375,7 @@ export default {
         },
 
         unloadHandler(e) {
-            if(this.hasPreparedMutations) {
+            if(!this.safeToNavigateAway) {
                 // NOTE most users will not see this message because browsers can override it
                 e.returnValue = "You have unsaved changes.";
             }

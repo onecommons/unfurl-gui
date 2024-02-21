@@ -103,7 +103,7 @@ export default {
             <environment-cell :environment="scope.item.context.environment"/>
         </template>
         <template #status$all="scope">
-            <environment-status v-if="scope.item._depth == 0" :scope="scope"/>
+            <environment-status v-if="scope.item._depth == 0" :environment="scope.item.context.environment"/>
         </template>
 
     </table-component>

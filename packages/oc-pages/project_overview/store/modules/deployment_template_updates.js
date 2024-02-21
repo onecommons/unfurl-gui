@@ -777,6 +777,7 @@ function readCommittedNames(accumulator) {
 
 const state = () => ({
     preparedMutations: [],
+    effectiveFirstMutation: 0,
     accumulator: {},
     patches: {},
     committedNames: [],
@@ -792,7 +793,7 @@ const getters = {
     getPreparedMutations(state) { return state.preparedMutations },
     getAccumulator(state) { return state.accumulator },
     getPatches(state) { return state.patches },
-    hasPreparedMutations(state) { return state.preparedMutations.length > (state.effectiveFirstMutation || 0) },
+    hasPreparedMutations(state) { return state.preparedMutations.length > state.effectiveFirstMutation },
     safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
     isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
     getCommitBranch(state) { return state.branch || 'main'}
@@ -832,7 +833,7 @@ const mutations = {
         state.updateType = updateType
     },
     pushPreparedMutation(state, preparedMutation) {
-        state.preparedMutations.push(preparedMutation)
+        state.preparedMutations = [...state.preparedMutations, preparedMutation]
     },
     applyMutations(state, o) {
         function applyPatchDefinition(patchDefinition) {

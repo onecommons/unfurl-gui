@@ -9,7 +9,7 @@ import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
 import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util'
-import {deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
+import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { redirectTo } from '~/lib/utils/url_utility';
 
@@ -36,7 +36,7 @@ export default {
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0, fetchedConnectable: false, fetchedProviders: false}
+        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false}
     },
     computed: {
         ...mapGetters([
@@ -91,11 +91,24 @@ export default {
             // NOTE: hardcoded names
             return cloudProviderFriendlyName(this.primaryProvider?._localTypeName) || __('Generic')
         },
+        cardsAreValid() {
+            for(const card of this.getCardsStacked) {
+                if(!this.cardIsValid(card)) return false
+            }
+
+            if(this.primaryProvider && !this.cardIsValid(this.primaryProvider)) {
+                return false
+            }
+
+            return true
+        },
         saveStatus() {
             if(!this.userCanEdit || this.showingPublicCloudTab) return 'hidden'
-            for(const card of this.getCardsStacked) {
-                if(!this.cardIsValid(card)) return 'disabled'
+
+            if(!this.cardsAreValid) {
+                return 'disabled'
             }
+
             if(!this.hasPreparedMutations) {
                 return 'disabled'
             }
@@ -119,7 +132,12 @@ export default {
                 else { delete query.provider }
 
                 if(! _.isEqual(query, this.$route.query)) {
-                    this.$router.push({...this.$route, query})
+                    const loc = {...this.$route, query}
+                    if(this.isNewProvider) { // try to prevent hijacking back button
+                        this.$router.replace(loc)
+                    } else {
+                        this.$router.push(loc)
+                    }
                 }
             }
         },
@@ -169,11 +187,12 @@ export default {
             'setAvailableResourceTypes',
             'useBaseState',
             'pushPreparedMutation',
-            'setRouterHook',
             'clearPreparedMutations',
             'resetTemplateResourceState',
             'setUpdateType',
-            'setUpdateObjectProjectPath'
+            'setDeploymentTemplate',
+            'setUpdateObjectProjectPath',
+            'clientDisregardUncommitted'
         ]),
         onExternalAdded({selection, title}) {
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
@@ -191,16 +210,19 @@ export default {
             )
 
         },
-        async onProviderAdded({selection, title}) {
-            await this.freshState()
-            this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
+        async onProviderAdded({selection, name, title}, fresh=false, clientDisregardUncommitted=false) {
+            if(!fresh) await this.freshState()
+            await this.createNodeResource({selection, name: name || slugify(title), title, isEnvironmentInstance: true})
             if(selection._localName == lookupCloudProviderAlias('k8s')) {
-                this.createNodeResource({
+                await this.createNodeResource({
                     selection: this.resolveResourceTypeFromAny('KubernetesIngressController'),
                     title: "KubernetesIngressController",
                     name: "k8sDefaultIngressController",
                 })
             }
+
+            if(clientDisregardUncommitted) this.clientDisregardUncommitted()
+
             this.$refs.deploymentResources.cleanModalResource()
 
             this.scrollToProvider(slugify(title))
@@ -276,8 +298,6 @@ export default {
         lookupCloudProviderAlias,
 
         async freshState() {
-            this.setRouterHook()
-
             this.clearPreparedMutations()
 
             const environmentName = this.environmentName
@@ -310,12 +330,30 @@ export default {
                 context: 'environment'
             })
 
+            if(connections.length == 0) {
+                const providers = (await fetchDashboardProviders(this.getHomeProjectPath)).providersByEnvironment[environmentName]
+                if(providers?.length) {
+                    // cheat to force agreement on primary card
+                    this.setDeploymentTemplate({primary: 'primary_provider'})
+                    this.isNewProvider = true
+                    await this.fetchProviders()
+                    await this.onProviderAdded({
+                        title: 'Primary Provider',
+                        name: 'primary_provider',
+                        selection: this.resolveResourceTypeFromAny(providers[0]),
+                    }, true, true)
+                }
+            }
+
             this.setAvailableResourceTypes(this.environmentLookupDiscoverable(environment))
         },
 
         onHide(e) {
             if(this.showingProviderModal) {
                 e.preventDefault()
+                if(this.isNewProvider) {
+                    return
+                }
             }
             this.showingProviderModal = false
         },
@@ -546,10 +584,9 @@ export default {
         </deployment-resources>
 
         <!-- v-model doesn't work on this stupid component -->
-        <gl-modal :visible="showingProviderModal" @hide="onHide" modalId="providerModal" ref="providerModal" size="lg">
-            <template #modal-footer><div></div></template>
+        <gl-modal :visible="showingProviderModal" @hide="onHide" modalId="providerModal" ref="providerModal" size="lg" :hide-header="isNewProvider" :hide-footer="true">
 
-            <deployment-resources style="margin-bottom: -3em;" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
+            <deployment-resources :class="{'mt-2': isNewProvider}" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
 
 
         </gl-modal>
