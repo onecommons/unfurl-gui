@@ -241,24 +241,30 @@ export function importsAreEqual(a, b) {
 export async function fetchTypeRepositories(repositories, params) {
     const typesDictionaries = await (Promise.all(repositories.map(
         (repo, i) => unfurlServerGetTypes(repoToExportParams(repo), params, i)
-            .then(typesResponse => typesResponse.ResourceType)
     )))
 
     if(!typesDictionaries.length) return {}
     // hopefully this won't hurt too badly if fetch results are small
 
-    const result = {}
+    const types = {}
+    const categories = {}
 
     typesDictionaries.forEach(td => {
-        Object.entries(td).forEach(([key, value]) => {
-            if(result[key] && value._sourceinfo?.incomplete) {
+        Object.entries(td.ResourceType).forEach(([key, value]) => {
+            if(types[key] && value._sourceinfo?.incomplete) {
                 return
             }
 
-            result[key] = value
+            types[key] = value
+        })
+
+        Object.entries(td.Overview?.categories || {}).forEach(([key, value]) => {
+            categories[key] = value
         })
     })
-    return _.cloneDeep(result)
+
+
+    return _.cloneDeep({types, categories})
     // return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
 }
 

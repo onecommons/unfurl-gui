@@ -354,7 +354,7 @@ const actions = {
     async blueprintFetchTypesWithParams({state, getters, commit, dispatch}, {params}) {
         let types
         try {
-            types = await fetchTypeRepositories(getters.blueprintRepositories, params)
+            types = (await fetchTypeRepositories(getters.blueprintRepositories, params)).types
         } catch(e) {
             const context = {
                 repositories: getters.blueprintRepositories,
