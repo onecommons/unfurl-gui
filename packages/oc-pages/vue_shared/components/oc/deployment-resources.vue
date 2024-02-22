@@ -119,7 +119,8 @@ export default {
             'getApplicationBlueprint',
             'instantiableResourceTypes',
             'resolveResourceTypeFromAny',
-            'getCurrentEnvironment'
+            'getCurrentEnvironment',
+            'getTypeCategory'
         ]),
 
         pipelinesPath(){
@@ -205,7 +206,12 @@ export default {
         mappedAvailableTypes() {
             const mapping = {}
             for(const type of this.instantiableResourceTypes) {
-                const badge = type.badge || 'Other'
+                // hack to eliminate huge number of apps when cloudmap isn't aligned with dashboard
+                if(type.extends.some(ext => ext.startsWith('App@') || ext.startsWith('unfurl.nodes.App@'))) continue
+
+                const badge = type.metadata?.category || type.extends.map(this.resolveResourceTypeFromAny).find(ext => ext?.metadata?.category)?.metadata?.category || 'Other'
+
+                if(badge == 'app') continue
                 const children = mapping[badge] || []
                 children.push(type)
                 mapping[badge] = children
@@ -214,19 +220,7 @@ export default {
             return mapping
         },
 
-        baseTypeExtends() {
-            const result = {...this.mappedAvailableTypes}
-            Object.keys(result).forEach(key => {
-                try {
-                    result[key] = this.mappedAvailableTypes[key][0].extends[1]
-                } catch(e) {
-                    delete result[key]
-                }
-            })
-            return result
-        },
-
-        baseTypes() {
+        categories() {
             // ensure Other is last
             return _.uniq(['Other', ...Object.keys(this.mappedAvailableTypes || {})]).reverse()
         },
@@ -536,15 +530,11 @@ export default {
             this.launchModal('oc-delete-node', 500);
 
         },
-        testId(baseType) {
-            let t = this.baseTypeExtends[baseType]
-            if(t) {
-                t = t.split('@')[0]
-            } else {
-                t = 'other'
-            }
-
-            return 'external-resource-tab-' + t
+        testId(category) {
+            return 'external-resource-tab-' + category
+        },
+        categoryTitle(category) {
+            return this.getTypeCategory(category)?.title || 'Other'
         }
     },
 };
@@ -649,13 +639,13 @@ export default {
             <div style="min-height: 500px">
                 <gl-tabs>
                     <oc-tab
-                        v-for="baseType in baseTypes"
-                        :title="baseType"
-                        :key="baseType"
-                        :title-testid="testId(baseType)"
-                        :title-count="mappedAvailableTypes[baseType] && mappedAvailableTypes[baseType].length"
+                        v-for="category in categories"
+                        :title="categoryTitle(category)"
+                        :key="category"
+                        :title-testid="testId(category)"
+                        :title-count="mappedAvailableTypes[category] && mappedAvailableTypes[category].length"
                     >
-                        <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[baseType]"/>
+                        <oc-list-resource v-model="topLevelSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="mappedAvailableTypes[category]"/>
                     </oc-tab>
 
                 </gl-tabs>

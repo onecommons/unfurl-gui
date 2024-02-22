@@ -20,6 +20,7 @@ import Vue from 'vue'
 
 const state = () => ({
     projectEnvironments: [],
+    resourceTypeCategories: {},
     resourceTypeDictionaries: {},
     variablesByEnvironment: {},
     saveEnvironmentHooks: [],
@@ -140,8 +141,11 @@ const mutations = {
 
     addTempRepository(state, repo) {
         state.tempRepositories.push(repo)
-    }
+    },
 
+    setResourceTypeCategories(state, categories) {
+        state.resourceTypeCategories = categories
+    }
 };
 
 const actions = {
@@ -614,10 +618,14 @@ const actions = {
         let types
 
         try {
-            types = await fetchTypeRepositories(
+            const result = await fetchTypeRepositories(
                 currentEnvironmentRepositories,
                 params
             )
+            types = result.types
+
+            commit('setResourceTypeCategories', {...state.resourceTypeCategories, ...result.categories})
+
         } catch(e) {
             console.error(e)
             const context = {
@@ -910,6 +918,12 @@ const getters = {
 
     allDeploymentPaths(state) {
         return Object.freeze(state.deploymentPaths)
+    },
+
+    getTypeCategory(state) {
+        return function(category) {
+            return state.resourceTypeCategories[category]
+        }
     }
 };
 
