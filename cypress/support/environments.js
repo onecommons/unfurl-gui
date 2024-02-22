@@ -82,7 +82,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
-  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
+  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
   cy.get('[data-testid="resource-selection-DigitalOceanDNSZone"]').click()
 
   const digitalOceanName = slugify(DIGITALOCEAN_DNS_TYPE)
@@ -112,7 +112,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
 function uncheckedCreateMail() {
   if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
   cy.contains('button', 'Add External Resource').click()
-  cy.get('[data-testid="external-resource-tab-SMTPServer"]').click()
+  cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
   cy.get('[data-testid="resource-selection-GenericSMTPServer"]').click()
 
   // todo: use a test id for this input, and use different name
@@ -138,7 +138,7 @@ function uncheckedCreateMail() {
 
 function uncheckedCreateDigitalOceanDNS(zone) {
   cy.contains('button', 'Add External Resource').click()
-  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
+  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
   cy.get('[data-testid="resource-selection-DigitalOceanDNSZone"]').click()
 
   cy.contains("button", "Next").click()
@@ -153,7 +153,7 @@ function uncheckedCreateDigitalOceanDNS(zone) {
 
 function uncheckedCreateGoogleCloudDNS(zone) {
   cy.contains('button', 'Add External Resource').click()
-  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
+  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
   cy.get('[data-testid="resource-selection-GoogleCloudDNSZone"]').click()
   cy.contains("button", "Next").click()
   const gcpName = slugify(GCP_DNS_TYPE)
@@ -164,7 +164,7 @@ function uncheckedCreateGoogleCloudDNS(zone) {
 
 function uncheckedCreateRoute53DNS(zone) {
   cy.contains('button', 'Add External Resource').click()
-  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"]').click()
+  cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
   cy.get('[data-testid="resource-selection-Route53DNSZone"]').click()
   cy.contains("button", "Next").click()
   const awsName = slugify(AWS_DNS_TYPE)
@@ -210,7 +210,7 @@ Cypress.Commands.add('createMailResource', environmentName => {
   cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
-  cy.get('[data-testid="external-resource-tab-SMTPServer"]').click()
+  cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
   cy.get('[data-testid="resource-selection-GenericSMTPServer"]').click()
 
   // todo: use a test id for this input, and use different name
