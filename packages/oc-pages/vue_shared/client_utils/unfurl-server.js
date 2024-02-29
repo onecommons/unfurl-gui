@@ -257,7 +257,14 @@ function groupTemplatesByPrimary(typesExportDict) {
 
 // just assume all repositories are public forn now
 export async function fetchTypeRepositories(repositories, params) {
-    const typesDictionaries = await (Promise.all(repositories.map(
+    const tempOnly = params?.tempOnly; delete params?.tempOnly
+
+    function filterRepositories(repo) {
+        if(tempOnly && !repo.temp) return false
+        return true
+    }
+
+    const typesDictionaries = await (Promise.all(repositories.filter(filterRepositories).map(
         (repo, i) => unfurlServerGetTypes(repoToExportParams(repo), params, i)
     )))
 

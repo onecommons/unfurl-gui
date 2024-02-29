@@ -510,7 +510,7 @@ const actions = {
                 Promise.all([
                     dispatch('environmentFetchTypesWithParams', {environmentName, deploymentName, params}),
                     // don't fetch blueprint if deployment is already created
-                    deploymentName? null: dispatch('blueprintFetchTypesWithParams', {params})
+                    dispatch('blueprintFetchTypesWithParams', {...params, tempOnly: !!deploymentName})
                 ]):
                 dispatch('blueprintFetchTypesWithParams', {params})
 
