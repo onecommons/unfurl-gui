@@ -205,7 +205,6 @@ const nextcloudMockGetters = {
             "directives": [
                 "substitute"
             ],
-            "icon": "https://unfurl.cloud/uploads/-/system/project/avatar/111/avatar.png",
             "__typename": "ResourceType",
             "_localName": "Nextcloud",
             "requirements": [],
