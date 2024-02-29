@@ -75,7 +75,7 @@ const mutations = {
     onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) },
 
     addTempRepository(state, repo) {
-        Vue.set(state.repositories, repo.url, repo)
+        Vue.set(state.repositories, repo.url, {...repo, temp: true})
     }
 
 }
