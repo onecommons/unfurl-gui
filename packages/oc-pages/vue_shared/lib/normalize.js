@@ -96,9 +96,11 @@ const transforms = {
             req.title = req.title || req.name
         }
 
-        if(resourceType.directives?.includes('substitute')) {
-            resourceType.requirements = resourceType.requirements.filter(req => !req.match)
-        }
+        // unmatched requirements are now filtered out before patching
+        // frontend now handles the substitution, so the match must be seen
+        // if(resourceType.directives?.includes('substitute')) {
+        //     resourceType.requirements = resourceType.requirements.filter(req => !req.match)
+        // }
 
         // will prevent nested dependencies with visibility set from overriding parent constraint visibility
         resourceType.requirements = resourceType.requirements.filter(req => req.visibility != 'hidden' || req.match)
