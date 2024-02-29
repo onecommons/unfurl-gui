@@ -8,7 +8,7 @@ import Vue from 'vue'
 
 function computeDependencyMap(root) {
     try {
-        const res = Object.values(root.ResourceTemplate)
+        const res = Object.values(root.ResourceTemplate || {})
             .map(
                 rt => rt.dependencies
                 .filter(req => req.match)
@@ -26,6 +26,11 @@ function lookupAncestors(rt, root, mutable=false) {
         if(mutable)  {
             root.computedDependencyMap = computedDependencyMap
         }
+    }
+
+    // fail silently in the case that we wanted to normalize a resource or template, but didn't have enough context
+    if(!computedDependencyMap) {
+        return []
     }
 
     let current = rt, matchEntry
@@ -67,7 +72,11 @@ const mutations = {
 
         state.callbacks = []
     },
-    onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) }
+    onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) },
+
+    addTempRepository(state, repo) {
+        Vue.set(state.repositories, repo.url, repo)
+    }
 
 }
 const actions = {
@@ -353,8 +362,11 @@ const actions = {
 
     async blueprintFetchTypesWithParams({state, getters, commit, dispatch}, {params}) {
         let types
+        let nestedTemplatesByPrimary = {}
         try {
-            types = (await fetchTypeRepositories(getters.blueprintRepositories, params)).types
+            const typesRepositoryResults = (await fetchTypeRepositories(getters.blueprintRepositories, params))
+            types = typesRepositoryResults.types
+            nestedTemplatesByPrimary = typesRepositoryResults.nestedTemplatesByPrimary
         } catch(e) {
             const context = {
                 repositories: getters.blueprintRepositories,
@@ -392,6 +404,13 @@ const actions = {
             'useProjectState',
             {root: {ResourceType: types}, shouldMerge: true}
         )
+
+
+        for(const nestedTemplate of Object.values(nestedTemplatesByPrimary).map(Object.values).flat()) {
+            dispatch('normalizeUnfurlData', {key: 'ResourceTemplate', entry: nestedTemplate, root: {ResourceType: types}})
+        }
+
+        commit('setProjectState', {key: "nestedTemplatesByPrimary", value: {...state.nestedTemplatesByPrimary, ...nestedTemplatesByPrimary}})
     }
 }
 
@@ -657,6 +676,10 @@ const getters = {
     blueprintRepositories(state) {
         return Object.values(state.repositories)
     },
+
+    nestedTemplatesByPrimary(state) {
+        return state.nestedTemplatesByPrimary || {}
+    }
 }
 
 

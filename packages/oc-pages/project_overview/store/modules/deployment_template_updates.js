@@ -182,7 +182,7 @@ Serializers = {
         }
     },
     // TODO unit test
-    ResourceTemplate(rt) {
+    ResourceTemplate(rt, state) {
         if(rt.__typename == 'Resource') return Serializers.Resource(rt)
 
         if(rt.directives?.includes('select')) {
@@ -234,6 +234,15 @@ Serializers = {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
             }
         })
+
+        if(rt.directives?.includes('substitute')) {
+            rt.dependencies = rt.dependencies.filter(
+                dep => !(
+                    rt.dependencies.some(otherDep => otherDep.name == dep.match) &&
+                    !state.ResourceTemplate[rt.match]
+                )
+            )
+        }
     },
     Resource(resource) {
         /*

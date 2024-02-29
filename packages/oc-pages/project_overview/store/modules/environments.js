@@ -139,9 +139,13 @@ const mutations = {
         state.defaults = defaults
     },
 
+    /*
+     * tentative change - temp repositories tracked with blueprints
+     * remove tempRepositories in environment store when ready
     addTempRepository(state, repo) {
         state.tempRepositories.push(repo)
     },
+    */
 
     setResourceTypeCategories(state, categories) {
         state.resourceTypeCategories = categories

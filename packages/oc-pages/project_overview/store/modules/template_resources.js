@@ -59,14 +59,23 @@ const mutations = {
         )
     },
 
-    createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace}){
+    createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace, constraintFieldsToReplace}){
         if(!dependentName) return
         const dependent = _state.resourceTemplates[dependentName];
         console.assert(dependent, `Expected parent ${dependentName} to exist for ${resourceTemplate?.name}`)
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
         resourceTemplate.dependentName = dependentName;
         resourceTemplate.dependentRequirement = dependentRequirement;
-        dependent.dependencies[index] = {...dependent.dependencies[index], ...fieldsToReplace, match: resourceTemplate.name};
+
+        const dependency = {constraint: {match: resourceTemplate.name}, ...(dependent.dependencies[index] || {}), ...fieldsToReplace, match: resourceTemplate.name}
+        if(constraintFieldsToReplace) {
+            dependency.constraint = {...(dependency.constraint || {}), ...constraintFieldsToReplace}
+        }
+        if(index == -1) {
+            dependent.dependencies.push(dependency)
+        } else {
+            dependent.dependencies[index] = dependency
+        }
         Vue.set(_state.resourceTemplates, dependentName, {...dependent})
     },
 
@@ -150,9 +159,56 @@ const actions = {
 
     async recursiveInstantiate({ commit, getters, rootGetters, state: _state, dispatch}, target) {
         const deferred = []
+        const nestedTemplates = rootGetters.nestedTemplatesByPrimary[target.type.name]
         for(const dep of getters.getDependencies(target)) {
             const req = dep.constraint
-            if(dep.match) continue
+            if(dep.match) {
+                let matchedNested
+
+                if(nestedTemplates && (matchedNested = nestedTemplates[dep.match])) {
+                    // This will create a node to be substituted
+                    // NOTE: the requirement that is added is based on the dependency match rather than its name
+
+
+                    const substituteDependency = target.dependencies.find(otherDep => otherDep.name == dep.match)
+                    const substituteNodeExists = !!(substituteDependency && getters.dtResolveResourceTemplate(substituteDependency.match))
+
+                    console.log({substituteDependency, substituteNodeExists})
+                    if(substituteNodeExists) continue
+
+                    const dependentName = target.name // the root of the inner topology
+                    const dependentRequirement = dep.match // the name of the source template from the inner topology
+
+                    matchedNested = {
+                        ...matchedNested,
+                        name: `${dep.name}-for-${target.name}`,
+                        _ancestors: [...(target._ancestors || []), [target, dep.name]],
+                        metadata: {created_by: 'unfurl-gui'}
+                    }
+
+                    commit(
+                        'createReference',
+                        {
+                            dependentName,
+                            dependentRequirement,
+                            resourceTemplate: matchedNested,
+                            fieldsToReplace: {...dep, name: dependentRequirement},
+                            constraintFieldsToReplace: {...req, match: dep.match, name: dependentRequirement}
+                        }
+                    )
+
+                    commit('createTemplateResource', matchedNested)
+
+                    commit(
+                        'pushPreparedMutation',
+                        createResourceTemplate({...matchedNested, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
+                        {root: true}
+                    )
+
+                    deferred.push(dispatch('recursiveInstantiate', matchedNested))
+                }
+                continue
+            }
             if(req.min === 0) continue
             const availableResourceTypes = getters.availableResourceTypesForRequirement(dep, true)
             // TODO also create if the only available type is not user settable
@@ -280,13 +336,22 @@ const actions = {
         }
     },
 
-    async fetchDeploymentIfNeeded({getters, dispatch, rootGetters}, {imported}) {
+    async fetchDeploymentIfNeeded({getters, commit, dispatch, rootGetters}, {imported}) {
         let [deploymentName, ...templateName] = imported.split(':')
         templateName = templateName.join(':')
-        const environmentName = rootGetters.getEnvironmentForDeployment(deploymentName, getters.getCurrentEnvironmentName)
         const projectPath = rootGetters.getHomeProjectPath
         const branch = rootGetters.getCommitBranch
-        let deploymentDict = rootGetters.getDeploymentDictionary(deploymentName, environmentName)
+        const deployment = deploymentName?
+            rootGetters.getDeployments.find(dep => dep.name == deploymentName):
+            rootGetters.getDeployment
+        deploymentName = deployment.name
+        const environmentName = deployment._environment
+
+        let deploymentDict
+
+        function assignDeploymentDict() { deploymentDict = rootGetters.getDeploymentDictionary(deploymentName, environmentName) }
+
+        assignDeploymentDict()
 
         if(!deploymentDict) {
             await dispatch('fetchDeployment',
@@ -296,8 +361,7 @@ const actions = {
                     projectPath,
                     branch
                 })
-            deploymentDict = rootGetters.getDeploymentDictionary(deploymentName, environmentName)
-
+            assignDeploymentDict()
         }
 
         if(deploymentDict) {
@@ -306,6 +370,18 @@ const actions = {
                 environmentName,
                 templateName
             )
+
+            if(!template) {
+                commit('createError', {
+                    message: `Could not find template '${templateName}'`,
+                    context: {
+                        environmentName,
+                        deploymentName
+                    },
+                    severity: 'minor'
+                }, {root: true})
+                return
+            }
 
             if(!getters.resolveResourceTypeFromAny(template.type)) {
                 const type = deploymentDict.ResourceType[template.type]
@@ -458,7 +534,7 @@ const actions = {
         let targetType
         if(selection._sourceinfo.incomplete || selection.directives?.includes('substitute')) {
             if(selection._sourceinfo.incomplete) {
-                commit('addTempRepository', selection._sourceinfo)
+                commit('addTempRepository', selection._sourceinfo) // consider this repository in future type calls
             }
 
             const environmentName = getters.getCurrentEnvironmentName
@@ -1056,7 +1132,8 @@ const getters = {
             if(!card.dependencies?.length) return true;
             return card.dependencies.every(dependency => (
                 (dependency.constraint.min == 0 && !dependency.match) ||
-                (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match))
+                (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match)) ||
+                (card.directives?.includes('substitute') && card.dependencies.some(otherDep => otherDep.name == dependency.match))
             ))
         };
 
@@ -1480,42 +1557,31 @@ const getters = {
         return function(card) {
             const cardName = card?.name || card
 
-            function* iterDisplayableDependencies(name) {
-                for(const {card, dependency} of getters.getDisplayableDependenciesByCard(name)) {
-                    const match = dependency?.match
+            const wouldBeOrphaned = getters.dtResolveResourceTemplate(cardName).dependencies.filter(dep => {
+                if(!dep.match) return false
 
-                    if(match) {
-                        yield match
-                    }
+                const rt = getters.dtResolveResourceTemplate(dep.match)
+                if(rt?.metadata?.created_by != 'unfurl-gui') return false
 
-                    for(const displayable of iterDisplayableDependencies(match)) {
-                        yield displayable
-                    }
+                // ancestors should be tracked
+                // this is the best we can do if they weren't for some reason
+                console.assert(rt._ancestors)
+                if(!rt._ancestors) {
+                    return true
                 }
-            }
 
-            const removingDisplayableDependencies = Array.from(iterDisplayableDependencies(cardName))
-
-            const wouldBeOrphaned = Object.values(state.resourceTemplates).filter(rt => {
-                if(rt.metadata?.created_by != 'unfurl-gui') return false
-
-                const directAncestors = Object.values(state.resourceTemplates).filter(a => {
-                    if(a.name == rt.name) return false
-                    if(rt.metadata?.created_by != 'unfurl-gui') return false
-
-                    return a.dependencies?.some(dep => dep.match == rt.name)
+                const remainingAncestors = rt._ancestors.filter(([node, dependencyName]) => {
+                    if(node.name == cardName) return false
+                    return node.dependencies.some(dep => dep.match == rt.name)
                 })
 
-                return directAncestors.filter(a => (
-                    !removingDisplayableDependencies.includes(a.name) &&
-                    a.name != cardName
-                )).length == 0
-            }).map(rt => rt.name)
+                return remainingAncestors.length == 0
+            }).map(dep => dep.match)
 
             return _.uniqBy([
-                ...removingDisplayableDependencies,
-                ...wouldBeOrphaned
-            ]).filter(name => name != cardName)
+                ...wouldBeOrphaned,
+                ...wouldBeOrphaned.map(getters.dependenciesRemovableWith).flat()
+            ])
         }
     },
 

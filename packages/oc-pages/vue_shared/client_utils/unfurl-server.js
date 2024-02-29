@@ -237,6 +237,24 @@ export function importsAreEqual(a, b) {
     return _.isEqual(repoToExportParams(a), repoToExportParams(b))
 }
 
+function groupTemplatesByPrimary(typesExportDict) {
+    const appBlueprint = Object.values(typesExportDict.ApplicationBlueprint || {})[0]
+    if(!appBlueprint) return {}
+
+    try {
+        const primary = typesExportDict.ResourceType[appBlueprint.primary]
+
+        if(primary.directives.includes('substitute')) {
+            return {
+                [primary.name]: typesExportDict.ResourceTemplate
+            }
+        }
+
+    } catch(e) {
+        return {}
+    }
+}
+
 // just assume all repositories are public forn now
 export async function fetchTypeRepositories(repositories, params) {
     const typesDictionaries = await (Promise.all(repositories.map(
@@ -248,6 +266,9 @@ export async function fetchTypeRepositories(repositories, params) {
 
     const types = {}
     const categories = {}
+
+    // track all templates that might be copied for node substitution later
+    const nestedTemplatesByPrimary = Object.assign({}, ...typesDictionaries.map(groupTemplatesByPrimary))
 
     typesDictionaries.forEach(td => {
         Object.entries(td.ResourceType).forEach(([key, value]) => {
@@ -264,7 +285,7 @@ export async function fetchTypeRepositories(repositories, params) {
     })
 
 
-    return _.cloneDeep({types, categories})
+    return _.cloneDeep({types, categories, nestedTemplatesByPrimary})
     // return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
 }
 
