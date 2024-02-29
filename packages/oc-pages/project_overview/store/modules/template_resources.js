@@ -1149,16 +1149,25 @@ const getters = {
             // generally prefer environmentResourceType
             const candidates = [environmentResourceType, dictionaryResourceType].filter(type => !!type)
 
+            const merge = {}
+
+            const icon = [environmentResourceType, dictionaryResourceType].find(type => type?.icon)?.icon
+            if(icon) {
+                merge["icon"] = icon
+            }
 
             // immediately return a type if it is 'substitute' and not incomplete
             for(const type of candidates) {
                 if(type._sourceinfo?.incomplete) continue
-                if(type.directives?.includes('substitute') || type.metadata?.alias) return type
+                if(type.directives?.includes('substitute') || type.metadata?.alias) return {...type, ...merge}
             }
 
             // prefer complete
             let result = candidates.find(type => !type._sourceinfo?.incomplete)
-            return (result || environmentResourceType || dictionaryResourceType) ?? null
+            result = (result || environmentResourceType || dictionaryResourceType) ?? null
+
+            if(!result) return result
+            return {...result, ...merge}
         }
     },
 
