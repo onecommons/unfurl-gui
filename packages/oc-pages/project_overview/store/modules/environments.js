@@ -653,12 +653,18 @@ const actions = {
                     throw new Error(`${name} has no sourceinfo`)
                 }
 
+                if(currentTypes[name]) {
+                    const icon = type.icon || currentTypes[name].icon
+                    currentTypes[name].icon = type.icon = icon
+                }
+
                 if(currentTypes[name] && type._sourceinfo.incomplete) {
                     delete types[name]
                 }
             } catch(e) {
                 if(!name.startsWith('__primary@')) { // reduntant error?
-                    console.warn(`Can't read repository url from source info: ${e.message}`)
+                    // console.warn(`Can't read repository url from source info: ${e.message}`)
+                    // this is quite noisy
                 }
             }
         })

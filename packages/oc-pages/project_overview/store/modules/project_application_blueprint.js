@@ -374,14 +374,18 @@ const actions = {
         }
 
         // prioritize types that are already defined when new type is incomplete
-        Object.entries(state.ResourceType).forEach(([name, type]) => {
+        Object.entries(state.ResourceType).forEach(([name, currentType]) => {
             const newType = types[name]
 
             if(newType && !newType._sourceinfo?.incomplete) {
+                if(currentType.icon) {
+                    newType.icon = currentType.icon
+                }
+
                 return
             }
 
-            types[name] = type
+            types[name] = currentType
         })
 
         await dispatch(
