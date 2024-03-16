@@ -239,7 +239,7 @@ Serializers = {
             rt.dependencies = rt.dependencies.filter(
                 dep => !(
                     rt.dependencies.some(otherDep => otherDep.name == dep.match) &&
-                    !state.ResourceTemplate[rt.match]
+                    !state.ResourceTemplate[dep.match]
                 )
             )
         }

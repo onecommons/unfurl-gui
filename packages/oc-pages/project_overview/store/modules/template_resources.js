@@ -10,6 +10,10 @@ import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
 import Vue from 'vue'
 
+function dateSuffix() {
+    return Date.now().toString(36)
+}
+
 const baseState = () => ({
     deploymentTemplate: {},
     resourceTemplates: {},
@@ -157,10 +161,13 @@ const actions = {
         commit('createTemplateResource', resource)
     },
 
-    async recursiveInstantiate({ commit, getters, rootGetters, state: _state, dispatch}, target) {
+    async recursiveInstantiate({ commit, getters, rootGetters, state: _state, dispatch}, node) {
         const deferred = []
-        const nestedTemplates = rootGetters.nestedTemplatesByPrimary[target.type.name]
-        for(const dep of getters.getDependencies(target)) {
+
+        const isSubstitute = node.directives?.includes('substitute')
+        const nestedTemplates = getters.getNestedTemplates(node)
+
+        for(const dep of getters.getDependencies(node)) {
             const req = dep.constraint
             if(dep.match) {
                 let matchedNested
@@ -170,21 +177,39 @@ const actions = {
                     // NOTE: the requirement that is added is based on the dependency match rather than its name
 
 
-                    const substituteDependency = target.dependencies.find(otherDep => otherDep.name == dep.match)
+                    const substituteDependency = isSubstitute && node.dependencies.find(otherDep => otherDep.name == dep.match)
                     const substituteNodeExists = !!(substituteDependency && getters.dtResolveResourceTemplate(substituteDependency.match))
 
-                    console.log({substituteDependency, substituteNodeExists})
+
                     if(substituteNodeExists) continue
 
-                    const dependentName = target.name // the root of the inner topology
-                    const dependentRequirement = dep.match // the name of the source template from the inner topology
+                    const shouldPerformSubstitution = isSubstitute && !substituteDependency
+
+                    const dependentName = node.name // the root of the inner topology
+                    const dependentRequirement = shouldPerformSubstitution? dep.match : dep.name // in the case of a substitution, the name of the source template from the inner topology
+
+                    const nameUnmangled = shouldPerformSubstitution ? `${dep.name}-for-${node.name}` : dep.match
+                    let name = nameUnmangled
+
+                    if(!shouldPerformSubstitution) {
+                        name = `${name}-${dateSuffix()}`
+                    }
 
                     matchedNested = {
                         ...matchedNested,
-                        name: `${dep.name}-for-${target.name}`,
-                        _ancestors: [...(target._ancestors || []), [target, dep.name]],
+                        _unmangled: nameUnmangled,
+                        name,
                         metadata: {created_by: 'unfurl-gui'}
                     }
+
+                    dispatch('normalizeUnfurlData', {
+                        key: "ResourceTemplate",
+                        entry: matchedNested,
+                        root: rootGetters.getApplicationRoot,
+                    })
+
+                    // TODO figure out the disagreement here
+                    matchedNested._ancestors = [...(node._ancestors || []), [node, dependentRequirement]]
 
                     commit(
                         'createReference',
@@ -201,7 +226,7 @@ const actions = {
 
                     commit(
                         'pushPreparedMutation',
-                        createResourceTemplate({...matchedNested, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
+                        createResourceTemplate({...matchedNested, dependentName, dependentRequirement, deploymentTemplateName: _state.lastFetchedFrom.templateSlug}),
                         {root: true}
                     )
 
@@ -223,10 +248,10 @@ const actions = {
             )
 
             if(!typeRequiresUserInteraction) {
-                const name = `${req.name}-for-${target.name}`
+                const name = `${req.name}-for-${node.name}`
                 deferred.push(
                     dispatch('createNodeResource', {
-                        dependentName: target.name,
+                        dependentName: node.name,
                         dependentRequirement: req.name,
                         requirement: req,
                         name: name,
@@ -397,13 +422,45 @@ const actions = {
         }
     },
 
-    async initMatched({state, commit, getters, dispatch, rootGetters}, {match, target, isDeploymentTemplate, dependentName, dependentRequirement, ancestors}) {
+    async initMatched({state, commit, getters, dispatch, rootGetters}, {match, target, isDeploymentTemplate, dependentName, dependentRequirement, ancestors, constraint}) {
+        if(!(match || target)) {
+            return
+        }
         if(state.resourceTemplates.hasOwnProperty(match)) {
             console.warn(`Cannot create matched resource for ${match}: already exists in store`)
             return
         }
 
+        console.assert(dependentName && state.resourceTemplates[dependentName], `Expected '${dependentName}' to exist for its child '${target || match}'`)
+
         let resolvedDependencyMatch = getters.dtResolveResourceTemplate(match)
+
+        if(!getters.dtResolveResourceTemplate(dependentName)?.directives?.includes('substitute')) {
+
+            const matchedNested = getters.getNestedTemplates(dependentName)[match]
+
+            if(matchedNested) {
+                matchedNested._unmangled = match
+                matchedNested.name = match = `${match}-${dateSuffix()}`
+                commit('createReference', {dependentName, dependentRequirement, resourceTemplate: matchedNested})
+                dispatch(
+                    'normalizeUnfurlData', {
+                        key: 'ResourceTemplate',
+                        entry: matchedNested,
+                        root: rootGetters.getApplicationRoot
+                    })
+
+
+                commit(
+                    'pushPreparedMutation',
+                    createResourceTemplate({...matchedNested, dependentName, dependentRequirement, deploymentTemplateName: state.lastFetchedFrom.templateSlug}),
+                )
+                console.log(`adding ${match} @initMatched`)
+            }
+
+            resolvedDependencyMatch = matchedNested || resolvedDependencyMatch
+        }
+
         let environmentName = state.lastFetchedFrom?.environmentName
 
 
@@ -430,35 +487,34 @@ const actions = {
             }
         }
 
-        let child = resolvedDependencyMatch
 
-        if(!isDeploymentTemplate && child) {
-            child = {...child, _external: true}
+        if(!isDeploymentTemplate && resolvedDependencyMatch) {
+            resolvedDependencyMatch = {...resolvedDependencyMatch, _external: true}
             // will not be resolvable for external resources
-            child = rootGetters.resolveResource(target) || child
+            resolvedDependencyMatch = rootGetters.resolveResource(target) || resolvedDependencyMatch
         }
 
-        const _valid = !!(child)
-        const id = _valid && btoa(child.name).replace(/=/g, '')
+        const _valid = !!(resolvedDependencyMatch)
+        const id = _valid && btoa(resolvedDependencyMatch.name).replace(/=/g, '')
 
         if(_valid) {
-            if(child.imported) {
-                await dispatch('fetchDeploymentIfNeeded', child)
+            if(resolvedDependencyMatch.imported) {
+                await dispatch('fetchDeploymentIfNeeded', resolvedDependencyMatch)
             }
 
             let _ancestors = null
 
             if(ancestors) {
-                _ancestors = child._ancestors
+                _ancestors = resolvedDependencyMatch._ancestors
                 if(
-                    (!child._ancestors && ancestors && !child.readonly) ||
-                        (Array.isArray(child._ancestors) && child._ancestors.length == 0)
+                    (!resolvedDependencyMatch._ancestors && ancestors && !resolvedDependencyMatch.readonly) ||
+                        (Array.isArray(resolvedDependencyMatch._ancestors) && resolvedDependencyMatch._ancestors.length == 0)
                 ) {
-                    _ancestors = ancestors.concat([[dependentName, match]])
+                    _ancestors = ancestors.concat([[getters.dtResolveResourceTemplate(dependentName), match]])
                 }
             }
 
-            const newResource = {...child, _ancestors}
+            const newResource = {...resolvedDependencyMatch, _ancestors}
 
             commit('createTemplateResource', {
                 ...newResource,
@@ -477,7 +533,9 @@ const actions = {
 
     async createMatchedResources({state, commit, getters, dispatch, rootGetters}, {resource, isDeploymentTemplate}) {
         let promises = []
-        for(const dependency of resource?.dependencies || []) {
+
+        for(const dependency of getters.getDependencies(resource.name) || resource.dependencies || []) {
+            console.log(dependency)
             promises.push(dispatch(
                 'initMatched', {
                     isDeploymentTemplate,
@@ -485,7 +543,8 @@ const actions = {
                     dependentRequirement: dependency.name,
                     match: dependency.match,
                     target: dependency.target,
-                    ancestors: resource._ancestors
+                    ancestors: resource._ancestors,
+                    constraint: dependency.constraint
                 }
             ))
         }
@@ -601,8 +660,6 @@ const actions = {
                 };
 
             });
-
-            await dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
         }
 
         target.dependentName = dependentName
@@ -642,6 +699,7 @@ const actions = {
         };
 
         commit('createReference', {dependentName, dependentRequirement, resourceTemplate: target, fieldsToReplace});
+        await dispatch('createMatchedResources', {resource: target, isDeploymentTemplate: true})
         await dispatch('recursiveInstantiate', target)
         return true;
     },
@@ -1022,7 +1080,7 @@ const getters = {
 
             if(!rt) return null
 
-            const dependencies = _.cloneDeep(rt.dependencies || [])
+            let dependencies = _.cloneDeep(rt.dependencies || [])
 
             if(dependencies.length == 0) return []
 
@@ -1034,7 +1092,21 @@ const getters = {
                 dep.constraint = _.mergeWith(dep.constraint, ...requirementsFilterGroups[dep.name], customMerge)
             }
 
-            return dependencies.filter(dep => dep.constraint.max > 0)
+            dependencies = dependencies.filter(dep => dep.constraint.max > 0)
+
+            if(rt.directives?.includes('substitute')) {
+                dependencies = dependencies.filter(dep => {
+                    for(const otherDep of dependencies) {
+                        if(dep == otherDep) continue
+                        if(dep.match == otherDep.name) {
+                            return false
+                        }
+                    }
+                    return true
+                })
+            }
+
+            return dependencies
         };
     },
     cardStatus(state) {
@@ -1129,11 +1201,11 @@ const getters = {
             const card = typeof(_card) == 'string'? state.resourceTemplates[_card]: _card;
             if(!card) return true
             if(card.imported) return true
-            if(!card.dependencies?.length) return true;
-            return card.dependencies.every(dependency => (
+            const dependencies = getters.getDependencies(card)
+            if(!dependencies.length) return true;
+            return dependencies.every(dependency => (
                 (dependency.constraint.min == 0 && !dependency.match) ||
-                (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match)) ||
-                (card.directives?.includes('substitute') && card.dependencies.some(otherDep => otherDep.name == dependency.match))
+                (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match))
             ))
         };
 
@@ -1590,6 +1662,27 @@ const getters = {
             const cardName = card?.name || card
 
             return state.resourceTemplates[cardName]?.title || cardName
+        }
+
+    },
+
+    getNestedTemplates(state, getters, _rootState, rootGetters) {
+        // determine which nested templates are "visible" for a given template (target)
+        return function(target) {
+            if(!target) return {}
+            if(typeof(target) == 'string') {
+                target = getters.dtResolveResourceTemplate(target)
+            }
+
+            let nestedTemplates = rootGetters.nestedTemplatesByPrimary[target.type?.name || target.type]
+            if(nestedTemplates) {
+                const cloud = getters.getDeploymentTemplate?.cloud?.split('@')?.shift()
+                const nestedLocalTemplates = nestedTemplates?.local[cloud]
+                return {...nestedTemplates.shared, ...nestedLocalTemplates}
+            } else if(target._ancestors?.length){
+                return getters.getNestedTemplates(_.last(target._ancestors)[0])
+            }
+            return {}
         }
 
     }
