@@ -406,10 +406,6 @@ const actions = {
         )
 
 
-        for(const nestedTemplate of Object.values(nestedTemplatesByPrimary).map(Object.values).flat()) {
-            dispatch('normalizeUnfurlData', {key: 'ResourceTemplate', entry: nestedTemplate, root: {ResourceType: types}})
-        }
-
         commit('setProjectState', {key: "nestedTemplatesByPrimary", value: {...state.nestedTemplatesByPrimary, ...nestedTemplatesByPrimary}})
     }
 }

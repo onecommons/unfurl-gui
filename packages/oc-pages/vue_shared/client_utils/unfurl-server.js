@@ -246,7 +246,14 @@ function groupTemplatesByPrimary(typesExportDict) {
 
         if(primary.directives.includes('substitute')) {
             return {
-                [primary.name]: typesExportDict.ResourceTemplate
+                [primary.name]: {
+                    shared: typesExportDict.ResourceTemplate,
+                    local: _.mapValues( // dict with cloud provider types => local templates
+                        _.mapKeys( // does not account for multiple deployment templates per cloud
+                            typesExportDict.DeploymentTemplate,
+                            value => value.cloud
+                        ),  dt => (dt.ResourceTemplate || {}))
+                }
             }
         }
 
