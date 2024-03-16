@@ -45,7 +45,7 @@ Cypress.Commands.add('recreateDeployment', options => {
   }
 
   cy.fixture(fixture).then(deployment => {
-    const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate} = deployment
+    const {DefaultTemplate, DeploymentTemplate, DeploymentPath, ResourceTemplate, ResourceType} = deployment
     const dt = Object.values(DeploymentTemplate)[0]
     title = options.title || `Cy ${dt.title} ${Date.now().toString(36)}`
     dt.title = title
@@ -228,17 +228,24 @@ Cypress.Commands.add('recreateDeployment', options => {
 
         }
 
+        if(template.dependencies.length == 0) {
+          cy.log(`no dependencies for ${template.name}`)
+        }
         for(const dependency of template.dependencies) {
           if (!dependency.match) continue
 
-          cy.log(dependency.match)
+          cy.log(`looking at child '${dependency.match}'`)
           const match = ResourceTemplate[dependency.match] || dt.ResourceTemplate[dependency.match]
           // dockerhost missing for some reason with current export?
           //expect(match).to.exist
 
-          if(!match) continue
+          if(!match) {
+            cy.log(`I don't see any '${dependency.match}'`)
+            continue
+          }
 
           if (dependency.constraint.visibility == 'hidden' || match.visibility == 'hidden') {
+            cy.log(`${match.name} is hidden`)
             recreateTemplate(match, HIDDEN)
             continue
           }
@@ -248,14 +255,24 @@ Cypress.Commands.add('recreateDeployment', options => {
             // .last()
             // .click() // this is a bit hacky
 
-          let dependencyCreate = $document.querySelector(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
+          let createDependencyQs = [
+            `[data-testid="create-dependency-${template.name}.${dependency.name}"]`,
+            `[data-testid^="create-dependency-${template.title}-"][data-testid$=".${dependency.name}"]`,
+            `[data-testid^="create-dependency-${template.name.slice(0,-9)}-"][data-testid$=".${dependency.name}"]`
+          ]
+
+          createDependencyQs = createDependencyQs.join(', ')
+
+          let dependencyCreate = $document.querySelector(createDependencyQs)
           if(!dependencyCreate) {
-            cy.log(`Couldn't find create for ${template.name}.${dependency.name}`)
+            cy.log(`Couldn't find create for ${template.name}.${dependency.name}, using '${createDependencyQs}' pretending hidden`)
+            recreateTemplate(match, HIDDEN)
             continue
           }
           if(
-            !dependencyCreate.offsetParent
-            && $document.querySelector(`[data-testid=tab-extras-${template.name}]`)
+            dependencyCreate &&
+            !dependencyCreate.offsetParent &&
+            $document.querySelector(`[data-testid=tab-extras-${template.name}]`)
           ) {
             cy.get(`[data-testid=tab-extras-${template.name}]`)
               .each(el => el.click())
@@ -263,13 +280,13 @@ Cypress.Commands.add('recreateDeployment', options => {
           }
 
           // todo: use test id instead of prev
-          cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
+          cy.get(createDependencyQs)
             .prev()
             .invoke('attr', 'disabled')
             .then((disabled) => {
               // if button is enabled, and the env is provided, connects it
               if (!disabled) {
-                cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`)
+                cy.get(createDependencyQs)
                   .prev()
                   .click()
 
@@ -282,7 +299,7 @@ Cypress.Commands.add('recreateDeployment', options => {
 
                 cy.contains('button', 'Next').click()
               } else {
-                cy.get(`[data-testid="create-dependency-${template.name}.${dependency.name}"]`).click()
+                cy.get(createDependencyQs).click()
 
                 // cy.get(`[data-testid="resource-selection-${match.type}"]`).click()
                 // cy.get('[data-testid="create-resource-template-title"]')
