@@ -718,7 +718,15 @@ const actions = {
                 await dispatch('fetchDeploymentIfNeeded', resourceTemplate)
             }
 
+            let _sourceinfo
+
+            if(!resourceTemplate._sourceinfo) {
+                const type = getters.resolveResourceTypeFromAny(resourceTemplate.type)
+                _sourceinfo = type?._sourceinfo
+            }
+
             resourceTemplateNode = {
+                _sourceinfo,
                 ...resourceTemplate,
                 name,
                 dependentName,
