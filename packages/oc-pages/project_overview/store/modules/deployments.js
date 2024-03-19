@@ -297,15 +297,17 @@ const actions = {
             resource = rootGetters.getPrimaryCard
         }
 
+        const type = rootGetters.resolveResourceTypeFromAny(resource.type)
         const newObject = {
             name: `__${environmentName}__${deploymentName}__${resourceName}`,
             metadata: {
-                extends: rootGetters.resolveResourceTypeFromAny(resource.type)?.extends || [],
+                extends: type?.extends || [],
             },
             title: resource.title,
             directives: ['select'],
             imported: `${deploymentName}:${resource.name}`,
             type: resource.type,
+            _sourceinfo: type?._sourceinfo,
             __typename: 'ResourceTemplate'
         }
 
@@ -326,15 +328,17 @@ const actions = {
         const resource = rootGetters.getCardsStacked.find(card => card.name == resourceName)
 
         const name = `__${environmentName}__${deploymentName}__${resourceName}`
+        const type = rootGetters.resolveResourceTypeFromAny(resource.type)
         const newObject = {
             name,
             metadata: {
-                extends: rootGetters.resolveResourceTypeFromAny(resource.type)?.extends || [],
+                extends: type?.extends || [],
             },
             title: resource.title,
             directives: ['select'],
             imported: `${deploymentName}:${resource.name}`,
             type: resource.type,
+            _sourceinfo: type?._sourceinfo,
             __typename: 'ResourceTemplate'
         }
 
