@@ -369,8 +369,8 @@ const actions = {
         const deployment = deploymentName?
             rootGetters.getDeployments.find(dep => dep.name == deploymentName):
             rootGetters.getDeployment
-        deploymentName = deployment.name
-        const environmentName = deployment._environment
+        deploymentName = deployment?.name || deploymentName
+        const environmentName = deployment?._environment || getters.getCurrentEnvironment?.name
 
         let deploymentDict
 
@@ -455,7 +455,6 @@ const actions = {
                     'pushPreparedMutation',
                     createResourceTemplate({...matchedNested, dependentName, dependentRequirement, deploymentTemplateName: state.lastFetchedFrom.templateSlug}),
                 )
-                console.log(`adding ${match} @initMatched`)
             }
 
             resolvedDependencyMatch = matchedNested || resolvedDependencyMatch
@@ -535,7 +534,6 @@ const actions = {
         let promises = []
 
         for(const dependency of getters.getDependencies(resource.name) || resource.dependencies || []) {
-            console.log(dependency)
             promises.push(dispatch(
                 'initMatched', {
                     isDeploymentTemplate,
@@ -1074,11 +1072,20 @@ const getters = {
             return getters.getCardsStacked('*').find(card => card.name == cardName)
         }
     },
-    getDependencies: (_state, getters) => {
+    getDependencies: (_state, getters, rootState, rootGetters) => {
         return function(resourceTemplateName) {
-            const rt = getters.dtResolveResourceTemplate(resourceTemplateName)
+            if(!resourceTemplateName) return null
+
+            const rt = (
+                rootGetters.resolveResource(resourceTemplateName?.name || resourceTemplateName) ||
+                getters.dtResolveResourceTemplate(resourceTemplateName)
+            )
 
             if(!rt) return null
+
+            if(rt.__typename == 'Resource') {
+                return rt.connections
+            }
 
             let dependencies = _.cloneDeep(rt.dependencies || [])
 
@@ -1202,7 +1209,7 @@ const getters = {
             if(!card) return true
             if(card.imported) return true
             const dependencies = getters.getDependencies(card)
-            if(!dependencies.length) return true;
+            if(!dependencies?.length) return true;
             return dependencies.every(dependency => (
                 (dependency.constraint.min == 0 && !dependency.match) ||
                 (getters.requirementMatchIsValid(dependency) && getters.cardIsValid(dependency.match))

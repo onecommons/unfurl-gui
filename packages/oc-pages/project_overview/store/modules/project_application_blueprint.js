@@ -534,12 +534,16 @@ const getters = {
     },
     resolveResource(state) {
         return name => {
-            if(!name) return
-            let rt = state['Resource'][name]
-            if(!rt && !name?.startsWith('::')) {
-                rt = state['Resource'][`::${name}`]
+            if(!name) return null
+            try {
+                let rt = state['Resource'][name]
+                if(!rt && !name?.startsWith('::')) {
+                    rt = state['Resource'][`::${name}`]
+                }
+                return rt
+            } catch(e) {
+                return null
             }
-            return rt
         }
     },
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
