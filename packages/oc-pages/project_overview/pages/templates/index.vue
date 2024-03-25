@@ -220,19 +220,19 @@ export default {
     },
 
     saveTooltip() {
-      if(this.saveDraftStatus == 'enabled' && this.branch && this.branch != 'main') {
+      if(this.saveDraftStatus == 'enabled' && this.commitBranch && this.commitBranch != 'main') {
         return 'Save a draft of the edits on this deployment blueprint and open a merge request.'
       }
       return null
     },
 
-    branch: {
+    commitBranch: {
       get() {
         return this.selfBranch || this.$route.query.branch || 'main'
       },
 
-      set(branch) {
-        this.selfBranch = branch
+      set(commitBranch) {
+        this.selfBranch = commitBranch
       }
     },
 
@@ -245,6 +245,20 @@ export default {
     validResourceTypesForSelectedRequirement() {
       return this.availableResourceTypesForRequirement(this.getRequirementSelected.requirement)
     },
+
+    deploymentParams() {
+      let projectUrl = `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`
+      if(this.$route.query.bprev) {
+        projectUrl += `#${this.$route.query.bprev}`
+      }
+      return {
+        environmentName: this.$route.params.environment,
+        projectUrl,
+        deployPath: this.deploymentDir,
+        deploymentName: this.$route.params.slug,
+        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+      }
+    }
   },
 
   watch: {
@@ -387,7 +401,8 @@ export default {
       'setCommitMessage',
       'setUpdateType',
       'createError',
-      'setCommitBranch'
+      'setCommitBranch',
+      'setBlueprintBranch'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -448,11 +463,13 @@ export default {
           await fetchUserHasWritePermissions(projectPath):
           this.userCanEdit
 
-        if(this.branch == 'main') {
+        this.setCommitBranch(this.commitBranch)
+
+        if(this.commitBranch == 'main') {
           if(!userCanEdit) {
             // computed setter
-            const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
-            this.setCommitBranch(this.branch)
+            const branch = this.commitBranch = `${this.getUsername}/${this.$route.params.slug}`
+            this.setCommitBranch(this.commitBranch)
 
             const target = 'main'
             const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
@@ -471,9 +488,17 @@ export default {
             }
           }
         } else {
-          const key = `branch ${this.branch}`
+          const key = `branch ${this.commitBranch}`
+
+          const target = 'main'
+          const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
+          const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch: this.commitBranch, target, labels, state: 'opened'})
+
+          if(openedMR) {
+            this.mergeRequest = openedMR
+          }
           if(!this.isAcknowledged(key)) {
-            this.createFlash(`You are working on an alternate branch "${this.branch}".`)
+            this.createFlash(`You are working on an alternate branch "${this.commitBranch}".`)
           }
           this.acknowledge(key)
         }
@@ -509,15 +534,21 @@ export default {
 
         if(this.hasCriticalErrors) return
 
-        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars, shouldMerge: true}); // NOTE this.project.globalVars
+        const blueprintBranch = this.$route.query?.bprev
+        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars, shouldMerge: true, branch: blueprintBranch}); // NOTE this.project.globalVars
         if(this.hasCriticalErrors) return
 
         if(deployRoot) {
           await this.useProjectState({root: deployRoot, shouldMerge: true, projectPath})
         }
 
+        if(blueprintBranch) {
+          this.setBlueprintBranch(blueprintBranch)
+        }
+
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath,
+          blueprintBranch,
           templateSlug,
           renamePrimary,
           renameDeploymentTemplate,
@@ -573,12 +604,12 @@ export default {
           const query = {...this.$route.query}
           delete query.ts
 
-          if(this.branch != 'main') {
-            query.branch = this.branch
+          if(this.commitBranch != 'main') {
+            query.branch = this.commitBranch
 
             if(!this.mergeRequest) {
               const projectPath = this.project.globalVars.projectPath
-              const branch = this.branch
+              const branch = this.commitBranch
               const target = 'main'
               const title = `[Draft] ${this.getDeploymentTemplate.title}`
               const labels = [
@@ -657,11 +688,7 @@ export default {
       if(this.hasCriticalErrors) return
 
       const result = await this.deployInto({
-        environmentName: this.$route.params.environment,
-        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-        deployPath: this.deploymentDir,
-        deploymentName: this.$route.params.slug,
-        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        ...this.deploymentParams,
         deployOptions: {
             schedule: 'defer'
         },
@@ -702,11 +729,7 @@ export default {
       if(this.hasCriticalErrors) return
 
       const result = await this.deployInto({
-        environmentName: this.$route.params.environment,
-        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-        deployPath: this.deploymentDir,
-        deploymentName: this.$route.params.slug,
-        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        ...this.deploymentParams,
         forceCheck,
         dryRun,
       })
@@ -733,7 +756,7 @@ export default {
 
       if(this.hasCriticalErrors) return
 
-      const branch = this.branch
+      const branch = this.commitBranch
       const target = 'main'
       const labels = [this.$route.params.slug, 'unfurl-gui-mr']
 

@@ -266,7 +266,7 @@ const actions = {
     },
 
     // used by deploy and blueprint editing
-    async populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
+    async populateTemplateResources({getters, rootGetters, commit, dispatch}, {projectPath, blueprintBranch, templateSlug, renameDeploymentTemplate, renamePrimary, syncState, environmentName}) {
         commit('resetTemplateResourceState')
         commit('setContext', environmentName? 'template': 'blueprint')
         if(!templateSlug) return false;
@@ -274,8 +274,9 @@ const actions = {
         let blueprint = rootGetters.getApplicationBlueprint;
         let deploymentTemplate = rootGetters.resolveDeploymentTemplate(templateSlug)
 
-        deploymentTemplate = {...deploymentTemplate, projectPath} // attach project path here so we can recall it later
-        blueprint = {...blueprint, projectPath} // maybe we want to do it here
+        // attach project/branch path here so we can recall it later
+        deploymentTemplate = {...deploymentTemplate, projectPath, branch: blueprintBranch}
+        blueprint = {...blueprint, projectPath, branch: blueprintBranch}
 
         const sourceDeploymentTemplate = deploymentTemplate.source || deploymentTemplate.name
 
@@ -589,8 +590,8 @@ const actions = {
     // TODO use dependenciesFromResourceType here
     async createNodeResource({ commit, getters, rootGetters, state: _state, dispatch}, {dependentName, dependentRequirement, requirement, name, title, selection, visibility}) {
         let targetType
-        if(selection._sourceinfo.incomplete || selection.directives?.includes('substitute')) {
-            if(selection._sourceinfo.incomplete) {
+        if(selection._sourceinfo?.incomplete || selection.directives?.includes('substitute')) {
+            if(selection._sourceinfo?.incomplete) {
                 commit('addTempRepository', selection._sourceinfo) // consider this repository in future type calls
             }
 

@@ -1,5 +1,5 @@
 <script>
-import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlDropdown, GlFormGroup, GlFormInput, GlDropdownItem, GlDropdownDivider, GlMarkdown } from '@gitlab/ui';
+import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormCheckbox } from '@gitlab/ui';
 import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
@@ -14,7 +14,7 @@ import LocalDevelop from '../../components/local-develop.vue'
 import {OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
-import {fetchUserHasWritePermissions} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserHasWritePermissions, fetchCurrentTag} from 'oc_vue_shared/client_utils/projects'
 import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
@@ -31,6 +31,7 @@ export default {
         GlCard, GlIcon, GlTabs,
         GlFormGroup,
         GlFormInput,
+        GlFormCheckbox,
         HeaderProjectView,
         TableWithoutHeader,
         EnvironmentCreationDialog,
@@ -61,6 +62,8 @@ export default {
             modalNextStatus: true,
             showBannerIntro: true,
             submitting: false,
+            currentTag: null,
+            useUnreleased: false,
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
@@ -135,8 +138,8 @@ export default {
                 return {
                     fn: this.templateForkedName || undefined,
                     ts: this.projectSlugName || undefined,
-                    tn: this.templateSelected.name || undefined // used to control modal for #oc-569
-
+                    tn: this.templateSelected.name || undefined, // used to control modal for #oc-569
+                    bprev: this.useUnreleased? 'main': undefined
                 }
             else return {}
         },
@@ -167,7 +170,7 @@ export default {
 
 
             const path = this.$route.path
-            if(document.activeElement.tagName == 'INPUT') {
+            if(document.activeElement.tagName == 'INPUT' && document.activeElement.type == 'text') {
                 const el = document.activeElement
                 el.onblur = _ => {
                     this.$router.replace({path, query})
@@ -243,6 +246,9 @@ export default {
             this.triedPopulatingDeploymentItems = true
             jobsListPromise.then(() => this.populateDeploymentItems(this.yourDeployments))
         }
+
+        fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
+
         this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
 
@@ -253,6 +259,8 @@ export default {
             bus.$emit('deployTemplate', templateSelected)
             this.templateForkedName = this.$route.query?.fn
         }
+
+        this.useUnreleased = this.$route.query?.bprev == 'main'
     },
     methods: {
         redirectToTemplateEditor(page=routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
@@ -495,7 +503,7 @@ export default {
                         />
 
                     </gl-form-group>
-                    <div class="col-md-6" v-if="instantiateAs!='template'">
+                    <div class="deploy-dialog col-md-6" v-if="instantiateAs!='template'">
                         <p>{{ __("Select an environment to deploy this template to:") }}</p>
                         <environment-selection
                             v-model="selectedEnvironment"
@@ -504,6 +512,11 @@ export default {
                             @createNewEnvironment="createNewEnvironment"
                             environment-creation
                         />
+
+                        <div class="mt-5">
+                        <p v-if="currentTag">The current release of {{getApplicationBlueprint.title}} is <b>{{currentTag.name}}</b></p>
+                        <gl-form-checkbox v-model="useUnreleased"> Use an unreleased version of {{ getApplicationBlueprint.title}}</gl-form-checkbox>
+                        </div>
                     </div>
                 </div>
             </gl-modal>
@@ -518,4 +531,11 @@ h2.oc-title-section {
 }
 
 .dropdown-parent >>> ul { width: unset; }
+
+/* TODO move this into gitlab oc */
+.deploy-dialog >>> .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #00D2D9 !important;
+}
+
 </style>
+

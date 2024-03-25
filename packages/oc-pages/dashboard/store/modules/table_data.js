@@ -69,7 +69,9 @@ const actions = {
                 if(frozenDeploymentDict.Deployment && frozenDeploymentDict.Resource[Object.values(frozenDeploymentDict.Deployment)[0].primary]) {
                     deployment = {...Object.values(frozenDeploymentDict.Deployment)[0]}
                     const dt = frozenDeploymentDict.DeploymentTemplate[deployment.deploymentTemplate]
+                    // ensure that these properties are always available when set
                     deployment.projectPath = dt?.projectPath
+                    deployment.branch = dt?.branch
                 } else {
                     deployment = Object.values(frozenDeploymentDict.DeploymentTemplate)[0]
                 }

@@ -18,6 +18,7 @@ export default {
         deploymentItem: {
             immediate: true,
             handler(item) {
+                if(!item) return
                 item.getUpstreamPipelineLink().then(res => this.upstreamPipelineLink = res) // this doesn't fetch when there's no upstream pipeline reference
             }
         }
