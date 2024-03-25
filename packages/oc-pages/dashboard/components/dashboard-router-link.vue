@@ -8,13 +8,14 @@ export default {
     },
     href: {
       type: [String, Object],
-      required: true
+      // required: true
+      // this is required, but it might not be available immediately as a prop, which can cause confusing error messages
     },
   },
   computed: {
     to() {
-      return this.href?.to ? 
-        this.href.to : 
+      return this.href?.to ?
+        this.href.to :
         this.href.replace('/dashboard', '') // NOTE this works fine for now because this component is used in the dashboard only
     },
   }

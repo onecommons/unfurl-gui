@@ -121,7 +121,7 @@ const actions = {
                     yield prepareApp(d, parent)
                 }
             } else {
-                for(const child of d.children) {
+                for(const child of d.children || []) {
                     for(const app of matchingApps(child, d)) {
                         yield app
                     }

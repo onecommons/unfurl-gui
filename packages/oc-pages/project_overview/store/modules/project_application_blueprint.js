@@ -81,14 +81,13 @@ const mutations = {
 }
 const actions = {
     async fetchProject({state, commit, dispatch, rootGetters}, params) {
-        const {projectPath, projectGlobal, shouldMerge} = {shouldMerge: false, ...params}
+        let {projectPath, projectGlobal, shouldMerge, branch} = {shouldMerge: false, ...params}
         const format = 'blueprint'
         commit('loaded', false)
 
-        let branch
         const deployment = Object.values(state.Deployment || {})[0]
 
-        if(deployment) {
+        if(deployment && !branch) {
             try {
                 branch = deployment.packages[projectPath].version
             } catch(e) {}

@@ -791,7 +791,8 @@ const state = () => ({
     patches: {},
     committedNames: [],
     commitMessage: null,
-    branch: null,
+    commitBranch: null,
+    blueprintBranch: null,
     updateType: null,
     env: {},
     isCommitting: false,
@@ -805,7 +806,7 @@ const getters = {
     hasPreparedMutations(state) { return state.preparedMutations.length > state.effectiveFirstMutation },
     safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
     isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
-    getCommitBranch(state) { return state.branch || 'main'}
+    getCommitBranch(state) { return state.commitBranch || 'main'}
 }
 
 const mutations = {
@@ -835,8 +836,11 @@ const mutations = {
     setEnvironmentScope(state, environmentScope) {
         state.environmentScope = environmentScope
     },
-    setCommitBranch(state, branch) {
-        state.branch = branch
+    setCommitBranch(state, commitBranch) {
+        state.commitBranch = commitBranch
+    },
+    setBlueprintBranch(state, blueprintBranch) {
+        state.blueprintBranch = blueprintBranch
     },
     setUpdateType(state, updateType) {
         state.updateType = updateType
@@ -882,7 +886,8 @@ const mutations = {
             state.projectPath = undefined
             state.environmentScope = undefined
             state.commitMessage = null
-            state.branch = null
+            state.commitBranch = null
+            state.blueprintBranch = null
             state.updateType = null
             state.preparedMutations = []
         }
@@ -1025,6 +1030,10 @@ const actions = {
                 variables.blueprint_url.username = rootGetters.getUsername
                 variables.blueprint_url.password = await fetchUserAccessToken()
 
+                if(state.blueprintBranch) {
+                    variables.blueprint_url.hash = state.blueprintBranch
+                }
+
                 variables.blueprint_url = variables.blueprint_url.toString()
 
                 method = 'create_ensemble'
@@ -1068,7 +1077,7 @@ const actions = {
             )
         }
 
-        const branch = state.branch || project.default_branch
+        const branch = state.commitBranch || project.default_branch
 
         const post = unfurlServerUpdate({
             method,

@@ -1,6 +1,7 @@
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
+import * as semver from 'semver'
 
 function generateConfig(options) {
     if(options?.accessToken) {
@@ -34,6 +35,20 @@ export async function fetchRegistryRepositories(projectId, options) {
 
 export async function fetchRepositoryBranches(projectId, options) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
+}
+
+export async function fetchRepositoryTags(projectId, options) {
+    return (await axios.get(`/api/v4/projects/${projectId}/repository/tags?per_page=99999`, generateConfig(options)))?.data
+}
+
+export async function fetchCurrentTag(projectId) {
+    let tags = await fetchRepositoryTags(projectId)
+
+    tags = tags.filter(t => semver.valid(t.name))
+
+    tags.sort((a,b) => semver.compare(a.name, b.name))
+
+    return tags.pop()
 }
 
 export async function fetchProjectInfo(projectId, options) {

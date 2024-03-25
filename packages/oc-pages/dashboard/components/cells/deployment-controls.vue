@@ -169,7 +169,7 @@ export default {
                 'resume-editing-target': this.resumeEditingTarget,
                 'view-jobs-link': this.viewJobsLink,
                 'view-deployment-target': this.viewDeploymentTarget,
-                'view-artifacts-link': this.deploymentItem.artifactsLink,
+                'view-artifacts-link': this.deploymentItem?.artifactsLink,
                 'view-in-repository-link': this.viewInRepositoryLink,
                 'disabled-buttons': this.disabledButtons,
             }
