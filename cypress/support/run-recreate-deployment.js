@@ -9,6 +9,7 @@ const AWS_ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
+const BLUEPRINT_REVISION = Cypress.env('BLUEPRINT_REVISION')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const GENERATE_SUBDOMAINS = Cypress.env('GENERATE_SUBDOMAINS')
@@ -157,6 +158,11 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.contains('button', 'Next').click()
 
     cy.get('[data-testid^="card-"]').should('exist')
+
+    if(BLUEPRINT_REVISION) {
+      cy.url().then(url => cy.visit(`${url}&bprev=${BLUEPRINT_REVISION}`))
+      cy.get('[data-testid^="card-"]').should('exist')
+    }
 
     function recreateTemplate(template, variant = 0) {
       if(variant != HIDDEN) {
