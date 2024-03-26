@@ -1,5 +1,5 @@
 <script>
-import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormCheckbox } from '@gitlab/ui';
+import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormRadio } from '@gitlab/ui';
 import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
@@ -14,7 +14,7 @@ import LocalDevelop from '../../components/local-develop.vue'
 import {OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
-import {fetchUserHasWritePermissions, fetchCurrentTag} from 'oc_vue_shared/client_utils/projects'
+import {fetchUserHasWritePermissions, fetchCurrentTag, fetchBranches} from 'oc_vue_shared/client_utils/projects'
 import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
@@ -31,7 +31,7 @@ export default {
         GlCard, GlIcon, GlTabs,
         GlFormGroup,
         GlFormInput,
-        GlFormCheckbox,
+        GlFormRadio,
         HeaderProjectView,
         TableWithoutHeader,
         EnvironmentCreationDialog,
@@ -63,7 +63,8 @@ export default {
             showBannerIntro: true,
             submitting: false,
             currentTag: null,
-            useUnreleased: false,
+            version: null,
+            mainBranchCommitId: null,
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
@@ -133,13 +134,17 @@ export default {
                 text: this.creatingEnvironment? __('Back'): __('Cancel')
             };
         },
+        useUnreleased() {
+            if(!this.currentTag) return false
+            return this.version != this.currentTag.name
+        },
         querySpec() {
             if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.name)
                 return {
                     fn: this.templateForkedName || undefined,
                     ts: this.projectSlugName || undefined,
                     tn: this.templateSelected.name || undefined, // used to control modal for #oc-569
-                    bprev: this.useUnreleased? 'main': undefined
+                    bprev: this.useUnreleased? this.version: undefined
                 }
             else return {}
         },
@@ -163,6 +168,20 @@ export default {
             return null
         },
 
+        mainAtLastest() {
+            if(!this.mainBranchCommitId || !this.currentTag?.commit?.id) return false
+
+            return this.mainBranchCommitId == this.currentTag.commit.id
+        },
+
+        shouldProvideVersionSelection() {
+            console.log(this.currentTag, this.mainBranchCommitId, this.mainAtLastest)
+            if(!this.currentTag) return false
+            if(!this.mainBranchCommitId) return false
+            if(this.mainAtLastest) return false
+
+            return true
+        }
     },
     watch: {
         querySpec: function(query, oldQuery) {
@@ -200,6 +219,13 @@ export default {
             immediate: true,
             handler(val) {
                 if(!this.selectedEnvironment) this.selectedEnvironment = this.lookupEnvironment(val)
+            }
+        },
+
+        currentTag(currentTag) {
+            if(!currentTag) return
+            if(!this.version) {
+                this.version = currentTag.name
             }
         }
     },
@@ -248,6 +274,7 @@ export default {
         }
 
         fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
+        fetchBranches(encodeURIComponent(this.$projectGlobal.projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == 'main')?.commit?.id)
 
         this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
@@ -260,7 +287,7 @@ export default {
             this.templateForkedName = this.$route.query?.fn
         }
 
-        this.useUnreleased = this.$route.query?.bprev == 'main'
+        this.version = this.$route.query?.bprev
     },
     methods: {
         redirectToTemplateEditor(page=routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
@@ -513,9 +540,9 @@ export default {
                             environment-creation
                         />
 
-                        <div class="mt-5">
-                        <p v-if="currentTag">The current release of {{getApplicationBlueprint.title}} is <b>{{currentTag.name}}</b></p>
-                        <gl-form-checkbox v-model="useUnreleased"> Use an unreleased version of {{ getApplicationBlueprint.title}}</gl-form-checkbox>
+                        <div v-if="shouldProvideVersionSelection" class="mt-5">
+                            <gl-form-radio v-model="version" :value="currentTag.name">Use the current release of {{getApplicationBlueprint.title}}  (<b>{{currentTag.name}}</b>)</gl-form-radio>
+                            <gl-form-radio v-model="version" value="main"> Use the latest (unreleased) version</gl-form-radio>
                         </div>
                     </div>
                 </div>

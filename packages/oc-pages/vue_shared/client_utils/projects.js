@@ -3,6 +3,8 @@ import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
 import * as semver from 'semver'
 
+const BRANCH_CACHE_DURATION = 2000
+
 function generateConfig(options) {
     if(options?.accessToken) {
         return {headers: {
@@ -81,7 +83,7 @@ export async function fetchBranches(projectId) {
     }
     const promise = async () => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
 
-    setTimeout(() => delete branchesData[projectId], 1000)
+    setTimeout(() => delete branchesData[projectId], BRANCH_CACHE_DURATION)
     return branchesData[projectId] = promise()
 }
 
