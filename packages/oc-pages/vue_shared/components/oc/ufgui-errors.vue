@@ -59,7 +59,7 @@ export default {
 </script>
 <template>
     <!-- 599 is one z-index below the sidebar -->
-    <div ref="container" style="position: sticky; top: 0px; z-index: 599;">
+    <div class = "ufgui-error-container" ref="container" style="top: 0px; z-index: 599;">
         <gl-alert @dismiss="clearErrors" variant="danger" v-if="defaultErrorCount > 0">
             <gl-tabs v-if="defaultErrorCount > 1 && defaultErrorCount != errors.length" v-model="currentTab" style="margin-bottom: -24px" >
                 <oc-tab title="All" v-if="minorCount > majorCount" :title-count="minorCount" />
@@ -84,3 +84,12 @@ export default {
     </div>
 
 </template>
+<style>
+.ufgui-error-container {
+    position: sticky;
+}
+
+body.modal-open .ufgui-error-container {
+    position: fixed;
+}
+</style>
