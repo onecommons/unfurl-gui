@@ -18,6 +18,8 @@ import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 
 
+const DASHBOARD_PROVIDERS_LIMIT = 15 // this is conservative - in local testing up to 18 was OK
+
 const state = () => ({
     projectEnvironments: [],
     resourceTypeCategories: {},
@@ -603,11 +605,34 @@ const actions = {
 
     async loadAdditionalProviders({rootGetters, commit}, {accessLevel=30}) {
         // include developer access for deploy requests, etc.
-        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
+        const dashboardsOfLevel = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchDashboardProviders(dashboard.path_with_namespace)) || []
 
-        const dashboardProviders = (await Promise.all(dashboards)).filter(provider => !!provider)
+
+        if(dashboardsOfLevel && dashboardsOfLevel.length > DASHBOARD_PROVIDERS_LIMIT) {
+            commit('createError', {
+                message: `@loadAdditionalProviders: cannot list providers for all dashboards with access - too many dashboard memberships`,
+                context: {
+                    skippedDashboards: dashboardsOfLevel.slice(DASHBOARD_PROVIDERS_LIMIT),
+                },
+                severity: 'major'
+            }, {root: true})
+        }
+
+        // limited to DASHBOARD_PROVIDERS_LIMIT for query complexity
+        const dashboards = dashboardsOfLevel?.slice(0, DASHBOARD_PROVIDERS_LIMIT)?.map(dashboard => fetchDashboardProviders(dashboard.path_with_namespace)) || []
+
+        let dashboardProviders = (await Promise.all(dashboards).catch(e => {
+            commit('createError', {
+                message: `@loadAdditionalProviders: ${e.message}`,
+                context: {
+                    dashboards,
+                },
+                severity: 'major'
+            }, {root: true})
+        })) || []
+
+        dashboardProviders = dashboardProviders.filter(provider => !!provider)
 
         commit('setAdditionalProviders', dashboardProviders)
     },
