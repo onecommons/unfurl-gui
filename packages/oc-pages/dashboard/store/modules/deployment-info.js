@@ -127,7 +127,7 @@ const actions = {
     async populateJobsList({rootGetters, commit}) {
         let result
 
-        // #!if
+        // #!if false
         result = await graphqlClient.defaultClient.query({
             query: LOOKUP_JOBS,
             fetchPolicy: 'network-only',

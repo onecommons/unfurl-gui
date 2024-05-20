@@ -7,7 +7,11 @@ const BACKOFF_EXPONENT = 1.25
 const DEFAULT_STARTUP_ESTIMATE = 5 * 60 * 10000// 5 minutes
 
 
-const xhrIframe = new XhrIFrame()
+let xhrIframe = null
+
+// #!if false
+xhrIframe = new XhrIFrame()
+// #!endif
 
 const stateFn = () => ({
     urlPolls: {},

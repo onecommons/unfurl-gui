@@ -24,16 +24,15 @@ module.exports = {
     "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
     "semi": "off",
-    "graphql/template-strings": [
-      "warn", //eslint hates me
-      {
-        env: "literal",
-        projectName: "app",
-        schemaJsonFilepath: "graphql/schema.json"
-      }
-    ],
-    "@typescript-eslint/no-explicit-any": "off"
+    // "graphql/template-strings": [
+    //   "warn", //eslint hates me
+    //   {
+    //     env: "literal",
+    //     projectName: "app",
+    //     schemaJsonFilepath: "graphql/schema.json"
+    //   }
+    // ],
+    // "@typescript-eslint/no-explicit-any": "off"
   },
 
-  plugins: ["graphql"]
 };

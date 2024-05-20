@@ -135,7 +135,7 @@ export function clearMatchingStorage(re, visit) {
 }
 
 export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
-export const DEFAULT_UNFURL_SERVER_URL = '/services/unfurl-server'
+export const DEFAULT_UNFURL_SERVER_URL = window.gon.unfurl_server_url || '/services/unfurl-server'
 
 
 window.lsHiddenOptions = function() {

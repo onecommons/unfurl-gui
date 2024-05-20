@@ -74,6 +74,7 @@ export default {
             if(result > 0) {
                 return result
             }
+            return null
         },
 
         pickerOptions() {

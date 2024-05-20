@@ -102,7 +102,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     const username = window.gon.current_username
 
-    let exportUrl = `${baseUrl}/export?format=${format}`
+    let exportUrl = `${baseUrl}/export?format=${format}`.replace(/^\/+/, '/')
 
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
 
@@ -115,7 +115,9 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += `&branch=${branch}`
     }
 
-    exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
+    if(!window.gon.unfurl_gui) {
+        exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
+    }
 
     // if(alwaysSendLatestCommit() || !getOverride(projectPath)) {
     // pass latest commit when it's not the repo we're developing
@@ -153,7 +155,10 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     // the only other reason to hit branches would be to get the main branch
 
     const fetchCommitPromise = (branch && !branch.startsWith('v'))? fetchLastCommit(encodeURIComponent(projectPath), branch): null
-    const fetchProjectInfoPromise = sendCredentials ?? null == null?  fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility): null
+
+    const shouldFetchProjectInfo = (sendCredentials ?? null) == null && !window.gon.unfurl_gui
+    const fetchProjectInfoPromise = shouldFetchProjectInfo?  fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility): null
+
     const [lastCommitResult, password, visibility] = await Promise.all([fetchCommitPromise, fetchUserAccessToken(), fetchProjectInfoPromise])
     const [latestCommit, inferredBranch] = lastCommitResult || []
     const _sendCredentials = sendCredentials ?? visibility != 'public'
@@ -167,7 +172,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     const username = window.gon.current_username
 
-    let exportUrl = `${baseUrl}/types`
+    let exportUrl = `${baseUrl}/types`.replace(/^\/+/, '/')
 
     exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
 

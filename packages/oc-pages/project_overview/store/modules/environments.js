@@ -421,12 +421,9 @@ const actions = {
         const {fullPath, branch, includeDeployments, only} = {includeDeployments: true, ...options}
         let environments = []
         try {
-            const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath)))?.id
-
             const result = await fetchEnvironments({
                 fullPath,
                 branch: branch || 'main',
-                projectId,
                 includeDeployments,
                 only
             })
@@ -516,6 +513,7 @@ const actions = {
         await Promise.all(promises)
     },
     async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
+        // #!if false
         const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath))
         const namespace = projectInfo?.namespace
 
@@ -532,6 +530,7 @@ const actions = {
         } catch(e) {
             console.warn('Unable to create access token')
         }
+        // #!endif
     },
 
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, options) {

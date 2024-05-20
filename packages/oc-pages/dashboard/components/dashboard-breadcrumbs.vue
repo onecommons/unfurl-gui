@@ -1,11 +1,11 @@
 <script>
 import {mapGetters} from 'vuex'
-import {GlIcon, GlBreadcrumb} from '@gitlab/ui'
+import {GlBreadcrumb} from '@gitlab/ui'
 import * as routes from '../router/constants'
 
 export default {
     name: 'DashboardBreadcrumbs',
-    components: {GlBreadcrumb, GlIcon},
+    components: {GlBreadcrumb},
     props: {
         items: {
             type: Array,

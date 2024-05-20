@@ -6,6 +6,8 @@ import ErrorSmall from './ErrorSmall.vue'
 import {mapGetters} from 'vuex'
 import ExperimentalSettingInput from './experimental-settings-indicator/experimental-settings-input.vue'
 
+const enabled = !window.gon.unfurl_gui
+
 export default {
     name: 'ExperimentalSettingIndicator',
     components: {GlButton, GlIcon, GlModal, ElCard, ElButton, ErrorSmall, ExperimentalSettingInput},
@@ -14,7 +16,8 @@ export default {
             yPos: '0px',
             xPos: '0px',
             CONFIGURABLE_HIDDEN_OPTIONS,
-            changed: false
+            changed: false,
+            enabled
         }
     },
     methods: {
@@ -83,7 +86,7 @@ export default {
     },
     watch: {
         windowWidth: {
-            immediate: true,
+            immediate: enabled,
             handler(_) {
                 this.computePosition()
             }
@@ -101,7 +104,7 @@ export default {
 }
 </script>
 <template>
-    <div>
+    <div v-if="enabled">
         <gl-modal
             title="Developer Settings"
             modal-id="dev-settings-modal"

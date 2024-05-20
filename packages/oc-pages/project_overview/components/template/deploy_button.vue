@@ -13,7 +13,7 @@ export default {
         ElTooltip,
         ErrorSmall,
         Autostop,
-        GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox
+        GlButton, GlButtonGroup, GlDropdown, GlFormCheckbox
     },
     data() {
         return {

@@ -9,6 +9,9 @@ import { mapState } from 'vuex'
 import {compatibilityUnfurlBadgeUrlBuilder as initUnfurlBadgeUrlBuilder} from 'oc_vue_shared/compat'
 
 import { GlModal } from '@gitlab/ui'
+
+const enabled = !window.gon.unfurl_gui
+
 export default {
     name: 'OverviewShareModal',
     components: {
@@ -17,7 +20,8 @@ export default {
     data() {
         return {
             imageEl: null, encodedButtonParams: '',
-            baseTitle: document.querySelector('title').textContent
+            baseTitle: enabled && document.querySelector('title').textContent,
+            enabled
         }
     },
     methods: {
@@ -39,7 +43,6 @@ export default {
                 }
             }
 
-            console.log(newTitle)
             document.querySelector('title').textContent = newTitle
         }
     },
@@ -61,7 +64,7 @@ export default {
 
                 this.updateTitle()
             },
-            immediate: true
+            immediate: enabled
         },
         encodedButtonParams: {
             handler(val) {
@@ -104,7 +107,7 @@ export default {
 }
 </script>
 <template>
-<gl-modal modalId="overview-share-modal" title="Create an embeddable 'Deploy With Unfurl' button for this blueprint." :visible="visible" @hidden="visible = false">
+<gl-modal v-if="enabled" modalId="overview-share-modal" title="Create an embeddable 'Deploy With Unfurl' button for this blueprint." :visible="visible" @hidden="visible = false">
     <div v-html="project.globalVars.badgeSettings">  </div>
 </gl-modal>
 </template>

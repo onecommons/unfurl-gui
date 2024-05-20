@@ -139,8 +139,11 @@ const actions = {
     },
 
     async fetchCommentsIssue({ state, commit }) {
-        const issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(state.globalVars.projectPath)}/issues?state=opened&label=general+discussion`))?.data
+        let issues
 
+        // #!if false
+        issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(state.globalVars.projectPath)}/issues?state=opened&label=general+discussion`))?.data
+        // #!endif
 
         if(issues && issues.length > 0) {
             const commentsIssueUrl = issues[0].web_url

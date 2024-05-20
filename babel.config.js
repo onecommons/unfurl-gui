@@ -1,13 +1,19 @@
+const defaultEnv = {
+  presets: [
+    "@vue/cli-plugin-babel/preset",
+    "@babel/preset-env",
+  ],
+  plugins: [
+    "@babel/plugin-transform-runtime",
+  ]
+}
+
 module.exports = {
   env: {
-    "": {
-      presets: [
-        "@vue/cli-plugin-babel/preset",
-      ],
-    },
+    development: defaultEnv,
+    production: defaultEnv,
     test: {
       presets: [
-
         "@babel/preset-env",
         "@babel/preset-typescript"
         // ['@babel/preset-env', {targets: {node: 'current'}, useBuiltIns: 'usage', corejs: 3}],

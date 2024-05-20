@@ -17,7 +17,7 @@ const state = () => ({
     routerHook: DEFAULT_ROUTER_HOOK,
     isMobileLayout: isMobileLayout(),
     namespace: null,
-    dashboard: null,
+    dashboard: window.gon.home_project || null,
     dashboardProjectInfo: null,
     user: null,
     windowWidth: window.innerWidth,
@@ -66,9 +66,19 @@ const mutations = {
 
 const getters = {
     getRouterHook(state) {return state.routerHook},
-    getCurrentNamespace(state, getters) {return state.namespace || lookupKey('defaultNamespace') || getters.getUsername},
-    getHomeProjectPath(state, getters)  {return `${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`},
-    getHomeProjectName(state) { return state.dashboardProjectInfo?.name || 'Dashboard' },
+    getCurrentNamespace(state, getters) {
+        if(window.gon.home_project !== null) return state.namespace || lookupKey('defaultNamespace') || getters.getUsername
+        return null
+    },
+    getHomeProjectPath(state, getters)  {
+        if(window.gon.home_project !== null) return `${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`
+        return null
+    },
+    getHomeProjectName(state) {
+        if(window.gon.home_project !== null) 
+        return state.dashboardProjectInfo?.name || 'Dashboard'
+        return null
+    },
     getUsername() {return window.gon.current_username},
     getUser(state) {
         return state.user

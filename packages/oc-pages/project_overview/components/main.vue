@@ -1,8 +1,6 @@
 <script>
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
-import gql from 'graphql-tag'
-import graphqlClient from '../graphql';
 import * as routes from '../router/constants'
 
 export default {
@@ -26,7 +24,11 @@ export default {
           this.$store.commit('setDashboardName', dashboardName)
         }
 
-        if(gon.current_user_id && this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE ) {
+        if(
+            gon.current_user_id &&
+            this.$store.getters.getHomeProjectPath &&
+            this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE
+        ) {
             this.$store.dispatch('populateCurrentUser').catch(() => {})
 
             const includeDeployments = ![

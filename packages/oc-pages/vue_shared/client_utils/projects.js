@@ -195,6 +195,8 @@ const getUserPermissions = gql`
 
 
 export async function fetchUserHasWritePermissions(projectPath) {
+
+    // #!if false
     const result = await graphqlClient.defaultClient.query({
         query: getUserPermissions,
         variables: {projectPath},
@@ -202,6 +204,9 @@ export async function fetchUserHasWritePermissions(projectPath) {
     })
 
     return result?.data?.project?.userPermissions?.pushCode ?? false
+    // #!endif
+
+    return true
 }
 
 export async function createMergeRequest(projectId, {branch, target, title, description, labels}) {

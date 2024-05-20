@@ -7,6 +7,8 @@ import axios from '~/lib/utils/axios_utils';
 import {mapGetters, mapState} from 'vuex'
 import { __ } from '~/locale';
 
+const enabled = !window.gon.unfurl_gui
+
 export default {
     name: 'HeaderProjectView',
     components: {
@@ -28,7 +30,8 @@ export default {
                 count: this.$projectGlobal.buttonStar.count,
                 text: this.$projectGlobal.buttonStar.text,
                 icon: null,
-            }
+            },
+            enabled,
         }
     },
 
@@ -84,7 +87,7 @@ export default {
 }
 </script>
 <template>
-    <div class="project-home-panel js-show-on-project-root gl-my-5">
+    <div v-if="enabled" class="project-home-panel js-show-on-project-root gl-my-5">
 
         <div class="gl-display-flex gl-justify-content-space-between gl-flex-wrap gl-sm-flex-direction-column gl-mb-3">
             <div class="home-panel-title-row gl-display-flex">

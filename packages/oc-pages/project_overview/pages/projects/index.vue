@@ -11,7 +11,7 @@ import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
 import LocalDevelop from '../../components/local-develop.vue'
-import {OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
+import {MarkdownView, OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
 import {fetchUserHasWritePermissions, fetchCurrentTag, fetchBranches} from 'oc_vue_shared/client_utils/projects'
@@ -39,6 +39,7 @@ export default {
         YourDeployments,
         OpenCloudDeployments,
         GlMarkdown,
+        MarkdownView,
         NotesWrapper,
         LocalDevelop
     },
@@ -69,7 +70,8 @@ export default {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
             },
-            currentTab: 0
+            currentTab: 0,
+            standalone: window.gon.unfurl_gui
         }
     },
     computed: {
@@ -259,8 +261,11 @@ export default {
         const projectPath = this.$projectGlobal.projectPath
 
         // async, not awaiting
-        fetchUserHasWritePermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
-        this.fetchCommentsIssue()
+        if(!window.gon.unfurl_gui) {
+            fetchUserHasWritePermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
+            this.fetchCommentsIssue()
+        }
+
         const jobsListPromise = this.populateJobsList().catch(e => console.error('failed to lookup jobs: ', e.message))
         //
 
@@ -273,7 +278,10 @@ export default {
             jobsListPromise.then(() => this.populateDeploymentItems(this.yourDeployments))
         }
 
-        fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
+        if(!window.gon.unfurl_gui) {
+            fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
+        }
+
         fetchBranches(encodeURIComponent(this.$projectGlobal.projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == 'main')?.commit?.id)
 
         this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
@@ -482,7 +490,7 @@ export default {
 
             </gl-tabs>
 
-            <gl-card v-if="$projectGlobal.readme">
+            <gl-card v-if="$projectGlobal.readme || $projectGlobal.readmeRaw">
                 <template #header>
                     <div class="d-flex align-items-center">
                         <gl-icon name="information-o" class="mr-2"/>
@@ -491,7 +499,11 @@ export default {
                         </h5>
                     </div>
                 </template>
-                <gl-markdown class="md" v-html="$projectGlobal.readme" />
+
+                <gl-markdown v-if="standalone">
+                    <markdown-view :content="$projectGlobal.readmeRaw"/>
+                </gl-markdown>
+                <gl-markdown v-else class="md" v-html="$projectGlobal.readme" />
             </gl-card>
 
 

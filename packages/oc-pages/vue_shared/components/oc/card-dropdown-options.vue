@@ -40,9 +40,6 @@ export default {
         isPrimary() {
             return this.getPrimaryCard?.name == this.card.name
         },
-
-        controlButtons() {
-        }
     }
 }
 </script>

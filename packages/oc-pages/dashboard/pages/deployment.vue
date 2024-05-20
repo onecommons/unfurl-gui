@@ -102,18 +102,21 @@ export default {
             if(this.autostopRemainingTime >= ONE_DAY) {
                 return Math.floor(this.autostopRemainingTime / ONE_DAY)
             }
+            return null
         },
 
         autostopRemainingHours() {
             if(this.autostopRemainingTime >= ONE_HOUR) {
                 return Math.floor(this.autostopRemainingTime % ONE_DAY / ONE_HOUR).toString().padStart(2, '0')
             }
+            return null
         },
 
         autostopRemainingMinutes() {
             if(this.autostopRemainingTime >= ONE_MINUTE) {
                 return Math.floor(this.autostopRemainingTime % ONE_HOUR / ONE_MINUTE).toString().padStart(2, '0')
             }
+            return null
         },
 
         autostopRemainingSeconds() {
