@@ -7,6 +7,8 @@ import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import Autostop from 'oc_vue_shared/components/oc/autostop.vue'
 import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
 
+const standalone = window.gon.unfurl_gui
+
 export default {
     name: 'DeployButton',
     components: {
@@ -20,7 +22,8 @@ export default {
             forceCheck: false,
             dryRun: false,
             localDeploy: false,
-            isCypress: !!window.Cypress
+            isCypress: !!window.Cypress,
+            standalone
         }
     },
     props: {
@@ -64,6 +67,9 @@ export default {
         canDeploy() {
             return this.cardIsValid(this.getPrimaryCard)
         },
+        canAutoStop() {
+            return this.userCanEdit && !this.editingDeployed && !this.editingTorndown && !standalone
+        },
         workInProgress() {
             return this.mergeRequest && this.mergeRequest.work_in_progress
         },
@@ -94,7 +100,7 @@ export default {
         localDeployOnly() {
             // *not* reactive
 
-            return !!getTransientUnfurlServerOverride()
+            return standalone || !!getTransientUnfurlServerOverride()
         }
     }
 }
@@ -102,7 +108,7 @@ export default {
 </script>
 <template>
     <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper position-relative">
-        <autostop v-if="userCanEdit && !editingDeployed && !editingTorndown" class="mr-2"/>
+        <autostop v-if="canAutoStop" class="mr-2"/>
         <el-tooltip :disabled="!deployTooltip">
             <template #content>
                 <div>
@@ -125,10 +131,10 @@ export default {
                     >
                         {{ localDeployOnly? 'Deploy Locally': deployButtonText}}
                     </gl-button>
-                    <gl-dropdown v-if="userCanEdit" :disabled="deployStatus == 'disabled'" right>
+                    <gl-dropdown v-if="userCanEdit && !standalone" :disabled="deployStatus == 'disabled'" right>
                         <div class="mt-2"/>
-                            <gl-form-checkbox data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled' && !localDeployOnly" placement="right">
+                            <gl-form-checkbox v-if="!localDeployOnly" data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
+                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'" placement="right">
                                     <template #content>
                                         Use Unfurl to deploy this from the command line
                                     </template>

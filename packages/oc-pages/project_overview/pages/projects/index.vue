@@ -19,6 +19,8 @@ import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 
+const standalone = window.gon.unfurl_gui
+
 export default {
     name: 'ProjectPageHome',
     i18n: {
@@ -71,7 +73,7 @@ export default {
                 description: ""
             },
             currentTab: 0,
-            standalone: window.gon.unfurl_gui
+            standalone
         }
     },
     computed: {
@@ -261,10 +263,11 @@ export default {
         const projectPath = this.$projectGlobal.projectPath
 
         // async, not awaiting
-        if(!window.gon.unfurl_gui) {
+        if(!standalone) {
             fetchUserHasWritePermissions(projectPath).then(hasEditPermissions => this.hasEditPermissions = hasEditPermissions)
             this.fetchCommentsIssue()
         }
+        else { this.hasEditPermissions = true }
 
         const jobsListPromise = this.populateJobsList().catch(e => console.error('failed to lookup jobs: ', e.message))
         //
@@ -278,7 +281,7 @@ export default {
             jobsListPromise.then(() => this.populateDeploymentItems(this.yourDeployments))
         }
 
-        if(!window.gon.unfurl_gui) {
+        if(!standalone) {
             fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
         }
 
@@ -451,7 +454,7 @@ export default {
                         </gl-card>
                     </div>
                 </oc-tab>
-                <oc-tab v-if="hasEditPermissions" ref="developmentTab" title="Develop">
+                <oc-tab v-if="hasEditPermissions && !standalone" ref="developmentTab" title="Develop">
                     <gl-card>
                         <template #header>
                             <div class="d-flex align-items-center">

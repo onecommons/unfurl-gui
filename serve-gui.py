@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from pathlib import Path
 from unfurl.server import app
 import unfurl.server as ufserver
 from flask import request, Response, Request, jsonify, send_file
@@ -8,6 +7,8 @@ from jinja2 import Environment, FileSystemLoader
 import requests
 import re
 from glob import glob
+from rich import inspect
+from urllib.parse import urlparse
 
 
 WEBPACK_ORIGIN = os.environ.get('WEBPACK_ORIGIN') # implied dev mode
@@ -28,7 +29,14 @@ for filename in ['README', 'README.md', 'README.txt']:
         break
 
 err, localenv = ufserver._make_readonly_localenv("", "")
+localrepo = ufserver._get_project_repo("", "", {})
 user = os.getenv('USER', 'unfurl-user')
+
+localrepo_is_dashboard = len(glob("unfurl.y*ml")) > 0 and len(glob("ensemble-template.y*ml")) == 0
+
+if localrepo_is_dashboard and localrepo.remote.url:
+    parsed = urlparse(localrepo.remote.url) 
+    [user, password, *rest] = re.split(r'[@:]', parsed.netloc)
 
 
 def get_head_contents(f):
@@ -63,12 +71,17 @@ else:
     dashboard_head = f"<head>{get_head_contents(os.path.join(DIST, 'dashboard.html'))}</head>"
 
 
-def serve_document():
+def serve_document(path):
+    server_fragment = re.split(r"/(deployment-drafts|-)", path)[0]
+    repo = get_repo(server_fragment)
+
+    inspect([repo, path, server_fragment])
     format = 'environments'
-    if Path('ensemble-template.yaml').exists():
+    if glob(os.path.join(repo.working_dir, 'ensemble-template.y*ml')):
         format = 'blueprint'
 
-    project_name = localenv.project.name
+    project_path = repo.project_path()
+    project_name = os.path.basename(project_path)
 
 
     if format == 'blueprint':
@@ -80,7 +93,11 @@ def serve_document():
         name=project_name,
         readme=readme,
         user=user,
-        head=(project_head if format == 'blueprint' else dashboard_head)
+        head=(project_head if format == 'blueprint' else dashboard_head),
+        project_path=project_path,
+        namespace=os.path.dirname(project_path),
+        home_project = "dashboard" if localrepo_is_dashboard else None,
+        working_dir_project = f"{user}/dashboard" if localrepo_is_dashboard else project_name
     )
 
 
@@ -105,15 +122,36 @@ def proxy_webpack(url):
     return Response(res.content, res.status_code, headers)
 
 
+# TODO don't match arbitrary globs
+def first_glob(g):
+    next(iter(glob(g)), None)
+
+
+def get_repo(project_path):
+    project_path = project_path.rstrip('/')
+    if project_path == localenv.project.name or project_path == f"{user}/{localenv.project.name}":
+        repo = localrepo
+    else:
+        repo = ufserver._get_project_repo(project_path, "", {})
+
+    inspect([project_path, repo])
+    return repo
+
+
 def create_gui_routes():
-    @app.route('/<user>/dashboard/-/variables')
+    @app.route('/<user>/dashboard/-/variables', methods=["GET", "PATCH"])
     def variables(user):
         return {"variables": []}
 
+    
+    @app.route('/api/v4/unfurl_access_token')
+    def unfurl_access_token():
+        return {"token": password}
 
-    @app.route(f'/api/v4/projects/{localenv.project.name}/repository/branches')
-    def branches():
-        repo = ufserver._get_project_repo("", "", {})
+
+    @app.route('/api/v4/projects/<path:project_path>/repository/branches')
+    def branches(project_path):
+        repo = get_repo(project_path)
 
         return jsonify(
             #TODO 
@@ -121,15 +159,21 @@ def create_gui_routes():
         )
 
 
+    @app.route('/api/v4/projects/<path:project_path>')
+    def project(project_path):
+        repo = get_repo(project_path)
+        inspect([repo, project_path])
+
+        return {"name": os.path.basename(repo.project_path())}
+
+
     @app.route('/<path:project_path>/-/raw/<branch>/<path:file>')
     def local_file(project_path, branch, file):
-        path_prefix = os.path.join('repos', 'public', project_path)
+        repo = get_repo(project_path)
 
-        # TODO don't match arbitrary globs
-        matches = glob(f'{path_prefix}/*/{file}')
-
-        if len(matches) > 0:
-            return send_file(os.path.abspath(matches[0]))
+        full_path = os.path.join(repo.working_dir, file)
+        if os.path.exists(full_path):
+            return send_file(full_path)
 
         return "Not found", 404
 
@@ -140,7 +184,7 @@ def create_gui_routes():
         # if path == '':
             # path = 'dashboard'
         if 'text/html' in request.headers['accept']: 
-            return serve_document()
+            return serve_document(path)
 
 
         if WEBPACK_ORIGIN:

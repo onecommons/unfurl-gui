@@ -113,7 +113,6 @@ export async function fetchUser() {
 
 let userAccessToken
 export async function fetchUserAccessToken() {
-    // #!if false
     if(!userAccessToken) {
         userAccessToken = (async () => {
             try { return (await axios.get('/api/v4/unfurl_access_token'))?.data?.token }
@@ -121,7 +120,6 @@ export async function fetchUserAccessToken() {
         })()
     }
     return await userAccessToken
-    // #!endif
 
     return ''
 }

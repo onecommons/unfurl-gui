@@ -98,7 +98,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     const _sendCredentials = sendCredentials ?? true
     await healthCheckErrorHelper(projectPath)
 
-    if(!latestCommit) throw new Error(`@unfurlServerExport: latestCommit is not defined for ${projectPath}#${branch}`)
+    if(!window.gon.unfurl_gui && !latestCommit) throw new Error(`@unfurlServerExport: latestCommit is not defined for ${projectPath}#${branch}`)
 
     const username = window.gon.current_username
 
@@ -115,7 +115,8 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += `&branch=${branch}`
     }
 
-    if(!window.gon.unfurl_gui) {
+    // TODO standalone: figure out how to determine if auth project should be blank 
+    if(window.gon.working_dir_project != projectPath) {
         exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
     }
 
@@ -174,7 +175,9 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     let exportUrl = `${baseUrl}/types`.replace(/^\/+/, '/')
 
-    exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
+    if(window.gon.working_dir_project != projectPath) {
+        exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
+    }
 
     if(!params.hasOwnProperty('cloudmap')) {
         const combinationKey = JSON.stringify(params)
@@ -311,7 +314,7 @@ export async function fetchTypeRepositories(repositories, params) {
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
-    const [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
+    let [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
     const [latestCommit, _branch] = lastCommitResult
     await healthCheckErrorHelper(projectPath)
 
@@ -326,9 +329,14 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         patch,
         commit_msg: commitMessage || method
     }
+
     const headers = createHeaders({username, password})
     headers['Content-Type'] = 'application/json'
-    const url = `${baseUrl}/${method}?auth_project=${encodeURIComponent(projectPath)}`
+    let url = `${baseUrl}/${method}`.replace(/^\/+/, '/')
+
+    if(window.gon.working_dir_project != projectPath) {
+        url += `?auth_project=${encodeURIComponent(projectPath)}`
+    }
 
     let data
 

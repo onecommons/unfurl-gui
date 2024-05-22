@@ -276,6 +276,7 @@ export default {
             } else if(this.location == 'spec') {
                 return this.getCurrentProjectPath
             }
+            return null
         },
 
         filteredFiles() {
@@ -516,4 +517,3 @@ export default {
 }
 
 </style>
-<sytle

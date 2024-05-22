@@ -687,7 +687,7 @@ export default {
       await this.triggerSave();
       if(this.hasCriticalErrors) return
 
-      const result = await this.deployInto({
+      const result = window.gon.unfurl_gui? {}: await this.deployInto({
         ...this.deploymentParams,
         deployOptions: {
             schedule: 'defer'

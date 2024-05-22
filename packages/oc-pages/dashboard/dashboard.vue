@@ -75,8 +75,10 @@ export default {
 
         this.populateDeploymentItems(this.getDashboardItems)
 
-        for(const {environment, deployment} of this.getDashboardItems) {
-            this.addUrlPoll({deployment, environment})
+        if(!window.gon.unfurl_gui) {
+            for(const {environment, deployment} of this.getDashboardItems) {
+                this.addUrlPoll({deployment, environment})
+            }
         }
 
         this.handleResize()

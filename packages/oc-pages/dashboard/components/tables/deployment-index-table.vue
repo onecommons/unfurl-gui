@@ -616,7 +616,7 @@ export default {
             handler(val) {
                 for(const item of val) {
                     const deploymentItem = this.deploymentItemDirect({deployment: item.deployment, environment: item.environment})
-                    if(deploymentItem?.isRunning && item.deployment?.url) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
+                    if(deploymentItem?.isRunning && item.deployment?.url && !window.gon.unfurl_gui) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
                 }
             }
         },

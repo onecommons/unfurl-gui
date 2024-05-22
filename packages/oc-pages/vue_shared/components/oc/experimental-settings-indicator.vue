@@ -88,7 +88,9 @@ export default {
         windowWidth: {
             immediate: enabled,
             handler(_) {
-                this.computePosition()
+                if(enabled) {
+                    this.computePosition()
+                }
             }
         }
     },

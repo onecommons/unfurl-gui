@@ -25,6 +25,7 @@ const uiDirectives = {
 export function getCustomInputComponent(type) {
     return customComponents[type] ?? null
 }
+console.log(getCustomInputComponent)
 
 export function getCustomTooltip(type) {
     return customTooltips[type] ?? null
@@ -35,7 +36,10 @@ export function getUiDirective(type) {
 }
 
 import FakePassword from './formily-fake-password'
+
+// #!if false
 import FileSelector from './formily-file-selector'
+// #!endif
 
 const formilyElement = async function() {
     if(!formilyElement.promise) {
@@ -68,7 +72,12 @@ export const fields =  async function() {
         ArrayItems,
         Space,
         Input,
-        InputNumber, Checkbox, Select, FakePassword, FileSelector, Editable
+        InputNumber, Checkbox, Select, FakePassword, Editable,
+
+        // #!if false
+        FileSelector
+        // #!endif
+
       }
     })
 }

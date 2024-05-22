@@ -13,6 +13,10 @@ const mutations = {
 
 const actions = {
     async fetchMergeRequests({commit, rootGetters}) {
+        if(window.gon.unfurl_gui) {
+            return
+        }
+
         const target = 'main'
         const labels = ['unfurl-gui-mr']
 
