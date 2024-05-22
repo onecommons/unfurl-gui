@@ -113,7 +113,7 @@ export default {
                     s="Application"
                     p="Applications"
                     class="qcard1"
-                    secondary-link="/explore/blueprints" />
+                    secondary-link="/projects/new#create_from_template" />
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                     :count="environmentsCount"
