@@ -6880,6 +6880,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"babel-core@npm:^7.0.0-bridge.0":
+  version: 7.0.0-bridge.0
+  resolution: "babel-core@npm:7.0.0-bridge.0"
+  peerDependencies:
+    "@babel/core": ^7.0.0-0
+  checksum: 2a1cb879019dffb08d17bec36e13c3a6d74c94773f41c1fd8b14de13f149cc34b705b0a1e07b42fcf35917b49d78db6ff0c5c3b00b202a5235013d517b5c6bbb
+  languageName: node
+  linkType: hard
+
 "babel-eslint@npm:^10.0.3, babel-eslint@npm:^10.1.0":
   version: 10.1.0
   resolution: "babel-eslint@npm:10.1.0"
@@ -20550,6 +20559,7 @@ __metadata:
     "@vue/test-utils": ^1.3.0
     axios: ^0.20.0
     axios-cookiejar-support: ^2.0.4
+    babel-core: ^7.0.0-bridge.0
     babel-eslint: ^10.1.0
     babel-jest: ^29.6.0
     babel-plugin-transform-es2015-modules-commonjs: ^6.26.2
