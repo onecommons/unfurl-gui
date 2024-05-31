@@ -1,5 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
+import MarkdownView from 'oc_vue_shared/components/oc/markdown-view'
 
 import QuantityCard from '../components/quantity-card.vue'
 import ApplicationCell from '../components/cells/application-cell.vue'
@@ -44,7 +45,8 @@ export default {
         DeploymentCell,
         ResourceCell,
         DashboardWelcome,
-        GlMarkdown, GlCard, GlIcon
+        GlMarkdown, GlCard, GlIcon,
+        MarkdownView
     },
     data() {
         return {
@@ -52,6 +54,7 @@ export default {
             //fields,
             //items: [],
             readme: gon.readme,
+            readmeRaw: gon.readmeRaw,
             loaded: false,
         };
     },
@@ -166,7 +169,7 @@ export default {
     </TableComponent>
 
     <!-- card like on bluperint page -->
-    <gl-card v-if="readme" class="mt-6 consistent-card">
+    <gl-card v-if="readme || readmeRaw" class="mt-6 consistent-card">
         <template #header>
             <div class="d-flex align-items-center">
                 <gl-icon name="information-o" class="mr-2"/>
@@ -175,7 +178,8 @@ export default {
                 </h5>
             </div>
         </template>
-        <gl-markdown class="md" v-html="readme" />
+        <gl-markdown v-if="readme" class="md" v-html="readme" />
+        <markdown-view v-else :content="readmeRaw" />
     </gl-card>
 
 
