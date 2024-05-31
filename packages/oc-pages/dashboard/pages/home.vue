@@ -18,6 +18,7 @@ import * as routes from '../router/constants'
 
 import { GlMarkdown, GlCard, GlIcon } from '@gitlab/ui'
 
+const standalone = window.gon.unfurl_gui
 
 function pluralizeResourceType(count) {
   if(count == 0) return ''
@@ -56,6 +57,7 @@ export default {
             readme: gon.readme,
             readmeRaw: gon.readmeRaw,
             loaded: false,
+            standalone,
         };
     },
 
@@ -116,14 +118,14 @@ export default {
                     s="Application"
                     p="Applications"
                     class="qcard1"
-                    secondary-link="/projects/new#create_from_template" />
+                    :secondary-link="!standalone && '/projects/new#create_from_template'" />
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                     :count="environmentsCount"
                     s="Environment"
                     p="Environments"
                     class="qcard2"
-                    :secondary-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
+                    :secondary-link="!standalone && {name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
             </div>
             <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card
@@ -132,7 +134,7 @@ export default {
                     s="Running Deployment"
                     p="Running Deployments"
                     class="qcard3"
-                    secondary-link="/explore/blueprints" />
+                    :secondary-link="!standalone && '/explore/blueprints'" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"

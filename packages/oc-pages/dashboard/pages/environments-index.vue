@@ -7,6 +7,7 @@ import {mapGetters} from 'vuex'
 import * as routes from '../router/constants'
 import {__} from '~/locale'
 
+const standalone = window.gon.unfurl_gui
 
 export default {
     components: {GlButton, GlIcon, DashboardBreadcrumbs, EnvironmentsIndexTable, CreateEnvironmentModal},
@@ -27,6 +28,7 @@ export default {
             currentTab,
             routes,
             breadcrumbItems,
+            standalone,
         }
     },
     computed: {
@@ -78,7 +80,7 @@ export default {
                     Click <a href="https://unfurl.cloud/help/glossary" target="_blank">here</a> to learn more about how environments work on unfurl.cloud.
                 </div>
             </div>
-            <gl-button v-if="userCanEdit" variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
+            <gl-button v-if="userCanEdit && !standalone" variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
         </div>
         <environments-index-table v-if="getDashboardItems.length > 0" :items="getDashboardItems"/>
             

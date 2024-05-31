@@ -1,17 +1,24 @@
+
+// #!if false
 import LocalImageRepoSource from './LocalImageRepoSource.vue'
 import GithubMirroredRepoImageSource from './GithubMirroredRepoImageSource.vue'
 import UnfurlCloudMirroredRepoImageSource from './UnfurlCloudMirroredRepoImageSource.vue'
 import UnfurlCNamedDNSZone from './UnfurlCNamedDNSZone.vue'
+// #!endif
 
 import EnvironmentTooltip from './tooltips/EnvironmentTooltip.vue'
 
 import GenerateDirective from './directives/GenerateDirective.vue'
 
 const customComponents = {
+
+    // #!if false
     GithubMirroredRepoImageSource,
     LocalImageRepoSource,
     UnfurlCloudMirroredRepoImageSource,
     UnfurlCNamedDNSZone
+    // #!endif
+
 }
 
 const customTooltips = {
@@ -25,7 +32,6 @@ const uiDirectives = {
 export function getCustomInputComponent(type) {
     return customComponents[type] ?? null
 }
-console.log(getCustomInputComponent)
 
 export function getCustomTooltip(type) {
     return customTooltips[type] ?? null

@@ -23,6 +23,8 @@ const PROP_MAP = {
     AWS_ACCESS_KEY_ID(value) { return {name: 'Access key', value}}
 }
 
+const standalone = window.gon.unfurl_gui
+
 export default {
     name: 'Environment',
     components: {
@@ -36,7 +38,7 @@ export default {
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, unfurl_gui: window.gon.unfurl_gui, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false}
+        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone}
     },
     computed: {
         ...mapGetters([
@@ -510,8 +512,8 @@ export default {
                 </div>
             </oc-tab>
             <oc-tab title="Public Cloud" v-if="publicCloudResources.length > 0"></oc-tab>
-            <oc-tab title="Variables" v-if="userCanEdit">
-                <ci-variable-settings v-if="!unfurl_gui"/>
+            <oc-tab title="Variables" v-if="userCanEdit && !standalone">
+                <ci-variable-settings />
             </oc-tab>
         </gl-tabs>
         <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions d-flex justify-content-end">

@@ -552,7 +552,7 @@ export default {
                             :provider="templateSelected && templateSelected.cloud"
                             :error="deployDialogError"
                             @createNewEnvironment="createNewEnvironment"
-                            environment-creation
+                            :environment-creation="!standalone"
                         />
 
                         <div v-if="shouldProvideVersionSelection" class="mt-5">
