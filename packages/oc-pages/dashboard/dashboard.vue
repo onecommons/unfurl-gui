@@ -53,8 +53,11 @@ export default {
         const pathComponents = this.$router.options.base.split('/').filter(s => s);
         const currentNamespace = pathComponents.slice(0, -1).join('/')
 
-        this.setCurrentNamespace(currentNamespace);
-        this.setDashboardName(pathComponents[pathComponents.lastIndex])
+        if(!window.gon.home_project) {
+            this.setCurrentNamespace(currentNamespace);
+            this.setDashboardName(pathComponents[pathComponents.lastIndex])
+        }
+
         this.populateCurrentUser()
         this.populateDashboardProject()
 

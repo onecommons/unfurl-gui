@@ -15,13 +15,16 @@ export default {
 
         let dashboard
         if(dashboard = this.$route.params.dashboard) {
-          dashboard = decodeURIComponent(dashboard)
+            dashboard = decodeURIComponent(dashboard)
 
-          const pathComponents = dashboard.split('/')
-          const namespace = pathComponents.slice(0, -1).join('/')
-          const dashboardName = pathComponents[pathComponents.lastIndex]
-          this.$store.commit('setCurrentNamespace', namespace)
-          this.$store.commit('setDashboardName', dashboardName)
+            const pathComponents = dashboard.split('/')
+            const namespace = pathComponents.slice(0, -1).join('/')
+            const dashboardName = pathComponents[pathComponents.lastIndex]
+
+            if(!window.gon.home_project) {
+                this.$store.commit('setCurrentNamespace', namespace)
+                this.$store.commit('setDashboardName', dashboardName)
+            }
         }
 
         if(

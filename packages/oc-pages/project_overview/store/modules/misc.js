@@ -16,8 +16,8 @@ function isMobileLayout() {
 const state = () => ({
     routerHook: DEFAULT_ROUTER_HOOK,
     isMobileLayout: isMobileLayout(),
-    namespace: null,
-    dashboard: window.gon.home_project || null,
+    namespace: window.gon.home_project?.split('/')?.shift() || null,
+    dashboard: window.gon.home_project?.split('/')?.slice(1)?.join('/') || null,
     dashboardProjectInfo: null,
     user: null,
     windowWidth: window.innerWidth,

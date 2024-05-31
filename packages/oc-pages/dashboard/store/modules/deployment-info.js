@@ -89,7 +89,9 @@ const actions = {
 
 
                     if((context.deployPath?.pipelines?.length || 0) > 0 && !pipeline) {
-                        throw new Error('Active pipeline expected, but not found')
+                        if(!window.gon.unfurl_gui) {
+                            throw new Error('Active pipeline expected, but not found')
+                        }
                     }
 
                     if(pipeline) {
