@@ -450,6 +450,10 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
 }
 
 export const fetchDashboardProviders = _.memoize(async function (projectPath) {
+    if(window.gon.unfurl_gui) {
+        return null
+    }
+
     const query = gql`
         query fetchDashboardProviders ($projectPath: ID!) {
           project(fullPath: $projectPath) {

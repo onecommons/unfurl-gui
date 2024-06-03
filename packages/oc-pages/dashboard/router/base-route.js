@@ -7,5 +7,11 @@ export function baseRoute(location) {
 }
 
 export function baseRouteNaive(location) {
-    return baseRoute(location) || location.split('/').slice(0, 3).join('/')
+    let result = baseRoute(location) || location.split('/').slice(0, 3).join('/')
+
+    if(result.startsWith('/-')) {
+        result = '/'
+    }
+
+    return result
 }

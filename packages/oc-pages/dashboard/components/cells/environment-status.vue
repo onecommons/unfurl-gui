@@ -25,10 +25,13 @@ export default {
             immediate: true,
             async handler() {
                 if(!this.environment.primary_provider) {
-                    const providers = (await fetchDashboardProviders(this.getHomeProjectPath))
-                        .providersByEnvironment[this.environment.name]
+                    try {
+                        const providers = (await fetchDashboardProviders(this.getHomeProjectPath))
+                            .providersByEnvironment[this.environment.name]
 
-                    this.incompleteEnv = !!providers?.length
+                        this.incompleteEnv = !!providers?.length
+                    } catch(e) {} // error reported in environment-cell
+
                 }
             }
         }

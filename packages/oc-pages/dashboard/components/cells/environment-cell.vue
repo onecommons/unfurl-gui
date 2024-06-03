@@ -1,6 +1,6 @@
 <script>
 import * as routes from '../../router/constants'
-import {mapGetters} from 'vuex'
+import {mapGetters, mapMutations} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 export default {
@@ -23,13 +23,28 @@ export default {
             return this.environment.primary_provider?.type || this.recordedPrimaryProvider
         }
     },
+    methods: {
+        ...mapMutations(['createError'])
+    },
     watch: {
         environment: {
             immediate: true,
             async handler() {
                 if(!this.environment.primary_provider) {
-                    const providers = (await fetchDashboardProviders(this.getHomeProjectPath))
-                        .providersByEnvironment[this.environment.name]
+                    let providers
+                    try {
+                        providers = (await fetchDashboardProviders(this.getHomeProjectPath))
+                            .providersByEnvironment[this.environment.name]
+                    } catch(e) {
+                        if(!window.gon.unfurl_gui)
+                            this.createError({
+                                message: `Your environment is missing information: ${e.message}`,
+                                context: {
+                                    environment: this.environment.name,
+                                },
+                                severity: 'major'
+                            })
+                    }
 
                     try {
                         this.recordedPrimaryProvider = providers[0]

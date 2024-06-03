@@ -21,18 +21,9 @@ export {default as MarkdownView} from 'oc_vue_shared/components/oc/markdown-view
 export {default as CardDropdownOptions} from 'oc_vue_shared/components/oc/card-dropdown-options.vue'
 export {default as Autostop} from 'oc_vue_shared/components/oc/autostop.vue'
 export {default as AutostopInner} from 'oc_vue_shared/components/oc/autostop-inner.vue'
+export {default as PageNotFound} from 'oc_vue_shared/components/oc/page-not-found.vue'
 
 export let CiVariableSettings, createCiVariablesStore
-import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error.js'
-export const PageNotFound = Vue.component("page-not-found", {
-  template: "",
-  created() {
-    notFoundError()
-  },
-  unmounted() {
-    removeNotFoundError()
-  }
-})
 export const SignIn = Vue.component("sign-in", { template: "", })
 // #!if false
 import _CiVariableSettings from 'oc_vue_shared/oc_ci_variable_list/components/ci_variable_settings.vue'

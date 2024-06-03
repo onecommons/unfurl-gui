@@ -48,6 +48,10 @@ export default function createRouter() {
     });
 
 
+    router.name = 'dashboard'
+
+    // #!if false
+
     try {
         for(const [key, navigationElement] of Object.entries(navigationElements)) {
             navigationElement.onclick = e => {
@@ -59,12 +63,13 @@ export default function createRouter() {
         console.error('Could not create router links on side navigation;', e.message)
     }
 
+    // #!endif
 
-    router.name = 'dashboard'
-
-    // #!if false
 
     router.beforeEach((to, from, next) => {
+
+        // #!if false
+
         try {
             let navigationElement
             switch(to.name) {
@@ -90,6 +95,9 @@ export default function createRouter() {
         } catch(e) {
             console.error("Couldn't set class on side navigation;", e.message)
         }
+
+        // #!endif
+
         if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
             router.app.$store.getters.getRouterHook(to, from, next)
         }
@@ -97,7 +105,6 @@ export default function createRouter() {
 
     })
     
-    // #!endif
 
     return router;
 }

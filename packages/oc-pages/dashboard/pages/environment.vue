@@ -333,7 +333,7 @@ export default {
             })
 
             if(connections.length == 0) {
-                const providers = (await fetchDashboardProviders(this.getHomeProjectPath)).providersByEnvironment[environmentName]
+                const providers = (await fetchDashboardProviders(this.getHomeProjectPath))?.providersByEnvironment[environmentName] ?? []
                 if(providers?.length) {
                     // cheat to force agreement on primary card
                     this.setDeploymentTemplate({primary: 'primary_provider'})
