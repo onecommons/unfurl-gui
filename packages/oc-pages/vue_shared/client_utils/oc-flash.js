@@ -19,9 +19,6 @@ export function hideLastFlash() {
 }
 
 export function createFlash(messageOrOptions, ...args) {
-    // TODO standalone
-    if(window.gon.unfurl_gui) return
-
     const options = typeof messageOrOptions == 'string'? Object.assign({message: messageOrOptions}, ...args): messageOrOptions
     let message = options.message || ''
     let type = options.type

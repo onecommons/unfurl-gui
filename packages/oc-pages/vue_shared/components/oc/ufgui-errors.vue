@@ -1,13 +1,10 @@
 <script>
-import Vue from 'vue'
 import {mapGetters, mapMutations} from 'vuex'
 import {defaultSeverityLevel} from '../../storage-keys'
 import {GlAlert, GlTabs, GlPagination} from '@gitlab/ui'
 import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
 
 const ERROR_LEVELS = ['minor', 'major', 'critical']
-
-const enabled = !window.gon.unfurl_gui
 
 const PER_PAGE = 5
 export default {
@@ -18,14 +15,13 @@ export default {
     },
     data() {
         const headerElement = document.querySelector('[data-qa-selector="navbar"]')
-        const {y, height} = enabled? headerElement.getBoundingClientRect(): {}
+        const {y, height} = headerElement.getBoundingClientRect()
         return {
             currentTab: ERROR_LEVELS.indexOf(defaultSeverityLevel()),
             defaultSeverityLevel: defaultSeverityLevel(),
             page: 1,
             PER_PAGE,
             headerElementPos: y + height,
-            enabled
         }
     },
     computed: {
@@ -62,7 +58,7 @@ export default {
 </script>
 <template>
     <!-- 599 is one z-index below the sidebar -->
-    <div v-if="enabled" class="ufgui-error-container" ref="container" style="top: 0px; z-index: 599;">
+    <div class="ufgui-error-container" ref="container" style="top: 0px; z-index: 599;">
         <gl-alert @dismiss="clearErrors" variant="danger" v-if="defaultErrorCount > 0">
             <gl-tabs v-if="defaultErrorCount > 1 && defaultErrorCount != errors.length" v-model="currentTab" style="margin-bottom: -24px" >
                 <oc-tab title="All" v-if="minorCount > majorCount" :title-count="minorCount" />
