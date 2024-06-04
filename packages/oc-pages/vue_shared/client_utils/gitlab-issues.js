@@ -1,4 +1,4 @@
-const BASE_URL = `${window.origin}`
+const BASE_URL = window.gon.unfurl_gui? window.gon.gitlab_url: window.origin
 const BR = '\n'
 const PRE_O = '```'
 const PRE_C = '```'

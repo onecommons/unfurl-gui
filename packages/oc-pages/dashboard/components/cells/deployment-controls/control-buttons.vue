@@ -63,59 +63,64 @@ export default {
             sessionStorage['editing-target'] = this.resumeEditingTarget
             e.preventDefault()
             this.$emit('edit')
+        },
+        componentFor(button) {
+            return {
+                disabled: this.hasDisabledButton(button),
+            }
         }
     }
 }
 </script>
 <template>
 <div class="control-button-container">
-    <component :is='component' v-if="hasButton('cancel-autostop')" @click="cancelAutostop">
+    <component :is='component' v-if="hasButton('cancel-autostop')" v-bind="componentFor('cancel-autostop')" @click="cancelAutostop">
         <gl-icon :size="16" name="cancel"/>
         {{__('Cancel Auto Stop')}}
     </component>
-    <component :is='component' v-if="hasButton('cancel-job')" @click="cancelJob">
+    <component :is='component' v-if="hasButton('cancel-job')" v-bind="componentFor('cancel-job')" @click="cancelJob">
         <gl-icon :size="16" name="cancel"/>
         {{__('Cancel Job')}}
     </component>
-    <open-live-app :component="component" v-if="hasButton('open')" :deployment="deploymentItem.deployment" />
-    <component :is='component' v-if="hasButton('schedule-autostop')" @click="$emit('scheduleAutostop')">
+    <open-live-app :component="component" v-if="hasButton('open')" v-bind="componentFor('open')" :deployment="deploymentItem.deployment" />
+    <component :is='component' v-if="hasButton('schedule-autostop')" v-bind="componentFor('schedule-autostop')" @click="$emit('scheduleAutostop')">
         <i style="font-size: 17px; margin-right: 2.5px; bottom: -1px;" class="el-icon-timer"></i>
 
         {{deploymentItem.isAutostopCancelable? __('Rechedule Auto Stop'): __('Schedule Auto Stop')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
+    <component :is='component' v-if="hasButton('edit-draft')" v-bind="componentFor('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Draft')}}
     </component>
-    <component :is='component' v-if="hasButton('view-deployment')" :href="viewDeploymentTarget" rel="noopener noreferer" variant="confirm">
+    <component :is='component' v-if="hasButton('view-deployment')" v-bind="componentFor('view-deployment')" :href="viewDeploymentTarget" rel="noopener noreferer" variant="confirm">
         <gl-icon :size="16" name="external-link"/>
         {{__('View Deployment')}}
     </component>
-    <component :is='component' v-if="hasButton('edit-deployment')" @click="beforeResumeEdit" :href="resumeEditingTarget">
+    <component :is='component' v-if="hasButton('edit-deployment')" v-bind="componentFor('edit-deployment')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>
         {{__('Edit Deployment')}}
     </component>
-    <component :is='component' v-if="hasButton('clone-deployment')" @click="cloneDeployment">
+    <component :is='component' v-if="hasButton('clone-deployment')" v-bind="componentFor('clone-deployment')" @click="cloneDeployment">
         <gl-icon :size="16" name="duplicate"/>
         {{__('Clone Deployment')}}
     </component>
-    <component :is='component' v-if="hasButton('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
-    <component :is='component' v-if="hasButton('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
+    <component :is='component' v-if="hasButton('deploy')" v-bind="componentFor('deploy')" @click="startDeployment" variant="confirm"> <gl-icon :size="16" name="upload"/> {{__('Deploy')}} </component>
+    <component :is='component' v-if="hasButton('teardown')" v-bind="componentFor('teardown')" @click="stopDeployment" variant="danger"><gl-icon :size="16" name="clear-all" /> {{__('Teardown')}}</component>
     <!-- View Deployment History is too long when this is the primary action -->
-    <component :is='component' v-if="hasButton('job-history')" :disabled="hasDisabledButton('job-history')" :href="viewJobsLink">
+    <component :is='component' v-if="hasButton('job-history')" v-bind="componentFor('job-history')" :href="viewJobsLink">
         <gl-icon :size="16" name="history"/>
         {{component == 'gl-button'? __("Deploy History"): __('View Deployment History')}}
     </component>
-    <component :is='component' v-if="hasButton('view-artifacts')" :href="viewArtifactsLink">
+    <component :is='component' v-if="hasButton('view-artifacts')" v-bind="componentFor('view-artifacts')" :href="viewArtifactsLink">
         <gl-icon :size="16" name="archive"/>
         {{__('View Artifacts')}}
     </component>
-    <component :is='component' v-if="hasButton('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
-    <component :is='component' v-if="hasButton('view-in-repository')" :href="viewInRepositoryLink" target="_blank"><gl-icon :size="16" name="file-tree" /> {{__('View in Repository')}}</component>
-    <component :is='component' v-if="hasButton('inc-redeploy')" @click="incRedeploy"><gl-icon :size="16" name="repeat" /> {{__('Incremental Redeploy')}}</component>
+    <component :is='component' v-if="hasButton('local-deploy')" v-bind="componentFor('local-deploy')" @click="localDeploy"><gl-icon :size="16" name="upload" /> {{__('Deploy Locally')}}</component>
+    <component :is='component' v-if="hasButton('view-in-repository')" v-bind="componentFor('view-in-repository')" :href="viewInRepositoryLink" target="_blank"><gl-icon :size="16" name="file-tree" /> {{__('View in Repository')}}</component>
+    <component :is='component' v-if="hasButton('inc-redeploy')" v-bind="componentFor('inc-redeploy')" @click="incRedeploy"><gl-icon :size="16" name="repeat" /> {{__('Incremental Redeploy')}}</component>
     <component :is='component' v-if="issuesLinkArgs" @click="openIssue"><gl-icon :size="16" name="abuse" /> {{__('Report Issue')}}</component>
-    <component :is='component' v-if="hasButton('rename-deployment')" @click="renameDeployment"><gl-icon :size="16" name="label" /> {{__('Rename Deployment')}}</component>
-    <component :is='component' v-if="hasButton('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
+    <component :is='component' v-if="hasButton('rename-deployment')" v-bind="componentFor('rename-deployment')" @click="renameDeployment"><gl-icon :size="16" name="label" /> {{__('Rename Deployment')}}</component>
+    <component :is='component' v-if="hasButton('delete')" v-bind="componentFor('delete')" @click="deleteDeployment"><gl-icon :size="16" name="remove" /> {{__('Delete')}}</component>
 </div>
 </template>
 <style scoped>

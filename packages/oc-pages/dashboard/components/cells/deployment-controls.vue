@@ -97,7 +97,7 @@ export default {
 
             if(!this.deploymentItem?.isDraft && this.userCanEdit && !this.deploymentItem?.isJobCancelable) result.push('teardown')
 
-            //if(this.deploymentItem?.pipelines?.length > 0) result.push('job-history')
+            // will be disabled when needed
             result.push('job-history')
 
             const pipeline = this.deploymentItem?.pipeline
@@ -116,7 +116,9 @@ export default {
                 result.push('rename-deployment')
             }
 
-            result.push('view-in-repository')
+            if(!window.gon.unfurl_gui || window.gon.gitlab_url) {
+                result.push('view-in-repository')
+            }
 
             // these checks are inadequate
             //if(!this.deploymentItem?.isJobCancelable && this.deploymentItem?.isIncremental) result.push('inc-redeploy')
@@ -130,7 +132,13 @@ export default {
         disabledButtons() {
             const result = []
 
-            if(!this.deploymentItem?.pipelines?.length) result.push('job-history')
+            if(!this.deploymentItem?.pipelines?.length || window.gon.unfurl_gui) result.push('job-history')
+
+            if(window.gon.unfurl_gui) {
+                result.push('cancel-job')
+                result.push('cancel-autostop')
+                result.push('schedule-autostop')
+            }
 
             return result
         },
@@ -150,9 +158,15 @@ export default {
             return this.deployPath? `/${this.getHomeProjectPath}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
         },
         viewInRepositoryLink() {
-            return `/${this.getHomeProjectPath}/-/tree/main/${this.deployPath.name}`
+            let result = `/${this.getHomeProjectPath}/-/tree/main/${this.deployPath.name}`
+            if(window.gon.unfurl_gui && window.gon.gitlab_url) {
+                result = window.gon.gitlab_url + result
+            }
+            return result
         },
         issuesLinkArgs() {
+            if(window.gon.unfurl_gui && !window.gon.gitlab_url) return
+
             return [
                 this.getHomeProjectPath,
                 {

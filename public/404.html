@@ -1,0 +1,133 @@
+<html>
+
+<head>
+  <meta content="width=device-width, initial-scale=1, maximum-scale=1" name="viewport">
+  <title>The page you were looking for cannot be found (404)</title>
+  <style>
+    body {
+      color: #666;
+      text-align: center;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      margin: auto;
+      font-size: 14px;
+    }
+
+    h1 {
+      font-size: 56px;
+      line-height: 100px;
+      font-weight: 400;
+      color: #456;
+    }
+
+    h2 {
+      font-size: 24px;
+      color: #666;
+      line-height: 1.5em;
+    }
+
+    h3 {
+      color: #456;
+      font-size: 20px;
+      font-weight: 400;
+      line-height: 28px;
+    }
+
+    hr {
+      max-width: 800px;
+      margin: 18px auto;
+      border: 0;
+      border-top: 1px solid #EEE;
+      border-bottom: 1px solid white;
+    }
+
+    img {
+      max-width: 40vw;
+      display: block;
+      margin: 40px auto;
+    }
+
+    a.go-back {
+      margin-top: 20px;
+      font-weight: 400;
+      color: #4A8BEE;
+      height: 25px;
+      /* font-size: 18px; */
+      text-decoration: none;
+      margin-top: 0 !important;
+      padding-top: 0 !important;
+    }
+
+    .container {
+      margin: 35px 20px 0;
+      font-size: 18px;
+      height: 10vw;
+    }
+
+    .go-back {
+      display: none;
+    }
+
+    /* OC change - issue #199 */
+    .uf-error-text {
+      color: #EEEEEE;
+      margin-top: 5vw;
+      display: inline-block;
+      justify-content: center;
+    }
+
+    .big {
+      font-size: 20vw;
+      font-weight: 700;
+      margin-top: 4%;
+      line-height: 80%;
+    }
+
+    .med {
+      font-size: 2.5vw;
+      line-height: 90%;
+      max-width: 60vw;
+    }
+
+    .logo-container {
+      display: inline-block;
+      justify-content: center;
+    }
+
+    .unfurl-logo {
+      height: auto;
+      width: 20vw;
+      margin-right: auto;
+      margin-left: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="uf-error-text">
+    <div class="big">
+      404
+    </div>
+    <br>
+    <div class="med">
+      The page you were looking for cannot be found or you don't have permission to view it
+    </div>
+  </div>
+  <div class="container">
+    <hr>
+    <p>Make sure the address is correct and that the page hasn't moved.</p>
+    <p>Please contact <a href="mailto:support@onecommons.org">support@onecommons.org</a> if this problem persists.</p>
+    <a href="javascript:history.back()" class="js-go-back go-back" style="display: inline;">Go back</a>
+    <img src="/_logo.svg" alt="Unfurl Cloud logo" class="unfurl-logo">
+  </div>
+  <script>
+    (function () {
+      var goBack = document.querySelector('.js-go-back');
+
+      if (history.length > 1) {
+        goBack.style.display = 'inline';
+      }
+    })();
+  </script>
+</body>
+
+</html>
