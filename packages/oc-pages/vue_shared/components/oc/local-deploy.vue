@@ -12,6 +12,8 @@ if(window.location.port) {
     server = server + ':' + window.location.port
 }
 
+const EMPTY = Object.freeze({username: null, password: null})
+const standalone = window.gon.unfurl_gui
 
 export default {
     name: 'LocalDeploy',
@@ -22,6 +24,7 @@ export default {
     props: {
         environment: Object,
         deployment: Object,
+        teardown: Boolean,
         projectId: {
             type: [String, Number],
             default: () => window.gon.projectId
@@ -37,6 +40,7 @@ export default {
             blueprintProjectInfo: null,
             gettingBlueprintCreds: false,
             gettingBlueprintInfo: !this.noDeploy,
+            standalone,
         }
     },
     computed: {
@@ -59,9 +63,9 @@ export default {
             }
         },
         blueprintCredentials() {
-            const empty = {username: null, password: null}
-            if(!this.blueprintProjectInfo) return empty
-            if(this.blueprintProjectInfo.visibility == 'public') return empty
+            if(standalone) return EMPTY
+            if(!this.blueprintProjectInfo) return EMPTY
+            if(this.blueprintProjectInfo.visibility == 'public') return EMPTY
 
             const username = `UNFURL_DEPLOY_TOKEN_${this.projectId}`
             const password = this.lookupVariableByEnvironment(
@@ -114,15 +118,21 @@ export default {
             const deploymentItem = this.deploymentItemDirect({deployment, environment})
 
             const extraArgs = deploymentItem?.pipeline?.variables?.EXTRA_WORKFLOW_ARGS || ''
-            return `unfurl deploy${extraArgs && ' ' + extraArgs} --commit --push ${deploymentName}`
+            const subcommand = this.teardown? 'undeploy': 'deploy'
+            const pushFlag = (standalone && !window.gon.gitlab_url)? '': '--push '
+            return `unfurl ${subcommand}${extraArgs && ' ' + extraArgs} --commit ${pushFlag}${deploymentName}`
         },
         deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' },
         noDeploy() {
             return !(this.deployment && this.environment)
+        },
+        cdInstruction() {
+            if(standalone) return ''
+            return `cd ${this.getHomeProjectName}; `
         }
     },
     methods: {
-        ...mapActions(['tryFetchEnvironmentVariables', 'deployInto'])
+        ...mapActions(['fetchEnvironmentVariables', 'deployInto'])
     },
     watch: {
         blueprintCredentials: {
@@ -150,9 +160,9 @@ export default {
                         }
                     }
 
-                    const result = await this.deployInto(params)
+                    const _result = await this.deployInto(params)
 
-                    await this.tryFetchEnvironmentVariables({fullPath: this.getHomeProjectPath})
+                    await this.fetchEnvironmentVariables({fullPath: this.getHomeProjectPath})
 
                     this.gettingBlueprintCreds = false
                 }
@@ -177,19 +187,19 @@ export default {
     <div>
         <gl-loading-icon v-if="this.gettingBlueprintInfo" label="Loading" size="lg" style="margin-top: 5em;" />
         <div v-else>
-            <p>{{instruction}}</p>
-            <p>
+            <p v-if="instruction">{{instruction}}</p>
+            <p v-if="!standalone">
                 Install Unfurl if needed:
                 <code-clipboard class="mt-1">python -m pip install -U unfurl[full]</code-clipboard>
             </p>
-            <p >
+            <p v-if="!standalone">
                 Clone this Unfurl project if you haven't already:
                 <code-clipboard class="mt-1">{{localCloneInvocation}}</code-clipboard>
                 (Or if you have, run <code>git pull</code> to get latest.)
             </p>
             <p v-if="!noDeploy">
                 Deploy the blueprint:
-                <code-clipboard class="mt-1">cd {{getHomeProjectName}}; {{localDeployInvocation}}</code-clipboard>
+                <code-clipboard class="mt-1">{{cdInstruction}}{{localDeployInvocation}}</code-clipboard>
             </p>
             <p>Learn more at <a href="https://github.com/onecommons/unfurl" target="_blank">https://github.com/onecommons/unfurl</a>.</p>
         </div>

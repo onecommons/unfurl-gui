@@ -16,7 +16,7 @@ import * as routes from '../../router/constants'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 import MergeRequestsTable from './merge-requests-table.vue'
 
-
+const standalone = window.gon.unfurl_gui
 
 function deploymentGroupBy(item) {
     let result
@@ -154,7 +154,7 @@ export default {
         if(currentTab == -1) currentTab = 0
 
         const intent = '', target = null, newDeploymentTitle = null, cloneTargetEnvironment = null
-        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null}
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null, standalone}
 
     },
     methods: {
@@ -696,7 +696,7 @@ export default {
                 </div>
             </div>
             <div
-                v-if="intent == 'undeploy' && !ableToUndeploy"
+                v-if="intent == 'undeploy' && !ableToUndeploy && !standalone"
                 class="m-3">
                 <ol>
                     <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
@@ -735,6 +735,9 @@ export default {
             </div>
             <div class="m-3" v-if="intent == 'localDeploy'">
                 <local-deploy :environment="target.environment" :deployment="target.deployment" />
+            </div>
+            <div class="m-3" v-if="intent == 'undeploy' && standalone">
+                <local-deploy teardown :environment="target.environment" :deployment="target.deployment" />
             </div>
         </gl-modal>
         <gl-tabs v-model="currentTab" v-if="useTabs">
