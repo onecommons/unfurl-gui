@@ -58,9 +58,6 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
 
                 }
 
-                if(window.gon.unfurl_gui) {
-                    console.log({envPatch})
-                }
                 let result = null
                 if(envPatch.length) {
                     const currentVars = await tryFetchEnvironmentVariables(fullPath)
