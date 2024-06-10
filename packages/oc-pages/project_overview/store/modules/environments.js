@@ -713,7 +713,7 @@ function envFilter(name){
 
 const getters = {
     getEnvironments: state => state.projectEnvironments,
-    lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
+    lookupEnvironment: (state, getters) => function(name) {return [...getters.getEnvironments, state.defaults].find(envFilter(name))},
     getValidEnvironmentConnections: (state, getters, _, rootGetters) => function(environmentName, requirement, _resolver) {
         const resolver = _resolver? _resolver: getters.environmentResolveResourceType.bind(getters, environmentName)
         const filter = envFilter(environmentName)

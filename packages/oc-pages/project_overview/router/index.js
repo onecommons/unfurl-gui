@@ -38,6 +38,17 @@ export default function createRouter(base) {
         routes,
     });
 
+    router.onReady(() => {
+        // hack to share router
+        if(sessionStorage['unfurl-gui:route']) {
+            const route = JSON.parse(sessionStorage['unfurl-gui:route'])
+
+            router.replace(route)
+            delete sessionStorage['unfurl-gui:route']
+        }
+
+    })
+
     router.beforeEach((to, from, next) => {
         setTransientUnfurlServerOverride(null)
         if(to.name != from.name) {

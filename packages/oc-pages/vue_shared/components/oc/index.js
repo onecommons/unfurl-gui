@@ -22,6 +22,8 @@ export {default as CardDropdownOptions} from 'oc_vue_shared/components/oc/card-d
 export {default as Autostop} from 'oc_vue_shared/components/oc/autostop.vue'
 export {default as AutostopInner} from 'oc_vue_shared/components/oc/autostop-inner.vue'
 export {default as PageNotFound} from 'oc_vue_shared/components/oc/page-not-found.vue'
+export {default as TableWithoutHeader} from 'oc_vue_shared/components/oc/table_without_header.vue'
+export {default as BaseDeployDialog} from 'oc_vue_shared/components/oc/base-deploy-dialog.vue'
 
 export let CiVariableSettings, createCiVariablesStore
 export const SignIn = Vue.component("sign-in", { template: "", })

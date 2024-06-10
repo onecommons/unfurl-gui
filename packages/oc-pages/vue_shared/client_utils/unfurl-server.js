@@ -173,10 +173,11 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     const username = window.gon.current_username
 
-    let exportUrl = `${baseUrl}/types`.replace(/^\/+/, '/')
+    const exportUrlBase = `${baseUrl}/types?`.replace(/^\/+/, '/')
+    let exportUrl = []
 
     if(window.gon.working_dir_project != projectPath) {
-        exportUrl += `?auth_project=${encodeURIComponent(projectPath)}`
+        exportUrl.push(`auth_project=${encodeURIComponent(projectPath)}`)
     }
 
     if(!params.hasOwnProperty('cloudmap')) {
@@ -184,40 +185,42 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
         if(!constraintCombinationsWithCloudmap[combinationKey] && index == 0) {
             constraintCombinationsWithCloudmap[combinationKey] = true
-            exportUrl += `&cloudmap=${cloudmapRepo()}`
+            exportUrl.push(`cloudmap=${cloudmapRepo()}`)
         }
     }
 
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
 
     if(_sendCredentials && includePasswordInQuery && username && password) {
-        exportUrl += `&username=${username}`
-        exportUrl += `&private_token=${password}`
+        exportUrl.push(`username=${username}`)
+        exportUrl.push(`private_token=${password}`)
     }
 
     if(branch) {
-        exportUrl += `&branch=${branch}`
+        exportUrl.push(`branch=${branch}`)
     }
 
     if(file) {
         // TODO don't split when it's working
-        exportUrl += `&file=${encodeURIComponent(file.split('#')[0])}`
+        exportUrl.push(`file=${encodeURIComponent(file.split('#')[0])}`)
     }
 
     if(latestCommit && (alwaysSendLatestCommit() || !getOverride(projectPath))) {
         if(branch && branch == inferredBranch) {
-            exportUrl += `&latest_commit=${latestCommit}`
+            exportUrl += `latest_commit=${latestCommit}`
         }
     }
 
     Object.entries(params).forEach(([key, value]) => {
         if(value === undefined) return
         if(Array.isArray(value)) {
-            value.forEach(value => exportUrl += `&${key}=${encodeURIComponent(value)}`)
+            value.forEach(value => exportUrl.push(`${key}=${encodeURIComponent(value)}`))
         } else {
-            exportUrl += `&${key}=${encodeURIComponent(value)}`
+            exportUrl.push(`${key}=${encodeURIComponent(value)}`)
         }
     })
+
+    exportUrl = exportUrlBase + exportUrl.join('&')
 
     const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})).then(res => res.data)
     unfurlTypesResponsesCache[cacheKey] = result
