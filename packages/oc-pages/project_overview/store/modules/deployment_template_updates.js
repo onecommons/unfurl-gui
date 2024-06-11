@@ -1026,9 +1026,12 @@ const actions = {
                 variables.environment = environmentName
                 variables.deployment_blueprint = deploymentName
 
-                variables.blueprint_url = new URL(window.gon.gitlab_url + '/' + blueprintProjectPath + '.git')
+                variables.blueprint_url = new URL((window.gon.gitlab_url || 'https://unfurl.cloud') + '/' + blueprintProjectPath + '.git')
                 variables.blueprint_url.username = rootGetters.getUsername
-                variables.blueprint_url.password = await fetchUserAccessToken()
+                const password = await fetchUserAccessToken()
+                if(password) {
+                    variables.blueprint_url.password
+                }
 
                 if(state.blueprintBranch) {
                     variables.blueprint_url.hash = state.blueprintBranch

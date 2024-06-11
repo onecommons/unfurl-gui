@@ -2,7 +2,7 @@
 
 import { __ } from '~/locale'
 import { mapGetters, mapActions } from 'vuex'
-import { GlModal, GlDropdown, GlDropdownItem } from '@gitlab/ui';
+import { GlModal, GlDropdown, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui';
 import { queryParamVar } from 'oc_vue_shared/util'
 import { unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import OcListResource from '../../project_overview/components/shared/oc_list_resource.vue'
@@ -14,7 +14,7 @@ export default {
     components: {
         GlModal,
         OcListResource,
-        GlDropdown, GlDropdownItem,
+        GlDropdown, GlDropdownItem, GlLoadingIcon,
         BaseDeployDialog
     },
     data() {
@@ -180,9 +180,10 @@ export default {
         >
         <oc-list-resource v-if="stage == 'SelectAppBlueprint'" v-model="selectedBlueprint"
             :valid-resource-types="blueprints" />
+        <gl-loading-icon v-if="stage == 'SelectAppBlueprint' && blueprints.length == 0" size="lg"/>
 
         <div v-if="stage == 'SelectTemplate'">
-            <gl-dropdown class="col-md-6 mb-4">
+            <gl-dropdown v-if="deploymentTemplates.length > 0" class="col-md-6 mb-4">
                 <gl-dropdown-item v-for="dt in deploymentTemplates" :key="dt.name" @click="ts = dt.name">
                     <div class="">
                         <span class=" title">{{ dt.title || dt.name }}</span>
@@ -196,6 +197,7 @@ export default {
                     <span v-else> Select a Deployment Blueprint</span>
                 </template>
             </gl-dropdown>
+            <gl-loading-icon v-else size="lg" />
             <base-deploy-dialog
                     v-if="selectedTemplate"
                     ref="baseDeployDialog"
