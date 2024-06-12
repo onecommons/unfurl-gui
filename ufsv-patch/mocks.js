@@ -7,10 +7,18 @@ const mocks = {
   '/api/v4/unfurl_access_token': 'unfurl_access_token',
 }
 
+function getMock(name) {
+  try {
+    return fs.readFileSync(`ufsv-patch/mock-responses/${name}.json`, 'utf8')
+  } catch(e) {
+    return fs.readFileSync(`ufsv-patch/mock-responses/${process.env.TEST_VERSIONS}/${name}.json`)
+  }
+}
+
 const resolvedMocks = Object.entries(mocks).map(([expr, mock]) => {
   return {
     expr: new RegExp(expr),
-    mock: fs.readFileSync(`ufsv-patch/mock-responses/${mock}.json`, 'utf8')
+    mock: getMock(mock)
   }
 })
 export function interceptWithMock(interceptUrl) {

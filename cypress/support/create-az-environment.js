@@ -11,7 +11,7 @@ const AZURE_VIRTUAL_NETWORK = Cypress.env('AZURE_VIRTUAL_NETWORK')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -49,40 +49,44 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
     options
   )
 
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
-  createEnvironmentButton().click()
-  cy.azCompleteEnvironmentDialog({environmentName})
-  cy.url().should('include', environmentName)
-  cy.contains(environmentName).should('exist')
-  cy.contains('Azure').should('exist')
+  cy.whenEnvironmentAbsent(environmentName, () => {
+    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    createEnvironmentButton().click()
+    cy.azCompleteEnvironmentDialog({environmentName})
+    cy.url().should('include', environmentName)
+    cy.contains(environmentName).should('exist')
+    cy.contains('Azure').should('exist')
 
-  cy.wait(BASE_TIMEOUT / 2)
+    cy.wait(BASE_TIMEOUT / 2)
 
-  //cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}?provider`)
+    //cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}?provider`)
 
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_CLIENT_ID"]').type(ARM_CLIENT_ID)
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_SECRET"]').type(ARM_CLIENT_SECRET)
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_SUBSCRIPTION_ID"]').type(ARM_SUBSCRIPTION_ID)
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_TENANT"]').type(ARM_TENANT_ID)
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-resource_group"]').type(AZURE_RESOURCE_GROUP)
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-subnet"]').type(AZURE_SUBNET)
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-virtual_network"]').type(AZURE_VIRTUAL_NETWORK)
-  cy.wait(200)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_CLIENT_ID"]').type(ARM_CLIENT_ID)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_SECRET"]').type(ARM_CLIENT_SECRET)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_SUBSCRIPTION_ID"]').type(ARM_SUBSCRIPTION_ID)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_TENANT"]').type(ARM_TENANT_ID)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-resource_group"]').type(AZURE_RESOURCE_GROUP)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-subnet"]').type(AZURE_SUBNET)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-virtual_network"]').type(AZURE_VIRTUAL_NETWORK)
+    cy.wait(200)
 
-  cy.get('#providerModal').within(() => {
-    cy.contains('button', 'Save Changes').click()
+    cy.get('#providerModal').within(() => {
+      cy.contains('button', 'Save Changes').click()
+    })
+
+    cy.wait(5000)
   })
-
-  cy.wait(5000)
 
   cy.contains('a', 'Resources').click()
 
   // create external resource
   if (shouldCreateExternalResource) {
-    if(shouldCreateDNS) {
-      cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
-    }
-    cy.uncheckedCreateMail();
-    cy.saveExternalResources()
+    cy.whenInstancesAbsent(environmentName, () => {
+      if(shouldCreateDNS) {
+        cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+      }
+      cy.uncheckedCreateMail();
+      cy.saveExternalResources()
+    })
   }
 });

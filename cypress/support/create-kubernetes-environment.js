@@ -16,7 +16,7 @@ const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
 const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -94,48 +94,52 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
     options
   )
 
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
-  createEnvironmentButton().click()
-  cy.k8sCompleteEnvironmentDialog({environmentName})
-  cy.url().should('include', environmentName)
-  cy.contains(environmentName).should('exist')
-  cy.contains('Kubernetes').should('exist')
+  cy.whenEnvironmentAbsent(environmentName, () => {
+    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    createEnvironmentButton().click()
+    cy.k8sCompleteEnvironmentDialog({environmentName})
+    cy.url().should('include', environmentName)
+    cy.contains(environmentName).should('exist')
+    cy.contains('Kubernetes').should('exist')
 
-  cy.wait(BASE_TIMEOUT / 2)
-
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}?provider`)
-
-  enterK8sInfo()
-
-  cy.get('#providerModal').within(() => {
-    // forcing because there might have been no changes
-    cy.contains('button', 'Save Changes').click({force: true})
-  })
-
-  if(KUBECONFIG) {
     cy.wait(BASE_TIMEOUT / 2)
-    // easiest way to get rid of modal
-    cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
 
-    cy.contains('a', 'Variables').click()
-    cy.get('[data-qa-selector="add_ci_variable_button"]').click()
-    cy.get('[data-qa-selector="ci_variable_key_field"] input').type('KUBECONFIG')
-    // typing out KUBECONFIG is hilariously slow
-    cy.get('[data-qa-selector="ci_variable_value_field"]').invoke('val', KUBECONFIG)
-    cy.get('[data-qa-selector="ci_variable_value_field"]').type('\n')
-    cy.get('#ci-variable-type').select('File')
-    cy.get('[data-qa-selector="ci_variable_save_button"]').click()
-  }
-  cy.contains('a', 'Resources').click()
+    cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}?provider`)
 
-  addK8sAnnotations()
+    enterK8sInfo()
+
+    cy.get('#providerModal').within(() => {
+      // forcing because there might have been no changes
+      cy.contains('button', 'Save Changes').click({force: true})
+    })
+
+    if(KUBECONFIG) {
+      cy.wait(BASE_TIMEOUT / 2)
+      // easiest way to get rid of modal
+      cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+
+      cy.contains('a', 'Variables').click()
+      cy.get('[data-qa-selector="add_ci_variable_button"]').click()
+      cy.get('[data-qa-selector="ci_variable_key_field"] input').type('KUBECONFIG')
+      // typing out KUBECONFIG is hilariously slow
+      cy.get('[data-qa-selector="ci_variable_value_field"]').invoke('val', KUBECONFIG)
+      cy.get('[data-qa-selector="ci_variable_value_field"]').type('\n')
+      cy.get('#ci-variable-type').select('File')
+      cy.get('[data-qa-selector="ci_variable_save_button"]').click()
+    }
+    cy.contains('a', 'Resources').click()
+
+    addK8sAnnotations()
+  })
 
   // create external resource
   if (shouldCreateExternalResource) {
-    if(shouldCreateDNS) {
-      cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
-    }
-    cy.uncheckedCreateMail();
-    cy.saveExternalResources()
+    cy.whenInstancesAbsent(environmentName, () => {
+      if(shouldCreateDNS) {
+        cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+      }
+      cy.uncheckedCreateMail();
+      cy.saveExternalResources()
+    })
   }
 });

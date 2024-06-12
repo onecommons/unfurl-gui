@@ -7,7 +7,7 @@ const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
 const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -69,20 +69,25 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
     options
   )
 
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
-  createEnvironmentButton().click()
-  cy.awsCompleteEnvironmentDialog({environmentName})
-  cy.url().should('include', environmentName)
-  cy.awsAuthenticateEnvironment({region: AWS_DEFAULT_REGION})
-  cy.contains(environmentName).should('exist')
-  cy.contains('Amazon Web Services').should('exist')
+  cy.whenEnvironmentAbsent(environmentName, () => {
+    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    createEnvironmentButton().click()
+    cy.awsCompleteEnvironmentDialog({environmentName})
+    cy.url().should('include', environmentName)
+    cy.awsAuthenticateEnvironment({region: AWS_DEFAULT_REGION})
+    cy.contains(environmentName).should('exist')
+    cy.contains('Amazon Web Services').should('exist')
+  })
 
   // create external resource
   if (shouldCreateExternalResource) {
-    if(shouldCreateDNS) {
-      cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
-    }
-    cy.uncheckedCreateMail();
-    cy.saveExternalResources()
+    cy.whenInstancesAbsent(environmentName, () => {
+      cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      if(shouldCreateDNS) {
+        cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+      }
+      cy.uncheckedCreateMail();
+      cy.saveExternalResources()
+    })
   }
 });

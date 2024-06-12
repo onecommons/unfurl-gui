@@ -6,6 +6,7 @@ import store from './store'
 import Fixture from './fixture'
 import {jest} from '@jest/globals'
 import { sleep } from 'oc_vue_shared/client_utils/misc'
+import UnfurlServer from '../testing-shared/unfurl-server'
 
 // import {globSync} from 'glob'
 import glob from 'glob'
@@ -45,7 +46,7 @@ const UNFURL_DEFAULT_ENV = {
 
 function setupCmd() {
     try {
-      childProcess.execFileSync('./ufsv-patch/setup.sh', {env: {...process.env, UNFURL_SERVER_CWD}})
+      childProcess.execFileSync('testing-shared/setup.sh', {env: {...process.env, UNFURL_SERVER_CWD}})
     } catch(e) {
       console.error(e.message)
     }
@@ -65,32 +66,17 @@ function testToArtifactPath(testName) {
 
 function spawnUnfurlServer(testName) {
   const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
-  const cmd = '/usr/bin/env'
-  const args = [
-      UNFURL_CMD,
-      'serve',  '.',
-      '--cloud-server', OC_URL,
-      '--port', PORT,
-      '--clone-root', `${TMP_DIR}/repos`
-  ]
 
-  writeLine('serve command: ', [cmd, ...args].join(' '))
+  const unfurlInstance = new UnfurlServer({
+    cwd: UNFURL_SERVER_CWD,
+    env: UNFURL_DEFAULT_ENV,
+    outfile,
+    // cloneRoot: `${TMP_DIR}/repos`
+  })
 
-  return childProcess.spawn(
-    cmd,
-    args,
-    {
-      env: {
-        ...UNFURL_DEFAULT_ENV,
-        ...process.env
-      },
-      cwd: UNFURL_SERVER_CWD,
-      stdio: [
-        'inherit',
-        outfile,
-        outfile
-      ]
-    })
+  writeLine('serve command: ', JSON.stringify(unfurlInstance.invocation, null, 2))
+
+  return unfurlInstance.process
 }
 
 function spawnDryrunSync(fixture) {
@@ -137,8 +123,9 @@ function spawnDryrunSync(fixture) {
 async function sleepyCurl(n=2000) {
   await sleep(n)
   try {
-    childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
-    childProcess.execSync(`curl -v ${OC_URL}/-/health`, {stdio: 'inherit'})
+    const verbosity = process.env.CI? '-v ': ''
+    childProcess.execSync(`curl ${verbosity}${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
+    childProcess.execSync(`curl ${verbosity}${OC_URL}/-/health`, {stdio: 'inherit'})
   } catch(e) {
     console.error(e.message)
     await sleepyCurl(n+1000)

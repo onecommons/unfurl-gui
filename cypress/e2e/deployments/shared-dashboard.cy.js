@@ -5,7 +5,7 @@ const USERNAME = Cypress.env('OC_IMPERSONATE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 describe('Shared dashboard test', () => {
   const baseTitle = 'shared-dashbaord-env'

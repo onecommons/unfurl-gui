@@ -136,6 +136,11 @@ async function main() {
   if(dashboard = args['create-dashboard'] || args.dashboard) {
     const username = args.name || args.username
     console.log(`Creating a dashboard at ${username}/dashboard`)
+    const dashboardDestination = (
+      args['dashboard-dest'] ||
+      process.env.DASHBOARD_DEST ||
+      `${username}/dashboard`
+    )
     const options = {}
     if(!(OC_USERNAME && OC_PASSWORD)) {
       options.username = username
@@ -144,7 +149,7 @@ async function main() {
 
     spawnSync('sleep', ['1'])
 
-    if(! pushLocalRepo(dashboard, `${username}/dashboard`, options)) {
+    if(! pushLocalRepo(dashboard, `${dashboardDestination}`, options)) {
       throw new Error('Failed to push local repo to dashboard')
     }
   }

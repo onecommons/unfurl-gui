@@ -3,7 +3,7 @@ const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -44,7 +44,7 @@ describe('AWS environments', () => {
 
   afterEach(() => {
     cy.contains('.properties-list-container', 'Generic', {matchCase: false}).should('not.exist')
-    cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
+    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
     cy.environmentShouldExist(ENVIRONMENT_NAME)
   })
 

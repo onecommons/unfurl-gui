@@ -321,7 +321,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     const [latestCommit, _branch] = lastCommitResult
     await healthCheckErrorHelper(projectPath)
 
-    if(_branch != branch) {
+    if(_branch != branch && !window.gon.unfurl_gui) {
         await createBranch(encodeURIComponent(projectPath), branch, latestCommit)
     }
 

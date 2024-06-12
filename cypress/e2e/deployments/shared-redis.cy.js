@@ -1,7 +1,7 @@
 import {deploymentFixturePath} from '../../support/deployment-fixture'
 const FIXTURE = deploymentFixturePath('gcp__nextcloud__fullsh')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 function deploymentName(baseTitle) {
@@ -29,7 +29,7 @@ describe('Shared redis', () => {
       skipTeardown: true
     })
 
-    cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
+    cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=running`)
 
     cy.contains("a", dep1).click()
 

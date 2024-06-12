@@ -3,10 +3,11 @@
 if [ -z ${UNFURL_SERVER_CWD+x} ]; then echo UNFURL_SERVER_CWD must be set; exit 1; fi
 rm -r $UNFURL_SERVER_CWD/.git*
 rm -r $UNFURL_SERVER_CWD/*
+mkdir -p $(dirname $UNFURL_SERVER_CWD)
 
 set -e
 
-tar -xvf ufsv-patch/test-dashboard.tgz -C $UNFURL_SERVER_CWD
+tar -xvf testing-shared/fixtures/dashboards/$TEST_VERSIONS.tgz -C $UNFURL_SERVER_CWD
 back=$PWD
 cd $UNFURL_SERVER_CWD
 git checkout .

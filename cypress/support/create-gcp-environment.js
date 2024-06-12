@@ -4,24 +4,28 @@ const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
 const GCP_DNS_TYPE = Cypress.env('GCP_DNS_TYPE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 function createGCPEnvironment({environmentName, shouldCreateExternalResource, shouldCreateDNS}) {
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
-  cy.clickCreateEnvironmentButton()
-  cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
-  cy.url().should('include', environmentName)
-  authenticateGCP()
+  cy.whenEnvironmentAbsent(environmentName, () => {
+    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    cy.clickCreateEnvironmentButton()
+    cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
+    cy.url().should('include', environmentName)
+    authenticateGCP()
 
-  validateGCPEnvironment()
+    validateGCPEnvironment()
+  })
 
   // create external resource
   if (shouldCreateExternalResource) {
-    if(shouldCreateDNS) {
-      cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
-    }
-    cy.uncheckedCreateMail();
-    cy.saveExternalResources()
+    cy.whenInstancesAbsent(environmentName, () => {
+      if(shouldCreateDNS) {
+        cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
+      }
+      cy.uncheckedCreateMail();
+      cy.saveExternalResources()
+    })
   }
 }
 

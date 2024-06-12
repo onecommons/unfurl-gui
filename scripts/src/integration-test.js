@@ -1,25 +1,37 @@
 #!/usr/bin/env node
 
-const OC_USERNAME = process.env.OC_USERNAME
-const OC_PASSWORD = process.env.OC_PASSWORD
-const OC_URL = process.env.OC_URL
-const OC_INVITE_CODE = process.env.OC_INVITE_CODE
-const OC_DISCRIMINATOR = process.env.OC_DISCRIMINATOR
-const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
-
-const GENERATED_PASSWORD = btoa(Number.MAX_SAFE_INTEGER * Math.random())
-
-
 const {execFileSync, spawnSync} = require('child_process')
 const axios = require('axios')
 const path = require('path')
 const fs = require('fs')
 const {unfurlGuiRoot} = require('./shared/util.js')
 
+const OC_USERNAME = process.env.OC_USERNAME
+const OC_PASSWORD = process.env.OC_PASSWORD
+let PORT = process.env.PORT
+const OC_URL = process.env.OC_URL || (PORT? `http://localhost:${PORT}`: 'http://localhost:5001')
+const OC_INVITE_CODE = process.env.OC_INVITE_CODE
+const OC_DISCRIMINATOR = process.env.OC_DISCRIMINATOR
+const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
+const STANDALONE_UNFURL = OC_URL.includes('://localhost') 
+const ENV_NAMING_FUNCTION = process.env.ENV_NAMING_FUNCTION || (STANDALONE_UNFURL? 'identity' : 'identifierFromCurrentTime')
+const UNFURL_TEST_TMPDIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
+const STANDALONE_PROJECT_DIR = `${UNFURL_TEST_TMPDIR}/ufsv`
+if(STANDALONE_UNFURL && ! PORT) {
+  PORT = new URL(OC_URL).port
+}
+
+const GENERATED_PASSWORD = !STANDALONE_UNFURL && btoa(Number.MAX_SAFE_INTEGER * Math.random())
 const FIXTURES_TMP = path.join(unfurlGuiRoot, 'cypress/fixtures/tmp')
 
+process.env.OC_URL = OC_URL
+process.env.DASHBOARD_DEST = (
+  process.env.DASHBOARD_DEST ||
+  STANDALONE_UNFURL? STANDALONE_PROJECT_DIR: undefined
+)
+
 const READ_ARGS = {
-  username: (args) => args.u || args.username,
+  username: (args) => args.u || args.username || (STANDALONE_UNFURL && 'jest' || undefined),
   cypressEnv: (args) => args.e || args.env || args['cypress-env'],
   dashboardRepo: (args) => args.dashboard || args['dashboard-repo'],
   group: (args) => args.group,
@@ -111,8 +123,8 @@ async function forwardedEnvironmentVariables(override) {
   const result = {}
 
   for(const envvar of FORWARD_ENVIRONMENT_VARIABLES) {
-    let value
-    if(value = override[envvar] || process.env[envvar]) {
+    let value = override[envvar] || process.env[envvar]
+    if(value ?? null !== null) {
       result[`CYPRESS_${envvar}`] = transformEnvironmentVariables(envvar, value)
     }
   }
@@ -122,11 +134,14 @@ async function forwardedEnvironmentVariables(override) {
 
 const ERROR_CREATE_USER_NO_DASHBOARD = 'A dashboard must be specified if a user is to be created.  Specify either --username or --dashboard-repo'
 
-function identifierFromCurrentTime(baseId) {
-  const d = new Date(Date.now())
+const ENV_NAMING_FUNCTIONS = {
+  identifierFromCurrentTime(baseId) {
+    const d = new Date(Date.now())
 
-  const discriminator = OC_DISCRIMINATOR || d.toISOString().replace(/(:|\.|-)/g, '')
-  return `${baseId}-${discriminator}`
+    const discriminator = OC_DISCRIMINATOR || d.toISOString().replace(/(:|\.|-)/g, '')
+    return `${baseId}-${discriminator}`
+  },
+  identity(baseId) { return baseId}
 }
 
 function createDashboardCommand(username, dashboardRepo) {
@@ -174,7 +189,7 @@ async function main() {
 
   if(!username) {
     // we need to create a new user
-    username = identifierFromCurrentTime('user')
+    username = ENV_NAMING_FUNCTIONS.identifierFromCurrentTime('user')
     prepareUserCommand = createDashboardCommand(username, dashboardRepo)
   } else if (username == 'nobody') {
     username = undefined
@@ -182,16 +197,18 @@ async function main() {
 
   if(username) console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)
 
-  const GCP_ENVIRONMENT_NAME = identifierFromCurrentTime('gcp').toLowerCase()
-  const AWS_ENVIRONMENT_NAME = identifierFromCurrentTime('aws').toLowerCase()
-  const DO_ENVIRONMENT_NAME = identifierFromCurrentTime('do').toLowerCase()
-  const K8S_ENVIRONMENT_NAME = identifierFromCurrentTime('k8s').toLowerCase()
-  const AZ_ENVIRONMENT_NAME = identifierFromCurrentTime('az').toLowerCase()
+  const GCP_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('gcp').toLowerCase()
+  const AWS_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('aws').toLowerCase()
+  const DO_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('do').toLowerCase()
+  const K8S_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('k8s').toLowerCase()
+  const AZ_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('az').toLowerCase()
   const INTEGRATION_TEST_ARGS = JSON.stringify(parsedArgs)
 
-  const NAMESPACE_PROJECTS = (await fetchNamespaceProjects(REPOS_NAMESPACE)).map(p => p.name).join(',')
+  const NAMESPACE_PROJECTS = STANDALONE_UNFURL? []: (await fetchNamespaceProjects(REPOS_NAMESPACE)).map(p => p.name).join(',')
 
-  fs.writeFileSync(path.join(FIXTURES_TMP, 'namespace_projects.json'), JSON.stringify(await fetchNamespaceProjects(REPOS_NAMESPACE)))
+  if(!STANDALONE_UNFURL) {
+    fs.writeFileSync(path.join(FIXTURES_TMP, 'namespace_projects.json'), JSON.stringify(await fetchNamespaceProjects(REPOS_NAMESPACE)))
+  }
 
   let env = {OC_IMPERSONATE: username, GENERATED_PASSWORD, AWS_ENVIRONMENT_NAME, GCP_ENVIRONMENT_NAME, DO_ENVIRONMENT_NAME, K8S_ENVIRONMENT_NAME, AZ_ENVIRONMENT_NAME, REPOS_NAMESPACE, INTEGRATION_TEST_ARGS, NAMESPACE_PROJECTS}
 
@@ -230,6 +247,31 @@ async function main() {
   }
 
 
+  if(STANDALONE_UNFURL) {
+    execFileSync('testing-shared/setup.sh', {
+      env: {
+        ...process.env,
+        UNFURL_SERVER_CWD: process.env.DASHBOARD_DEST
+      }
+    })
+
+    const UnfurlServer = (await import('../../testing-shared/unfurl-server.mjs')).default
+
+    const unfurlServer = new UnfurlServer({
+      cwd: STANDALONE_PROJECT_DIR,
+      gui: true,
+      env: {
+        UNFURL_LOGGING: 'trace',
+        UNFURL_HOME: '',
+        UNFURL_SKIP_SAVE: 'never',
+      },
+      port: PORT,
+      cloudServer: null,
+      outfile: `${UNFURL_TEST_TMPDIR}/unfurl.log`
+    })
+
+    await unfurlServer.waitUntilReady()
+  }
   const cypressResult = cypressCommand()
   console.log(cypressResult)
   const status = cypressResult.status

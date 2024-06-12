@@ -10,7 +10,7 @@ const MAIL_PASSWORD = Cypress.env('MAIL_PASSWORD')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const
   DIGITALOCEAN_DNS_TYPE = 'DigitalOceanDNSZone',
   GCP_DNS_TYPE = 'GoogleCloudDNSZone',
@@ -37,6 +37,16 @@ Cypress.Commands.add('whenEnvironmentExists', (environmentName, cb) => {
 
 Cypress.Commands.add('whenEnvironmentAbsent', (environmentName, cb) => {
   return cy.withEnvironment(environmentName).then(env => !env && cb())
+})
+
+Cypress.Commands.add('whenInstancesAbsent', (environmentName, cb) => {
+  return cy.withEnvironment(environmentName).then( env => {
+    if(! env) return
+    if(Object.values(env.instances || {})
+      .filter(instance => instance.name != 'dns-zone') == 0) {
+      cb()
+    }
+  })
 })
 
 Cypress.Commands.add('environmentShouldExist', environmentName => {
@@ -71,7 +81,7 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
 })
 
 Cypress.Commands.add('deleteEnvironment', environmentName => {
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Delete Environment', {timeout: BASE_TIMEOUT * 2}).click({force: true})
   cy.contains('button.js-modal-action-primary', 'Delete').click()
@@ -79,7 +89,7 @@ Cypress.Commands.add('deleteEnvironment', environmentName => {
 })
 
 Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
@@ -100,7 +110,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.getInputOrTextarea(`[data-testid="oc-input-${digitalOceanName}-name"]`).should(
     "have.value",
     "untrusted.me"
@@ -207,7 +217,7 @@ Cypress.Commands.add('saveExternalResources', saveExternalResources)
 
 Cypress.Commands.add('createMailResource', environmentName => {
   if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
@@ -240,7 +250,7 @@ Cypress.Commands.add('createMailResource', environmentName => {
   //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-host"]`).should(
     "have.value",
     SMTP_HOST

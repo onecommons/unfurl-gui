@@ -1,4 +1,4 @@
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 export function deploymentNames(...titles) {
@@ -16,7 +16,7 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
     subdomain
   })
 
-  cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
+  cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=running`)
 
   cy.contains("a", dep).click()
 
@@ -40,7 +40,7 @@ export function deploySharedVolume2(dep1, dep2, fixture, cardTestId) {
     subdomain
   })
 
-  cy.visit(`/${NAMESPACE}/dashboard/-/deployments`)
+  cy.visit(`/${DASHBOARD_DEST}/-/deployments`)
 
   cy.contains("a", dep1).click()
 

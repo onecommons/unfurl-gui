@@ -1,5 +1,5 @@
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 function undeploy(deploymentTitle, _options) {
   const {verify} = Object.assign({
@@ -18,7 +18,7 @@ function undeploy(deploymentTitle, _options) {
     cy.withJob(job => {
       cy.expectSuccessfulJob(job)
       cy.withCompletedJob(job, () => {
-        cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=destroyed`)
+        cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=destroyed`)
         cy.contains('td', deploymentTitle).should('exist')
       })
     })

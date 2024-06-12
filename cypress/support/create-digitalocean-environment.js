@@ -9,7 +9,7 @@ const AWS_DNS_ZONE = Cypress.env('AWS_DNS_ZONE')
 const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
 const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -42,37 +42,41 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
     options
   )
 
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments`)
-  createEnvironmentButton().click()
-  cy.digitalOceanCompleteEnvironmentDialog({environmentName})
-  cy.url().should('include', environmentName)
-  cy.contains(environmentName).should('exist')
-  cy.contains('Digital Ocean').should('exist')
+  cy.whenEnvironmentAbsent(environmentName, () => {
+    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    createEnvironmentButton().click()
+    cy.digitalOceanCompleteEnvironmentDialog({environmentName})
+    cy.url().should('include', environmentName)
+    cy.contains(environmentName).should('exist')
+    cy.contains('Digital Ocean').should('exist')
 
-  cy.wait(BASE_TIMEOUT / 2)
+    cy.wait(BASE_TIMEOUT / 2)
 
-  //cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}?provider`)
+    //cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}?provider`)
 
-  cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
 
-  if(DO_DEFAULT_REGION) {
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-default_region"]').type(DO_DEFAULT_REGION)
-  }
+    if(DO_DEFAULT_REGION) {
+      cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-default_region"]').type(DO_DEFAULT_REGION)
+    }
 
-  cy.get('#providerModal').within(() => {
-    cy.contains('button', 'Save Changes').click()
+    cy.get('#providerModal').within(() => {
+      cy.contains('button', 'Save Changes').click()
+    })
+
+    cy.wait(5000)
   })
-
-  cy.wait(5000)
 
   cy.contains('a', 'Resources').click()
 
   // create external resource
   if (shouldCreateExternalResource) {
-    if(shouldCreateDNS) {
-      cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
-    }
-    cy.uncheckedCreateMail();
-    cy.saveExternalResources()
+    cy.whenInstancesAbsent(environmentName, () => {
+      if(shouldCreateDNS) {
+        cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
+      }
+      cy.uncheckedCreateMail();
+      cy.saveExternalResources()
+    )}
   }
 });

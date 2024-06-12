@@ -23,6 +23,7 @@ const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
 const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 
@@ -75,7 +76,12 @@ before(() => {
     return false
   })
   if(Cypress.spec.name.startsWith('00_visitor')) return
-  cy.visit(`/users/sign_in`).wait(100)
+  if((USERNAME && PASSWORD) || (GENERATED_PASSWORD && IMPERSONATE)) {
+    cy.visit(`/users/sign_in`).wait(100)
+  }
+  else {
+    cy.visit('/')
+  }
   cy.url().then(url => {
     if(url.endsWith('sign_in')) {
       if(USERNAME && PASSWORD)  {
@@ -132,11 +138,11 @@ beforeEach(() => {
   }
 
   cy.document().then(doc => {
-    const csrf = doc.querySelector('meta[name="csrf-token"]').content
+    const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
 
     cy.request({
       method: 'PATCH',
-      url: `/${DEFAULT_NAMESPACE}/dashboard/-/variables`,
+      url: `/${DASHBOARD_DEST}/-/variables`,
       failOnStatusCode: false,
       headers: {
         'X-CSRF-Token': csrf
