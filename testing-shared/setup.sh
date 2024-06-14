@@ -8,6 +8,8 @@ mkdir -p $UNFURL_SERVER_CWD
 set -e
 
 tar -xvf testing-shared/fixtures/dashboards/$TEST_VERSIONS.tgz -C $UNFURL_SERVER_CWD
+mkdir $UNFURL_SERVER_CWD/local
+cp testing-shared/unfurl.yaml $UNFURL_SERVER_CWD/local/
 back=$PWD
 cd $UNFURL_SERVER_CWD
 git checkout .

@@ -140,6 +140,8 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
       }
       cy.uncheckedCreateMail();
       cy.saveExternalResources()
+
+      cy.checkMail()
     })
   }
 });

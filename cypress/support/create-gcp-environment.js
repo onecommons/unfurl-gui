@@ -25,6 +25,8 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource, sh
       }
       cy.uncheckedCreateMail();
       cy.saveExternalResources()
+
+      cy.checkMail()
     })
   }
 }

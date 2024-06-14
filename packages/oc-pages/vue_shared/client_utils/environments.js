@@ -345,6 +345,8 @@ function decodeProviderString(s) {
 }
 
 export async function declareAvailableProviders(projectPath, environmentName, providerTypes) {
+    if(window.gon.unfurl_gui) return
+
     const providers = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
 
     if(providers.some(p => !p)) {

@@ -87,6 +87,8 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
       }
       cy.uncheckedCreateMail();
       cy.saveExternalResources()
+
+      cy.checkMail()
     })
   }
 });

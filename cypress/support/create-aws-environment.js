@@ -88,6 +88,8 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
       }
       cy.uncheckedCreateMail();
       cy.saveExternalResources()
+
+      cy.checkMail()
     })
   }
 });

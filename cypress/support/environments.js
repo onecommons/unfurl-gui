@@ -146,6 +146,24 @@ function uncheckedCreateMail() {
   )
 }
 
+function checkMail() {
+  const mailResourceName = slugify(MAIL_RESOURCE_NAME)
+
+  cy.getInputOrTextarea(
+    `[data-testid="oc-input-${mailResourceName}-host"]`
+  ).should('have.value', SMTP_HOST)
+
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-user_name"]`).should(
+    'have.value',
+    MAIL_USERNAME
+  )
+
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-password"]`).should(
+    'have.value',
+    MAIL_PASSWORD
+  )
+}
+
 function uncheckedCreateDigitalOceanDNS(zone) {
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
@@ -214,6 +232,7 @@ function saveExternalResources() {
 Cypress.Commands.add('uncheckedCreateDNS', uncheckedCreateDNS)
 Cypress.Commands.add('uncheckedCreateMail', uncheckedCreateMail)
 Cypress.Commands.add('saveExternalResources', saveExternalResources)
+Cypress.Commands.add('checkMail', checkMail)
 
 Cypress.Commands.add('createMailResource', environmentName => {
   if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
