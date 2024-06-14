@@ -77,6 +77,6 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
       }
       cy.uncheckedCreateMail();
       cy.saveExternalResources()
-    )}
+    })
   }
 });

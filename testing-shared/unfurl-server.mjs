@@ -50,13 +50,14 @@ export default class UnfurlServer {
       args.push('--gui')
     }
 
-    let fd
 
-    if(Number.isInteger(this.outfile)) {
-      fd = this.outfile
-    } else {
-      childProcess.execSync(`touch ${this.outfile}`)
-      fd = fs.openSync(this.outfile, 'a')
+    if(this.outfile != 'inherit') {
+      if(Number.isInteger(this.outfile)) {
+        this.fd = this.outfile
+      } else {
+        childProcess.execSync(`touch ${this.outfile}`)
+        this.fd = fs.openSync(this.outfile, 'a')
+      }
     }
     
     this.invocation = [
@@ -70,8 +71,8 @@ export default class UnfurlServer {
         cwd: this.cwd,
         stdio: [
           'inherit',
-          fd,
-          fd,
+          this.fd || this.outfile,
+          this.fd || this.outfile,
         ]
       }
     ]
@@ -83,8 +84,15 @@ export default class UnfurlServer {
   }
 
   async waitUntilReady(interval=1000) {
+    if(! this.timeout) {
+      this.timeout = sleep(interval * 10).then(async (_) => {
+        if(this.ready) return
+        process.exit(2)
+      })
+    }
     try {
-      childProcess.execSync(`curl localhost:${this.port}/version`, {stdio: 'inherit'})
+      childProcess.execSync(`curl 127.0.0.1:${this.port}/version`, {stdio: 'inherit'})
+      this.ready = true
       console.log('unfurl ready')
     } catch(e) {
       console.error(e.message)

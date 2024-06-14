@@ -264,6 +264,7 @@ async function main() {
         UNFURL_LOGGING: 'trace',
         UNFURL_HOME: '',
         UNFURL_SKIP_SAVE: 'never',
+        UFGUI_DIR: unfurlGuiRoot
       },
       port: PORT,
       cloudServer: null,
@@ -285,6 +286,7 @@ async function tryMain() {
     await main()
   } catch(e) {
     console.error('Error:', e.message)
+    process.exit(1)
   }
 }
 

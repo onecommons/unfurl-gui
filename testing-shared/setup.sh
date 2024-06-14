@@ -3,7 +3,7 @@
 if [ -z ${UNFURL_SERVER_CWD+x} ]; then echo UNFURL_SERVER_CWD must be set; exit 1; fi
 rm -r $UNFURL_SERVER_CWD/.git*
 rm -r $UNFURL_SERVER_CWD/*
-mkdir -p $(dirname $UNFURL_SERVER_CWD)
+mkdir -p $UNFURL_SERVER_CWD
 
 set -e
 
