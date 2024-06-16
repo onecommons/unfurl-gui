@@ -2,22 +2,41 @@ name: CI
 
 on: [push]
 
+env:
+  UNFURL_BRANCH: standalone-gui-naive-reload
+
+  GCP_DNS_ZONE: deploythis.io
+  AWS_DNS_ZONE: opencloudservices.net
+
+  MAIL_USERNAME: admin@mailu.untrusted.me
+  MAIL_PASSWORD: ocPC2cnGkQsz35I
+  SMTP_HOST: mailu.untrusted.me
+
+  AWS_ACCESS_KEY_ID: foobarbaz
+  AWS_SECRET_ACCESS_KEY: asldfjkasldkjalqweioptuqpeortiu
+  AWS_DEFAULT_REGION: eu-central-1
+
+  ARM_CLIENT_ID: 2b03ea39-628d-4443-96ec-535bc8b374eb
+  ARM_TENANT_ID: 1211e508-10ae-48e9-9591-74b82d108762
+  ARM_SUBSCRIPTION_ID: 2a4d88e0-165e-422b-bb41-aa4f1461e581
+  ARM_CLIENT_SECRET: asldfjkasldkjalqweioptuqpeortiu
+  AZURE_RESOURCE_GROUP: example-resources
+  AZURE_SUBNET: default
+  AZURE_VIRTUAL_NETWORK: example-network
+
+  GOOGLE_APPLICATION_CREDENTIALS: testing-shared/fixtures/service-account.json
+
+  DIGITALOCEAN_TOKEN:  asldfjkasldkjalqweioptuqpeortiu
+
+  FAIL_FAST_ENABLED: true
+  CY_COMMAND_TIMEOUT: 30000
+  TEST_VERSIONS: v2
+  UNFURL_TEST_TMPDIR: tmp
+
 jobs:
   build:
     name: Test & Build
     runs-on: ubuntu-latest
-    env:
-      UNFURL_BRANCH: standalone-gui
-      AWS_DNS_ZONE: opencloudservices.net 
-      AWS_ACCESS_KEY_ID: foobarbaz
-      AWS_SECRET_ACCESS_KEY: asldfjkasldkjalqweioptuqpeortiu
-      AWS_DEFAULT_REGION: eu-central-1
-      MAIL_USERNAME: admin@mailu.untrusted.me
-      MAIL_PASSWORD: ocPC2cnGkQsz35I
-      SMTP_HOST: mailu.untrusted.me
-      CY_COMMAND_TIMEOUT: 30000
-      TEST_VERSIONS: v2
-      UNFURL_TEST_TMPDIR: tmp
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
@@ -55,8 +74,7 @@ jobs:
       - name: Create release artifacts
         if: startsWith(github.ref, 'refs/tags/')
         run: tar -czvf unfurl-gui-dist.tar.gz dist
-      - name: Upload release artifact
-        if: startsWith(github.ref, 'refs/tags/')
+      - name: Upload dist
         uses: actions/upload-artifact@v2
         with:
           name: unfurl-gui-dist
@@ -77,3 +95,83 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: unfurl-gui-dist.tar.gz
+
+# TODO some yaml merging or smth (GitHub doesn't support yaml anchors)
+# This could leverage .gitlab/ci-tests.yaml and have automated documentation
+  dryrun_a:
+    name: Dryrun A
+    needs: build
+    env:
+      SPEC_GLOBS: aws* az*
+      SPEC_SKIP_GLOBS: '*container-webapp* *nestedcloud* *draft aws__baserow*' # we already ran baserow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Install yarn dependencies
+        run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+      - name: Compile # TODO just extract the artifact from previous step
+        run: yarn build
+      - name: Install unfurl
+        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pip install -e $HOME/unfurl
+      - name: Integration test
+        run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
+      - name: Upload Cypress screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: dryrunA-cypress-screenshots
+          path: cypress/screenshots
+      - name: Upload dashboard
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: dryrunA-dashboard
+          path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
+      - name: Upload unfurl server log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: dryrunA-unfurl-server-log
+          path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
+
+  dryrun_b:
+    name: Dryrun B
+    needs: build
+    env:
+      SPEC_GLOBS: gcp* do*
+      SPEC_SKIP_GLOBS: '*container-webapp* *nestedcloud* *draft aws__baserow*' # we already ran baserow
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+      - name: Install yarn dependencies
+        run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
+      - name: Compile # TODO just extract the artifact from previous step
+        run: yarn build
+      - name: Install unfurl
+        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pip install -e $HOME/unfurl
+      - name: Integration test
+        run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
+      - name: Upload Cypress screenshots
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: dryrunB-cypress-screenshots
+          path: cypress/screenshots
+      - name: Upload dashboard
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: dryrunB-dashboard
+          path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
+      - name: Upload unfurl server log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v2
+        with:
+          name: dryrunB-unfurl-server-log
+          path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log

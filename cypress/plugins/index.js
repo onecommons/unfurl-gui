@@ -31,6 +31,8 @@ module.exports = (on, config) => {
   //
   config.env.ELECTRON_EXTRA_LAUNCH_ARGS = '--js-flags="--expose-gc"'
 
+  require('cypress-fail-fast/plugin')(on, config)
+
   const OC_URL = config.env.OC_URL = config.env.OC_URL || 'http://localhost:8080'
   config.env.OC_GRAPHQL_ENDPOINT = (function(baseUrl){
     const url = new URL(baseUrl)
@@ -84,7 +86,6 @@ module.exports = (on, config) => {
   if (typeof TEARDOWN == 'string') TEARDOWN = TEARDOWN.toLowerCase()
   if (typeof GENERATE_SUBDOMAINS == 'string') GENERATE_SUBDOMAINS = GENERATE_SUBDOMAINS.toLowerCase()
 
-  console.log({TEARDOWN, GENERATE_SUBDOMAINS, INTEGRATION_TEST_ARGS})
   // default true
   config.env.TEARDOWN = !['0', 'false', 'no', false].includes(TEARDOWN)
   // default false

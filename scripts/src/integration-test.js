@@ -21,6 +21,14 @@ if(STANDALONE_UNFURL && ! PORT) {
   PORT = new URL(OC_URL).port
 }
 
+process.env.FAIL_FAST_ENABLED = process.env.FAIL_FAST_ENABLED || 'false'
+
+if(STANDALONE_UNFURL) {
+  // allow some specs to self-filter
+  process.env.NO_FLAKY = '1'
+  process.env.DRYRUN = '1'
+}
+
 const GENERATED_PASSWORD = !STANDALONE_UNFURL && btoa(Number.MAX_SAFE_INTEGER * Math.random())
 const FIXTURES_TMP = path.join(unfurlGuiRoot, 'cypress/fixtures/tmp')
 
@@ -172,7 +180,14 @@ function createDashboardCommand(username, dashboardRepo) {
   }
 }
 
-function invokeCypressCommand(baseArgs, forwardedEnv) {
+async function invokeCypressCommand(baseArgs, forwardedEnv) {
+  if(!baseArgs.includes('-s') && baseArgs[0] == 'run') {
+    process.env.SPEC_GLOBS = process.env.SPEC_GLOBS || '*'
+    const {getBlueprintSpecs} = (await import('../../testing-shared/fixture-specs.mjs'))
+    baseArgs.push('-s')
+    baseArgs.push(getBlueprintSpecs())
+  }
+
   const args = ['run', 'cypress', ...baseArgs]
   const options = {stdio: 'inherit', env: {...process.env, ...forwardedEnv}}
   return spawnSync.bind(null, 'yarn', args, options)
@@ -224,7 +239,7 @@ async function main() {
     delete forwardedEnv['CYPRESS_OC_IMPERSONATE']
   }
 
-  const cypressCommand = invokeCypressCommand(args._, forwardedEnv)
+  const cypressCommand = await invokeCypressCommand(args._, forwardedEnv)
 
   if(prepareUserCommand) prepareUserCommand()
 
@@ -271,14 +286,17 @@ async function main() {
       outfile: `${UNFURL_TEST_TMPDIR}/unfurl.log`
     })
 
+    unfurlServer.process.on('exit', () => {
+      console.error('Unfurl server exited early')
+      process.exit(1)
+    })
+
     await unfurlServer.waitUntilReady()
   }
   const cypressResult = cypressCommand()
   console.log(cypressResult)
   const status = cypressResult.status
-  if(status) {
-    process.exit(status)
-  }
+  process.exit(status)
 }
 
 async function tryMain() {

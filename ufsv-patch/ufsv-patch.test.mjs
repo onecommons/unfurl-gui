@@ -7,35 +7,19 @@ import Fixture from './fixture'
 import {jest} from '@jest/globals'
 import { sleep } from 'oc_vue_shared/client_utils/misc'
 import UnfurlServer from '../testing-shared/unfurl-server'
+import { getBlueprintFixtures } from '../testing-shared/fixture-specs'
 
 // import {globSync} from 'glob'
 import glob from 'glob'
 const globSync = glob.sync
 
 const TMP_DIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
-const SPEC_GLOBS = process.env.SPEC_GLOBS || ''
-const SKIP_GLOBS = process.env.SPEC_SKIP_GLOBS || '*container-webapp* *nestedcloud* *draft*'
-const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
 const UNFURL_SERVER_CWD = TMP_DIR + '/ufsv'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
 
-const prefix = `cypress/fixtures/generated/deployments/${TEST_VERSIONS}/`
-const suffix = '.json'
-
-function evalGlobs(globs) {
-  return globs.split(/\s+/).map(
-    spec => {
-      const s = `${prefix}${spec}${suffix}`
-      return globSync(`${prefix}${spec}${suffix}`)
-    }
-  ).flat()
-}
-
-const fixtures = evalGlobs(SPEC_GLOBS)
-const skipFixtures = evalGlobs(SKIP_GLOBS)
 
 // Update .readme/2_jest-ufcloud-emulation.md when changed
 const UNFURL_DEFAULT_ENV = {
@@ -202,8 +186,7 @@ async function runSpecs() {
     }
   })
 
-  for(const path of fixtures) {
-    if(skipFixtures.includes(path)) continue
+  for(const path of getBlueprintFixtures()) {
     const fixture = new Fixture(path)
     test(fixture.name, async () => {
       await fixture.test(store)

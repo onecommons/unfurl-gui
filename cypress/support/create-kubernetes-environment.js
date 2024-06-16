@@ -94,6 +94,8 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
     options
   )
 
+  let environmentCreated
+
   cy.whenEnvironmentAbsent(environmentName, () => {
     cy.visit(`/${DASHBOARD_DEST}/-/environments`)
     createEnvironmentButton().click()
@@ -127,14 +129,16 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
       cy.get('#ci-variable-type').select('File')
       cy.get('[data-qa-selector="ci_variable_save_button"]').click()
     }
-    cy.contains('a', 'Resources').click()
-
     addK8sAnnotations()
+
+    environmentCreated = true
   })
 
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
+      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      cy.contains('a', 'Resources').click()
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
       }

@@ -345,10 +345,10 @@ Cypress.Commands.add('recreateDeployment', options => {
           const deploymentDir = store.getters.lookupDeployPath(deployment.name, deployment._environment)?.name
           expect(deploymentDir).to.exist
 
-          cy.execLoud(
-            `./testing-shared/run-unfurl.sh deploy --dryrun --use-environment ${deployment._environment} --approve --jobexitcode error ${deploymentDir}`,
-            { timeout: BASE_TIMEOUT * 10 }
-          )
+          cy.execLoud(`./testing-shared/run-unfurl.sh deploy --dryrun --use-environment ${deployment._environment} --approve --jobexitcode error ${deploymentDir}`, {
+            timeout: BASE_TIMEOUT * 100,  // unfurl isn't known to hang, so we can wait a long time
+            failOnNonZeroExit: false // we'll fail later when we check the status - this is better for the log
+          })
         })
 
         cy.reload()

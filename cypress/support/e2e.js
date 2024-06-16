@@ -14,6 +14,7 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
+import 'cypress-fail-fast'
 import './commands'
 
 const USERNAME = Cypress.env('OC_USERNAME')

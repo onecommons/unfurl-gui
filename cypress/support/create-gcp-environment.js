@@ -7,6 +7,8 @@ const USERNAME = Cypress.env('OC_IMPERSONATE')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 function createGCPEnvironment({environmentName, shouldCreateExternalResource, shouldCreateDNS}) {
+  let environmentCreated
+
   cy.whenEnvironmentAbsent(environmentName, () => {
     cy.visit(`/${DASHBOARD_DEST}/-/environments`)
     cy.clickCreateEnvironmentButton()
@@ -15,11 +17,13 @@ function createGCPEnvironment({environmentName, shouldCreateExternalResource, sh
     authenticateGCP()
 
     validateGCPEnvironment()
+    environmentCreated = true
   })
 
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
+      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
       }

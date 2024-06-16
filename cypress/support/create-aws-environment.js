@@ -69,6 +69,8 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
     options
   )
 
+  let environmentCreated
+
   cy.whenEnvironmentAbsent(environmentName, () => {
     cy.visit(`/${DASHBOARD_DEST}/-/environments`)
     createEnvironmentButton().click()
@@ -77,12 +79,13 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
     cy.awsAuthenticateEnvironment({region: AWS_DEFAULT_REGION})
     cy.contains(environmentName).should('exist')
     cy.contains('Amazon Web Services').should('exist')
+    environmentCreated = true
   })
 
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
-      cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
       }

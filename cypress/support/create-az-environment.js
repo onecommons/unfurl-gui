@@ -49,6 +49,8 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
     options
   )
 
+  let environmentCreated
+
   cy.whenEnvironmentAbsent(environmentName, () => {
     cy.visit(`/${DASHBOARD_DEST}/-/environments`)
     createEnvironmentButton().click()
@@ -74,14 +76,16 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
       cy.contains('button', 'Save Changes').click()
     })
 
+    environmentCreated = true
     cy.wait(5000)
   })
 
-  cy.contains('a', 'Resources').click()
 
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
+      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      cy.contains('a', 'Resources').click()
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
       }

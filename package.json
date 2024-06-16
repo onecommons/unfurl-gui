@@ -84,6 +84,7 @@
     "babel-jest": "^29.6.0",
     "babel-plugin-transform-es2015-modules-commonjs": "^6.26.2",
     "cypress": "11.2.0",
+    "cypress-fail-fast": "^7.1.0",
     "cypress-file-upload": "^5.0.8",
     "cypress-wait-until": "^1.7.2",
     "eslint": "^7.2.0",
