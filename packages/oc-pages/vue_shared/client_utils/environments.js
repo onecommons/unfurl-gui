@@ -287,7 +287,7 @@ export async function fetchEnvironments(options) {
             try {
                 const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
-                const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
+                const environment = deploymentPaths.find(dp => (new RegExp(`(/|^)${deploymentName}$`).test(dp.name))).environment
                 deployment._environment = environment
 
                 if(deployment.ResourceType) {

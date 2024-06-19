@@ -832,9 +832,12 @@ const getters = {
     // TODO rename to lookupDeployPathByEnvironment?
     lookupDeployPath(state) {
         return function(deploymentName, environmentName) {
+            const re = (new RegExp(`(/|^)${deploymentName}$`))
+
+            const matchingSuffix = state.deploymentPaths.filter(dp => re.test(dp.name))
             const prefix = `environments/${environmentName}`
-            const suffix = `/${deploymentName}`
-            return state.deploymentPaths.find(dp => dp.name?.startsWith(prefix) && dp.name?.endsWith(suffix))
+
+            return matchingSuffix.find(dp => dp.name?.startsWith(prefix)) || matchingSuffix[0]
         }
     },
     // do not use if the pipeline may have not been started yet
