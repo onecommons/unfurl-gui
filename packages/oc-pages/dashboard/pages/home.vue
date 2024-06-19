@@ -1,6 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
-import MarkdownView from 'oc_vue_shared/components/oc/markdown-view'
+import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
 
 import QuantityCard from '../components/quantity-card.vue'
 import ApplicationCell from '../components/cells/application-cell.vue'
@@ -54,8 +54,8 @@ export default {
             routes,
             //fields,
             //items: [],
-            readme: gon.readme,
-            readmeRaw: gon.readmeRaw,
+            readme: window.gon.readme,
+            readmeRaw: window.gon.readmeRaw,
             loaded: false,
             standalone,
         };

@@ -43,8 +43,8 @@ export default {
             createEnvironmentName: '',
             createEnvironmentProvider: '',
             currentTag: null,
-            version: null,
             mainBranchCommitId: null,
+            userSpecifiedDeploymentName: !!this.$route.query.fn, // hopefully we'll consider it to be user modified if they were redirected
             standalone
         }
     },
@@ -52,6 +52,7 @@ export default {
         ...queryParamVar('ts'),
         ...queryParamVar('fn'),
         ...queryParamVar('bprev'),
+        ...queryParamVar('env'),
 
         deployDialogError() {
             if (this.instantiateAs == 'deployment-draft') {
@@ -64,6 +65,8 @@ export default {
         },
         ...mapGetters([
             'getNextDefaultDeploymentName',
+            'environmentsAreReady',
+            'lookupEnvironment',
             'getMatchingEnvironments',
             'getDefaultEnvironmentName',
             'lookupDeploymentOrDraft',
@@ -71,10 +74,6 @@ export default {
             'getHomeProjectPath',
             'getLastUsedEnvironment',
         ]),
-        useUnreleased() {
-            if (!this.currentTag) return false
-            return this.version != this.currentTag.name
-        },
 
         mainAtLastest() {
             if (!this.mainBranchCommitId || !this.currentTag?.commit?.id) return false
@@ -103,6 +102,13 @@ export default {
             if(this.instantiateAs != 'template' && !this.selectedEnvironment) return true
 
             return false
+        },
+
+        environmentSelectionFromUrl() {
+            if(!this.environmentsAreReady) return null
+            if(!this.env) return null
+
+            return this.lookupEnvironment(this.env)
         }
     },
     watch: {
@@ -110,7 +116,7 @@ export default {
             immediate: true,
             handler (val) {
                 this.ts = val.name
-                if (this.fn) return
+                if (this.userSpecifiedDeploymentName) return
                 if (val && this.instantiateAs == 'deployment-draft') {
                     this.fn = this.getNextDefaultDeploymentName(
                         this.applicationBlueprint?.title + ' ' + lookupCloudProviderShortName(val.cloud)
@@ -123,8 +129,8 @@ export default {
 
         currentTag(currentTag) {
             if (!currentTag) return
-            if (!this.version) {
-                this.version = currentTag.name
+            if (!this.bprev) {
+                this.bprev = currentTag.name
             }
         },
 
@@ -132,6 +138,19 @@ export default {
             immediate: true,
             handler(val) {
                 this.$emit('completionStatusSet', !val)
+            }
+        },
+        // modal wants to set to false
+        bprev() {
+            if(this.bprev === false) this.bprev = undefined
+        },
+
+        environmentSelectionFromUrl: {
+            immediate: true,
+            handler() {
+                if(!this.selectedEnvironment && this.environmentSelectionFromUrl) {
+                    this.selectedEnvironment = this.environmentSelectionFromUrl
+                }
             }
         }
     },
@@ -172,6 +191,11 @@ export default {
         }
 
         fetchBranches(encodeURIComponent(this._projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == 'main')?.commit?.id)
+
+        if(sessionStorage['instantiate_env']) {
+            this.env = sessionStorage['instantiate_env']
+            delete sessionStorage['instantiate_env']
+        }
     }
 }
 </script>
@@ -182,7 +206,7 @@ export default {
         :cloud-provider="templateSelected && templateSelected.cloud" />
     <div v-else-if="applicationBlueprint">
         <gl-form-group label="Name" class="col-md-4 align_left">
-            <gl-form-input id="input1" data-testid="deployment-name-input" v-model="fn"
+            <gl-form-input id="input1" data-testid="deployment-name-input" @change="userSpecifiedDeploymentName = true" v-model="fn"
                 name="input['template-name']" type="text" />
 
         </gl-form-group>
@@ -193,9 +217,9 @@ export default {
                 :environment-creation="!standalone" />
 
             <div v-if="shouldProvideVersionSelection" class="mt-5">
-                <gl-form-radio v-model="version" :value="currentTag.name">Use the current release of
-                    {{ getApplicationBlueprint.title }} (<b>{{ currentTag.name }}</b>)</gl-form-radio>
-                <gl-form-radio v-model="version" value="main"> Use the latest (unreleased) version</gl-form-radio>
+                <gl-form-radio v-model="bprev" :value="currentTag.name">Use the current release of
+                    {{ applicationBlueprint.title }} (<b>{{ currentTag.name }}</b>)</gl-form-radio>
+                <gl-form-radio v-model="bprev" value="main"> Use the latest (unreleased) version</gl-form-radio>
             </div>
         </div>
     </div>

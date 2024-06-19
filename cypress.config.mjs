@@ -7,7 +7,7 @@ export default defineConfig({
   defaultCommandTimeout,
   videoCompression: false,
   video: false,
-  numTestsKeptInMemory: 0,
+  numTestsKeptInMemory: 1,
   watchForFileChanges: false,
   // enable for Cypress 12.x
   // experimentalMemoryManagement: true,

@@ -33,10 +33,11 @@ const GENERATED_PASSWORD = !STANDALONE_UNFURL && btoa(Number.MAX_SAFE_INTEGER * 
 const FIXTURES_TMP = path.join(unfurlGuiRoot, 'cypress/fixtures/tmp')
 
 process.env.OC_URL = OC_URL
-process.env.DASHBOARD_DEST = (
-  process.env.DASHBOARD_DEST ||
-  STANDALONE_UNFURL? STANDALONE_PROJECT_DIR: undefined
-)
+
+if(STANDALONE_UNFURL && !process.env.DASHBOARD_DEST) {
+  process.env.DASHBOARD_DEST = STANDALONE_PROJECT_DIR
+}
+
 
 const READ_ARGS = {
   username: (args) => args.u || args.username || (STANDALONE_UNFURL && 'jest' || undefined),
@@ -208,6 +209,10 @@ async function main() {
     prepareUserCommand = createDashboardCommand(username, dashboardRepo)
   } else if (username == 'nobody') {
     username = undefined
+  }
+
+  if(username && !process.env.DASHBOARD_DEST) {
+    process.env.DASHBOARD_DEST = `${username}/dashboard`
   }
 
   if(username) console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)

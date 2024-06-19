@@ -708,7 +708,7 @@ const actions = {
 
 };
 function envFilter(name){
-    return env => env.name == name
+    return env => env?.name == name
 }
 
 const getters = {

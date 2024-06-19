@@ -88,7 +88,9 @@ export default {
     position: sticky;
 }
 
-body.modal-open .ufgui-error-container {
+/* Doesn't work consistently on dashboard page */
+body.modal-open #OcAppDeployments .ufgui-error-container {
     position: fixed;
+    min-width: min(950px, 100%)
 }
 </style>

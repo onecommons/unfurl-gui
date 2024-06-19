@@ -1,7 +1,7 @@
 <script>
 
 import { __ } from '~/locale'
-import { mapGetters, mapActions } from 'vuex'
+import { mapGetters, mapActions, mapMutations } from 'vuex'
 import { GlModal, GlDropdown, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui';
 import { queryParamVar } from 'oc_vue_shared/util'
 import { unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
@@ -29,14 +29,30 @@ export default {
         ...mapActions([
             'environmentFetchTypesWithParams',
         ]),
+        ...mapMutations([
+            'createError',
+        ]),
         async doSetup() {
             await this.environmentFetchTypesWithParams({ environmentName: this.environmentName })
             const types = this.environmentResourceTypeDict(this.environmentName)
             this.blueprints = Object.values(types).filter(t => t.directives?.includes('substitute'))
+            if(this.blueprints.length == 0) {
+                this.createError({
+                    message: 'No valid blueprints found',
+                    context: {
+                        environmentName: this.environmentName,
+                        visibleTypes: Object.values(types).map(type => type.name)
+                    }
+                })
+            }
         },
         primarySelectTemplate() {
             if(this.$refs.baseDeployDialog) {
-                this.$refs.baseDeployDialog.redirectToTemplateEditor()
+                if(this.$refs.baseDeployDialog.creatingEnvironment) {
+                    this.$refs.baseDeployDialog.redirectToNewEnvironment()
+                } else {
+                    this.$refs.baseDeployDialog.redirectToTemplateEditor()
+                }
             }
         },
         primarySelectAppBlueprint() {
@@ -54,6 +70,9 @@ export default {
             this.blueprintProject = undefined
             this.ts = undefined
             this.fn = undefined
+            this.bprev = undefined
+            this.env = undefined
+            this.provider = undefined
             this.baseDialogComplete = false
         },
         backSelectAppBlueprint() {
@@ -90,12 +109,15 @@ export default {
         },
         enabled: {
             get() {
-                return this.$route.hash == NEW_DEPLOYMENT_HASH
+                return (
+                    this.$route.hash == NEW_DEPLOYMENT_HASH ||
+                    !!this.blueprintProject
+                )
             },
             set(val) {
                 // avoids duplicated navigation error
                 if(val) {
-                window.location.hash = val
+                    window.location.hash = NEW_DEPLOYMENT_HASH
                 } else {
                     this.reset()
                 }
@@ -104,6 +126,9 @@ export default {
         ...queryParamVar('blueprintProject'),
         ...queryParamVar('ts'),
         ...queryParamVar('fn'),
+        ...queryParamVar('bprev'),
+        ...queryParamVar('env'),
+        ...queryParamVar('provider'),
         stage() {
             if(this.blueprintProject) return 'SelectTemplate'
             return 'SelectAppBlueprint'
