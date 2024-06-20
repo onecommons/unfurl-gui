@@ -286,28 +286,30 @@ export async function fetchTypeRepositories(repositories, params) {
         (repo, i) => unfurlServerGetTypes(repoToExportParams(repo), params, i)
     )))
 
-    if(!typesDictionaries.length) return {}
+    let nestedTemplatesByPrimary = {}
     // hopefully this won't hurt too badly if fetch results are small
 
     const types = {}
     const categories = {}
 
-    // track all templates that might be copied for node substitution later
-    const nestedTemplatesByPrimary = Object.assign({}, ...typesDictionaries.map(groupTemplatesByPrimary))
+    if(typesDictionaries.length) {
+        // track all templates that might be copied for node substitution later
+        nestedTemplatesByPrimary = Object.assign({}, ...typesDictionaries.map(groupTemplatesByPrimary))
 
-    typesDictionaries.forEach(td => {
-        Object.entries(td.ResourceType).forEach(([key, value]) => {
-            if(types[key] && value._sourceinfo?.incomplete) {
-                return
-            }
+        typesDictionaries.forEach(td => {
+            Object.entries(td.ResourceType).forEach(([key, value]) => {
+                if(types[key] && value._sourceinfo?.incomplete) {
+                    return
+                }
 
-            types[key] = value
+                types[key] = value
+            })
+
+            Object.entries(td.Overview?.categories || {}).forEach(([key, value]) => {
+                categories[key] = value
+            })
         })
-
-        Object.entries(td.Overview?.categories || {}).forEach(([key, value]) => {
-            categories[key] = value
-        })
-    })
+    }
 
 
     return _.cloneDeep({types, categories, nestedTemplatesByPrimary})

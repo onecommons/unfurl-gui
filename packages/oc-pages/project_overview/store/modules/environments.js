@@ -643,7 +643,7 @@ const actions = {
             deploymentName
         )
 
-        let types
+        let types = {}
 
         try {
             const result = await fetchTypeRepositories(
