@@ -31,7 +31,7 @@ const actions = {
         const items = [];
         let deployments = 0
         let applications = 0
-        let environments = 0
+        let environmentsCount = 0
         let totalDeployments = 0
         let applicationNames = {}
 
@@ -46,11 +46,18 @@ const actions = {
         }
         let iterationCounter = 0
 
+        const environments = rootGetters.getEnvironments
+
+
+        if(rootGetters.getDeploymentDictionaries.some(dep => dep._environment == 'defaults')) {
+            environments.push(rootGetters.lookupEnvironment('defaults'))
+        }
+
         for(const environment of rootGetters.getEnvironments) {
             deepFreeze(environment)
             context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
-            environments += 1
+            environmentsCount += 1
             const environmentName = environment.name
             context.environment = environment
             context.environmentName = environmentName
@@ -98,7 +105,7 @@ const actions = {
                 const application = {...Object.values(frozenDeploymentDict['ApplicationBlueprint'])[0]}
                 application.projectPath = deployment.projectPath
 
-                if(!application.projectIcon) {
+                if(!application.projectIcon && application.projectPath && application.projectPath != '.') {
                     try {
                         application.projectIcon = fetchProjectInfo(encodeURIComponent(application.projectPath)).then(projectInfo => projectInfo?.avatar_url)
                     } catch(e) {
@@ -129,7 +136,7 @@ const actions = {
         applications = Object.keys(applicationNames).length
 
         commit('setDashboardItems', items)
-        commit('setDashboardCounters', {deployments, applications, environments, totalDeployments})
+        commit('setDashboardCounters', {deployments, applications, environments: environmentsCount, totalDeployments})
         commit('setDashboardLoaded', true)
     }
 }

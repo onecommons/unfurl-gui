@@ -21,7 +21,7 @@ export default {
 </script>
 <template>
     <!-- TODO use router link when possible -->
-    <a :href="`/${application.projectPath}`">
+    <a :href="application.projectPath && application.projectPath != '.' ? `/${application.projectPath}`: null">
         <div v-if="application" class="status-item font-weight-bold">
             <project-icon :projectIcon="projectIconSrc" />
             {{application.title}}

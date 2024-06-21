@@ -15,6 +15,7 @@ export default {
     computed: {
         ...mapGetters(['getHomeProjectPath']),
         destination() {
+            if((this.$props?.environment?.name ?? 'defaults') == 'defaults') return {href: null}
             return this.noRouter ?
                 {href: `/${this.getHomeProjectPath}/-/environments/${this.$props?.environment?.name}`} :
                 this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})

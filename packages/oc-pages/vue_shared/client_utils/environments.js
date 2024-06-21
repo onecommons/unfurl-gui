@@ -288,7 +288,7 @@ export async function fetchEnvironments(options) {
                 const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
                 const environment = deploymentPaths.find(dp => (new RegExp(`(/|^)${deploymentName}$`).test(dp.name))).environment
-                deployment._environment = environment
+                deployment._environment = environment || 'defautlts'
 
                 if(deployment.ResourceType) {
                     Object.values(deployment.ResourceType).forEach(rt => localNormalize(rt, 'ResourceType', deployment))
