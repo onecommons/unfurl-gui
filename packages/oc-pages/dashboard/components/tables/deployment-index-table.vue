@@ -49,6 +49,10 @@ const tabFilters = [
         title: 'Drafts',
         filter(item) { return item.isDraft }
     },
+
+    // hide irrelevant tabs for standalone
+    // #!if false
+
     {
         title: 'Merge Requests',
         filter(item) { return false }
@@ -59,6 +63,9 @@ const tabFilters = [
             return item.autostopScheduled
         }
     },
+
+    // #!endif
+
     {
         title: 'Failed',
         filter(item) {
