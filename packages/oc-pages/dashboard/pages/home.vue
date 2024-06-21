@@ -109,7 +109,7 @@ export default {
 <div>
     <dashboard-breadcrumbs />
     <div style="width: fit-content; margin: auto;">
-        <dashboard-welcome v-if="totalDeploymentsCount == 0" />
+        <dashboard-welcome v-if="!standalone && totalDeploymentsCount == 0" />
         <div class="quantity-cards">
             <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card
