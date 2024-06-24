@@ -54,7 +54,7 @@ export default function createRouter(base) {
         if(to.name != from.name) {
             hideLastFlash()
         }
-        if(!window.gon.current_username) {
+        if(!window.gon.current_username && !window.gon.unfurl_gui) {
             if(isPrivateRoute(to)) {
                 setTimeout( () => window.location.href = '/users/sign_in?redirect_to_referer=yes', 1)
                 return false
