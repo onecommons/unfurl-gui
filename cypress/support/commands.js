@@ -48,6 +48,7 @@ const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLO
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 function whenUnfurlGUI(cb) {
   cy.window().then(win => {
@@ -102,7 +103,7 @@ function login(username, password, impersonate) {
         cy.url().should('not.contain', 'admin')
 
         if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-          cy.visit(`/${impersonate}/dashboard`)
+          cy.visit(`/${DASHBOARD_DEST}`)
         }
       }
     }
@@ -150,7 +151,7 @@ function login(impersonateUser) {
       }
       win.sessionStorage['unfurl-trace'] = 't'
     })
-    cy.visit(`/${impersonateUser || USERNAME}/dashboard`)
+    cy.visit(`/${DASHBOARD_DEST}`)
   },
   {
     cacheAcrossSpecs: false,

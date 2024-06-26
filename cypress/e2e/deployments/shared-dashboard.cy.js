@@ -8,7 +8,7 @@ const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 describe('Shared dashboard test', () => {
-  const baseTitle = 'shared-dashbaord-env'
+  const baseTitle = 'shared-dashboard-env'
   const baseDeploymentTitle = 'Shared dashboard deployment'
   const suffix = Date.now().toString(36).slice(4) + Math.random().toString().slice(-4)
   const environmentName = `${baseTitle}-gcp${suffix}`.toLowerCase()

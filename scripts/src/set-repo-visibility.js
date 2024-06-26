@@ -8,7 +8,7 @@ const login = require('./shared/login.js')
 async function setRepoVisibility(projectPath, visibility) {
   const _visibility = visibility == 'public'? 20 : visibility == 'internal'? 10 : 0
   await login()
-  const res = await axios.get(`${process.env.OC_URL}/${projectPath}/edit`)
+  const res = await axios.get(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${projectPath}/edit`)
   const authenticity_token = extractCsrf(res.data)
 
   const form = new FormData()
@@ -21,7 +21,7 @@ async function setRepoVisibility(projectPath, visibility) {
     "Content-Length": form.getLengthSync()
   }
 
-  const status = (await axios.post(`${process.env.OC_URL}/${projectPath}`, form, {headers})).status
+  const status = (await axios.post(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${projectPath}`, form, {headers})).status
 
   return status < 400 && status >= 200
 }

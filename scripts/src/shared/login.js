@@ -7,18 +7,18 @@ process.env.OC_PASSWORD = '******'
 const FormData = require('form-data')
 const axios = require('./axios-instance.js')
 const {extractCsrf} = require("./util.js")
+const fs = require('fs')
 
 const authenticityTokenRegex = /name="csrf-token"\s+content="(([A-Za-z0-9+/=])+)"/i
 let loggedIn = false
 async function login(gitlabURL, gitlabUsername, gitlabPassword, impersonate, force=false) {
   if(loggedIn && !force) return
-  loggedIn = true
   let result
 
   {
     const form = new FormData()
 
-    const signInURL = `${gitlabURL || process.env.OC_URL}/users/sign_in`
+    const signInURL = `${gitlabURL || process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/users/sign_in`
     const res = await axios.get(signInURL)
     const authenticity_token = extractCsrf(res.data)
     form.append('authenticity_token', authenticity_token)
@@ -32,15 +32,19 @@ async function login(gitlabURL, gitlabUsername, gitlabPassword, impersonate, for
     }
 
     const response = await axios.post(signInURL, form, {headers})
+
+    fs.writeFileSync('/tmp/login.html', response.data, 'utf8')
+
     const status = response.status
 
-    result = status < 400 && status >= 200
-    if(!result) return false
+    const statusOk = status < 400 && status >= 200
+    const credentialsOk = !response.data.includes('Invalid login or password.')
+    loggedIn = result = (statusOk && credentialsOk)
   }
 
   let impersonateUser
-  if((impersonateUser = impersonate || process.env.OC_IMPERSONATE)) {
-    const adminUserPage = `${process.env.OC_URL}/admin/users/${impersonateUser}`
+  if(result && (impersonateUser = impersonate || process.env.OC_IMPERSONATE)) {
+    const adminUserPage = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/admin/users/${impersonateUser}`
     const authenticity_token = extractCsrf((await axios.get(adminUserPage)).data)
 
     const form = new FormData()
@@ -52,7 +56,7 @@ async function login(gitlabURL, gitlabUsername, gitlabPassword, impersonate, for
       "Content-Length": form.getLengthSync()
     }
 
-    const adminImpersonateURL = `${process.env.OC_URL}/admin/users/${impersonateUser}/impersonate`
+    const adminImpersonateURL = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/admin/users/${impersonateUser}/impersonate`
     result = (await axios.post(adminImpersonateURL, form, {headers})).status
 
   }

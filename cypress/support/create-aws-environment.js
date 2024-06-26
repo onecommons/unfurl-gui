@@ -8,6 +8,8 @@ const AWS_DNS_TYPE = Cypress.env('AWS_DNS_TYPE')
 const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
+const STANDALONE_UNFURL = Cypress.env('STANDALONE_UNFURL')
+const UNFURL_TEST_TMPDIR = Cypress.env('UNFURL_TEST_TMPDIR')
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -69,23 +71,41 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
     options
   )
 
-  let environmentCreated
+  let viewingEnv
 
   cy.whenEnvironmentAbsent(environmentName, () => {
-    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
-    createEnvironmentButton().click()
-    cy.awsCompleteEnvironmentDialog({environmentName})
-    cy.url().should('include', environmentName)
-    cy.awsAuthenticateEnvironment({region: AWS_DEFAULT_REGION})
-    cy.contains(environmentName).should('exist')
-    cy.contains('Amazon Web Services').should('exist')
-    environmentCreated = true
+    if(STANDALONE_UNFURL) {
+      const UNFURL_TEST_TMPDIR = Cypress.env('UNFURL_TEST_TMPDIR')
+      cy.execLoud(`testing-shared/ufhome-add-environment.sh aws "${UNFURL_TEST_TMPDIR}/ufsv" "${environmentName}"`)
+
+      cy.wait(1000)
+
+      cy.window().then(win => {
+        cy.request({
+          method: 'POST',
+          url: `/clear_project_file_cache?auth_project=${win.gon.home_project}`
+        })
+      })
+
+      cy.reload()
+    } else {
+      cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+      createEnvironmentButton().click()
+      cy.awsCompleteEnvironmentDialog({environmentName})
+      cy.url().should('include', environmentName)
+      cy.awsAuthenticateEnvironment({region: AWS_DEFAULT_REGION})
+      cy.contains(environmentName).should('exist')
+      cy.contains('Amazon Web Services').should('exist')
+      viewingEnv = true
+    }
   })
+
+  cy.environmentShouldExist(environmentName)
 
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
-      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      viewingEnv || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
       }

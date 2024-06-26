@@ -1,5 +1,4 @@
 #!/bin/bash
-
 if [ -z ${UNFURL_SERVER_CWD+x} ]; then echo UNFURL_SERVER_CWD must be set; exit 1; fi
 rm -rf $UNFURL_SERVER_CWD/.git*
 rm -rf $UNFURL_SERVER_CWD/*

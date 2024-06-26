@@ -10,16 +10,22 @@ const OC_USERNAME = process.env.OC_USERNAME
 const OC_PASSWORD = process.env.OC_PASSWORD
 let PORT = process.env.PORT
 const OC_URL = process.env.OC_URL || (PORT? `http://localhost:${PORT}`: 'http://localhost:5001')
+const UNFURL_CLOUD_SERVER = process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL
 const OC_INVITE_CODE = process.env.OC_INVITE_CODE
 const OC_DISCRIMINATOR = process.env.OC_DISCRIMINATOR
 const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
 const STANDALONE_UNFURL = OC_URL.includes('://localhost') 
 const ENV_NAMING_FUNCTION = process.env.ENV_NAMING_FUNCTION || (STANDALONE_UNFURL? 'identity' : 'identifierFromCurrentTime')
-const UNFURL_TEST_TMPDIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
+const UNFURL_TEST_TMPDIR = process.env.UNFURL_TEST_TMPDIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
 const STANDALONE_PROJECT_DIR = `${UNFURL_TEST_TMPDIR}/ufsv`
 if(STANDALONE_UNFURL && ! PORT) {
   PORT = new URL(OC_URL).port
 }
+process.env.UNFURL_HOME = path.join(UNFURL_TEST_TMPDIR, './unfurl_home')
+process.env.UNFURL_NORUNTIME = true
+process.env.OC_URL = OC_URL
+
+const LOCAL_ONLY = !!(STANDALONE_UNFURL && (!UNFURL_CLOUD_SERVER || UNFURL_CLOUD_SERVER == OC_URL))
 
 process.env.FAIL_FAST_ENABLED = process.env.FAIL_FAST_ENABLED || 'false'
 
@@ -27,12 +33,12 @@ if(STANDALONE_UNFURL) {
   // allow some specs to self-filter
   process.env.NO_FLAKY = '1'
   process.env.DRYRUN = '1'
+  process.env.STANDALONE_UNFURL = STANDALONE_UNFURL
 }
 
-const GENERATED_PASSWORD = !STANDALONE_UNFURL && btoa(Number.MAX_SAFE_INTEGER * Math.random())
+const GENERATED_PASSWORD = btoa(Number.MAX_SAFE_INTEGER * Math.random())
 const FIXTURES_TMP = path.join(unfurlGuiRoot, 'cypress/fixtures/tmp')
 
-process.env.OC_URL = OC_URL
 
 if(STANDALONE_UNFURL && !process.env.DASHBOARD_DEST) {
   process.env.DASHBOARD_DEST = STANDALONE_PROJECT_DIR
@@ -40,7 +46,13 @@ if(STANDALONE_UNFURL && !process.env.DASHBOARD_DEST) {
 
 
 const READ_ARGS = {
-  username: (args) => args.u || args.username || (STANDALONE_UNFURL && 'jest' || undefined),
+  username: (args) => {
+    if(LOCAL_ONLY) {
+      return 'jest'
+    }
+
+    return args.u || args.username
+  },
   cypressEnv: (args) => args.e || args.env || args['cypress-env'],
   dashboardRepo: (args) => args.dashboard || args['dashboard-repo'],
   group: (args) => args.group,
@@ -118,7 +130,11 @@ const INTERNAL_TEST_VARIALBES = [
   'AZ_ENVIRONMENT_NAME',
   'GENERATED_PASSWORD',
   'EXTERNAL',
-  'NAMESPACE_PROJECTS'
+  'NAMESPACE_PROJECTS',
+  'STANDALONE_UNFURL',
+  'UNFURL_NORUNTIME',
+  'UNFURL_HOME',
+  "UNFURL_TEST_TMPDIR"
 ]  // always overriden
 
 const FORWARD_ENVIRONMENT_VARIABLES = [
@@ -156,27 +172,50 @@ const ENV_NAMING_FUNCTIONS = {
 function createDashboardCommand(username, dashboardRepo) {
   //if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
   const
-    file = path.join(__dirname, 'create-user.js'),
-    args = ['--username', username, '--external', EXTERNAL],
+    createUser = path.join(__dirname, 'create-user.js'),
+    createUserArgs = ['--username', username, '--external', EXTERNAL],
     options = {stdio: 'inherit'}
   if(dashboardRepo) {
-    args.push('--dashboard')
-    args.push(dashboardRepo)
+    createUserArgs.push('--dashboard')
+    createUserArgs.push(dashboardRepo)
   }
-  if(!(OC_USERNAME && OC_PASSWORD)) {
-    args.push('--password')
-    args.push(GENERATED_PASSWORD)
+  if(!(OC_USERNAME && OC_PASSWORD) || STANDALONE_UNFURL) {
+    createUserArgs.push('--password')
+    createUserArgs.push(GENERATED_PASSWORD)
+  }
+  if(STANDALONE_UNFURL) {
+    createUserArgs.push('--select-role')
   }
   if(OC_INVITE_CODE) {
-    args.push('--invite-code')
-    args.push(OC_INVITE_CODE)
+    createUserArgs.push('--invite-code')
+    createUserArgs.push(OC_INVITE_CODE)
   }
   return () => {
-    try {
-      execFileSync(file, args, options)
-      console.log(`Dashboard created for ${username}`)
-    } catch(e) {
-      console.error(e.message)
+    execFileSync(createUser, createUserArgs, options)
+    console.log(`Dashboard created for ${username}`)
+    if(STANDALONE_UNFURL) {
+      try {
+        fs.rmdirSync(process.env.DASHBOARD_DEST, {force: true, recursive: true})
+      } catch(e) {console.error(e.message, process.env.DASHBOARD_DEST)}
+
+      const env = {
+        ...(options.env || {}),
+        ...process.env,
+      }
+      delete env['OC_TOKEN']
+
+      execFileSync(
+        path.join(__dirname, 'unfurl-clone.js'),
+        [
+          '--username', username,
+          '--password', GENERATED_PASSWORD,
+          process.env.DASHBOARD_DEST
+        ],
+        {
+          ...options,
+          env
+        }
+      )
     }
   }
 }
@@ -203,6 +242,13 @@ async function main() {
 
   if(!REPOS_NAMESPACE) REPOS_NAMESPACE = 'testing'
 
+  if(STANDALONE_UNFURL) {
+    try {
+      // don't worry it's be set to something else
+      fs.rmdirSync(process.env.UNFURL_HOME, {force: true, recursive: true})
+    } catch(e) {}
+  }
+
   if(!username) {
     // we need to create a new user
     username = ENV_NAMING_FUNCTIONS.identifierFromCurrentTime('user')
@@ -215,7 +261,7 @@ async function main() {
     process.env.DASHBOARD_DEST = `${username}/dashboard`
   }
 
-  if(username) console.log(`${process.env.OC_URL}/${username}/dashboard/-/deployments`)
+  if(username && UNFURL_CLOUD_SERVER) console.log(`${UNFURL_CLOUD_SERVER}/${username}/dashboard/-/deployments`)
 
   const GCP_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('gcp').toLowerCase()
   const AWS_ENVIRONMENT_NAME = ENV_NAMING_FUNCTIONS[ENV_NAMING_FUNCTION]('aws').toLowerCase()
@@ -238,13 +284,18 @@ async function main() {
 
   const forwardedEnv = await forwardedEnvironmentVariables(env)
 
-  if(!username) {
+  if(!username || STANDALONE_UNFURL) {
     delete forwardedEnv['CYPRESS_OC_USERNAME']
     delete forwardedEnv['CYPRESS_OC_PASSWORD']
     delete forwardedEnv['CYPRESS_OC_IMPERSONATE']
   }
 
+  if(STANDALONE_UNFURL && ! LOCAL_ONLY) {
+    delete forwardedEnv['CYPRESS_DASHBOARD_DEST'] // has ambiguous meaning for standalone with upstream
+  }
+
   const cypressCommand = await invokeCypressCommand(args._, forwardedEnv)
+
 
   if(prepareUserCommand) prepareUserCommand()
 
@@ -266,14 +317,17 @@ async function main() {
     }
   }
 
-
   if(STANDALONE_UNFURL) {
-    execFileSync('testing-shared/setup.sh', {
-      env: {
-        ...process.env,
-        UNFURL_SERVER_CWD: process.env.DASHBOARD_DEST
-      }
-    })
+
+    if(LOCAL_ONLY) {
+      execFileSync('testing-shared/setup.sh', {
+        env: {
+          ...process.env,
+          UNFURL_SERVER_CWD: process.env.DASHBOARD_DEST
+        },
+        stdio: 'inherit'
+      })
+    }
 
     const UnfurlServer = (await import('../../testing-shared/unfurl-server.mjs')).default
 
@@ -282,7 +336,7 @@ async function main() {
       gui: true,
       env: {
         UNFURL_LOGGING: 'trace',
-        UNFURL_HOME: '',
+        UNFURL_HOME: process.env.UNFURL_HOME,
         UNFURL_SKIP_SAVE: 'never',
         UFGUI_DIR: unfurlGuiRoot
       },
@@ -308,7 +362,8 @@ async function tryMain() {
   try {
     await main()
   } catch(e) {
-    console.error('Error:', e.message)
+    // console.error('Error:', e.message)
+    console.error(e)
     process.exit(1)
   }
 }

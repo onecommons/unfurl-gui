@@ -48,7 +48,7 @@ export default {
             'getUsername'
         ]),
         disableDeployButton() {
-            return this.getUsername && !this.environmentsAreReady
+            return (window.gon.unfurl_gui || this.getUsername) && !this.environmentsAreReady
         }
     },
 }

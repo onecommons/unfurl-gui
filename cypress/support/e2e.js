@@ -96,7 +96,7 @@ before(() => {
           cy.url().should('not.contain', 'admin')
 
           if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-            cy.visit(`/${IMPERSONATE}/dashboard`)
+            cy.visit(`/${DASHBOARD_DEST}`)
           }
         }
       } else if (GENERATED_PASSWORD && IMPERSONATE) {
@@ -115,7 +115,7 @@ before(() => {
       }
 
       if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-        cy.visit(`/${IMPERSONATE}/dashboard`)
+        cy.visit(`/${DASHBOARD_DEST}`)
       }
     }
   })
@@ -141,9 +141,11 @@ beforeEach(() => {
   cy.document().then(doc => {
     const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
 
+    const win = doc.parentView || doc.defaultView
+
     cy.request({
       method: 'PATCH',
-      url: `/${DASHBOARD_DEST}/-/variables`,
+      url: `/${DASHBOARD_DEST || win.gon.home_project}/-/variables`,
       failOnStatusCode: false,
       headers: {
         'X-CSRF-Token': csrf

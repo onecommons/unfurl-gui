@@ -1,0 +1,7 @@
+environments:
+  k8s:
+    connections:
+      primary_provider:
+        type: unfurl.relationships.ConnectsTo.K8sCluster
+        properties:
+          context:

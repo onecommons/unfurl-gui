@@ -1,0 +1,7 @@
+environments:
+ azure:
+    connections:
+       primary_provider:
+          type: unfurl.relationships.ConnectsTo.Azure
+          properties:
+            AZURE_CLIENT_D:

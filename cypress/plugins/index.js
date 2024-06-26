@@ -63,6 +63,8 @@ module.exports = (on, config) => {
 
   config.env.DEFAULT_NAMESPACE = config.env.DEFAULT_NAMESPACE || config.env.OC_IMPERSONATE
 
+  if(!config.env.DASHBOARD_DEST) config.env.DASHBOARD_DEST = ''
+
   const
     DIGITALOCEAN_DNS_ZONE = config.env.DIGITALOCEAN_DNS_ZONE || 'untrusted.me',
     GCP_DNS_ZONE = config.env.GCP_DNS_ZONE,

@@ -1,0 +1,11 @@
+environments:
+  gcp:
+    connections:
+      primary_provider:
+        type: unfurl.relationships.ConnectsTo.GoogleCloudProject
+        properties:
+          CLOUDSDK_CORE_PROJECT:
+          CLOUDSDK_COMPUTE_REGION: us-central1
+          CLOUDSDK_COMPUTE_ZONE: us-central1-a
+          # place application-credentials.json in the "secrets" so that it is automatically encrypted
+          GOOGLE_APPLICATION_CREDENTIALS: "{{ 'secrets/application-credentials.json' | abspath('src') }}"
