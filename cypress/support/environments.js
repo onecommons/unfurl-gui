@@ -9,6 +9,7 @@ const MAIL_USERNAME = Cypress.env('MAIL_USERNAME')
 const MAIL_PASSWORD = Cypress.env('MAIL_PASSWORD')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
+const STANDALONE_UNFURL = Cypress.env('STANDALONE_UNFURL')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const
@@ -21,7 +22,10 @@ import slugify from '../../packages/oc-pages/vue_shared/slugify'
 Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
   return cy.waitUntil(() => cy.withStore().then(store => {
     if(!store.getters.environmentsAreReady) return false
-    expect(store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
+
+    if(!STANDALONE_UNFURL) {
+      expect(store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
+    }
     return store
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
     .then(store => {

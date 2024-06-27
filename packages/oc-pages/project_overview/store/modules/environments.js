@@ -493,13 +493,19 @@ const actions = {
             throw new Error('Unable to set PROJECT_DNS_ZONE', e)
         }
     },
-    async generateVaultPasswordIfNeeded({getters, dispatch, rootGetters}, {fullPath}) {
+    async generateVaultPasswordIfNeeded({getters, commit, dispatch}, {fullPath}) {
+        if(window.gon.unfurl_gui) return
         const promises = []
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
             promises.push(
                 dispatch('setEnvironmentVariable', {environmentName: '*', variableName: 'UNFURL_VAULT_DEFAULT_PASSWORD', variableValue: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true})
-                .catch(e => console.warn(`Failed to set vault password for ${fullPath}`, e.message))
+                .catch(e => commit(
+                        'createError',
+                        {
+                            message: `Could not set vault password: ${e.message}`,
+                        }
+                    ))
             )
         }
 
@@ -546,6 +552,7 @@ const actions = {
                 try {
                     await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
                     await Promise.all([
+                        // vault password must NOT be generated if we failed to fetch enviornment variables
                         dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}),
                         dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
                     ])
@@ -897,7 +904,7 @@ const getters = {
     userCanEdit(_, getters) {
         // we can't read or set UNFURL_VAULT_DEFAULT_PASSWORD if we're not a maintainer
         // NOTE this criteria is meaningless when we're editing a blueprint
-        return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
+        return window.gon.unfurl_gui || !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     },
 
     getEnvironmentDefaults(state) { return state.defaults || null },
