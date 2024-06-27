@@ -123,7 +123,7 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     // if(alwaysSendLatestCommit() || !getOverride(projectPath)) {
     // pass latest commit when it's not the repo we're developing
     if(alwaysSendLatestCommit() || !unfurlServerUrlOverride(projectPath)) {
-        if(branch && branch == inferredBranch) {
+        if(latestCommit && branch && branch == inferredBranch) {
             exportUrl += `&latest_commit=${latestCommit}`
         }
     }
@@ -334,6 +334,8 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         patch,
         commit_msg: commitMessage || method
     }
+
+    if(!latestCommit) delete body.latestCommit
 
     const headers = createHeaders({username, password})
     headers['Content-Type'] = 'application/json'
