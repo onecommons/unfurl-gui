@@ -646,7 +646,7 @@ const actions = {
         let types = {}
 
         try {
-            if(options.fallbackTypeRepository && currentEnvironmentRepositories.length == 0) {
+            if(options?.fallbackTypeRepository && currentEnvironmentRepositories.length == 0) {
                 currentEnvironmentRepositories = [options.fallbackTypeRepository]
             }
             const result = await fetchTypeRepositories(
