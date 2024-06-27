@@ -54,13 +54,19 @@ export async function fetchCurrentTag(projectId) {
 }
 
 export async function fetchProjectInfo(projectId, options) {
-    let result
-    if(result = projectInfos[projectId]) {
-        return result
-    }
-    const promise =  async() => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+    if(!window.gon.unfurl_gui) {
+        let result
+        if(result = projectInfos[projectId]) {
+            return result
+        }
+        const promise =  async() => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
 
-    return projectInfos[projectId] = promise()
+        return projectInfos[projectId] = promise()
+    } else {
+        if(typeof projectId != 'string') return null
+
+        return {name: projectId.split(/(%2F|\/)/).pop()}
+    }
 }
 
 export async function fetchProjectPipelines(projectId, options) {
