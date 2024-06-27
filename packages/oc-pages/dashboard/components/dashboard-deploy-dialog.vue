@@ -33,7 +33,14 @@ export default {
             'createError',
         ]),
         async doSetup() {
-            await this.environmentFetchTypesWithParams({ environmentName: this.environmentName })
+            await this.environmentFetchTypesWithParams({
+                environmentName: this.environmentName,
+                options: {
+                    fallbackTypeRepository: {
+                        url: 'https://unfurl.cloud/onecommons/std.git'
+                    }
+                }
+            })
             const types = this.environmentResourceTypeDict(this.environmentName)
             this.blueprints = Object.values(types).filter(t => t.directives?.includes('substitute'))
             if(this.blueprints.length == 0) {

@@ -637,8 +637,8 @@ const actions = {
     },
 
     // optional deployment name
-    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, deploymentName, params}) {
-        const currentEnvironmentRepositories = getters.currentEnvironmentRepositories(
+    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, deploymentName, params, options}) {
+        let currentEnvironmentRepositories = getters.currentEnvironmentRepositories(
             environmentName,
             deploymentName
         )
@@ -646,6 +646,9 @@ const actions = {
         let types = {}
 
         try {
+            if(options.fallbackTypeRepository && currentEnvironmentRepositories.length == 0) {
+                currentEnvironmentRepositories = [options.fallbackTypeRepository]
+            }
             const result = await fetchTypeRepositories(
                 currentEnvironmentRepositories,
                 params
