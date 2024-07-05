@@ -6,7 +6,17 @@ function normalizeDirectives(directives) {
     }
 }
 
+export function normpath(path) {
+    return path.split('/').filter(c => !!c).join('/')
+}
+
 const transforms = {
+    ApplicationBlueprint(blueprint, root) {
+        if(blueprint.projectPath) {
+            blueprint.projectPath = normpath(blueprint.projectPath)
+        }
+    },
+
     Deployment(deployment, root) {
         deployment._environment = root._environment
 
@@ -44,6 +54,15 @@ const transforms = {
                 rt._local = true
                 localNormalize(rt, 'ResourceTemplate', root)
             })
+        }
+        if(!dt.projectPath) {
+            try {
+                dt.projectPath = Object.values(root.ApplicationBlueprint)[0].projectPath
+            } catch(e) {}
+        }
+
+        if(dt.projectPath) {
+            dt.projectPath = normpath(dt.projectPath)
         }
     },
 

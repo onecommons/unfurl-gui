@@ -11,6 +11,19 @@ import axios from '~/lib/utils/axios_utils'
 const state = () => ({deployments: [], deploymentHooks: [], shareStates: {}});
 const mutations = {
     setDeployments(state, deployments) {
+        for(const deployment of deployments) {
+            for(const key of Object.keys(deployment)) {
+                for(const entry of Object.values(deployment[key] || {})) {
+                    if(typeof entry == 'string') continue
+                    if(!entry) continue
+                    try {
+                        localNormalize(entry, key, deployment)
+                    } catch(e) {
+                        console.error(e.message)
+                    }
+                }
+            }
+        }
         state.deployments = deployments;
     },
 

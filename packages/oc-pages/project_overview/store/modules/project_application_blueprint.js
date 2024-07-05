@@ -673,7 +673,7 @@ const getters = {
     },
 
     blueprintRepositories(state) {
-        return Object.values(state.repositories)
+        return Object.values(state.repositories || {})
     },
 
     nestedTemplatesByPrimary(state) {

@@ -29,7 +29,6 @@ export default function createRouter(base) {
     if(!base)
     throw new Error(`
         Could not initialize router without a projectPath.
-        If you are on unfurl-gui, make sure you are running apollo:start before serve so that live/db.json is populated
     `)
 
     const router = new VueRouter({
