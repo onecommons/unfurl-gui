@@ -38,6 +38,6 @@ fi
 if [ ! -z "$dashboard_project" ]; then
   # pushd $ufhome
   pushd $dashboard_project
-  $unfurl init --existing --use-environment $name_or_type
+  $unfurl init --existing --use-environment $name_or_type || /bin/true
   popd
 fi

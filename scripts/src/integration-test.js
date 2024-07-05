@@ -18,6 +18,9 @@ const STANDALONE_UNFURL = OC_URL.includes('://localhost')
 const ENV_NAMING_FUNCTION = process.env.ENV_NAMING_FUNCTION || (STANDALONE_UNFURL? 'identity' : 'identifierFromCurrentTime')
 const UNFURL_TEST_TMPDIR = process.env.UNFURL_TEST_TMPDIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
 const STANDALONE_PROJECT_DIR = `${UNFURL_TEST_TMPDIR}/ufsv`
+let unfurlServer
+let code = 0
+
 if(STANDALONE_UNFURL && ! PORT) {
   PORT = new URL(OC_URL).port
 }
@@ -353,7 +356,7 @@ async function main() {
 
     const UnfurlServer = (await import('../../testing-shared/unfurl-server.mjs')).default
 
-    const unfurlServer = new UnfurlServer({
+    unfurlServer = new UnfurlServer({
       cwd: STANDALONE_PROJECT_DIR,
       gui: true,
       env: {
@@ -367,18 +370,39 @@ async function main() {
       outfile: `${UNFURL_TEST_TMPDIR}/unfurl.log`
     })
 
+    let ready = false
+
     unfurlServer.process.on('exit', () => {
-      console.error('Unfurl server exited early')
-      process.exit(1)
+      if(!ready) {
+        console.error('Unfurl server exited early')
+        process.exit(1)
+      }
     })
 
     await unfurlServer.waitUntilReady()
+    ready = true
   }
   const cypressResult = cypressCommand()
-  console.log(cypressResult)
-  const status = cypressResult.status
-  process.exit(status)
+  code = cypressResult.status
 }
+
+let shouldReportExit = true
+
+async function beforeExit() {
+  if(unfurlServer) {
+    unfurlServer.process.kill()
+    setInterval(() => {
+      unfurlServer.process.kill('SIGKILL')
+    }, 5000)
+    await unfurlServer.waitForExit()
+    if(shouldReportExit) {
+      console.log('unfurl serve exited')
+    }
+    shouldReportExit = false
+  }
+}
+
+process.on('SIGINT', beforeExit)
 
 async function tryMain() {
   try {
@@ -386,8 +410,11 @@ async function tryMain() {
   } catch(e) {
     // console.error('Error:', e.message)
     console.error(e)
-    process.exit(1)
+    code = 1
+  } finally {
+    await beforeExit()
   }
+  process.exit(code)
 }
 
 tryMain()

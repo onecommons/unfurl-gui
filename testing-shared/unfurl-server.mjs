@@ -100,4 +100,10 @@ export default class UnfurlServer {
       await this.waitUntilReady(interval)
     }
   }
+
+  waitForExit() {
+    return new Promise(resolve => {
+      this.process.on('close', resolve)
+    })
+  }
 }
