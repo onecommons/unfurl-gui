@@ -1,10 +1,10 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {OcTab, EnvironmentSelection, LocalDeploy, AutostopInner} from 'oc_vue_shared/components/oc'
+import CombinedCell from '../cells/combined-cell.vue'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
-import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
@@ -13,7 +13,6 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import Vue from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
-import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 import MergeRequestsTable from './merge-requests-table.vue'
 
 const standalone = window.gon.unfurl_gui
@@ -84,6 +83,7 @@ const tabFilters = [
 export default {
     components: {
         TableComponent,
+        CombinedCell,
         EnvironmentCell,
         ResourceCell,
         DeploymentControls,
@@ -94,8 +94,6 @@ export default {
         EnvironmentSelection,
         GlFormInput,
         GlFormGroup,
-        DeploymentStatusIcon,
-        DashboardRouterLink,
         MergeRequestsTable,
         AutostopInner,
         LocalDeploy
@@ -757,18 +755,7 @@ export default {
                 </div>
             </template>
             <template #deployment="scope">
-                <div class="d-flex">
-                    <deployment-status-icon width="40px" :scope="scope" />
-                    <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem(scope, 'viewableLink'): deploymentItem(scope, 'viewableTo')">
-                            <b>{{scope.item.context.deployment.title}}:</b>
-                        </dashboard-router-link>
-                        <a :href="`/${scope.item.context.deployment.projectPath}`">
-                            ({{scope.item.context.application.title}})
-                        </a>
-
-                    </div>
-                </div>
+                <combined-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :scope="scope" :application="scope.item.context.application" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
             </template>
             <!--template #resource$empty="scope">
                 <div v-if="hasDeployPath(scope)">{{__('Not yet deployed')}}</div>

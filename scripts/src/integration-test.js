@@ -21,11 +21,31 @@ const STANDALONE_PROJECT_DIR = `${UNFURL_TEST_TMPDIR}/ufsv`
 if(STANDALONE_UNFURL && ! PORT) {
   PORT = new URL(OC_URL).port
 }
+
+
 process.env.UNFURL_HOME = path.join(UNFURL_TEST_TMPDIR, './unfurl_home')
 process.env.UNFURL_NORUNTIME = true
 process.env.OC_URL = OC_URL
 
 const LOCAL_ONLY = !!(STANDALONE_UNFURL && (!UNFURL_CLOUD_SERVER || UNFURL_CLOUD_SERVER == OC_URL))
+
+if(LOCAL_ONLY) {
+  console.log('Running a local only test - there is no defined upstream')
+} else if(STANDALONE_UNFURL) {
+  console.log(`Running a local test against ${UNFURL_CLOUD_SERVER}`)
+} else {
+  console.log(`Running test against an Unfurl Cloud instance: ${OC_URL}`)
+}
+
+// not used unless local only
+const STANDALONE_SETUP_SCRIPT = process.env.STANDALONE_SETUP_SCRIPT || 'testing-shared/setup.sh'
+if(process.env.STANDALONE_SETUP_SCRIPT) {
+  console.log(`Using a parameterized setup script ${process.env.STANDALONE_SETUP_SCRIPT}`)
+}
+
+if(!LOCAL_ONLY && process.env.STANDALONE_SETUP_SCRIPT) {
+  console.warn('Contradictory test parameters: STANDALONE_SETUP_SCRIPT can not be used with UNFURL_CLOUD_SERVER or OC_URL')
+}
 
 process.env.FAIL_FAST_ENABLED = process.env.FAIL_FAST_ENABLED || 'false'
 
@@ -157,8 +177,6 @@ async function forwardedEnvironmentVariables(override) {
 }
 
 
-const ERROR_CREATE_USER_NO_DASHBOARD = 'A dashboard must be specified if a user is to be created.  Specify either --username or --dashboard-repo'
-
 const ENV_NAMING_FUNCTIONS = {
   identifierFromCurrentTime(baseId) {
     const d = new Date(Date.now())
@@ -170,7 +188,6 @@ const ENV_NAMING_FUNCTIONS = {
 }
 
 function createDashboardCommand(username, dashboardRepo) {
-  //if(!dashboardRepo) { throw new Error(ERROR_CREATE_USER_NO_DASHBOARD) }
   const
     createUser = path.join(__dirname, 'create-user.js'),
     createUserArgs = ['--username', username, '--external', EXTERNAL],
@@ -290,8 +307,13 @@ async function main() {
     delete forwardedEnv['CYPRESS_OC_IMPERSONATE']
   }
 
-  if(STANDALONE_UNFURL && ! LOCAL_ONLY) {
-    delete forwardedEnv['CYPRESS_DASHBOARD_DEST'] // has ambiguous meaning for standalone with upstream
+  if(STANDALONE_UNFURL ) {
+    if(LOCAL_ONLY) {
+      delete forwardedEnv['CYPRESS_DASHBOARD_DEST'] // has ambiguous meaning for standalone with upstream
+    }
+    else {
+      forwardedEnv['CYPRESS_DASHBOARD_DEST'] = 'local:' + forwardedEnv['CYPRESS_DASHBOARD_DEST']
+    }
   }
 
   const cypressCommand = await invokeCypressCommand(args._, forwardedEnv)
@@ -320,7 +342,7 @@ async function main() {
   if(STANDALONE_UNFURL) {
 
     if(LOCAL_ONLY) {
-      execFileSync('testing-shared/setup.sh', {
+      execFileSync(STANDALONE_SETUP_SCRIPT, {
         env: {
           ...process.env,
           UNFURL_SERVER_CWD: process.env.DASHBOARD_DEST

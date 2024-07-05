@@ -3,7 +3,7 @@ if [ -z ${UNFURL_SERVER_CWD+x} ]; then echo UNFURL_SERVER_CWD must be set; exit 
 rm -rf $UNFURL_SERVER_CWD/.git*
 rm -rf $UNFURL_SERVER_CWD/*
 mkdir -p $UNFURL_SERVER_CWD
-local_unfurl_yaml=$(realpath $UFSV_LOCAL)
+local_unfurl_yaml=$(realpath $UFSV_LOCAL) #safe with cd
 
 set -e
 

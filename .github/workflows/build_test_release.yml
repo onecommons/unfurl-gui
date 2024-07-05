@@ -42,6 +42,8 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 16
+      - name: git config
+        run: git config --global user.email "you@example.com"; git config --global user.name "Your Name"
       - name: Install yarn dependencies
         run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
         # TODO add back ufsv-patch -- --runInBand
@@ -53,6 +55,12 @@ jobs:
         run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pip install -e $HOME/unfurl
       - name: Integration test
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
+      - name: pkill
+        run: pkill unfurl || /bin/true
+      - name: Integration test (unfurl init)
+        env:
+          STANDALONE_SETUP_SCRIPT: testing-shared/unfurl-init-setup.sh
+        run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
       - name: pkill
         run: pkill unfurl || /bin/true
       - name: Integration test (staging upstream)

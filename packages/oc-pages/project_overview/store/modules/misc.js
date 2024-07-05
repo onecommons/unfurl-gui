@@ -5,6 +5,7 @@ import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
 import {unfurlServerUrlOverride} from 'oc_vue_shared/storage-keys'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
+import {normpath} from 'oc_vue_shared/lib/normalize'
 
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
@@ -67,11 +68,11 @@ const mutations = {
 const getters = {
     getRouterHook(state) {return state.routerHook},
     getCurrentNamespace(state, getters) {
-        if(window.gon.home_project !== null) return state.namespace || lookupKey('defaultNamespace') || getters.getUsername
+        if(window.gon.home_project !== null) return normpath(state.namespace || lookupKey('defaultNamespace') || getters.getUsername)
         return null
     },
     getHomeProjectPath(state, getters)  {
-        if(window.gon.home_project !== null) return `${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`
+        if(window.gon.home_project !== null) return normpath(`${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`)
         return null
     },
     getHomeProjectName(state) {

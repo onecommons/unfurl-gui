@@ -19,6 +19,19 @@ const
 
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
+/**
+ * Custom Cypress command to wait until the environment is ready,
+ * then execute a callback with the environment and store as arguments.
+ *
+ * Note: Assertions can be directly chained on the return value of this command.
+ * This is because Cypress commands return Promises, allowing for assertions
+ * like `cy.withEnvironment('envName').should('exist')`. The callback function
+ * does not affect this behavior as long as the command returns the expected value.
+ *
+ * @param {string} environmentName - The name of the environment to look up.
+ * @param {Function} cb - A callback function that receives the environment and store.
+ * @returns {Cypress.Chainable} - Returns a chainable Cypress command.
+ */
 Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
   return cy.waitUntil(() => cy.withStore().then(store => {
     if(!store.getters.environmentsAreReady) return false
@@ -30,25 +43,25 @@ Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
     .then(store => {
       const env = store.getters.lookupEnvironment(environmentName) || null
-      cb && cb(env)
+      cb && cb(env, store) // store in callback for convenience
       return env
     })
 })
 
 Cypress.Commands.add('whenEnvironmentExists', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName).then(env => env && cb(env))
+  return cy.withEnvironment(environmentName).then((env, store) => env && cb(env, store))
 })
 
 Cypress.Commands.add('whenEnvironmentAbsent', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName).then(env => !env && cb())
+  return cy.withEnvironment(environmentName).then((env, store) => !env && cb(store))
 })
 
 Cypress.Commands.add('whenInstancesAbsent', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName).then( env => {
+  return cy.withEnvironment(environmentName).then((env, store) => {
     if(! env) return
     if(Object.values(env.instances || {})
       .filter(instance => instance.name != 'dns-zone') == 0) {
-      cb()
+      cb(env, store)
     }
   })
 })

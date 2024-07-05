@@ -31,6 +31,7 @@ const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 const UNFURL_CLOUDMAP_PATH = Cypress.env('UNFURL_CLOUDMAP_PATH')
 const UNFURL_PACKAGE_RULES = Cypress.env('UNFURL_PACKAGE_RULES')
+const STANDALONE_UNFURL = Cypress.env('STANDALONE_UNFURL')
 
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
@@ -138,32 +139,35 @@ beforeEach(() => {
     })
   }
 
-  cy.document().then(doc => {
-    const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
+  // set via unfurl environment in standalone tests
+  if(!STANDALONE_UNFURL) {
+    cy.document().then(doc => {
+      const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
 
-    const win = doc.parentView || doc.defaultView
+      const win = doc.parentView || doc.defaultView
 
-    cy.request({
-      method: 'PATCH',
-      url: `/${DASHBOARD_DEST || win.gon.home_project}/-/variables`,
-      failOnStatusCode: false,
-      headers: {
-        'X-CSRF-Token': csrf
-      },
-      body: {
-        "variables_attributes": [
-          {
-            "key": "UNFURL_SKIP_SAVE",
-            "secret_value": "never",
-            "environment_scope": "*",
-            "variable_type": "env_var",
-            "masked": false,
-            "protected": false
-          }
-        ]
-      }
+      cy.request({
+        method: 'PATCH',
+        url: `/${DASHBOARD_DEST || win.gon.home_project}/-/variables`,
+        failOnStatusCode: false,
+        headers: {
+          'X-CSRF-Token': csrf
+        },
+        body: {
+          "variables_attributes": [
+            {
+              "key": "UNFURL_SKIP_SAVE",
+              "secret_value": "never",
+              "environment_scope": "*",
+              "variable_type": "env_var",
+              "masked": false,
+              "protected": false
+            }
+          ]
+        }
+      })
     })
-  })
+  }
 
   cy.window().then(win => {
     if(DEPLOY_IMAGE) {

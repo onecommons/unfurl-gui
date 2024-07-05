@@ -104,7 +104,9 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
 
   // create external resource
   if (shouldCreateExternalResource) {
-    cy.whenInstancesAbsent(environmentName, () => {
+    cy.whenInstancesAbsent(environmentName, (env) => {
+      if(Object.keys(env.repositories).filter(repo => repo != '_dashboard').length == 0) return
+
       viewingEnv || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)

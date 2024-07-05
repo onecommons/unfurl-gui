@@ -9,6 +9,7 @@ import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
+import {normpath} from 'oc_vue_shared/lib/normalize'
 
 Vue.use(GlToast);
 Vue.use(OcComponents)
@@ -31,6 +32,8 @@ export default (elemId='js-table-component') => {
     import('./layout-fix.css')
     const element = document.getElementById(elemId);
     window.gon = {...window.gon, ...element.dataset}
+    window.gon.home_project = normpath(window.gon.home_project)
+    window.gon.working_dir_project = normpath(window.gon.working_dir_project)
 
     if(window.Cypress || sessionStorage['debug'] || sessionStorage['unfurl-gui:state']) {
         window.$store = store

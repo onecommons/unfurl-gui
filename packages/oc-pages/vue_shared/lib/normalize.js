@@ -7,6 +7,8 @@ function normalizeDirectives(directives) {
 }
 
 export function normpath(path) {
+    if(!path) return path
+    if(path == ':') path = window.gon.home_project
     return path.split('/').filter(c => !!c).join('/')
 }
 

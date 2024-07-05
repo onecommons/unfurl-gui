@@ -29,7 +29,7 @@ ufhome=$dashboard_project
 cp testing-shared/fixtures/environments/$1.yaml $ufhome/local/$name_or_type.yaml
 
 
-sed -i "s|environments:|+?include-$name_or_type: local/$name_or_type.yaml\nenvironments:|" $ufhome/unfurl.yaml
+sed -E -i "s|((# )?environments:)|+?include-$name_or_type: local/$name_or_type.yaml\n\1|" $ufhome/unfurl.yaml
 
 if [ ! -z "$environment_name" ]; then
   sed -i "s|$environment_type:|$environment_name:|" "$ufhome/local/$name_or_type.yaml"

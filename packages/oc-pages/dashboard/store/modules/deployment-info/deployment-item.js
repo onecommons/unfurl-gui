@@ -108,7 +108,11 @@ export default class DeploymentItem {
 
     get readonlyLink() { return `/${this.projectPath}/-/deployments/${this.environment.name}/${this.deployment.name}`}
     get editableLink() {
-        let result = `/${this.deployment.projectPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`
+        let overviewPath = this.deployment.projectPath
+        if(window.gon.unfurl_gui) {
+            overviewPath += '/-/overview'
+        }
+        let result = `/${overviewPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`
         if(this.deployment.branch) {
             result += `&bprev=${this.deployment.branch}`
         }

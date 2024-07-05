@@ -35,6 +35,8 @@ export default (elemId='js-oc-project-overview') => {
   } = element.dataset;
 
   projectPath = normpath(projectPath)
+  window.gon.home_project = normpath(window.gon.home_project)
+  window.gon.working_dir_project = normpath(window.gon.working_dir_project)
   const base = window.location.pathname.includes('/-/overview') ?
     `${projectPath}/-/overview` : projectPath
 
