@@ -311,7 +311,7 @@ async function main() {
   }
 
   if(STANDALONE_UNFURL ) {
-    if(LOCAL_ONLY) {
+    if(!LOCAL_ONLY) {
       delete forwardedEnv['CYPRESS_DASHBOARD_DEST'] // has ambiguous meaning for standalone with upstream
     }
     else {
