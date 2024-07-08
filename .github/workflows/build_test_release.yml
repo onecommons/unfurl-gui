@@ -96,7 +96,8 @@ jobs:
         if: "! startsWith(github.ref, 'refs/tags/')"
         uses: benc-uk/workflow-dispatch@v1
         with:
-          workflow: dryrun.yml
+          workflow: Dryrun Extra
+        continue-on-error: true
   release:
     name: Release
     if: startsWith(github.ref, 'refs/tags/')
