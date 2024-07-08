@@ -7,15 +7,22 @@ function normalizeDirectives(directives) {
 }
 
 export function normpath(path) {
+    if(typeof path != 'string') return
     if(!path) return path
     if(path == ':') path = window.gon.home_project
     return path.split('/').filter(c => !!c).join('/')
 }
 
+const PATH_PROPS = ['blueprintPath', 'projectPath']
+
 const transforms = {
     ApplicationBlueprint(blueprint, root) {
         if(blueprint.projectPath) {
             blueprint.projectPath = normpath(blueprint.projectPath)
+        }
+
+        if(blueprint.blueprintPath) {
+            blueprint.blueprintPath = normpath(blueprint.blueprintPath)
         }
     },
 
@@ -57,14 +64,14 @@ const transforms = {
                 localNormalize(rt, 'ResourceTemplate', root)
             })
         }
-        if(!dt.projectPath) {
-            try {
-                dt.projectPath = Object.values(root.ApplicationBlueprint)[0].projectPath
-            } catch(e) {}
-        }
+        const appBlueprint = Object.values(root.ApplicationBlueprint)[0]
 
-        if(dt.projectPath) {
-            dt.projectPath = normpath(dt.projectPath)
+        if(appBlueprint) {
+            for(const pathProp of PATH_PROPS) {
+                if(!dt[pathProp]) {
+                    dt[pathProp] = appBlueprint[pathProp]
+                }
+            }
         }
     },
 
@@ -214,6 +221,7 @@ const transforms = {
 }
 
 export function localNormalize(object, typename=null, root) {
+    if(!object) return
     if(object._normalized) return
     if(!(object.__typename || typename)) {
         throw new Error(`Couldn't normalize ${object.name}: no typename`)
@@ -223,5 +231,11 @@ export function localNormalize(object, typename=null, root) {
     if(typeof transforms[t] == 'function') {
         transforms[t](object, root)
         object._normalized = true
+    }
+
+    for(const pathProp of PATH_PROPS) {
+        if(object.hasOwnProperty(pathProp)) {
+            object[pathProp] = normpath(object[pathProp])
+        }
     }
 }

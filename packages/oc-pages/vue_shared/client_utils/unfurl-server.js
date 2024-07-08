@@ -136,7 +136,8 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
     if(format == 'deployment') {
         if(! deploymentPath) throw new Error('Deployment path is required when exporting a deployment')
-
+    }
+    if(deploymentPath) {
         exportUrl += `&deployment_path=${deploymentPath}`
     }
 

@@ -3,6 +3,7 @@ import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
 import * as routeNames from './constants.js'
+import _ from 'lodash'
 import { PageNotFound } from 'oc_vue_shared/components/oc'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
 import { FLASH_TYPES, hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
@@ -10,6 +11,8 @@ import { HIDDEN_OPTION_KEYS, lookupKey, setLocalStorageKey, clearMatchingStorage
 import { setTransientUnfurlServerOverride, getTransientUnfurlServerOverride, healthCheckIfNeeded } from 'oc_vue_shared/client_utils/unfurl-server'
 
 Vue.use(VueRouter);
+
+const PERSISTED_QUERY_PARAMS = ['blueprintPath']
 
 const isPrivateRoute = createDenyList(
     filterFromRoutes(routes),
@@ -48,7 +51,45 @@ export default function createRouter(base) {
 
     })
 
+    const { isNavigationFailure, NavigationFailureType } = VueRouter
+
+    router.og = {
+        push: router.push.bind(router),
+        replace: router.replace.bind(router),
+        resolve: router.resolve.bind(router)
+    }
+
+    for(const fn of ['push', 'replace']) {
+        router[fn] = _.debounce(function(...args) {
+            console.log(fn, ...args)
+            return router.og[fn](...args).catch(e => {
+                if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
+                    Promise.reject(e)
+                }
+            })
+        }, 10)
+    }
+
+    router.resolve = function(to, ...args) {
+        const from = router.currentRoute
+        for(const param of PERSISTED_QUERY_PARAMS) {
+            if(from.query.hasOwnProperty(param) && !to.query.hasOwnProperty(param)) {
+                to.query[param] = from.query[param]
+            }
+        }
+        return router.og.resolve(to, ...args)
+    }
+
     router.beforeEach((to, from, next) => {
+        let modified = false
+        const modifiedTo = {...to}
+        for(const param of PERSISTED_QUERY_PARAMS) {
+            if(from.query.hasOwnProperty(param) && !to.query.hasOwnProperty(param)) {
+                modifiedTo.query[param] = from.query[param]
+                modified = true
+            }
+        }
+
         setTransientUnfurlServerOverride(null)
         if(to.name != from.name) {
             hideLastFlash()
@@ -56,13 +97,20 @@ export default function createRouter(base) {
         if(!window.gon.current_username && !window.gon.unfurl_gui) {
             if(isPrivateRoute(to)) {
                 setTimeout( () => window.location.href = '/users/sign_in?redirect_to_referer=yes', 1)
+                next(false)
                 return false
             }
         }
+
+        let _next
+        if(modified) _next = (_a, ...rest) => next(modifiedTo, ...rest)
+        else _next = next
+
+
         if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
-            router.app.$store.getters.getRouterHook(to, from, next)
+            router.app.$store.getters.getRouterHook(to, from, _next)
         }
-        else next()
+        else _next()
     })
 
     router.afterEach(async (to) => {

@@ -113,6 +113,9 @@ export default class DeploymentItem {
             overviewPath += '/-/overview'
         }
         let result = `/${overviewPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`
+        if(this.deployment.blueprintPath) {
+            result += `&blueprintPath=${this.deployment.blueprintPath}`
+        }
         if(this.deployment.branch) {
             result += `&bprev=${this.deployment.branch}`
         }

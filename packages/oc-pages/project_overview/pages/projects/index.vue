@@ -179,7 +179,6 @@ export default {
         },
 
         shouldProvideVersionSelection() {
-            console.log(this.currentTag, this.mainBranchCommitId, this.mainAtLastest)
             if(!this.currentTag) return false
             if(!this.mainBranchCommitId) return false
             if(this.mainAtLastest) return false
@@ -364,7 +363,7 @@ export default {
         async loadPrimaryDeploymentBlueprint() {
             const projectPath = this.$projectGlobal.projectPath
             if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
-            await this.fetchProject({projectPath});
+            await this.fetchProject({projectPath, blueprintPath: this.$route.query.blueprintPath});
             if(this.hasCriticalErrors) return
             const templateSlug = this.getPrimaryDeploymentBlueprint
             if(!templateSlug) return

@@ -535,7 +535,7 @@ export default {
         if(this.hasCriticalErrors) return
 
         const blueprintBranch = this.$route.query?.bprev
-        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars, shouldMerge: true, branch: blueprintBranch}); // NOTE this.project.globalVars
+        await this.fetchProject({projectPath, blueprintPath: this.$route.query.blueprintPath, projectGlobal: this.project.globalVars, shouldMerge: true, branch: blueprintBranch}); // NOTE this.project.globalVars
         if(this.hasCriticalErrors) return
 
         if(deployRoot) {

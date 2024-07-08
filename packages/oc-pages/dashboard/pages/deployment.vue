@@ -222,7 +222,7 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge', 'createFlash', 'populateDeploymentItems', 'populateJobsList',]),
+        ...mapActions(['useProjectState', 'populateDeploymentResources', 'acknowledge', 'createFlash', 'populateDeploymentItems', 'populateJobsList',]),
         async prepareView() {
             this.viewReady = false
 
