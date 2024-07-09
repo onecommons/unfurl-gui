@@ -182,4 +182,11 @@ export default class DeploymentItem {
         if(!this.isAutostopCancelable) throw new Error(`Job ${this.autostopJob?.id || -1} is not cancelable`)
         await axios.post(this.autostopCancelLink)
     }
+
+    get isRenamable() {
+        return (
+            this.deployPath != this.application.blueprintPath &&
+            this.deployment.source != '__generated'
+        )
+    }
 }

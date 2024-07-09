@@ -278,10 +278,10 @@ const actions = {
         deploymentTemplate = {...deploymentTemplate, projectPath, branch: blueprintBranch}
         blueprint = {...blueprint, projectPath, branch: blueprintBranch}
 
-        const sourceDeploymentTemplate = deploymentTemplate.source || deploymentTemplate.name
+        const sourceDeploymentTemplate = deploymentTemplate._sourceTemplate || deploymentTemplate.name
 
-        if(!deploymentTemplate.source && renameDeploymentTemplate) {
-            deploymentTemplate.source = sourceDeploymentTemplate
+        if(!deploymentTemplate._sourceTemplate && renameDeploymentTemplate) {
+            deploymentTemplate._sourceTemplate = deploymentTemplate.source = sourceDeploymentTemplate
             deploymentTemplate.title = renameDeploymentTemplate;
             deploymentTemplate.name = slugify(renameDeploymentTemplate);
             deploymentTemplate.slug = deploymentTemplate.name

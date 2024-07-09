@@ -65,6 +65,7 @@ const transforms = {
             })
         }
         const appBlueprint = Object.values(root.ApplicationBlueprint)[0]
+        dt._sourceTemplate = dt.source == '__generated'? undefined : dt.source
 
         if(appBlueprint) {
             for(const pathProp of PATH_PROPS) {

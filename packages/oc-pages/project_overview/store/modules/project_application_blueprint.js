@@ -219,12 +219,12 @@ const actions = {
                 if(projectPath && !deploymentTemplate.projectPath) {
                     deploymentTemplate.projectPath = projectPath
                 }
-                if(deploymentTemplate.source) {
+                if(deploymentTemplate._sourceTemplate) {
                     if(!deploymentTemplate.ResourceTemplate) {
                         deploymentTemplate.ResourceTemplate = {}
                     }
 
-                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate.source)?.ResourceTemplate || {}).forEach(([name, rt]) => {
+                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate._sourceTemplate)?.ResourceTemplate || {}).forEach(([name, rt]) => {
                         if(
                             (root.ResourceTemplate[name] && root.ResourceTemplate[name].directives.includes('default')) &&
                             (!deploymentTemplate.ResourceTemplate[name])

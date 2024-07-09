@@ -180,6 +180,9 @@ Serializers = {
 
             dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
         }
+        if(dt.source == '__generated') {
+            dt.directives = ['predefined'] // mark as not needing to be committed
+        }
     },
     // TODO unit test
     ResourceTemplate(rt, state) {
@@ -405,7 +408,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         let _propertyValue = propertyValue // cloned at caller
 
         if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
-            if(deploymentTemplate.source) {
+            if(deploymentTemplate._sourceTemplate) {
                 result.push(
                     deleteResourceTemplate({templateName, deploymentTemplateName: deploymentTemplate.name})
                 )
@@ -549,7 +552,7 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
             const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentTemplateName]
             patch = deploymentTemplate['ResourceTemplate'][dependentName]
 
-            if(patch && deploymentTemplate.source) {
+            if(patch && deploymentTemplate._sourceTemplate) {
                 result.push(
                     deleteResourceTemplate({templateName: dependentName, deploymentTemplateName: deploymentTemplate.name})
                 )
@@ -789,6 +792,8 @@ const state = () => ({
     effectiveFirstMutation: 0,
     accumulator: {},
     patches: {},
+    deploymentParams: {},
+    path: null,
     committedNames: [],
     commitMessage: null,
     commitBranch: null,
@@ -829,6 +834,9 @@ const mutations = {
             state.preparedMutation = []
         }
         state.projectPath = projectPath
+    },
+    setDeploymentParams(state, deploymentParams) {
+        state.deploymentParams = deploymentParams
     },
     setCommitMessage(state, commitMessage) {
         state.commitMessage = commitMessage
@@ -1012,32 +1020,28 @@ const actions = {
         let sync, method, path = state.path
 
         if(state.updateType == UPDATE_TYPE.deployment) {
-            variables.deployment_path = path
+            variables.deployment_path = path || state.deploymentParams?.deployPath
             if(!rootGetters.hasDeployPathKey(path)) {
                 // infer information from the deployment object path instead of our getters
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
-                const pathSplits = path.split('/')
-                pathSplits.shift()
-                const environmentName = pathSplits.shift()
-                const deploymentName = pathSplits.pop()
-                const blueprintProjectPath = pathSplits.join('/')
+                variables.environment = state.deploymentParams?.environmentName
+                variables.deployment_blueprint = state.deploymentParams?.deploymentName
+                variables.blueprint_url = state.deploymentParams?.projectUrl?
+                    new URL(state.deploymentParams.projectUrl) : null
 
-                variables.environment = environmentName
-                variables.deployment_blueprint = deploymentName
-
-                variables.blueprint_url = new URL((window.gon.gitlab_url || 'https://unfurl.cloud') + '/' + blueprintProjectPath + '.git')
-                variables.blueprint_url.username = rootGetters.getUsername
-                const password = await fetchUserAccessToken()
-                if(password) {
-                    variables.blueprint_url.password
+                if(variables.blueprint_url) {
+                    const password = await fetchUserAccessToken()
+                    if(password) {
+                        variables.blueprint_url.password = password
+                    }
                 }
 
-                if(state.blueprintBranch) {
-                    variables.blueprint_url.hash = state.blueprintBranch
+                if(variables.blueprint_url) {
+                    variables.blueprint_url = variables.blueprint_url.toString()
+                } else {
+                    delete variables.blueprint_url
                 }
-
-                variables.blueprint_url = variables.blueprint_url.toString()
 
                 method = 'create_ensemble'
             } else {

@@ -105,7 +105,7 @@ export default {
                 result.push('view-artifacts')
             }
 
-            if(window.gon.projectId && this.userCanEdit) {
+            if((window.gon.unfurl_gui || window.gon.projectId) && this.userCanEdit) {
                 //temporary limitation (restrict to dashboard app)
 
                 // allowing local deploy regardless of teardown status
@@ -113,7 +113,7 @@ export default {
             }
 
             if(this.userCanEdit) {
-                result.push('rename-deployment')
+                if(this.deploymentItem?.isRenamable) result.push('rename-deployment')
             }
 
             if(!window.gon.unfurl_gui || window.gon.gitlab_url) {

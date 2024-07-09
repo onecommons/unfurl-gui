@@ -14,6 +14,7 @@ import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {fetchUserHasWritePermissions, setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
+import {normpath} from 'oc_vue_shared/lib/normalize'
 import * as routes from '../../router/constants'
 
 
@@ -84,6 +85,7 @@ export default {
       'getPrimaryCard',
       'getCardsStacked',
       'getDeploymentTemplate',
+      'getDeployment',
       'getDependencies',
       'hasPreparedMutations',
       'safeToNavigateAway',
@@ -100,6 +102,7 @@ export default {
       'getValidConnections',
       'lookupConfigurableTypes',
       'lookupEnvironment',
+      'lookupDeployPath',
       'getParentDependency',
       'getPrimary',
       'environmentsAreReady',
@@ -118,12 +121,21 @@ export default {
     ]),
 
     deploymentDir() {
-        const environment = this.$route.params.environment
-        // this.getDeploymentTemplate.name not loaded yet
+      if(!this.getDeploymentTemplate) return null
+      const environment = this.$route.params.environment
 
-        // params.slug is the blueprint unfortunately
-        const deploymentSlug = this.$route.params.slug //slugify(this.$route.query.fn)
-        return `environments/${environment}/${this.project.globalVars.projectPath}/${deploymentSlug}`
+      if(this.getDeployment) {
+        const deployPath = this.lookupDeployPath(this.getDeployment.name, environment)
+        if(deployPath) return deployPath.name
+      }
+
+      const deploymentSlug = this.$route.params.slug
+      let projectPath = this.project.globalVars.projectPath
+
+      if(window.gon.unfurl_gui && normpath(projectPath) == normpath(window.gon.working_dir_project)) {
+        projectPath = 'local'
+      }
+      return normpath(`environments/${environment}/${projectPath}/${deploymentSlug}`)
     },
     saveStatus() {
       switch(this.$route.name) {
@@ -247,16 +259,28 @@ export default {
     },
 
     deploymentParams() {
-      let projectUrl = `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`
+      const projectPath = this.project.globalVars.projectPath
+
+      let projectUrl
+      if(projectPath.startsWith('local:')) {
+        // projectUrl = projectPath.replace('local:', 'file://')
+        projectUrl = null
+      } else {
+        projectUrl = `${window.gon.gitlab_url || 'https://unfurl.cloud'}/${this.project.globalVars.projectPath}.git`
+      }
+
+      const deploymentBlueprint = this.$route.query.ts || this.getDeploymentTemplate?.source
+
       if(this.$route.query.bprev) {
         projectUrl += `#${this.$route.query.bprev}`
       }
+
       return {
         environmentName: this.$route.params.environment,
         projectUrl,
         deployPath: this.deploymentDir,
         deploymentName: this.$route.params.slug,
-        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        deploymentBlueprint
       }
     }
   },
@@ -317,7 +341,22 @@ export default {
         const ref = this.$refs['oc-template-resource']
         ref.hide()
       }
-    }, 100)
+    }, 100),
+
+    deploymentDir: {
+      immediate: true, // force calculation
+      handler(val) {
+        if(val && this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
+          this.setUpdateObjectPath(val);
+        }
+      }
+    },
+    deploymentParams: {
+      immediate: true,
+      handler(val) {
+        this.setDeploymentParams(val)
+      }
+    }
   },
 
   serverPrefetch() {
@@ -400,6 +439,7 @@ export default {
       'pushPreparedMutation',
       'setCommitMessage',
       'setUpdateType',
+      'setDeploymentParams',
       'createError',
       'setCommitBranch',
       'setBlueprintBranch'
@@ -509,7 +549,6 @@ export default {
         const renameDeploymentTemplate = this.$route.query.fn;
         const environmentName = this.$route.params.environment
         if(this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
-          this.setUpdateObjectPath(this.deploymentDir);
           this.setUpdateObjectProjectPath(this.getHomeProjectPath);
           this.setEnvironmentScope(environmentName)
         }

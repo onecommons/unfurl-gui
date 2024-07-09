@@ -61,7 +61,6 @@ export default function createRouter(base) {
 
     for(const fn of ['push', 'replace']) {
         router[fn] = _.debounce(function(...args) {
-            console.log(fn, ...args)
             return router.og[fn](...args).catch(e => {
                 if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
                     Promise.reject(e)
@@ -72,19 +71,22 @@ export default function createRouter(base) {
 
     router.resolve = function(to, ...args) {
         const from = router.currentRoute
+        let modified = false
+        const modifiedTo = {query: {}, ...to}
         for(const param of PERSISTED_QUERY_PARAMS) {
-            if(from.query.hasOwnProperty(param) && !to.query.hasOwnProperty(param)) {
-                to.query[param] = from.query[param]
+            if(from.query?.hasOwnProperty(param) && !to.query?.hasOwnProperty(param)) {
+                modifiedTo.query[param] = from.query[param]
             }
+            modified = true
         }
-        return router.og.resolve(to, ...args)
+        return router.og.resolve(modified? modifiedTo: to, ...args)
     }
 
     router.beforeEach((to, from, next) => {
         let modified = false
         const modifiedTo = {...to}
         for(const param of PERSISTED_QUERY_PARAMS) {
-            if(from.query.hasOwnProperty(param) && !to.query.hasOwnProperty(param)) {
+            if(from.query?.hasOwnProperty(param) && !to.query?.hasOwnProperty(param)) {
                 modifiedTo.query[param] = from.query[param]
                 modified = true
             }

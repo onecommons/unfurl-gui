@@ -91,6 +91,13 @@ class Fixture {
     store.commit('setUpdateObjectPath', this.deploymentDir)
     store.commit('setUpdateObjectProjectPath', this.dashboardProjectPath)
     store.commit('setEnvironmentScope', this.environment)
+    store.commit('setDeploymentParams', {
+        environmentName: this.environment,
+        projectUrl: `${OC_URL}/${this.projectPath}`,
+        deployPath: this.deploymentDir,
+        deploymentName: this.templateSlug,
+        deploymentBlueprint: this.templateSlug
+    })
     store.commit('setCurrentNamespace', this.user.username)
 
 
