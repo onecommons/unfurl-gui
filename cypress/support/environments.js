@@ -60,7 +60,7 @@ Cypress.Commands.add('whenInstancesAbsent', (environmentName, cb) => {
   return cy.withEnvironment(environmentName).then((env, store) => {
     if(! env) return
     if(Object.values(env.instances || {})
-      .filter(instance => instance.name != 'dns-zone') == 0) {
+      .filter(instance => instance.name != 'dns-zone').length == 0) {
       cb(env, store)
     }
   })
