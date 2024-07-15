@@ -76,6 +76,11 @@ function withStore(cb) {
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
 }
 
+function assertNoErrors() {
+  cy.get('.gl-alert.gl-alert-danger').should('not.exist')
+  withStore().then(store => store.getters).should('have.property', 'hasCriticalErrors', false)
+}
+
 function getInputOrTextarea(selector) {
   return cy.get(`input${selector}, textarea${selector}, ${selector} input`)
 }
@@ -167,6 +172,7 @@ function login(impersonateUser) {
 Cypress.Commands.add('whenGitlab', whenGitlab)
 Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
 Cypress.Commands.add('withStore', withStore)
+Cypress.Commands.add('assertNoErrors', assertNoErrors)
 Cypress.Commands.add('getInputOrTextarea', getInputOrTextarea)
 Cypress.Commands.add('execLoud', execLoud)
 Cypress.Commands.add('login', login)

@@ -363,7 +363,7 @@ async function main() {
         UNFURL_LOGGING: 'trace',
         UNFURL_HOME: process.env.UNFURL_HOME,
         UNFURL_SKIP_SAVE: 'never',
-        UFGUI_DIR: unfurlGuiRoot
+        UNFURL_GUI_DIR: unfurlGuiRoot
       },
       port: PORT,
       cloudServer: null,

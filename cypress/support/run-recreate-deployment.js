@@ -109,6 +109,9 @@ Cypress.Commands.add('recreateDeployment', options => {
         })
       }
     }
+
+    cy.assertNoErrors()
+
     if(USE_UNFURL_DNS) {
       dnsZone = `${USERNAME}.u.${USE_UNFURL_DNS}`
     }
@@ -127,6 +130,8 @@ Cypress.Commands.add('recreateDeployment', options => {
 
 
     cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
+
+    cy.assertNoErrors()
 
     cy.get(`[data-testid="deploy-template-${dt.source}"]`)
     cy.wait(BASE_TIMEOUT / 2)
@@ -150,6 +155,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.get('[data-testid^="card-"]').should('exist')
 
     function recreateTemplate(template, variant = 0) {
+      cy.assertNoErrors()
       if(variant != HIDDEN) {
         cy.get(`[data-testid^="card-${template.name}"]`).should('exist')
       }
@@ -304,6 +310,8 @@ Cypress.Commands.add('recreateDeployment', options => {
 
     recreateTemplate(primary, PRIMARY)
 
+    cy.assertNoErrors()
+
     console.log(options)
 
     // hack for azure credentials
@@ -333,6 +341,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     if(shouldDeploy) {
       cy.whenUnfurlGUI(() => {
         cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
+        cy.assertNoErrors()
         cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
         // TODO figure out how to chain this?
@@ -368,7 +377,10 @@ Cypress.Commands.add('recreateDeployment', options => {
         // doesn't work reliably in CI
         // popover tooltip may partially cover when deplying DRYRUN
         cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
+
+        cy.assertNoErrors()
         cy.url({timeout: BASE_TIMEOUT * 10}).should('include', dt.name)
+
         cy.wait(BASE_TIMEOUT)
         cy.withJob((job) => {
           cy.expectSuccessfulJob(job)
@@ -384,7 +396,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     } else if(shouldSave) {
       cy.get('[data-testid="save-draft-btn"]').click()
       cy.wait(BASE_TIMEOUT / 2)
-      cy.get('.gl-alert.gl-alert-danger').should('not.exist')
+      cy.assertNoErrors()
     }
   })
 })
