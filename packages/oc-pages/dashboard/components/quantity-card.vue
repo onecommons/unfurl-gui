@@ -7,7 +7,7 @@ export default {
         p: String,
         color: String,
         to: {
-            type: Object,
+            type: [Object, String],
             default: () =>  '#'
         },
         secondaryLink: [String, Object],

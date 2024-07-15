@@ -21,6 +21,8 @@ module.exports = {
   },
   rules: {
     semi: 'off', // XXX [1]
+    "vue/multi-word-component-names": "off",
+    "vue/no-v-text-v-html-on-component": "off",
     "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
     /*

@@ -60,13 +60,18 @@ export default function createRouter(base) {
     }
 
     for(const fn of ['push', 'replace']) {
+        /* 
         router[fn] = _.debounce(function(...args) {
+        */
+        // TODO: this needs a special debounce that collects changes
+        // the same can be done for the dashboard router
+        router[fn] = function(...args) {
             return router.og[fn](...args).catch(e => {
                 if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
                     Promise.reject(e)
                 }
             })
-        }, 10)
+        }
     }
 
     router.resolve = function(to, ...args) {

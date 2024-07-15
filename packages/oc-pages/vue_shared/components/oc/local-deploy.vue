@@ -39,7 +39,7 @@ export default {
         return {
             blueprintProjectInfo: null,
             gettingBlueprintCreds: false,
-            gettingBlueprintInfo: !this.noDeploy,
+            gettingBlueprintInfo: (this.deployment && this.environment),
             standalone,
         }
     },

@@ -154,7 +154,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     // this is rather convoluted, but we don't want to fetch last commit for a tagged release
     // this code would probably be removed once unfurl server doesn't need a last commit
-    // the only other reason to hit branches would be to get the main branch
+    // the only other reason to hit branches would be to get the primary branch
 
     const fetchCommitPromise = (branch && !branch.startsWith('v'))? fetchLastCommit(encodeURIComponent(projectPath), branch): null
 

@@ -16,6 +16,7 @@ function generateConfig(options) {
 
 const projectInfos = {}
 const branchesData = {}
+const projectDefaultBranches = {}
 
 export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
@@ -36,7 +37,10 @@ export async function fetchRegistryRepositories(projectId, options) {
 }
 
 export async function fetchRepositoryBranches(projectId, options) {
-    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
+    const result = (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
+    const defaultBranch = result.find(branch => branch.default)
+    if(defaultBranch) projectDefaultBranches[projectId] = defaultBranch
+    return result
 }
 
 export async function fetchRepositoryTags(projectId, options) {
@@ -61,7 +65,13 @@ export async function fetchProjectInfo(projectId, options) {
         }
         const promise =  async() => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
 
-        return projectInfos[projectId] = promise()
+        return projectInfos[projectId] = promise().then(projectInfo => {
+            if(projectInfo.default_branch) {
+                projectDefaultBranches[projectId] = projectInfo.default_branch
+                projectDefaultBranches[projectInfo.id] = projectInfo.default_branch
+            }
+            return projectInfo
+        })
     } else {
         if(typeof projectId != 'string') return null
 
@@ -90,7 +100,13 @@ export async function fetchBranches(projectId) {
     const promise = async () => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
 
     setTimeout(() => delete branchesData[projectId], BRANCH_CACHE_DURATION)
-    return branchesData[projectId] = promise()
+    return branchesData[projectId] = promise().then(branches => {
+        const defaultBranch = branches.length == 1? branches[0]: branches.find(b => b.default)
+        if(defaultBranch) {
+            projectDefaultBranches[projectId] = defaultBranch.name
+        }
+        return branches
+    })
 }
 
 
@@ -106,11 +122,12 @@ export function setLastCommit(projectId, branch, commit) {
 }
 
 export async function fetchLastCommit(projectId, _branch) {
-    const [branch, branches] = await Promise.all([
-        _branch, // allow provided branch to be a promise so they can be fetched in parallel?
+    let [branch, branches] = await Promise.all([
+        _branch, // allow provided branch to be a promise so they can be fetched in parallel
         fetchBranches(projectId)
     ])
 
+    if(!branch) branch = await getOrFetchDefaultBranch(projectId)
     const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
     const {id, created_at} = commit || {}
 
@@ -126,15 +143,21 @@ export async function fetchLastCommit(projectId, _branch) {
         return [lastInSessionStorage.commit, branch]
     }
 
-    return [id, name || 'main']
+    return [id, name]
 }
 
 export async function fetchBranch(projectId, branch) {
-    return (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
+    const result = (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
+    if(result.default) {
+        projectDefaultBranches[projectId] = branch
+    }
+    return result
 }
 
-export async function createBranch(projectId, branch, ref='main') {
-    const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref}, {validateStatus() {return true}})
+export async function createBranch(projectId, branch, ref) {
+    const _ref = ref || await getOrFetchDefaultBranch(projectId)
+
+    const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref: _ref}, {validateStatus() {return true}})
 
     if(response.status >= 400) {
         console.error(response.data)
@@ -142,7 +165,7 @@ export async function createBranch(projectId, branch, ref='main') {
     }
 
     try {
-        branchesData[branchName] = branchesData[ref]
+        branchesData[branchName] = branchesData[_ref]
     } catch(e) {}
 
     return response.data
@@ -262,5 +285,16 @@ export async function setMergeRequestReadyStatus(projectId, {branch, target, lab
 }
 
 export async function listProjectFiles(projectPath, {branch}={}) {
-    return (await axios.get(`/${projectPath}/-/files/${branch || 'main'}?format=json`)).data
+    const _branch = branch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
+    return (await axios.get(`/${projectPath}/-/files/${_branch}?format=json`)).data
+}
+
+export async function getOrFetchDefaultBranch(projectId) {
+    let result = projectDefaultBranches[projectId]
+    if(result === '') result = 'HEAD'
+    if(!result) {
+        await fetchBranches(projectId) // force population
+        result = projectDefaultBranches[projectId]
+    }
+    return result
 }

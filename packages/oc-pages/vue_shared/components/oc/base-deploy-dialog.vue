@@ -1,6 +1,6 @@
 <script>
 import { GlModalDirective, GlFormGroup, GlFormInput, GlFormRadio } from '@gitlab/ui';
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import _ from 'lodash'
 import { __ } from '~/locale';
 import EnvironmentCreationDialog from '../../../project_overview/components/environment-creation-dialog.vue'
@@ -9,12 +9,14 @@ import { slugify } from 'oc_vue_shared/util'
 import { lookupCloudProviderShortName } from 'oc_vue_shared/util'
 import { fetchCurrentTag, fetchBranches } from 'oc_vue_shared/client_utils/projects'
 import { queryParamVar } from 'oc_vue_shared/util'
+import {homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 import * as overview_routes from '../../../project_overview/router/constants'
 
 const standalone = window.gon.unfurl_gui
 
 export default {
     name: 'BaseDeployDialog',
+    mixins: [homeProjectDefaultBranch],
     components: {
         EnvironmentSelection,
         GlFormGroup,
@@ -29,6 +31,7 @@ export default {
         instantiateAs: {
             default: () => 'deployment-draft'
         },
+        forceEnvCreation: Boolean,
         projectPath: String,
         applicationBlueprint: Object
     },
@@ -155,6 +158,7 @@ export default {
         }
     },
     methods: {
+        ...mapActions(['updateLastUsedEnvironment']),
         redirectToTemplateEditor() {
             const query = this.$route.query || {}
             query.tn = query.ts
@@ -166,6 +170,17 @@ export default {
             const page = this.instantiateAs == 'deployment-draft'?
                 overview_routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
                 overview_routes.OC_PROJECT_VIEW_CREATE_TEMPLATE
+
+            // store the environment in local storage
+            const lastUsedEnvironment = {
+                cloud: this.templateSelected.cloud,
+                environmentName: this.templateSelected.environment
+            }
+
+            this.updateLastUsedEnvironment({
+                lastUsedEnvironment,
+                username: this.getUsername
+            })
 
             const route = { query, name: page, params: { dashboard, environment: this.selectedEnvironment.name, name: slugify(query.fn), slug: slugify(query.fn) } }
             if(this.$router.name == 'overview') {
@@ -184,14 +199,24 @@ export default {
             this.$refs.environmentDialog.beginEnvironmentCreation()
         },
 
+        performRedirect(e) {
+            e?.preventDefault()
+            if(this.creatingEnvironment) {
+                this.redirectToNewEnvironment()
+            } else {
+                this.redirectToTemplateEditor()
+            }
+        }
+
     },
-    mounted() {
+    async mounted() {
         if(!standalone) {
             fetchCurrentTag(encodeURIComponent(this._projectPath)).then(tag => this.currentTag = tag)
         }
 
-        fetchBranches(encodeURIComponent(this._projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == 'main')?.commit?.id)
+        await this.homeProjectDefaultBranchPromise
 
+        fetchBranches(encodeURIComponent(this._projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == this.homeProjectDefaultBranch)?.commit?.id)
         if(sessionStorage['instantiate_env']) {
             this.env = sessionStorage['instantiate_env']
             delete sessionStorage['instantiate_env']
@@ -214,13 +239,19 @@ export default {
             <p>{{ __("Select an environment to deploy this template to:") }}</p>
             <environment-selection v-model="selectedEnvironment" :provider="templateSelected && templateSelected.cloud"
                 :error="deployDialogError" @createNewEnvironment="createNewEnvironment"
-                :environment-creation="!standalone" />
+                :environment-creation="!standalone || forceEnvCreation" />
 
             <div v-if="shouldProvideVersionSelection" class="mt-5">
                 <gl-form-radio v-model="bprev" :value="currentTag.name">Use the current release of
                     {{ applicationBlueprint.title }} (<b>{{ currentTag.name }}</b>)</gl-form-radio>
-                <gl-form-radio v-model="bprev" value="main"> Use the latest (unreleased) version</gl-form-radio>
+                <gl-form-radio v-model="bprev" :value="homeProjectDefaultBranch"> Use the latest (unreleased) version</gl-form-radio>
             </div>
         </div>
     </div>
 </template>
+<style scoped>
+/* TODO move this into gitlab oc */
+.deploy-dialog >>> .custom-control-input:checked ~ .custom-control-label::before {
+    background-color: #00D2D9 !important;
+}
+</style>

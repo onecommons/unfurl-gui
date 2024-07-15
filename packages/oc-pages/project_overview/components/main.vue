@@ -1,7 +1,9 @@
 <script>
+
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import * as routes from '../router/constants'
+import {getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 
 export default {
     name: 'MainComponent',
@@ -39,7 +41,7 @@ export default {
             ].includes(this.$route.name)
 
             const projectPath = this.$store.getters.getHomeProjectPath
-            const branch = this.$route.query.branch || 'main'
+            const branch = this.$route.query.branch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
             const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments, only: !includeDeployments && this.$route.params.environment})
                 .catch(err => {

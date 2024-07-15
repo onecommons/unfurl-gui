@@ -1,5 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import { redirectTo } from '~/lib/utils/url_utility';
+import { getOrFetchDefaultBranch } from './projects'
 
 const MASK_VARIABLES = ['UNFURL_ACCESS_TOKEN']
 function toGlVariablesAttributes(variables, variable_type='unencrypted_var') {
@@ -24,8 +25,10 @@ function toGlVariablesAttributes(variables, variable_type='unencrypted_var') {
 }
 
 export async function triggerPipeline(pipelinesPath, variables_attributes, options) {
-    // TODO implement followRedirect
-    const defaults = {followRedirect: false, ref: 'main'}
+    const defaults = {
+        followRedirect: false,
+        ref: await getOrFetchDefaultBranch(encodeURIComponent(pipelinesPath.split('/-/')[0]))
+    }
     const {ref, followRedirect} = {...defaults, ...options}
 
     const {data} = await axios.post(pipelinesPath, {ref, variables_attributes})
@@ -33,7 +36,9 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
 }
 
 
-export async function triggerAtomicDeployment(projectPath, {ref='main', schedule='now', variables=[], dependencies={}}) {
+export async function triggerAtomicDeployment(projectPath, {ref, schedule='now', variables=[], dependencies={}}) {
+    const _ref = ref || await getOrFetchDefaultBranch(projectPath)
+
     const members = (await axios.get(`/api/v4/projects/${encodeURIComponent(projectPath)}/members`))?.data || []
     const bot_id = members.find(m => m.name == 'UNFURL_PROJECT_TOKEN')?.id
 
@@ -42,7 +47,7 @@ export async function triggerAtomicDeployment(projectPath, {ref='main', schedule
     return (await axios.post(
         `/${projectPath}/-/deployments/new`,
         {
-            pipeline: {ref, variables_attributes: variables},
+            pipeline: {ref: _ref, variables_attributes: variables},
             deployment: {
                 bot_id,
                 schedule,
@@ -129,22 +134,6 @@ export async function triggerIncrementalDeployment(pipelinesPath, {variables, up
     }
 
     return triggerPipeline(pipelinesPath, toGlVariablesAttributes(variablesDict, 'env_var'))
-}
-
-export async function deploy(pipelinesPath, parameters, options) {
-    return triggerPipeline(
-        pipelinesPath,
-        await prepareVariables({...parameters, workflow: 'deploy'}),
-        options
-    )
-}
-
-export async function undeploy(pipelinesPath, parameters, options) {
-    return triggerPipeline(
-        pipelinesPath,
-        await prepareVariables({...parameters, workflow: 'undeploy'}),
-        options
-    )
 }
 
 export function getJobsPath(pipelineData) {

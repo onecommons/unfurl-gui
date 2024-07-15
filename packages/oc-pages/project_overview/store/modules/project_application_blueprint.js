@@ -240,6 +240,9 @@ const actions = {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
                 }
+                if(projectPath && !applicationBlueprint.projectPath) {
+                    applicationBlueprint.projectPath = projectPath
+                }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
             Resource(resource, root) {

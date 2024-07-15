@@ -2,6 +2,7 @@
 import {GlDropdown, GlButtonGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
+import {homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import * as routes from '../../router/constants'
 
@@ -158,7 +159,7 @@ export default {
             return this.deployPath? `/${this.getHomeProjectPath}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
         },
         viewInRepositoryLink() {
-            let result = `/${this.getHomeProjectPath}/-/tree/main/${this.deployPath.name}`
+            let result = `/${this.getHomeProjectPath}/-/tree/${this.homeProjectDefaultBranch}/${this.deployPath.name}`
             if(window.gon.unfurl_gui && window.gon.gitlab_url) {
                 result = window.gon.gitlab_url + result
             }

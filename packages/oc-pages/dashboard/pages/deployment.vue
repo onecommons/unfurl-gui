@@ -22,6 +22,7 @@ const ONE_HOUR = 60 * 60
 const ONE_MINUTE = 60
 
 export default {
+    name: 'Deployment',
     components: {
         DeploymentResources,
         DashboardBreadcrumbs,

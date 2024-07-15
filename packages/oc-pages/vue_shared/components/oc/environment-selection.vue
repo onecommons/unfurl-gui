@@ -63,6 +63,7 @@ export default {
         }
     },
     async beforeMount() {
+        if(window.gon.unfurl_gui) return
         if(!GLOBAL_providersLoaded) {
             await this.loadAdditionalProviders({accessLevel: DEPLOY_INTO_ENV_MIN_ACCESS})
         }

@@ -6,6 +6,7 @@ import { Button as ElButton, Select as ElSelect, Option as ElOption } from 'elem
 import _ from 'lodash'
 import * as mime from 'mime-types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
+import {blueprintDefaultBranch, homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 
 // ?.input selections are to play nice with a formily workaround
 function readExpressionValue(property, index=0) {
@@ -29,6 +30,7 @@ function getMime(fileName) {
 
 export default {
     name: 'FileSelector',
+    mixins: [blueprintDefaultBranch, homeProjectDefaultBranch],
     components: {
         ElButton, Tree,
         ElSelect, ElOption,
@@ -265,10 +267,10 @@ export default {
             return `${this.schemaDefaultPrefix}${this.expressionFile}` || '/'
         },
         linkForDisplayValue() {
-            return `/${this.fileRepository}/-/blob/main/${this.displayValue}`
+            return `/${this.fileRepository}/-/blob/${this.defaultEditBranch}/${this.displayValue}`
         },
         linkForViewInRepository() {
-            return `/${this.fileRepository}/-/tree/main/${this.schemaDefaultPrefix}`
+            return `/${this.fileRepository}/-/tree/${this.defaultEditBranch}/${this.schemaDefaultPrefix}`
         },
         fileRepository() {
             if(['.', 'project'].includes(this.location)) {
@@ -299,6 +301,14 @@ export default {
 
         projectFiles() {
             return this.treeFromProjectFiles(this.filteredFiles)
+        },
+
+        defaultEditBranch() {
+            if(['.', 'project'].includes(this.location)) {
+                return this.homeProjectDefaultBranch
+            } else if(this.location == 'spec') {
+                return this.blueprintDefaultBranch
+            }
         }
     },
     watch: {

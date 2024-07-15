@@ -34,20 +34,20 @@ export default {
         ]),
         async doSetup() {
             await this.environmentFetchTypesWithParams({
-                environmentName: this.environmentName,
+                environmentName: this.exportEnvironmentName,
                 options: {
                     fallbackTypeRepository: {
                         url: 'https://unfurl.cloud/onecommons/std.git'
                     }
                 }
             })
-            const types = this.environmentResourceTypeDict(this.environmentName)
+            const types = this.environmentResourceTypeDict(this.exportEnvironmentName)
             this.blueprints = Object.values(types).filter(t => t.directives?.includes('substitute'))
             if(this.blueprints.length == 0) {
                 this.createError({
                     message: 'No valid blueprints found',
                     context: {
-                        environmentName: this.environmentName,
+                        environmentName: this.exportEnvironmentName,
                         visibleTypes: Object.values(types).map(type => type.name)
                     }
                 })
@@ -143,7 +143,7 @@ export default {
         ready() {
             return this.enabled && this.environmentsAreReady
         },
-        environmentName() {
+        exportEnvironmentName() {
             return this.$route.name == 'dashboardEnvironments' ?
                 this.$route.params.name :
                 'defaults'

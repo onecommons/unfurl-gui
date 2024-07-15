@@ -7,6 +7,7 @@ import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.js'
 import {localNormalize} from '../lib/normalize'
+import { getOrFetchDefaultBranch } from './projects'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -95,7 +96,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
-    const branch = 'main' // TODO don't hardcode main
+    const branch = await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
     const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider].filter(tmpl => !!tmpl)
 

@@ -1,4 +1,4 @@
-import {listMergeRequests} from '../client_utils/projects'
+import {listMergeRequests, getOrFetchDefaultBranch} from '../client_utils/projects'
 const stateFn = () => ({
     mergeRequests: []
 })
@@ -17,7 +17,10 @@ const actions = {
             return
         }
 
-        const target = 'main'
+        const target = await getOrFetchDefaultBranch(
+            encodeURIComponent(rootGetters.getHomeProjectPath)
+        )
+
         const labels = ['unfurl-gui-mr']
 
         const mergeRequests = await listMergeRequests(

@@ -37,6 +37,16 @@ export default (elemId='js-oc-project-overview') => {
   projectPath = normpath(projectPath)
   window.gon.home_project = normpath(window.gon.home_project)
   window.gon.working_dir_project = normpath(window.gon.working_dir_project)
+
+  // force /-/overview for route consistence with standalone
+  if(window.gon.unfurl_gui && !window.location.pathname.includes('/-/overview')) {
+    window.history.replaceState(
+      {},
+      '',
+      window.location.pathname.replace(projectPath, `${projectPath}/-/overview`) + window.location.search + window.location.hash
+    )
+  }
+
   const base = window.location.pathname.includes('/-/overview') ?
     `${projectPath}/-/overview` : projectPath
 

@@ -7,7 +7,7 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjectInfo, generateProjectAccessToken, getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, shareEnvironmentVariables, fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
@@ -423,7 +423,7 @@ const actions = {
         try {
             const result = await fetchEnvironments({
                 fullPath,
-                branch: branch || 'main',
+                branch: branch || await getOrFetchDefaultBranch(encodeURIComponent(fullPath)),
                 includeDeployments,
                 only
             })

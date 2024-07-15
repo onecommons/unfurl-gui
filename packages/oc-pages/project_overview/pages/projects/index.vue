@@ -11,11 +11,12 @@ import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
 import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
 import LocalDevelop from '../../components/local-develop.vue'
-import {MarkdownView, OcTab, EnvironmentSelection} from 'oc_vue_shared/components/oc'
+import {MarkdownView, OcTab, EnvironmentSelection, BaseDeployDialog} from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
 import { slugify } from 'oc_vue_shared/util'
-import {fetchUserHasWritePermissions, fetchCurrentTag, fetchBranches} from 'oc_vue_shared/client_utils/projects'
-import {lookupCloudProviderShortName} from 'oc_vue_shared/util'
+import {fetchUserHasWritePermissions, fetchCurrentTag, fetchBranches, getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
+import {blueprintDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
+import {lookupCloudProviderShortName, queryParamVar} from 'oc_vue_shared/util'
 import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
 import * as routes from '../../router/constants'
 
@@ -26,17 +27,14 @@ export default {
     i18n: {
         buttonLabel: __('Create new template'),
     },
+    mixins: [blueprintDefaultBranch],
     components: {
         OcTab,
-        EnvironmentSelection,
+        BaseDeployDialog,
         GlModal,
         GlCard, GlIcon, GlTabs,
-        GlFormGroup,
-        GlFormInput,
-        GlFormRadio,
         HeaderProjectView,
         TableWithoutHeader,
-        EnvironmentCreationDialog,
         ProjectDescriptionBox,
         YourDeployments,
         OpenCloudDeployments,
@@ -54,8 +52,7 @@ export default {
             triedPopulatingDeploymentItems: false,
             instantiateAs: null,
             projectSlugName: null,
-            templateForkedName: null,
-            templateSelected: {},
+            templateSelected: null,
             selectedEnvironment: null,
             newEnvironmentProvider: null,
             hasEditPermissions: false,
@@ -73,40 +70,11 @@ export default {
                 description: ""
             },
             currentTab: 0,
-            standalone
+            standalone,
+            baseDialogComplete: false
         }
     },
     computed: {
-        shouldDisableSubmitTemplate() {
-            if(this.creatingEnvironment) {
-                return !(this.createEnvironmentProvider && this.createEnvironmentName)
-            }
-            if(this.deployDialogError) return true
-            if(!this.templateForkedName) return true
-            if(this.instantiateAs != 'template' && !this.selectedEnvironment) return true
-
-            return false
-        },
-        modalTitle() {
-            if(this.creatingEnvironment) {
-                return s__('OcDeployments|Create New Environment')
-            }
-            if(this.instantiateAs == 'template') {
-                return s__('OcDeployments|Create New Deployment Template')
-            }
-
-            return s__('OcDeployments|Create New Deployment')
-
-        },
-        deployDialogError() {
-            if(this.instantiateAs == 'deployment-draft') {
-                const environment = this.selectedEnvironment ?? null
-                if(environment && this.lookupDeploymentOrDraft(slugify(this.templateForkedName), environment)) {
-                    return `'${this.templateForkedName.trim()}' already exists in environment '${environment?.name || environment}'`
-                }
-            }
-            return null
-        },
         ...mapGetters([
             'yourDeployments',
             'getApplicationBlueprint',
@@ -127,6 +95,36 @@ export default {
             'commentsIssueUrl',
             'hasCriticalErrors'
         ]),
+        ...queryParamVar('ts'),
+        ...queryParamVar('tn'),
+        ...queryParamVar('fn'),
+        ...queryParamVar('bprev'),
+        ...queryParamVar('env'),
+        shouldDisableSubmitTemplate() {
+            console.log(this.$refs, this.baseDialogComplete)
+            if(!this.$refs.baseDeployDialog) return true
+            return !this.baseDialogComplete
+        },
+        modalTitle() {
+            if(this.creatingEnvironment) {
+                return s__('OcDeployments|Create New Environment')
+            }
+            if(this.instantiateAs == 'template') {
+                return s__('OcDeployments|Create New Deployment Template')
+            }
+
+            return s__('OcDeployments|Create New Deployment')
+
+        },
+        deployDialogError() {
+            if(this.instantiateAs == 'deployment-draft') {
+                const environment = this.selectedEnvironment ?? null
+                if(environment && this.lookupDeploymentOrDraft(slugify(this.tf), environment)) {
+                    return `'${this.tf.trim()}' already exists in environment '${environment?.name || environment}'`
+                }
+            }
+            return null
+        },
         primaryProps() {
             return {
                 text: __('Next'),
@@ -138,24 +136,6 @@ export default {
                 text: this.creatingEnvironment? __('Back'): __('Cancel')
             };
         },
-        useUnreleased() {
-            if(!this.currentTag) return false
-            return this.version != this.currentTag.name
-        },
-        querySpec() {
-            if(this.instantiateAs == 'deployment-draft' && this.templateSelected?.name)
-                return {
-                    fn: this.templateForkedName || undefined,
-                    ts: this.projectSlugName || undefined,
-                    tn: this.templateSelected.name || undefined, // used to control modal for #oc-569
-                    bprev: this.useUnreleased? this.version: undefined
-                }
-            else return {}
-        },
-        matchingEnvironments() {
-            return this.getMatchingEnvironments(this.templateSelected?.cloud)
-        },
-        // NOTE I probably should have just used a watcher here
         defaultEnvironmentName() {
             return (
                 this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud)
@@ -172,47 +152,20 @@ export default {
             return null
         },
 
-        mainAtLastest() {
-            if(!this.mainBranchCommitId || !this.currentTag?.commit?.id) return false
-
-            return this.mainBranchCommitId == this.currentTag.commit.id
+        modalOpen: {
+            set(val) {
+                if(val) {
+                } else {
+                    this.clearModalTemplate()
+                    this.baseDialogComplete = false
+                }
+            },
+            get() {
+                return !!this.ts
+            }
         },
-
-        shouldProvideVersionSelection() {
-            if(!this.currentTag) return false
-            if(!this.mainBranchCommitId) return false
-            if(this.mainAtLastest) return false
-
-            return true
-        }
     },
     watch: {
-        querySpec: function(query, oldQuery) {
-            if(_.isEqual(query, oldQuery)) return
-
-
-            const path = this.$route.path
-            if(document.activeElement.tagName == 'INPUT' && document.activeElement.type == 'text') {
-                const el = document.activeElement
-                el.onblur = _ => {
-                    this.$router.replace({path, query})
-                    el.onblur = null
-                }
-            } else {
-                this.$router.replace({path, query})
-            }
-
-        },
-        templateSelected: function(val) {
-            if(this.templateForkedName) return
-            if(val && this.instantiateAs == 'deployment-draft') {
-                this.templateForkedName = this.getNextDefaultDeploymentName(
-                    this.getApplicationBlueprint.title + ' ' + lookupCloudProviderShortName(val.cloud)
-                )
-            }
-            else this.templateForkedName = ''
-
-        },
         environmentsAreReady(newState, _oldState) {
             if (newState && this.yourDeployments.length) {
                 this.populateDeploymentItems(this.yourDeployments)
@@ -229,6 +182,12 @@ export default {
             if(!currentTag) return
             if(!this.version) {
                 this.version = currentTag.name
+            }
+        },
+
+        templateSelected(val) {
+            if(val?.name) {
+                this.ts = val.name
             }
         }
     },
@@ -284,17 +243,19 @@ export default {
             fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
         }
 
-        fetchBranches(encodeURIComponent(this.$projectGlobal.projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == 'main')?.commit?.id)
+        this.blueprintDefaultBranchPromise.then(defaultBranch => {
+            fetchBranches(encodeURIComponent(this.$projectGlobal.projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == defaultBranch)?.commit?.id)
+        })
 
         this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
         this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
 
-        const templateSelected = this.$route.query?.ts?
+        const templateSelected = this.ts?
             this.getTemplatesList.find(template => template.name == this.$route.query.ts) : null
 
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
-            this.templateForkedName = this.$route.query?.fn
+            this.tf = this.$route.query?.fn
         }
 
         this.version = this.$route.query?.bprev
@@ -310,56 +271,20 @@ export default {
             window.location.href = this.$router.resolve({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name}}).href
         },
 
+        onSubmitModal(e) {
+            return this.$refs?.baseDeployDialog?.performRedirect(e)
+        },
+
         clearModalTemplate(e) {
-            if(this.submitting) return
-            this.templateForkedName = null;
+            e?.preventDefault()
             this.templateSelected = null
-            this.selectedEnvironment = null
-            this.creatingEnvironment = false
+            this.ts = undefined
+            this.tn = undefined
+            this.bprev = undefined
+            this.env = undefined
+            this.fn = undefined
         },
 
-        instantiatePrimaryDeploymentTemplate() {
-            this.instantiateAs = 'template'
-            this.templateSelected = {...this.getTemplatesList[0]};
-            this.projectSlugName = '';
-        },
-
-        async onSubmitModal(e) {
-            // not implemented
-            if(this.creatingEnvironment) {
-                e.preventDefault()
-                this.redirectToNewEnvironment()
-                return
-            }
-            if (this.projectSlugName !== null) {
-                this.submitting = true
-                this.prepareTemplateNew();
-
-                if(this.instantiateAs == 'deployment-draft'){
-                    // store the environment in local storage
-                    const lastUsedEnvironment = {
-                        cloud: this.templateSelected.cloud,
-                        environmentName: this.templateSelected.environment
-                    }
-                    this.updateLastUsedEnvironment({
-                        lastUsedEnvironment,
-                        username: this.getUsername
-                    })
-
-                    this.redirectToTemplateEditor(routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT);
-                } else {
-                    const args = {...this.templateSelected, blueprintName: this.getApplicationBlueprint.name}
-                    this.pushPreparedMutation(createDeploymentTemplate(args))
-
-                    await this.commitPreparedMutations()
-                    this.redirectToTemplateEditor();
-                }
-
-                this.submitting = false
-                this.clearModalTemplate()
-            }
-
-        },
         async loadPrimaryDeploymentBlueprint() {
             const projectPath = this.$projectGlobal.projectPath
             if(!projectPath) throw new Error('projectGlobal.projectPath is not defined')
@@ -372,18 +297,11 @@ export default {
                 templateSlug,
             })
         },
-        onCancelModal(e) {
-            if(this.creatingEnvironment) {
-                this.creatingEnvironment = false
-                this.createEnvironmentName = ''
-                this.createEnvironmentProvider = ''
-                e.preventDefault()
-            }
-        },
+
         prepareTemplateNew() {
             this.templateSelected.primary = this.templateSelected.title
-            this.templateSelected.title = this.templateForkedName;
-            this.templateSelected.name = slugify(this.templateForkedName);
+            this.templateSelected.title = this.tf;
+            this.templateSelected.name = slugify(this.tf);
             this.templateSelected.totalDeployments = 0;
             this.templateSelected.environment = this.selectedEnvironment?.name || this.defaultEnvironmentName
             this.templateSelected.primaryType = this.getApplicationBlueprint.primary
@@ -393,17 +311,6 @@ export default {
             this.creatingEnvironment = true
         },
 
-        redirectToNewEnvironment() {
-            this.$refs.environmentDialog.beginEnvironmentCreation()
-            /*
-            const redirectTarget = `${window.location.pathname}${window.location.search}`
-            const pathComponents = window.location.pathname.split("/").slice(0, -2)
-            pathComponents[1] = this.getUsername
-            pathComponents[2] = USER_HOME_PROJECT
-            const url = `${window.origin}${pathComponents.join("/")}/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`;
-            window.location = url;
-            */
-        },
 
         handleClose() {
             this.showBannerIntro = false;
@@ -415,7 +322,6 @@ export default {
             'populateJobsList',
             'populateTemplateResources',
             'fetchProject',
-            'updateLastUsedEnvironment',
             'fetchCloudmap',
             'fetchCommentsIssue'
         ]),
@@ -513,53 +419,24 @@ export default {
             <gl-modal
                 ref="oc-templates-deploy"
                 modal-id="oc-templates-deploy"
-                :visible="!!$route.query.tn"
+                v-model="modalOpen"
 
                 :title="modalTitle"
                 :action-primary="primaryProps"
                 :action-cancel="cancelProps"
                 no-fade
                 @primary="onSubmitModal"
-                @cancel="onCancelModal"
-                @hidden="clearModalTemplate"
+                @_cancel="clearModalTemplate"
+                @_hidden="clearModalTemplate"
             >
-                <environment-creation-dialog
-                    v-if="creatingEnvironment"
-                    ref="environmentDialog"
-                    @environmentNameChange="env => createEnvironmentName = env"
-                    @cloudProviderChange="provider => createEnvironmentProvider = provider"
-                    :cloud-provider="templateSelected && templateSelected.cloud"
-                    />
-                <div v-else>
-                    <gl-form-group
-                        label="Name"
-                        class="col-md-4 align_left"
-                    >
-                        <gl-form-input
-                        id="input1"
-                        data-testid="deployment-name-input"
-                        v-model="templateForkedName"
-                        name="input['template-name']"
-                        type="text"
-                        />
 
-                    </gl-form-group>
-                    <div class="deploy-dialog col-md-6" v-if="instantiateAs!='template'">
-                        <p>{{ __("Select an environment to deploy this template to:") }}</p>
-                        <environment-selection
-                            v-model="selectedEnvironment"
-                            :provider="templateSelected && templateSelected.cloud"
-                            :error="deployDialogError"
-                            @createNewEnvironment="createNewEnvironment"
-                            :environment-creation="!standalone"
-                        />
-
-                        <div v-if="shouldProvideVersionSelection" class="mt-5">
-                            <gl-form-radio v-model="version" :value="currentTag.name">Use the current release of {{getApplicationBlueprint.title}}  (<b>{{currentTag.name}}</b>)</gl-form-radio>
-                            <gl-form-radio v-model="version" value="main"> Use the latest (unreleased) version</gl-form-radio>
-                        </div>
-                    </div>
-                </div>
+                <base-deploy-dialog
+                    ref="baseDeployDialog"
+                    @completionStatusSet="status => baseDialogComplete = status"
+                    :project-path="$projectGlobal.projectPath"
+                    :template-selected="templateSelected"
+                    :application-blueprint="getApplicationBlueprint"
+                />
             </gl-modal>
         </div>
     </div>
@@ -572,11 +449,4 @@ h2.oc-title-section {
 }
 
 .dropdown-parent >>> ul { width: unset; }
-
-/* TODO move this into gitlab oc */
-.deploy-dialog >>> .custom-control-input:checked ~ .custom-control-label::before {
-    background-color: #00D2D9 !important;
-}
-
 </style>
-

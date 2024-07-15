@@ -7,6 +7,7 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
+import { getOrFetchDefaultBranch } from "../../../vue_shared/client_utils/projects";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -811,7 +812,8 @@ const getters = {
     hasPreparedMutations(state) { return state.preparedMutations.length > state.effectiveFirstMutation },
     safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
     isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
-    getCommitBranch(state) { return state.commitBranch || 'main'}
+    // CRITICAL: ensure this is called
+    getCommitBranch(state) { return state.commitBranch}
 }
 
 const mutations = {
@@ -1084,7 +1086,7 @@ const actions = {
             )
         }
 
-        const branch = state.commitBranch || project.default_branch
+        const branch = state.commitBranch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
         const post = unfurlServerUpdate({
             method,
