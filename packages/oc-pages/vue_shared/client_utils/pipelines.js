@@ -37,7 +37,7 @@ export async function triggerPipeline(pipelinesPath, variables_attributes, optio
 
 
 export async function triggerAtomicDeployment(projectPath, {ref, schedule='now', variables=[], dependencies={}}) {
-    const _ref = ref || await getOrFetchDefaultBranch(projectPath)
+    const _ref = ref || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
     const members = (await axios.get(`/api/v4/projects/${encodeURIComponent(projectPath)}/members`))?.data || []
     const bot_id = members.find(m => m.name == 'UNFURL_PROJECT_TOKEN')?.id

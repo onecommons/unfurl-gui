@@ -17,13 +17,16 @@ export const blueprintDefaultBranch = {
             handler(val, prev) {
                 if(val?.projectPath && val.projectPath != prev?.projectPath) {
                     this.blueprintDefaultBranchPromise = (
-                        getOrFetchDefaultBranch(val.projectPath)
-                    ) 
+                        getOrFetchDefaultBranch(encodeURIComponent(val.projectPath))
+                    )
                 }
             }
         },
-        blueprintDefaultBranch(val) {
-            val.then(resolved => this.blueprintDefaultBranch = resolved)
+        blueprintDefaultBranchPromise: {
+            immediate: true,
+            handler(val) {
+                val.then(resolved => this.blueprintDefaultBranch = resolved)
+            }
         }
     }
 }
@@ -42,15 +45,18 @@ export const homeProjectDefaultBranch = {
         getHomeProjectPath: {
             immediate: true,
             handler(val, prev) {
-                if(val?.projectPath && val.projectPath != prev?.projectPath) {
+                if(val && val != prev) {
                     this.homeProjectDefaultBranchPromise = (
-                        getOrFetchDefaultBranch(val.projectPath)
-                    ) 
+                        getOrFetchDefaultBranch(encodeURIComponent(val))
+                    )
                 }
             }
         },
-        homeProjectDefaultBranch(val) {
-            val.then(resolved => this.homeProjectDefaultBranch = resolved)
+        homeProjectDefaultBranchPromise: {
+            immediate: true,
+            handler(val) {
+                val.then(resolved => this.homeProjectDefaultBranch = resolved)
+            }
         }
     }
 }

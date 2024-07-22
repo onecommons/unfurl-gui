@@ -24,6 +24,7 @@ export default {
         viewDeploymentLink: [Object, String],
         scope: Object,
     },
+    mixins: [homeProjectDefaultBranch],
     data() {
         return {
             job: null
