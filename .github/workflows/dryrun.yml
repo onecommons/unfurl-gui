@@ -5,7 +5,7 @@ on:
 
 # copied from build_and_test.yml
 env:
-  UNFURL_BRANCH: standalone-gui-naive-reload
+  UNFURL_BRANCH: python13
 
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
@@ -34,6 +34,7 @@ env:
   CY_COMMAND_TIMEOUT: 30000
   TEST_VERSIONS: v2
   UNFURL_TEST_TMPDIR: tmp
+  COLUMNS: 120
 
 jobs:
   dryrun_a:
@@ -57,19 +58,19 @@ jobs:
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dryrunA-cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dryrunA-dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dryrunA-unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
@@ -96,19 +97,19 @@ jobs:
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dryrunB-cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dryrunB-dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dryrunB-unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log

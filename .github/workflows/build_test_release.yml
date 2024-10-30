@@ -3,7 +3,7 @@ name: Build, Test, Release
 on: [push]
 
 env:
-  UNFURL_BRANCH: standalone-gui-naive-reload
+  UNFURL_BRANCH: python13
 
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
@@ -52,7 +52,7 @@ jobs:
       - name: Compile
         run: yarn build
       - name: Install unfurl
-        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pip install -e $HOME/unfurl
+        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pipx install -e $HOME/unfurl
       - name: Integration test
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       - name: Integration test (unfurl init)
@@ -67,19 +67,19 @@ jobs:
           UNFURL_CLOUD_SERVER: https://staging.unfurl.cloud
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
@@ -87,7 +87,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: tar -czvf unfurl-gui-dist.tar.gz dist
       - name: Upload dist
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: unfurl-gui-dist
           path: unfurl-gui-dist.tar.gz
@@ -107,7 +107,7 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
     - name: Download build artifact
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: unfurl-gui-dist
     - name: Create GitHub Release
