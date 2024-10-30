@@ -1,8 +1,6 @@
 
 name: Dryrun Extra
-on:
-  workflow_dispatch:
-
+on: [workflow_dispatch, workflow_call]
 # copied from build_and_test.yml
 env:
   UNFURL_BRANCH: python13
@@ -53,7 +51,7 @@ jobs:
       - name: Compile # TODO just extract the artifact from previous step
         run: yarn build
       - name: Install unfurl
-        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pip install -e $HOME/unfurl
+        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pipx install -e $HOME/unfurl
       - name: Integration test
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
@@ -77,7 +75,6 @@ jobs:
 
   dryrun_b:
     name: Dryrun B
-    if: "github.event.workflow_run.conclusion == 'success' && startsWith(github.ref, 'refs/heads/')"
     env:
       SPEC_GLOBS: gcp* do*
       SPEC_SKIP_GLOBS: '*container-webapp* *nestedcloud* *draft aws__baserow*' # we already ran baserow
@@ -92,7 +89,7 @@ jobs:
       - name: Compile # TODO just extract the artifact from previous step
         run: yarn build
       - name: Install unfurl
-        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pip install -e $HOME/unfurl
+        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pipx install -e $HOME/unfurl
       - name: Integration test
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
