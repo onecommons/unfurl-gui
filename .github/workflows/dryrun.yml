@@ -40,6 +40,7 @@ jobs:
     env:
       SPEC_GLOBS: aws* az*
       SPEC_SKIP_GLOBS: '*container-webapp* *nestedcloud* *draft aws__baserow*' # we already ran baserow
+      CYPRESS_FAIL_FAST_STRATEGY: spec
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -78,6 +79,7 @@ jobs:
     env:
       SPEC_GLOBS: gcp* do*
       SPEC_SKIP_GLOBS: '*container-webapp* *nestedcloud* *draft aws__baserow*' # we already ran baserow
+      CYPRESS_FAIL_FAST_STRATEGY: spec
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
