@@ -360,7 +360,7 @@ async function main() {
       cwd: STANDALONE_PROJECT_DIR,
       gui: true,
       env: {
-        UNFURL_LOGGING: 'trace',
+        UNFURL_LOGGING: process.env.UNFURL_LOGGING || 'trace',
         UNFURL_HOME: process.env.UNFURL_HOME,
         UNFURL_SKIP_SAVE: 'never',
         UNFURL_GUI_DIR: unfurlGuiRoot

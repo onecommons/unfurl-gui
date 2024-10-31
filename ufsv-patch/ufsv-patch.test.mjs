@@ -198,15 +198,15 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
+      if (!process.env.UNFURL_TEST_KEEP_ARTIFACT) {
+        try {
+          fs.rmSync(testToArtifactPath(testName), { recursive: true, force: true })
+        } catch (e) { }
 
-
-      try {
-        fs.rmSync(testToArtifactPath(testName), {recursive: true, force: true})
-      } catch(e) {}
-
-      try {
-        fs.renameSync(`${TMP_DIR}/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
-      } catch(e) { console.error(e.message) }
+        try {
+          fs.renameSync(`${TMP_DIR}/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
+        } catch (e) { console.error(e.message) }
+      }
 
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
