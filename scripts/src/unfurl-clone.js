@@ -55,7 +55,7 @@ async function main() {
   ]
 
   
-  console.log(UNFURL_CMD, unfurlArgs.join(' '))
+  console.log("running", UNFURL_CMD, unfurlArgs.join(' ').replaceAll(token, "XXXXX"))
   spawnSync(UNFURL_CMD, unfurlArgs, {stdio: 'inherit'})
 }
 
