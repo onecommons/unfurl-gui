@@ -85,25 +85,26 @@ jobs:
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
       - name: Create release artifacts
         if: startsWith(github.ref, 'refs/tags/')
-        run: tar -czvf unfurl-gui-dist.tar.gz dist
+        run: |
+          echo ${{  github.ref_name }} > dist/RELEASE.txt
+          tar -czvf unfurl-gui-dist.tar.gz dist
       - name: Upload dist
         uses: actions/upload-artifact@v3
         with:
           name: unfurl-gui-dist
           path: unfurl-gui-dist.tar.gz
-  dryrun:
-    name: Trigger dryrun
-    # avoid running twice when we're pushing a tag
-    if: "!startsWith(github.ref, 'refs/tags/')"
-    uses: ./.github/workflows/dryrun.yml
+  # disable until dryrun tests are updated for local gui
+  # dryrun:
+  #   name: Trigger dryrun
+  #   # avoid running twice when we're pushing a tag
+  #   if: "!startsWith(github.ref, 'refs/tags/')"
+  #   uses: ./.github/workflows/dryrun.yml
   release:
     name: Release
     if: startsWith(github.ref, 'refs/tags/')
     needs: build_and_test
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
     - name: Download build artifact
       uses: actions/download-artifact@v3
       with:
@@ -112,3 +113,6 @@ jobs:
       uses: softprops/action-gh-release@v2
       with:
         files: unfurl-gui-dist.tar.gz
+        # make_latest: "true"
+        # draft: true
+        # prerelease: true
