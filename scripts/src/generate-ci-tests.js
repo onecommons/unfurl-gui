@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// usage: yarn run generate:gitlab-ci  > .gitlab/generated/tests.yml
 const YAML = require('yaml')
 const fs = require('fs')
 const path = require('path')
@@ -16,7 +17,9 @@ Object.entries(ciTests).forEach(([key, value]) => {
   result[key] = {
     'extends': '.tests',
     script: [
-      `${env || ''} yarn run integration-test run ${username? `--username ${username}`: ''} --namespace $OC_NAMESPACE -- --browser chrome -s '${spec}'`
+      `${env || ''} yarn run integration-test run ${username? `--username ${username}`: ''} --namespace $OC_NAMESPACE -- --browser chrome -s '${spec}' || exit_code=$?`,
+      // timeout command exits with 124 on timeout
+      'if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;'
     ],
     rules: [
       { 'if': cond }

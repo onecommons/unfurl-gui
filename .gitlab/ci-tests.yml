@@ -117,17 +117,30 @@ drafts:
   env: DRYRUN=true
   status: v1 exclusive
 
-dryrun_a:
-  spec: cypress/e2e/blueprints/aws*,cypress/e2e/blueprints/az*
-  cond: $TEST == "dryrun"
-  description: DRYRUN aws and azure
+dryrun_aws:
+  spec: cypress/e2e/blueprints/aws*
+  cond: $TEST == "dryrun" || $TEST == "dryrun_aws"
+  description: DRYRUN aws
   env: DRYRUN=true NO_FLAKY=1
 
-dryrun_b:
-  spec: cypress/e2e/blueprints/gcp*,cypress/e2e/blueprints/do*
-  cond: $TEST == "dryrun"
-  description: DRYRUN aws and azure
+dryrun_gcp:
+  spec: cypress/e2e/blueprints/gcp*
+  cond: $TEST == "dryrun" || $TEST == "dryrun_gcp"
+  description: DRYRUN gcp
   env: DRYRUN=true NO_FLAKY=1
+
+dryrun_az_do:
+  spec: cypress/e2e/blueprints/do*,cypress/e2e/blueprints/az*
+  cond: $TEST == "dryrun" || $TEST == "dryrun_az_do"
+  description: DRYRUN digital ocean and azure
+  env: DRYRUN=true NO_FLAKY=1
+
+# TODO fix fixtures
+# dryrun_k8s:
+#   spec: cypress/e2e/blueprints/k8s*
+#   cond: $TEST == "dryrun" || $TEST == "dryrun_k8s"
+#   description: DRYRUN k8s
+#   env: DRYRUN=true NO_FLAKY=1
 
 nextcloud_shared_volumes:
   spec: cypress/e2e/deployments/shared-volume*.js

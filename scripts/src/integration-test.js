@@ -158,9 +158,15 @@ function createDashboardCommand(username, dashboardRepo) {
 }
 
 function invokeCypressCommand(baseArgs, forwardedEnv) {
-  const args = ['run', 'cypress', ...baseArgs]
   const options = {stdio: 'inherit', env: {...process.env, ...forwardedEnv}}
-  return spawnSync.bind(null, 'yarn', args, options)
+  let args = ['run', 'cypress', ...baseArgs]
+  let cmd = 'yarn'
+  let timeout = options.env.SCRIPT_TIMEOUT
+  if (timeout) {
+      args = [timeout, cmd, ...args]
+      cmd = 'timeout'
+  }
+  return spawnSync.bind(null, cmd, args, options)
 }
 
 async function main() {

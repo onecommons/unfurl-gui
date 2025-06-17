@@ -3,56 +3,66 @@ sanity:
   extends: .tests
   script:
     - " yarn run integration-test run --username nobody --namespace
-      $OC_NAMESPACE -- --browser chrome -s './cypress/e2e/00_visitor/*.js'"
+      $OC_NAMESPACE -- --browser chrome -s './cypress/e2e/00_visitor/*.js' ||
+      exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "sanity" || $TEST == "visitor" || $TEST == "all"
 nestedcloud:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/*nestedcloud*.js'"
+      chrome -s './cypress/e2e/blueprints/*nestedcloud*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "nestedcloud" || $TEST == "all"
 nextcloud_aws:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/aws*nextcloud*.js'"
+      chrome -s './cypress/e2e/blueprints/aws*nextcloud*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "nextcloud" || $TEST == "nextcloud_aws" || $TEST == "all"
 nextcloud_gcp:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/gcp*nextcloud*.js'"
+      chrome -s './cypress/e2e/blueprints/gcp*nextcloud*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "nextcloud" || $TEST == "nextcloud_gcp" || $TEST == "all"
 nextcloud_do:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/do*nextcloud*.js'"
+      chrome -s './cypress/e2e/blueprints/do*nextcloud*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "nextcloud" || $TEST == "nextcloud_do" || $TEST == "all"
 baserow:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/*baserow*.js'"
+      chrome -s './cypress/e2e/blueprints/*baserow*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /baserow/ || $TEST == "all"
 minecraft:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/*minecraft*.js'"
+      chrome -s './cypress/e2e/blueprints/*minecraft*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /minecraft/ || $TEST == "all"
 container_webapp:
   extends: .tests
   script:
     - EXTERNAL=0 yarn run integration-test run  --namespace $OC_NAMESPACE --
-      --browser chrome -s './cypress/e2e/blueprints/*container-webapp*.js'
+      --browser chrome -s './cypress/e2e/blueprints/*container-webapp*.js' ||
+      exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "container_webapp" || $TEST == "all"
 container_webapp_gcp:
@@ -60,6 +70,8 @@ container_webapp_gcp:
   script:
     - EXTERNAL=0 yarn run integration-test run  --namespace $OC_NAMESPACE --
       --browser chrome -s './cypress/e2e/blueprints/gcp__container-webapp*.js'
+      || exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "container_webapp_gcp"
 container_webapp_aws:
@@ -67,34 +79,40 @@ container_webapp_aws:
   script:
     - EXTERNAL=0 yarn run integration-test run  --namespace $OC_NAMESPACE --
       --browser chrome -s './cypress/e2e/blueprints/aws__container-webapp*.js'
+      || exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "container_webapp_aws"
 ghost:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/*ghost*.js'"
+      chrome -s './cypress/e2e/blueprints/*ghost*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /ghost/ || $TEST == "all"
 mediawiki:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/*mediawiki*.js'"
+      chrome -s './cypress/e2e/blueprints/*mediawiki*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /mediawiki/ || $TEST == "all"
 wordpress:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/*wordpress*.js'"
+      chrome -s './cypress/e2e/blueprints/*wordpress*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /wordpress/ || $TEST == "all"
 kubernetes:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s './cypress/e2e/blueprints/k8s__wordpress*.js'"
+      chrome -s './cypress/e2e/blueprints/k8s__wordpress*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /k8s/ || ($TEST == "all" && $SKIP !~ /k8s/)
 unfurl_cloud_dns:
@@ -102,7 +120,8 @@ unfurl_cloud_dns:
   script:
     - USE_UNFURL_DNS=opencloudservices.net yarn run integration-test
       run  --namespace $OC_NAMESPACE -- --browser chrome -s
-      './cypress/e2e/blueprints/aws__nextcloud__only-mail*.js'
+      './cypress/e2e/blueprints/aws__nextcloud__only-mail*.js' || exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST =~ /uc_dns/ || $TEST == "all"
 cloud_redis:
@@ -111,65 +130,85 @@ cloud_redis:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
       chrome -s
       'cypress/e2e/blueprints/gcp__nextcloud__memorystore*.js,cypress/e2e/bluep\
-      rints/aws__nextcloud__memorydb*.js'"
+      rints/aws__nextcloud__memorydb*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "cloud_redis"
 multiple_workflows:
   extends: .tests
   script:
     - DRYRUN=true yarn run integration-test run  --namespace $OC_NAMESPACE --
-      --browser chrome -s 'cypress/e2e/deployments/multiple-workflows*.js'
+      --browser chrome -s 'cypress/e2e/deployments/multiple-workflows*.js' ||
+      exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "multiple_workflows" || $TEST == "misc"
 smorgasbord:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s 'cypress/e2e/deployments/smorgasbord*.js'"
+      chrome -s 'cypress/e2e/deployments/smorgasbord*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "smorgasbord"
 nodefilter:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s 'cypress/e2e/deployments/node-filter*.js'"
+      chrome -s 'cypress/e2e/deployments/node-filter*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "node_filter" || $TEST == "misc"
 clonedraft:
   extends: .tests
   script:
     - DRYRUN=true yarn run integration-test run  --namespace $OC_NAMESPACE --
-      --browser chrome -s 'cypress/e2e/deployments/clone-draft*.js'
+      --browser chrome -s 'cypress/e2e/deployments/clone-draft*.js' ||
+      exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "clone_draft" || $TEST == "misc"
 drafts:
   extends: .tests
   script:
-    - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s 'cypress/e2e/deployments/draft*.js'"
+    - DRYRUN=true yarn run integration-test run  --namespace $OC_NAMESPACE --
+      --browser chrome -s 'cypress/e2e/deployments/draft*.js' || exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "drafts" || $TEST == "misc"
-dryrun_a:
+dryrun_aws:
+  extends: .tests
+  script:
+    - DRYRUN=true NO_FLAKY=1 yarn run integration-test run  --namespace
+      $OC_NAMESPACE -- --browser chrome -s 'cypress/e2e/blueprints/aws*' ||
+      exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
+  rules:
+    - if: $TEST == "dryrun" || $TEST == "dryrun_aws"
+dryrun_gcp:
+  extends: .tests
+  script:
+    - DRYRUN=true NO_FLAKY=1 yarn run integration-test run  --namespace
+      $OC_NAMESPACE -- --browser chrome -s 'cypress/e2e/blueprints/gcp*' ||
+      exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
+  rules:
+    - if: $TEST == "dryrun" || $TEST == "dryrun_gcp"
+dryrun_az_do:
   extends: .tests
   script:
     - DRYRUN=true NO_FLAKY=1 yarn run integration-test run  --namespace
       $OC_NAMESPACE -- --browser chrome -s
-      'cypress/e2e/blueprints/aws*,cypress/e2e/blueprints/az*'
+      'cypress/e2e/blueprints/do*,cypress/e2e/blueprints/az*' || exit_code=$?
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
-    - if: $TEST == "dryrun"
-dryrun_b:
-  extends: .tests
-  script:
-    - DRYRUN=true NO_FLAKY=1 yarn run integration-test run  --namespace
-      $OC_NAMESPACE -- --browser chrome -s
-      'cypress/e2e/blueprints/gcp*,cypress/e2e/blueprints/do*'
-  rules:
-    - if: $TEST == "dryrun"
+    - if: $TEST == "dryrun" || $TEST == "dryrun_az_do"
 nextcloud_shared_volumes:
   extends: .tests
   script:
     - " yarn run integration-test run  --namespace $OC_NAMESPACE -- --browser
-      chrome -s 'cypress/e2e/deployments/shared-volume*.js'"
+      chrome -s 'cypress/e2e/deployments/shared-volume*.js' || exit_code=$?"
+    - if [ $exit_code -eq 124 ]; then echo "test timed out"; fi; exit $exit_code;
   rules:
     - if: $TEST == "shared_volumes" || $TEST == "all"
 

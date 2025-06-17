@@ -50,7 +50,9 @@ build:
 
 .tests:
   stage: test
-  timeout: 1h 30m
+  timeout: 2h
+  variables:
+    SCRIPT_TIMEOUT: 90m  # set this to less than "timeout" so artifacts get saved
   image: $CI_REGISTRY_IMAGE:latest
   before_script:
     - yarn install --immutable
@@ -63,7 +65,7 @@ build:
     paths:
       - cypress/videos/**/*.mp4
       - cypress/screenshots/**/*
-    expire_in: 1 day
+    expire_in: never
 
 include: .gitlab/generated/tests.yml
 
