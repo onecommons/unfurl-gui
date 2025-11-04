@@ -4,15 +4,8 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Maximize Build Space
-        uses: easimon/maximize-build-space@master
-        with:
-          root-reserve-mb: 512
-          swap-size-mb: 1024
-          remove-dotnet: 'true'
-          remove-android: 'true'
-          remove-haskell: 'true'
-
+      - name: Check disk space
+        run: df -h
       - name: Gitlab Runner
         uses: addshore/gitlab-runner-action@main
         with:
