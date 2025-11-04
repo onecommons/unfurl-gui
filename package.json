@@ -39,7 +39,7 @@
     "@gitlab/ui": "32.21.0",
     "@lifeomic/json-schema-to-graphql-types": "^1.4.2",
     "@vue/composition-api": "^1.4.3",
-    "axios": "^0.20.0",
+    "axios": "^0.30.2",
     "axios-cookiejar-support": "^2.0.4",
     "bootstrap": "4.5.3",
     "core-js": "^3.6.5",
