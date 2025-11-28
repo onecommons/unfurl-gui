@@ -14,3 +14,4 @@ jobs:
           name: ${{ github.run_id }}
           tag-list: "${{ github.event.client_payload.tag_list }}"
           gitlab-instance: "${{ github.event.client_payload.url }}"
+          exit-after-job: "true" 
