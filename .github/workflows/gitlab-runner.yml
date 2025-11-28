@@ -7,7 +7,7 @@ jobs:
       - name: Check disk space
         run: df -h
       - name: Gitlab Runner
-        uses: addshore/gitlab-runner-action@main
+        uses: onecommons/gitlab-runner-action@main
         with:
           registration-token: "${{ github.event.client_payload.registration_token }}"
           docker-image: "docker:19.03.12"
