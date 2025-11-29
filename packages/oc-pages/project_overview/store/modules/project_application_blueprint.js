@@ -137,8 +137,18 @@ const actions = {
 
     },
 
-    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath}) {
+    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath, cache}) {
         let transforms
+
+        // Initialize cache if not provided
+        if (!cache) {
+            cache = {
+                resourceTypes: new Map(),
+                missingDependencies: new Map(),
+                missingProperties: new Map(),
+                groupProperties: new Map()
+            }
+        }
 
         function normalizeProperties(properties) {
             if(!properties || typeof properties != 'object') {
@@ -164,6 +174,38 @@ const actions = {
             }
         }
 
+        // Cached getter wrapper
+        function getCachedResourceType(typeName) {
+            if (!cache.resourceTypes.has(typeName)) {
+                cache.resourceTypes.set(typeName, getters.resolveResourceType(typeName))
+            }
+            return cache.resourceTypes.get(typeName)
+        }
+
+        function getCachedMissingDependencies(resourceTemplate) {
+            const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
+            if (!cache.missingDependencies.has(key)) {
+                cache.missingDependencies.set(key, getters.getMissingDependencies(resourceTemplate))
+            }
+            return cache.missingDependencies.get(key)
+        }
+
+        function getCachedMissingProperties(resourceTemplate) {
+            const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
+            if (!cache.missingProperties.has(key)) {
+                cache.missingProperties.set(key, getters.getMissingProperties(resourceTemplate))
+            }
+            return cache.missingProperties.get(key)
+        }
+
+        function getCachedGroupProperties(resourceTemplate) {
+            const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
+            if (!cache.groupProperties.has(key)) {
+                cache.groupProperties.set(key, getters.groupProperties(resourceTemplate))
+            }
+            return cache.groupProperties.get(key)
+        }
+
         // TODO refactor independent transformations into vue_shared/lib/normalize
         transforms = {
             ResourceType(resourceType) {
@@ -180,14 +222,14 @@ const actions = {
                     }
                 })
 
-                const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
+                const {properties, computedProperties} = getCachedGroupProperties(resourceTemplate)
                 resourceTemplate.properties = properties
                 resourceTemplate.computedProperties = computedProperties
 
-                for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
+                for(const generatedDep of getCachedMissingDependencies(resourceTemplate)) {
                     resourceTemplate.dependencies.push(generatedDep)
                 }
-                for(const generatedProp of getters.getMissingProperties(resourceTemplate)) {
+                for(const generatedProp of getCachedMissingProperties(resourceTemplate)) {
                     resourceTemplate.properties.push(generatedProp)
                 }
 
@@ -201,7 +243,7 @@ const actions = {
                 // aggressively add _sourceinfo if immediately available
                 // this will not always be able to get _sourceinfo from types calls
                 if(!resourceTemplate._sourceinfo) {
-                    const type = getters.resolveResourceType(resourceTemplate.type)
+                    const type = getCachedResourceType(resourceTemplate.type)
                     if(type?._sourceinfo) {
                         resourceTemplate._sourceinfo = type._sourceinfo
                     }
@@ -335,6 +377,14 @@ const actions = {
         // Batch size for processing entries to reduce memory pressure
         const BATCH_SIZE = 50
 
+        // Create a shared cache for all normalization operations
+        const normalizationCache = {
+            resourceTypes: new Map(),
+            missingDependencies: new Map(),
+            missingProperties: new Map(),
+            groupProperties: new Map()
+        }
+
         for(const key of ordering) {
             const value = root[key]
 
@@ -348,7 +398,7 @@ const actions = {
 
                 batch.forEach(entry => {
                     try {
-                        dispatch('normalizeUnfurlData', {key, entry, root, projectPath})
+                        dispatch('normalizeUnfurlData', {key, entry, root, projectPath, cache: normalizationCache})
                     } catch(e) {
                         console.error({key, entry, root, projectPath})
                         console.error('@useProjectState', e)
