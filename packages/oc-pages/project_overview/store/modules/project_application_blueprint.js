@@ -418,8 +418,15 @@ const actions = {
                     try {
                         dispatch('normalizeUnfurlData', {key, entry, root, projectPath, cache: normalizationCache})
                     } catch(e) {
-                        console.error({key, entry, root, projectPath})
-                        console.error('@useProjectState', e)
+                        // Sanitize error logging to prevent memory retention of large objects
+                        console.error('@useProjectState normalization error', {
+                            key,
+                            entryName: entry?.name || entry?.title || 'unknown',
+                            projectPath,
+                            errorMessage: e.message,
+                            errorStack: e.stack
+                        })
+                        console.error(e)
                     }
                 })
 
@@ -594,7 +601,15 @@ const getters = {
                         applyInputsSchema(child, requirement.inputsSchema)
                     }
                 } catch(e) {
-                    console.error('Could not apply requirements filter to requirement', e, {i, ancestors, resourceType, nodeFilterPath})
+                    // Sanitize error logging to avoid retaining large cloned objects
+                    console.error('Could not apply requirements filter to requirement', {
+                        index: i,
+                        ancestorCount: ancestors.length,
+                        resourceTypeName: resourceType,
+                        errorMessage: e.message,
+                        errorStack: e.stack
+                    })
+                    console.error(e)
                 }
             }
 
