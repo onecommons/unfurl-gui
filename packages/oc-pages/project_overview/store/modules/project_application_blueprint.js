@@ -530,6 +530,9 @@ const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType: storeResolver('ResourceType'),
     resolveResourceTypeWithAncestors(state, getters) {
+        // Cache for already-resolved type + ancestor combinations
+        const resolvedCache = new Map()
+
         // where ancestors looks like [(ResourceType, RequirementConstraint?)]
         return function(resourceType, ancestors) {
             console.assert(resourceType, 'expected resource type')
@@ -537,12 +540,20 @@ const getters = {
                 return getters.resolveResourceType(resourceType)
             }
 
-            // don't mutate existing types
-            const nodeFilterPath = _.cloneDeep([
-                ...(ancestors.map(([rt, req]) => [getters.resolveResourceType(rt.type), req])),
-                [getters.resolveResourceType(resourceType), null]
-            ])
+            // Create a cache key from resourceType and ancestors
+            const cacheKey = `${resourceType}::${ancestors.map(([rt, req]) => `${rt.type}:${req}`).join('|')}`
+            if (resolvedCache.has(cacheKey)) {
+                return resolvedCache.get(cacheKey)
+            }
 
+            // Only deep clone the final child type that will be mutated
+            const childType = _.cloneDeep(getters.resolveResourceType(resourceType))
+
+            // Build path without cloning intermediate types (they won't be mutated)
+            const nodeFilterPath = [
+                ...(ancestors.map(([rt, req]) => [getters.resolveResourceType(rt.type), req])),
+                [childType, null]
+            ]
 
             for(let i = 0; i < ancestors.length; i++) {
                 try {
@@ -564,6 +575,7 @@ const getters = {
             }
 
             const result = _.last(nodeFilterPath)[0]
+            resolvedCache.set(cacheKey, result)
             return result
         }
     },
