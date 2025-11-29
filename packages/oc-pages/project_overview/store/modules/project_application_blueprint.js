@@ -332,19 +332,34 @@ const actions = {
         // guarunteed ordering
         const ordering = uniq(['ResourceType', 'DefaultTemplate', 'DeploymentEnvironment', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
+        // Batch size for processing entries to reduce memory pressure
+        const BATCH_SIZE = 50
+
         for(const key of ordering) {
             const value = root[key]
 
             if(! value) continue
 
-            Object.values(value).forEach(entry => {
-                try {
-                    dispatch('normalizeUnfurlData', {key, entry, root, projectPath})
-                } catch(e) {
-                    console.error({key, entry, root, projectPath})
-                    console.error('@useProjectState', e)
+            const entries = Object.values(value)
+
+            // Process entries in batches to allow garbage collection between batches
+            for(let i = 0; i < entries.length; i += BATCH_SIZE) {
+                const batch = entries.slice(i, i + BATCH_SIZE)
+
+                batch.forEach(entry => {
+                    try {
+                        dispatch('normalizeUnfurlData', {key, entry, root, projectPath})
+                    } catch(e) {
+                        console.error({key, entry, root, projectPath})
+                        console.error('@useProjectState', e)
+                    }
+                })
+
+                // Allow garbage collection between batches
+                if (i + BATCH_SIZE < entries.length) {
+                    await new Promise(resolve => setTimeout(resolve, 0))
                 }
-            })
+            }
 
             // commit so we can use our resolvers while normalizing
             if(key == 'ResourceType') {
