@@ -47,7 +47,25 @@ function lookupAncestors(rt, root, mutable=false) {
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
-        Vue.set(state, key, {...state[key], ...value})
+        // Avoid spreading existing state for initial set or when merging large objects
+        // This reduces memory pressure from creating intermediate copies
+        if (!state[key] || typeof value !== 'object') {
+            Vue.set(state, key, value)
+        } else {
+            Vue.set(state, key, {...state[key], ...value})
+        }
+        state.clean = false
+    },
+
+    setProjectStateBatch(state, updates) {
+        // Efficiently batch multiple state updates
+        updates.forEach(({key, value}) => {
+            if (!state[key] || typeof value !== 'object') {
+                Vue.set(state, key, value)
+            } else {
+                Vue.set(state, key, {...state[key], ...value})
+            }
+        })
         state.clean = false
     },
 
@@ -420,11 +438,17 @@ const actions = {
             commit('setProjectState', {key: 'applicationBlueprint', value: Object.values(root.ApplicationBlueprint)[0]})
         }
 
-        // second iteration to avoid mutating committed
+        // Batch commit remaining state updates to reduce mutation overhead
+        const batchUpdates = []
         for(const key of ordering) {
             if(key == 'ResourceType') continue
             const value = root[key]
-            commit('setProjectState', {key, value})
+            if (value) {
+                batchUpdates.push({key, value})
+            }
+        }
+        if (batchUpdates.length > 0) {
+            commit('setProjectStateBatch', batchUpdates)
         }
     },
 
