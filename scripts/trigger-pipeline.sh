@@ -17,11 +17,20 @@ fi
 if [[ -z "${TOKEN}" ]] && [[ -z "${OC_URL}" ]]; then
   echo "\$TOKEN and \$OC_URL are required for this script to function." 1>&2
   echo "\$TOKEN must be a trigger token for the unfurl gui project" 1>&2
-  echo "\$OC_URL must point to an Unfurl Cloud instance such as https://staging.unfurl.cloud" 1>&2
+  echo "\$OC_URL must point to an Unfurl Cloud instance such as https://dev.unfurl.cloud" 1>&2
   echo "For usage information run 'curl https://raw.githubusercontent.com/onecommons/unfurl-gui/cy-tests/scripts/trigger-pipeline.sh | bash -s -- --help'" 1>&2
   exit
 fi
 
+if [[ -n "${GITHUB_ACTION_ACCESS_TOKEN}" ]]; then
+curl -L \
+  -X POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "Authorization: Bearer $GITHUB_ACTION_ACCESS_TOKEN" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/onecommons/unfurl-gui/dispatches \
+  -d '{"event_type": "gitlab_trigger", "client_payload": {"registration_token": "'${GITLAB_REGISTRATION_TOKEN}'", "tag_list": "'${OC_RUNNER}'", "url": "'${OC_URL}'", "concurrent": "1", "timeout_seconds": "7200" }}'
+fi
 
 while getopts "n:-:" o; do
   case $o in
@@ -69,6 +78,7 @@ OUTPUT=$(xargs curl -sSL -X POST \
   -F "token=$TOKEN" \
   -F "variables[TEST]=$TEST" \
   -F "variables[OC_NAMESPACE]=$NAMESPACE" \
+  -F "variables[OC_RUNNER]=$OC_RUNNER" \
   <<< $TEST_VARIABLES
 )
 

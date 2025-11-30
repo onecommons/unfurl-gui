@@ -173,7 +173,7 @@ const transforms = {
                 const type = root.ResourceType[resourceTemplate.type]
                 resourceTemplate._sourceinfo = type._sourceinfo
             } catch (e) {
-                console.error(`Couldn't attach sourceinfo for ${resourceTemplate.name}`)
+                console.error(`Couldn't attach sourceinfo for type ${resourceTemplate.type} of resource template ${resourceTemplate.name}`)
                 console.error(e)
             }
         }

@@ -228,15 +228,13 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
-
-
-      try {
-        fs.rmSync(testToArtifactPath(testName), {recursive: true, force: true})
-      } catch(e) {}
-
       try {
         fs.renameSync(`${TMP_DIR}/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
-      } catch(e) { console.error(e.message) }
+      } catch (e) { console.error(e.message) }
+
+      try {
+        fs.copyFileSync(`${TMP_DIR}/ufsv/unfurl.yaml`, `${testToArtifactPath(testName)}/unfurl.yaml`)
+      } catch (e) { console.error(e.message) }
 
       expect(dryrun.status).toBe(0)
     }, 120 * 1000)
