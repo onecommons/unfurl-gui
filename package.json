@@ -43,7 +43,7 @@
     "axios-cookiejar-support": "^2.0.4",
     "bootstrap": "4.5.3",
     "core-js": "^3.6.5",
-    "dompurify": "^2.4.2",
+    "dompurify": "^3.2.4",
     "element-theme-dark": "^1.0.3",
     "element-ui": "^2.15.6",
     "form-data": "^4.0.4",
