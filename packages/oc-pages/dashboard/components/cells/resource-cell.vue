@@ -22,7 +22,11 @@ export default {
     computed: {
         ...mapGetters(['getHomeProjectPath', 'deploymentItemDirect']),
         id() {
-            return generateCardId(this.resource.name)
+            // Cards use the template name which won't match resource.name
+            // for nested topologies (e.g. "unfurl_cloud_tyk:tyk-helm" vs "tyk-helm")
+            const t = this.resource.template
+            const name = typeof t === 'string' ? t : (t?.name || this.resource.name)
+            return generateCardId(name)
         },
         deploymentItem() {
             const {environment, deployment} = this
