@@ -125,7 +125,7 @@ const mutations = {
 
 const actions = {
     // used exclusively for /dashboard/deployment/<env>/<deployment> TODO merge with related actions
-    async populateDeploymentResources({rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
+    async populateDeploymentResources({state, rootGetters, getters, commit, dispatch}, {deployment, environmentName}) {
         commit('resetTemplateResourceState')
         const isDeploymentTemplate = deployment.__typename == 'DeploymentTemplate'
         let deploymentTemplate = cloneDeep(rootGetters.resolveDeploymentTemplate(
@@ -156,9 +156,26 @@ const actions = {
         }
         commit('updateLastFetchedFrom', {environmentName})
         commit('setDeploymentTemplate', deploymentTemplate)
+        commit('createTemplateResource', resource)
 
         await dispatch('createMatchedResources', {resource, isDeploymentTemplate})
-        commit('createTemplateResource', resource)
+
+        // createMatchedResources only walks the dependency graph via non-null
+        // `match` fields.  Templates/Resources that aren't reachable through
+        // that graph (e.g. deps with match=null, or children of unreachable
+        // parents) still need to appear in the deployment table.
+        // Honour the same visibility rules that getCardsStacked applies.
+        const pab = rootGetters.getApplicationRoot
+        const allEntries = Object.entries(
+            isDeploymentTemplate ? (pab?.ResourceTemplate || {}) : (pab?.Resource || {})
+        )
+        for(const [name, raw] of allEntries) {
+            if(state.resourceTemplates[name]) continue
+            if(!raw) continue
+            const vis = raw.visibility || 'inherit'
+            if(vis === 'hidden') continue
+            commit('createTemplateResource', raw)
+        }
     },
 
     async recursiveInstantiate({ commit, getters, rootGetters, state: _state, dispatch}, node) {
@@ -1684,10 +1701,11 @@ const getters = {
 
     getNestedTemplates(state, getters, _rootState, rootGetters) {
         // determine which nested templates are "visible" for a given template (target)
-        return function(target) {
+        const walk = (target, seen) => {
             if(!target) return {}
             if(typeof(target) == 'string') {
                 target = getters.dtResolveResourceTemplate(target)
+                if(!target) return {}
             }
 
             let nestedTemplates = rootGetters.nestedTemplatesByPrimary[target.type?.name || target.type]
@@ -1695,12 +1713,24 @@ const getters = {
                 const cloud = getters.getDeploymentTemplate?.cloud?.split('@')?.shift()
                 const nestedLocalTemplates = nestedTemplates?.local[cloud]
                 return {...nestedTemplates.shared, ...nestedLocalTemplates}
-            } else if(target._ancestors?.length){
-                return getters.getNestedTemplates(_.last(target._ancestors)[0])
+            } else if(target._ancestors?.length) {
+                const next = _.last(target._ancestors)[0]
+                const nextName = next?.name
+                // Guard against cycles in the ancestors graph — mutual deps
+                // (A↔B) can produce _ancestors chains that point back at each
+                // other and cause infinite recursion here.
+                if(nextName && seen.has(nextName)) {
+                    console.warn(`getNestedTemplates: cycle detected: ${target.name} -> ${nextName}`)
+                    return {}
+                }
+                seen.add(target.name)
+                return walk(next, seen)
             }
             return {}
         }
-
+        return function(target) {
+            return walk(target, new Set())
+        }
     }
 };
 

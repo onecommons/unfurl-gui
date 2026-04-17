@@ -35,10 +35,21 @@ function lookupAncestors(rt, root, mutable=false) {
 
     let current = rt, matchEntry
     const reverseAncestors = []
+    const visited = new Set([current.name])
     while(matchEntry = computedDependencyMap[current.name]) {
-        const [rt, req] = matchEntry
+        const [next] = matchEntry
+        // Stop before pushing an edge that loops back to a node we've already
+        // seen. Without this the resulting _ancestors chain can contain a
+        // cycle (A → B → A), which later causes Array.push to throw
+        // "Invalid array length" or makes downstream consumers (e.g.
+        // getNestedTemplates) recurse forever.
+        if(visited.has(next.name)) {
+            console.warn(`lookupAncestors: cycle detected: ${current.name} -> ${next.name}`)
+            break
+        }
+        visited.add(next.name)
         reverseAncestors.push(matchEntry)
-        current = rt
+        current = next
     }
 
     return reverseAncestors.reverse()
