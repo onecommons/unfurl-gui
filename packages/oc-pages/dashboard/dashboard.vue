@@ -78,7 +78,7 @@ export default {
 
         this.fetchMergeRequests() // not awaiting
 
-        this.populateDeploymentItems(this.getDashboardItems)
+        await this.populateDeploymentItems(this.getDashboardItems)
 
         if(!window.gon.unfurl_gui) {
             for(const {environment, deployment} of this.getDashboardItems) {

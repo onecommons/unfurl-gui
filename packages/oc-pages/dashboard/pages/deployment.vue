@@ -245,7 +245,7 @@ export default {
             const projectPath = this.deployment?.projectPath || this.state.DeploymentTemplate[this.deployment.deploymentTemplate]?.projectPath
             await this.useProjectState({projectPath, root: cloneDeep({...this.state, DeploymentEnvironment, ResourceType})})
 
-            this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
+            await this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },
         async setTabToConsoleIfNeeded() {
