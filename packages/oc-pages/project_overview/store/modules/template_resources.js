@@ -335,11 +335,16 @@ const actions = {
         }
 
 
-        await dispatch('createMatchedResources', {resource: primary, isDeploymentTemplate: true});
-
+        // Register the primary template BEFORE walking its matched children.
+        // `createMatchedResources` dispatches `initMatched` for each dependency
+        // with a `match`, and each of those asserts that the parent template
+        // (here `__primary`) is already in `state.resourceTemplates` — so if we
+        // registered it afterwards every matched child would trip the assert.
         commit('clientDisregardUncommitted', {root: true})
         commit('setDeploymentTemplate', deploymentTemplate)
         commit('createTemplateResource', primary)
+
+        await dispatch('createMatchedResources', {resource: primary, isDeploymentTemplate: true});
         await dispatch('fetchTypesForParams', {params: {}})
         await Promise.all(Object.values(state.resourceTemplates).map(rt => dispatch('recursiveInstantiate', rt)))
         return true;
@@ -445,7 +450,14 @@ const actions = {
             return
         }
         if(state.resourceTemplates.hasOwnProperty(match)) {
-            console.warn(`Cannot create matched resource for ${match}: already exists in store`)
+            // Template was already added by a recursive sibling's
+            // createMatchedResources running in parallel.  Don't re-create it,
+            // but still wire up the parent→child reference so the dependency
+            // renders correctly.
+            if(dependentName && dependentRequirement) {
+                const existing = state.resourceTemplates[match]
+                commit('createReference', {dependentName, dependentRequirement, resourceTemplate: existing})
+            }
             return
         }
 
