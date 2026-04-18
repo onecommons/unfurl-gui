@@ -7,7 +7,7 @@ import DashboardDeployDialog from './components/dashboard-deploy-dialog.vue'
 
 export default {
     name: 'Dashboard',
-    data() {return {isLoaded: false, doNotRender: false}},
+    data() {return {isLoaded: false, doNotRender: false, standalone: !!window.gon.unfurl_gui}},
     components: {GlLoadingIcon, GlModal, LocalDeploy, DashboardDeployDialog},
     methods: {
         ...mapActions([
@@ -129,6 +129,6 @@ export default {
         <oc-unfurl-gui-errors />
         <gl-loading-icon v-if="!isLoaded" label="Loading" size="lg" style="margin-top: 5em;" />
         <router-view v-else-if="!doNotRender"/>
-        <dashboard-deploy-dialog />
+        <dashboard-deploy-dialog v-if="standalone" />
     </div>
 </template>

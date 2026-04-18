@@ -3,7 +3,6 @@ import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
 import * as routeNames from './constants.js'
-import _ from 'lodash'
 import { PageNotFound } from 'oc_vue_shared/components/oc'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
 import { FLASH_TYPES, hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
@@ -40,16 +39,18 @@ export default function createRouter(base) {
         routes,
     });
 
-    router.onReady(() => {
-        // hack to share router
-        if(sessionStorage['unfurl-gui:route']) {
-            const route = JSON.parse(sessionStorage['unfurl-gui:route'])
+    if(window.gon.unfurl_gui) {
+        router.onReady(() => {
+            // hack to share router
+            if(sessionStorage['unfurl-gui:route']) {
+                const route = JSON.parse(sessionStorage['unfurl-gui:route'])
 
-            router.replace(route)
-            delete sessionStorage['unfurl-gui:route']
-        }
+                router.replace(route)
+                delete sessionStorage['unfurl-gui:route']
+            }
 
-    })
+        })
+    }
 
     const { isNavigationFailure, NavigationFailureType } = VueRouter
 
@@ -59,18 +60,15 @@ export default function createRouter(base) {
         resolve: router.resolve.bind(router)
     }
 
-    for(const fn of ['push', 'replace']) {
-        /* 
-        router[fn] = _.debounce(function(...args) {
-        */
-        // TODO: this needs a special debounce that collects changes
-        // the same can be done for the dashboard router
-        router[fn] = function(...args) {
-            return router.og[fn](...args).catch(e => {
-                if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
-                    Promise.reject(e)
-                }
-            })
+    if(window.gon.unfurl_gui) {
+        for(const fn of ['push', 'replace']) {
+            router[fn] = function(...args) {
+                return router.og[fn](...args).catch(e => {
+                    if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
+                        Promise.reject(e)
+                    }
+                })
+            }
         }
     }
 
