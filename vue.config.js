@@ -56,7 +56,14 @@ module.exports = {
           exclude: /node_modules/,
           use: [
             'babel-loader',
-            'webpack-preprocessor-loader',
+            {
+              loader: 'webpack-preprocessor-loader',
+              options: {
+                params: {
+                  standalone: true,
+                },
+              },
+            },
           ]
         },
       ],

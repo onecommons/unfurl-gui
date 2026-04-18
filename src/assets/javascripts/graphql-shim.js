@@ -4,7 +4,7 @@ import 'regenerator-runtime/runtime';
 // const apolloProvider = createProvider({resolvers, link, typeDefs});
 let apolloProvider = null
 
-// #!if false
+// #!if !standalone
 apolloProvider = createProvider();
 // #!endif
 

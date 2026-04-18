@@ -50,7 +50,7 @@ export default function createRouter() {
 
     router.name = 'dashboard'
 
-    // #!if false
+    // #!if !standalone
 
     try {
         for(const [key, navigationElement] of Object.entries(navigationElements)) {
@@ -68,7 +68,7 @@ export default function createRouter() {
 
     router.beforeEach((to, from, next) => {
 
-        // #!if false
+        // #!if !standalone
 
         try {
             let navigationElement

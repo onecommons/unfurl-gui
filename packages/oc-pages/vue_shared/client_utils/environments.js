@@ -11,7 +11,7 @@ import { getOrFetchDefaultBranch } from './projects'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
-    // #!if false
+    // #!if !standalone
 
     const {data} = await axios.get(`/${projectPath}/-/environments.json`)
     result = data?.environments || result
@@ -80,7 +80,7 @@ export async function deleteEnvironmentByName(projectPath, environmentName) {
 }
 export async function deleteEnvironment(projectPath, projectId, environmentName, environmentId) {
     console.warn('TODO Use deleteEnvironmentByName instead')
-    // #!if false
+    // #!if !standalone
     const {variables} = (await axios.get(`/${projectPath}/-/variables`)).data
     const patchVariables = []
 

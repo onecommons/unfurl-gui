@@ -104,7 +104,7 @@ export async function generateAccessToken(tokenName, options) {
 }
 
 export async function fetchUser() {
-    // #!if false
+    // #!if !standalone
     return (await axios.get('/api/v4/user'))?.data
     // #!endif
 

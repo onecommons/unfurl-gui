@@ -519,7 +519,7 @@ const actions = {
         await Promise.all(promises)
     },
     async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
-        // #!if false
+        // #!if !standalone
         const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath))
         const namespace = projectInfo?.namespace
 

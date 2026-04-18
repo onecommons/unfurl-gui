@@ -50,7 +50,7 @@ const tabFilters = [
     },
 
     // hide irrelevant tabs for standalone
-    // #!if false
+    // #!if !standalone
 
     {
         title: 'Merge Requests',

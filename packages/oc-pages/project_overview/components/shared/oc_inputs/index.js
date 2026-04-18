@@ -1,5 +1,5 @@
 
-// #!if false
+// #!if !standalone
 import LocalImageRepoSource from './LocalImageRepoSource.vue'
 import GithubMirroredRepoImageSource from './GithubMirroredRepoImageSource.vue'
 import UnfurlCloudMirroredRepoImageSource from './UnfurlCloudMirroredRepoImageSource.vue'
@@ -12,7 +12,7 @@ import GenerateDirective from './directives/GenerateDirective.vue'
 
 const customComponents = {
 
-    // #!if false
+    // #!if !standalone
     GithubMirroredRepoImageSource,
     LocalImageRepoSource,
     UnfurlCloudMirroredRepoImageSource,
@@ -43,7 +43,7 @@ export function getUiDirective(type) {
 
 import FakePassword from './formily-fake-password'
 
-// #!if false
+// #!if !standalone
 import FileSelector from './formily-file-selector'
 // #!endif
 
@@ -80,7 +80,7 @@ export const fields =  async function() {
         Input,
         InputNumber, Checkbox, Select, FakePassword, Editable,
 
-        // #!if false
+        // #!if !standalone
         FileSelector
         // #!endif
 

@@ -6,7 +6,7 @@
 
 
 
-// #!if false
+// #!if !standalone
 import csrf from '~/lib/utils/csrf'
 import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf-badge.js'
 let mountJobsConsole
@@ -18,7 +18,7 @@ export let compatibilityMountJobConsole = function() {}
 export let compatibilityMountNotesApp = function() {}
 export let compatibilityUnfurlBadgeUrlBuilder = function() {}
 
-// #!if false
+// #!if !standalone
 token = csrf.token
 compatibilityUnfurlBadgeUrlBuilder = initUnfurlBadgeUrlBuilder
 compatibilityMountJobConsole = async function(...args) {

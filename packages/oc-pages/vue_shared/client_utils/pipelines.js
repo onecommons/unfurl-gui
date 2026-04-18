@@ -149,7 +149,7 @@ export async function getJobsData(pipelineData) {
 }
 
 export async function redirectToJobConsole({pipelineData}, options) {
-    // #!if false
+    // #!if !standalone
 
     const jobsData = await getJobsData(pipelineData)
     if(Array.isArray(jobsData)) {

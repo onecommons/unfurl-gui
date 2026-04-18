@@ -27,11 +27,11 @@ export {default as BaseDeployDialog} from 'oc_vue_shared/components/oc/base-depl
 
 export let CiVariableSettings, createCiVariablesStore
 export const SignIn = Vue.component("sign-in", { template: "", })
-// #!if false
+// #!if !standalone
 import _CiVariableSettings from 'oc_vue_shared/oc_ci_variable_list/components/ci_variable_settings.vue'
-// #!if false
+// #!if !standalone
 import {asModule} from 'oc_vue_shared/oc_ci_variable_list/store'
-// #!if false
+// #!if !standalone
 CiVariableSettings = _CiVariableSettings; createCiVariablesStore = asModule
 
 

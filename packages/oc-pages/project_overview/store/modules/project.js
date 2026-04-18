@@ -141,7 +141,7 @@ const actions = {
     async fetchCommentsIssue({ state, commit }) {
         let issues
 
-        // #!if false
+        // #!if !standalone
         issues = (await axios.get(`/api/v4/projects/${encodeURIComponent(state.globalVars.projectPath)}/issues?state=opened&label=general+discussion`))?.data
         // #!endif
 

@@ -9,7 +9,7 @@ const DEFAULT_STARTUP_ESTIMATE = 5 * 60 * 10000// 5 minutes
 
 let xhrIframe = null
 
-// #!if false
+// #!if !standalone
 xhrIframe = new XhrIFrame()
 // #!endif
 

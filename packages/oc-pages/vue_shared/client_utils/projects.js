@@ -225,7 +225,7 @@ const getUserPermissions = gql`
 
 export async function fetchUserHasWritePermissions(projectPath) {
 
-    // #!if false
+    // #!if !standalone
     const result = await graphqlClient.defaultClient.query({
         query: getUserPermissions,
         variables: {projectPath},
