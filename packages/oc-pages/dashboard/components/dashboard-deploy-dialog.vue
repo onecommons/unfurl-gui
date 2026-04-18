@@ -41,7 +41,7 @@ export default {
                     }
                 }
             })
-            const types = this.environmentResourceTypeDict(this.exportEnvironmentName)
+            const types = this.environmentResourceTypeDict(this.exportEnvironmentName) || {}
             this.blueprints = Object.values(types).filter(t => t.directives?.includes('substitute'))
             if(this.blueprints.length == 0) {
                 this.createError({

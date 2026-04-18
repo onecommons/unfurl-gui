@@ -230,7 +230,14 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 }
 
 export function repoToExportParams(repo) {
-    const url = new URL(repo.url)
+    let url
+    try {
+        url = new URL(repo.url)
+    } catch (e) {
+        // repo.url may be empty or a bare filesystem path (e.g. `unfurl serve --gui`
+        // on a local project); nothing to export via unfurl-server in that case.
+        return null
+    }
     const projectPath = url.pathname.slice(1).replace(/\.git$/, '')
 
     const [branch, _file] = (url.hash?.slice(1) || '').split(':')
@@ -283,9 +290,13 @@ export async function fetchTypeRepositories(repositories, params) {
         return true
     }
 
-    const typesDictionaries = await (Promise.all(repositories.filter(filterRepositories).map(
-        (repo, i) => unfurlServerGetTypes(repoToExportParams(repo), params, i)
-    )))
+    const typesDictionaries = await (Promise.all(
+        repositories
+            .filter(filterRepositories)
+            .map(repo => repoToExportParams(repo))
+            .filter(exportParams => exportParams !== null)
+            .map((exportParams, i) => unfurlServerGetTypes(exportParams, params, i))
+    ))
 
     let nestedTemplatesByPrimary = {}
     // hopefully this won't hurt too badly if fetch results are small
