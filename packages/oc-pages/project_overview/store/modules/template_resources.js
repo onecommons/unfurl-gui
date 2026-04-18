@@ -1,7 +1,7 @@
 import { cloneDeep, create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { lookupCloudProviderAlias, slugify } from 'oc_vue_shared/util';
+import { lookupCloudProviderAlias, slugify, generateCardId } from 'oc_vue_shared/util';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
@@ -492,7 +492,6 @@ const actions = {
 
         let environmentName = state.lastFetchedFrom?.environmentName
 
-
         if(!resolvedDependencyMatch && environmentName) {
             let matchedInstance = rootGetters.lookupConnection(environmentName, match)
             if(matchedInstance) {
@@ -524,7 +523,7 @@ const actions = {
         }
 
         const _valid = !!(resolvedDependencyMatch)
-        const id = _valid && btoa(resolvedDependencyMatch.name).replace(/=/g, '')
+        const id = _valid && generateCardId(resolvedDependencyMatch.name)
 
         if(_valid) {
             if(resolvedDependencyMatch.imported) {
@@ -693,7 +692,7 @@ const actions = {
         target.dependentName = dependentName
         target.dependentRequirement = dependentRequirement
 
-        target.id = btoa(target.name).replace(/=/g, '');
+        target.id = generateCardId(target.name);
 
         // FIXME these create helpers should accept meta args in a different object than target so they can be passed through as is
         if(state.context == 'environment') {

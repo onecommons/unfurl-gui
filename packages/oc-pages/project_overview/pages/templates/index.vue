@@ -11,7 +11,7 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from 'oc_vue_shared/bus';
-import { slugify } from 'oc_vue_shared/util'
+import { slugify, generateCardId } from 'oc_vue_shared/util'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {fetchUserHasWritePermissions, setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
 import {normpath} from 'oc_vue_shared/lib/normalize'
@@ -266,8 +266,10 @@ export default {
 
       let projectUrl
       if(projectPath.startsWith('local:')) {
-        // projectUrl = projectPath.replace('local:', 'file://')
+        // local: prefixes a local working directory path, ignore
         projectUrl = null
+      } else if(projectPath.startsWith('remote:')) {
+        projectUrl = projectPath.replace('remote:', '')
       } else {
         projectUrl = `${window.gon.gitlab_url || 'https://unfurl.cloud'}/${this.project.globalVars.projectPath}.git`
       }
@@ -477,8 +479,9 @@ export default {
 
     scrollDown(elId, timeOut=0) {
       clearTimeout(this.uiTimeout);
-      const anchorId = btoa(elId).replace(/=/g, '');
-      const anchor = document.querySelector(`#${anchorId}`);
+      const anchorId = generateCardId(elId);
+      const anchor = document.querySelector(`#${CSS.escape(anchorId)}`);
+      if (!anchor) return;
       this.uiTimeout = setTimeout(
         () => {
           anchor.scrollIntoView({behavior: "smooth", block: "center", inline: "start"});
