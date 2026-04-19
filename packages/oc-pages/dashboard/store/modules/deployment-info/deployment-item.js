@@ -107,7 +107,21 @@ export default class DeploymentItem {
     }
 
     get readonlyLink() { return `/${this.projectPath}/-/deployments/${this.environment.name}/${this.deployment.name}`}
-    get editableLink() { return `/${this.deployment.projectPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`}
+    get editableLink() {
+        let overviewPath = this.deployment.projectPath
+        if(window.gon.unfurl_gui) {
+            overviewPath += '/-/overview'
+        }
+        let result = `/${overviewPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`
+        if(this.deployment.blueprintPath) {
+            result += `&blueprintPath=${this.deployment.blueprintPath}`
+        }
+        if(this.deployment.branch) {
+            result += `&bprev=${this.deployment.branch}`
+        }
+
+        return result
+    }
     get viewableLink() { return this.isDraft? this.editableLink: this.readonlyLink }
     get viewableTo() {
         return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}}}
@@ -167,5 +181,12 @@ export default class DeploymentItem {
     async cancelAutostop() {
         if(!this.isAutostopCancelable) throw new Error(`Job ${this.autostopJob?.id || -1} is not cancelable`)
         await axios.post(this.autostopCancelLink)
+    }
+
+    get isRenamable() {
+        return (
+            this.deployPath != this.application.blueprintPath &&
+            this.deployment.source != '__generated'
+        )
     }
 }

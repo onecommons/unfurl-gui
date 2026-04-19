@@ -7,7 +7,7 @@ const login = require('./shared/login.js')
 
 async function deleteProject(projectPath) {
   await login()
-  const res = await axios.get(`${process.env.OC_URL}/admin/projects`)
+  const res = await axios.get(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/admin/projects`)
   const authenticity_token = extractCsrf(res.data)
 
   const form = new FormData()
@@ -21,7 +21,7 @@ async function deleteProject(projectPath) {
     "Content-Length": form.getLengthSync()
   }
 
-  const status = (await axios.post(`${process.env.OC_URL}/admin/projects/${projectPath}`, form, {headers})).status
+  const status = (await axios.post(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/admin/projects/${projectPath}`, form, {headers})).status
 
   console.log(status)
   return status < 400 && status >= 200

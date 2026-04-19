@@ -7,6 +7,7 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
+import { getOrFetchDefaultBranch } from "../../../vue_shared/client_utils/projects";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -180,9 +181,12 @@ Serializers = {
 
             dt.resourceTemplates = _.union(Object.keys(localResourceTemplates || {}), Object.keys(state.ResourceTemplate || {}))
         }
+        if(dt.source == '__generated') {
+            dt.directives = ['predefined'] // mark as not needing to be committed
+        }
     },
     // TODO unit test
-    ResourceTemplate(rt) {
+    ResourceTemplate(rt, state) {
         if(rt.__typename == 'Resource') return Serializers.Resource(rt)
 
         if(rt.directives?.includes('select')) {
@@ -234,6 +238,15 @@ Serializers = {
                 dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
             }
         })
+
+        if(rt.directives?.includes('substitute')) {
+            rt.dependencies = rt.dependencies.filter(
+                dep => !(
+                    rt.dependencies.some(otherDep => otherDep.name == dep.match) &&
+                    !state.ResourceTemplate[dep.match]
+                )
+            )
+        }
     },
     Resource(resource) {
         /*
@@ -396,7 +409,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
         let _propertyValue = propertyValue // cloned at caller
 
         if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
-            if(deploymentTemplate.source) {
+            if(deploymentTemplate._sourceTemplate) {
                 result.push(
                     deleteResourceTemplate({templateName, deploymentTemplateName: deploymentTemplate.name})
                 )
@@ -540,7 +553,7 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
             const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentTemplateName]
             patch = deploymentTemplate['ResourceTemplate'][dependentName]
 
-            if(patch && deploymentTemplate.source) {
+            if(patch && deploymentTemplate._sourceTemplate) {
                 result.push(
                     deleteResourceTemplate({templateName: dependentName, deploymentTemplateName: deploymentTemplate.name})
                 )
@@ -780,9 +793,12 @@ const state = () => ({
     effectiveFirstMutation: 0,
     accumulator: {},
     patches: {},
+    deploymentParams: {},
+    path: null,
     committedNames: [],
     commitMessage: null,
-    branch: null,
+    commitBranch: null,
+    blueprintBranch: null,
     updateType: null,
     env: {},
     isCommitting: false,
@@ -796,7 +812,8 @@ const getters = {
     hasPreparedMutations(state) { return state.preparedMutations.length > state.effectiveFirstMutation },
     safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
     isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
-    getCommitBranch(state) { return state.branch || 'main'}
+    // CRITICAL: ensure this is called
+    getCommitBranch(state) { return state.commitBranch}
 }
 
 const mutations = {
@@ -820,14 +837,20 @@ const mutations = {
         }
         state.projectPath = projectPath
     },
+    setDeploymentParams(state, deploymentParams) {
+        state.deploymentParams = deploymentParams
+    },
     setCommitMessage(state, commitMessage) {
         state.commitMessage = commitMessage
     },
     setEnvironmentScope(state, environmentScope) {
         state.environmentScope = environmentScope
     },
-    setCommitBranch(state, branch) {
-        state.branch = branch
+    setCommitBranch(state, commitBranch) {
+        state.commitBranch = commitBranch
+    },
+    setBlueprintBranch(state, blueprintBranch) {
+        state.blueprintBranch = blueprintBranch
     },
     setUpdateType(state, updateType) {
         state.updateType = updateType
@@ -873,7 +896,8 @@ const mutations = {
             state.projectPath = undefined
             state.environmentScope = undefined
             state.commitMessage = null
-            state.branch = null
+            state.commitBranch = null
+            state.blueprintBranch = null
             state.updateType = null
             state.preparedMutations = []
         }
@@ -998,25 +1022,28 @@ const actions = {
         let sync, method, path = state.path
 
         if(state.updateType == UPDATE_TYPE.deployment) {
-            variables.deployment_path = path
+            variables.deployment_path = path || state.deploymentParams?.deployPath
             if(!rootGetters.hasDeployPathKey(path)) {
                 // infer information from the deployment object path instead of our getters
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
-                const pathSplits = path.split('/')
-                pathSplits.shift()
-                const environmentName = pathSplits.shift()
-                const deploymentName = pathSplits.pop()
-                const blueprintProjectPath = pathSplits.join('/')
+                variables.environment = state.deploymentParams?.environmentName
+                variables.deployment_blueprint = state.deploymentParams?.deploymentName
+                variables.blueprint_url = state.deploymentParams?.projectUrl?
+                    new URL(state.deploymentParams.projectUrl) : null
 
-                variables.environment = environmentName
-                variables.deployment_blueprint = deploymentName
+                if(variables.blueprint_url) {
+                    const password = await fetchUserAccessToken()
+                    if(password) {
+                        variables.blueprint_url.password = password
+                    }
+                }
 
-                variables.blueprint_url = new URL(window.location.origin + '/' + blueprintProjectPath + '.git')
-                variables.blueprint_url.username = rootGetters.getUsername
-                variables.blueprint_url.password = await fetchUserAccessToken()
-
-                variables.blueprint_url = variables.blueprint_url.toString()
+                if(variables.blueprint_url) {
+                    variables.blueprint_url = variables.blueprint_url.toString()
+                } else {
+                    delete variables.blueprint_url
+                }
 
                 method = 'create_ensemble'
             } else {
@@ -1059,7 +1086,7 @@ const actions = {
             )
         }
 
-        const branch = state.branch || project.default_branch
+        const branch = state.commitBranch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
         const post = unfurlServerUpdate({
             method,

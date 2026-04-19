@@ -5,7 +5,7 @@ import Vue from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {Card as ElCard} from 'element-ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
-import {fields, schemaFieldComponents, FormProvider, FormLayout, getCustomTooltip, getUiDirective} from './oc_inputs'
+import {fields, schemaFieldComponents, FormProvider, FormLayout, getCustomTooltip, getUiDirective} from './oc_inputs/index.js'
 import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
 import { GlTabs } from '@gitlab/ui';
 

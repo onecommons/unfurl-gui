@@ -1,17 +1,6 @@
-import Vue from 'vue';
-import { GlToast } from '@gitlab/ui';
-import Translate from '~/vue_shared/translate';
-import Layout from "../../components/Layout.vue";
-import dashboard from '../../gitlab-oc/dashboard'
+import '~/locale'
+import initTableComponent from 'oc_dashboard';
 
-import setConfigs from "@gitlab/ui/dist/config";
-setConfigs();
-
-if (process.env.NODE_ENV !== 'production') {
-  Vue.config.productionTip = false;
+if (document.getElementById('js-table-component')) {
+    initTableComponent();
 }
-Vue.use(Translate);
-
-
-dashboard("app").$mount('#app')
-

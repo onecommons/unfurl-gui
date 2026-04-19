@@ -11,6 +11,8 @@ import { setTransientUnfurlServerOverride, getTransientUnfurlServerOverride, hea
 
 Vue.use(VueRouter);
 
+const PERSISTED_QUERY_PARAMS = ['blueprintPath']
+
 const isPrivateRoute = createDenyList(
     filterFromRoutes(routes),
 
@@ -29,7 +31,6 @@ export default function createRouter(base) {
     if(!base)
     throw new Error(`
         Could not initialize router without a projectPath.
-        If you are on unfurl-gui, make sure you are running apollo:start before serve so that live/db.json is populated
     `)
 
     const router = new VueRouter({
@@ -38,21 +39,83 @@ export default function createRouter(base) {
         routes,
     });
 
+    if(window.gon.unfurl_gui) {
+        router.onReady(() => {
+            // hack to share router
+            if(sessionStorage['unfurl-gui:route']) {
+                const route = JSON.parse(sessionStorage['unfurl-gui:route'])
+
+                router.replace(route)
+                delete sessionStorage['unfurl-gui:route']
+            }
+
+        })
+    }
+
+    const { isNavigationFailure, NavigationFailureType } = VueRouter
+
+    router.og = {
+        push: router.push.bind(router),
+        replace: router.replace.bind(router),
+        resolve: router.resolve.bind(router)
+    }
+
+    if(window.gon.unfurl_gui) {
+        for(const fn of ['push', 'replace']) {
+            router[fn] = function(...args) {
+                return router.og[fn](...args).catch(e => {
+                    if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
+                        Promise.reject(e)
+                    }
+                })
+            }
+        }
+    }
+
+    router.resolve = function(to, ...args) {
+        const from = router.currentRoute
+        let modified = false
+        const modifiedTo = {query: {}, ...to}
+        for(const param of PERSISTED_QUERY_PARAMS) {
+            if(from.query?.hasOwnProperty(param) && !to.query?.hasOwnProperty(param)) {
+                modifiedTo.query[param] = from.query[param]
+            }
+            modified = true
+        }
+        return router.og.resolve(modified? modifiedTo: to, ...args)
+    }
+
     router.beforeEach((to, from, next) => {
+        let modified = false
+        const modifiedTo = {...to}
+        for(const param of PERSISTED_QUERY_PARAMS) {
+            if(from.query?.hasOwnProperty(param) && !to.query?.hasOwnProperty(param)) {
+                modifiedTo.query[param] = from.query[param]
+                modified = true
+            }
+        }
+
         setTransientUnfurlServerOverride(null)
         if(to.name != from.name) {
             hideLastFlash()
         }
-        if(!window.gon.current_username) {
+        if(!window.gon.current_username && !window.gon.unfurl_gui) {
             if(isPrivateRoute(to)) {
                 setTimeout( () => window.location.href = '/users/sign_in?redirect_to_referer=yes', 1)
+                next(false)
                 return false
             }
         }
+
+        let _next
+        if(modified) _next = (_a, ...rest) => next(modifiedTo, ...rest)
+        else _next = next
+
+
         if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
-            router.app.$store.getters.getRouterHook(to, from, next)
+            router.app.$store.getters.getRouterHook(to, from, _next)
         }
-        else next()
+        else _next()
     })
 
     router.afterEach(async (to) => {

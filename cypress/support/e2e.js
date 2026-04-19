@@ -14,6 +14,7 @@
 // ***********************************************************
 
 // Import commands.js using ES2015 syntax:
+import 'cypress-fail-fast'
 import './commands'
 
 const USERNAME = Cypress.env('OC_USERNAME')
@@ -23,12 +24,14 @@ const IMPERSONATE = Cypress.env('OC_IMPERSONATE')
 const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLOY')
 const DEPLOY_IMAGE = Cypress.env('DEPLOY_IMAGE')
 const DEPLOY_TAG = Cypress.env('DEPLOY_TAG') // no longer in use
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const DEFAULT_NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 const UNFURL_CLOUDMAP_PATH = Cypress.env('UNFURL_CLOUDMAP_PATH')
 const UNFURL_PACKAGE_RULES = Cypress.env('UNFURL_PACKAGE_RULES')
+const STANDALONE_UNFURL = Cypress.env('STANDALONE_UNFURL')
 
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
 
@@ -75,7 +78,12 @@ before(() => {
     return false
   })
   if(Cypress.spec.name.startsWith('00_visitor')) return
-  cy.visit(`/users/sign_in`).wait(100)
+  if((USERNAME && PASSWORD) || (GENERATED_PASSWORD && IMPERSONATE)) {
+    cy.visit(`/users/sign_in`).wait(100)
+  }
+  else {
+    cy.visit('/')
+  }
   cy.url().then(url => {
     if(url.endsWith('sign_in')) {
       if(USERNAME && PASSWORD)  {
@@ -89,7 +97,7 @@ before(() => {
           cy.url().should('not.contain', 'admin')
 
           if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-            cy.visit(`/${IMPERSONATE}/dashboard`)
+            cy.visit(`/${DASHBOARD_DEST}`)
           }
         }
       } else if (GENERATED_PASSWORD && IMPERSONATE) {
@@ -108,7 +116,7 @@ before(() => {
       }
 
       if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-        cy.visit(`/${IMPERSONATE}/dashboard`)
+        cy.visit(`/${DASHBOARD_DEST}`)
       }
     }
   })
@@ -131,30 +139,35 @@ beforeEach(() => {
     })
   }
 
-  cy.document().then(doc => {
-    const csrf = doc.querySelector('meta[name="csrf-token"]').content
+  // set via unfurl environment in standalone tests
+  if(!STANDALONE_UNFURL) {
+    cy.document().then(doc => {
+      const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
 
-    cy.request({
-      method: 'PATCH',
-      url: `/${DEFAULT_NAMESPACE}/dashboard/-/variables`,
-      failOnStatusCode: false,
-      headers: {
-        'X-CSRF-Token': csrf
-      },
-      body: {
-        "variables_attributes": [
-          {
-            "key": "UNFURL_SKIP_SAVE",
-            "secret_value": "never",
-            "environment_scope": "*",
-            "variable_type": "env_var",
-            "masked": false,
-            "protected": false
-          }
-        ]
-      }
+      const win = doc.parentView || doc.defaultView
+
+      cy.request({
+        method: 'PATCH',
+        url: `/${DASHBOARD_DEST || win.gon.home_project}/-/variables`,
+        failOnStatusCode: false,
+        headers: {
+          'X-CSRF-Token': csrf
+        },
+        body: {
+          "variables_attributes": [
+            {
+              "key": "UNFURL_SKIP_SAVE",
+              "secret_value": "never",
+              "environment_scope": "*",
+              "variable_type": "env_var",
+              "masked": false,
+              "protected": false
+            }
+          ]
+        }
+      })
     })
-  })
+  }
 
   cy.window().then(win => {
     if(DEPLOY_IMAGE) {

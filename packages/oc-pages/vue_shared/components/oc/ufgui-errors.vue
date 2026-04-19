@@ -1,5 +1,4 @@
 <script>
-import Vue from 'vue'
 import {mapGetters, mapMutations} from 'vuex'
 import {defaultSeverityLevel} from '../../storage-keys'
 import {GlAlert, GlTabs, GlPagination} from '@gitlab/ui'
@@ -22,7 +21,7 @@ export default {
             defaultSeverityLevel: defaultSeverityLevel(),
             page: 1,
             PER_PAGE,
-            headerElementPos: y + height
+            headerElementPos: y + height,
         }
     },
     computed: {
@@ -59,7 +58,7 @@ export default {
 </script>
 <template>
     <!-- 599 is one z-index below the sidebar -->
-    <div ref="container" style="position: sticky; top: 0px; z-index: 599;">
+    <div class="ufgui-error-container" ref="container" style="top: 0px; z-index: 599;">
         <gl-alert @dismiss="clearErrors" variant="danger" v-if="defaultErrorCount > 0">
             <gl-tabs v-if="defaultErrorCount > 1 && defaultErrorCount != errors.length" v-model="currentTab" style="margin-bottom: -24px" >
                 <oc-tab title="All" v-if="minorCount > majorCount" :title-count="minorCount" />
@@ -84,3 +83,14 @@ export default {
     </div>
 
 </template>
+<style>
+.ufgui-error-container {
+    position: sticky;
+}
+
+/* Doesn't work consistently on dashboard page */
+body.modal-open #OcAppDeployments .ufgui-error-container {
+    position: fixed;
+    min-width: min(950px, 100%)
+}
+</style>

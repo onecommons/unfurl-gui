@@ -11,7 +11,7 @@ const {sleep} = require('./shared/util.js')
 const setRepoVisibility = require('./set-repo-visibility.js')
 
 function constructTargetURL(projectPath, username=process.env.OC_USERNAME, password=process.env.OC_PASSWORD) {
-  const {protocol, host} = new URL(process.env.OC_URL)
+  const {protocol, host} = new URL(process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL)
   const targetURL = `${protocol}//${username}:${password}@${host}/${projectPath}`
   return targetURL
 }

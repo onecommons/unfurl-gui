@@ -3,10 +3,12 @@ import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {GlLoadingIcon, GlModal} from '@gitlab/ui'
 import {LocalDeploy} from 'oc_vue_shared/components/oc'
+import DashboardDeployDialog from './components/dashboard-deploy-dialog.vue'
+
 export default {
     name: 'Dashboard',
-    data() {return {isLoaded: false, doNotRender: false}},
-    components: {GlLoadingIcon, GlModal, LocalDeploy},
+    data() {return {isLoaded: false, doNotRender: false, standalone: !!window.gon.unfurl_gui}},
+    components: {GlLoadingIcon, GlModal, LocalDeploy, DashboardDeployDialog},
     methods: {
         ...mapActions([
             'loadDashboard',
@@ -53,8 +55,11 @@ export default {
         const pathComponents = this.$router.options.base.split('/').filter(s => s);
         const currentNamespace = pathComponents.slice(0, -1).join('/')
 
-        this.setCurrentNamespace(currentNamespace);
-        this.setDashboardName(pathComponents[pathComponents.lastIndex])
+        if(!window.gon.home_project) {
+            this.setCurrentNamespace(currentNamespace);
+            this.setDashboardName(pathComponents[pathComponents.lastIndex])
+        }
+
         this.populateCurrentUser()
         this.populateDashboardProject()
 
@@ -73,10 +78,12 @@ export default {
 
         this.fetchMergeRequests() // not awaiting
 
-        this.populateDeploymentItems(this.getDashboardItems)
+        await this.populateDeploymentItems(this.getDashboardItems)
 
-        for(const {environment, deployment} of this.getDashboardItems) {
-            this.addUrlPoll({deployment, environment})
+        if(!window.gon.unfurl_gui) {
+            for(const {environment, deployment} of this.getDashboardItems) {
+                this.addUrlPoll({deployment, environment})
+            }
         }
 
         this.handleResize()
@@ -122,5 +129,6 @@ export default {
         <oc-unfurl-gui-errors />
         <gl-loading-icon v-if="!isLoaded" label="Loading" size="lg" style="margin-top: 5em;" />
         <router-view v-else-if="!doNotRender"/>
+        <dashboard-deploy-dialog v-if="standalone" />
     </div>
 </template>

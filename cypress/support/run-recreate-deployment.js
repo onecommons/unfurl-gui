@@ -18,6 +18,7 @@ const USERNAME = Cypress.env('OC_IMPERSONATE')
 const TEARDOWN = Cypress.env('TEARDOWN')
 const CLEAR_CACHE = Cypress.env('CLEAR_CACHE')
 const DRYRUN = Cypress.env('DRYRUN')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const PRIMARY = 1
 const HIDDEN = 2
 
@@ -70,55 +71,48 @@ Cypress.Commands.add('recreateDeployment', options => {
       if(AWS_ENVIRONMENT_NAME && cloud == 'unfurl.relationships.ConnectsTo.AWSAccount') {
         env = AWS_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE
-        cy.whenEnvironmentAbsent(env, () => {
-          cy.createAWSEnvironment({
-            environmentName: env,
-            shouldCreateExternalResource: true,
-            shouldCreateDNS: !USE_UNFURL_DNS,
-          })
+        cy.createAWSEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+          shouldCreateDNS: !USE_UNFURL_DNS,
         })
       } else if (GCP_ENVIRONMENT_NAME && cloud == 'unfurl.relationships.ConnectsTo.GoogleCloudProject') {
         env = GCP_ENVIRONMENT_NAME
         dnsZone = GCP_DNS_ZONE
-        cy.whenEnvironmentAbsent(env, () => {
-          cy.createGCPEnvironment({
-            environmentName: env,
-            shouldCreateExternalResource: true,
-            shouldCreateDNS: !USE_UNFURL_DNS,
-          })
+        cy.createGCPEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+          shouldCreateDNS: !USE_UNFURL_DNS,
         })
       } else if (DO_ENVIRONMENT_NAME && cloud == 'ConnectsTo.DigitalOceanEnvironment') {
         env = DO_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE // not a mistake
-        cy.whenEnvironmentAbsent(env, () => {
-          cy.createDigitalOceanEnvironment({
-            environmentName: env,
-            shouldCreateExternalResource: true,
-            shouldCreateDNS: !USE_UNFURL_DNS,
-          })
+        cy.createDigitalOceanEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+          shouldCreateDNS: !USE_UNFURL_DNS,
         })
       } else if(K8S_ENVIRONMENT_NAME && cloud == 'unfurl.relationships.ConnectsTo.K8sCluster') {
         env = K8S_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE
-        cy.whenEnvironmentAbsent(env, () => {
-          cy.createK8SEnvironment({
-            environmentName: env,
-            shouldCreateExternalResource: true,
-            shouldCreateDNS: !USE_UNFURL_DNS,
-          })
+        cy.createK8SEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+          shouldCreateDNS: !USE_UNFURL_DNS,
         })
       } else if(AZ_ENVIRONMENT_NAME && cloud == 'ConnectsTo.AzureEnvironment') {
         env = AZ_ENVIRONMENT_NAME
         dnsZone = AWS_DNS_ZONE // not a mistake
-        cy.whenEnvironmentAbsent(env, () => {
-          cy.createAzEnvironment({
-            environmentName: env,
-            shouldCreateExternalResource: true,
-            shouldCreateDNS: !USE_UNFURL_DNS,
-          })
+        cy.createAzEnvironment({
+          environmentName: env,
+          shouldCreateExternalResource: true,
+          shouldCreateDNS: !USE_UNFURL_DNS,
         })
       }
     }
+
+    cy.assertNoErrors()
+
     if(USE_UNFURL_DNS) {
       dnsZone = `${USERNAME}.u.${USE_UNFURL_DNS}`
     }
@@ -137,6 +131,8 @@ Cypress.Commands.add('recreateDeployment', options => {
 
 
     cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
+
+    cy.assertNoErrors()
 
     cy.get(`[data-testid="deploy-template-${dt.source}"]`)
     cy.wait(BASE_TIMEOUT / 2)
@@ -165,6 +161,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
 
     function recreateTemplate(template, variant = 0) {
+      cy.assertNoErrors()
       if(variant != HIDDEN) {
         cy.get(`[data-testid^="card-${template.name}"]`).should('exist')
       }
@@ -336,6 +333,8 @@ Cypress.Commands.add('recreateDeployment', options => {
 
     recreateTemplate(primary, PRIMARY)
 
+    cy.assertNoErrors()
+
     console.log(options)
 
     // hack for azure credentials
@@ -363,28 +362,48 @@ Cypress.Commands.add('recreateDeployment', options => {
     cy.wait(BASE_TIMEOUT / 50)
 
     if(shouldDeploy) {
-      if(DRYRUN) {
-        cy.get('[data-testid="deploy-button"]').next().click()
-        // cy.get('[data-testid="toggle-dry-run"]').click() // covered by label
-        cy.contains('label', 'Dry Run').click()
-      }
-
-      // cy.get('[data-testid="deploy-button"]:not([disabled])').click({position: 'bottomLeft'})
-      // doesn't work reliably in CI
-      // popover tooltip may partially cover when deplying DRYRUN
-
-      cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
       cy.whenUnfurlGUI(() => {
+        cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
+        cy.assertNoErrors()
         cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
         // TODO figure out how to chain this?
+
+        
         cy.withStore((store) => {
-          expect(store.getters.getDeployment.status).to.equal(1)
+          const deployment = store.getters.getDeployment
+          expect(deployment).to.exist
+          const deploymentDir = store.getters.lookupDeployPath(deployment.name, deployment._environment)?.name
+          expect(deploymentDir).to.exist
+
+          cy.execLoud(`./testing-shared/run-unfurl.sh deploy --dryrun --use-environment ${deployment._environment} --approve --jobexitcode error ${deploymentDir}`, {
+            timeout: BASE_TIMEOUT * 100,  // unfurl isn't known to hang, so we can wait a long time
+            failOnNonZeroExit: false // we'll fail later when we check the status - this is better for the log
+          })
+        })
+
+        cy.reload()
+        cy.withStore((store) => {
+          const deployment = store.getters.getDeployment
+          expect(deployment.status).to.equal(1)
         })
 
       })
       cy.whenGitlab(() => {
+        if(DRYRUN) {
+          cy.get('[data-testid="deploy-button"]').next().click()
+          // cy.get('[data-testid="toggle-dry-run"]').click() // covered by label
+          cy.contains('label', 'Dry Run').click()
+        }
+
+        // cy.get('[data-testid="deploy-button"]:not([disabled])').click({position: 'bottomLeft'})
+        // doesn't work reliably in CI
+        // popover tooltip may partially cover when deplying DRYRUN
+        cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
+
+        cy.assertNoErrors()
         cy.url({timeout: BASE_TIMEOUT * 10}).should('include', dt.name)
+
         cy.wait(BASE_TIMEOUT)
         cy.withJob((job) => {
           cy.expectSuccessfulJob(job)
@@ -400,7 +419,7 @@ Cypress.Commands.add('recreateDeployment', options => {
     } else if(shouldSave) {
       cy.get('[data-testid="save-draft-btn"]').click()
       cy.wait(BASE_TIMEOUT / 2)
-      cy.get('.gl-alert.gl-alert-danger').should('not.exist')
+      cy.assertNoErrors()
     }
   })
 })

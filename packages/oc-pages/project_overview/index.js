@@ -8,6 +8,7 @@ import __ from '~/locale';
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import {setupTheme} from 'oc_vue_shared/theme'
 import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
+import {normpath} from '../vue_shared/lib/normalize'
 
 import './assets/global.css';
 
@@ -21,7 +22,7 @@ setupTheme(Vue)
 export default (elemId='js-oc-project-overview') => {
   const element = document.getElementById(elemId);
 
-  const {
+  let {
     projectPath,
     buttonStarText,
     buttonStarLink,
@@ -33,6 +34,18 @@ export default (elemId='js-oc-project-overview') => {
     buttonForkCount,
   } = element.dataset;
 
+  projectPath = normpath(projectPath)
+  window.gon.home_project = normpath(window.gon.home_project)
+  window.gon.working_dir_project = normpath(window.gon.working_dir_project)
+
+  // force /-/overview for route consistence with standalone
+  if(window.gon.unfurl_gui && !window.location.pathname.includes('/-/overview')) {
+    window.history.replaceState(
+      {},
+      '',
+      window.location.pathname.replace(projectPath, `${projectPath}/-/overview`) + window.location.search + window.location.hash
+    )
+  }
 
   const base = window.location.pathname.includes('/-/overview') ?
     `${projectPath}/-/overview` : projectPath

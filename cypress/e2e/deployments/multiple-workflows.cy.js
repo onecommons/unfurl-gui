@@ -1,7 +1,7 @@
 import {deploymentFixturePath} from '../../support/deployment-fixture'
 const FIXTURE = deploymentFixturePath('aws__minecraft__minecraft')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
 function deploymentName(baseTitle) {
@@ -43,7 +43,7 @@ describe('Multiple workflows', () => {
 
 
     cy.waitUntil(() => {
-      cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=running`)
+      cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=running`)
       cy.get('.oc-table').first().should('exist')
       return cy.document().then($document => {
         let table = $document.querySelector('.oc-table')

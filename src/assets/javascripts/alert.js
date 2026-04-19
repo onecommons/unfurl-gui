@@ -3,15 +3,21 @@ import { escape } from 'lodash';
 export const spriteIcon = (icon, className = '') => {
   const classAttribute = className.length > 0 ? `class="${className}"` : '';
 
-  return `<svg ${classAttribute}><use xlink:href="${gon.sprite_icons}#${icon}" /></svg>`;
+  return `<bold>&#10006;</bold>`
 };
 
-const FLASH_TYPES = {
-  ALERT: 'alert',
-  NOTICE: 'notice',
-  SUCCESS: 'success',
-  WARNING: 'warning',
-};
+const VARIANT_SUCCESS = 'success';
+const VARIANT_WARNING = 'warning';
+const VARIANT_DANGER = 'danger';
+const VARIANT_INFO = 'info';
+const VARIANT_TIP = 'tip';
+
+const CLASSES = {
+  [VARIANT_DANGER]: 'alert',
+  [VARIANT_SUCCESS]: 'success',
+  [VARIANT_WARNING]: 'warning',
+  [VARIANT_INFO]: 'notice'
+}
 
 const getCloseEl = (flashEl) => {
   return flashEl.querySelector('.js-close-icon');
@@ -52,8 +58,8 @@ const createAction = (config) => `
   </a>
 `;
 
-const createFlashEl = (message, type) => `
-  <div class="flash-${type}">
+const createFlashEl = (message, variant) => `
+  <div class="flash-${CLASSES[variant]}">
     <div class="flash-text">
       ${escape(message)}
       <div class="close-icon-wrapper js-close-icon">
@@ -76,7 +82,7 @@ const removeFlashClickListener = (flashEl, fadeTransition) => {
  *
  *  @param {Object} options                   Options to control the flash message
  *  @param {String} options.message           Flash message text
- *  @param {String} options.type              Type of Flash, it can be `notice`, `success`, `warning` or `alert` (default)
+ *  @param {String} options.variant           variant of Flash, it can be `notice`, `success`, `warning` or `alert` (default)
  *  @param {Object} options.parent            Reference to parent element under which Flash needs to appear
  *  @param {Object} options.actionConfig      Map of config to show action on banner
  *    @param {String} href                    URL to which action config should point to (default: '#')
@@ -86,9 +92,9 @@ const removeFlashClickListener = (flashEl, fadeTransition) => {
  *  @param {Boolean} options.captureError     Boolean to determine whether to send error to sentry
  *  @param {Object} options.error              Error to be captured in sentry
  */
-const createFlash = function createFlash({
+const createAlert = function createFlash({
   message,
-  type = FLASH_TYPES.ALERT,
+  variant = VARIANT_DANGER,
   parent = document,
   actionConfig = null,
   fadeTransition = true,
@@ -100,9 +106,9 @@ const createFlash = function createFlash({
 
   if (!flashContainer) return null;
 
-  flashContainer.innerHTML = createFlashEl(message, type);
+  flashContainer.innerHTML = createFlashEl(message, variant);
 
-  const flashEl = flashContainer.querySelector(`.flash-${type}`);
+  const flashEl = flashContainer.querySelector(`.flash-${CLASSES[variant]}`);
 
   if (actionConfig) {
     flashEl.insertAdjacentHTML('beforeend', createAction(actionConfig));
@@ -126,14 +132,18 @@ const createFlash = function createFlash({
     getCloseEl(flashEl).click();
   };
 
-  return flashContainer;
+  return {$el: flashEl};
 };
 
 export {
-  createFlash as default,
+  createAlert,
   createFlashEl,
   createAction,
   hideFlash,
   removeFlashClickListener,
-  FLASH_TYPES,
+  VARIANT_DANGER,
+  VARIANT_TIP,
+  VARIANT_INFO,
+  VARIANT_WARNING,
+  VARIANT_SUCCESS
 };

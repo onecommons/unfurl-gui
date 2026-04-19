@@ -104,11 +104,16 @@ export async function generateAccessToken(tokenName, options) {
 }
 
 export async function fetchUser() {
+    // #!if !standalone
     return (await axios.get('/api/v4/user'))?.data
+    // #!endif
+
+    return {}
 }
 
 let userAccessToken
 export async function fetchUserAccessToken() {
+    if(window.gon.unfurl_gui) return ''
     if(!userAccessToken) {
         userAccessToken = (async () => {
             try { return (await axios.get('/api/v4/unfurl_access_token'))?.data?.token }

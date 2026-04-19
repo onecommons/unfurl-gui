@@ -48,6 +48,7 @@ const MOCK_DEPLOY = Cypress.env('UNFURL_MOCK_DEPLOY') || Cypress.env('MOCK_DEPLO
 const INTEGRATION_TEST_ARGS = Cypress.env('INTEGRATION_TEST_ARGS')
 const UNFURL_SERVER_URL = Cypress.env('UNFURL_SERVER_URL')
 const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.env('VALIDATION_MODE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 
 function whenUnfurlGUI(cb) {
   cy.window().then(win => {
@@ -73,6 +74,11 @@ function withStore(cb) {
     }
     else {return false}
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
+}
+
+function assertNoErrors() {
+  cy.get('.gl-alert.gl-alert-danger').should('not.exist')
+  withStore().then(store => store.getters).should('have.property', 'hasCriticalErrors', false)
 }
 
 function getInputOrTextarea(selector) {
@@ -102,7 +108,7 @@ function login(username, password, impersonate) {
         cy.url().should('not.contain', 'admin')
 
         if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-          cy.visit(`/${impersonate}/dashboard`)
+          cy.visit(`/${DASHBOARD_DEST}`)
         }
       }
     }
@@ -150,7 +156,7 @@ function login(impersonateUser) {
       }
       win.sessionStorage['unfurl-trace'] = 't'
     })
-    cy.visit(`/${impersonateUser || USERNAME}/dashboard`)
+    cy.visit(`/${DASHBOARD_DEST}`)
   },
   {
     cacheAcrossSpecs: false,
@@ -166,6 +172,7 @@ function login(impersonateUser) {
 Cypress.Commands.add('whenGitlab', whenGitlab)
 Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
 Cypress.Commands.add('withStore', withStore)
+Cypress.Commands.add('assertNoErrors', assertNoErrors)
 Cypress.Commands.add('getInputOrTextarea', getInputOrTextarea)
 Cypress.Commands.add('execLoud', execLoud)
 Cypress.Commands.add('login', login)

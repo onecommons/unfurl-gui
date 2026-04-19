@@ -13,6 +13,7 @@ export default {
             const dict = this.getDeploymentDictionary(deployment.name, deployment._environment)
             const resource = dict['Resource'][resourceName]
 
+            if(!resource) return null
             // resolve the template here, since it's not in our other dictionary
             return {...resource, template: dict['ResourceTemplate'][resource.template]}
         },

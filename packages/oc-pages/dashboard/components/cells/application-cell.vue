@@ -1,8 +1,10 @@
 <script>
 import * as routes from '../../router/constants'
+import {withApplicationLinkTarget} from './mixins'
 import ProjectIcon from 'oc_vue_shared/components/oc/project-icon.vue'
 export default {
     components: { ProjectIcon },
+    mixins: [withApplicationLinkTarget],
     props: {
         application: {
             type: Object,
@@ -21,7 +23,7 @@ export default {
 </script>
 <template>
     <!-- TODO use router link when possible -->
-    <a :href="`/${application.projectPath}`">
+    <a :href="applicationLinkTarget">
         <div v-if="application" class="status-item font-weight-bold">
             <project-icon :projectIcon="projectIconSrc" />
             {{application.title}}

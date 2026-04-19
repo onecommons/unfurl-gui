@@ -15,7 +15,7 @@ export default {
         value: Object,
         environmentCreation: Boolean,
     },
-    data() {},
+    data() {return {}},
     components: {
         GlDropdown,
         GlDropdownItem,
@@ -63,6 +63,7 @@ export default {
         }
     },
     async beforeMount() {
+        if(window.gon.unfurl_gui) return
         if(!GLOBAL_providersLoaded) {
             await this.loadAdditionalProviders({accessLevel: DEPLOY_INTO_ENV_MIN_ACCESS})
         }
@@ -75,13 +76,13 @@ export default {
     <div class="dropdown-parent">
         <gl-dropdown v-if="environmentCreation || matchingEnvironments.length > 0" data-testid="deployment-environment-select" ref="dropdown">
             <template #button-text>
-                <span class="d-flex" style="line-height: 1">
+                <span class="d-flex align-items-center" style="line-height: 1.1">
                     <!-- detect icon for thin copy of env -->
                     <detect-icon v-if="env && env.type" class="mr-2" no-default :type="env.type" />
                     <!-- detect icon loaded env -->
                     <detect-icon v-else-if="env" class="mr-2" no-default :env="env" />
 
-                    {{(env && env.name) || __("Select")}}
+                    <span>{{(env && env.name) || __("Select")}}</span>
                 </span>
             </template>
 

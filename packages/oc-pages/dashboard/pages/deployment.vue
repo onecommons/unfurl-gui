@@ -22,6 +22,7 @@ const ONE_HOUR = 60 * 60
 const ONE_MINUTE = 60
 
 export default {
+    name: 'Deployment',
     components: {
         DeploymentResources,
         DashboardBreadcrumbs,
@@ -102,18 +103,21 @@ export default {
             if(this.autostopRemainingTime >= ONE_DAY) {
                 return Math.floor(this.autostopRemainingTime / ONE_DAY)
             }
+            return null
         },
 
         autostopRemainingHours() {
             if(this.autostopRemainingTime >= ONE_HOUR) {
                 return Math.floor(this.autostopRemainingTime % ONE_DAY / ONE_HOUR).toString().padStart(2, '0')
             }
+            return null
         },
 
         autostopRemainingMinutes() {
             if(this.autostopRemainingTime >= ONE_MINUTE) {
                 return Math.floor(this.autostopRemainingTime % ONE_HOUR / ONE_MINUTE).toString().padStart(2, '0')
             }
+            return null
         },
 
         autostopRemainingSeconds() {
@@ -219,7 +223,7 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['useProjectState', 'fetchProject', 'populateDeploymentResources', 'acknowledge', 'createFlash', 'populateDeploymentItems', 'populateJobsList',]),
+        ...mapActions(['useProjectState', 'populateDeploymentResources', 'acknowledge', 'createFlash', 'populateDeploymentItems', 'populateJobsList',]),
         async prepareView() {
             this.viewReady = false
 
@@ -241,7 +245,7 @@ export default {
             const projectPath = this.deployment?.projectPath || this.state.DeploymentTemplate[this.deployment.deploymentTemplate]?.projectPath
             await this.useProjectState({projectPath, root: cloneDeep({...this.state, DeploymentEnvironment, ResourceType})})
 
-            this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
+            await this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },
         async setTabToConsoleIfNeeded() {

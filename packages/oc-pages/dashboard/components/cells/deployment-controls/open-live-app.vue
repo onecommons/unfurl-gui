@@ -22,6 +22,7 @@ export default {
             if(this.disabled) {
                 return 'Application is not currently reachable'
             }
+            return null
         }
     }
 }

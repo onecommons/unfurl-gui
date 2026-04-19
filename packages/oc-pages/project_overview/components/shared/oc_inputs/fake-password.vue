@@ -35,12 +35,6 @@ export default {
     </el-input>
 </template>
 <style>
-    @font-face {
-        font-family: 'Password';
-        font-style: normal;
-        font-weight: 400;
-        src: url(/oc/assets/fonts/Bullets.woff2) format('woff2');
-    }
 
     .hidingPassword input {
         letter-spacing: 0.5px;

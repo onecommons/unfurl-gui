@@ -73,7 +73,7 @@ const UNFURL_DEFAULT_ENV = {
 ## Test directory structure and outputs:
 - `/tmp/ufsv`: The location of the test dashboard.  Will be used as the working directory for `unfurl serve` and `unfurl deploy`.
 - `/tmp/repos`: The location of `--clone-root` for `unfurl serve`.
-- `/tmp/ufartifacts`: All deployments will be moved here between test runs, so as to not wipe debug information when the next spec is run.  All `ensemble.yaml` files and artifacts will be present here after the suite has finished running.
+- `/tmp/ufartifacts`: All deployments will be moved here between test runs, so as to not wipe debug information when the next spec is run.  All `ensemble.yaml` files and artifacts will be present here after the suite has finished running. Set `UNFURL_TEST_KEEP_ARTIFACT=1` to disable this behavior.
 - `/tmp/${testName}-ufsv.log`: Pattern for where `unfurl serve` logs will be written. Tip: use `less -r` to view.
 - `/tmp/${testName}-ufdryrun.log`: Pattern for where `unfurl deploy` logs will be written when in CI (otherwise stdio). Tip: use `less -r` to view.
 

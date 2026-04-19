@@ -7,7 +7,7 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {fetchProjectInfo, generateProjectAccessToken} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjectInfo, generateProjectAccessToken, getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, shareEnvironmentVariables, fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
@@ -17,6 +17,8 @@ import { fetchTypeRepositories, importsAreEqual } from  'oc_vue_shared/client_ut
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 
+
+const DASHBOARD_PROVIDERS_LIMIT = 15 // this is conservative - in local testing up to 18 was OK
 
 const state = () => ({
     projectEnvironments: [],
@@ -139,9 +141,13 @@ const mutations = {
         state.defaults = defaults
     },
 
+    /*
+     * tentative change - temp repositories tracked with blueprints
+     * remove tempRepositories in environment store when ready
     addTempRepository(state, repo) {
         state.tempRepositories.push(repo)
     },
+    */
 
     setResourceTypeCategories(state, categories) {
         state.resourceTypeCategories = categories
@@ -415,12 +421,9 @@ const actions = {
         const {fullPath, branch, includeDeployments, only} = {includeDeployments: true, ...options}
         let environments = []
         try {
-            const projectId = (await fetchProjectInfo(encodeURIComponent(fullPath)))?.id
-
             const result = await fetchEnvironments({
                 fullPath,
-                branch: branch || 'main',
-                projectId,
+                branch: branch || await getOrFetchDefaultBranch(encodeURIComponent(fullPath)),
                 includeDeployments,
                 only
             })
@@ -490,13 +493,19 @@ const actions = {
             throw new Error('Unable to set PROJECT_DNS_ZONE', e)
         }
     },
-    async generateVaultPasswordIfNeeded({getters, dispatch, rootGetters}, {fullPath}) {
+    async generateVaultPasswordIfNeeded({getters, commit, dispatch}, {fullPath}) {
+        if(window.gon.unfurl_gui) return
         const promises = []
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
             promises.push(
                 dispatch('setEnvironmentVariable', {environmentName: '*', variableName: 'UNFURL_VAULT_DEFAULT_PASSWORD', variableValue: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true})
-                .catch(e => console.warn(`Failed to set vault password for ${fullPath}`, e.message))
+                .catch(e => commit(
+                        'createError',
+                        {
+                            message: `Could not set vault password: ${e.message}`,
+                        }
+                    ))
             )
         }
 
@@ -510,6 +519,7 @@ const actions = {
         await Promise.all(promises)
     },
     async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
+        // #!if !standalone
         const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath))
         const namespace = projectInfo?.namespace
 
@@ -526,6 +536,7 @@ const actions = {
         } catch(e) {
             console.warn('Unable to create access token')
         }
+        // #!endif
     },
 
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, options) {
@@ -541,6 +552,7 @@ const actions = {
                 try {
                     await dispatch('fetchEnvironmentVariables', {fullPath: _projectPath})
                     await Promise.all([
+                        // vault password must NOT be generated if we failed to fetch enviornment variables
                         dispatch('generateVaultPasswordIfNeeded', {fullPath: _projectPath}),
                         dispatch('createAccessTokenIfNeeded', {fullPath: _projectPath})
                     ])
@@ -599,25 +611,51 @@ const actions = {
 
     async loadAdditionalProviders({rootGetters, commit}, {accessLevel=30}) {
         // include developer access for deploy requests, etc.
-        const dashboards = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
+        const dashboardsOfLevel = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
             ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
-            ?.map(dashboard => fetchDashboardProviders(dashboard.path_with_namespace)) || []
 
-        const dashboardProviders = (await Promise.all(dashboards)).filter(provider => !!provider)
+
+        if(dashboardsOfLevel && dashboardsOfLevel.length > DASHBOARD_PROVIDERS_LIMIT) {
+            commit('createError', {
+                message: `@loadAdditionalProviders: cannot list providers for all dashboards with access - too many dashboard memberships`,
+                context: {
+                    skippedDashboards: dashboardsOfLevel.slice(DASHBOARD_PROVIDERS_LIMIT),
+                },
+                severity: 'major'
+            }, {root: true})
+        }
+
+        // limited to DASHBOARD_PROVIDERS_LIMIT for query complexity
+        const dashboards = dashboardsOfLevel?.slice(0, DASHBOARD_PROVIDERS_LIMIT)?.map(dashboard => fetchDashboardProviders(dashboard.path_with_namespace)) || []
+
+        let dashboardProviders = (await Promise.all(dashboards).catch(e => {
+            commit('createError', {
+                message: `@loadAdditionalProviders: ${e.message}`,
+                context: {
+                    dashboards,
+                },
+                severity: 'major'
+            }, {root: true})
+        })) || []
+
+        dashboardProviders = dashboardProviders.filter(provider => !!provider)
 
         commit('setAdditionalProviders', dashboardProviders)
     },
 
     // optional deployment name
-    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, deploymentName, params}) {
-        const currentEnvironmentRepositories = getters.currentEnvironmentRepositories(
+    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, deploymentName, params, options}) {
+        let currentEnvironmentRepositories = getters.currentEnvironmentRepositories(
             environmentName,
             deploymentName
         )
 
-        let types
+        let types = {}
 
         try {
+            if(options?.fallbackTypeRepository && currentEnvironmentRepositories.length == 0) {
+                currentEnvironmentRepositories = [options.fallbackTypeRepository]
+            }
             const result = await fetchTypeRepositories(
                 currentEnvironmentRepositories,
                 params
@@ -653,12 +691,18 @@ const actions = {
                     throw new Error(`${name} has no sourceinfo`)
                 }
 
+                if(currentTypes[name]) {
+                    const icon = type.icon || currentTypes[name].icon
+                    currentTypes[name].icon = type.icon = icon
+                }
+
                 if(currentTypes[name] && type._sourceinfo.incomplete) {
                     delete types[name]
                 }
             } catch(e) {
                 if(!name.startsWith('__primary@')) { // reduntant error?
-                    console.warn(`Can't read repository url from source info: ${e.message}`)
+                    // console.warn(`Can't read repository url from source info: ${e.message}`)
+                    // this is quite noisy
                 }
             }
         })
@@ -674,12 +718,12 @@ const actions = {
 
 };
 function envFilter(name){
-    return env => env.name == name
+    return env => env?.name == name
 }
 
 const getters = {
     getEnvironments: state => state.projectEnvironments,
-    lookupEnvironment: (_, getters) => function(name) {return getters.getEnvironments.find(envFilter(name))},
+    lookupEnvironment: (state, getters) => function(name) {return [...getters.getEnvironments, state.defaults].find(envFilter(name))},
     getValidEnvironmentConnections: (state, getters, _, rootGetters) => function(environmentName, requirement, _resolver) {
         const resolver = _resolver? _resolver: getters.environmentResolveResourceType.bind(getters, environmentName)
         const filter = envFilter(environmentName)
@@ -798,9 +842,12 @@ const getters = {
     // TODO rename to lookupDeployPathByEnvironment?
     lookupDeployPath(state) {
         return function(deploymentName, environmentName) {
+            const re = (new RegExp(`(/|^)${deploymentName}$`))
+
+            const matchingSuffix = state.deploymentPaths.filter(dp => re.test(dp.name))
             const prefix = `environments/${environmentName}`
-            const suffix = `/${deploymentName}`
-            return state.deploymentPaths.find(dp => dp.name?.startsWith(prefix) && dp.name?.endsWith(suffix))
+
+            return matchingSuffix.find(dp => dp.name?.startsWith(prefix)) || matchingSuffix[0]
         }
     },
     // do not use if the pipeline may have not been started yet
@@ -857,7 +904,7 @@ const getters = {
     userCanEdit(_, getters) {
         // we can't read or set UNFURL_VAULT_DEFAULT_PASSWORD if we're not a maintainer
         // NOTE this criteria is meaningless when we're editing a blueprint
-        return !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
+        return window.gon.unfurl_gui || !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     },
 
     getEnvironmentDefaults(state) { return state.defaults || null },

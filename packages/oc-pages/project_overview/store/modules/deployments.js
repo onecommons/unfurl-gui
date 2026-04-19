@@ -2,7 +2,6 @@ import {slugify} from 'oc_vue_shared/util'
 import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
-import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
@@ -12,6 +11,19 @@ import axios from '~/lib/utils/axios_utils'
 const state = () => ({deployments: [], deploymentHooks: [], shareStates: {}});
 const mutations = {
     setDeployments(state, deployments) {
+        for(const deployment of deployments) {
+            for(const key of Object.keys(deployment)) {
+                for(const entry of Object.values(deployment[key] || {})) {
+                    if(typeof entry == 'string') continue
+                    if(!entry) continue
+                    try {
+                        localNormalize(entry, key, deployment)
+                    } catch(e) {
+                        console.error(e.message)
+                    }
+                }
+            }
+        }
         state.deployments = deployments;
     },
 
@@ -297,15 +309,17 @@ const actions = {
             resource = rootGetters.getPrimaryCard
         }
 
+        const type = rootGetters.resolveResourceTypeFromAny(resource.type)
         const newObject = {
             name: `__${environmentName}__${deploymentName}__${resourceName}`,
             metadata: {
-                extends: rootGetters.resolveResourceTypeFromAny(resource.type)?.extends || [],
+                extends: type?.extends || [],
             },
             title: resource.title,
             directives: ['select'],
             imported: `${deploymentName}:${resource.name}`,
             type: resource.type,
+            _sourceinfo: type?._sourceinfo,
             __typename: 'ResourceTemplate'
         }
 
@@ -326,15 +340,17 @@ const actions = {
         const resource = rootGetters.getCardsStacked.find(card => card.name == resourceName)
 
         const name = `__${environmentName}__${deploymentName}__${resourceName}`
+        const type = rootGetters.resolveResourceTypeFromAny(resource.type)
         const newObject = {
             name,
             metadata: {
-                extends: rootGetters.resolveResourceTypeFromAny(resource.type)?.extends || [],
+                extends: type?.extends || [],
             },
             title: resource.title,
             directives: ['select'],
             imported: `${deploymentName}:${resource.name}`,
             type: resource.type,
+            _sourceinfo: type?._sourceinfo,
             __typename: 'ResourceTemplate'
         }
 

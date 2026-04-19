@@ -9,8 +9,9 @@ const MAIL_USERNAME = Cypress.env('MAIL_USERNAME')
 const MAIL_PASSWORD = Cypress.env('MAIL_PASSWORD')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
+const STANDALONE_UNFURL = Cypress.env('STANDALONE_UNFURL')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const
   DIGITALOCEAN_DNS_TYPE = 'DigitalOceanDNSZone',
   GCP_DNS_TYPE = 'GoogleCloudDNSZone',
@@ -18,25 +19,51 @@ const
 
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
 
+/**
+ * Custom Cypress command to wait until the environment is ready,
+ * then execute a callback with the environment and store as arguments.
+ *
+ * Note: Assertions can be directly chained on the return value of this command.
+ * This is because Cypress commands return Promises, allowing for assertions
+ * like `cy.withEnvironment('envName').should('exist')`. The callback function
+ * does not affect this behavior as long as the command returns the expected value.
+ *
+ * @param {string} environmentName - The name of the environment to look up.
+ * @param {Function} cb - A callback function that receives the environment and store.
+ * @returns {Cypress.Chainable} - Returns a chainable Cypress command.
+ */
 Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
   return cy.waitUntil(() => cy.withStore().then(store => {
     if(!store.getters.environmentsAreReady) return false
-    expect(store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
+
+    if(!STANDALONE_UNFURL) {
+      expect(store.getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')).to.not.be.null
+    }
     return store
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
     .then(store => {
       const env = store.getters.lookupEnvironment(environmentName) || null
-      cb && cb(env)
+      cb && cb(env, store) // store in callback for convenience
       return env
     })
 })
 
 Cypress.Commands.add('whenEnvironmentExists', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName).then(env => env && cb(env))
+  return cy.withEnvironment(environmentName).then((env, store) => env && cb(env, store))
 })
 
 Cypress.Commands.add('whenEnvironmentAbsent', (environmentName, cb) => {
-  return cy.withEnvironment(environmentName).then(env => !env && cb())
+  return cy.withEnvironment(environmentName).then((env, store) => !env && cb(store))
+})
+
+Cypress.Commands.add('whenInstancesAbsent', (environmentName, cb) => {
+  return cy.withEnvironment(environmentName).then((env, store) => {
+    if(! env) return
+    if(Object.values(env.instances || {})
+      .filter(instance => instance.name != 'dns-zone').length == 0) {
+      cb(env, store)
+    }
+  })
 })
 
 Cypress.Commands.add('environmentShouldExist', environmentName => {
@@ -71,7 +98,7 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
 })
 
 Cypress.Commands.add('deleteEnvironment', environmentName => {
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Delete Environment', {timeout: BASE_TIMEOUT * 2}).click({force: true})
   cy.contains('button.js-modal-action-primary', 'Delete').click()
@@ -79,7 +106,7 @@ Cypress.Commands.add('deleteEnvironment', environmentName => {
 })
 
 Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
@@ -100,7 +127,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.getInputOrTextarea(`[data-testid="oc-input-${digitalOceanName}-name"]`).should(
     "have.value",
     "untrusted.me"
@@ -133,6 +160,24 @@ function uncheckedCreateMail() {
   )
   cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
     'tls'
+  )
+}
+
+function checkMail() {
+  const mailResourceName = slugify(MAIL_RESOURCE_NAME)
+
+  cy.getInputOrTextarea(
+    `[data-testid="oc-input-${mailResourceName}-host"]`
+  ).should('have.value', SMTP_HOST)
+
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-user_name"]`).should(
+    'have.value',
+    MAIL_USERNAME
+  )
+
+  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-password"]`).should(
+    'have.value',
+    MAIL_PASSWORD
   )
 }
 
@@ -204,10 +249,11 @@ function saveExternalResources() {
 Cypress.Commands.add('uncheckedCreateDNS', uncheckedCreateDNS)
 Cypress.Commands.add('uncheckedCreateMail', uncheckedCreateMail)
 Cypress.Commands.add('saveExternalResources', saveExternalResources)
+Cypress.Commands.add('checkMail', checkMail)
 
 Cypress.Commands.add('createMailResource', environmentName => {
   if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
@@ -240,7 +286,7 @@ Cypress.Commands.add('createMailResource', environmentName => {
   //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
-  cy.visit(`/${NAMESPACE}/dashboard/-/environments/${environmentName}`)
+  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
   cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-host"]`).should(
     "have.value",
     SMTP_HOST

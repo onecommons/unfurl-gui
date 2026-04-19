@@ -6,7 +6,26 @@ function normalizeDirectives(directives) {
     }
 }
 
+export function normpath(path) {
+    if(typeof path != 'string') return
+    if(!path) return path
+    if(path == ':') path = window.gon.home_project
+    return path.split('/').filter(c => !!c).join('/')
+}
+
+const PATH_PROPS = ['blueprintPath', 'projectPath']
+
 const transforms = {
+    ApplicationBlueprint(blueprint, root) {
+        if(blueprint.projectPath) {
+            blueprint.projectPath = normpath(blueprint.projectPath)
+        }
+
+        if(blueprint.blueprintPath) {
+            blueprint.blueprintPath = normpath(blueprint.blueprintPath)
+        }
+    },
+
     Deployment(deployment, root) {
         deployment._environment = root._environment
 
@@ -44,6 +63,16 @@ const transforms = {
                 rt._local = true
                 localNormalize(rt, 'ResourceTemplate', root)
             })
+        }
+        const appBlueprint = Object.values(root.ApplicationBlueprint)[0]
+        dt._sourceTemplate = dt.source == '__generated'? undefined : dt.source
+
+        if(appBlueprint) {
+            for(const pathProp of PATH_PROPS) {
+                if(!dt[pathProp]) {
+                    dt[pathProp] = appBlueprint[pathProp]
+                }
+            }
         }
     },
 
@@ -96,9 +125,11 @@ const transforms = {
             req.title = req.title || req.name
         }
 
-        if(resourceType.directives?.includes('substitute')) {
-            resourceType.requirements = resourceType.requirements.filter(req => !req.match)
-        }
+        // unmatched requirements are now filtered out before patching
+        // frontend now handles the substitution, so the match must be seen
+        // if(resourceType.directives?.includes('substitute')) {
+        //     resourceType.requirements = resourceType.requirements.filter(req => !req.match)
+        // }
 
         // will prevent nested dependencies with visibility set from overriding parent constraint visibility
         resourceType.requirements = resourceType.requirements.filter(req => req.visibility != 'hidden' || req.match)
@@ -191,6 +222,7 @@ const transforms = {
 }
 
 export function localNormalize(object, typename=null, root) {
+    if(!object) return
     if(object._normalized) return
     if(!(object.__typename || typename)) {
         throw new Error(`Couldn't normalize ${object.name}: no typename`)
@@ -200,5 +232,11 @@ export function localNormalize(object, typename=null, root) {
     if(typeof transforms[t] == 'function') {
         transforms[t](object, root)
         object._normalized = true
+    }
+
+    for(const pathProp of PATH_PROPS) {
+        if(object.hasOwnProperty(pathProp)) {
+            object[pathProp] = normpath(object[pathProp])
+        }
     }
 }

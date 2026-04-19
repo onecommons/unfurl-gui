@@ -1,4 +1,5 @@
 import Jed from 'jed';
+import Vue from 'vue';
 
 const SPLIT_REGEX = /\s*[\r\n]+\s*/;
 
@@ -67,3 +68,8 @@ export { ngettext as n__ };
 export { pgettext as s__ };
 // export { sprintf };  
 export default locale;
+
+
+Vue.prototype.__ = gettext;
+Vue.prototype.n__ = ngettext;
+Vue.prototype.s__ = pgettext;

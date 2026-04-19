@@ -36,8 +36,8 @@ async function main() {
   const upstreamUsername = `user-up-${now}`
   const downstreamUsername = `user-down-${now}`
 
-  const upstreamCodeRepo = `${process.env.OC_URL}/${upstreamUsername}/buildpack-test-app`
-  const upstreamBlueprint = `${process.env.OC_URL}/${upstreamUsername}/container-webapp`
+  const upstreamCodeRepo = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${upstreamUsername}/buildpack-test-app`
+  const upstreamBlueprint = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${upstreamUsername}/container-webapp`
   const deployToken = 'foo'
   const dashboardProject = `${downstreamUsername}/dashboard`
 
@@ -72,7 +72,7 @@ async function main() {
 
   await createProjectToken({project: dashboardProject})
   
-  const res = await axios.get(`${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(dashboardProject)}/members`)
+  const res = await axios.get(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/api/v4/projects/${encodeURIComponent(dashboardProject)}/members`)
   const bot_id = res.data.find(member => member.name == 'UNFURL_PROJECT_TOKEN').id
 
 
@@ -93,7 +93,7 @@ async function main() {
     PROJECT_DNS_ZONE: `${downstreamUsername}.u.opencloudservices.net`
   }
 
-  const apiTarget = `${process.env.OC_URL}/${downstreamUsername}/dashboard/-/deployments/new`
+  const apiTarget = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${downstreamUsername}/dashboard/-/deployments/new`
 
   const requestBody = {
     pipeline: {

@@ -1,5 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
+import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
 
 import QuantityCard from '../components/quantity-card.vue'
 import ApplicationCell from '../components/cells/application-cell.vue'
@@ -17,6 +18,7 @@ import * as routes from '../router/constants'
 
 import { GlMarkdown, GlCard, GlIcon } from '@gitlab/ui'
 
+const standalone = window.gon.unfurl_gui
 
 function pluralizeResourceType(count) {
   if(count == 0) return ''
@@ -44,15 +46,18 @@ export default {
         DeploymentCell,
         ResourceCell,
         DashboardWelcome,
-        GlMarkdown, GlCard, GlIcon
+        GlMarkdown, GlCard, GlIcon,
+        MarkdownView
     },
     data() {
         return {
             routes,
             //fields,
             //items: [],
-            readme: gon.readme,
+            readme: window.gon.readme,
+            readmeRaw: window.gon.readmeRaw,
             loaded: false,
+            standalone,
         };
     },
 
@@ -104,7 +109,7 @@ export default {
 <div>
     <dashboard-breadcrumbs />
     <div style="width: fit-content; margin: auto;">
-        <dashboard-welcome v-if="totalDeploymentsCount == 0" />
+        <dashboard-welcome v-if="!standalone && totalDeploymentsCount == 0" />
         <div class="quantity-cards">
             <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card
@@ -113,14 +118,14 @@ export default {
                     s="Application"
                     p="Applications"
                     class="qcard1"
-                    secondary-link="/explore/blueprints" />
+                    :secondary-link="!standalone && '/projects/new#create_from_template'" />
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
                     :count="environmentsCount"
                     s="Environment"
                     p="Environments"
                     class="qcard2"
-                    :secondary-link="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
+                    :secondary-link="!standalone && {name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
             </div>
             <div class="d-flex flex-wrap justify-content-center">
                 <quantity-card
@@ -129,7 +134,7 @@ export default {
                     s="Running Deployment"
                     p="Running Deployments"
                     class="qcard3"
-                    secondary-link="/explore/blueprints" />
+                    :secondary-link="standalone && '#new-deployment'" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
@@ -166,7 +171,7 @@ export default {
     </TableComponent>
 
     <!-- card like on bluperint page -->
-    <gl-card v-if="readme" class="mt-6 consistent-card">
+    <gl-card v-if="readme || readmeRaw" class="mt-6 consistent-card">
         <template #header>
             <div class="d-flex align-items-center">
                 <gl-icon name="information-o" class="mr-2"/>
@@ -175,7 +180,8 @@ export default {
                 </h5>
             </div>
         </template>
-        <gl-markdown class="md" v-html="readme" />
+        <gl-markdown v-if="readme" class="md" v-html="readme" />
+        <markdown-view v-else :content="readmeRaw" />
     </gl-card>
 
 

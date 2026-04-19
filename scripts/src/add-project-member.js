@@ -10,16 +10,16 @@ async function addProjectMember(o) {
   await login()
 
 
-  const matchingUsers = (await axios.get(`${process.env.OC_URL}/-/autocomplete/users.json?search=${username}`)).data
+  const matchingUsers = (await axios.get(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/-/autocomplete/users.json?search=${username}`)).data
 
   const user_id = `${matchingUsers.find(u => u.username == username).id}` // ffs gitlab
 
-  const url = `${process.env.OC_URL}/${project}/-/project_members`
+  const url = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${project}/-/project_members`
   const page = (await axios.get(url)).data
   const authenticity_token = extractCsrf(page)
 
 
-  const invitationUrl = `${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(project)}/invitations`
+  const invitationUrl = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/api/v4/projects/${encodeURIComponent(project)}/invitations`
   const body = {
       user_id,
       format: 'json',

@@ -35,7 +35,7 @@ export default {
             return `/${this.getHomeProjectPath}/-/environments/${this.environmentName}`
         },
         show() {
-            return this.card?.imported && this.deploymentLink
+            return this.card?.imported && this.deploymentLink && this.deploymentTitle
         }
     }
 }

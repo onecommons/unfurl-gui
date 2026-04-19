@@ -11,14 +11,17 @@ import OcListResource from '../../components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../components/shared/oc_template_header.vue';
 import TemplateButtons from '../../components/template/template_buttons.vue';
 import { bus } from 'oc_vue_shared/bus';
-import { slugify } from 'oc_vue_shared/util'
+import { slugify, generateCardId } from 'oc_vue_shared/util'
 import { deleteDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import {fetchUserHasWritePermissions, setMergeRequestReadyStatus, createMergeRequest, listMergeRequests} from 'oc_vue_shared/client_utils/projects'
+import {normpath} from 'oc_vue_shared/lib/normalize'
+import {blueprintDefaultBranch, homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 import * as routes from '../../router/constants'
 
 
 export default {
   name: 'TemplatesPage',
+  mixins: [blueprintDefaultBranch, homeProjectDefaultBranch],
   components: {
     GlModal,
     GlSkeletonLoader,
@@ -66,10 +69,6 @@ export default {
       checkedNode: true,
       selectedServiceToConnect: '',
       jobsData: null,
-      refValue: {
-        shortName: 'main',
-        fullName: 'refs/heads/main',
-      },
       mergeRequest: null
     };
   },
@@ -84,6 +83,7 @@ export default {
       'getPrimaryCard',
       'getCardsStacked',
       'getDeploymentTemplate',
+      'getDeployment',
       'getDependencies',
       'hasPreparedMutations',
       'safeToNavigateAway',
@@ -100,6 +100,7 @@ export default {
       'getValidConnections',
       'lookupConfigurableTypes',
       'lookupEnvironment',
+      'lookupDeployPath',
       'getParentDependency',
       'getPrimary',
       'environmentsAreReady',
@@ -117,13 +118,27 @@ export default {
       'getDeploymentDictionaries',
     ]),
 
-    deploymentDir() {
-        const environment = this.$route.params.environment
-        // this.getDeploymentTemplate.name not loaded yet
+    defaultEditBranch() {
+      return this.$route.name == routes.OC_PROJECT_VIEW_CREATE_TEMPLATE?
+        this.blueprintDefaultBranch : this.homeProjectDefaultBranch
+    },
 
-        // params.slug is the blueprint unfortunately
-        const deploymentSlug = this.$route.params.slug //slugify(this.$route.query.fn)
-        return `environments/${environment}/${this.project.globalVars.projectPath}/${deploymentSlug}`
+    deploymentDir() {
+      if(!this.getDeploymentTemplate) return null
+      const environment = this.$route.params.environment
+
+      if(this.getDeployment) {
+        const deployPath = this.lookupDeployPath(this.getDeployment.name, environment)
+        if(deployPath) return deployPath.name
+      }
+
+      const deploymentSlug = this.$route.params.slug
+      let projectPath = this.project.globalVars.projectPath
+
+      if(window.gon.unfurl_gui && normpath(projectPath) == normpath(window.gon.working_dir_project)) {
+        projectPath = 'local'
+      }
+      return normpath(`environments/${environment}/${projectPath}/${deploymentSlug}`)
     },
     saveStatus() {
       switch(this.$route.name) {
@@ -220,19 +235,19 @@ export default {
     },
 
     saveTooltip() {
-      if(this.saveDraftStatus == 'enabled' && this.branch && this.branch != 'main') {
+      if(this.saveDraftStatus == 'enabled' && this.commitBranch && this.commitBranch != this.defaultEditBranch) {
         return 'Save a draft of the edits on this deployment blueprint and open a merge request.'
       }
       return null
     },
 
-    branch: {
+    commitBranch: {
       get() {
-        return this.selfBranch || this.$route.query.branch || 'main'
+        return this.selfBranch || this.$route.query.branch || this.defaultEditBranch
       },
 
-      set(branch) {
-        this.selfBranch = branch
+      set(commitBranch) {
+        this.selfBranch = commitBranch
       }
     },
 
@@ -245,6 +260,34 @@ export default {
     validResourceTypesForSelectedRequirement() {
       return this.availableResourceTypesForRequirement(this.getRequirementSelected.requirement)
     },
+
+    deploymentParams() {
+      const projectPath = this.project.globalVars.projectPath
+
+      let projectUrl
+      if(projectPath.startsWith('local:')) {
+        // local: prefixes a local working directory path, ignore
+        projectUrl = null
+      } else if(projectPath.startsWith('remote:')) {
+        projectUrl = projectPath.replace('remote:', '')
+      } else {
+        projectUrl = `${window.gon.gitlab_url || 'https://unfurl.cloud'}/${this.project.globalVars.projectPath}.git`
+      }
+
+      const deploymentBlueprint = this.$route.query.ts || this.getDeploymentTemplate?.source
+
+      if(this.$route.query.bprev) {
+        projectUrl += `#${this.$route.query.bprev}`
+      }
+
+      return {
+        environmentName: this.$route.params.environment,
+        projectUrl,
+        deployPath: this.deploymentDir,
+        deploymentName: this.$route.params.slug,
+        deploymentBlueprint
+      }
+    }
   },
 
   watch: {
@@ -303,7 +346,22 @@ export default {
         const ref = this.$refs['oc-template-resource']
         ref.hide()
       }
-    }, 100)
+    }, 100),
+
+    deploymentDir: {
+      immediate: true, // force calculation
+      handler(val) {
+        if(val && this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
+          this.setUpdateObjectPath(val);
+        }
+      }
+    },
+    deploymentParams: {
+      immediate: true,
+      handler(val) {
+        this.setDeploymentParams(val)
+      }
+    }
   },
 
   serverPrefetch() {
@@ -386,8 +444,10 @@ export default {
       'pushPreparedMutation',
       'setCommitMessage',
       'setUpdateType',
+      'setDeploymentParams',
       'createError',
-      'setCommitBranch'
+      'setCommitBranch',
+      'setBlueprintBranch'
     ]),
     ...mapActions([
       'syncGlobalVars',
@@ -419,8 +479,9 @@ export default {
 
     scrollDown(elId, timeOut=0) {
       clearTimeout(this.uiTimeout);
-      const anchorId = btoa(elId).replace(/=/g, '');
-      const anchor = document.querySelector(`#${anchorId}`);
+      const anchorId = generateCardId(elId);
+      const anchor = document.querySelector(`#${CSS.escape(anchorId)}`);
+      if (!anchor) return;
       this.uiTimeout = setTimeout(
         () => {
           anchor.scrollIntoView({behavior: "smooth", block: "center", inline: "start"});
@@ -448,13 +509,15 @@ export default {
           await fetchUserHasWritePermissions(projectPath):
           this.userCanEdit
 
-        if(this.branch == 'main') {
+        this.setCommitBranch(this.commitBranch)
+
+        if(this.commitBranch == this.defaultEditBranch) {
           if(!userCanEdit) {
             // computed setter
-            const branch = this.branch = `${this.getUsername}/${this.$route.params.slug}`
-            this.setCommitBranch(this.branch)
+            const branch = this.commitBranch = `${this.getUsername}/${this.$route.params.slug}`
+            this.setCommitBranch(this.commitBranch)
 
-            const target = 'main'
+            const target = this.defaultEditBranch
             const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
 
             const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened'})
@@ -464,16 +527,24 @@ export default {
             } else {
               const key = `branch ${branch}`
               if(!this.isAcknowledged(key)) {
-                this.createFlash(`You are working on a new branch "${branch}". After your changes are saved, a merge request will be created automatically so they can be merged back into main and deployed by a maintainer.`)
+                this.createFlash(`You are working on a new branch "${branch}". After your changes are saved, a merge request will be created automatically so they can be merged back the primary branch and deployed by a maintainer.`)
               }
               this.acknowledge(key)
 
             }
           }
         } else {
-          const key = `branch ${this.branch}`
+          const key = `branch ${this.commitBranch}`
+
+          const target = this.defaultEditBranch
+          const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
+          const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch: this.commitBranch, target, labels, state: 'opened'})
+
+          if(openedMR) {
+            this.mergeRequest = openedMR
+          }
           if(!this.isAcknowledged(key)) {
-            this.createFlash(`You are working on an alternate branch "${this.branch}".`)
+            this.createFlash(`You are working on an alternate branch "${this.commitBranch}".`)
           }
           this.acknowledge(key)
         }
@@ -484,7 +555,6 @@ export default {
         const renameDeploymentTemplate = this.$route.query.fn;
         const environmentName = this.$route.params.environment
         if(this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
-          this.setUpdateObjectPath(this.deploymentDir);
           this.setUpdateObjectProjectPath(this.getHomeProjectPath);
           this.setEnvironmentScope(environmentName)
         }
@@ -509,15 +579,21 @@ export default {
 
         if(this.hasCriticalErrors) return
 
-        await this.fetchProject({projectPath, projectGlobal: this.project.globalVars, shouldMerge: true}); // NOTE this.project.globalVars
+        const blueprintBranch = this.$route.query?.bprev
+        await this.fetchProject({projectPath, blueprintPath: this.$route.query.blueprintPath, projectGlobal: this.project.globalVars, shouldMerge: true, branch: blueprintBranch}); // NOTE this.project.globalVars
         if(this.hasCriticalErrors) return
 
         if(deployRoot) {
           await this.useProjectState({root: deployRoot, shouldMerge: true, projectPath})
         }
 
+        if(blueprintBranch) {
+          this.setBlueprintBranch(blueprintBranch)
+        }
+
         const populateTemplateResult = await this.populateTemplateResources({
           projectPath,
+          blueprintBranch,
           templateSlug,
           renamePrimary,
           renameDeploymentTemplate,
@@ -573,13 +649,13 @@ export default {
           const query = {...this.$route.query}
           delete query.ts
 
-          if(this.branch != 'main') {
-            query.branch = this.branch
+          if(this.commitBranch != this.defaultEditBranch) {
+            query.branch = this.commitBranch
 
             if(!this.mergeRequest) {
               const projectPath = this.project.globalVars.projectPath
-              const branch = this.branch
-              const target = 'main'
+              const branch = this.commitBranch
+              const target = this.defaultEditBranch
               const title = `[Draft] ${this.getDeploymentTemplate.title}`
               const labels = [
                 this.$route.params.slug,
@@ -633,7 +709,7 @@ export default {
         this.createError({
             message: `An unexpected error occurred while saving (${e.message})`,
             context: e.message,
-            severity: 'major'
+            severity: 'critical'
         })
         return false;
       }
@@ -656,12 +732,8 @@ export default {
       await this.triggerSave();
       if(this.hasCriticalErrors) return
 
-      const result = await this.deployInto({
-        environmentName: this.$route.params.environment,
-        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-        deployPath: this.deploymentDir,
-        deploymentName: this.$route.params.slug,
-        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+      const result = window.gon.unfurl_gui? {}: await this.deployInto({
+        ...this.deploymentParams,
         deployOptions: {
             schedule: 'defer'
         },
@@ -683,6 +755,9 @@ export default {
       window.history.replaceState({}, null, href)
 
       this.dataWritten = true
+
+      if(this.hasCriticalErrors) return
+
       window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
     }, 250),
 
@@ -702,11 +777,7 @@ export default {
       if(this.hasCriticalErrors) return
 
       const result = await this.deployInto({
-        environmentName: this.$route.params.environment,
-        projectUrl: `${window.gon.gitlab_url}/${this.project.globalVars.projectPath}.git`,
-        deployPath: this.deploymentDir,
-        deploymentName: this.$route.params.slug,
-        deploymentBlueprint: this.$route.query.ts || this.getDeploymentTemplate?.source,
+        ...this.deploymentParams,
         forceCheck,
         dryRun,
       })
@@ -723,6 +794,9 @@ export default {
       window.history.replaceState({}, null, href)
 
       this.dataWritten = true
+
+      if(this.hasCriticalErrors) return
+
       window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
     }, 250),
 
@@ -733,11 +807,13 @@ export default {
 
       if(this.hasCriticalErrors) return
 
-      const branch = this.branch
-      const target = 'main'
+      const branch = this.commitBranch
+      const target = this.defaultEditBranch
       const labels = [this.$route.params.slug, 'unfurl-gui-mr']
 
       await setMergeRequestReadyStatus(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened', status})
+
+      if(this.hasCriticalErrors) return
 
       window.location.href = this.mergeRequest.web_url
 

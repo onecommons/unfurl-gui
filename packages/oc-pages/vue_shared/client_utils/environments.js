@@ -7,10 +7,11 @@ import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.js'
 import {localNormalize} from '../lib/normalize'
+import { getOrFetchDefaultBranch } from './projects'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
-    // #!if false
+    // #!if !standalone
 
     const {data} = await axios.get(`/${projectPath}/-/environments.json`)
     result = data?.environments || result
@@ -79,7 +80,7 @@ export async function deleteEnvironmentByName(projectPath, environmentName) {
 }
 export async function deleteEnvironment(projectPath, projectId, environmentName, environmentId) {
     console.warn('TODO Use deleteEnvironmentByName instead')
-    // #!if false
+    // #!if !standalone
     const {variables} = (await axios.get(`/${projectPath}/-/variables`)).data
     const patchVariables = []
 
@@ -95,7 +96,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
-    const branch = 'main' // TODO don't hardcode main
+    const branch = await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
     const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider].filter(tmpl => !!tmpl)
 
@@ -287,8 +288,8 @@ export async function fetchEnvironments(options) {
             try {
                 const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
-                const environment = deploymentPaths.find(dp => dp.name.endsWith(`/${deploymentName}`)).environment
-                deployment._environment = environment
+                const environment = deploymentPaths.find(dp => (new RegExp(`(/|^)${deploymentName}$`).test(dp.name))).environment
+                deployment._environment = environment || 'defautlts'
 
                 if(deployment.ResourceType) {
                     Object.values(deployment.ResourceType).forEach(rt => localNormalize(rt, 'ResourceType', deployment))
@@ -345,6 +346,8 @@ function decodeProviderString(s) {
 }
 
 export async function declareAvailableProviders(projectPath, environmentName, providerTypes) {
+    if(window.gon.unfurl_gui) return
+
     const providers = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
 
     if(providers.some(p => !p)) {
@@ -450,6 +453,10 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
 }
 
 export const fetchDashboardProviders = _.memoize(async function (projectPath) {
+    if(window.gon.unfurl_gui) {
+        return null
+    }
+
     const query = gql`
         query fetchDashboardProviders ($projectPath: ID!) {
           project(fullPath: $projectPath) {

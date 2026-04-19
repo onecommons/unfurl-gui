@@ -11,7 +11,7 @@ const args = require('minimist')(process.argv.slice(2))
 const deploymentName = args.deployment || args['deployment-name']
 const username = args.username
 const dashboard = args.dashboard || (args.username && `${args.username}/dashboard`)
-const unfurlServer = args.unfurlServer || args['unfurl-server'] || `${process.env.OC_URL}/services/unfurl-server`
+const unfurlServer = args.unfurlServer || args['unfurl-server'] || `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/services/unfurl-server`
 // const generateTest = args['test-name'] || args['test'] || args['generate-test']
 const fixtureName = args.fixtureName || args['fixture-name'] || args['test']
 const fixturePath = `generated/deployments/${TEST_VERSIONS}/${fixtureName}`
@@ -29,7 +29,7 @@ async function main() {
     }
   })
 
-  await login(process.env.OC_URL, process.env.OC_USERNAME, process.env.OC_PASSWORD)
+  await login(process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL, process.env.OC_USERNAME, process.env.OC_PASSWORD)
   const response = await axios.get(
     `${unfurlServer}/export?format=environments&branch=main&auth_project=${encodeURIComponent(dashboard)}&include_all_deployments=1`,
     {

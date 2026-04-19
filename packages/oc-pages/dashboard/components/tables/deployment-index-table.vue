@@ -1,10 +1,10 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {OcTab, EnvironmentSelection, LocalDeploy, AutostopInner} from 'oc_vue_shared/components/oc'
+import CombinedCell from '../cells/combined-cell.vue'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ResourceCell from '../cells/resource-cell.vue'
 import DeploymentControls from '../cells/deployment-controls.vue'
-import DeploymentStatusIcon from '../cells/shared/deployment-status-icon.vue'
 import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
@@ -13,10 +13,9 @@ import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import Vue from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
-import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 import MergeRequestsTable from './merge-requests-table.vue'
 
-
+const standalone = window.gon.unfurl_gui
 
 function deploymentGroupBy(item) {
     let result
@@ -49,6 +48,10 @@ const tabFilters = [
         title: 'Drafts',
         filter(item) { return item.isDraft }
     },
+
+    // hide irrelevant tabs for standalone
+    // #!if !standalone
+
     {
         title: 'Merge Requests',
         filter(item) { return false }
@@ -59,6 +62,9 @@ const tabFilters = [
             return item.autostopScheduled
         }
     },
+
+    // #!endif
+
     {
         title: 'Failed',
         filter(item) {
@@ -77,6 +83,7 @@ const tabFilters = [
 export default {
     components: {
         TableComponent,
+        CombinedCell,
         EnvironmentCell,
         ResourceCell,
         DeploymentControls,
@@ -87,8 +94,6 @@ export default {
         EnvironmentSelection,
         GlFormInput,
         GlFormGroup,
-        DeploymentStatusIcon,
-        DashboardRouterLink,
         MergeRequestsTable,
         AutostopInner,
         LocalDeploy
@@ -154,7 +159,7 @@ export default {
         if(currentTab == -1) currentTab = 0
 
         const intent = '', target = null, newDeploymentTitle = null, cloneTargetEnvironment = null
-        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null}
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null, standalone}
 
     },
     methods: {
@@ -616,7 +621,7 @@ export default {
             handler(val) {
                 for(const item of val) {
                     const deploymentItem = this.deploymentItemDirect({deployment: item.deployment, environment: item.environment})
-                    if(deploymentItem?.isRunning && item.deployment?.url) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
+                    if(deploymentItem?.isRunning && item.deployment?.url && !window.gon.unfurl_gui) this.addUrlPoll({deployment: item.deployment, environment: item.environment})
                 }
             }
         },
@@ -696,7 +701,7 @@ export default {
                 </div>
             </div>
             <div
-                v-if="intent == 'undeploy' && !ableToUndeploy"
+                v-if="intent == 'undeploy' && !ableToUndeploy && !standalone"
                 class="m-3">
                 <ol>
                     <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
@@ -736,6 +741,9 @@ export default {
             <div class="m-3" v-if="intent == 'localDeploy'">
                 <local-deploy :environment="target.environment" :deployment="target.deployment" />
             </div>
+            <div class="m-3" v-if="intent == 'undeploy' && standalone">
+                <local-deploy teardown :environment="target.environment" :deployment="target.deployment" />
+            </div>
         </gl-modal>
         <gl-tabs v-model="currentTab" v-if="useTabs">
             <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
@@ -747,18 +755,7 @@ export default {
                 </div>
             </template>
             <template #deployment="scope">
-                <div class="d-flex">
-                    <deployment-status-icon width="40px" :scope="scope" />
-                    <div v-if="scope.item.context.application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${scope.item.context.deployment.name}` == $route.hash}">
-                        <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem(scope, 'viewableLink'): deploymentItem(scope, 'viewableTo')">
-                            <b>{{scope.item.context.deployment.title}}:</b>
-                        </dashboard-router-link>
-                        <a :href="`/${scope.item.context.deployment.projectPath}`">
-                            ({{scope.item.context.application.title}})
-                        </a>
-
-                    </div>
-                </div>
+                <combined-cell v-if="scope.item.context.deployment" :noRouter="noRouter" :scope="scope" :application="scope.item.context.application" :deployment="scope.item.context.deployment" :environment="scope.item.context.environment"/>
             </template>
             <!--template #resource$empty="scope">
                 <div v-if="hasDeployPath(scope)">{{__('Not yet deployed')}}</div>

@@ -4,11 +4,11 @@ export const USER_HOME_PROJECT = 'dashboard';
 
 // TODO make this a const
 export function userDefaultPath() {
-  return 'unfurl.json'
+    return 'unfurl.json'
 }
 
 export function generateCardId(name) {
-  return btoa(name).replace(/=/g, '')
+    return btoa(name).replace(/=/g, '')
 }
 
 const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
@@ -17,49 +17,49 @@ const Azure = 'ConnectsTo.AzureEnvironment'
 const K8s = 'unfurl.relationships.ConnectsTo.K8sCluster'
 const DigitalOcean = 'ConnectsTo.DigitalOceanEnvironment'
 const CLOUD_PROVIDER_ALIASES = {
-  AWSAccount: AWS,
-  aws: AWS,
-  [AWS]: AWS,
-  AWS,
-  GoogleCloudAccount: GCP,
-  GoogleCloudProject: GCP,
-  gcp: GCP,
-  [GCP]: GCP,
-  'Google Cloud': GCP,
-  GCP,
-  AzureAccount: Azure,
-  [Azure]: Azure,
-  Azure,
-  azure: Azure,
-  K8s,
-  [K8s]: K8s,
-  k8s: K8s,
-  kubernetes: K8s,
-  DigitalOcean,
-  DigitalOceanEnvironment: DigitalOcean,
-  [DigitalOcean]: DigitalOcean,
-  'Google Cloud Platform': GCP,
-  'Amazon Web Services': AWS,
-  'Kubernetes': K8s,
-  'Azure': Azure,
-  'Digital Ocean': DigitalOcean,
+    AWSAccount: AWS,
+    aws: AWS,
+    [AWS]: AWS,
+    AWS,
+    GoogleCloudAccount: GCP,
+    GoogleCloudProject: GCP,
+    gcp: GCP,
+    [GCP]: GCP,
+    'Google Cloud': GCP,
+    GCP,
+    AzureAccount: Azure,
+    [Azure]: Azure,
+    Azure,
+    azure: Azure,
+    K8s,
+    [K8s]: K8s,
+    k8s: K8s,
+    kubernetes: K8s,
+    DigitalOcean,
+    DigitalOceanEnvironment: DigitalOcean,
+    [DigitalOcean]: DigitalOcean,
+    'Google Cloud Platform': GCP,
+    'Amazon Web Services': AWS,
+    'Kubernetes': K8s,
+    'Azure': Azure,
+    'Digital Ocean': DigitalOcean,
 }
 
 export function lookupCloudProviderAlias(key) {
-  const result = CLOUD_PROVIDER_ALIASES[key?.split('@')?.shift()]
-  return result
+    const result = CLOUD_PROVIDER_ALIASES[key?.split('@')?.shift()]
+    return result
 }
 
 export function lookupCloudProviderShortName(key) {
-  const actual = lookupCloudProviderAlias(key)
-  const dict = {
-    [GCP]: 'GCP',
-    [AWS]: 'AWS',
-    [K8s]: 'K8s',
-    [Azure]: 'Azure',
-    [DigitalOcean]: 'DO'
-  }
-  return dict[actual] || 'Self-Hosted'
+    const actual = lookupCloudProviderAlias(key)
+    const dict = {
+        [GCP]: 'GCP',
+        [AWS]: 'AWS',
+        [K8s]: 'K8s',
+        [Azure]: 'Azure',
+        [DigitalOcean]: 'DO'
+    }
+    return dict[actual] || 'Self-Hosted'
 }
 
 export function cloudProviderFriendlyName(key) {
@@ -72,4 +72,31 @@ export function cloudProviderFriendlyName(key) {
         [DigitalOcean]: 'Digital Ocean'
     }
     return dict[actual] || 'Self-Hosted'
+}
+
+export function queryParamVar(v) {
+    return {
+        [v]: {
+            get() {
+                return this.$route.query[v]
+            },
+            set(val) {
+                const query = {...this.$route.query} || {}
+
+                if(val !== undefined) {
+                    query[v] = val
+                }
+                else {
+                    delete query[v]
+                }
+
+                if(JSON.stringify(query) == JSON.stringify(this.$route.query)) return
+
+                this.$router.replace({
+                    ...this.$route,
+                    query
+                })
+            }
+        }
+    }
 }

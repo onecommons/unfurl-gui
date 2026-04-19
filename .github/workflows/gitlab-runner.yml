@@ -1,0 +1,19 @@
+name: Gitlab Runner Service
+on: [repository_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 185  # should be slightly longer than timeout for cleanup
+    steps:
+      - name: Check disk space
+        run: df -h
+      - name: Gitlab Runner
+        uses: onecommons/gitlab-runner-action@main
+        with:
+          registration-token: "${{ github.event.client_payload.registration_token || secrets.GITLAB_REGISTRATION_TOKEN  }}"
+          docker-image: "docker:19.03.12"
+          name: ${{ github.run_id }}
+          tag-list: "${{ github.event.client_payload.tag_list }}"
+          gitlab-instance: "${{ github.event.client_payload.url }}"
+          concurrent: "${{ github.event.client_payload.concurrent }}"
+          timeout: "${{ github.event.client_payload.timeout_seconds }}"

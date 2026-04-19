@@ -14,7 +14,7 @@ let authenticity_token
 async function createEnvironment(o) {
   if(!o) throw new Error('expected options to create new environment')
   await login()
-  const environmentURL = `${process.env.OC_URL}/${o['project-path']}/-/environments`
+  const environmentURL = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${o['project-path']}/-/environments`
   const res = await axios.get(environmentURL)
   authenticity_token = extractCsrf(res.data)
   const form = new FormData()
@@ -77,7 +77,7 @@ async function main() {
         query: "mutation UpdateDeploymentObject($fullPath: ID!, $patch: JSON!, $path: String!) {\n  updateDeploymentObj(input: {projectPath: $fullPath, patch: $patch, path: $path}) {\n    isOk\n    errors\n    __typename\n  }\n}\n"
     }
 
-    const {data} = await axios.post(`${process.env.OC_URL}/api/graphql`, payload, {headers: {'X-CSRF-Token': authenticity_token}})
+    const {data} = await axios.post(`${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/api/graphql`, payload, {headers: {'X-CSRF-Token': authenticity_token}})
     if(data.errors && data.errors.length) throw new Error(data.errors[0].message)
   }
 }

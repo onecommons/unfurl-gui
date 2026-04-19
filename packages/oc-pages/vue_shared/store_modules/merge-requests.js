@@ -1,4 +1,4 @@
-import {listMergeRequests} from '../client_utils/projects'
+import {listMergeRequests, getOrFetchDefaultBranch} from '../client_utils/projects'
 const stateFn = () => ({
     mergeRequests: []
 })
@@ -13,7 +13,14 @@ const mutations = {
 
 const actions = {
     async fetchMergeRequests({commit, rootGetters}) {
-        const target = 'main'
+        if(window.gon.unfurl_gui) {
+            return
+        }
+
+        const target = await getOrFetchDefaultBranch(
+            encodeURIComponent(rootGetters.getHomeProjectPath)
+        )
+
         const labels = ['unfurl-gui-mr']
 
         const mergeRequests = await listMergeRequests(

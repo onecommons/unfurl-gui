@@ -8,7 +8,7 @@ import Vue from 'vue'
 
 function computeDependencyMap(root) {
     try {
-        const res = Object.values(root.ResourceTemplate)
+        const res = Object.values(root.ResourceTemplate || {})
             .map(
                 rt => rt.dependencies
                 .filter(req => req.match)
@@ -28,12 +28,28 @@ function lookupAncestors(rt, root, mutable=false) {
         }
     }
 
+    // fail silently in the case that we wanted to normalize a resource or template, but didn't have enough context
+    if(!computedDependencyMap) {
+        return []
+    }
+
     let current = rt, matchEntry
     const reverseAncestors = []
+    const visited = new Set([current.name])
     while(matchEntry = computedDependencyMap[current.name]) {
-        const [rt, req] = matchEntry
+        const [next] = matchEntry
+        // Stop before pushing an edge that loops back to a node we've already
+        // seen. Without this the resulting _ancestors chain can contain a
+        // cycle (A → B → A), which later causes Array.push to throw
+        // "Invalid array length" or makes downstream consumers (e.g.
+        // getNestedTemplates) recurse forever.
+        if(visited.has(next.name)) {
+            console.warn(`lookupAncestors: cycle detected: ${current.name} -> ${next.name}`)
+            break
+        }
+        visited.add(next.name)
         reverseAncestors.push(matchEntry)
-        current = rt
+        current = next
     }
 
     return reverseAncestors.reverse()
@@ -42,7 +58,25 @@ function lookupAncestors(rt, root, mutable=false) {
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
-        Vue.set(state, key, {...state[key], ...value})
+        // Avoid spreading existing state for initial set or when merging large objects
+        // This reduces memory pressure from creating intermediate copies
+        if (!state[key] || typeof value !== 'object') {
+            Vue.set(state, key, value)
+        } else {
+            Vue.set(state, key, {...state[key], ...value})
+        }
+        state.clean = false
+    },
+
+    setProjectStateBatch(state, updates) {
+        // Efficiently batch multiple state updates
+        updates.forEach(({key, value}) => {
+            if (!state[key] || typeof value !== 'object') {
+                Vue.set(state, key, value)
+            } else {
+                Vue.set(state, key, {...state[key], ...value})
+            }
+        })
         state.clean = false
     },
 
@@ -67,19 +101,22 @@ const mutations = {
 
         state.callbacks = []
     },
-    onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) }
+    onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) },
+
+    addTempRepository(state, repo) {
+        Vue.set(state.repositories, repo.url, {...repo, temp: true})
+    }
 
 }
 const actions = {
     async fetchProject({state, commit, dispatch, rootGetters}, params) {
-        const {projectPath, projectGlobal, shouldMerge} = {shouldMerge: false, ...params}
+        let {projectPath, blueprintPath, projectGlobal, shouldMerge, branch} = {shouldMerge: false, ...params}
         const format = 'blueprint'
         commit('loaded', false)
 
-        let branch
         const deployment = Object.values(state.Deployment || {})[0]
 
-        if(deployment) {
+        if(deployment && !branch) {
             try {
                 branch = deployment.packages[projectPath].version
             } catch(e) {}
@@ -90,6 +127,7 @@ const actions = {
             root = await unfurlServerExport({
                 format,
                 projectPath,
+                deploymentPath: blueprintPath,
                 sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public'),
                 branch
             })
@@ -128,8 +166,18 @@ const actions = {
 
     },
 
-    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath}) {
+    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath, cache}) {
         let transforms
+
+        // Initialize cache if not provided
+        if (!cache) {
+            cache = {
+                resourceTypes: new Map(),
+                missingDependencies: new Map(),
+                missingProperties: new Map(),
+                groupProperties: new Map()
+            }
+        }
 
         function normalizeProperties(properties) {
             if(!properties || typeof properties != 'object') {
@@ -155,6 +203,38 @@ const actions = {
             }
         }
 
+        // Cached getter wrapper
+        function getCachedResourceType(typeName) {
+            if (!cache.resourceTypes.has(typeName)) {
+                cache.resourceTypes.set(typeName, getters.resolveResourceType(typeName))
+            }
+            return cache.resourceTypes.get(typeName)
+        }
+
+        function getCachedMissingDependencies(resourceTemplate) {
+            const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
+            if (!cache.missingDependencies.has(key)) {
+                cache.missingDependencies.set(key, getters.getMissingDependencies(resourceTemplate))
+            }
+            return cache.missingDependencies.get(key)
+        }
+
+        function getCachedMissingProperties(resourceTemplate) {
+            const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
+            if (!cache.missingProperties.has(key)) {
+                cache.missingProperties.set(key, getters.getMissingProperties(resourceTemplate))
+            }
+            return cache.missingProperties.get(key)
+        }
+
+        function getCachedGroupProperties(resourceTemplate) {
+            const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
+            if (!cache.groupProperties.has(key)) {
+                cache.groupProperties.set(key, getters.groupProperties(resourceTemplate))
+            }
+            return cache.groupProperties.get(key)
+        }
+
         // TODO refactor independent transformations into vue_shared/lib/normalize
         transforms = {
             ResourceType(resourceType) {
@@ -171,14 +251,14 @@ const actions = {
                     }
                 })
 
-                const {properties, computedProperties} = getters.groupProperties(resourceTemplate)
+                const {properties, computedProperties} = getCachedGroupProperties(resourceTemplate)
                 resourceTemplate.properties = properties
                 resourceTemplate.computedProperties = computedProperties
 
-                for(const generatedDep of getters.getMissingDependencies(resourceTemplate)) {
+                for(const generatedDep of getCachedMissingDependencies(resourceTemplate)) {
                     resourceTemplate.dependencies.push(generatedDep)
                 }
-                for(const generatedProp of getters.getMissingProperties(resourceTemplate)) {
+                for(const generatedProp of getCachedMissingProperties(resourceTemplate)) {
                     resourceTemplate.properties.push(generatedProp)
                 }
 
@@ -192,7 +272,7 @@ const actions = {
                 // aggressively add _sourceinfo if immediately available
                 // this will not always be able to get _sourceinfo from types calls
                 if(!resourceTemplate._sourceinfo) {
-                    const type = getters.resolveResourceType(resourceTemplate.type)
+                    const type = getCachedResourceType(resourceTemplate.type)
                     if(type?._sourceinfo) {
                         resourceTemplate._sourceinfo = type._sourceinfo
                     }
@@ -210,12 +290,12 @@ const actions = {
                 if(projectPath && !deploymentTemplate.projectPath) {
                     deploymentTemplate.projectPath = projectPath
                 }
-                if(deploymentTemplate.source) {
+                if(deploymentTemplate._sourceTemplate) {
                     if(!deploymentTemplate.ResourceTemplate) {
                         deploymentTemplate.ResourceTemplate = {}
                     }
 
-                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate.source)?.ResourceTemplate || {}).forEach(([name, rt]) => {
+                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate._sourceTemplate)?.ResourceTemplate || {}).forEach(([name, rt]) => {
                         if(
                             (root.ResourceTemplate[name] && root.ResourceTemplate[name].directives.includes('default')) &&
                             (!deploymentTemplate.ResourceTemplate[name])
@@ -230,6 +310,9 @@ const actions = {
             ApplicationBlueprint(applicationBlueprint) {
                 if(!applicationBlueprint.title) {
                     applicationBlueprint.title = applicationBlueprint.name
+                }
+                if(projectPath && !applicationBlueprint.projectPath) {
+                    applicationBlueprint.projectPath = projectPath
                 }
                 applicationBlueprint.__typename = 'ApplicationBlueprint'
             },
@@ -320,19 +403,49 @@ const actions = {
         // guarunteed ordering
         const ordering = uniq(['ResourceType', 'DefaultTemplate', 'DeploymentEnvironment', 'ResourceTemplate', 'DeploymentTemplate', 'Deployment'].concat(Object.keys(root)))
 
+        // Batch size for processing entries to reduce memory pressure
+        const BATCH_SIZE = 50
+
+        // Create a shared cache for all normalization operations
+        const normalizationCache = {
+            resourceTypes: new Map(),
+            missingDependencies: new Map(),
+            missingProperties: new Map(),
+            groupProperties: new Map()
+        }
+
         for(const key of ordering) {
             const value = root[key]
 
             if(! value) continue
 
-            Object.values(value).forEach(entry => {
-                try {
-                    dispatch('normalizeUnfurlData', {key, entry, root, projectPath})
-                } catch(e) {
-                    console.error({key, entry, root, projectPath})
-                    console.error('@useProjectState', e)
+            const entries = Object.values(value)
+
+            // Process entries in batches to allow garbage collection between batches
+            for(let i = 0; i < entries.length; i += BATCH_SIZE) {
+                const batch = entries.slice(i, i + BATCH_SIZE)
+
+                batch.forEach(entry => {
+                    try {
+                        dispatch('normalizeUnfurlData', {key, entry, root, projectPath, cache: normalizationCache})
+                    } catch(e) {
+                        // Sanitize error logging to prevent memory retention of large objects
+                        console.error('@useProjectState normalization error', {
+                            key,
+                            entryName: entry?.name || entry?.title || 'unknown',
+                            projectPath,
+                            errorMessage: e.message,
+                            errorStack: e.stack
+                        })
+                        console.error(e)
+                    }
+                })
+
+                // Allow garbage collection between batches
+                if (i + BATCH_SIZE < entries.length) {
+                    await new Promise(resolve => setTimeout(resolve, 0))
                 }
-            })
+            }
 
             // commit so we can use our resolvers while normalizing
             if(key == 'ResourceType') {
@@ -343,18 +456,27 @@ const actions = {
             commit('setProjectState', {key: 'applicationBlueprint', value: Object.values(root.ApplicationBlueprint)[0]})
         }
 
-        // second iteration to avoid mutating committed
+        // Batch commit remaining state updates to reduce mutation overhead
+        const batchUpdates = []
         for(const key of ordering) {
             if(key == 'ResourceType') continue
             const value = root[key]
-            commit('setProjectState', {key, value})
+            if (value) {
+                batchUpdates.push({key, value})
+            }
+        }
+        if (batchUpdates.length > 0) {
+            commit('setProjectStateBatch', batchUpdates)
         }
     },
 
     async blueprintFetchTypesWithParams({state, getters, commit, dispatch}, {params}) {
         let types
+        let nestedTemplatesByPrimary = {}
         try {
-            types = (await fetchTypeRepositories(getters.blueprintRepositories, params)).types
+            const typesRepositoryResults = (await fetchTypeRepositories(getters.blueprintRepositories, params))
+            types = typesRepositoryResults.types
+            nestedTemplatesByPrimary = typesRepositoryResults.nestedTemplatesByPrimary
         } catch(e) {
             const context = {
                 repositories: getters.blueprintRepositories,
@@ -374,20 +496,27 @@ const actions = {
         }
 
         // prioritize types that are already defined when new type is incomplete
-        Object.entries(state.ResourceType).forEach(([name, type]) => {
+        Object.entries(state.ResourceType).forEach(([name, currentType]) => {
             const newType = types[name]
 
             if(newType && !newType._sourceinfo?.incomplete) {
+                if(currentType.icon) {
+                    newType.icon = currentType.icon
+                }
+
                 return
             }
 
-            types[name] = type
+            types[name] = currentType
         })
 
         await dispatch(
             'useProjectState',
             {root: {ResourceType: types}, shouldMerge: true}
         )
+
+
+        commit('setProjectState', {key: "nestedTemplatesByPrimary", value: {...state.nestedTemplatesByPrimary, ...nestedTemplatesByPrimary}})
     }
 }
 
@@ -443,6 +572,9 @@ const getters = {
     getApplicationRoot(state) {return state},
     resolveResourceType: storeResolver('ResourceType'),
     resolveResourceTypeWithAncestors(state, getters) {
+        // Cache for already-resolved type + ancestor combinations
+        const resolvedCache = new Map()
+
         // where ancestors looks like [(ResourceType, RequirementConstraint?)]
         return function(resourceType, ancestors) {
             console.assert(resourceType, 'expected resource type')
@@ -450,12 +582,20 @@ const getters = {
                 return getters.resolveResourceType(resourceType)
             }
 
-            // don't mutate existing types
-            const nodeFilterPath = _.cloneDeep([
-                ...(ancestors.map(([rt, req]) => [getters.resolveResourceType(rt.type), req])),
-                [getters.resolveResourceType(resourceType), null]
-            ])
+            // Create a cache key from resourceType and ancestors
+            const cacheKey = `${resourceType}::${ancestors.map(([rt, req]) => `${rt.type}:${req}`).join('|')}`
+            if (resolvedCache.has(cacheKey)) {
+                return resolvedCache.get(cacheKey)
+            }
 
+            // Only deep clone the final child type that will be mutated
+            const childType = _.cloneDeep(getters.resolveResourceType(resourceType))
+
+            // Build path without cloning intermediate types (they won't be mutated)
+            const nodeFilterPath = [
+                ...(ancestors.map(([rt, req]) => [getters.resolveResourceType(rt.type), req])),
+                [childType, null]
+            ]
 
             for(let i = 0; i < ancestors.length; i++) {
                 try {
@@ -472,11 +612,20 @@ const getters = {
                         applyInputsSchema(child, requirement.inputsSchema)
                     }
                 } catch(e) {
-                    console.error('Could not apply requirements filter to requirement', e, {i, ancestors, resourceType, nodeFilterPath})
+                    // Sanitize error logging to avoid retaining large cloned objects
+                    console.error('Could not apply requirements filter to requirement', {
+                        index: i,
+                        ancestorCount: ancestors.length,
+                        resourceTypeName: resourceType,
+                        errorMessage: e.message,
+                        errorStack: e.stack
+                    })
+                    console.error(e)
                 }
             }
 
             const result = _.last(nodeFilterPath)[0]
+            resolvedCache.set(cacheKey, result)
             return result
         }
     },
@@ -515,12 +664,16 @@ const getters = {
     },
     resolveResource(state) {
         return name => {
-            if(!name) return
-            let rt = state['Resource'][name]
-            if(!rt && !name?.startsWith('::')) {
-                rt = state['Resource'][`::${name}`]
+            if(!name) return null
+            try {
+                let rt = state['Resource'][name]
+                if(!rt && !name?.startsWith('::')) {
+                    rt = state['Resource'][`::${name}`]
+                }
+                return rt
+            } catch(e) {
+                return null
             }
-            return rt
         }
     },
     resolveDeployment(state) { return name =>  state['Deployment'][name] },
@@ -651,8 +804,12 @@ const getters = {
     },
 
     blueprintRepositories(state) {
-        return Object.values(state.repositories)
+        return Object.values(state.repositories || {})
     },
+
+    nestedTemplatesByPrimary(state) {
+        return state.nestedTemplatesByPrimary || {}
+    }
 }
 
 

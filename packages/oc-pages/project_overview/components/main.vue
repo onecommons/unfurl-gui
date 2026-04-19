@@ -1,9 +1,9 @@
 <script>
+
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
-import gql from 'graphql-tag'
-import graphqlClient from '../graphql';
 import * as routes from '../router/constants'
+import {getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 
 export default {
     name: 'MainComponent',
@@ -17,16 +17,23 @@ export default {
 
         let dashboard
         if(dashboard = this.$route.params.dashboard) {
-          dashboard = decodeURIComponent(dashboard)
+            dashboard = decodeURIComponent(dashboard)
 
-          const pathComponents = dashboard.split('/')
-          const namespace = pathComponents.slice(0, -1).join('/')
-          const dashboardName = pathComponents[pathComponents.lastIndex]
-          this.$store.commit('setCurrentNamespace', namespace)
-          this.$store.commit('setDashboardName', dashboardName)
+            const pathComponents = dashboard.split('/')
+            const namespace = pathComponents.slice(0, -1).join('/')
+            const dashboardName = pathComponents[pathComponents.lastIndex]
+
+            if(!window.gon.home_project) {
+                this.$store.commit('setCurrentNamespace', namespace)
+                this.$store.commit('setDashboardName', dashboardName)
+            }
         }
 
-        if(gon.current_user_id && this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE ) {
+        if(
+            gon.current_user_id &&
+            this.$store.getters.getHomeProjectPath &&
+            this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE
+        ) {
             this.$store.dispatch('populateCurrentUser').catch(() => {})
 
             const includeDeployments = ![
@@ -34,7 +41,7 @@ export default {
             ].includes(this.$route.name)
 
             const projectPath = this.$store.getters.getHomeProjectPath
-            const branch = this.$route.query.branch || 'main'
+            const branch = this.$route.query.branch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
 
             const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments, only: !includeDeployments && this.$route.params.environment})
                 .catch(err => {

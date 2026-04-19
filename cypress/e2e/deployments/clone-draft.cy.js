@@ -1,5 +1,5 @@
 import {deploymentFixturePath} from '../../support/deployment-fixture'
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const fixture = deploymentFixturePath('az__nextcloud__sh')
 
@@ -35,7 +35,7 @@ function shouldDeploy(deploymentTemplateTitle) {
 }
 
 function editAndDeploy(title) {
-  cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=drafts`)
+  cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=drafts`)
 
   cy.contains('tr', title).should('exist')
 
@@ -47,7 +47,7 @@ function editAndDeploy(title) {
 }
 
 function cloneDeployment(ogTitle, cloneTitle) {
-  cy.visit(`/${NAMESPACE}/dashboard/-/deployments?show=drafts`)
+  cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=drafts`)
 
   cy.contains('tr', ogTitle).within(() => {
     cy.get('button.dropdown-toggle').click()
@@ -57,7 +57,7 @@ function cloneDeployment(ogTitle, cloneTitle) {
   cy.get('.modal-body input').clear().type(cloneTitle)
   cy.contains('button', 'Confirm').click()
 
-  cy.url().should('contain', `/${NAMESPACE}/dashboard/-/deployments/`)
+  cy.url().should('contain', `/${DASHBOARD_DEST}/-/deployments/`)
 }
 
 describe('Cloning and deploying drafts', () => {

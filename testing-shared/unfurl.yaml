@@ -1,0 +1,22 @@
+## When "unfurl clone" is invoked this file will be used to generate a new local/unfurl.yaml
+## Any lines starting with ## will be excluded from the generated file.
+##
+apiVersion: unfurl/v1alpha1
+kind: Project
+# this file is including into unfurl.yaml but is listed in .gitignore
+# so you can add configuration that you don't want committed to the repository,
+# such as secrets, local settings, and local ensembles.
+environments:
+ defaults:
+    # use "variables" to modify environment variables
+    # keys are processed in order and a leader "+" and "-"
+    # will copy or remove the variable from the environment
+    # e.g.:
+    # variables:
+    #   -*:       # will remove all environment variables
+    #   +HOME:    # will add HOME back
+    #   FOO: bar  # set FOO
+    variables:
+      +?include-env:
+        file: ${UNFURL_CLOUD_VARS_URL:envlist.json}
+        merge: maplist

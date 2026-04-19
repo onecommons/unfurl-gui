@@ -1,4 +1,4 @@
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 

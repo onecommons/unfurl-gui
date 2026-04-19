@@ -237,7 +237,7 @@ export default {
                     title="create"
                     :aria-label="__(`create`)"
                     type="button"
-                    :data-testid="`create-dependency-${card.name}.${dependency.name}`"
+                    :data-testid="`create-dependency-${card._unmangled || card.name}.${dependency.name}`"
                     class="gl-ml-3 oc_requirements_actions"
                     @click="sendRequirement(dependency)">{{ __('Create') }}</gl-button>
             </div>

@@ -1,17 +1,24 @@
+
+// #!if !standalone
 import LocalImageRepoSource from './LocalImageRepoSource.vue'
 import GithubMirroredRepoImageSource from './GithubMirroredRepoImageSource.vue'
 import UnfurlCloudMirroredRepoImageSource from './UnfurlCloudMirroredRepoImageSource.vue'
 import UnfurlCNamedDNSZone from './UnfurlCNamedDNSZone.vue'
+// #!endif
 
 import EnvironmentTooltip from './tooltips/EnvironmentTooltip.vue'
 
 import GenerateDirective from './directives/GenerateDirective.vue'
 
 const customComponents = {
+
+    // #!if !standalone
     GithubMirroredRepoImageSource,
     LocalImageRepoSource,
     UnfurlCloudMirroredRepoImageSource,
     UnfurlCNamedDNSZone
+    // #!endif
+
 }
 
 const customTooltips = {
@@ -35,7 +42,10 @@ export function getUiDirective(type) {
 }
 
 import FakePassword from './formily-fake-password'
+
+// #!if !standalone
 import FileSelector from './formily-file-selector'
+// #!endif
 
 const formilyElement = async function() {
     if(!formilyElement.promise) {
@@ -68,7 +78,12 @@ export const fields =  async function() {
         ArrayItems,
         Space,
         Input,
-        InputNumber, Checkbox, Select, FakePassword, FileSelector, Editable
+        InputNumber, Checkbox, Select, FakePassword, Editable,
+
+        // #!if !standalone
+        FileSelector
+        // #!endif
+
       }
     })
 }

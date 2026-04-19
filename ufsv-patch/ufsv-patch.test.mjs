@@ -6,35 +6,20 @@ import store from './store'
 import Fixture from './fixture'
 import {jest} from '@jest/globals'
 import { sleep } from 'oc_vue_shared/client_utils/misc'
+import UnfurlServer from '../testing-shared/unfurl-server'
+import { getBlueprintFixtures } from '../testing-shared/fixture-specs'
 
 // import {globSync} from 'glob'
 import glob from 'glob'
 const globSync = glob.sync
 
 const TMP_DIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
-const SPEC_GLOBS = process.env.SPEC_GLOBS || ''
-const SKIP_GLOBS = process.env.SPEC_SKIP_GLOBS || '*container-webapp* *nestedcloud* *draft*'
-const TEST_VERSIONS = process.env.TEST_VERSIONS || 'v2'
 const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
 const UNFURL_SERVER_CWD = TMP_DIR + '/ufsv'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
 const UNFURL_SERVER_URL =  `http://localhost:${PORT}`
 
-const prefix = `cypress/fixtures/generated/deployments/${TEST_VERSIONS}/`
-const suffix = '.json'
-
-function evalGlobs(globs) {
-  return globs.split(/\s+/).map(
-    spec => {
-      const s = `${prefix}${spec}${suffix}`
-      return globSync(`${prefix}${spec}${suffix}`)
-    }
-  ).flat()
-}
-
-const fixtures = evalGlobs(SPEC_GLOBS)
-const skipFixtures = evalGlobs(SKIP_GLOBS)
 
 // Update .readme/2_jest-ufcloud-emulation.md when changed
 const UNFURL_DEFAULT_ENV = {
@@ -45,7 +30,7 @@ const UNFURL_DEFAULT_ENV = {
 
 function setupCmd() {
     try {
-      childProcess.execFileSync('./ufsv-patch/setup.sh', {env: {...process.env, UNFURL_SERVER_CWD}})
+      childProcess.execFileSync('testing-shared/setup.sh', {env: {...process.env, UNFURL_SERVER_CWD}})
     } catch(e) {
       console.error(e.message)
     }
@@ -65,32 +50,17 @@ function testToArtifactPath(testName) {
 
 function spawnUnfurlServer(testName) {
   const outfile = fs.openSync(testToUfsvLogPath(testName), 'w')
-  const cmd = '/usr/bin/env'
-  const args = [
-      UNFURL_CMD,
-      'serve',  '.',
-      '--cloud-server', OC_URL,
-      '--port', PORT,
-      '--clone-root', `${TMP_DIR}/repos`
-  ]
 
-  writeLine('serve command: ', [cmd, ...args].join(' '))
+  const unfurlInstance = new UnfurlServer({
+    cwd: UNFURL_SERVER_CWD,
+    env: UNFURL_DEFAULT_ENV,
+    outfile,
+    // cloneRoot: `${TMP_DIR}/repos`
+  })
 
-  return childProcess.spawn(
-    cmd,
-    args,
-    {
-      env: {
-        ...UNFURL_DEFAULT_ENV,
-        ...process.env
-      },
-      cwd: UNFURL_SERVER_CWD,
-      stdio: [
-        'inherit',
-        outfile,
-        outfile
-      ]
-    })
+  writeLine('serve command: ', JSON.stringify(unfurlInstance.invocation, null, 2))
+
+  return unfurlInstance.process
 }
 
 function spawnDryrunSync(fixture) {
@@ -137,8 +107,9 @@ function spawnDryrunSync(fixture) {
 async function sleepyCurl(n=2000) {
   await sleep(n)
   try {
-    childProcess.execSync(`curl -v ${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
-    childProcess.execSync(`curl -v ${OC_URL}/-/health`, {stdio: 'inherit'})
+    const verbosity = process.env.CI? '-v ': ''
+    childProcess.execSync(`curl ${verbosity}${UNFURL_SERVER_URL}/version`, {stdio: 'inherit'})
+    childProcess.execSync(`curl ${verbosity}${OC_URL}/-/health`, {stdio: 'inherit'})
   } catch(e) {
     console.error(e.message)
     await sleepyCurl(n+1000)
@@ -215,8 +186,7 @@ async function runSpecs() {
     }
   })
 
-  for(const path of fixtures) {
-    if(skipFixtures.includes(path)) continue
+  for(const path of getBlueprintFixtures()) {
     const fixture = new Fixture(path)
     test(fixture.name, async () => {
       await fixture.test(store)
@@ -228,9 +198,15 @@ async function runSpecs() {
       // await sleep(1000) // logs are buffering weird?
       // sectionEnd(sectionName)
 
-      try {
-        fs.renameSync(`${TMP_DIR}/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
-      } catch (e) { console.error(e.message) }
+      if (!process.env.UNFURL_TEST_KEEP_ARTIFACT) {
+        try {
+          fs.rmSync(testToArtifactPath(testName), { recursive: true, force: true })
+        } catch (e) { }
+
+        try {
+          fs.renameSync(`${TMP_DIR}/ufsv/${fixture.deploymentDir}`, testToArtifactPath(testName))
+        } catch (e) { console.error(e.message) }
+      }
 
       try {
         fs.copyFileSync(`${TMP_DIR}/ufsv/unfurl.yaml`, `${testToArtifactPath(testName)}/unfurl.yaml`)

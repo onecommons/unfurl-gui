@@ -31,10 +31,12 @@ export default {
     methods: {
         deployTemplate(template) {
             bus.$emit('deployTemplate', template);
+            this.$emit('deployTemplate', template)
         },
 
         editTemplate(template) {
             bus.$emit('editTemplate', template);
+            this.$emit('editTemplate', template)
         },
         redirectToDeployment() {
             window.location.href = this.$projectGlobal.linkDeployment;
@@ -46,7 +48,7 @@ export default {
             'getUsername'
         ]),
         disableDeployButton() {
-            return this.getUsername && !this.environmentsAreReady
+            return (window.gon.unfurl_gui || this.getUsername) && !this.environmentsAreReady
         }
     },
 }

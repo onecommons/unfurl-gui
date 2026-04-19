@@ -7,14 +7,15 @@ async function createProjectToken(o) {
   const {project, accessLevel} = o
   await login()
 
-  const url = `${process.env.OC_URL}/${project}/-/settings/access_tokens`
+  const url = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/${project}/-/settings/access_tokens`
   const page = (await axios.get(url)).data
   const authenticity_token = extractCsrf(page)
 
   const form = new FormData()
 
-  const FIELD_NAME = process.env.GITLAB_VERSION == '14.9'?
-    'resource_access_token': 'project_access_token'
+  // const FIELD_NAME = process.env.GITLAB_VERSION == '14.9'?
+    // 'resource_access_token': 'project_access_token'
+  const FIELD_NAME = 'resource_access_token'
 
   form.append('authenticity_token', authenticity_token)
   form.append(`${FIELD_NAME}[name]`, 'UNFURL_PROJECT_TOKEN')
@@ -37,7 +38,7 @@ async function createProjectToken(o) {
   /*
    * can't use API with admin user session?
    * I'll try again later with a CSRF token
-  const url = `${process.env.OC_URL}/api/v4/projects/${encodeURIComponent(project)}/access_tokens`
+  const url = `${process.env.UNFURL_CLOUD_SERVER || process.env.OC_URL}/api/v4/projects/${encodeURIComponent(project)}/access_tokens`
   const response = await axios.post(
     url,
     {
@@ -51,8 +52,10 @@ async function createProjectToken(o) {
   const status = response.status
 
   if(status < 400 && status >= 200) {
+    if(response.data.new_token) {
+      return response.data.new_token
+    }
     const token = response.data.match(/input.*name="created-personal-access-token.*value="((\w|-)+)"/)[1]
-    console.log({token})
     return token
   } else {
     console.error(response)

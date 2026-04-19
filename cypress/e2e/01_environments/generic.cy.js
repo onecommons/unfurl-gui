@@ -1,4 +1,4 @@
-const NAMESPACE = Cypress.env('DEFAULT_NAMESPACE')
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const ENVIRONMENT_NAME = 'env-test-' + 'generic'
 
 describe('Generic environment', () => {
@@ -11,7 +11,7 @@ describe('Generic environment', () => {
 
   afterEach(() => {
     cy.contains('Generic', {matchCase: false}).should('exist')
-    cy.visit(`${NAMESPACE}/dashboard/-/environments`)
+    cy.visit(`${DASHBOARD_DEST}/-/environments`)
     cy.environmentShouldExist(ENVIRONMENT_NAME)
   })
 
