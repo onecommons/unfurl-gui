@@ -3,6 +3,7 @@ import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node-filter'
 import { repoToExportParams, fetchTypeRepositories, unfurlServerGetTypes } from  'oc_vue_shared/client_utils/unfurl-server'
+import { deepClone as cloneDeep } from 'oc_vue_shared/util'
 import _ from 'lodash'
 import Vue from 'vue'
 
@@ -589,7 +590,7 @@ const getters = {
             }
 
             // Only deep clone the final child type that will be mutated
-            const childType = _.cloneDeep(getters.resolveResourceType(resourceType))
+            const childType = cloneDeep(getters.resolveResourceType(resourceType))
 
             // Build path without cloning intermediate types (they won't be mutated)
             const nodeFilterPath = [

@@ -1,7 +1,7 @@
-import { cloneDeep, create } from 'lodash';
+import { create } from 'lodash';
 import _ from 'lodash'
 import { __ } from "~/locale";
-import { lookupCloudProviderAlias, slugify, generateCardId } from 'oc_vue_shared/util';
+import { lookupCloudProviderAlias, slugify, generateCardId, deepClone as cloneDeep } from 'oc_vue_shared/util';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
@@ -495,7 +495,7 @@ const actions = {
         if(!resolvedDependencyMatch && environmentName) {
             let matchedInstance = rootGetters.lookupConnection(environmentName, match)
             if(matchedInstance) {
-                matchedInstance = _.cloneDeep(matchedInstance)
+                matchedInstance = cloneDeep(matchedInstance)
                 const key = isDeploymentTemplate? 'ResourceTemplate': 'Resource'
 
                 dispatch(
@@ -897,7 +897,7 @@ const actions = {
         update.propertyName = firstComponent
 
         if(propertyPath.length > 0) {
-            update.propertyValue = _.cloneDeep(templatePropertyValue || {})
+            update.propertyValue = cloneDeep(templatePropertyValue || {})
 
             let mutProperty = update.propertyValue
             for(const component of propertyPath.slice(1)) {
@@ -911,7 +911,7 @@ const actions = {
 
             mutProperty[propertyName] = propertyValue
         } else {
-            update.propertyValue = _.cloneDeep(propertyValue)
+            update.propertyValue = cloneDeep(propertyValue)
         }
 
         const inputsSchema = getters.resourceTemplateInputsSchema(templateName)
@@ -1124,7 +1124,7 @@ const getters = {
                 return rt.connections
             }
 
-            let dependencies = _.cloneDeep(rt.dependencies || [])
+            let dependencies = cloneDeep(rt.dependencies || [])
 
             if(dependencies.length == 0) return []
 
@@ -1418,7 +1418,7 @@ const getters = {
             if(!rt._ancestors) return null
 
             // TODO rt.dependencies should have been normalized to an empty array
-            const ancestorConstraints = _.cloneDeep(rt._ancestors || []).map(([rt, req]) => rt.dependencies?.find(dep => dep.name == req)?.constraint)
+            const ancestorConstraints = cloneDeep(rt._ancestors || []).map(([rt, req]) => rt.dependencies?.find(dep => dep.name == req)?.constraint)
 
             const parentConstraint = ancestorConstraints.reduce((prev, cur) => _.merge(cur, ...(prev?.requirementsFilter || [])), null)
 
@@ -1449,7 +1449,7 @@ const getters = {
                 return getters.resolveResourceTypeFromAny(resourceTemplate.type)?.inputsSchema
             }
 
-            const type = _.cloneDeep(getters.resolveResourceTypeFromAny(rt.type))
+            const type = cloneDeep(getters.resolveResourceTypeFromAny(rt.type))
 
             if(strict && type?._sourceinfo?.incomplete) {
                 throw new Error(`'${type.name}' is incomplete`)

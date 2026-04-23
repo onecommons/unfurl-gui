@@ -8,7 +8,8 @@ import ShareResourceToggle from '../components/share-resource-toggle.vue'
 import JobSummary from '../components/job-summary.vue'
 import {bus} from 'oc_vue_shared/bus'
 import * as routes from '../router/constants'
-import {debounce, cloneDeep} from 'lodash'
+import {debounce} from 'lodash'
+import {deepClone} from 'oc_vue_shared/util'
 import {GlTabs, GlLoadingIcon} from '@gitlab/ui'
 import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
@@ -243,8 +244,7 @@ export default {
                 ResourceType = this.environmentResourceTypeDict(this.environment.name)
             }
             const projectPath = this.deployment?.projectPath || this.state.DeploymentTemplate[this.deployment.deploymentTemplate]?.projectPath
-            await this.useProjectState({projectPath, root: cloneDeep({...this.state, DeploymentEnvironment, ResourceType})})
-
+            await this.useProjectState({projectPath, root: deepClone({...this.state, DeploymentEnvironment, ResourceType})})
             await this.populateDeploymentResources({deployment: this.deployment, environmentName: this.environment.name})
             this.viewReady = true
         },

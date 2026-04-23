@@ -3,6 +3,7 @@ import { visit } from 'graphql/language';
 import _ from "lodash";
 import typeDefs from './graphql/client-schema.graphql';
 import gql from 'graphql-tag'
+import { deepClone as fastCloneDeep } from './util'
 
 export { typeDefs };
 
@@ -115,7 +116,7 @@ async function fetchRootBlob(root, _variables, context) {
             errors.forEach(console.error)
         }
         const jsonPayload = data?.applicationBlueprint?.json
-        return _.cloneDeep(jsonPayload)
+        return fastCloneDeep(jsonPayload)
     } catch(e) {
         console.error(e)
     }
@@ -179,7 +180,7 @@ function makeClientResolver(typename, field=null, selector, o) {
             target.__typename = 'JSON'
         } else { target.__typename = typename }
         if(deepClone) {
-            target = _.cloneDeep(target)
+            target = fastCloneDeep(target)
         }
         return target
     }

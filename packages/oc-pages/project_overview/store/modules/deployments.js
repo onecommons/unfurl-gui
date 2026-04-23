@@ -1,4 +1,4 @@
-import {slugify} from 'oc_vue_shared/util'
+import {slugify, deepClone as cloneDeep} from 'oc_vue_shared/util'
 import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc_vue_shared/lib/deployment-template'
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
@@ -93,7 +93,7 @@ const actions = {
 
         if(sourceDeploymentDict && deployPathName) {
             const {DeploymentTemplate, ResourceTemplate, ApplicationBlueprint, DefaultTemplate} = sourceDeploymentDict
-            const deploymentObj = _.cloneDeep({DeploymentTemplate, ResourceTemplate, ApplicationBlueprint})
+            const deploymentObj = cloneDeep({DeploymentTemplate, ResourceTemplate, ApplicationBlueprint})
             const prevDeploymentName = getPreviousDeploymentName(deployPathName)
             const newDeploymentName = getNewDeploymentName(newDeploymentTitle, targetEnvironmentName)
 
@@ -259,7 +259,7 @@ const actions = {
             (acc) => {
                 const environment = rootGetters.lookupEnvironment(environmentName)
                 // TODO check if this needs to be cloned
-                const patch = _.cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
+                const patch = cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -273,7 +273,7 @@ const actions = {
             (acc) => {
                 const environment = rootGetters.getEnvironmentDefaults
                 // instances is initially an object for defaults
-                const patch = _.cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
+                const patch = cloneDeep({...environment, instances: {...environment.instances, [name]: undefined}})
                 return [{target: 'defaults', patch, typename: 'DeploymentEnvironment'}];
             },
             {root: true}
@@ -328,7 +328,7 @@ const actions = {
             (acc) => {
                 // we can use acc here because updateResourceSharedState populated the state
                 //const patch = acc.DeploymentEnvironment[environmentName]
-                const patch = _.cloneDeep(rootGetters.lookupEnvironment(environmentName))
+                const patch = cloneDeep(rootGetters.lookupEnvironment(environmentName))
                 patch.instances[newObject.name] = newObject
                 return [{target: environmentName, patch, typename: 'DeploymentEnvironment'}];
             },
@@ -357,7 +357,7 @@ const actions = {
         commit(
             'pushPreparedMutation',
             (acc) => {
-                const patch = _.cloneDeep(rootGetters.getEnvironmentDefaults)
+                const patch = cloneDeep(rootGetters.getEnvironmentDefaults)
                 patch.instances[name] = newObject
                 return [{target: 'defaults', patch, typename: 'DeploymentEnvironment'}];
             },

@@ -1,8 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 import { __ } from "~/locale";
 import _ from 'lodash'
-import {cloneDeep} from 'lodash'
-import {lookupCloudProviderAlias, slugify} from 'oc_vue_shared/util.js'
+import {lookupCloudProviderAlias, slugify, deepClone as cloneDeep} from 'oc_vue_shared/util.js'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
@@ -576,10 +575,10 @@ const actions = {
         const cloneTarget = slugify(newEnvironmentName)
         const variables = []
         let instances = []
-        const primary_provider = _.cloneDeep(provider.template)
+        const primary_provider = cloneDeep(provider.template)
         environmentVariableDependencies(primary_provider).forEach(v => variables.push(v))
         if(provider.source == 'connection') {
-            instances = _.cloneDeep(provider.environment.instances)
+            instances = cloneDeep(provider.environment.instances)
             for(const instance of instances) {
                 environmentVariableDependencies(instance).forEach(v => variables.push(v))
             }

@@ -8,7 +8,40 @@ export function userDefaultPath() {
 }
 
 export function generateCardId(name) {
-    return btoa(name).replace(/=/g, '')
+    return encodeURIComponent(name)
+}
+
+// Fast deep-clone. Uses native structuredClone (C++, 100-1000× faster
+// than lodash.cloneDeep on large objects) when available. The app's
+// browserslist (see package.json) restricts targets to browsers with
+// native structuredClone (circa 2022) so Babel/core-js skips the JS polyfill.
+//
+// structuredClone handles cycles (we have
+// cyclic `_ancestors` references in normalized resource templates)
+// and preserves Dates / Maps / Sets.
+//
+// Safety: structuredClone throws DataCloneError on functions, Promises,
+// WeakMap/Set, Error instances, DOM nodes, Proxies, or symbol values.
+// We fall back to lodash.cloneDeep in those cases so callers never
+// see an exception.
+//
+// Caveat (not caught by fallback): plain class instances are silently
+// demoted to plain Objects — prototype link is severed, so methods
+// defined on the prototype disappear. Apollo / GraphQL / user-input
+// payloads we clone don't carry class instances, but if a future
+// caller clones something constructed from a user-defined class,
+// downstream `instanceof` checks and method calls will break.
+export function deepClone(value) {
+    if (typeof structuredClone === 'function') {
+        try {
+            return structuredClone(value)
+        } catch (_e) {
+            // Fall through to lodash — value contains something
+            // structuredClone rejects.
+        }
+    }
+    // eslint-disable-next-line global-require
+    return require('lodash').cloneDeep(value)
 }
 
 const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
