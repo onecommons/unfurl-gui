@@ -217,6 +217,18 @@ export default {
             }
         },
 
+        onHeaderClick(e) {
+            // Primary card isn't collapsible — no click toggle there.
+            if (this.isPrimary) return
+            // Ignore clicks on interactive descendants so buttons, links,
+            // tooltips, inputs, the delete control, and the chevron itself
+            // aren't "stolen" by the header-wide toggle.
+            if (e.target.closest && e.target.closest(
+                'button, a, input, textarea, select, [role="button"], .gl-button, .card-toggle'
+            )) return
+            this.toggleCard(e)
+        },
+
         toggleCard(e) {
             if (!this.setHeight) {
                 this.adaptWidth()
@@ -234,7 +246,7 @@ export default {
 <template>
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
         <template #header>
-            <div :id="id" :data-testid="card && ('card-' + card.name)" class="d-flex position-relative w-100 justify-content-between">
+            <div :id="id" :data-testid="card && ('card-' + card.name)" class="d-flex position-relative w-100 justify-content-between" :class="{'oc-card-header-clickable': !isPrimary}" @click="onHeaderClick">
                 <div class="d-flex oc-card-header justify-content-between w-100">
                     <slot name="header">
                         <div v-if="card" class="align_left gl-display-flex align-items-center flex-one flex-wrap">
@@ -274,7 +286,7 @@ export default {
                             </gl-button>
 
                         </slot>
-                        <span class="card-toggle" @click="toggleCard" v-if="!isPrimary">
+                        <span class="card-toggle" @click.stop="toggleCard" v-if="!isPrimary">
                             <gl-icon :name="expanded? 'chevron-down': 'chevron-left'" :size="24"></gl-icon>
                         </span>
                     </div>
@@ -362,6 +374,12 @@ export default {
 .card-toggle {
     margin-left: 0.5em;
     display: inline-flex;
+}
+
+/* Whole header bar toggles the card on non-primary cards. Cursor hint
+   so users know it's clickable, not just the chevron. */
+.oc-card-header-clickable {
+    cursor: pointer;
 }
 
 @media only screen and (max-width: 768px) {
