@@ -53,14 +53,39 @@ const mutations = {
         _state.deploymentTemplate = {...deploymentTemplate};
     },
 
+    // ========================================================================
+    // Invariant: every card stored in `state.resourceTemplates` is shallowly
+    // frozen via Object.freeze. This tells Vue 2 to skip deep-reactive
+    // observation of the card's nested properties/dependencies/metadata/
+    // _ancestors trees
+    // (Vue otherwise walks every nested key installing getters/setters).
+    //
+    // Rules for code that touches stored cards:
+    //   1. Never mutate a stored card in place — reassigning top-level
+    //      fields (`card.title = ...`, `card.foo = ...`) throws in strict
+    //      mode. Mutating nested arrays (`card.properties.push(...)`)
+    //      silently succeeds but Vue won't re-render because the top-level
+    //      reference hasn't changed.
+    //   2. All updates must go through createReference / deleteReference /
+    //      templateUpdateProperty, which build a new frozen card and
+    //      install it via Vue.set.
+    //   3. Cards pass through normalizeUnfurlData BEFORE being committed
+    //      (they're still mutable at that point). Actions that construct a
+    //      fresh `target` object and call `normalizeUnfurlData` before
+    //      `commit('createTemplateResource', target)` are fine — the freeze
+    //      happens inside createTemplateResource.
+    // ========================================================================
     createTemplateResource(_state, target ) {
         // eslint-disable-next-line no-param-reassign
         if(!target.name) return;
-        Vue.set(
-            _state.resourceTemplates,
-            target.name,
-            { ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name}
-        )
+        const card = Object.freeze({ ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name})
+        Vue.set(_state.resourceTemplates, target.name, card)
+        if (process.env.NODE_ENV !== 'production') {
+            // Verify the freeze invariant held end-to-end: if a future
+            // maintainer adds a path that forgets Object.freeze, this fires.
+            console.assert(Object.isFrozen(_state.resourceTemplates[target.name]),
+                'createTemplateResource: stored card is not frozen', target.name)
+        }
     },
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace, constraintFieldsToReplace}){
@@ -68,32 +93,60 @@ const mutations = {
         const dependent = _state.resourceTemplates[dependentName];
         console.assert(dependent, `Expected parent ${dependentName} to exist for ${resourceTemplate?.name}`)
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
+        // resourceTemplate may already be frozen (if it came from state).
+        // Persist the parent wiring by replacing the stored template with
+        // a fresh frozen copy that carries dependentName/dependentRequirement.
+        if (resourceTemplate && resourceTemplate.name && _state.resourceTemplates[resourceTemplate.name]) {
+            const prev = _state.resourceTemplates[resourceTemplate.name];
+            Vue.set(
+                _state.resourceTemplates,
+                resourceTemplate.name,
+                Object.freeze({...prev, dependentName, dependentRequirement})
+            );
+        } else if (resourceTemplate) {
+            // Not yet in state — safe to annotate the caller's object.
         resourceTemplate.dependentName = dependentName;
         resourceTemplate.dependentRequirement = dependentRequirement;
+        }
 
-        const dependency = {constraint: {match: resourceTemplate.name}, ...(dependent.dependencies[index] || {}), ...fieldsToReplace, match: resourceTemplate.name}
+        let dependency = {constraint: {match: resourceTemplate.name}, ...(dependent.dependencies[index] || {}), ...fieldsToReplace, match: resourceTemplate.name}
         if(constraintFieldsToReplace) {
-            dependency.constraint = {...(dependency.constraint || {}), ...constraintFieldsToReplace}
+            dependency = {...dependency, constraint: {...(dependency.constraint || {}), ...constraintFieldsToReplace}}
         }
-        if(index == -1) {
-            dependent.dependencies.push(dependency)
-        } else {
-            dependent.dependencies[index] = dependency
+        // Functional update of nested array so the frozen parent object
+        // doesn't need in-place mutation. See freeze invariant above.
+        const newDependencies = index === -1
+            ? [...dependent.dependencies, dependency]
+            : dependent.dependencies.map((d, i) => i === index ? dependency : d)
+        const card = Object.freeze({...dependent, dependencies: newDependencies})
+        Vue.set(_state.resourceTemplates, dependentName, card)
+        if (process.env.NODE_ENV !== 'production') {
+            console.assert(Object.isFrozen(_state.resourceTemplates[dependentName]),
+                'createReference: stored card is not frozen', dependentName)
         }
-        Vue.set(_state.resourceTemplates, dependentName, {...dependent})
     },
 
     deleteReference(_state, { dependentName, dependentRequirement }) {
         if(dependentName && dependentRequirement) {
             const dependent = _state.resourceTemplates[dependentName];
             const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
-            const templateName = dependent.dependencies[index].match;
-            dependent.dependencies[index] = {...dependent.dependencies[index], match: null, completionStatus: null, _valid: false};
-            dependent.dependencies[index].constraint.match = null
-
-            _state.resourceTemplates[dependentName] = {...dependent};
-
+            const newDependencies = dependent.dependencies.map((d, i) => {
+                if (i !== index) return d;
+                return {
+                    ...d,
+                    match: null,
+                    completionStatus: null,
+                    _valid: false,
+                    constraint: {...(d.constraint || {}), match: null}
+                };
+            })
+            const card = Object.freeze({...dependent, dependencies: newDependencies})
+            Vue.set(_state.resourceTemplates, dependentName, card)
             _state.resourceTemplates = {..._state.resourceTemplates};
+            if (process.env.NODE_ENV !== 'production') {
+                console.assert(Object.isFrozen(_state.resourceTemplates[dependentName]),
+                    'deleteReference: stored card is not frozen', dependentName)
+            }
         }
     },
 
@@ -112,14 +165,23 @@ const mutations = {
 
     templateUpdateProperty(state, {templateName, propertyName, propertyValue, nestedPropName}) {
         const template = state.resourceTemplates[templateName]
-        let property = template.properties.find(prop => prop.name == (nestedPropName || propertyName))
-        if(property) {
-            property.value = propertyValue
+        const targetName = nestedPropName || propertyName
+        const idx = template.properties.findIndex(prop => prop.name == targetName)
+        let newProperties
+        if(idx >= 0) {
+            newProperties = template.properties.map((p, i) =>
+                i === idx ? {...p, value: propertyValue} : p
+            )
         } else {
             console.warn(`[OC] Updated a property "${propertyName}" with ${JSON.stringify(propertyValue)}.  This property was not found in the schema`)
-            template.properties.push({name: (nestedPropName || propertyName), value: propertyValue})
+            newProperties = [...template.properties, {name: targetName, value: propertyValue}]
         }
-        Vue.set(state.resourceTemplates, templateName, template)
+        const card = Object.freeze({...template, properties: newProperties})
+        Vue.set(state.resourceTemplates, templateName, card)
+        if (process.env.NODE_ENV !== 'production') {
+            console.assert(Object.isFrozen(state.resourceTemplates[templateName]),
+                'templateUpdateProperty: stored card is not frozen', templateName)
+        }
     },
 }
 

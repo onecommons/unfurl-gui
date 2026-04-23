@@ -59,23 +59,30 @@ function lookupAncestors(rt, root, mutable=false) {
 const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
-        // Avoid spreading existing state for initial set or when merging large objects
-        // This reduces memory pressure from creating intermediate copies
+        if (typeof value === 'object' && value !== null) {
+            Object.freeze(value)
+        }
         if (!state[key] || typeof value !== 'object') {
             Vue.set(state, key, value)
         } else {
-            Vue.set(state, key, {...state[key], ...value})
+            Vue.set(state, key, Object.freeze({...state[key], ...value}))
         }
         state.clean = false
     },
 
     setProjectStateBatch(state, updates) {
-        // Efficiently batch multiple state updates
+        // Efficiently batch multiple state updates.
+        // Freeze values before committing so Vue 2 skips its recursive
+        // reactivity walk (observe).  The export data is read-only — it
+        // comes from the server and is never mutated after normalization.
         updates.forEach(({key, value}) => {
+            if (typeof value === 'object' && value !== null) {
+                Object.freeze(value)
+            }
             if (!state[key] || typeof value !== 'object') {
                 Vue.set(state, key, value)
             } else {
-                Vue.set(state, key, {...state[key], ...value})
+                Vue.set(state, key, Object.freeze({...state[key], ...value}))
             }
         })
         state.clean = false
