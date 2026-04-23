@@ -8,6 +8,7 @@ import { redirectTo } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../../project_overview/components/shared/oc_card.vue';
 import OcList from '../../../project_overview/components/shared/oc_list.vue';
+import LazyCardList from './lazy-card-list.vue';
 import OcListResource from '../../../project_overview/components/shared/oc_list_resource.vue';
 import OcTemplateHeader from '../../../project_overview/components/shared/oc_template_header.vue';
 import TemplateButtons from '../../../project_overview/components/template/template_buttons.vue';
@@ -35,6 +36,7 @@ export default {
         OcListResource,
         OcTemplateHeader,
         TemplateButtons,
+        LazyCardList,
         GlTabs, OcTab
     },
 
@@ -95,7 +97,11 @@ export default {
             selectedServiceToConnect: '',
             selectingTopLevel: false,
             topLevelSelection: {},
-            providerSelection: {}
+            providerSelection: {},
+            // Page-level modals are only needed on user action (create /
+            // delete / connect). Defer mounting them until after the main
+            // render so they don't slow first paint.
+            modalsReady: false
         };
     },
 
@@ -299,11 +305,15 @@ export default {
         });
 
         bus.$on('placeTempRequirement', (obj) => {
+            // See launchModal — force-mount deferred modals first.
+            this.modalsReady = true;
+            this.$nextTick(() => {
             const ref = this.$refs['oc-template-resource'];
             setTimeout(() => {
                 this.createNodeResourceData = obj;
-                ref.show();
+                    ref && ref.show();
             }, 100);
+            });
         });
 
         bus.$on('launchModalToConnect', (obj) => {
@@ -331,6 +341,15 @@ export default {
             try {
                 this.scrollDown(window.location.hash)
             } catch(e) {}
+        }
+        // Mount modals after first paint. requestIdleCallback gives the
+        // browser a chance to paint + settle layout before we spend time
+        // instantiating 5 gl-modals that aren't visible yet.
+        const deferMount = () => { this.modalsReady = true };
+        if (typeof requestIdleCallback === 'function') {
+            requestIdleCallback(deferMount, { timeout: 2000 });
+        } else {
+            setTimeout(deferMount, 500);
         }
     },
 
@@ -389,10 +408,15 @@ export default {
         },
 
         launchModal(refId, timeToWait) {
+            // Modals are deferred-mounted via modalsReady. Force-mount
+            // them now so the ref exists when we try to .show().
+            this.modalsReady = true;
+            this.$nextTick(() => {
             const ref = this.$refs[refId];
             setTimeout(() => {
-                ref.show();
+                    ref && ref.show();
             }, timeToWait);
+            });
         },
 
         async triggerSave(reason) {
@@ -626,6 +650,9 @@ export default {
             />
 
 
+        <!-- Modals deferred to requestIdleCallback after first paint.
+             See data().modalsReady + mounted() for the trigger. -->
+        <template v-if="modalsReady">
         <gl-modal
             modal-id="toplevel-selection"
             size="lg"
@@ -733,5 +760,6 @@ export default {
             >
             <p v-html="legendDeleteTemplate()"></p>
         </gl-modal>
+        </template>
     </div>
 </template>

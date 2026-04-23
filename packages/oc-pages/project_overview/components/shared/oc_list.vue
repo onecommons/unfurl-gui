@@ -253,34 +253,34 @@ export default {
     <div>
         <component :is="customInputComponent" :readonly="_readonly" v-if="customInputComponent" :card="_card"/>
         <gl-tabs v-if="shouldRenderTabs" class="">
-            <oc-tab v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
+            <oc-tab lazy v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid"> <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirementKey(requirement)"/>
                     </div>
                 </div>
             </oc-tab>
-            <oc-tab v-if="shouldRenderInputs && !customInputComponent && inputsTitleCount" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="inputsTitleCount">
+            <oc-tab lazy v-if="shouldRenderInputs && !customInputComponent && inputsTitleCount" title="Inputs" :title-testid="`tab-inputs-${_card.name}`" :titleCount="inputsTitleCount">
                 <oc-properties-list v-if="_readonly" :container-style="propertiesStyle" :properties="properties">
                     <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="_card" /> </template>
                 </oc-properties-list>
 
                 <oc-inputs @setInputLength="i => inputsLength = i" ref="inputs" v-else :card="_card" />
             </oc-tab>
-            <oc-tab :key="tab.tab_title" no-count-zero :titleCount="tab.count" :title="tab.tab_title" :title-testid="`tab-${tab.name}-${_card.name}`" v-for="tab in inputTabs">
+            <oc-tab lazy :key="tab.tab_title" no-count-zero :titleCount="tab.count" :title="tab.tab_title" :title-testid="`tab-${tab.name}-${_card.name}`" v-for="tab in inputTabs">
                 <oc-inputs :card="_card" @setInputLength="len => tab.count = len" :property-path="[tab.name]"/>
             </oc-tab>
-            <oc-tab v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
+            <oc-tab lazy v-if="shouldRenderAttributes" title="Attributes" :titleCount="attributes.length">
                 <oc-properties-list :container-style="propertiesStyle" :properties="attributes">
                     <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="card" /> </template>
                 </oc-properties-list>
             </oc-tab>
-            <oc-tab v-if="shouldRenderOutputs" title="Outputs" :titleCount="_card.outputs.length">
+            <oc-tab lazy v-if="shouldRenderOutputs" title="Outputs" :titleCount="_card.outputs.length">
                 <oc-properties-list :container-style="propertiesStyle" :card="_card" property="outputs">
                     <!-- not sure this template would ever be reached -->
                     <template #Incremental_Deploy> <oc-incremental-deployment-switch :card="card" /> </template>
                 </oc-properties-list>
             </oc-tab>
-            <oc-tab v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
+            <oc-tab lazy v-if="shouldRenderExtras" title="Extras" :title-testid="`tab-extras-${_card.name}`" :titleCount="extras.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid">
                         <dependency :card="extra.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="extra.dependency" v-for="extra in extras" :key="requirementKey(extra)"/>

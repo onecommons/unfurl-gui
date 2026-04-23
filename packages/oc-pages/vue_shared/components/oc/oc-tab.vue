@@ -13,6 +13,12 @@ export default {
         titleTestid: {
             type: String,
             default: () => null
+        },
+        // When true, tab content is only rendered while the tab is
+        // active (bootstrap-vue b-tab's built-in lazy behavior).
+        lazy: {
+            type: Boolean,
+            default: false
         }
     },
     computed: {
@@ -30,7 +36,7 @@ export default {
 }
 </script>
 <template>
-    <gl-tab ref="tab" class="gl-mt-3" v-on="$listeners">
+    <gl-tab ref="tab" class="gl-mt-3" :lazy="lazy" v-on="$listeners">
         <template slot="title">
             <span :data-testid="titleTestid">{{ __(title)}}</span>
             <gl-badge v-if="showCount" size="sm" class="gl-tab-counter-badge">

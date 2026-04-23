@@ -289,7 +289,9 @@ export default {
                                 <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                                 <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
                             </div>
-                            <el-tooltip :disabled="!tooltip">
+                            <!-- Avoid mounting el-tooltip (popper + listeners)
+                                 when there's no tooltip text. -->
+                            <el-tooltip v-if="tooltip">
                                 <template #content>
                                     <div>
                                         {{tooltip}}
@@ -298,6 +300,7 @@ export default {
 
                                 <detect-icon v-if="_displayValidation" v-bind="statusIconProps" />
                             </el-tooltip>
+                            <detect-icon v-else-if="_displayValidation" v-bind="statusIconProps" />
                             <div v-if="_displayStatus" class="d-flex pt-1 pb-1 badges-container">
                                 <slot name="status">
                                     <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="md" class="gl-tab-counter-badge gl-mr-3" >
