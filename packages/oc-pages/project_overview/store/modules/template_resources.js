@@ -1159,22 +1159,31 @@ const getters = {
         }
     },
     getBuriedDependencies(state, getters) {
-        return function(cardName) {
+        // Walk the dependency graph collecting buried (hidden) descendants.
+        // A template's dependency `match` can point back up the graph
+        // use visited set to break cycles 
+        function walk(cardName, visited) {
             if(!getters.cardIsHidden(cardName?.name || cardName)) return []
             const card = getters.dtResolveResourceTemplate(cardName)
+            if(!card) return []
+            if(visited.has(card.name)) return []
+            visited.add(card.name)
             const result = []
             for(const dependency of getters.getDependencies(card.name)) {
                 if(!getters.constraintIsHidden(card.name, dependency.name)) {
                     result.push({card, dependency, buried: true})
                 }
-                let match
-                if(match = dependency.target || dependency.match) { // try to support resources
-                    for(const buriedDescendent of getters.getBuriedDependencies(match)) {
+                const match = dependency.target || dependency.match
+                if(match) {
+                    for(const buriedDescendent of walk(match, visited)) {
                         result.push(buriedDescendent)
                     }
                 }
             }
             return result
+        }
+        return function(cardName) {
+            return walk(cardName, new Set())
         }
     },
     getDisplayableDependenciesByCard(state, getters) {
