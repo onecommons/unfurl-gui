@@ -20797,7 +20797,6 @@ __metadata:
     mkdirp: ^0.5.5
     node-gyp: ^10.1.0
     pikaday: ^1.8.0
-    portal-vue: ^2.1.7
     prettier: ^1.19.1
     regenerator-runtime: ^0.14.0
     sass: 1.34.1

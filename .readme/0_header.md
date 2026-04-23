@@ -14,5 +14,3 @@ Need to run `yarn run apollo:start` first to start the apollo graphql server (ru
 see https://gitlab-org.gitlab.io/gitlab-ui/ and https://gitlab-org.gitlab.io/gitlab-svgs/
 
 gitlab-ui wraps https://bootstrap-vue.org/ which wraps bootstrap 4
-
-It also depends on https://portal-vue.linusb.org/ which we could use to build a vs-code like minimap of a view using http://asvd.github.io/syncscroll/ or similar.

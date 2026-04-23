@@ -55,7 +55,6 @@
     "marked": "^0.3.12",
     "mkdirp": "^0.5.5",
     "pikaday": "^1.8.0",
-    "portal-vue": "^2.1.7",
     "regenerator-runtime": "^0.14.0",
     "sass": "1.34.1",
     "sass-loader": "^8.0.2",
