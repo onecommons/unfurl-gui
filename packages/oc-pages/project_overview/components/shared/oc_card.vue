@@ -77,13 +77,31 @@ export default {
             required: false,
             default: null
         },
-        removable: Boolean
+        removable: Boolean,
+        // When true, the card starts collapsed AND its #content slot is
+        // NOT rendered until the user expands it.
+        startCollapsed: {
+            type: Boolean,
+            default: false
+        },
+        // When true, propagate startCollapsed to every nested child
+        // rendered from _children. Lets a primary card mount instantly
+        // while its siblings render as collapsed
+        // headers that expand on click.
+        collapseChildren: {
+            type: Boolean,
+            default: false
+        }
     },
     data() {
         return {
             title: null,
             iconSection: false,
-            expanded: true,
+            expanded: !this.startCollapsed,
+            // Tracks whether we've ever been expanded so the content
+            // subtree stays mounted once shown (subsequent collapse is
+            // CSS-only, no remount cost).
+            everExpanded: !this.startCollapsed,
             setHeight: false,
         };
     },
@@ -170,6 +188,12 @@ export default {
             for(const key of ['displayValidation', 'displayStatus', 'readonly', 'childClass']) {
                 attrs[key] = this[key]
             }
+            if(this.collapseChildren) {
+                attrs.startCollapsed = true
+                // Nested grandchildren inherit the same lazy behavior so
+                // the whole subtree stays cheap until the user drills in.
+                attrs.collapseChildren = true
+            }
 
             return attrs
         },
@@ -231,12 +255,23 @@ export default {
 
         toggleCard(e) {
             if (!this.setHeight) {
+                // start-collapsed cards have no mounted content yet —
+                // nothing to measure, no animation possible on first
+                // expand. Flip state immediately and skip the rAF dance
+                // so the click actually does something.)
+                if (!this.everExpanded) {
+                    this.setHeight = true
+                    this.expanded = true
+                    this.everExpanded = true
+                    return
+                }
                 this.adaptWidth()
                 requestAnimationFrame(this.toggleCard)
                 this.setHeight = true
                 return
             }
             this.expanded = !this.expanded
+            if (this.expanded) this.everExpanded = true
             this.adaptWidth()
         }
     }
@@ -295,7 +330,13 @@ export default {
             </div>
         </template>
         <div ref="containerOuter" class="card-content-outer" :class="{active: setHeight}">
-            <div ref="container" class="card-content-container" :class="{collapsed: !expanded, active: setHeight}">
+            <!-- Lazy: until the card has been expanded at least once,
+                 don't render the content container at all. This avoids
+                 the container's top/bottom padding (~28 px) taking space
+                 in the collapsed state — the old adaptWidth() negative-
+                 margin trick depended on a real offsetHeight measurement
+                 that's 0 while the parent is display:none. -->
+            <div v-if="everExpanded" ref="container" class="card-content-container" :class="{collapsed: !expanded, active: setHeight}">
                 <slot name="content" v-bind="card"></slot>
 
                 <div v-if="_children.length > 0">
