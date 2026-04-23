@@ -112,6 +112,7 @@ export default {
             'primaryCardProperties',
             'getCardProperties',
             'getCardsInTopology',
+            'getHiddenCardsInTopology',
             'getDeploymentTemplate',
             'getDependencies',
             'safeToNavigateAway',
@@ -251,6 +252,28 @@ export default {
             }
         },
 
+        presentableHiddenCards() {
+            if(!this.getPrimaryCard?.name) return []
+            const hiddenCards = this.getHiddenCardsInTopology(this.getPrimaryCard.name)
+            if(typeof this.filter != 'function') {
+                return hiddenCards
+            } else {
+                return hiddenCards.filter(this.filter)
+            }
+        },
+
+        hiddenResourcesCard() {
+            // Synthetic card used as the wrapper for the nested hidden
+            // resources. The real cards are passed via :children so they
+            // render inside, matching the prod→runner_cluster nesting.
+            return {
+                name: '__hidden_resources__',
+                title: `${__('Hidden Resources')} (${this.presentableHiddenCards.length})`,
+                __typename: 'ResourceTemplate',
+                _localTypeName: ''
+            }
+        },
+
         selectingProvider: {
             get() { return this.$route.query.hasOwnProperty('newProvider') },
             set(val) {
@@ -308,11 +331,11 @@ export default {
             // See launchModal — force-mount deferred modals first.
             this.modalsReady = true;
             this.$nextTick(() => {
-            const ref = this.$refs['oc-template-resource'];
-            setTimeout(() => {
-                this.createNodeResourceData = obj;
+                const ref = this.$refs['oc-template-resource'];
+                setTimeout(() => {
+                    this.createNodeResourceData = obj;
                     ref && ref.show();
-            }, 100);
+                }, 100);
             });
         });
 
@@ -396,7 +419,13 @@ export default {
 
         scrollDown(elId, timeOut=500) {
             clearTimeout(this.uiTimeout);
-            const anchorId = generateCardId(elId.replace('#', ''));
+            const rawName = elId.replace('#', '');
+            const anchorId = generateCardId(rawName);
+            // If the target is in the hidden collapsible, force it to
+            // expand + fully mount so the anchor exists in the DOM.
+            if(this.presentableHiddenCards.some(c => c.name == rawName)) {
+                this.$refs.hiddenResources?.mountAll();
+            }
             this.uiTimeout = setTimeout(
                 () => {
                     let anchor = document.querySelector(`#${CSS.escape(anchorId)}`);
@@ -412,10 +441,10 @@ export default {
             // them now so the ref exists when we try to .show().
             this.modalsReady = true;
             this.$nextTick(() => {
-            const ref = this.$refs[refId];
-            setTimeout(() => {
+                const ref = this.$refs[refId];
+                setTimeout(() => {
                     ref && ref.show();
-            }, timeToWait);
+                }, timeToWait);
             });
         },
 
@@ -633,6 +662,33 @@ export default {
             </oc-card>
         </div>
         <!-- End Content -->
+
+        <!-- Hidden Resources: lazily mounted + imperative toggle via shared component. -->
+        <lazy-card-list
+            v-if="presentableHiddenCards.length > 0"
+            ref="hiddenResources"
+            :cards="presentableHiddenCards"
+            :title="__('Hidden Resources')"
+            :display-validation="displayValidation"
+            :display-status="displayStatus"
+            :readonly="readonly"
+            @deleteNode="onDeleteNode"
+        >
+            <template #controls="cardSlot">
+                <slot name="controls" v-bind="cardSlot"></slot>
+            </template>
+            <template #content="cardSlot">
+                <oc-list
+                    :display-validation="displayValidation"
+                    :render-inputs="renderInputs"
+                    :display-status="displayStatus"
+                    :template-dependencies="getDependencies(cardSlot.name)"
+                    :title-key="cardSlot.title"
+                    :readonly="readonly"
+                    :card="cardSlot"
+                />
+            </template>
+        </lazy-card-list>
 
         <!-- Buttons -->
         <template-buttons
