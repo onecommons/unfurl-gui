@@ -5,6 +5,12 @@
   "engines": {
     "node": ">=14 <17"
   },
+  "browserslist": [
+    "Chrome >= 98",
+    "Firefox >= 94",
+    "Safari >= 15.4",
+    "Edge >= 98"
+  ],
   "scripts": {
     "start": "./scripts/start",
     "stop": "./scripts/stop",
