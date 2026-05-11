@@ -57,19 +57,19 @@ jobs:
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dryrunA-cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dryrunA-dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dryrunA-unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
@@ -96,19 +96,19 @@ jobs:
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dryrunB-cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dryrunB-dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dryrunB-unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log

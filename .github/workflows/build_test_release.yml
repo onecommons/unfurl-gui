@@ -67,19 +67,19 @@ jobs:
           UNFURL_CLOUD_SERVER: https://staging.unfurl.cloud
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
@@ -89,7 +89,7 @@ jobs:
           echo ${{  github.ref_name }} > dist/RELEASE.txt
           tar -czvf unfurl-gui-dist.tar.gz dist
       - name: Upload dist
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: unfurl-gui-dist
           path: unfurl-gui-dist.tar.gz
@@ -106,7 +106,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Download build artifact
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
       with:
         name: unfurl-gui-dist
     - name: Create GitHub Release
