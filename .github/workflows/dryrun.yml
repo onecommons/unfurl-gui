@@ -43,8 +43,8 @@ jobs:
       CYPRESS_FAIL_FAST_STRATEGY: spec
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 16
       - name: Install yarn dependencies
@@ -57,19 +57,19 @@ jobs:
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dryrunA-cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dryrunA-dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dryrunA-unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
@@ -82,8 +82,8 @@ jobs:
       CYPRESS_FAIL_FAST_STRATEGY: spec
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
         with:
           node-version: 16
       - name: Install yarn dependencies
@@ -96,19 +96,19 @@ jobs:
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dryrunB-cypress-screenshots
           path: cypress/screenshots
       - name: Upload dashboard
         if: ${{ failure() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dryrunB-dashboard
           path: ${{ env.UNFURL_TEST_TMPDIR }}/ufsv
       - name: Upload unfurl server log
         if: ${{ always() }}
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: dryrunB-unfurl-server-log
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
