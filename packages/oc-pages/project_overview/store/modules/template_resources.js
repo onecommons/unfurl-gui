@@ -68,39 +68,16 @@ const mutations = {
         _state.deploymentTemplate = {...deploymentTemplate};
     },
 
-    // ========================================================================
-    // Invariant: every card stored in `state.resourceTemplates` is shallowly
-    // frozen via Object.freeze. This tells Vue 2 to skip deep-reactive
-    // observation of the card's nested properties/dependencies/metadata/
-    // _ancestors trees (profiled as ~700ms savings on page load; Vue
-    // otherwise walks every nested key installing getters/setters).
-    //
-    // Rules for code that touches stored cards:
-    //   1. Never mutate a stored card in place — reassigning top-level
-    //      fields (`card.title = ...`, `card.foo = ...`) throws in strict
-    //      mode. Mutating nested arrays (`card.properties.push(...)`)
-    //      silently succeeds but Vue won't re-render because the top-level
-    //      reference hasn't changed.
-    //   2. All updates must go through createReference / deleteReference /
-    //      templateUpdateProperty, which build a new frozen card and
-    //      install it via Vue.set.
-    //   3. Cards pass through normalizeUnfurlData BEFORE being committed
-    //      (they're still mutable at that point). Actions that construct a
-    //      fresh `target` object and call `normalizeUnfurlData` before
-    //      `commit('createTemplateResource', target)` are fine — the freeze
-    //      happens inside createTemplateResource.
-    // ========================================================================
+    // Stored cards are intentionally NOT frozen. Freezing them lets Vue 2 skip
+    // its deep-reactive walk, but unsafe in-place mutations elsewhere block
+    // the flip. See unfurl.cloud/onecommons/unfurl-gui#149 for the call sites to fix and
+    // the steps to re-enable. Look for `/* Object.freeze */` markers below.
     createTemplateResource(_state, target ) {
         // eslint-disable-next-line no-param-reassign
         if(!target.name) return;
-        const card = Object.freeze({ ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name})
+        // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
+        const card = /* Object.freeze */ ({ ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name})
         Vue.set(_state.resourceTemplates, target.name, card)
-        if (process.env.NODE_ENV !== 'production') {
-            // Verify the freeze invariant held end-to-end: if a future
-            // maintainer adds a path that forgets Object.freeze, this fires.
-            console.assert(Object.isFrozen(_state.resourceTemplates[target.name]),
-                'createTemplateResource: stored card is not frozen', target.name)
-        }
     },
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace, constraintFieldsToReplace}){
@@ -108,15 +85,13 @@ const mutations = {
         const dependent = _state.resourceTemplates[dependentName];
         console.assert(dependent, `Expected parent ${dependentName} to exist for ${resourceTemplate?.name}`)
         const index = dependent.dependencies.findIndex(req => req.name == dependentRequirement);
-        // resourceTemplate may already be frozen (if it came from state).
-        // Persist the parent wiring by replacing the stored template with
-        // a fresh frozen copy that carries dependentName/dependentRequirement.
         if (resourceTemplate && resourceTemplate.name && _state.resourceTemplates[resourceTemplate.name]) {
             const prev = _state.resourceTemplates[resourceTemplate.name];
+            // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
             Vue.set(
                 _state.resourceTemplates,
                 resourceTemplate.name,
-                Object.freeze({...prev, dependentName, dependentRequirement})
+                /* Object.freeze */ ({...prev, dependentName, dependentRequirement})
             );
         } else if (resourceTemplate) {
             // Not yet in state — safe to annotate the caller's object.
@@ -128,17 +103,12 @@ const mutations = {
         if(constraintFieldsToReplace) {
             dependency = {...dependency, constraint: {...(dependency.constraint || {}), ...constraintFieldsToReplace}}
         }
-        // Functional update of nested array so the frozen parent object
-        // doesn't need in-place mutation. See freeze invariant above.
         const newDependencies = index === -1
             ? [...dependent.dependencies, dependency]
             : dependent.dependencies.map((d, i) => i === index ? dependency : d)
-        const card = Object.freeze({...dependent, dependencies: newDependencies})
+        // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
+        const card = /* Object.freeze */ ({...dependent, dependencies: newDependencies})
         Vue.set(_state.resourceTemplates, dependentName, card)
-        if (process.env.NODE_ENV !== 'production') {
-            console.assert(Object.isFrozen(_state.resourceTemplates[dependentName]),
-                'createReference: stored card is not frozen', dependentName)
-        }
     },
 
     deleteReference(_state, { dependentName, dependentRequirement }) {
@@ -155,13 +125,10 @@ const mutations = {
                     constraint: {...(d.constraint || {}), match: null}
                 };
             })
-            const card = Object.freeze({...dependent, dependencies: newDependencies})
+            // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
+            const card = /* Object.freeze */ ({...dependent, dependencies: newDependencies})
             Vue.set(_state.resourceTemplates, dependentName, card)
             _state.resourceTemplates = {..._state.resourceTemplates};
-            if (process.env.NODE_ENV !== 'production') {
-                console.assert(Object.isFrozen(_state.resourceTemplates[dependentName]),
-                    'deleteReference: stored card is not frozen', dependentName)
-            }
         }
     },
 
@@ -191,12 +158,9 @@ const mutations = {
             console.warn(`[OC] Updated a property "${propertyName}" with ${JSON.stringify(propertyValue)}.  This property was not found in the schema`)
             newProperties = [...template.properties, {name: targetName, value: propertyValue}]
         }
-        const card = Object.freeze({...template, properties: newProperties})
+        // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
+        const card = /* Object.freeze */ ({...template, properties: newProperties})
         Vue.set(state.resourceTemplates, templateName, card)
-        if (process.env.NODE_ENV !== 'production') {
-            console.assert(Object.isFrozen(state.resourceTemplates[templateName]),
-                'templateUpdateProperty: stored card is not frozen', templateName)
-        }
     },
 }
 
@@ -1614,7 +1578,7 @@ const getters = {
         return !!deployment?.workflow
     },
 
-    editingTorndown(_a, getters, _b, rootGetters) {
+    editingTorndown(state, getters, _b, rootGetters) {
         // TODO use deployment status
         const deployment = rootGetters.resolveDeployment(state.deploymentTemplate.name)
         return deployment?.workflow == 'undeploy'
