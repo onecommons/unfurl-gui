@@ -205,17 +205,35 @@ Cypress.Commands.add('recreateDeployment', options => {
 
             cy.document().then($document2 => {
               // NOTE coupled tightly with element ui
+              const testidEl = `[data-testid="oc-input-${template.name}-${property.name}"]`
               let q = `
-                [data-testid="oc-input-${template.name}-${property.name}"].el-input,
-                [data-testid="oc-input-${template.name}-${property.name}"].el-input-number
+                ${testidEl}.el-input,
+                ${testidEl}.el-input-number
               `
-              let qChecked = `label[data-testid="oc-input-${template.name}-${property.name}"].el-checkbox`
+              let qSelect = `${testidEl}.el-select`
+              let qChecked = `label${testidEl}.el-checkbox`
               let el
-              if($document2.querySelector(q)) {
-                cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`)
-                  .last()
-                  .invoke('val', '')
-                  .type(value)
+              if ($document2.querySelector(qSelect)) {
+                // el-select widget - open dropdown and click the matching option
+                cy.get(qSelect).click()
+                cy.get('.el-select-dropdown:visible')
+                  .contains('.el-select-dropdown__item', String(value))
+                  .click()
+              } else if($document2.querySelector(q)) {
+                const allEls = Array.from($document2.querySelectorAll(testidEl))
+                const lastEl = allEls[allEls.length - 1]
+                if (lastEl && lastEl.tagName === 'INPUT' && lastEl.readOnly) {
+                  // readonly input inside el-select - open dropdown and click the matching option
+                  cy.get(testidEl).last().closest('.el-select').click()
+                  cy.get('.el-select-dropdown:visible')
+                    .contains('.el-select-dropdown__item', String(value))
+                    .click()
+                } else {
+                  cy.get(testidEl)
+                    .last()
+                    .invoke('val', '')
+                    .type(value)
+                }
               } else if (el = $document2.querySelector(qChecked)) {
                 if(el.classList.contains('is-checked') && !value) {
                   cy.get(qChecked).click()
