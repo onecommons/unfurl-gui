@@ -3,7 +3,7 @@ name: Build, Test, Release
 on: [push]
 
 env:
-  UNFURL_BRANCH: python13
+  UNFURL_BRANCH: testing
 
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
