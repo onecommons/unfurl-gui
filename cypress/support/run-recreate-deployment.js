@@ -219,10 +219,16 @@ Cypress.Commands.add('recreateDeployment', options => {
                   .contains('.el-select-dropdown__item', String(value))
                   .click()
               } else if (elem && (elem.classList.contains('el-input') || elem.classList.contains('el-input-number'))) {
-                cy.get(testidEl)
-                  .last()
-                  .invoke('val', '')
-                  .type(value)
+                const innerInput = elem.querySelector('input')
+                if (innerInput && innerInput.readOnly) {
+                  // field is rendered read-only by formily (e.g. x-read-only / const) – skip
+                  cy.log(`Skipping readonly field ${property.name} on ${template.name}`)
+                } else {
+                  cy.get(testidEl)
+                    .last()
+                    .invoke('val', '')
+                    .type(value)
+                }
               } else if (el = $document2.querySelector(qChecked)) {
                 if(el.classList.contains('is-checked') && !value) {
                   cy.get(qChecked).click()
