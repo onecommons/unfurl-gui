@@ -158,9 +158,7 @@ function uncheckedCreateMail() {
   cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-password"]`).type(
     MAIL_PASSWORD
   )
-  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
-    'tls'
-  )
+  // protocol is a const in the blueprint (readonly) – no need to set it
 }
 
 function checkMail() {
@@ -275,9 +273,7 @@ Cypress.Commands.add('createMailResource', environmentName => {
   cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-password"]`).type(
     MAIL_PASSWORD
   )
-  cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-protocol"]`).type(
-    'tls'
-  )
+  // protocol is a const in the blueprint (readonly) – no need to set it
 
   cy.wait(BASE_TIMEOUT / 50)
   cy.contains("button", "Save Changes").click()
