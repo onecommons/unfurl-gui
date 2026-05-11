@@ -206,34 +206,23 @@ Cypress.Commands.add('recreateDeployment', options => {
             cy.document().then($document2 => {
               // NOTE coupled tightly with element ui
               const testidEl = `[data-testid="oc-input-${template.name}-${property.name}"]`
-              let q = `
-                ${testidEl}.el-input,
-                ${testidEl}.el-input-number
-              `
-              let qSelect = `${testidEl}.el-select`
               let qChecked = `label${testidEl}.el-checkbox`
               let el
-              if ($document2.querySelector(qSelect)) {
-                // el-select widget - open dropdown and click the matching option
-                cy.get(qSelect).click()
+
+              const elem = $document2.querySelector(testidEl)
+
+              if (elem && elem.closest('.el-select')) {
+                // Element is inside (or is) an el-select dropdown widget.
+                // The inner input is readonly by design – open the dropdown and click the option.
+                cy.get(testidEl).last().closest('.el-select').click()
                 cy.get('.el-select-dropdown:visible')
                   .contains('.el-select-dropdown__item', String(value))
                   .click()
-              } else if($document2.querySelector(q)) {
-                const allEls = Array.from($document2.querySelectorAll(testidEl))
-                const lastEl = allEls[allEls.length - 1]
-                if (lastEl && lastEl.tagName === 'INPUT' && lastEl.readOnly) {
-                  // readonly input inside el-select - open dropdown and click the matching option
-                  cy.get(testidEl).last().closest('.el-select').click()
-                  cy.get('.el-select-dropdown:visible')
-                    .contains('.el-select-dropdown__item', String(value))
-                    .click()
-                } else {
-                  cy.get(testidEl)
-                    .last()
-                    .invoke('val', '')
-                    .type(value)
-                }
+              } else if (elem && (elem.classList.contains('el-input') || elem.classList.contains('el-input-number'))) {
+                cy.get(testidEl)
+                  .last()
+                  .invoke('val', '')
+                  .type(value)
               } else if (el = $document2.querySelector(qChecked)) {
                 if(el.classList.contains('is-checked') && !value) {
                   cy.get(qChecked).click()
@@ -242,7 +231,7 @@ Cypress.Commands.add('recreateDeployment', options => {
                 }
               } else {
                 cy.log(`Could not find ${property.name} on ${template.name}`)
-                cy.log(`Used selector ${q}`)
+                cy.log(`Used selector ${testidEl}`)
               }
             })
           }
