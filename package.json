@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "engines": {
-    "node": ">=14 <17"
+    "node": ">=20"
   },
   "browserslist": [
     "Chrome >= 98",
@@ -44,8 +44,8 @@
     "@gitlab/ui": "60.1.0",
     "@lifeomic/json-schema-to-graphql-types": "^1.4.2",
     "@vue/composition-api": "^1.4.3",
-    "axios": "^0.30.2",
-    "axios-cookiejar-support": "^2.0.4",
+    "axios": "^1.7.0",
+    "axios-cookiejar-support": "^7.0.0",
     "bootstrap": "4.6.2",
     "core-js": "^3.37.1",
     "dompurify": "3.4.0",
@@ -105,8 +105,7 @@
     "vue-cli-plugin-apollo": "^0.22.2",
     "vue-jest": "^3.0.7",
     "vue-template-compiler": "2.7.14",
-    "webpack": "5.65.0",
-    "webpack-dev-server": "4.7.4",
+    "webpack": "^5.97.0",
     "webpack-merge": "5.8.0",
     "webpack-preprocessor-loader": "^1.1.4"
   },
@@ -114,7 +113,14 @@
     "packages/oc-pages"
   ],
   "resolutions": {
-    "vue-demi": "^0.14.5"
+    "vue-demi": "^0.14.5",
+    "dompurify": "3.4.0",
+    "lodash": "^4.17.24",
+    "marked@^0.3.12": "^4.0.10",
+    "semver@~7.0.0": "^7.5.2",
+    "form-data@3.0.0": "^3.0.4",
+    "form-data@4.0.0": "^4.0.4",
+    "form-data@~2.3.2": "^2.5.4"
   },
   "packageManager": "yarn@3.8.7"
 }
