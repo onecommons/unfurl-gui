@@ -160,9 +160,15 @@ module.exports = {
   // ],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
-  // testPathIgnorePatterns: [
-  //   "/node_modules/"
-  // ],
+  testPathIgnorePatterns: [
+    "/node_modules/",
+    // Claude Code's worktrees contain duplicate copies of the source
+    // tree (including tests) — ignore them so we don't run every test
+    // twice.
+    "/\\.claude/",
+    // don't run integration tests
+    '/cypress/',
+  ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
   testRegex: [

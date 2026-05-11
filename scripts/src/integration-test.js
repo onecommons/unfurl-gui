@@ -6,6 +6,10 @@ const path = require('path')
 const fs = require('fs')
 const {unfurlGuiRoot} = require('./shared/util.js')
 
+if (!process.env.TEST_VERSIONS) {
+  process.env.TEST_VERSIONS = 'v2'
+}
+
 const OC_USERNAME = process.env.OC_USERNAME
 const OC_PASSWORD = process.env.OC_PASSWORD
 let PORT = process.env.PORT
@@ -244,11 +248,22 @@ async function invokeCypressCommand(baseArgs, forwardedEnv) {
   if(!baseArgs.includes('-s') && baseArgs[0] == 'run') {
     process.env.SPEC_GLOBS = process.env.SPEC_GLOBS || '*'
     const {getBlueprintSpecs} = (await import('../../testing-shared/fixture-specs.mjs'))
+    const specs = getBlueprintSpecs()
+    // Guard against the silent "runs everything" footgun when the user
+    // passed a SPEC_GLOBS that doesn't match any file
+    if (specs.length === 0) {
+      console.error(
+        `Error: SPEC_GLOBS='${process.env.SPEC_GLOBS}' did not match any specs ` +
+        `under cypress/e2e/blueprints/*.cy.js.\n` +
+        `Remember to use wildcards — e.g. SPEC_GLOBS='*wordpress*' (not 'wordpress'). ` +
+        `Space-separate multiple globs.`
+      )
+      process.exit(1)
+    }
     baseArgs.push('-s')
-    baseArgs.push(getBlueprintSpecs())
+    baseArgs.push(specs)
   }
 
-  const args = ['run', 'cypress', ...baseArgs]
   const options = {stdio: 'inherit', env: {...process.env, ...forwardedEnv}}
   let args = ['run', 'cypress', ...baseArgs]
   let cmd = 'yarn'
@@ -262,6 +277,22 @@ async function invokeCypressCommand(baseArgs, forwardedEnv) {
 
 async function main() {
   const args = require('minimist')(process.argv.slice(2))
+
+  // Require an explicit Cypress subcommand up front. Without one the
+  // harness would spin up the standalone server + fixtures, then
+  // silently invoke Cypress with no action — Cypress just prints its
+  // help and exits, which looks like a confusing crash downstream.
+  const cypressSubcommand = args._[0]
+  if (cypressSubcommand !== 'run' && cypressSubcommand !== 'open') {
+    console.error(
+      `Error: missing Cypress subcommand.\n` +
+      `Usage: yarn integration-test (run|open) [cypress args...]\n` +
+      `  run   — headless test run (auto-injects spec globs via SPEC_GLOBS)\n` +
+      `  open  — opens the Cypress GUI for interactive debugging`
+    )
+    process.exit(1)
+  }
+
   let prepareUserCommand
 
   const parsedArgs = readArgs(args)
