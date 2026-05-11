@@ -192,7 +192,7 @@ module.exports = {
     '\\.mjs$': 'babel-jest',
     '\\.js$': 'babel-jest',
     '\\.ts$': 'babel-jest',
-    ".*\\.(vue)$": "vue-jest"
+    ".*\\.(vue)$": "@vue/vue2-jest"
   },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
