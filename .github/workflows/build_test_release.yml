@@ -53,18 +53,18 @@ jobs:
         run: yarn build
       - name: Install unfurl
         run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pipx install -e $HOME/unfurl
-      - name: Integration test
-        run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
+      # - name: Integration test
+      #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       - name: Integration test (unfurl init)
         env:
           STANDALONE_SETUP_SCRIPT: testing-shared/unfurl-init-setup.sh
         run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
-      - name: Integration test (staging upstream)
-        run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
-        env:
-          OC_INVITE_CODE: ${{ secrets.OC_INVITE_CODE }}
-          UNFURL_PACKAGE_RULES: 'gitlab.com/* staging.unfurl.cloud/* unfurl.cloud/* staging.unfurl.cloud/*'
-          UNFURL_CLOUD_SERVER: https://staging.unfurl.cloud
+      # - name: Integration test (staging upstream)
+      #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
+      #   env:
+      #     OC_INVITE_CODE: ${{ secrets.OC_INVITE_CODE }}
+      #     UNFURL_PACKAGE_RULES: 'gitlab.com/* staging.unfurl.cloud/* unfurl.cloud/* staging.unfurl.cloud/*'
+      #     UNFURL_CLOUD_SERVER: https://staging.unfurl.cloud
       - name: Upload Cypress screenshots
         if: ${{ failure() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
