@@ -6,7 +6,7 @@
     "@formily/core": "~2.2.0",
     "@formily/element": "~2.2.0",
     "@formily/vue": "~2.2.0",
-    "dompurify": "2.4.5",
+    "dompurify": "3.4.0",
     "marked": "^4.0.18",
     "mime-types": "^2.1.12",
     "semver": "^7.3.4",
