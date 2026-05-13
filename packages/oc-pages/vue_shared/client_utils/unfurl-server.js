@@ -115,8 +115,12 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += `&branch=${branch}`
     }
 
-    // TODO standalone: figure out how to determine if auth project should be blank 
-    if(window.gon.working_dir_project != projectPath) {
+    // In standalone gui mode always send auth_project so the server's cache
+    // keys are properly scoped to the project (e.g. `local:/.../...`), keeping
+    // them consistent with what /clear_project_file_cache uses. Otherwise the
+    // export cache and the clear-cache call diverge and the dashboard sees
+    // stale data after adding an environment or deployment.
+    if(window.gon.unfurl_gui || window.gon.working_dir_project != projectPath) {
         exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
     }
 
@@ -177,7 +181,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     const exportUrlBase = `${baseUrl}/types?`.replace(/^\/+/, '/')
     let exportUrl = []
 
-    if(window.gon.working_dir_project != projectPath) {
+    if(window.gon.unfurl_gui || window.gon.working_dir_project != projectPath) {
         exportUrl.push(`auth_project=${encodeURIComponent(projectPath)}`)
     }
 
@@ -353,7 +357,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     headers['Content-Type'] = 'application/json'
     let url = `${baseUrl}/${method}`.replace(/^\/+/, '/')
 
-    if(window.gon.working_dir_project != projectPath) {
+    if(window.gon.unfurl_gui || window.gon.working_dir_project != projectPath) {
         url += `?auth_project=${encodeURIComponent(projectPath)}`
     }
 
