@@ -78,6 +78,18 @@ export default class UnfurlServer {
     ]
       
 
+    const [cmd, cmdArgs, opts] = this.invocation
+    console.log(`[unfurl-server] cwd=${opts.cwd} cmd: ${cmd} ${cmdArgs.join(' ')}`)
+    const interesting = /^(UNFURL_|OC_|AWS_|GCP_|GOOGLE_|AZURE_|ARM_|DIGITALOCEAN_|PORT$|PATH$|HOME$|NODE_OPTIONS$|MAIL_|SMTP_|CYPRESS_)/
+    const isSecret = /TOKEN|SECRET|PASSWORD|API_KEY|ACCESS_KEY/i
+    const envSnapshot = Object.fromEntries(
+      Object.entries(opts.env)
+        .filter(([k]) => Object.prototype.hasOwnProperty.call(this.env, k) || interesting.test(k))
+        .map(([k, v]) => [k, isSecret.test(k) ? '<redacted>' : v])
+        .sort()
+    )
+    console.log(`[unfurl-server] env:`, envSnapshot)
+
     this.process = childProcess.spawn(
       ...this.invocation
     )

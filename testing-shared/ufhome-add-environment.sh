@@ -29,15 +29,22 @@ ufhome=$dashboard_project
 cp testing-shared/fixtures/environments/$1.yaml $ufhome/local/$name_or_type.yaml
 
 
-sed -E -i "s|((# )?environments:)|+?include-$name_or_type: local/$name_or_type.yaml\n\1|" $ufhome/unfurl.yaml
+if ! grep -q "^+?include-$name_or_type:" "$ufhome/unfurl.yaml"; then
+  nl=$'\n'
+  tmp=$(mktemp)
+  sed -E "s|((# )?environments:)|+?include-$name_or_type: local/$name_or_type.yaml\\${nl}\1|" "$ufhome/unfurl.yaml" > "$tmp"
+  mv "$tmp" "$ufhome/unfurl.yaml"
+fi
 
 if [ ! -z "$environment_name" ]; then
-  sed -i "s|$environment_type:|$environment_name:|" "$ufhome/local/$name_or_type.yaml"
+  tmp=$(mktemp)
+  sed "s|$environment_type:|$environment_name:|" "$ufhome/local/$name_or_type.yaml" > "$tmp"
+  mv "$tmp" "$ufhome/local/$name_or_type.yaml"
 fi
 
 if [ ! -z "$dashboard_project" ]; then
   # pushd $ufhome
   pushd $dashboard_project
-  $unfurl init --existing --use-environment $name_or_type || /bin/true
+  $unfurl -vv init --existing --use-environment $name_or_type || true
   popd
 fi

@@ -12,5 +12,6 @@ export UNFURL_HOME=''
 export UNFURL_SKIP_SAVE='never'
 
 pushd $DASHBOARD_DEST
-$cmd $@
+# Tee output to /tmp/dryrun-unfurl.log so it can be tailed live during the test.
+$cmd $@ 2>&1 | tee /tmp/dryrun-unfurl.log
 popd
