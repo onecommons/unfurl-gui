@@ -107,8 +107,13 @@ export default {
         ...queryParamVar('env'),
         shouldDisableSubmitTemplate() {
             if(this.standalone) {
+                // NB: read baseDialogComplete first so Vue 2 tracks it as a
+                // reactive dep — otherwise the `$refs` short-circuit (refs
+                // aren't reactive) on the initial compute leaves us
+                // permanently cached as `true`.
+                const complete = this.baseDialogComplete
                 if(!this.$refs.baseDeployDialog) return true
-                return !this.baseDialogComplete
+                return !complete
             }
 
             if(this.creatingEnvironment) {

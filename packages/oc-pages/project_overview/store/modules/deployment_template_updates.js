@@ -1028,7 +1028,7 @@ const actions = {
                 // I'm not sure there's much to be gained here in terms of decoupling, but this should work better with clone
 
                 variables.environment = state.deploymentParams?.environmentName
-                variables.deployment_blueprint = state.deploymentParams?.deploymentName
+                variables.deployment_blueprint = state.deploymentParams?.deploymentBlueprint
                 variables.blueprint_url = state.deploymentParams?.projectUrl?
                     new URL(state.deploymentParams.projectUrl) : null
 
