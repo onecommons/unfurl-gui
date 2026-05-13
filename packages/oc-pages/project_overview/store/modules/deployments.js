@@ -3,6 +3,7 @@ import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
 import _ from 'lodash'
@@ -169,7 +170,7 @@ const actions = {
 
         const items = dict.subscriptions[_projectPath]
 
-        const url = `/${rootGetters.getHomeProjectPath}/-/subscriptions?upstream=${encodeURIComponent(projectPath)}`
+        const url = `${projectPathToHomeRoute(rootGetters.getHomeProjectPath)}/-/subscriptions?upstream=${encodeURIComponent(projectPath)}`
 
         if(op == 'inc' && items?.length == 1) {
             console.log(`POST ${url}`)

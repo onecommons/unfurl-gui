@@ -89,7 +89,7 @@ export default {
             return result
         },
         action() {
-            return `${window.origin}/${this.getHomeProjectPath}/-/environments`
+            return `${window.origin}${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments`
         },
         filteredAvailableProviders() {
             return this.availableProviders.filter(provider => {
@@ -216,16 +216,16 @@ export default {
                 if(this.hasCriticalErrors) return
                 sessionStorage['redirectOnProviderSaved'] = redirectTarget
                 if(provider) {
-                  window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
+                  window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
                 } else {
-                  window.location.href = `/${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+                  window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
                 }
             } else {
-                const url = `${window.origin}/${this.getHomeProjectPath}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
+                const url = `${window.origin}${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
                 sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
                 await axios.get(url); // set redirect
 
-                window.location.href = `/${this.getHomeProjectPath}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${provider}`
+                window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${provider}`
             }
         },
         displayProvider(provider) {

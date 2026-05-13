@@ -9,6 +9,7 @@ import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
 import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { redirectTo } from '~/lib/utils/url_utility';
@@ -414,7 +415,7 @@ export default {
                     result.push({
                         name: 'Created in',
                         value: `Job #${jobId}`,
-                        url: `/${this.getHomeProjectPath}/-/jobs/${jobId}`,
+                        url: `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/jobs/${jobId}`,
                     })
                 }
             }

@@ -3,6 +3,7 @@ import {mapGetters} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {GlBadge} from '@gitlab/ui'
 import {Tooltip as ElTooltip} from 'element-ui'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 export default {
     name: 'ImportLink',
@@ -29,10 +30,10 @@ export default {
             return this.deployment?.title || this.deploymentName
         },
         deploymentLink() {
-           return `/${this.getHomeProjectPath}/-/deployments/${this.environmentName}/${this.deploymentName}#${this.resourceName}`
+           return `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.environmentName}/${this.deploymentName}#${this.resourceName}`
         },
         environmentLink() {
-            return `/${this.getHomeProjectPath}/-/environments/${this.environmentName}`
+            return `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
         },
         show() {
             return this.card?.imported && this.deploymentLink && this.deploymentTitle

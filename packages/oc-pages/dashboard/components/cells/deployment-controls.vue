@@ -5,6 +5,7 @@ import {lookupKey} from 'oc_vue_shared/storage-keys'
 import {homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 import ControlButtons from './deployment-controls/control-buttons.vue'
 import * as routes from '../../router/constants'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 function emitDeploymentItemFor(eventNames) {
     const result = {}
@@ -157,10 +158,10 @@ export default {
             return this.deploymentItem?.viewableLink
         },
         viewJobsLink() {
-            return this.deployPath? `/${this.getHomeProjectPath}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
+            return this.deployPath? `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/jobs?var_deploy_path=${encodeURIComponent(this.deployPath.name)}`: null
         },
         viewInRepositoryLink() {
-            let result = `/${this.getHomeProjectPath}/-/tree/${this.homeProjectDefaultBranch}/${this.deployPath.name}`
+            let result = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/tree/${this.homeProjectDefaultBranch}/${this.deployPath.name}`
             if(window.gon.unfurl_gui && window.gon.gitlab_url) {
                 result = window.gon.gitlab_url + result
             }
@@ -246,7 +247,7 @@ export default {
             if(!pipeline) return
             const jobId = this.jobByPipelineId(pipeline.id)?.id
             if(!jobId) return
-            const result = `/${this.getHomeProjectPath}/-/jobs/${jobId}`
+            const result = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/jobs/${jobId}`
             return result
         },
 

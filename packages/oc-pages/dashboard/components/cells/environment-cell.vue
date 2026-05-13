@@ -3,6 +3,7 @@ import * as routes from '../../router/constants'
 import {mapGetters, mapMutations} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 export default {
     components: { DetectIcon },
     props: {
@@ -17,7 +18,7 @@ export default {
         destination() {
             if((this.$props?.environment?.name ?? 'defaults') == 'defaults') return {href: null}
             return this.noRouter ?
-                {href: `/${this.getHomeProjectPath}/-/environments/${this.$props?.environment?.name}`} :
+                {href: `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.$props?.environment?.name}`} :
                 this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
         },
         primaryProvider() {

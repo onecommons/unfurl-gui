@@ -6,6 +6,7 @@ import {createFlash, hideLastFlash, FLASH_TYPES} from 'oc_vue_shared/client_util
 import {unfurlServerUrlOverride} from 'oc_vue_shared/storage-keys'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
 import {normpath} from 'oc_vue_shared/lib/normalize'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 const DEFAULT_ROUTER_HOOK = (to, from, next) => next()
 
@@ -86,7 +87,7 @@ const getters = {
     },
     getFullname() {return window.gon.current_user_fullname},
     isMobileLayout() {return state.isMobileLayout},
-    pipelinesPath(_, getters) { return `/${getters.getHomeProjectPath}/-/pipelines` },
+    pipelinesPath(_, getters) { return `${projectPathToHomeRoute(getters.getHomeProjectPath)}/-/pipelines` },
     //deployTriggerPath(_, getters) { return `/${getters.getHomeProjectPath}/-/deployments/new` },
     UNFURL_MOCK_DEPLOY() {
         if((/(&|\?)(unfurl(-|_))?mock(_|-)deploy/i).test(window.location.search)) return true

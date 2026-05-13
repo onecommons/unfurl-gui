@@ -2,6 +2,7 @@
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput } from '@gitlab/ui';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
+import { projectPathToHomeRoute } from 'oc_vue_shared/client_utils/dashboard';
 import _ from 'lodash'
 import { __ } from '~/locale';
 import OcCard from '../../components/shared/oc_card.vue';
@@ -758,7 +759,7 @@ export default {
 
       if(this.hasCriticalErrors) return
 
-      window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
+      window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
     }, 250),
 
     triggerDeployment: _.debounce(async function({forceCheck, dryRun}) {
@@ -797,7 +798,7 @@ export default {
 
       if(this.hasCriticalErrors) return
 
-      window.location.href = `/${this.getHomeProjectPath}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
+      window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
     }, 250),
 
     mergeRequestReady: _.debounce(async function({status}) {

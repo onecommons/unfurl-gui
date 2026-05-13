@@ -2,6 +2,7 @@
 import { mapGetters } from 'vuex'
 import { GlBadge } from '@gitlab/ui'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 export default {
     name: 'JobSummary',
     components: { GlBadge, TableComponent },
@@ -35,7 +36,7 @@ export default {
 
                             const jobId = this.jobsData[0].id
 
-                            const url = `/${this.getHomeProjectPath}/-/jobs/${jobId}/artifacts/browse/${basePath}`
+                            const url = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/jobs/${jobId}/artifacts/browse/${basePath}`
                             const text = basePath.split('/').filter(s => !!s).slice(-3).join('/')
 
                             const artifact = {

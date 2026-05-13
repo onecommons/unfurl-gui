@@ -3,6 +3,7 @@ import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 const fields = [
     {
@@ -35,6 +36,9 @@ export default {
         TableComponent,
         GlIcon,
         EnvironmentCell
+    },
+    methods: {
+        projectPathToHomeRoute,
     },
     computed: {
         ...mapGetters(['mergeRequests', 'getHomeProjectPath', 'lookupEnvironment']),
@@ -100,7 +104,7 @@ export default {
             {{(new Date(item.updated_at)).toLocaleDateString()}} {{(new Date(item.updated_at)).toLocaleTimeString()}}
         </template>
         <template #source_branch="{item}">
-            <a :href="`/${getHomeProjectPath}/-/tree/${item.source_branch}`"> {{item.source_branch}} </a>
+            <a :href="`${projectPathToHomeRoute(getHomeProjectPath)}/-/tree/${item.source_branch}`"> {{item.source_branch}} </a>
         </template>
     </table-component>
 </template>

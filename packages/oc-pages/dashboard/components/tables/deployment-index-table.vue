@@ -9,6 +9,7 @@ import LastDeploy from './deployment-index-table/last-deploy.vue'
 import {GlTabs, GlModal, GlFormInput, GlFormGroup} from '@gitlab/ui'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import Vue from 'vue'
 import _ from 'lodash'
@@ -309,7 +310,7 @@ export default {
                         type: FLASH_TYPES.SUCCESS,
                         duration: 5000
                     })
-                    const redirectLocation = `/${this.getHomeProjectPath}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
+                    const redirectLocation = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
                 case 'incRedeploy':

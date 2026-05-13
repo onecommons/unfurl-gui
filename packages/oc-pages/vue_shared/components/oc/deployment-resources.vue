@@ -16,6 +16,7 @@ import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
 import { cloudProviderFriendlyName, slugify, generateCardId } from '../../util'
 import { deleteDeploymentTemplate } from '../../../project_overview/store/modules/deployment_template_updates'
 import {bus} from 'oc_vue_shared/bus'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 console.assert(OcTab)
 
@@ -131,7 +132,7 @@ export default {
         ]),
 
         pipelinesPath(){
-            return `/${this.getHomeProjectPath}/-/pipelines`
+            return `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/pipelines`
         },
 
         primaryPropsDelete() {
