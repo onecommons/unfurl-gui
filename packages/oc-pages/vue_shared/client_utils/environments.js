@@ -218,8 +218,10 @@ export async function fetchEnvironments(options) {
             },
             severity: 'critical'
         })
-        return {errors}
+        return {errors, environments: []}
     }
+
+    try {
 
     const environments = Object.entries(data.DeploymentEnvironment)
         .filter(([name, env]) => {
@@ -261,15 +263,18 @@ export async function fetchEnvironments(options) {
     if(includeDeployments) {
         const deploymentErrors = []
 
-        // that filter is expected to be obsolete
-        const deployments = data.deployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
+        // that filter is expected to be obsolete.
+        // Guard against a partial/malformed response where `deployments` is missing —
+        // a missing field shouldn't take out the whole environments load.
+        const rawDeployments = data.deployments || []
+        const deployments = rawDeployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
         // temporary error before removal so this goes loud
-        if(deployments.length != data.deployments.length) {
+        if(deployments.length != rawDeployments.length) {
             result.errors.push({
                 message: 'Assertion failed: An obsolete filter removed a deployment',
                 context: {
                     filtered: _.cloneDeep(deployments),
-                    unfiltered: _.cloneDeep(data.deployments)
+                    unfiltered: _.cloneDeep(rawDeployments)
                 },
                 severity: 'minor'
             })
@@ -323,6 +328,26 @@ export async function fetchEnvironments(options) {
     }
 
     return result
+
+    } catch(e) {
+        // A throw here means the export response was successful but had an unexpected
+        // shape (missing/null field, etc.). Surface it as a structured error rather
+        // than letting it escape as an uncaught TypeError that breaks downstream pages.
+        errors.push({
+            message: `@fetchEnvironments: An error occurred while processing the export response (${e.message})`,
+            context: {
+                error: e.message,
+                stack: e.stack,
+                format,
+                projectPath,
+                includeDeployments,
+                branch,
+                topKeys: data && Object.keys(data),
+            },
+            severity: 'critical'
+        })
+        return {errors, environments: []}
+    }
 }
 
 let _gitlabProjectEnvironments = {}
