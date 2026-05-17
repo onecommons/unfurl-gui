@@ -13,7 +13,7 @@ import { getBlueprintFixtures } from '../testing-shared/fixture-specs'
 import glob from 'glob'
 const globSync = glob.sync
 
-const TMP_DIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
+const TMP_DIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "tmp")
 const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
 const UNFURL_SERVER_CWD = TMP_DIR + '/ufsv'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'

@@ -31,7 +31,6 @@ env:
   FAIL_FAST_ENABLED: true
   CY_COMMAND_TIMEOUT: 30000
   TEST_VERSIONS: v2
-  UNFURL_TEST_TMPDIR: tmp
 
 jobs:
   build_and_test:

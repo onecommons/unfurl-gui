@@ -20,7 +20,7 @@ const OC_DISCRIMINATOR = process.env.OC_DISCRIMINATOR
 const EXTERNAL = process.env.hasOwnProperty('EXTERNAL')? process.env['EXTERNAL'] || '1' : '1'
 const STANDALONE_UNFURL = OC_URL.includes('://localhost') 
 const ENV_NAMING_FUNCTION = process.env.ENV_NAMING_FUNCTION || (STANDALONE_UNFURL? 'identity' : 'identifierFromCurrentTime')
-const UNFURL_TEST_TMPDIR = process.env.UNFURL_TEST_TMPDIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "/tmp")
+const UNFURL_TEST_TMPDIR = process.env.UNFURL_TEST_TMPDIR = path.resolve(process.env.UNFURL_TEST_TMPDIR || "tmp")
 const STANDALONE_PROJECT_DIR = `${UNFURL_TEST_TMPDIR}/ufsv`
 let unfurlServer
 let code = 0
