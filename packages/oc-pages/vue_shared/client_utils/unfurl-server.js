@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchProjectInfo, fetchLastCommit, setLastCommit, createBranch } from "./projects";
+import { fetchProjectInfo, fetchLastCommit, getLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
@@ -91,14 +91,17 @@ async function healthCheckErrorHelper(projectPath) {
 
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment}) {
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, skipLatestCommit, lastCommitResult: providedLastCommit}) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
-    const [lastCommitResult, password] = await Promise.all([fetchLastCommit(encodeURIComponent(projectPath), branch), fetchUserAccessToken()])
-    const [latestCommit, inferredBranch] = lastCommitResult || []
     const _sendCredentials = sendCredentials ?? true
+    // Callers that have already resolved the [commit, branch, queueid] tuple can
+    // pass it in via `lastCommitResult` to avoid a redundant fetchLastCommit.
+    const fetchCommit = skipLatestCommit ? null : (providedLastCommit || fetchLastCommit(projectPath, branch))
+    const [lastCommitResult, password] = await Promise.all([fetchCommit, _sendCredentials ? fetchUserAccessToken(): null])
+    const [latestCommit, inferredBranch, queueid] = lastCommitResult || []
     await healthCheckErrorHelper(projectPath)
 
-    if(!window.gon.unfurl_gui && !latestCommit) throw new Error(`@unfurlServerExport: latestCommit is not defined for ${projectPath}#${branch}`)
+    if(!window.gon.unfurl_gui && fetchCommit && !latestCommit) throw new Error(`@unfurlServerExport: latestCommit is not defined for ${projectPath}#${branch}`)
 
     const username = window.gon.current_username
 
@@ -114,23 +117,14 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     if(branch) {
         exportUrl += `&branch=${branch}`
     }
-
-    // In standalone gui mode always send auth_project so the server's cache
-    // keys are properly scoped to the project (e.g. `local:/.../...`), keeping
-    // them consistent with what /clear_project_file_cache uses. Otherwise the
-    // export cache and the clear-cache call diverge and the dashboard sees
-    // stale data after adding an environment or deployment.
-    if(window.gon.unfurl_gui || window.gon.working_dir_project != projectPath) {
-        exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
-    }
-
-    // if(alwaysSendLatestCommit() || !getOverride(projectPath)) {
-    // pass latest commit when it's not the repo we're developing
+    exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
+    // pass latest commit unless we're in developer mode for this project
     if(alwaysSendLatestCommit() || !unfurlServerUrlOverride(projectPath)) {
         if(latestCommit && branch && branch == inferredBranch) {
             exportUrl += `&latest_commit=${latestCommit}`
         }
     }
+    exportUrl += `&queueid=${queueid || 0}`
 
     if(includeDeployments) {
         exportUrl += '&include_all_deployments=1'
@@ -145,7 +139,15 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         exportUrl += `&deployment_path=${deploymentPath}`
     }
 
-    return (await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})))?.data
+    const data = (await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})))?.data
+    // The server may include latest_commit in the response (the SHA the export
+    // was computed against). Seed sessionStorage so the next call can send it
+    // as latest_commit on the request, taking the cache fast-path.
+    const resolvedBranch = branch || inferredBranch
+    if (data?.latest_commit && resolvedBranch) {
+        setLastCommit(projectPath, resolvedBranch, {commit: data.latest_commit})
+    }
+    return data
 }
 
 const unfurlTypesResponsesCache = {}
@@ -156,17 +158,13 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     const params = {implementation_requirements: _params.implementation_requirements}
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
 
-    // this is rather convoluted, but we don't want to fetch last commit for a tagged release
-    // this code would probably be removed once unfurl server doesn't need a last commit
-    // the only other reason to hit branches would be to get the primary branch
-
-    const fetchCommitPromise = (branch && !branch.startsWith('v'))? fetchLastCommit(encodeURIComponent(projectPath), branch): null
-
     const shouldFetchProjectInfo = (sendCredentials ?? null) == null && !window.gon.unfurl_gui
     const fetchProjectInfoPromise = shouldFetchProjectInfo?  fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility): null
 
-    const [lastCommitResult, password, visibility] = await Promise.all([fetchCommitPromise, fetchUserAccessToken(), fetchProjectInfoPromise])
-    const [latestCommit, inferredBranch] = lastCommitResult || []
+    // fetchUserAccessToken short-circuits to '' in unfurl_gui mode, so always firing it is cheap.
+    // The previous attempt to gate it on _sendCredentials required visibility, which isn't available
+    // until after the await — that created a TDZ on `visibility`.
+    const [password, visibility] = await Promise.all([fetchUserAccessToken(), fetchProjectInfoPromise])
     const _sendCredentials = sendCredentials ?? visibility != 'public'
     await healthCheckErrorHelper(projectPath)
 
@@ -180,10 +178,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     const exportUrlBase = `${baseUrl}/types?`.replace(/^\/+/, '/')
     let exportUrl = []
-
-    if(window.gon.unfurl_gui || window.gon.working_dir_project != projectPath) {
-        exportUrl.push(`auth_project=${encodeURIComponent(projectPath)}`)
-    }
+    exportUrl.push(`auth_project=${encodeURIComponent(projectPath)}`)
 
     if(!params.hasOwnProperty('cloudmap')) {
         const combinationKey = JSON.stringify(params)
@@ -210,12 +205,6 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
         exportUrl.push(`file=${encodeURIComponent(file.split('#')[0])}`)
     }
 
-    if(latestCommit && (alwaysSendLatestCommit() || !getOverride(projectPath))) {
-        if(branch && branch == inferredBranch) {
-            exportUrl += `latest_commit=${latestCommit}`
-        }
-    }
-
     Object.entries(params).forEach(([key, value]) => {
         if(value === undefined) return
         if(Array.isArray(value)) {
@@ -227,7 +216,16 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
 
     exportUrl = exportUrlBase + exportUrl.join('&')
 
-    const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})).then(res => res.data)
+    const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})).then(res => {
+        const data = res?.data
+        // Seed sessionStorage with the response's latest_commit if present, same
+        // as unfurlServerExport. Only meaningful when we know which branch the
+        // commit belongs to.
+        if (data?.latest_commit && branch) {
+            setLastCommit(projectPath, branch, {commit: data.latest_commit})
+        }
+        return data
+    })
     unfurlTypesResponsesCache[cacheKey] = result
 
     return await result
@@ -332,34 +330,34 @@ export async function fetchTypeRepositories(repositories, params) {
     // return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
 }
 
-export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables}) {
+export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables, sync}) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
-    let [password, lastCommitResult] = await Promise.all([fetchUserAccessToken(), fetchLastCommit(encodeURIComponent(projectPath), branch)])
-    const [latestCommit, _branch] = lastCommitResult
-    await healthCheckErrorHelper(projectPath)
-
-    if(_branch != branch && !window.gon.unfurl_gui) {
-        await createBranch(encodeURIComponent(projectPath), branch, latestCommit)
+    let {commit, queueid, when} = getLastCommit(projectPath, branch)
+    if (!commit) {
+        throw new Error('@unfurlServerUpdate: no commit found for update, unable to proceed')
     }
+    let password = await fetchUserAccessToken()
+    await healthCheckErrorHelper(projectPath)
 
     const body = {
         ...variables,
-        branch: branch || _branch,
-        latest_commit: latestCommit,
+        branch,
+        latest_commit: commit,
         patch,
-        commit_msg: commitMessage || method
+        commit_msg: commitMessage || method,
     }
-
-    if(!latestCommit) delete body.latestCommit
+    // Omitting queueid forces the server to process the patch synchronously and
+    // enforce the optimistic latest_commit lock (returning 409 on conflict)
+    // rather than queueing the work.
+    if (!sync) {
+        body.queueid = queueid || 0
+    }
 
     const headers = createHeaders({username, password})
     headers['Content-Type'] = 'application/json'
     let url = `${baseUrl}/${method}`.replace(/^\/+/, '/')
-
-    if(window.gon.unfurl_gui || window.gon.working_dir_project != projectPath) {
-        url += `?auth_project=${encodeURIComponent(projectPath)}`
-    }
+    url += `?auth_project=${encodeURIComponent(projectPath)}`
 
     let data
 
@@ -367,14 +365,14 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         data = (await doXhr(projectPath, 'POST', url, body, headers)).data
     } catch(e) {
         if(e.response?.status == 409) {
-            setLastCommit(encodeURIComponent(projectPath), branch, undefined)
+            setLastCommit(projectPath, branch, undefined)
         }
 
         throw e
     }
 
     if(data.commit) {
-        setLastCommit(encodeURIComponent(projectPath), branch, data.commit)
+        setLastCommit(projectPath, branch, data)
     } else {
         throw new Error('@unfurlServerUpdate: failed to set last commit')
     }

@@ -114,36 +114,61 @@ function commitSessionStorageKey(projectId, branch) {
     return `${projectId}#${branch}.latest_commit`
 }
 
-export function setLastCommit(projectId, branch, commit) {
-    const when = (new Date(Date.now())).toISOString()
-    sessionStorage[commitSessionStorageKey(projectId, branch)] = commit === undefined?
-        undefined:
-        JSON.stringify({commit, when})
+export function setLastCommit(projectId, branch, commit_data) {
+    if (commit_data === undefined) {
+        delete sessionStorage[commitSessionStorageKey(projectId, branch)]
+    } else {
+        let {commit, queueid, when} = commit_data
+        if (!when) {
+            when = (new Date(Date.now())).toISOString()
+        }
+        if (!queueid) {
+            queueid = 0
+        }
+        sessionStorage[commitSessionStorageKey(projectId, branch)] = JSON.stringify({commit, queueid, when})
+    }
 }
 
-export async function fetchLastCommit(projectId, _branch) {
+// Returns [commit, branch, queueid, changed] where `changed` is true iff this
+// call wrote a different commit to sessionStorage than was there before. Callers
+// can use this flag as a "has the upstream moved since we last looked?" signal
+// without needing to read sessionStorage themselves (which would race with our
+// own writeback below).
+export async function fetchLastCommit(projectPath, _branch) {
+    let lastInSessionStorage = getLastCommit(projectPath, _branch)
+    if (lastInSessionStorage?.queueid) {
+        // if there's queueid > 0, it means we have an in-flight commit
+        return [lastInSessionStorage.commit, _branch, lastInSessionStorage.queueid, false]
+    }
+
+    const projectId = encodeURIComponent(projectPath)
+    // fetchBranches returns local branchesData if present
     let [branch, branches] = await Promise.all([
         _branch, // allow provided branch to be a promise so they can be fetched in parallel
         fetchBranches(projectId)
     ])
-
     if(!branch) branch = await getOrFetchDefaultBranch(projectId)
-    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
-    const {id, created_at} = commit || {}
 
-    let lastInSessionStorage
-    try {
-        lastInSessionStorage = JSON.parse(sessionStorage[commitSessionStorageKey(projectId, branch)])
-    } catch(e) {}
+    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
+    const {id, created_at} = commit || {}  // note: same as committed_date
 
     const fromAPI = new Date(created_at)
     const fromStore = new Date(lastInSessionStorage?.when || 0)
 
     if (lastInSessionStorage?.commit && fromStore > fromAPI) {
-        return [lastInSessionStorage.commit, branch]
+        return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }
+    const changed = id !== lastInSessionStorage?.commit
+    setLastCommit(projectPath, branch, {commit: id, queueid: 0, when: created_at})
+    return [id, name, 0, changed]
+}
 
-    return [id, name]
+export function getLastCommit(projectId, branch) {
+  let lastInSessionStorage
+  try {
+    lastInSessionStorage = JSON.parse(sessionStorage[commitSessionStorageKey(projectId, branch)])
+  } catch (e) { }
+  return lastInSessionStorage
 }
 
 export async function fetchBranch(projectId, branch) {
@@ -159,13 +184,25 @@ export async function createBranch(projectId, branch, ref) {
 
     const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref: _ref}, {validateStatus() {return true}})
 
-    if(response.status >= 400) {
+    let commitId
+
+    if (response.status === 400 && /already exists/i.test(response.data?.message || '')) {
+        console.warn(`createBranch: branch '${branch}' already exists on ${projectId}; using existing branch`)
+        const existing = await fetchBranch(projectId, branch)
+        commitId = existing?.commit?.id
+    } else if (response.status >= 400) {
         console.error(response.data)
         throw new Error(`Couldn't create branch '${branch}'`)
+    } else {
+        commitId = response.data?.commit?.id
+    }
+
+    if (commitId) {
+        setLastCommit(decodeURIComponent(projectId), branch, {commit: commitId})
     }
 
     try {
-        branchesData[branchName] = branchesData[_ref]
+        branchesData[branch] = branchesData[_ref]
     } catch(e) {}
 
     return response.data
