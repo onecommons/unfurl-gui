@@ -1,5 +1,6 @@
 import {uniq} from 'lodash'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node-filter'
 import { repoToExportParams, fetchTypeRepositories, unfurlServerGetTypes } from  'oc_vue_shared/client_utils/unfurl-server'
@@ -108,9 +109,8 @@ const mutations = {
 }
 const actions = {
     async fetchProject({state, commit, dispatch, rootGetters}, params) {
-        let {projectPath, blueprintPath, projectGlobal, shouldMerge, branch} = {shouldMerge: false, ...params}
+        let {projectPath, blueprintPath, projectGlobal, shouldMerge, branch, forEditing} = {shouldMerge: false, ...params}
         const format = 'blueprint'
-        commit('loaded', false)
 
         const deployment = Object.values(state.Deployment || {})[0]
 
@@ -120,6 +120,29 @@ const actions = {
             } catch(e) {}
         }
 
+        // Optimization: when editing, skip the export entirely if the branch HEAD
+        // hasn't moved since the last fetchLastCommit — the data in the store is
+        // still current. fetchLastCommit returns `changed=false` when it didn't
+        // write a new commit to sessionStorage. Don't skip when there's queued
+        // work (queueid > 0): the server-side state may still be settling.
+        // If we do need to re-export, forward the already-resolved commit tuple
+        // so unfurlServerExport doesn't redo the work.
+        let lastCommitResult
+        if (forEditing && state.loaded) {
+            try {
+                lastCommitResult = await fetchLastCommit(projectPath, branch)
+                const [, , queueid, changed] = lastCommitResult
+                if (!queueid && !changed) {
+                    return
+                }
+            } catch(e) {
+                console.warn('@fetchProject: skipping freshness check after fetchLastCommit error', e)
+                lastCommitResult = undefined
+            }
+        }
+
+        commit('loaded', false)
+
         let root
         try {
             root = await unfurlServerExport({
@@ -127,7 +150,9 @@ const actions = {
                 projectPath,
                 deploymentPath: blueprintPath,
                 sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public'),
-                branch
+                branch,
+                skipLatestCommit: !forEditing,
+                lastCommitResult,
             })
         } catch(e) {
             // TODO handle this from the caller

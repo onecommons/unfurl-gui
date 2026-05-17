@@ -189,7 +189,8 @@ export default {
                 if(val) {
                     this.blueprintExport = await unfurlServerExport({
                         format: 'blueprint',
-                        projectPath: val
+                        projectPath: val,
+                        skipLatestCommit: true
                     })
                 } else {
                     this.blueprintExport = null
