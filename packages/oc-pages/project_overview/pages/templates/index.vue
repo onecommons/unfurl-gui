@@ -448,6 +448,7 @@ export default {
       'setDeploymentParams',
       'createError',
       'setCommitBranch',
+      'setCommitBranchIsNew',
       'setBlueprintBranch'
     ]),
     ...mapActions([
@@ -517,6 +518,7 @@ export default {
             // computed setter
             const branch = this.commitBranch = `${this.getUsername}/${this.$route.params.slug}`
             this.setCommitBranch(this.commitBranch)
+            this.setCommitBranchIsNew(true)
 
             const target = this.defaultEditBranch
             const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
@@ -525,6 +527,7 @@ export default {
 
             if(openedMR) {
               this.mergeRequest = openedMR
+              this.setCommitBranchIsNew(false)
             } else {
               const key = `branch ${branch}`
               if(!this.isAcknowledged(key)) {

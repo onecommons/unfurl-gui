@@ -7,7 +7,7 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
-import { getOrFetchDefaultBranch } from "../../../vue_shared/client_utils/projects";
+import { getOrFetchDefaultBranch, createBranch } from "../../../vue_shared/client_utils/projects";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -798,6 +798,7 @@ const state = () => ({
     committedNames: [],
     commitMessage: null,
     commitBranch: null,
+    commitBranchIsNew: false,
     blueprintBranch: null,
     updateType: null,
     env: {},
@@ -848,6 +849,10 @@ const mutations = {
     },
     setCommitBranch(state, commitBranch) {
         state.commitBranch = commitBranch
+        state.commitBranchIsNew = false
+    },
+    setCommitBranchIsNew(state, isNew) {
+        state.commitBranchIsNew = isNew
     },
     setBlueprintBranch(state, blueprintBranch) {
         state.blueprintBranch = blueprintBranch
@@ -897,6 +902,7 @@ const mutations = {
             state.environmentScope = undefined
             state.commitMessage = null
             state.commitBranch = null
+            state.commitBranchIsNew = false
             state.blueprintBranch = null
             state.updateType = null
             state.preparedMutations = []
@@ -1087,6 +1093,11 @@ const actions = {
         }
 
         const branch = state.commitBranch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
+
+        if (state.commitBranchIsNew && !window.gon.unfurl_gui) {
+            await createBranch(encodeURIComponent(projectPath), branch)
+            commit('setCommitBranchIsNew', false)
+        }
 
         const post = unfurlServerUpdate({
             method,
