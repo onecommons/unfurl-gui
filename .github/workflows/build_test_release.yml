@@ -3,7 +3,7 @@ name: Build, Test, Release
 on: [push]
 
 env:
-  UNFURL_BRANCH: testing
+  UNFURL_BRANCH: git-sync
 
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
@@ -31,6 +31,11 @@ env:
   FAIL_FAST_ENABLED: true
   CY_COMMAND_TIMEOUT: 30000
   TEST_VERSIONS: v2
+  # Must stay declared at workflow level — the upload-artifact steps below
+  # reference it via ${{ env.UNFURL_TEST_TMPDIR }}, which only reads YAML
+  # env. (integration-test.js also defaults to "tmp" when unset, but that
+  # only sets it for child processes, not GitHub Actions expressions.)
+  UNFURL_TEST_TMPDIR: tmp
 
 jobs:
   build_and_test:
@@ -43,6 +48,10 @@ jobs:
           node-version: 20
       - name: git config
         run: git config --global user.email "you@example.com"; git config --global user.name "Your Name"
+      - name: Install valkey
+        run: |
+            sudo apt-get update -y
+            sudo apt install -y valkey
       - name: Install yarn dependencies
         run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
         # TODO add back ufsv-patch -- --runInBand
@@ -56,8 +65,22 @@ jobs:
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       - name: Integration test (unfurl init)
         env:
+          CACHE_REDIS_URL: redis://localhost:6379/0
           STANDALONE_SETUP_SCRIPT: testing-shared/unfurl-init-setup.sh
-        run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
+          # Runs the unfurl-server jest suite against the standalone gui
+          # server before cypress. Tests live writes against the same
+          # tmp/ufsv project that cypress is about to use.
+          JEST_PRE_CYPRESS: packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js
+        run: |
+          mkdir -p ${{ env.UNFURL_TEST_TMPDIR }}
+          set -o pipefail
+          yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js 2>&1 | tee ${{ env.UNFURL_TEST_TMPDIR }}/integration-test.log
+      - name: Upload integration-test log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: integration-test-log
+          path: ${{ env.UNFURL_TEST_TMPDIR }}/integration-test.log
       # - name: Integration test (staging upstream)
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       #   env:

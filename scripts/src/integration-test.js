@@ -420,6 +420,32 @@ async function main() {
     await unfurlServer.waitUntilReady()
     ready = true
   }
+
+  // Run jest test files against the already-running standalone server before
+  // cypress kicks off. Set JEST_PRE_CYPRESS to a space-separated list of
+  // jest test paths (e.g. "packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js").
+  // Skipped when there's no live server (non-standalone runs).
+  if (STANDALONE_UNFURL && process.env.JEST_PRE_CYPRESS) {
+    const jestTests = process.env.JEST_PRE_CYPRESS.split(/\s+/).filter(Boolean)
+    console.log(`[jest-pre-cypress] running: ${jestTests.join(' ')}`)
+    const jestEnv = {
+      ...process.env,
+      OC_URL,
+      TEST_PROJECT_PATH:
+        process.env.JEST_PRE_CYPRESS_TEST_PROJECT_PATH || `local:${STANDALONE_PROJECT_DIR}`,
+    }
+    const jestResult = spawnSync(
+      'yarn',
+      ['jest', '--runInBand', ...jestTests],
+      {cwd: unfurlGuiRoot, env: jestEnv, stdio: 'inherit'}
+    )
+    if (jestResult.status !== 0) {
+      console.error(`[jest-pre-cypress] failed with code ${jestResult.status}`)
+      code = jestResult.status
+      return  // skip cypress; beforeExit() will tear the server down
+    }
+  }
+
   const cypressResult = cypressCommand()
   code = cypressResult.status
 }

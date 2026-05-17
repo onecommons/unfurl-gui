@@ -168,6 +168,9 @@ module.exports = {
     "/\\.claude/",
     // don't run integration tests
     '/cypress/',
+    // heavyweight suites with extra prereqs (unfurl CLI, GOOGLE_APPLICATION_CREDENTIALS,
+    // setup.sh, SPEC_GLOBS); run them explicitly via their own scripts
+    '/ufsv-patch/',
   ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
@@ -180,9 +183,6 @@ module.exports = {
 
   // This option allows use of a custom test runner
   // testRunner: "jest-circus/runner",
-
-  // This option sets the URL for the jsdom environment. It is reflected in properties such as location.href
-  testURL: process.env.OC_URL || 'https://unfurl.cloud',
 
   // Setting this value to "fake" allows the use of fake timers for functions such as "setTimeout"
   // timers: "real",

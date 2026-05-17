@@ -17,6 +17,7 @@
     "restart": "./scripts/restart",
     "tail": "./scripts/tail",
     "test": "jest",
+    "test:ufsv-patch": "jest --testPathIgnorePatterns=/node_modules/ --testPathIgnorePatterns=/.claude/ --testPathIgnorePatterns=/cypress/ ufsv-patch -- --runInBand",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "integration-test": "./scripts/src/integration-test.js",
