@@ -89,8 +89,58 @@ before(() => {
         try {
           const msg = args.map(serialize).join(' ').replace(/\n/g, ' \\n ')
           cy.task('log', `[browser ${level}] ${msg}`, {log: false})
+          // When Apollo throws `Cannot create property '__typename' on number 'X'`,
+          // dump where in the most-recent export payload that numeric value lives,
+          // plus a synthesized stack so we can see the call site.
+          if (level === 'error' && /Cannot create property '__typename' on number/.test(msg)) {
+            const numMatch = msg.match(/'([0-9.eE+-]+)'/)
+            const target = numMatch ? Number(numMatch[1]) : null
+            const recent = win.__lastExportResponse
+            const findPaths = (obj, want, path = [], out = []) => {
+              if (typeof obj === 'number' && obj === want) out.push(path.join('.'))
+              else if (obj && typeof obj === 'object') {
+                for (const k of Object.keys(obj)) findPaths(obj[k], want, [...path, k], out)
+                if (out.length > 20) return out
+              }
+              return out
+            }
+            const paths = target != null && recent ? findPaths(recent.body, target).slice(0, 20) : []
+            const diag = {
+              url: win.location && win.location.href,
+              target,
+              foundIn: recent ? recent.url : '(no recent export response captured)',
+              paths,
+              stack: new Error('apollo __typename trap').stack
+            }
+            cy.task('log', `[diag __typename] ${JSON.stringify(diag).slice(0, 2000)}`, {log: false})
+          }
         } catch (_) {}
         orig(...args)
+      }
+    }
+    // Stash the most recent /export?format=* response on win so the
+    // __typename diag above can walk it for the offending numeric value.
+    // The SPA uses axios (XMLHttpRequest under the hood), not fetch, so
+    // wrap XHR.open + a load listener to capture responses.
+    win.__lastExportResponse = null
+    const XHR = win.XMLHttpRequest
+    if (XHR) {
+      const origOpen = XHR.prototype.open
+      XHR.prototype.open = function (method, url, ...rest) {
+        this.__url = url
+        return origOpen.call(this, method, url, ...rest)
+      }
+      const origSend = XHR.prototype.send
+      XHR.prototype.send = function (...args) {
+        this.addEventListener('load', () => {
+          try {
+            if (this.__url && /\/export\?format=/.test(this.__url)) {
+              const body = JSON.parse(this.responseText)
+              win.__lastExportResponse = { url: this.__url, body }
+            }
+          } catch (_) {}
+        })
+        return origSend.apply(this, args)
       }
     }
     win.addEventListener('error', e => {
