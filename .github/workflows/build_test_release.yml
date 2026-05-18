@@ -69,11 +69,6 @@ jobs:
       - name: Integration test (unfurl init)
         env:
           CACHE_REDIS_URL: redis://localhost:6379/0
-          # Per-run namespace so the rust proxy's queue/cache state from
-          # earlier runs (or earlier attempts of this run) doesn't leak in
-          # and trigger spurious 409 "pending batch" / "queueid conflict"
-          # rejections against a freshly-initialized project.
-          CACHE_KEY_PREFIX: gh-${{ github.run_id }}-${{ github.run_attempt }}
           STANDALONE_SETUP_SCRIPT: testing-shared/unfurl-init-setup.sh
           # Runs the unfurl-server jest suite against the standalone gui
           # server before cypress. Tests live writes against the same

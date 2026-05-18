@@ -373,6 +373,14 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
 
     if(data.commit) {
         setLastCommit(projectPath, branch, data)
+    } else if(typeof data.queueid !== 'undefined') {
+        // Rust-proxy queued response: {queueid: N} with no commit. The
+        // patch is enqueued against the latest_commit we sent and Python
+        // hasn't applied it yet. Keep that latest_commit as our stored
+        // commit so subsequent requests carry it, and bump the queueid
+        // so the next request takes inc_queueid's normal path instead of
+        // tripping the "pending batch" sync-write rejection.
+        setLastCommit(projectPath, branch, {commit, queueid: data.queueid, when})
     } else {
         throw new Error('@unfurlServerUpdate: failed to set last commit')
     }
