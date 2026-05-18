@@ -43,11 +43,13 @@ if [ ! -z "$environment_name" ]; then
 fi
 
 if [ ! -z "$dashboard_project" ]; then
-  # Pass the project path explicitly instead of cd'ing into it. UNFURL_CMD
-  # (when set) is a `docker run ... -w $PWD ...` line whose -w is baked at
-  # the caller's environment setup time — bash won't re-expand $PWD when
-  # the value is later interpolated, so `pushd $dashboard_project` doesn't
-  # change the docker container's cwd. Passing the project path positionally
-  # lets `init --existing` target it regardless of the container's cwd.
-  $unfurl -vv init --existing "$dashboard_project" --use-environment $name_or_type || true
+  # Pass project_dir + ensemble_name positionally so `unfurl init` targets
+  # the existing project at $dashboard_project and creates a new ensemble
+  # named ${name_or_type}_ensemble using $name_or_type as the environment.
+  # `--existing` is the wrong flag here — that path's discovery walks up
+  # from cwd, which on CI is the workspace root (not the project), and
+  # UNFURL_CMD's `-w $PWD` is baked at workflow setup time so pushd-ing
+  # doesn't change the docker container's cwd. Specifying project_dir
+  # positionally avoids all of that.
+  $unfurl -vv init "$dashboard_project" "${name_or_type}_ensemble" --use-environment $name_or_type
 fi
