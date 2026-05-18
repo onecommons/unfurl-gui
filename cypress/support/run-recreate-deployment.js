@@ -412,8 +412,15 @@ Cypress.Commands.add('recreateDeployment', options => {
         cy.window().then(win => {
           const projectPath = win.gon && win.gon.home_project
           if (projectPath) {
-            cy.task('log', `[trace] clearing cache for ${projectPath}`, {log: false})
-            cy.request('POST', `${OC_URL}/services/unfurl-server/clear_project_file_cache?auth_project=${encodeURIComponent(projectPath)}`)
+            // In standalone mode the unfurl server is mounted at OC_URL directly.
+            // In gitlab-managed mode it's proxied at /services/unfurl-server/.
+            // home_project starting with `local:` is a reliable standalone signal.
+            const prefix = projectPath.startsWith('local:') ? '' : '/services/unfurl-server'
+            const url = `${OC_URL}${prefix}/clear_project_file_cache?auth_project=${encodeURIComponent(projectPath)}`
+            cy.task('log', `[trace] clearing cache: ${url}`, {log: false})
+            cy.request({method: 'POST', url, failOnStatusCode: false}).then(resp => {
+              cy.task('log', `[trace] clear_project_file_cache -> ${resp.status}`, {log: false})
+            })
           } else {
             cy.task('log', `[trace] no home_project on gon; skipping cache clear`, {log: false})
           }
