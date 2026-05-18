@@ -91,6 +91,12 @@ export default class UnfurlServer {
         '-v', `${hostRoot}:${hostRoot}`,
         '-w', this.cwd || hostRoot,
         '--user', `${process.getuid()}:${process.getgid()}`,
+        // The image's USER directive is `unfurl:unfurl`, but --user overrides
+        // it to the runner's uid which has no /etc/passwd entry, so HOME
+        // resolves to '/' inside the container. Ansible's import-time setup
+        // then tries to mkdir /.ansible/tmp and crashes with EACCES. Point
+        // HOME at /tmp (always writable, container is --rm so disposable).
+        '-e', 'HOME=/tmp',
         '--entrypoint', 'unfurl',
       ]
       for (const v of DOCKER_ENV_FORWARD) {
