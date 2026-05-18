@@ -4,7 +4,7 @@ on: [push]
 
 env:
   UNFURL_BRANCH: git-sync
-  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:381b081-server
+  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:git-sync-server
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
 
@@ -80,11 +80,7 @@ jobs:
           # Runs the unfurl-server jest suite against the standalone gui
           # server before cypress. Tests live writes against the same
           # tmp/ufsv project that cypress is about to use.
-          # TEMP: disabled during the cypress bisect — jest fails on the
-          # old pinned image (queue-prefix fix not present), which would
-          # short-circuit cypress before it runs. Restore once cypress
-          # bisect is resolved and we're back on ${UNFURL_BRANCH}-server.
-          # JEST_PRE_CYPRESS: packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js
+          JEST_PRE_CYPRESS: packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js
           # Cap the parent-walk for `unfurl init` and LocalEnv resolution
           # at $PWD/tmp so it doesn't ascend past tmp/ufsv into the
           # unfurl-gui checkout and adopt the gui repo's own _unfurl/
