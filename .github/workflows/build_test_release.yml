@@ -95,7 +95,7 @@ jobs:
           # git's identity-lookup crashes when --user overrides the image's
           # USER to a uid with no /etc/passwd entry (see unfurl-server.mjs
           # for the full explanation).
-          export UNFURL_CMD="docker run --rm -v $PWD:$PWD -w $PWD --user $(id -u):$(id -g) -e HOME=/tmp -e USER=unfurl -e GIT_AUTHOR_NAME=unfurl -e GIT_AUTHOR_EMAIL=unfurl@example.com -e GIT_COMMITTER_NAME=unfurl -e GIT_COMMITTER_EMAIL=unfurl@example.com -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=init.defaultBranch -e GIT_CONFIG_VALUE_0=main -e UNFURL_HOME -e UNFURL_LOGGING -e UNFURL_NORUNTIME -e UNFURL_SKIP_SAVE -e UNFURL_SEARCH_ROOT --entrypoint unfurl $UNFURL_SERVER_IMAGE"
+          export UNFURL_CMD="docker run --rm -v $PWD:$PWD -w $PWD --user $(id -u):$(id -g) -e HOME=/tmp -e USER=unfurl -e GIT_AUTHOR_NAME=unfurl -e GIT_AUTHOR_EMAIL=unfurl@example.com -e GIT_COMMITTER_NAME=unfurl -e GIT_COMMITTER_EMAIL=unfurl@example.com -e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=init.defaultBranch -e GIT_CONFIG_VALUE_0=main -e UNFURL_HOME -e UNFURL_LOGGING -e UNFURL_NORUNTIME -e UNFURL_SKIP_SAVE -e UNFURL_SEARCH_ROOT -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e AWS_DEFAULT_REGION --entrypoint unfurl $UNFURL_SERVER_IMAGE"
           yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
       # - name: Integration test (staging upstream)
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
