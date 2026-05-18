@@ -89,6 +89,30 @@ const TEST_PATCH = makeTestPatch()
 // Set at module level so it applies to tests registered during describe-time.
 if (MODE !== 'mock') jest.setTimeout(30000)
 
+// The rust unfurl-server proxy enqueues every update POST that has a
+// `queueid` field and a background worker drains the queue, holding a
+// per-project lock while it forwards to the Python backend. Subsequent
+// sync writes during that window get 409 "pending batch"; subsequent
+// queued writes can get 409 "queueid conflict" if the queue key has
+// already been recorded. Tests that fire multiple updates back-to-back
+// need to give the worker time to drain in between. The default tolerates
+// the rust proxy's batch-window default (UNFURL_BATCH_WINDOW_SECS=5);
+// tests run faster when the server is launched with that env var set
+// lower (CI uses 1). Mock mode has no real worker, so this is a no-op.
+async function letQueueDrain(ms) {
+  if (MODE === 'mock') return
+  if (ms === undefined) {
+    // Worst case: enqueue happens at t=0, worker wakes after batch_window,
+    // checks every 250ms, forwards to Python, Python commits (~1s), updates
+    // queue key. Empirically 2× the window + 2s covers it; the default
+    // batch_window is 5s so we wait 12s, which feels long but reliably
+    // catches the worker's writeback.
+    const win = parseFloat(process.env.UNFURL_BATCH_WINDOW_SECS || '5')
+    ms = Math.max(2000, Math.ceil(win * 1000) * 2 + 2000)
+  }
+  await new Promise(r => setTimeout(r, ms))
+}
+
 beforeAll(() => {
     Object.assign(window.gon, {
         unfurl_gui: MODE === 'gui',
@@ -96,11 +120,19 @@ beforeAll(() => {
     })
 })
 
-beforeEach(() => {
+beforeEach(async () => {
     sessionStorage.clear()
     if (MODE === 'mock') {
         axios.get.mockReset()
         axios.post.mockReset()
+    } else {
+        // Give the rust proxy's batch worker time to drain the prior
+        // test's queue items before we start this one. The new flush-on-
+        // export server behaviour blocks the *export* path until drain,
+        // but POST /update_environment still races: if the worker is mid-
+        // batch when this test's first POST fires, the proxy 409s
+        // ("pending batch") or fails the queueid check.
+        await letQueueDrain()
     }
 })
 
@@ -278,6 +310,9 @@ describe('back-to-back unfurlServerUpdate sends the prior response commit as lat
         const afterFirst = getLastCommit(TEST_PROJECT, TEST_BRANCH)
         expect(afterFirst?.commit).toBeTruthy()
 
+        // No wait needed: the second POST sends the bumped queueid from
+        // the first response, so the rust proxy's inc_queueid takes the
+        // queueid-bump path (not the sync-write "pending batch" rejection).
         await unfurlServerUpdate({method: TEST_METHOD, projectPath: TEST_PROJECT, branch: TEST_BRANCH, patch: makeTestPatch(), commitMessage: 'second'})
 
         if (MODE === 'mock') {
@@ -332,15 +367,32 @@ describe('unfurlServerExport seeds sessionStorage from response.latest_commit an
         const afterUpdate = getLastCommit(TEST_PROJECT, TEST_BRANCH)
         expect(afterUpdate?.commit).toBeTruthy()
         if (MODE === 'mock') expect(afterUpdate.queueid).toBe(5)
+        // Sanity: the queued update bumped queueid; we'll assert the
+        // export below clears it.
+        expect((afterUpdate.queueid || 0) > 0).toBe(true)
+        const queuedAgainstCommit = afterUpdate.commit
 
-        // Now export again — the server should resolve the queued work and return
-        // its latest_commit in the response, which unfurlServerExport seeds into
-        // sessionStorage (with queueid defaulting back to 0).
+        // Export with queueid > 0: the rust proxy flushes the pending
+        // batch, waits for the Python backend's batch_patch to commit,
+        // and serves the export against the new HEAD. That exercises:
+        //   - rust reading the queue key under CACHE_KEY_PREFIX (matches
+        //     Python's writer) — without that we'd never see new_commit
+        //   - Python's _update_queue_key writing a plain-utf8 value via
+        //     raw redis (not a pickle blob the rust Lua can't parse)
+        //   - Python's batch_patch picking the parent-aware fresh
+        //     LocalEnv so the recorded new_commit is the parent repo's
+        //     post-patch HEAD (not the cached ensemble-subrepo HEAD)
         await unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT, branch: TEST_BRANCH})
 
         const afterExport = getLastCommit(TEST_PROJECT, TEST_BRANCH)
         expect(afterExport?.commit).toBeTruthy()
         expect(afterExport.queueid || 0).toBe(0)
+        // Most important: the export reported a commit *different* from
+        // what we sent — i.e. the worker's drain reached the client via
+        // the queue-key round-trip. If any link in that chain is
+        // broken (wrong repo, wrong cache prefix, pickled value), this
+        // assertion fails because the new commit never gets propagated.
+        expect(afterExport.commit).not.toBe(queuedAgainstCommit)
         if (MODE === 'mock') expect(afterExport.commit).toBe('commit-C')
     })
 })

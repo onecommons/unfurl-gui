@@ -24,6 +24,7 @@ const DOCKER_ENV_FORWARD = [
   'UNFURL_NORUNTIME',
   'CACHE_REDIS_URL',
   'CACHE_KEY_PREFIX',
+  'UNFURL_BATCH_WINDOW_SECS',
 ]
 
 export default class UnfurlServer {

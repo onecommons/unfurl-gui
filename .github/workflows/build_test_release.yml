@@ -69,6 +69,13 @@ jobs:
       - name: Integration test (unfurl init)
         env:
           CACHE_REDIS_URL: redis://localhost:6379/0
+          # Shrink the rust proxy's batch-consolidation window from its 5-second
+          # default to 1s so the unfurl-server jest tests' back-to-back updates
+          # don't race the window (which would trip the worker's lock with a
+          # "pending batch" rejection or a stale-queueid conflict against a
+          # queue key that's still mid-batch). Tests still exercise the batch
+          # path; they just don't wait 5s+ per round-trip.
+          UNFURL_BATCH_WINDOW_SECS: '1'
           STANDALONE_SETUP_SCRIPT: testing-shared/unfurl-init-setup.sh
           # Runs the unfurl-server jest suite against the standalone gui
           # server before cypress. Tests live writes against the same
