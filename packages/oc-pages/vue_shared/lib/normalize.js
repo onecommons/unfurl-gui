@@ -223,6 +223,11 @@ const transforms = {
 
 export function localNormalize(object, typename=null, root) {
     if(!object) return
+    // Caller may hand us a primitive when the export response has a numeric value
+    // (e.g. `0.1`) where the schema expects an entity. Setting `__typename` on a
+    // primitive throws `Cannot create property '__typename' on number 'X'`, which
+    // breaks Apollo's cache normalization for the entire query.
+    if(typeof object !== 'object') return
     if(object._normalized) return
     if(!(object.__typename || typename)) {
         throw new Error(`Couldn't normalize ${object.name}: no typename`)
