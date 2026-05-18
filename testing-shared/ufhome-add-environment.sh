@@ -43,8 +43,11 @@ if [ ! -z "$environment_name" ]; then
 fi
 
 if [ ! -z "$dashboard_project" ]; then
-  # pushd $ufhome
-  pushd $dashboard_project
-  $unfurl -vv init --existing --use-environment $name_or_type || true
-  popd
+  # Pass the project path explicitly instead of cd'ing into it. UNFURL_CMD
+  # (when set) is a `docker run ... -w $PWD ...` line whose -w is baked at
+  # the caller's environment setup time — bash won't re-expand $PWD when
+  # the value is later interpolated, so `pushd $dashboard_project` doesn't
+  # change the docker container's cwd. Passing the project path positionally
+  # lets `init --existing` target it regardless of the container's cwd.
+  $unfurl -vv init --existing "$dashboard_project" --use-environment $name_or_type || true
 fi
