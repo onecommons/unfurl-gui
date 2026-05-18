@@ -4,7 +4,7 @@ on: [push]
 
 env:
   UNFURL_BRANCH: git-sync
-
+  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:381b081-server
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
 
@@ -63,7 +63,7 @@ jobs:
         # The :<branch>-server image is built by unfurl's dev_images.yml and
         # bundles both the rust unfurl-server binary AND the optional Python
         # deps (redis, etc.) that a pipx install would skip.
-        run: docker pull ghcr.io/onecommons/unfurl:${UNFURL_BRANCH}-server
+        run: docker pull ${UNFURL_SERVER_IMAGE}
       # - name: Integration test
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       - name: Integration test (unfurl init)
@@ -80,16 +80,13 @@ jobs:
           # Runs the unfurl-server jest suite against the standalone gui
           # server before cypress. Tests live writes against the same
           # tmp/ufsv project that cypress is about to use.
-          JEST_PRE_CYPRESS: packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js
-          # `unfurl serve` (via UnfurlServer) runs inside this image.
-          UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:${{ env.UNFURL_BRANCH }}-server
+          # TEMP: disabled during the cypress bisect — jest fails on the
+          # old pinned image (queue-prefix fix not present), which would
+          # short-circuit cypress before it runs. Restore once cypress
+          # bisect is resolved and we're back on ${UNFURL_BRANCH}-server.
+          # JEST_PRE_CYPRESS: packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js
         run: |
           mkdir -p ${{ env.UNFURL_TEST_TMPDIR }}
-          # `unfurl init` (called from unfurl-init-setup.sh via $UNFURL_CMD)
-          # also runs in the container, so we don't need unfurl installed on
-          # the runner. Bind-mount the runner's cwd at the same path inside
-          # so absolute paths the test code resolves (UNFURL_HOME,
-          # UNFURL_SERVER_CWD, etc.) are valid on both sides.
           # HOME=/tmp + USER=unfurl + GIT_*_NAME/EMAIL avoid ansible and
           # git's identity-lookup crashes when --user overrides the image's
           # USER to a uid with no /etc/passwd entry (see unfurl-server.mjs
