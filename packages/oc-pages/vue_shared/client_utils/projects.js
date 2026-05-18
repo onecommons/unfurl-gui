@@ -101,6 +101,7 @@ export async function fetchBranches(projectId) {
 
     setTimeout(() => delete branchesData[projectId], BRANCH_CACHE_DURATION)
     return branchesData[projectId] = promise().then(branches => {
+        if (!Array.isArray(branches)) return []
         const defaultBranch = branches.length == 1? branches[0]: branches.find(b => b.default)
         if(defaultBranch) {
             projectDefaultBranches[projectId] = defaultBranch.name

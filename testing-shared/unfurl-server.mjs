@@ -25,6 +25,11 @@ const DOCKER_ENV_FORWARD = [
   'CACHE_REDIS_URL',
   'CACHE_KEY_PREFIX',
   'UNFURL_BATCH_WINDOW_SECS',
+  // Caps the LocalEnv parent-walk so unfurl serve doesn't ascend past
+  // the test workspace and adopt a sibling/ancestor project (e.g.
+  // unfurl-gui's own _unfurl/) as the project — which leaves the
+  // patched ensemble's manifest.repo None.
+  'UNFURL_SEARCH_ROOT',
 ]
 
 export default class UnfurlServer {
@@ -67,6 +72,15 @@ export default class UnfurlServer {
       args.push('--gui')
     }
 
+    // When using bridge networking inside a container, the listener must
+    // bind to 0.0.0.0 so `-p <port>:<port>` actually reaches it. Default
+    // `unfurl serve --address localhost` only binds to the container's
+    // own loopback. (Caller must set the env var; only relevant when
+    // also setting UNFURL_SERVER_DOCKER_BRIDGE=1.)
+    if (this.image && process.env.UNFURL_SERVER_DOCKER_BRIDGE === '1') {
+      args.push('--address')
+      args.push(process.env.UNFURL_HOST || '0.0.0.0')
+    }
 
     if(this.outfile != 'inherit') {
       if(Number.isInteger(this.outfile)) {
@@ -85,11 +99,34 @@ export default class UnfurlServer {
       // host-vs-container path translation needed.
       const hostRoot = process.cwd()
       const mergedEnv = {...this.env, ...process.env}
+      // Extra `-v` mounts via UNFURL_SERVER_EXTRA_MOUNTS (comma-separated
+      // host:container entries) — for surfacing things outside the repo
+      // cwd, e.g. mounting a local edit of unfurl source over the
+      // installed copy in the image during debugging.
+      const extraMounts = (mergedEnv.UNFURL_SERVER_EXTRA_MOUNTS || '')
+        .split(',').map(s => s.trim()).filter(Boolean)
+        .flatMap(m => ['-v', m])
+      // Docker Desktop's --network host is opt-in (Settings → Resources →
+      // Network → "Enable host networking") and even when enabled is unreliable
+      // on macOS for host→container reachability. Set
+      // UNFURL_SERVER_DOCKER_BRIDGE=1 to use bridge networking with explicit
+      // -p port forwarding instead. CACHE_REDIS_URL should then point at
+      // `host.docker.internal:<port>` (or `redis://host.docker.internal:6379/0`
+      // for a default redis on the host).
+      const useBridge = mergedEnv.UNFURL_SERVER_DOCKER_BRIDGE === '1'
+      const port = String(this.port)
+      const networkArgs = useBridge
+        ? ['-p', `${port}:${port}`]
+        : ['--network', 'host']
+      // `unfurl serve --address 0.0.0.0` is appended above when useBridge
+      // is true, so the container's listener is reachable via the -p
+      // forward.
       const dockerArgs = [
         'docker', 'run', '--rm', '-i',
         '--name', 'unfurl-test-server',
-        '--network', 'host',
+        ...networkArgs,
         '-v', `${hostRoot}:${hostRoot}`,
+        ...extraMounts,
         '-w', this.cwd || hostRoot,
         '--user', `${process.getuid()}:${process.getgid()}`,
         // The image's USER directive is `unfurl:unfurl`, but --user overrides
@@ -179,7 +216,11 @@ export default class UnfurlServer {
 
   async waitUntilReady(interval=1000) {
     if(! this.timeout) {
-      this.timeout = sleep(interval * 10).then(async (_) => {
+      // Default 10s readiness timeout is fine for native runs but too tight
+      // for `--platform linux/amd64` emulated on Apple Silicon, where the
+      // rust + python startup can easily take 15–30s. Tunable via env.
+      const maxWaitSecs = parseInt(process.env.UNFURL_SERVER_READY_TIMEOUT_SECS || '10', 10)
+      this.timeout = sleep(interval * maxWaitSecs).then(async (_) => {
         if(this.ready) return
         process.exit(2)
       })

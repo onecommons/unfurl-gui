@@ -25,7 +25,7 @@ export const blueprintDefaultBranch = {
         blueprintDefaultBranchPromise: {
             immediate: true,
             handler(val) {
-                val.then(resolved => this.blueprintDefaultBranch = resolved)
+                if (val) val.then(resolved => this.blueprintDefaultBranch = resolved)
             }
         }
     }
@@ -55,7 +55,7 @@ export const homeProjectDefaultBranch = {
         homeProjectDefaultBranchPromise: {
             immediate: true,
             handler(val) {
-                val.then(resolved => this.homeProjectDefaultBranch = resolved)
+                if (val) val.then(resolved => this.homeProjectDefaultBranch = resolved)
             }
         }
     }

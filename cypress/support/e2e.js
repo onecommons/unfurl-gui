@@ -72,9 +72,54 @@ before(() => {
   Cypress.on('window:before:load', win => {
     console.log(win.gc)
     typeof win.gc == 'function' && win.gc()
+    // Pipe browser console output into cypress task logs so we can see why
+    // the SPA renders its 404 overlay during the local cypress run.
+    const serialize = a => {
+      if (a == null) return String(a)
+      if (a instanceof Error) return `Error: ${a.message} | ${(a.stack || '').replace(/\n/g, ' \\n ')}`
+      if (typeof a === 'object') {
+        const proto = Object.getOwnPropertyNames(a)
+        try { return JSON.stringify(a, proto.length ? proto : undefined) } catch (_) { return String(a) }
+      }
+      return String(a)
+    }
+    for (const level of ['log', 'warn', 'error']) {
+      const orig = win.console[level].bind(win.console)
+      win.console[level] = (...args) => {
+        try {
+          const msg = args.map(serialize).join(' ').replace(/\n/g, ' \\n ')
+          cy.task('log', `[browser ${level}] ${msg}`, {log: false})
+        } catch (_) {}
+        orig(...args)
+      }
+    }
+    win.addEventListener('error', e => {
+      try { cy.task('log', `[browser windowerror] ${e.message} at ${e.filename}:${e.lineno}:${e.colno} stack=${(e.error && e.error.stack || '').replace(/\n/g, ' \\n ')}`, {log: false}) } catch (_) {}
+    })
+    win.addEventListener('unhandledrejection', e => {
+      const r = e.reason
+      const msg = r instanceof Error ? `${r.message} | ${(r.stack || '').replace(/\n/g, ' \\n ')}` : serialize(r)
+      try { cy.task('log', `[browser unhandledrejection] ${msg}`, {log: false}) } catch (_) {}
+    })
+    // Catch notFoundError() calls explicitly with a stack trace so we know
+    // which component triggered the 404 overlay.
+    const origCreateElement = win.document.createElement.bind(win.document)
+    win.document.createElement = function (tag) {
+      const el = origCreateElement(tag)
+      const origSetAttribute = el.setAttribute.bind(el)
+      el.setAttribute = function (name, value) {
+        if (name === 'id' && value === '404-overlay') {
+          const stack = new Error('notFoundError() called here').stack
+          try { cy.task('log', `[browser 404-overlay] ${stack}`, {log: false}) } catch (_) {}
+        }
+        return origSetAttribute(name, value)
+      }
+      return el
+    }
   })
 
   Cypress.on('uncaught:exception', (err, runnable) => {
+    try { cy.task('log', `[browser uncaught] ${err.message}\n${err.stack}`, {log: false}) } catch (_) {}
     return false
   })
   if(Cypress.spec.name.startsWith('00_visitor')) return
