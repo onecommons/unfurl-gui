@@ -83,11 +83,11 @@ jobs:
           # the runner. Bind-mount the runner's cwd at the same path inside
           # so absolute paths the test code resolves (UNFURL_HOME,
           # UNFURL_SERVER_CWD, etc.) are valid on both sides.
-          # HOME=/tmp and USER=unfurl avoid ansible's import-time crashes
-          # when --user overrides the image's USER to a uid with no
-          # /etc/passwd entry (see unfurl-server.mjs for the full
-          # explanation).
-          export UNFURL_CMD="docker run --rm -v $PWD:$PWD -w $PWD --user $(id -u):$(id -g) -e HOME=/tmp -e USER=unfurl -e UNFURL_HOME -e UNFURL_LOGGING -e UNFURL_NORUNTIME -e UNFURL_SKIP_SAVE --entrypoint unfurl $UNFURL_SERVER_IMAGE"
+          # HOME=/tmp + USER=unfurl + GIT_*_NAME/EMAIL avoid ansible and
+          # git's identity-lookup crashes when --user overrides the image's
+          # USER to a uid with no /etc/passwd entry (see unfurl-server.mjs
+          # for the full explanation).
+          export UNFURL_CMD="docker run --rm -v $PWD:$PWD -w $PWD --user $(id -u):$(id -g) -e HOME=/tmp -e USER=unfurl -e GIT_AUTHOR_NAME=unfurl -e GIT_AUTHOR_EMAIL=unfurl@example.com -e GIT_COMMITTER_NAME=unfurl -e GIT_COMMITTER_EMAIL=unfurl@example.com -e UNFURL_HOME -e UNFURL_LOGGING -e UNFURL_NORUNTIME -e UNFURL_SKIP_SAVE --entrypoint unfurl $UNFURL_SERVER_IMAGE"
           yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
       # - name: Integration test (staging upstream)
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js

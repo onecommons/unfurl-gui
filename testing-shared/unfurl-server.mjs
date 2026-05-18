@@ -92,15 +92,23 @@ export default class UnfurlServer {
         '-w', this.cwd || hostRoot,
         '--user', `${process.getuid()}:${process.getgid()}`,
         // The image's USER directive is `unfurl:unfurl`, but --user overrides
-        // it to the runner's uid which has no /etc/passwd entry. Two
-        // consequences ansible chokes on at import time:
-        //   - HOME resolves to '/' (no pwd entry), so mkdir /.ansible/tmp
-        //     crashes with EACCES → set HOME=/tmp (always writable; the
-        //     container is --rm so anything written there is disposable)
+        // it to the runner's uid which has no /etc/passwd entry. Several
+        // tools then choke on missing identity bits at startup:
+        //   - HOME resolves to '/' (no pwd entry), so ansible's mkdir
+        //     /.ansible/tmp crashes with EACCES → HOME=/tmp (always
+        //     writable; --rm container, so disposable)
         //   - getpass.getuser() raises 'uid not found' → seed USER so the
-        //     fallback to env vars works (any non-empty string is fine)
+        //     env-var fallback works (any non-empty string is fine)
+        //   - git commits need a committer identity. The runner's
+        //     `git config --global ...` writes to /home/runner/.gitconfig
+        //     which isn't visible inside the container, so we pass the
+        //     identity via git's native env-var overrides instead.
         '-e', 'HOME=/tmp',
         '-e', 'USER=unfurl',
+        '-e', 'GIT_AUTHOR_NAME=unfurl',
+        '-e', 'GIT_AUTHOR_EMAIL=unfurl@example.com',
+        '-e', 'GIT_COMMITTER_NAME=unfurl',
+        '-e', 'GIT_COMMITTER_EMAIL=unfurl@example.com',
         '--entrypoint', 'unfurl',
       ]
       for (const v of DOCKER_ENV_FORWARD) {
