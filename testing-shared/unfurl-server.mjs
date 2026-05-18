@@ -92,11 +92,15 @@ export default class UnfurlServer {
         '-w', this.cwd || hostRoot,
         '--user', `${process.getuid()}:${process.getgid()}`,
         // The image's USER directive is `unfurl:unfurl`, but --user overrides
-        // it to the runner's uid which has no /etc/passwd entry, so HOME
-        // resolves to '/' inside the container. Ansible's import-time setup
-        // then tries to mkdir /.ansible/tmp and crashes with EACCES. Point
-        // HOME at /tmp (always writable, container is --rm so disposable).
+        // it to the runner's uid which has no /etc/passwd entry. Two
+        // consequences ansible chokes on at import time:
+        //   - HOME resolves to '/' (no pwd entry), so mkdir /.ansible/tmp
+        //     crashes with EACCES → set HOME=/tmp (always writable; the
+        //     container is --rm so anything written there is disposable)
+        //   - getpass.getuser() raises 'uid not found' → seed USER so the
+        //     fallback to env vars works (any non-empty string is fine)
         '-e', 'HOME=/tmp',
+        '-e', 'USER=unfurl',
         '--entrypoint', 'unfurl',
       ]
       for (const v of DOCKER_ENV_FORWARD) {
