@@ -119,6 +119,14 @@ before(() => {
   })
 
   Cypress.on('uncaught:exception', (err, runnable) => {
+    // Cypress's own runner throws `Cannot read properties of undefined (reading 'set')`
+    // from ProxyLogging.logIncomingRequest while decoding a websocket message — a
+    // cypress-internal bug that surfaces here as a SUT uncaught exception. Swallow
+    // it silently so it doesn't pollute the log; the existing return-false already
+    // prevents it from failing the test.
+    if (err.stack && err.stack.includes('ProxyLogging.logIncomingRequest')) {
+      return false
+    }
     try { cy.task('log', `[browser uncaught] ${err.message}\n${err.stack}`, {log: false}) } catch (_) {}
     return false
   })
