@@ -402,6 +402,14 @@ Cypress.Commands.add('recreateDeployment', options => {
             timeout: BASE_TIMEOUT * 100,  // unfurl isn't known to hang, so we can wait a long time
             failOnNonZeroExit: false // we'll fail later when we check the status - this is better for the log
           })
+          // The deploy CLI writes lastJob to ensemble.yaml on disk but doesn't
+          // git-commit, so the rust proxy's commit-keyed cache stays valid and
+          // the next /export returns the pre-deploy snapshot (status: null).
+          // Invalidate the dashboard project's cache so cy.reload() forces a
+          // fresh export computation. Standalone-only path; harmless otherwise.
+          if (DASHBOARD_DEST && DASHBOARD_DEST.startsWith('/')) {
+            cy.execLoud(`./scripts/src/clear-project-file-cache.js --project-path local:${DASHBOARD_DEST}`)
+          }
         })
 
         cy.reload()
