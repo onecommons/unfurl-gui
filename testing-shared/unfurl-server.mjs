@@ -109,6 +109,13 @@ export default class UnfurlServer {
         '-e', 'GIT_AUTHOR_EMAIL=unfurl@example.com',
         '-e', 'GIT_COMMITTER_NAME=unfurl',
         '-e', 'GIT_COMMITTER_EMAIL=unfurl@example.com',
+        // Force init.defaultBranch=main inside the container (the image has
+        // no global git config, so git would default to "master" and unfurl
+        // init's commits would live on the wrong branch — the tests look up
+        // "main").
+        '-e', 'GIT_CONFIG_COUNT=1',
+        '-e', 'GIT_CONFIG_KEY_0=init.defaultBranch',
+        '-e', 'GIT_CONFIG_VALUE_0=main',
         '--entrypoint', 'unfurl',
       ]
       for (const v of DOCKER_ENV_FORWARD) {
