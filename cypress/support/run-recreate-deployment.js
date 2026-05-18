@@ -402,13 +402,20 @@ Cypress.Commands.add('recreateDeployment', options => {
             timeout: BASE_TIMEOUT * 100,  // unfurl isn't known to hang, so we can wait a long time
             failOnNonZeroExit: false // we'll fail later when we check the status - this is better for the log
           })
-          // The deploy CLI writes lastJob to ensemble.yaml on disk but doesn't
-          // git-commit, so the rust proxy's commit-keyed cache stays valid and
-          // the next /export returns the pre-deploy snapshot (status: null).
-          // Invalidate the dashboard project's cache so cy.reload() forces a
-          // fresh export computation. Standalone-only path; harmless otherwise.
-          if (DASHBOARD_DEST && DASHBOARD_DEST.startsWith('/')) {
-            cy.execLoud(`./scripts/src/clear-project-file-cache.js --project-path local:${DASHBOARD_DEST}`)
+        })
+        // The deploy CLI writes lastJob to ensemble.yaml on disk but doesn't
+        // git-commit, so the rust proxy's commit-keyed cache stays valid and
+        // the next /export returns the pre-deploy snapshot (status: null).
+        // POST clear_project_file_cache so cy.reload() forces a fresh export.
+        // Pull the project path from window.gon.home_project (same value the
+        // SPA uses for its own export calls).
+        cy.window().then(win => {
+          const projectPath = win.gon && win.gon.home_project
+          if (projectPath) {
+            cy.task('log', `[trace] clearing cache for ${projectPath}`, {log: false})
+            cy.request('POST', `${OC_URL}/services/unfurl-server/clear_project_file_cache?auth_project=${encodeURIComponent(projectPath)}`)
+          } else {
+            cy.task('log', `[trace] no home_project on gon; skipping cache clear`, {log: false})
           }
         })
 
