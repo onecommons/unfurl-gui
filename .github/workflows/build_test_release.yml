@@ -59,8 +59,11 @@ jobs:
         run: yarn test packages -- --runInBand
       - name: Compile
         run: yarn build
-      - name: Install unfurl
-        run: git clone --recurse-submodules --branch $UNFURL_BRANCH --single-branch --depth 1 https://github.com/onecommons/unfurl $HOME/unfurl; pipx install -e $HOME/unfurl
+      - name: Pull unfurl server image
+        # The :<branch>-server image is built by unfurl's dev_images.yml and
+        # bundles both the rust unfurl-server binary AND the optional Python
+        # deps (redis, etc.) that a pipx install would skip.
+        run: docker pull ghcr.io/onecommons/unfurl:${UNFURL_BRANCH}-server
       # - name: Integration test
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       - name: Integration test (unfurl init)
@@ -71,16 +74,20 @@ jobs:
           # server before cypress. Tests live writes against the same
           # tmp/ufsv project that cypress is about to use.
           JEST_PRE_CYPRESS: packages/oc-pages/vue_shared/client_utils/unfurl-server.test.js
+          # `unfurl serve` (via UnfurlServer) runs inside this image.
+          UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:${{ env.UNFURL_BRANCH }}-server
         run: |
           mkdir -p ${{ env.UNFURL_TEST_TMPDIR }}
-          set -o pipefail
-          yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js 2>&1 | tee ${{ env.UNFURL_TEST_TMPDIR }}/integration-test.log
-      - name: Upload integration-test log
-        if: ${{ always() }}
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: integration-test-log
-          path: ${{ env.UNFURL_TEST_TMPDIR }}/integration-test.log
+          # `unfurl init` (called from unfurl-init-setup.sh via $UNFURL_CMD)
+          # also runs in the container, so we don't need unfurl installed on
+          # the runner. Bind-mount the runner's cwd at the same path inside
+          # so absolute paths the test code resolves (UNFURL_HOME,
+          # UNFURL_SERVER_CWD, etc.) are valid on both sides.
+          # HOME=/tmp avoids the EACCES on /.ansible at import time when
+          # --user overrides the image's USER (see unfurl-server.mjs for the
+          # full explanation).
+          export UNFURL_CMD="docker run --rm -v $PWD:$PWD -w $PWD --user $(id -u):$(id -g) -e HOME=/tmp -e UNFURL_HOME -e UNFURL_LOGGING -e UNFURL_NORUNTIME -e UNFURL_SKIP_SAVE --entrypoint unfurl $UNFURL_SERVER_IMAGE"
+          yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
       # - name: Integration test (staging upstream)
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       #   env:

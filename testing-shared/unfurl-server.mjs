@@ -10,6 +10,21 @@ function sleep(n) {
 const UNFURL_CMD = process.env.UNFURL_CMD || 'unfurl'
 const OC_URL = process.env.OC_URL || 'https://unfurl.cloud'
 const PORT = process.env.PORT || '5001'
+// When set, run `unfurl serve` inside this docker image instead of locally.
+// The image is expected to be the unfurl server build (Dockerfile.server),
+// which bundles the rust unfurl-server binary and all of unfurl's optional
+// Python deps (e.g. redis) that a pipx install would miss.
+const UNFURL_SERVER_IMAGE = process.env.UNFURL_SERVER_IMAGE || ''
+// Container env vars to forward from the caller into the container.
+const DOCKER_ENV_FORWARD = [
+  'UNFURL_LOGGING',
+  'UNFURL_HOME',
+  'UNFURL_GUI_DIR',
+  'UNFURL_SKIP_SAVE',
+  'UNFURL_NORUNTIME',
+  'CACHE_REDIS_URL',
+  'CACHE_KEY_PREFIX',
+]
 
 export default class UnfurlServer {
   constructor(params) {
@@ -19,12 +34,13 @@ export default class UnfurlServer {
       {
         cmd: UNFURL_CMD,
         gui: false,
-        cwd: '', 
+        cwd: '',
         env: {},
         cloudServer: OC_URL,
         port: PORT,
         cloneRoot: null,
         outfile: 'inherit',
+        image: UNFURL_SERVER_IMAGE,
       },
       params
     )
@@ -59,10 +75,38 @@ export default class UnfurlServer {
         this.fd = fs.openSync(this.outfile, 'a')
       }
     }
-    
+
+    let invocationArgs = args
+    if (this.image) {
+      // Bind-mount the host's cwd at the same absolute path inside the
+      // container so every path our caller already resolved (UNFURL_HOME,
+      // UNFURL_SERVER_CWD, this.cwd, etc.) is valid inside too — no
+      // host-vs-container path translation needed.
+      const hostRoot = process.cwd()
+      const mergedEnv = {...this.env, ...process.env}
+      const dockerArgs = [
+        'docker', 'run', '--rm', '-i',
+        '--name', 'unfurl-test-server',
+        '--network', 'host',
+        '-v', `${hostRoot}:${hostRoot}`,
+        '-w', this.cwd || hostRoot,
+        '--user', `${process.getuid()}:${process.getgid()}`,
+        '--entrypoint', 'unfurl',
+      ]
+      for (const v of DOCKER_ENV_FORWARD) {
+        if (mergedEnv[v] !== undefined && mergedEnv[v] !== '') {
+          dockerArgs.push('-e', `${v}=${mergedEnv[v]}`)
+        }
+      }
+      dockerArgs.push(this.image)
+      // Strip the leading `unfurl` cmd; the --entrypoint provides it.
+      dockerArgs.push(...args.slice(1))
+      invocationArgs = dockerArgs
+    }
+
     this.invocation = [
       '/usr/bin/env',
-      args,
+      invocationArgs,
       {
         env: {
           ...this.env,
@@ -93,6 +137,18 @@ export default class UnfurlServer {
     this.process = childProcess.spawn(
       ...this.invocation
     )
+
+    if (this.image) {
+      // SIGKILL on the docker client doesn't always propagate to the
+      // container; arrange for the container to be killed by name on exit
+      // of either side.
+      const containerName = 'unfurl-test-server'
+      const killContainer = () => {
+        try { childProcess.execSync(`docker kill ${containerName}`, {stdio: 'ignore'}) } catch (e) {}
+      }
+      this.process.on('exit', killContainer)
+      process.on('exit', killContainer)
+    }
   }
 
   async waitUntilReady(interval=1000) {
