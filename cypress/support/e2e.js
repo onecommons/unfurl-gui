@@ -122,6 +122,65 @@ before(() => {
     try { cy.task('log', `[browser uncaught] ${err.message}\n${err.stack}`, {log: false}) } catch (_) {}
     return false
   })
+
+  // Per-command trace into cy.task('log') so the failing command
+  // shows in the run output. Cypress's Test Runner UI displays
+  // commands, but a headless run only logs the raw failure text.
+  Cypress.on('command:start', (cmd) => {
+    try {
+      const name = cmd.attributes && cmd.attributes.name
+      const args = cmd.attributes && cmd.attributes.args
+      if (name && !['task', 'wrap', 'then', 'window', 'document'].includes(name)) {
+        const argRepr = (args || []).map(a => {
+          if (a == null) return String(a)
+          if (typeof a === 'string') return a.length > 80 ? a.slice(0, 80) + '…' : a
+          if (typeof a === 'function') return 'fn'
+          if (typeof a === 'object') return '{…}'
+          return String(a)
+        }).join(', ')
+        cy.task('log', `[cmd] ${name}(${argRepr})`, {log: false})
+      }
+    } catch(_) {}
+  })
+
+  // On test failure, dump a snapshot of the DOM and the cypress
+  // command queue tail so we can see what was on screen and which
+  // step the assertion fired against. Helps when failures look like
+  // "expected null to exist" with no element context.
+  Cypress.on('fail', (err) => {
+    try {
+      // Dump the last 20 commands from cy.queue / cy.state('runnable')
+      const queue = cy.queue || (Cypress.cy && Cypress.cy.queue)
+      const commands = queue?.commands?.()
+      if (commands) {
+        const tail = commands.slice(-20).map(c => {
+          const a = c.attributes || c
+          const args = (a.args || []).map(x => {
+            try { return typeof x === 'string' ? x.slice(0, 60) : (typeof x === 'object' ? '{}' : String(x)) }
+            catch(_) { return '?' }
+          }).join(', ')
+          return `${a.name || '?'}(${args})`
+        })
+        cy.task('log', `[fail cmd-tail] ${JSON.stringify(tail)}`, {log: false})
+      }
+      const win = cy.state('window')
+      if (win && win.document) {
+        const card = Array.from(win.document.querySelectorAll('[data-testid^="card-"]'))
+          .map(el => el.getAttribute('data-testid')).slice(0, 20)
+        const testidsAll = Array.from(win.document.querySelectorAll('[data-testid]'))
+          .map(el => el.getAttribute('data-testid')).slice(0, 80)
+        const url = win.location && win.location.href
+        cy.task('log', `[fail url] ${url}`, {log: false})
+        cy.task('log', `[fail card-* testids] ${JSON.stringify(card)}`, {log: false})
+        cy.task('log', `[fail all testids (80 max)] ${JSON.stringify(testidsAll)}`, {log: false})
+        const bodyHtml = win.document.body && win.document.body.innerHTML
+        if (bodyHtml) {
+          cy.task('writeArtifact', {artifactName: `fail-dom-${Date.now()}.html`, data: bodyHtml})
+        }
+      }
+    } catch (e) { try { cy.task('log', `[fail hook error] ${e.message}`, {log: false}) } catch(_) {} }
+    throw err
+  })
   if(Cypress.spec.name.startsWith('00_visitor')) return
   if((USERNAME && PASSWORD) || (GENERATED_PASSWORD && IMPERSONATE)) {
     cy.visit(`/users/sign_in`).wait(100)

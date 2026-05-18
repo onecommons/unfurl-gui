@@ -51,5 +51,6 @@ if [ ! -z "$dashboard_project" ]; then
   # UNFURL_CMD's `-w $PWD` is baked at workflow setup time so pushd-ing
   # doesn't change the docker container's cwd. Specifying project_dir
   # positionally avoids all of that.
-  $unfurl -vv init "$dashboard_project" "${name_or_type}_ensemble" --use-environment $name_or_type
+  # use --empty to just add the environment, don't create a new ensemble
+  $unfurl -vv init "$dashboard_project" --empty --use-environment $name_or_type
 fi

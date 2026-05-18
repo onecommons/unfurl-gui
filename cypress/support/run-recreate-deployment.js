@@ -26,7 +26,9 @@ function pseudorandomPassword() {
   return (Math.sqrt(Math.random()) * 100000000).toString(36) + (Math.sqrt(Math.random()) * 100000000).toString(36)
 }
 
+console.log('[trace-load] run-recreate-deployment.js loaded')
 Cypress.Commands.add('recreateDeployment', options => {
+  console.log('[trace-cmd] recreateDeployment entry')
   cy.wait(5000)
   let fixture, shouldDeploy, shouldSave, title, skipTeardown, expectExisting, verificationRoutine, _env, _dnsZone, subdomain
   if (typeof options == 'string') {
@@ -153,6 +155,13 @@ Cypress.Commands.add('recreateDeployment', options => {
 
     cy.contains('button', 'Next').click()
 
+    // The Next click triggers a route change to /deployment-drafts/...; without
+    // this small wait the immediately-following cy.get(card-*).should('exist')
+    // can fire against the *prior* page's DOM (the wizard hasn't mounted yet)
+    // and cypress's retry loop fails with the misleading "expected null to exist"
+    // instead of the usual "Timed out... never found it". Once the wizard mounts,
+    // card-the_app is present and the rest of recreateTemplate can proceed.
+    cy.wait(2000)
     cy.get('[data-testid^="card-"]').should('exist')
 
     if(BLUEPRINT_REVISION) {
@@ -161,8 +170,10 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
 
     function recreateTemplate(template, variant = 0) {
+      cy.task('writeArtifact', {artifactName: `trace-rt-${template?.name}-${variant}.log`, data: `recreateTemplate name=${template?.name} variant=${variant}\n`}, {log: false})
       cy.assertNoErrors()
       if(variant != HIDDEN) {
+        cy.task('log', `[trace] check card-${template.name} exists`, {log: false})
         cy.get(`[data-testid^="card-${template.name}"]`).should('exist')
       }
       let inputWait = 500 // we should wait longer for the first for async components
@@ -331,9 +342,12 @@ Cypress.Commands.add('recreateDeployment', options => {
       })
     }
 
+    cy.task('log', `[trace] entering recreateTemplate primary=${primary?.name}`, {log: false})
     recreateTemplate(primary, PRIMARY)
+    cy.task('log', `[trace] returned from recreateTemplate primary`, {log: false})
 
     cy.assertNoErrors()
+    cy.task('log', `[trace] post-recreate assertNoErrors passed`, {log: false})
 
     console.log(options)
 
@@ -365,15 +379,23 @@ Cypress.Commands.add('recreateDeployment', options => {
       cy.whenUnfurlGUI(() => {
         cy.get('[data-testid="deploy-button"]:not([disabled])').click({force: true})
         cy.assertNoErrors()
+        // Same race as after the Next click earlier: deploy triggers a route
+        // change to /-/deployments/..., and a `should()` chain fired against
+        // a mid-navigation cy.url() yields a null subject and a misleading
+        // chai error. A small explicit wait lets the URL settle.
+        cy.wait(2000)
         cy.url({timeout: BASE_TIMEOUT * 10}).should('not.include', 'deployment-drafts')
         cy.wait(BASE_TIMEOUT)
         // TODO figure out how to chain this?
 
-        
+
         cy.withStore((store) => {
+          cy.task('log', `[trace] inside withStore, checking deployment`, {log: false})
           const deployment = store.getters.getDeployment
+          cy.task('log', `[trace] deployment=${deployment ? deployment.name : String(deployment)}`, {log: false})
           expect(deployment).to.exist
           const deploymentDir = store.getters.lookupDeployPath(deployment.name, deployment._environment)?.name
+          cy.task('log', `[trace] deploymentDir=${deploymentDir}`, {log: false})
           expect(deploymentDir).to.exist
 
           cy.execLoud(`./testing-shared/run-unfurl.sh deploy --dryrun --use-environment ${deployment._environment} --approve --jobexitcode error ${deploymentDir}`, {
