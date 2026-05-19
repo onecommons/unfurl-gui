@@ -7,7 +7,7 @@ import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.js'
 import {localNormalize} from '../lib/normalize'
-import { getOrFetchDefaultBranch } from './projects'
+import { getOrFetchDefaultBranch, fetchLastCommit } from './projects'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -203,6 +203,11 @@ export async function fetchEnvironments(options) {
             includeDeployments,
             environment: only,
             branch,
+            // Pre-fetch the branch HEAD so the export carries a known-fresh
+            // commit. If a local deploy left the working tree dirty,
+            // /branches returns `<sha>-dirty` and the rust+python caches
+            // both bypass so the deployment status reflects the new state.
+            lastCommitResult: fetchLastCommit(projectPath, branch),
         })
     } catch(e) {
         const responseData = e.response?.data
