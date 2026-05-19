@@ -190,7 +190,6 @@ export default {
                     this.blueprintExport = await unfurlServerExport({
                         format: 'blueprint',
                         projectPath: val,
-                        skipLatestCommit: true
                     })
                 } else {
                     this.blueprintExport = null

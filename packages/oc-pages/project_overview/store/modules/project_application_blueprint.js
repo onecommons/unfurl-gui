@@ -120,20 +120,20 @@ const actions = {
             } catch(e) {}
         }
 
-        // Optimization: when editing, skip the export entirely if the branch HEAD
-        // hasn't moved since the last fetchLastCommit — the data in the store is
-        // still current. fetchLastCommit returns `changed=false` when it didn't
-        // write a new commit to sessionStorage. Don't skip when there's queued
-        // work (queueid > 0): the server-side state may still be settling.
-        // If we do need to re-export, forward the already-resolved commit tuple
-        // so unfurlServerExport doesn't redo the work.
+        // When editing, resolve the branch HEAD so the export request runs against
+        // a known-fresh commit. On a reload (state.loaded) we can short-circuit
+        // entirely if the HEAD hasn't moved and there's no in-flight queue work —
+        // the store is still current. First load has to populate the store
+        // regardless, so we only forward the resolved tuple in that case.
         let lastCommitResult
-        if (forEditing && state.loaded) {
+        if (forEditing) {
             try {
                 lastCommitResult = await fetchLastCommit(projectPath, branch)
-                const [, , queueid, changed] = lastCommitResult
-                if (!queueid && !changed) {
-                    return
+                if (state.loaded) {
+                    const [, , queueid, changed] = lastCommitResult
+                    if (!queueid && !changed) {
+                        return
+                    }
                 }
             } catch(e) {
                 console.warn('@fetchProject: skipping freshness check after fetchLastCommit error', e)
@@ -151,7 +151,6 @@ const actions = {
                 deploymentPath: blueprintPath,
                 sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public'),
                 branch,
-                skipLatestCommit: !forEditing,
                 lastCommitResult,
             })
         } catch(e) {

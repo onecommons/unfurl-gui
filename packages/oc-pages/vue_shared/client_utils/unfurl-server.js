@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchProjectInfo, fetchLastCommit, getLastCommit, setLastCommit, createBranch } from "./projects";
+import { fetchProjectInfo, getLastCommit, setLastCommit, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
@@ -91,63 +91,121 @@ async function healthCheckErrorHelper(projectPath) {
 
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, skipLatestCommit, lastCommitResult: providedLastCommit}) {
-    const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
-    const _sendCredentials = sendCredentials ?? true
-    // Callers that have already resolved the [commit, branch, queueid] tuple can
-    // pass it in via `lastCommitResult` to avoid a redundant fetchLastCommit.
-    const fetchCommit = skipLatestCommit ? null : (providedLastCommit || fetchLastCommit(projectPath, branch))
-    const [lastCommitResult, password] = await Promise.all([fetchCommit, _sendCredentials ? fetchUserAccessToken(): null])
-    const [latestCommit, inferredBranch, queueid] = lastCommitResult || []
+// Resolve credentials + run the unfurl-server health check. Shared so the
+// mechanics are in one place. The defaulting rule for `sendCredentials` is
+// caller-controlled via `defaultSendCredentials`:
+//   - `true`            → unconditionally send (unfurlServerExport's rule).
+//   - `'public-aware'`  → look up project visibility and skip credentials for
+//                         public projects (unfurlServerGetTypes's rule).
+// In gui mode `fetchUserAccessToken` short-circuits to '' and the visibility
+// lookup is skipped — no GitLab round-trips either way.
+async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCredentials = true}) {
+    const shouldFetchProjectInfo =
+        (sendCredentials ?? null) == null &&
+        defaultSendCredentials === 'public-aware' &&
+        !window.gon.unfurl_gui
+    const fetchProjectInfoPromise = shouldFetchProjectInfo
+        ? fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility)
+        : null
+    const [password, visibility] = await Promise.all([
+        fetchUserAccessToken(),
+        fetchProjectInfoPromise,
+    ])
     await healthCheckErrorHelper(projectPath)
+    const resolved = sendCredentials
+        ?? (defaultSendCredentials === 'public-aware' ? visibility !== 'public' : true)
+    return {
+        sendCredentials: resolved,
+        username: window.gon.current_username,
+        password,
+    }
+}
 
-    if(!window.gon.unfurl_gui && fetchCommit && !latestCommit) throw new Error(`@unfurlServerExport: latestCommit is not defined for ${projectPath}#${branch}`)
-
-    const username = window.gon.current_username
-
-    let exportUrl = `${baseUrl}/export?format=${format}`.replace(/^\/+/, '/')
-
+// Shared between unfurlServerExport and unfurlServerGetTypes so the freshness
+// contract stays in one place: build the URL with `auth_project` + optional
+// branch + credentials, issue the GET, and seed sessionStorage with the
+// server-reported latest_commit so the next request can send it as
+// `latest_commit=<sha>` and take the proxy's cache fast-path.
+async function unfurlServerGet({
+    projectPath, endpoint, branch,
+    query = [],
+    sendCredentials, username, password,
+    cacheBranch = branch,
+}) {
+    const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
 
-    if(_sendCredentials && includePasswordInQuery && username && password) {
-        exportUrl += `&username=${username}`
-        exportUrl += `&private_token=${password}`
+    const params = []
+    if(sendCredentials && includePasswordInQuery && username && password) {
+        params.push(`username=${username}`)
+        params.push(`private_token=${password}`)
+    }
+    if(branch) params.push(`branch=${branch}`)
+    params.push(`auth_project=${encodeURIComponent(projectPath)}`)
+    for(const p of query) {
+        if(p === undefined || p === null || p === '') continue
+        params.push(p)
     }
 
-    if(branch) {
-        exportUrl += `&branch=${branch}`
+    const url = `${baseUrl}${endpoint}?${params.join('&')}`.replace(/^\/+/, '/')
+    const headers = createHeaders({
+        sendCredentials: (!includePasswordInQuery && sendCredentials),
+        username, password,
+    })
+
+    const data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
+
+    if (data?.latest_commit && cacheBranch) {
+        setLastCommit(projectPath, cacheBranch, {commit: data.latest_commit})
     }
-    exportUrl += `&auth_project=${encodeURIComponent(projectPath)}`
+    return data
+}
+
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, lastCommitResult: providedLastCommit}) {
+    // Resolve latest_commit from the caller's tuple (which may be a promise) or
+    // fall back to whatever sessionStorage already has. We never call
+    // fetchLastCommit on our own: callers that need a guaranteed-fresh value
+    // resolve it themselves and pass it in via `lastCommitResult`. When neither
+    // source has a commit we omit `latest_commit` from the URL and accept
+    // whatever the server's most-recent state happens to be.
+    const [auth, resolvedFromCaller] = await Promise.all([
+        unfurlServerAuth({projectPath, sendCredentials}),
+        providedLastCommit,
+    ])
+    let lastCommitResult = resolvedFromCaller
+    if (!lastCommitResult) {
+        const cached = getLastCommit(projectPath, branch)
+        if (cached) lastCommitResult = [cached.commit, branch, cached.queueid]
+    }
+    const [latestCommit, inferredBranch, queueid] = lastCommitResult || []
+
+    const query = [`format=${format}`]
     // pass latest commit unless we're in developer mode for this project
     if(alwaysSendLatestCommit() || !unfurlServerUrlOverride(projectPath)) {
         if(latestCommit && branch && branch == inferredBranch) {
-            exportUrl += `&latest_commit=${latestCommit}`
+            query.push(`latest_commit=${latestCommit}`)
         }
     }
-    exportUrl += `&queueid=${queueid || 0}`
+    query.push(`queueid=${queueid || 0}`)
 
     if(includeDeployments) {
-        exportUrl += '&include_all_deployments=1'
+        query.push('include_all_deployments=1')
     } else if(environment) {
-        exportUrl += `&environment=${environment}`
+        query.push(`environment=${environment}`)
     }
 
-    if(format == 'deployment') {
-        if(! deploymentPath) throw new Error('Deployment path is required when exporting a deployment')
+    if(format == 'deployment' && !deploymentPath) {
+        throw new Error('Deployment path is required when exporting a deployment')
     }
     if(deploymentPath) {
-        exportUrl += `&deployment_path=${deploymentPath}`
+        query.push(`deployment_path=${deploymentPath}`)
     }
 
-    const data = (await doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})))?.data
-    // The server may include latest_commit in the response (the SHA the export
-    // was computed against). Seed sessionStorage so the next call can send it
-    // as latest_commit on the request, taking the cache fast-path.
-    const resolvedBranch = branch || inferredBranch
-    if (data?.latest_commit && resolvedBranch) {
-        setLastCommit(projectPath, resolvedBranch, {commit: data.latest_commit})
-    }
-    return data
+    return await unfurlServerGet({
+        projectPath, endpoint: '/export', branch,
+        query, ...auth,
+        cacheBranch: branch || inferredBranch,
+    })
 }
 
 const unfurlTypesResponsesCache = {}
@@ -156,75 +214,45 @@ const constraintCombinationsWithCloudmap = {}
 export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, _params={}, index) {
     // TODO remove when unfurl server types supports params
     const params = {implementation_requirements: _params.implementation_requirements}
-    const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
-
-    const shouldFetchProjectInfo = (sendCredentials ?? null) == null && !window.gon.unfurl_gui
-    const fetchProjectInfoPromise = shouldFetchProjectInfo?  fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility): null
-
-    // fetchUserAccessToken short-circuits to '' in unfurl_gui mode, so always firing it is cheap.
-    // The previous attempt to gate it on _sendCredentials required visibility, which isn't available
-    // until after the await — that created a TDZ on `visibility`.
-    const [password, visibility] = await Promise.all([fetchUserAccessToken(), fetchProjectInfoPromise])
-    const _sendCredentials = sendCredentials ?? visibility != 'public'
-    await healthCheckErrorHelper(projectPath)
 
     const cacheKey = JSON.stringify({branch, projectPath, ...params})
-
     if (unfurlTypesResponsesCache[cacheKey]) {
         return await unfurlTypesResponsesCache[cacheKey]
     }
 
-    const username = window.gon.current_username
+    const auth = await unfurlServerAuth({
+        projectPath, sendCredentials,
+        defaultSendCredentials: 'public-aware',
+    })
 
-    const exportUrlBase = `${baseUrl}/types?`.replace(/^\/+/, '/')
-    let exportUrl = []
-    exportUrl.push(`auth_project=${encodeURIComponent(projectPath)}`)
+    const query = []
 
     if(!params.hasOwnProperty('cloudmap')) {
         const combinationKey = JSON.stringify(params)
 
         if(!constraintCombinationsWithCloudmap[combinationKey] && index == 0) {
             constraintCombinationsWithCloudmap[combinationKey] = true
-            exportUrl.push(`cloudmap=${cloudmapRepo()}`)
+            query.push(`cloudmap=${cloudmapRepo()}`)
         }
-    }
-
-    const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
-
-    if(_sendCredentials && includePasswordInQuery && username && password) {
-        exportUrl.push(`username=${username}`)
-        exportUrl.push(`private_token=${password}`)
-    }
-
-    if(branch) {
-        exportUrl.push(`branch=${branch}`)
     }
 
     if(file) {
         // TODO don't split when it's working
-        exportUrl.push(`file=${encodeURIComponent(file.split('#')[0])}`)
+        query.push(`file=${encodeURIComponent(file.split('#')[0])}`)
     }
 
     Object.entries(params).forEach(([key, value]) => {
         if(value === undefined) return
         if(Array.isArray(value)) {
-            value.forEach(value => exportUrl.push(`${key}=${encodeURIComponent(value)}`))
+            value.forEach(v => query.push(`${key}=${encodeURIComponent(v)}`))
         } else {
-            exportUrl.push(`${key}=${encodeURIComponent(value)}`)
+            query.push(`${key}=${encodeURIComponent(value)}`)
         }
     })
 
-    exportUrl = exportUrlBase + exportUrl.join('&')
-
-    const result = doXhr(projectPath, 'GET', exportUrl, null, createHeaders({sendCredentials: (!includePasswordInQuery && _sendCredentials), username, password})).then(res => {
-        const data = res?.data
-        // Seed sessionStorage with the response's latest_commit if present, same
-        // as unfurlServerExport. Only meaningful when we know which branch the
-        // commit belongs to.
-        if (data?.latest_commit && branch) {
-            setLastCommit(projectPath, branch, {commit: data.latest_commit})
-        }
-        return data
+    const result = unfurlServerGet({
+        projectPath, endpoint: '/types', branch,
+        query, ...auth,
     })
     unfurlTypesResponsesCache[cacheKey] = result
 

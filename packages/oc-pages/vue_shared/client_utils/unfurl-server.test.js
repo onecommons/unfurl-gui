@@ -148,9 +148,11 @@ function mockBranchesResponse(commitId = 'commit-A', branch = TEST_BRANCH) {
     }
 }
 
-function mockExportResponse() {
+function mockExportResponse(latestCommit = 'commit-A') {
     // Shape doesn't matter for these tests — unfurlServerExport returns it verbatim.
-    return {data: {ResourceTemplate: {}, DeploymentTemplate: {}, ApplicationBlueprint: {}}}
+    // Include latest_commit by default so the response-side sessionStorage seed fires
+    // (unfurlServerExport no longer fetches the branch HEAD itself).
+    return {data: {ResourceTemplate: {}, DeploymentTemplate: {}, ApplicationBlueprint: {}, latest_commit: latestCommit}}
 }
 
 describe('unfurlServerExport seeds sessionStorage with the branch HEAD commit', () => {
@@ -175,7 +177,10 @@ describe('unfurlServerExport seeds sessionStorage with the branch HEAD commit', 
         if (MODE === 'mock') expect(stored.commit).toBe('commit-A')
     })
 
-    test('skipLatestCommit avoids the branches GET', async () => {
+    test('export never hits the GitLab branches endpoint', async () => {
+        // unfurlServerExport doesn't call fetchLastCommit anymore: it uses the
+        // sessionStorage cache (if any) and the response's latest_commit only.
+        // No upfront /repository/branches round-trip should ever happen.
         if (MODE === 'mock') {
             axios.get.mockImplementation((url) => {
                 if (url.includes('/export')) return Promise.resolve(mockExportResponse())
@@ -187,12 +192,8 @@ describe('unfurlServerExport seeds sessionStorage with the branch HEAD commit', 
             format: 'environments',
             projectPath: TEST_PROJECT,
             branch: TEST_BRANCH,
-            skipLatestCommit: true,
         })
 
-        // sessionStorage may still get seeded from response.latest_commit (a separate
-        // feature) — what we're checking here is that the upfront GitLab /repository/branches
-        // round-trip was skipped.
         if (MODE === 'mock') {
             const branchesCalls = axios.get.mock.calls.filter(([url]) => url.includes('/repository/branches'))
             expect(branchesCalls).toHaveLength(0)
