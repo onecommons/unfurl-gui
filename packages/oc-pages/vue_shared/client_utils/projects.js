@@ -156,7 +156,14 @@ export async function fetchLastCommit(projectPath, _branch) {
     const fromAPI = new Date(created_at)
     const fromStore = new Date(lastInSessionStorage?.when || 0)
 
-    if (lastInSessionStorage?.commit && fromStore > fromAPI) {
+    // A `-dirty` suffix from /branches means the on-disk working tree was
+    // uncommitted at the time of the lookup; we must trust the API value
+    // unconditionally — the previously-cached sessionStorage commit (set
+    // from an /export response with `when=Date.now()`) will look "newer"
+    // because the outer repo's HEAD timestamp doesn't advance when only
+    // the working tree changed.
+    const isDirty = typeof id === 'string' && id.endsWith('-dirty')
+    if (lastInSessionStorage?.commit && !isDirty && fromStore > fromAPI) {
         return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }
     const changed = id !== lastInSessionStorage?.commit
