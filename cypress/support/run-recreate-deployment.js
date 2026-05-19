@@ -403,29 +403,10 @@ Cypress.Commands.add('recreateDeployment', options => {
             failOnNonZeroExit: false // we'll fail later when we check the status - this is better for the log
           })
         })
-        // The deploy CLI writes lastJob to ensemble.yaml on disk but doesn't
-        // git-commit, so the rust proxy's commit-keyed cache stays valid and
-        // the next /export returns the pre-deploy snapshot (status: null).
-        // POST clear_project_file_cache so cy.reload() forces a fresh export.
-        // Pull the project path from window.gon.home_project (same value the
-        // SPA uses for its own export calls).
-        cy.window().then(win => {
-          const projectPath = win.gon && win.gon.home_project
-          if (projectPath) {
-            // In standalone mode the unfurl server is mounted at OC_URL directly.
-            // In gitlab-managed mode it's proxied at /services/unfurl-server/.
-            // home_project starting with `local:` is a reliable standalone signal.
-            const prefix = projectPath.startsWith('local:') ? '' : '/services/unfurl-server'
-            const url = `${OC_URL}${prefix}/clear_project_file_cache?auth_project=${encodeURIComponent(projectPath)}`
-            cy.task('log', `[trace] clearing cache: ${url}`, {log: false})
-            cy.request({method: 'POST', url, failOnStatusCode: false}).then(resp => {
-              cy.task('log', `[trace] clear_project_file_cache -> ${resp.status}`, {log: false})
-            })
-          } else {
-            cy.task('log', `[trace] no home_project on gon; skipping cache clear`, {log: false})
-          }
-        })
-
+        // The deploy CLI writes lastJob to ensemble.yaml without committing.
+        // Server-side, /branches now reports `<sha>-dirty` and the rust proxy
+        // bypasses its cache for `-dirty`-suffixed latest_commit values, so a
+        // plain reload picks up the post-deploy state without any cache POST.
         cy.reload()
         cy.withStore((store) => {
           const deployment = store.getters.getDeployment

@@ -3,6 +3,7 @@ import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
@@ -430,11 +431,16 @@ const actions = {
         const deploymentPath = rootGetters.lookupDeployPath(deploymentName, environmentName).name
 
         try {
+            // Pre-fetch the branch HEAD so the export request carries a known-
+            // fresh latest_commit. If a local deploy left the working tree
+            // dirty, /branches returns `<sha>-dirty` and the rust proxy
+            // bypasses its cache so we see the updated deployment status.
             deployment = await unfurlServerExport({
                 format,
                 projectPath,
                 deploymentPath,
                 branch,
+                lastCommitResult: fetchLastCommit(projectPath, branch), // awaited in unfurlServerExport
             })
         } catch(e) {
             const responseData = e.response?.data
