@@ -226,9 +226,9 @@ export default class UnfurlServer {
       })
     }
     try {
-      childProcess.execSync(`curl 127.0.0.1:${this.port}/version`, {stdio: 'inherit'})
+      const version = childProcess.execSync(`curl -s 127.0.0.1:${this.port}/version`).toString()
       this.ready = true
-      console.log('unfurl ready')
+      console.log(`unfurl version: ${version}`)
     } catch(e) {
       console.error(e.message)
       await sleep(interval)
