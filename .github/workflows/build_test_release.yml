@@ -3,13 +3,13 @@ name: Build, Test, Release
 on: [push]
 
 env:
-  UNFURL_BRANCH: git-sync
-  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:git-sync-server
+  UNFURL_BRANCH: rust-merge
+  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:rust-merge-server
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
 
   MAIL_USERNAME: admin@mailu.untrusted.me
-  MAIL_PASSWORD: ocPC2cnGkQsz35I
+  MAIL_PASSWORD: ocXX2yyyySsz00T
   SMTP_HOST: mailu.untrusted.me
 
   AWS_ACCESS_KEY_ID: foobarbaz
