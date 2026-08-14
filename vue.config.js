@@ -24,6 +24,14 @@ const alias = {
 module.exports = {
   devServer: {
     allowedHosts: 'all',
+    // gdk's nginx serves the unfurl server under this path, with the prefix stripped
+    proxy: {
+      '/services/unfurl-server': {
+        target: 'http://localhost:8081',
+        changeOrigin: true,
+        pathRewrite: {'^/services/unfurl-server': ''},
+      },
+    },
     setupMiddlewares(middlewares, {app}) {
     //   const unfurlProxy = createProxyMiddleware({
     //     target: 'http://localhost:4000/graphql',
@@ -77,6 +85,11 @@ module.exports = {
 
     dashboard: {
       entry: "src/pages/dashboard/index.js"
+    },
+
+    // templated by public/public_cloud.html
+    public_cloud: {
+      entry: "src/pages/public_cloud/index.js"
     }
   }
 };

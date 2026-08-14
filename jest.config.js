@@ -83,6 +83,8 @@ module.exports = {
     "^~/(.*)$": "<rootDir>/src/assets/javascripts/$1",
     '^oc_vue_shared(.*)$': '<rootDir>/packages/oc-pages/vue_shared/$1',
     '^oc_dashboard(.*)$': '<rootDir>/packages/oc-pages/dashboard/$1',
+    // must precede the ^oc(.*)$ catch-all, which would rewrite this to src/assets/javascripts/_pages
+    '^oc_pages(.*)$': '<rootDir>/packages/oc-pages$1',
     '^oc(.*)$': '<rootDir>/src/assets/javascripts/$1',
   },
 

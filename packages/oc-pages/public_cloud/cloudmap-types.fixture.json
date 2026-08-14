@@ -1,0 +1,137 @@
+{
+  "_comment": "Trimmed stand-in for the unfurl-server /types response the cloud map is built from. Field shapes match production: package ids are host/namespace/project, implementation_requirements hold the canonical ConnectsTo.* values that ProviderIcons and lookupCloudProviderAlias are keyed by, and _sourceinfo.url is present on every type because the chart dereferences it unguarded. Also usable as dev data: serve this file as 'types' on the port vue.config.js proxies /services/unfurl-server to.",
+
+  "Overview": {
+    "documentation_url_template": "https://{host}/{namespace}/{project}/-/blob/main/{module}.yaml",
+    "categories": {
+      "compute": {"title": "Compute"},
+      "db": {"title": "Databases"},
+      "app": {"title": "Applications"}
+    }
+  },
+
+  "ResourceType": {
+    "GenericCompute@unfurl.cloud/onecommons/std:generic/compute": {
+      "name": "GenericCompute@unfurl.cloud/onecommons/std:generic/compute",
+      "title": "Generic Compute",
+      "description": "Abstract compute type. Has no implementations, so it never becomes a leaf; it only lends its icon to concrete subtypes.",
+      "icon": "https://unfurl.cloud/assets/generic-compute.svg",
+      "extends": ["GenericCompute@unfurl.cloud/onecommons/std:generic/compute", "unfurl.nodes.Compute"],
+      "implementations": [],
+      "implementation_requirements": [],
+      "metadata": {"category": "compute"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "Ec2Compute@unfurl.cloud/onecommons/std:aws/compute": {
+      "name": "Ec2Compute@unfurl.cloud/onecommons/std:aws/compute",
+      "title": "EC2 Instance",
+      "description": "An **elastic** compute instance on AWS.",
+      "extends": ["Ec2Compute@unfurl.cloud/onecommons/std:aws/compute", "unfurl.nodes.Compute"],
+      "implementations": ["create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.AWSAccount"],
+      "metadata": {"category": "compute"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "GcpInstance@unfurl.cloud/onecommons/std:gcp/compute": {
+      "name": "GcpInstance@unfurl.cloud/onecommons/std:gcp/compute",
+      "title": "Compute Engine VM",
+      "description": "A virtual machine on Google Cloud.",
+      "extends": ["GcpInstance@unfurl.cloud/onecommons/std:gcp/compute", "unfurl.nodes.Compute"],
+      "implementations": ["create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.GoogleCloudProject"],
+      "metadata": {"category": "compute"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "K8sPod@unfurl.cloud/onecommons/std:k8s/workload": {
+      "name": "K8sPod@unfurl.cloud/onecommons/std:k8s/workload",
+      "title": "Kubernetes Pod",
+      "description": "A pod scheduled on a Kubernetes cluster.",
+      "extends": ["K8sPod@unfurl.cloud/onecommons/std:k8s/workload", "unfurl.nodes.Compute"],
+      "implementations": ["create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.K8sCluster"],
+      "metadata": {"category": "compute"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "DoDroplet@unfurl.cloud/onecommons/std:do/compute": {
+      "name": "DoDroplet@unfurl.cloud/onecommons/std:do/compute",
+      "title": "Droplet",
+      "description": "A DigitalOcean droplet.",
+      "extends": ["DoDroplet@unfurl.cloud/onecommons/std:do/compute", "unfurl.nodes.Compute"],
+      "implementations": ["create"],
+      "implementation_requirements": ["ConnectsTo.DigitalOceanEnvironment"],
+      "metadata": {"category": "compute"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "RdsPostgres@unfurl.cloud/onecommons/std:aws/db": {
+      "name": "RdsPostgres@unfurl.cloud/onecommons/std:aws/db",
+      "title": "RDS Postgres",
+      "description": "Managed Postgres on AWS.",
+      "extends": ["RdsPostgres@unfurl.cloud/onecommons/std:aws/db", "unfurl.nodes.Database"],
+      "implementations": ["create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.AWSAccount"],
+      "metadata": {"category": "db"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "CloudSql@unfurl.cloud/onecommons/std:gcp/db": {
+      "name": "CloudSql@unfurl.cloud/onecommons/std:gcp/db",
+      "title": "Cloud SQL",
+      "description": "Managed SQL on Google Cloud.",
+      "extends": ["CloudSql@unfurl.cloud/onecommons/std:gcp/db", "unfurl.nodes.Database"],
+      "implementations": ["create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.GoogleCloudProject"],
+      "metadata": {"category": "db"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "AbstractApp@unfurl.cloud/onecommons/std:apps/abstract": {
+      "name": "AbstractApp@unfurl.cloud/onecommons/std:apps/abstract",
+      "title": "Abstract App",
+      "description": "An app type without a 'connect' implementation, which the transform treats as abstract and drops.",
+      "extends": ["AbstractApp@unfurl.cloud/onecommons/std:apps/abstract", "unfurl.nodes.App"],
+      "implementations": ["create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.AWSAccount"],
+      "metadata": {"category": "app"},
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "Nextcloud@unfurl.cloud/onecommons/std:apps/nextcloud": {
+      "name": "Nextcloud@unfurl.cloud/onecommons/std:apps/nextcloud",
+      "title": "Nextcloud",
+      "description": "Self-hosted file sync and share.",
+      "extends": ["Nextcloud@unfurl.cloud/onecommons/std:apps/nextcloud", "unfurl.nodes.App"],
+      "implementations": ["connect", "create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.K8sCluster"],
+      "metadata": {
+        "category": "app",
+        "components": [
+          "K8sPod@unfurl.cloud/onecommons/std:k8s/workload",
+          "RdsPostgres@unfurl.cloud/onecommons/std:aws/db"
+        ]
+      },
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    },
+
+    "Wordpress@unfurl.cloud/onecommons/std:apps/wordpress": {
+      "name": "Wordpress@unfurl.cloud/onecommons/std:apps/wordpress",
+      "title": "WordPress",
+      "description": "The classic CMS.",
+      "extends": ["Wordpress@unfurl.cloud/onecommons/std:apps/wordpress", "unfurl.nodes.App"],
+      "implementations": ["connect", "create"],
+      "implementation_requirements": ["unfurl.relationships.ConnectsTo.AWSAccount"],
+      "metadata": {
+        "category": "app",
+        "components": [
+          "Ec2Compute@unfurl.cloud/onecommons/std:aws/compute",
+          "NotAType@unfurl.cloud/onecommons/std:missing"
+        ]
+      },
+      "_sourceinfo": {"url": "https://unfurl.cloud/onecommons/std"}
+    }
+  }
+}

@@ -1,0 +1,94 @@
+/*
+ * Layout for the public cloud page.
+ *
+ * The markup these rules target is supplied by the page host, not by this package:
+ * - gitlab-oc: app/views/public_cloud/index.html.haml
+ * - standalone: public/public_cloud.html
+ * Keep the ids in sync with both.
+ */
+
+#public-cloud-layout {
+  --cloud-chart-height: 58vh;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 7rem);
+  min-height: 720px;
+  position: relative;
+  z-index: 1;
+}
+
+#public-cloud-chart-pane {
+  position: relative;
+  min-height: 320px;
+  flex: 0 0 var(--cloud-chart-height);
+  overflow: hidden;
+}
+
+#chart {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+#cloud-splitter {
+  height: 14px;
+  cursor: row-resize;
+  position: relative;
+  z-index: 6;
+  background: transparent;
+  flex: 0 0 14px;
+}
+
+#cloud-splitter::before {
+  content: '';
+  position: absolute;
+  left: 2rem;
+  right: 2rem;
+  top: 6px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(0, 174, 180, 0.7);
+  box-shadow: 0 0 0 1px rgba(36, 123, 125, 0.2);
+}
+
+#cloud-splitter::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 2px;
+  width: 56px;
+  height: 10px;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+}
+
+#public-cloud-table-pane {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+  z-index: 5;
+  padding: 0 0 1.5rem;
+}
+
+#cloud-table {
+  height: 100%;
+  min-height: 0;
+  padding: 0 2rem 1.5rem;
+}
+
+@media (max-width: 700px) {
+  #public-cloud-layout {
+    min-height: 0;
+    height: calc(100vh - 5.5rem);
+  }
+
+  #cloud-table {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
