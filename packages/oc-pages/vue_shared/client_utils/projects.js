@@ -163,6 +163,9 @@ export async function fetchLastCommit(projectPath, _branch) {
     // because the outer repo's HEAD timestamp doesn't advance when only
     // the working tree changed.
     const isDirty = typeof id === 'string' && id.endsWith('-dirty')
+    if (isDirty) {
+        console.debug(`[fetchLastCommit] ${projectPath}#${name} -> ${id}`)
+    }
     if (lastInSessionStorage?.commit && !isDirty && fromStore > fromAPI) {
         return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }

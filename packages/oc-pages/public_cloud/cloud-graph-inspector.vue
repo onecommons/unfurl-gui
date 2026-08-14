@@ -9,6 +9,15 @@ const SECTION_FOR_KIND = {
   Type: 'Types',
 }
 
+function decodeHashUrl(value) {
+  try {
+    return decodeURIComponent(value)
+  } catch(e) {
+    // a hand-edited hash can hold malformed escapes -- take it literally rather than throw
+    return value
+  }
+}
+
 function relationEntriesToItems(entries) {
   return (entries || []).map((entry, index) => {
     const normalized = typeof entry === 'string' ? { type: entry } : entry
@@ -88,6 +97,8 @@ export default {
     selectUrl(url, kind = '') {
       const nextKind = kind || this.kindForUrl(url) || this.selectedKind
       if(!url || !nextKind) return
+      // re-selecting what is already shown would only stack duplicate history entries
+      if(url == this.selectedUrl && nextKind == this.selectedKind) return
 
       this.selectedUrl = url
       this.selectedKind = nextKind
@@ -96,6 +107,13 @@ export default {
         '',
         `#graph=${encodeURIComponent(url)}`
       )
+    },
+    showOverview() {
+      if(this.isOverview) return
+
+      this.selectedUrl = ''
+      this.selectedKind = ''
+      window.history.pushState(this.stateFor('', ''), '', '#graph=')
     },
     onPopState(event) {
       const state = event.state
@@ -110,15 +128,13 @@ export default {
     restoreFromLocation() {
       const hash = window.location.hash || ''
       const match = hash.match(/graph=([^&]+)/)
-      if(!match) {
-        this.selectedUrl = ''
-        this.selectedKind = ''
-        return
-      }
+      const url = match? decodeHashUrl(match[1]): ''
+      // a url the graph knows nothing about has no relations to draw, and an empty focus
+      // view is indistinguishable from a broken one -- show the overview instead
+      const kind = url? this.kindForUrl(url): ''
 
-      const url = decodeURIComponent(match[1])
-      this.selectedUrl = url
-      this.selectedKind = this.kindForUrl(url)
+      this.selectedUrl = kind? url: ''
+      this.selectedKind = kind
     },
     nodeFor(url, kind) {
       if(!url || !kind) return null
@@ -245,9 +261,11 @@ export default {
 
       <template v-else>
         <div class="focus-header">
-          <button class="focus-url" @click="selectUrl(selectedUrl, selectedKind)">
-            {{ selectedUrl }}
+          <button class="focus-back" @click="showOverview">
+            <span class="group-caret">←</span>
+            <span>Overview</span>
           </button>
+          <div class="focus-url">{{ selectedUrl }}</div>
         </div>
 
         <div class="relation-stack">
@@ -334,12 +352,33 @@ export default {
 }
 
 .focus-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
   margin-bottom: 0.7rem;
 }
 
+.focus-back {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: none;
+  border: 1px solid rgba(36, 123, 125, 0.16);
+  border-radius: 10px;
+  background: rgba(239, 252, 252, 0.92);
+  color: #247b7d;
+  font-size: 0.88rem;
+  font-weight: 700;
+  padding: 0.65rem 0.8rem;
+}
+
+.focus-back:hover {
+  background: rgba(240, 253, 250, 0.78);
+  color: #0f766e;
+}
+
 .focus-url {
-  display: block;
-  width: 100%;
+  flex: 1 1 auto;
   border: 1px solid rgba(36, 123, 125, 0.16);
   border-radius: 10px;
   background: linear-gradient(135deg, rgba(248, 252, 252, 0.98), rgba(255, 255, 255, 0.98));
@@ -349,10 +388,6 @@ export default {
   padding: 0.65rem 0.8rem;
   text-align: left;
   overflow-wrap: anywhere;
-}
-
-.focus-url:hover {
-  color: #0f766e;
 }
 
 .relation-stack {

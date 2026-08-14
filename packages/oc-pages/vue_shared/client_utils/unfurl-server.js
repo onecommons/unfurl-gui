@@ -156,6 +156,9 @@ async function unfurlServerGet({
     const data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
 
     if (data?.latest_commit && cacheBranch) {
+        if (data.latest_commit.endsWith('-dirty')) {
+            console.debug(`[unfurl-server] ${endpoint} ${projectPath}#${cacheBranch} response latest_commit=${data.latest_commit}`)
+        }
         setLastCommit(projectPath, cacheBranch, {commit: data.latest_commit})
     }
     return data
