@@ -3,7 +3,7 @@ import graphqlClient from 'oc/graphql-shim'
 import axios from '~/lib/utils/axios_utils'
 import * as semver from 'semver'
 
-const BRANCH_CACHE_DURATION = 2000
+const BRANCH_CACHE_DURATION = 1000 * 60 * 5 // 5 minutes
 
 function generateConfig(options) {
     if(options?.accessToken) {
@@ -16,7 +16,28 @@ function generateConfig(options) {
 
 const projectInfos = {}
 const branchesData = {}
-const projectDefaultBranches = {}
+
+// default branches are persisted to sessionStorage (like get/setLastCommit)
+// so a page load can resolve the default branch without a /branches round-trip
+function defaultBranchSessionStorageKey(projectId) {
+    return `${projectId}.default_branch`
+}
+
+export function setProjectDefaultBranch(projectId, branch) {
+    if (branch === undefined) {
+        delete sessionStorage[defaultBranchSessionStorageKey(projectId)]
+    } else {
+        sessionStorage[defaultBranchSessionStorageKey(projectId)] = JSON.stringify(branch)
+    }
+}
+
+export function getProjectDefaultBranch(projectId) {
+    let result
+    try {
+        result = JSON.parse(sessionStorage[defaultBranchSessionStorageKey(projectId)])
+    } catch (e) { }
+    return result
+}
 
 export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
@@ -39,7 +60,7 @@ export async function fetchRegistryRepositories(projectId, options) {
 export async function fetchRepositoryBranches(projectId, options) {
     const result = (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
     const defaultBranch = result.find(branch => branch.default)
-    if(defaultBranch) projectDefaultBranches[projectId] = defaultBranch
+    if(defaultBranch) setProjectDefaultBranch(projectId, defaultBranch.name)
     return result
 }
 
@@ -67,8 +88,8 @@ export async function fetchProjectInfo(projectId, options) {
 
         return projectInfos[projectId] = promise().then(projectInfo => {
             if(projectInfo.default_branch) {
-                projectDefaultBranches[projectId] = projectInfo.default_branch
-                projectDefaultBranches[projectInfo.id] = projectInfo.default_branch
+                setProjectDefaultBranch(projectId, projectInfo.default_branch)
+                setProjectDefaultBranch(projectInfo.id, projectInfo.default_branch)
             }
             return projectInfo
         })
@@ -93,6 +114,7 @@ export async function fetchCommit(projectId, commitHash) {
 
 
 export async function fetchBranches(projectId) {
+    // saves the default branch to sessionStorage if it finds one, and caches the branchesData for BRANCH_CACHE_DURATION
     let result
     if(result = branchesData[projectId]) {
         return result
@@ -104,7 +126,7 @@ export async function fetchBranches(projectId) {
         if (!Array.isArray(branches)) return []
         const defaultBranch = branches.length == 1? branches[0]: branches.find(b => b.default)
         if(defaultBranch) {
-            projectDefaultBranches[projectId] = defaultBranch.name
+            setProjectDefaultBranch(projectId, defaultBranch.name)
         }
         return branches
     })
@@ -136,19 +158,16 @@ export function setLastCommit(projectId, branch, commit_data) {
 // without needing to read sessionStorage themselves (which would race with our
 // own writeback below).
 export async function fetchLastCommit(projectPath, _branch) {
-    let lastInSessionStorage = getLastCommit(projectPath, _branch)
+    const projectId = encodeURIComponent(projectPath)
+    const branch = _branch || await getOrFetchDefaultBranch(projectId)
+    let lastInSessionStorage = getLastCommit(projectPath, branch)
     if (lastInSessionStorage?.queueid) {
         // if there's queueid > 0, it means we have an in-flight commit
-        return [lastInSessionStorage.commit, _branch, lastInSessionStorage.queueid, false]
+        return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }
 
-    const projectId = encodeURIComponent(projectPath)
     // fetchBranches returns local branchesData if present
-    let [branch, branches] = await Promise.all([
-        _branch, // allow provided branch to be a promise so they can be fetched in parallel
-        fetchBranches(projectId)
-    ])
-    if(!branch) branch = await getOrFetchDefaultBranch(projectId)
+    const branches = await fetchBranches(projectId)
 
     const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
     const {id, created_at} = commit || {}  // note: same as committed_date
@@ -164,7 +183,7 @@ export async function fetchLastCommit(projectPath, _branch) {
     // the working tree changed.
     const isDirty = typeof id === 'string' && id.endsWith('-dirty')
     if (isDirty) {
-        console.debug(`[fetchLastCommit] ${projectPath}#${name} -> ${id}`)
+        console.debug(`fetchLastCommit got dirty commit: ${projectPath}#${name} -> ${id}`)
     }
     if (lastInSessionStorage?.commit && !isDirty && fromStore > fromAPI) {
         return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
@@ -185,7 +204,7 @@ export function getLastCommit(projectId, branch) {
 export async function fetchBranch(projectId, branch) {
     const result = (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
     if(result.default) {
-        projectDefaultBranches[projectId] = branch
+        setProjectDefaultBranch(projectId, branch)
     }
     return result
 }
@@ -338,11 +357,10 @@ export async function listProjectFiles(projectPath, {branch}={}) {
 }
 
 export async function getOrFetchDefaultBranch(projectId) {
-    let result = projectDefaultBranches[projectId]
-    if(result === '') result = 'HEAD'
+    let result = getProjectDefaultBranch(projectId)
     if(!result) {
-        await fetchBranches(projectId) // force population
-        result = projectDefaultBranches[projectId]
+        await fetchBranches(projectId) // force population if not already cached
+        result = getProjectDefaultBranch(projectId)
     }
     return result
 }

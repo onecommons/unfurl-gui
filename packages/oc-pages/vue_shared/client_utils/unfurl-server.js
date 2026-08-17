@@ -156,9 +156,6 @@ async function unfurlServerGet({
     const data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
 
     if (data?.latest_commit && cacheBranch) {
-        if (data.latest_commit.endsWith('-dirty')) {
-            console.debug(`[unfurl-server] ${endpoint} ${projectPath}#${cacheBranch} response latest_commit=${data.latest_commit}`)
-        }
         setLastCommit(projectPath, cacheBranch, {commit: data.latest_commit})
     }
     return data
@@ -176,14 +173,14 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         providedLastCommit,
     ])
     let lastCommitResult = resolvedFromCaller
-    if (!lastCommitResult) {
+    if (!lastCommitResult && branch) {
         const cached = getLastCommit(projectPath, branch)
         if (cached) lastCommitResult = [cached.commit, branch, cached.queueid]
     }
     const [latestCommit, inferredBranch, queueid] = lastCommitResult || []
 
     const query = [`format=${format}`]
-    // pass latest commit unless we're in developer mode for this project
+    // if we specified a branch, pass latest commit unless we're in developer mode for this project
     if(alwaysSendLatestCommit() || !unfurlServerUrlOverride(projectPath)) {
         if(latestCommit && branch && branch == inferredBranch) {
             query.push(`latest_commit=${latestCommit}`)
@@ -213,7 +210,6 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
 
 const unfurlTypesResponsesCache = {}
 const constraintCombinationsWithCloudmap = {}
-// export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, params={}, index) {
 export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, _params={}, index) {
     // TODO remove when unfurl server types supports params
     const params = {implementation_requirements: _params.implementation_requirements}
@@ -362,6 +358,9 @@ export async function fetchTypeRepositories(repositories, params) {
 }
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables, sync}) {
+    if (!branch) {
+        throw new Error(`@unfurlServerUpdate: branch is required (method=${method}, projectPath=${projectPath})`)
+    }
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
     let {commit, queueid, when} = getLastCommit(projectPath, branch)

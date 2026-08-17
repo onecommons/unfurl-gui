@@ -128,7 +128,9 @@ const actions = {
         let lastCommitResult
         if (forEditing) {
             try {
-                lastCommitResult = await fetchLastCommit(projectPath, branch)
+                // if branch == "(MISSING)" (set by deployment.packages above, intended for unfurlServerExport() below)) use default branch instead
+                const editBranch = branch == "(MISSING)" ? "" : branch;
+                lastCommitResult = await fetchLastCommit(projectPath, editBranch)
                 if (state.loaded) {
                     const [, , queueid, changed] = lastCommitResult
                     if (!queueid && !changed) {

@@ -3,7 +3,7 @@
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import * as routes from '../router/constants'
-import {getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
+import {getProjectDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 
 export default {
     name: 'MainComponent',
@@ -41,7 +41,9 @@ export default {
             ].includes(this.$route.name)
 
             const projectPath = this.$store.getters.getHomeProjectPath
-            const branch = this.$route.query.branch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
+            // an explicit ?branch= override; otherwise the store actions
+            // (fetchProjectEnvironments, fetchDeployment) resolve the default branch
+            const branch = this.$route.query.branch
 
             const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments, only: !includeDeployments && this.$route.params.environment})
                 .catch(err => {
@@ -52,7 +54,9 @@ export default {
                             message: err.message,
                             context: {
                                 projectPath,
-                                branch,
+                                // no ?branch= override means the store actions resolved
+                                // the default branch; report what they cached
+                                branch: branch || getProjectDefaultBranch(encodeURIComponent(projectPath)),
                                 includeDeployments
                             },
                             severity: 'critical'
@@ -80,7 +84,7 @@ export default {
                                 message: err.message,
                                 context: {
                                     projectPath,
-                                    branch,
+                                    branch: branch || getProjectDefaultBranch(encodeURIComponent(projectPath)),
                                     includeDeployments,
                                     environmentName,
                                     deploymentName
