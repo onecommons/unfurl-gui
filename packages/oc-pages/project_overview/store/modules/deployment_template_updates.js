@@ -7,7 +7,7 @@ import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
-import { getOrFetchDefaultBranch, createBranch } from "../../../vue_shared/client_utils/projects";
+import { getOrFetchCurrentBranch, createBranch } from "../../../vue_shared/client_utils/projects";
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -1092,7 +1092,9 @@ const actions = {
             )
         }
 
-        const branch = state.commitBranch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
+        // current-then-default: updates must land on (and key sessionStorage by)
+        // the same branch exports were served from, or getLastCommit misses
+        const branch = state.commitBranch || await getOrFetchCurrentBranch(encodeURIComponent(projectPath))
 
         if (state.commitBranchIsNew && !window.gon.unfurl_gui) {
             await createBranch(encodeURIComponent(projectPath), branch)

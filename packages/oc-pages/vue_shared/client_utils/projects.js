@@ -39,6 +39,30 @@ export function getProjectDefaultBranch(projectId) {
     return result
 }
 
+// the branch the unfurl server actually used for a project's export when the
+// request didn't pin one — reported by the server in the export response and
+// recorded by unfurlServerGet. Kept separate from default_branch: an explicit
+// ?branch= request must never overwrite it.
+function currentBranchSessionStorageKey(projectId) {
+    return `${projectId}.current_branch`
+}
+
+export function setProjectCurrentBranch(projectId, branch) {
+    if (branch === undefined) {
+        delete sessionStorage[currentBranchSessionStorageKey(projectId)]
+    } else {
+        sessionStorage[currentBranchSessionStorageKey(projectId)] = JSON.stringify(branch)
+    }
+}
+
+export function getProjectCurrentBranch(projectId) {
+    let result
+    try {
+        result = JSON.parse(sessionStorage[currentBranchSessionStorageKey(projectId)])
+    } catch (e) { }
+    return result
+}
+
 export async function fetchProjects(options={}) {
     // TODO this probably doesn't need access level 40
     const {minAccessLevel} = options
@@ -159,7 +183,7 @@ export function setLastCommit(projectId, branch, commit_data) {
 // own writeback below).
 export async function fetchLastCommit(projectPath, _branch) {
     const projectId = encodeURIComponent(projectPath)
-    const branch = _branch || await getOrFetchDefaultBranch(projectId)
+    const branch = _branch || await getOrFetchCurrentBranch(projectId)
     let lastInSessionStorage = getLastCommit(projectPath, branch)
     if (lastInSessionStorage?.queueid) {
         // if there's queueid > 0, it means we have an in-flight commit
@@ -363,4 +387,11 @@ export async function getOrFetchDefaultBranch(projectId) {
         result = getProjectDefaultBranch(projectId)
     }
     return result
+}
+
+// resolution for callers that want "the branch the server is serving this
+// project from": prefer the branch a previous export response reported using,
+// fall back to the default branch
+export async function getOrFetchCurrentBranch(projectId) {
+    return getProjectCurrentBranch(projectId) || await getOrFetchDefaultBranch(projectId)
 }

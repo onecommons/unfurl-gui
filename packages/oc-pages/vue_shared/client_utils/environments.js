@@ -7,7 +7,7 @@ import graphqlClient from 'oc/graphql-shim'
 import _ from 'lodash'
 import { lookupCloudProviderAlias } from '../util.js'
 import {localNormalize} from '../lib/normalize'
-import { getOrFetchDefaultBranch, fetchLastCommit } from './projects'
+import { getOrFetchCurrentBranch, fetchLastCommit } from './projects'
 
 export async function fetchGitlabEnvironments(projectPath, environmentName) {
     let result = []
@@ -96,7 +96,7 @@ export async function deleteEnvironment(projectPath, projectId, environmentName,
 
 // NOTE try to keep this in sync with commitPreparedMutations
 export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
-    const branch = await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
+    const branch = await getOrFetchCurrentBranch(encodeURIComponent(projectPath))
 
     const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider].filter(tmpl => !!tmpl)
 
@@ -182,7 +182,7 @@ export function connectionsToArray(environment) {
 }
 
 export async function fetchEnvironments(options) {
-    const {fullPath, includeDeployments, branch, only} = {
+    const {fullPath, includeDeployments, branch, setCurrentBranch, only} = {
         includeDeployments: true,
         ...options
     }
@@ -203,6 +203,7 @@ export async function fetchEnvironments(options) {
             includeDeployments,
             environment: only,
             branch,
+            setCurrentBranch,
             // Pre-fetch the branch HEAD so the export carries a known-fresh
             // commit. If a local deploy left the working tree dirty,
             // /branches returns `<sha>-dirty` and the rust+python caches

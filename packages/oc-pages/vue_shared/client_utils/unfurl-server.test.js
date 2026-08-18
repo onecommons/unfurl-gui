@@ -57,7 +57,7 @@ jest.mock('~/lib/utils/axios_utils', () => {
 
 import axios from '~/lib/utils/axios_utils'
 import { unfurlServerExport, unfurlServerUpdate } from './unfurl-server'
-import { createBranch, fetchLastCommit, getLastCommit, setLastCommit } from './projects'
+import { createBranch, fetchLastCommit, getLastCommit, setLastCommit, getProjectCurrentBranch, getProjectDefaultBranch } from './projects'
 
 const MODE = process.env.OC_URL
     ? (process.env.GITLAB_TOKEN ? 'cloud' : 'gui')
@@ -148,11 +148,11 @@ function mockBranchesResponse(commitId = 'commit-A', branch = TEST_BRANCH) {
     }
 }
 
-function mockExportResponse(latestCommit = 'commit-A') {
+function mockExportResponse(latestCommit = 'commit-A', branch = TEST_BRANCH) {
     // Shape doesn't matter for these tests — unfurlServerExport returns it verbatim.
-    // Include latest_commit by default so the response-side sessionStorage seed fires
-    // (unfurlServerExport no longer fetches the branch HEAD itself).
-    return {data: {ResourceTemplate: {}, DeploymentTemplate: {}, ApplicationBlueprint: {}, latest_commit: latestCommit}}
+    // Include latest_commit and branch by default: the response-side sessionStorage
+    // seed keys off the server-reported branch and skips the writeback without it.
+    return {data: {ResourceTemplate: {}, DeploymentTemplate: {}, ApplicationBlueprint: {}, latest_commit: latestCommit, branch}}
 }
 
 describe('unfurlServerExport seeds sessionStorage with the branch HEAD commit', () => {
@@ -198,6 +198,94 @@ describe('unfurlServerExport seeds sessionStorage with the branch HEAD commit', 
             const branchesCalls = axios.get.mock.calls.filter(([url]) => url.includes('/repository/branches'))
             expect(branchesCalls).toHaveLength(0)
         }
+    })
+})
+
+// The export response may report which branch the server actually ran against
+// (forward-compatible: serve.py doesn't send `branch` yet). unfurlServerGet
+// records it as the project's current_branch — but only when the request didn't
+// pin a branch — and the next branchless export resolves and sends it.
+// Mock-only until live servers send the field.
+const describeCurrentBranch = MODE === 'mock' ? describe : describe.skip
+describeCurrentBranch('current_branch is recorded from branchless export responses', () => {
+    test('branchless export records current_branch and the next export reuses it', async () => {
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/export')) return Promise.resolve(
+                {data: {...mockExportResponse('commit-A').data, branch: 'serve-branch'}})
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        await unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT})
+
+        expect(getProjectCurrentBranch(encodeURIComponent(TEST_PROJECT))).toBe('serve-branch')
+        // the latest_commit writeback is keyed by the response branch
+        expect(getLastCommit(TEST_PROJECT, 'serve-branch')?.commit).toBe('commit-A')
+
+        await unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT})
+
+        const [lastExportUrl] = axios.get.mock.calls[axios.get.mock.calls.length - 1]
+        expect(lastExportUrl).toContain('branch=serve-branch')
+        expect(lastExportUrl).toContain('latest_commit=commit-A')
+    })
+
+    test('the "(MISSING)" version sentinel is treated as an inferred branch', async () => {
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/export')) return Promise.resolve(
+                {data: {...mockExportResponse('commit-A').data, branch: 'serve-branch'}})
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        await unfurlServerExport({format: 'blueprint', projectPath: TEST_PROJECT, branch: '(MISSING)'})
+
+        // the sentinel is passed through to the server, but counts as inferred
+        const [exportUrl] = axios.get.mock.calls[0]
+        expect(exportUrl).toContain('branch=(MISSING)')
+        expect(getProjectCurrentBranch(encodeURIComponent(TEST_PROJECT))).toBe('serve-branch')
+        // the latest_commit writeback is keyed by the response branch, never the sentinel
+        expect(getLastCommit(TEST_PROJECT, 'serve-branch')?.commit).toBe('commit-A')
+        expect(getLastCommit(TEST_PROJECT, '(MISSING)')).toBeUndefined()
+    })
+
+    test('a caller-resolved branch records current_branch by default', async () => {
+        // store actions (fetchDeployment, fetchProjectEnvironments) resolve the
+        // branch themselves before exporting; setCurrentBranch defaults to true
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/export')) return Promise.resolve(mockExportResponse('commit-A'))
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        await unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT, branch: TEST_BRANCH})
+
+        expect(getProjectCurrentBranch(encodeURIComponent(TEST_PROJECT))).toBe(TEST_BRANCH)
+    })
+
+    test('a response default_branch is recorded regardless of how the branch was requested', async () => {
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/export')) return Promise.resolve(
+                {data: {...mockExportResponse('commit-A').data, default_branch: 'trunk'}})
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        // route-pinned branch — current_branch stays unset, default_branch is recorded anyway
+        await unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT, branch: TEST_BRANCH, setCurrentBranch: false})
+
+        expect(getProjectDefaultBranch(encodeURIComponent(TEST_PROJECT))).toBe('trunk')
+        expect(getProjectCurrentBranch(encodeURIComponent(TEST_PROJECT))).toBeUndefined()
+    })
+
+    test('a route-pinned branch (setCurrentBranch: false) never records current_branch', async () => {
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/export')) return Promise.resolve(
+                {data: {...mockExportResponse('commit-A').data, branch: 'other-branch'}})
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        await unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT, branch: TEST_BRANCH, setCurrentBranch: false})
+
+        expect(getProjectCurrentBranch(encodeURIComponent(TEST_PROJECT))).toBeUndefined()
+        // the writeback still keys off the response-reported branch
+        expect(getLastCommit(TEST_PROJECT, 'other-branch')?.commit).toBe('commit-A')
+        expect(getLastCommit(TEST_PROJECT, TEST_BRANCH)).toBeUndefined()
     })
 })
 

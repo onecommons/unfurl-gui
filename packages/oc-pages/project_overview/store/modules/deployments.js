@@ -3,7 +3,7 @@ import {environmentVariableDependencies, transformEnvironmentVariables} from 'oc
 import {shareEnvironmentVariables} from 'oc_vue_shared/client_utils/environments'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
-import {fetchLastCommit, getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
+import {fetchLastCommit, getOrFetchCurrentBranch} from 'oc_vue_shared/client_utils/projects'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
 import Vue from 'vue'
@@ -423,10 +423,10 @@ const actions = {
         await dispatch('commitPreparedMutations')
     },
 
-    async fetchDeployment({state, getters, commit, rootGetters, dispatch}, {deploymentName, environmentName, projectPath, branch}) {
+    async fetchDeployment({state, getters, commit, rootGetters, dispatch}, {deploymentName, environmentName, projectPath, branch, setCurrentBranch}) {
 
         let deployment
-        branch = branch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
+        branch = branch || await getOrFetchCurrentBranch(encodeURIComponent(projectPath))
 
         const format = 'deployment'
         const deploymentPath = rootGetters.lookupDeployPath(deploymentName, environmentName).name
@@ -441,6 +441,7 @@ const actions = {
                 projectPath,
                 deploymentPath,
                 branch,
+                setCurrentBranch,
                 lastCommitResult: fetchLastCommit(projectPath, branch), // awaited in unfurlServerExport
             })
         } catch(e) {

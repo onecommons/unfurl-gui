@@ -448,7 +448,11 @@ const actions = {
                     deploymentName,
                     environmentName,
                     projectPath,
-                    branch
+                    branch,
+                    // commitBranch might be a generated draft branch, or a ?branch=
+                    // url pin round-tripped through the editor — so don't let
+                    // it overwrite the project's current_branch
+                    setCurrentBranch: !branch
                 })
             assignDeploymentDict()
         }
@@ -1208,7 +1212,7 @@ const getters = {
     getBuriedDependencies(state, getters) {
         // Walk the dependency graph collecting buried (hidden) descendants.
         // A template's dependency `match` can point back up the graph
-        // use visited set to break cycles 
+        // use visited set to break cycles
         function walk(cardName, visited) {
             if(!getters.cardIsHidden(cardName?.name || cardName)) return []
             const card = getters.dtResolveResourceTemplate(cardName)

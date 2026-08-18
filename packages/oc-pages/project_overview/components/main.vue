@@ -44,8 +44,10 @@ export default {
             // an explicit ?branch= override; otherwise the store actions
             // (fetchProjectEnvironments, fetchDeployment) resolve the default branch
             const branch = this.$route.query.branch
+            // a route-pinned branch must not overwrite the project's current_branch
+            const setCurrentBranch = !branch
 
-            const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, includeDeployments, only: !includeDeployments && this.$route.params.environment})
+            const fetchEnvironments = this.$store.dispatch('ocFetchEnvironments', {projectPath, branch, setCurrentBranch, includeDeployments, only: !includeDeployments && this.$route.params.environment})
                 .catch(err => {
                     console.error('@main.vue', err)
                     this.$store.commit(
@@ -73,7 +75,7 @@ export default {
                 completePromise = fetchEnvironments
                     .then(() => {
                         if(this.$store.getters.lookupDeployPath(deploymentName, environmentName)) {
-                            return this.$store.dispatch('fetchDeployment', {projectPath, branch, deploymentName, environmentName})
+                            return this.$store.dispatch('fetchDeployment', {projectPath, branch, setCurrentBranch, deploymentName, environmentName})
                         }
                     })
                     .catch(err => {

@@ -112,6 +112,11 @@ const actions = {
         let {projectPath, blueprintPath, projectGlobal, shouldMerge, branch, forEditing} = {shouldMerge: false, ...params}
         const format = 'blueprint'
 
+        // params.branch is only ever a route pin (?bprev=, see templates/index.vue);
+        // the deployment.packages version fill-in below is not one, so it may
+        // still let the export response record current_branch
+        const setCurrentBranch = !branch
+
         const deployment = Object.values(state.Deployment || {})[0]
 
         if(deployment && !branch) {
@@ -153,6 +158,7 @@ const actions = {
                 deploymentPath: blueprintPath,
                 sendCredentials: !(rootGetters.getGlobalVars?.projectPath == projectPath && rootGetters.getGlobalVars?.projectVisibility == 'public'),
                 branch,
+                setCurrentBranch,
                 lastCommitResult,
             })
         } catch(e) {

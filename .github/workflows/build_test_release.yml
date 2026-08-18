@@ -4,7 +4,7 @@ on: [push]
 
 env:
   UNFURL_BRANCH: rust-merge
-  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:rust-merge-server
+  UNFURL_SERVER_IMAGE: ghcr.io/onecommons/unfurl:local-cloud-endpoint-server
   GCP_DNS_ZONE: deploythis.io
   AWS_DNS_ZONE: opencloudservices.net
 

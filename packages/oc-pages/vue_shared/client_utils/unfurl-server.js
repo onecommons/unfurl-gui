@@ -1,6 +1,6 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchProjectInfo, getLastCommit, setLastCommit, createBranch } from "./projects";
+import { fetchProjectInfo, getLastCommit, setLastCommit, getProjectCurrentBranch, setProjectCurrentBranch, getProjectDefaultBranch, setProjectDefaultBranch, createBranch } from "./projects";
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
@@ -121,8 +121,7 @@ async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCreden
     }
 }
 
-// Shared between unfurlServerExport and unfurlServerGetTypes so the freshness
-// contract stays in one place: build the URL with `auth_project` + optional
+// Build the URL with `auth_project` + optional
 // branch + credentials, issue the GET, and seed sessionStorage with the
 // server-reported latest_commit so the next request can send it as
 // `latest_commit=<sha>` and take the proxy's cache fast-path.
@@ -130,7 +129,10 @@ async function unfurlServerGet({
     projectPath, endpoint, branch,
     query = [],
     sendCredentials, username, password,
-    cacheBranch = branch,
+    // false only when the request's branch was pinned by an explicit
+    // branch=<name> url parameter on the page route (?branch=, ?bprev=) —
+    // those must not overwrite the project's current_branch
+    setCurrentBranch = true,
 }) {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
@@ -155,13 +157,33 @@ async function unfurlServerGet({
 
     const data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
 
-    if (data?.latest_commit && cacheBranch) {
-        setLastCommit(projectPath, cacheBranch, {commit: data.latest_commit})
+    const projectId = encodeURIComponent(projectPath)
+    const responseBranch = data?.branch
+    if (responseBranch && setCurrentBranch) {
+        setProjectCurrentBranch(projectId, responseBranch)
+    }
+    // response may opportunistically report the project's default branch. Unlike
+    // current_branch this is a fact about the project, not about this request,
+    // so no gating — record it whenever it changed.
+    const responseDefaultBranch = data?.default_branch
+    if (responseDefaultBranch && responseDefaultBranch !== getProjectDefaultBranch(projectId)) {
+        setProjectDefaultBranch(projectId, responseDefaultBranch)
+    }
+    // key the latest_commit writeback by the branch the server says it ran
+    // against — authoritative
+    if (data?.latest_commit && responseBranch) {
+        setLastCommit(projectPath, responseBranch, {commit: data.latest_commit})
     }
     return data
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, lastCommitResult: providedLastCommit}) {
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, lastCommitResult: providedLastCommit, setCurrentBranch = true}) {
+    const resolvedFromCache = !branch
+    if (!branch) {
+    // If the caller didn't pin a branch, use the branch a previous export
+    // response reported using (recorded by unfurlServerGet).
+      branch = getProjectCurrentBranch(encodeURIComponent(projectPath))
+    }
     // Resolve latest_commit from the caller's tuple (which may be a promise) or
     // fall back to whatever sessionStorage already has. We never call
     // fetchLastCommit on our own: callers that need a guaranteed-fresh value
@@ -201,11 +223,20 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         query.push(`deployment_path=${deploymentPath}`)
     }
 
-    return await unfurlServerGet({
-        projectPath, endpoint: '/export', branch,
-        query, ...auth,
-        cacheBranch: branch || inferredBranch,
-    })
+    try {
+        return await unfurlServerGet({
+            projectPath, endpoint: '/export', branch,
+            query, ...auth,
+            setCurrentBranch,
+        })
+    } catch(e) {
+        // don't let a stale cached current_branch pin every subsequent
+        // branchless export to a failing request
+        if (resolvedFromCache && branch) {
+            setProjectCurrentBranch(encodeURIComponent(projectPath), undefined)
+        }
+        throw e
+    }
 }
 
 const unfurlTypesResponsesCache = {}

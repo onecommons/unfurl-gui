@@ -6,7 +6,7 @@ import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
-import {fetchProjectInfo, generateProjectAccessToken, getOrFetchDefaultBranch} from 'oc_vue_shared/client_utils/projects'
+import {fetchProjectInfo, generateProjectAccessToken, getOrFetchCurrentBranch} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, shareEnvironmentVariables, fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
@@ -417,12 +417,13 @@ const actions = {
     },
 
     async fetchProjectEnvironments({commit, dispatch, rootGetters}, options) {
-        const {fullPath, branch, includeDeployments, only} = {includeDeployments: true, ...options}
+        const {fullPath, branch, setCurrentBranch, includeDeployments, only} = {includeDeployments: true, ...options}
         let environments = []
         try {
             const result = await fetchEnvironments({
                 fullPath,
-                branch: branch || await getOrFetchDefaultBranch(encodeURIComponent(fullPath)),
+                branch: branch || await getOrFetchCurrentBranch(encodeURIComponent(fullPath)),
+                setCurrentBranch,
                 includeDeployments,
                 only
             })
@@ -539,7 +540,7 @@ const actions = {
     },
 
     async ocFetchEnvironments({ commit, dispatch, rootGetters }, options) {
-        const {fullPath, projectPath, branch, includeDeployments, only} = {
+        const {fullPath, projectPath, branch, setCurrentBranch, includeDeployments, only} = {
             includeDeployments: true,
             ...options
         }
@@ -559,7 +560,7 @@ const actions = {
                     console.warn('@ocFetchProjectEnvironments: Could not read/write envvars', e)
                 }
             })(),
-            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, includeDeployments, only})
+            dispatch('fetchProjectEnvironments', {fullPath: _projectPath, branch, setCurrentBranch, includeDeployments, only})
         ])
 
         commit('setReady', true)
