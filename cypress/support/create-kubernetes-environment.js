@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const ENVIRONMENT_NAME = Cypress.env('K8S_ENVIRONMENT_NAME')
 const K8S_CLUSTER_NAME = Cypress.env('K8S_CLUSTER_NAME')
 const K8S_CONTEXT = Cypress.env('K8S_CONTEXT')
@@ -52,7 +53,7 @@ function enterK8sInfo(providerName='primary_provider') {
     cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-cluster_ca_certificate"]`).type(K8S_CA_CERT)
   }
   if(K8S_INSECURE) {
-    cy.get(`label[data-testid="oc-input-${providerName}-insecure"] input[type="checkbox"]`).click({force: true})
+    cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-insecure"]`).click({force: true})
   }
   if(K8S_AUTH_TOKEN) {
     cy.getInputOrTextarea(`[data-testid="oc-input-${providerName}-token"]`).type(K8S_AUTH_TOKEN)
@@ -77,10 +78,11 @@ function addK8sAnnotations() {
     console.error(e)
   }
 
+  // providerName isn't in scope here, so match on the property suffix
   for(const [key, value] of annotations) {
-    cy.contains('button.formily-element-array-base-addition', 'Add').click()
-    cy.get('[placeholder="key"]').last().type(key)
-    cy.get('[placeholder="value"]').last().type(value)
+    cy.get('[data-testid$="-annotations-add"]').click()
+    cy.getInputOrTextarea('[data-testid$="-annotations-key"]').last().type(key)
+    cy.getInputOrTextarea('[data-testid$="-annotations-value"]').last().type(value)
   }
 }
 
@@ -97,7 +99,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
   let environmentCreated
 
   cy.whenEnvironmentAbsent(environmentName, () => {
-    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    cy.visit(dashboardPath(`/-/environments`))
     createEnvironmentButton().click()
     cy.k8sCompleteEnvironmentDialog({environmentName})
     cy.url().should('include', environmentName)
@@ -106,7 +108,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
 
     cy.wait(BASE_TIMEOUT / 2)
 
-    cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}?provider`)
+    cy.visit(dashboardPath(`/-/environments/${environmentName}?provider`))
 
     enterK8sInfo()
 
@@ -118,11 +120,11 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
     if(KUBECONFIG) {
       cy.wait(BASE_TIMEOUT / 2)
       // easiest way to get rid of modal
-      cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      cy.visit(dashboardPath(`/-/environments/${environmentName}`))
 
       cy.contains('a', 'Variables').click()
       cy.get('[data-qa-selector="add_ci_variable_button"]').click()
-      cy.get('[data-qa-selector="ci_variable_key_field"] input').type('KUBECONFIG')
+      cy.getInputOrTextarea('[data-qa-selector="ci_variable_key_field"]').type('KUBECONFIG')
       // typing out KUBECONFIG is hilariously slow
       cy.get('[data-qa-selector="ci_variable_value_field"]').invoke('val', KUBECONFIG)
       cy.get('[data-qa-selector="ci_variable_value_field"]').type('\n')
@@ -137,7 +139,7 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
-      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      environmentCreated || cy.visit(dashboardPath(`/-/environments/${environmentName}`))
       cy.contains('a', 'Resources').click()
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)

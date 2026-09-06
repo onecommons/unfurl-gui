@@ -1,6 +1,7 @@
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
+import {dashboardPath} from './dashboard-path'
 function undeploy(deploymentTitle, _options) {
   const {verify} = Object.assign({
     verify: true
@@ -18,7 +19,7 @@ function undeploy(deploymentTitle, _options) {
     cy.withJob(job => {
       cy.expectSuccessfulJob(job)
       cy.withCompletedJob(job, () => {
-        cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=destroyed`)
+        cy.visit(dashboardPath(`/-/deployments?show=destroyed`))
         cy.contains('td', deploymentTitle).should('exist')
       })
     })

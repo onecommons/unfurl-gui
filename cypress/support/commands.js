@@ -39,6 +39,8 @@ import './github'
 import './ci-jobs'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
+import {dashboardPath} from './dashboard-path'
+import {DANGER_ALERT} from './alerts'
 
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_USERNAME')
@@ -77,7 +79,7 @@ function withStore(cb) {
 }
 
 function assertNoErrors() {
-  cy.get('.gl-alert.gl-alert-danger').should('not.exist')
+  cy.get(DANGER_ALERT).should('not.exist')
   withStore().then(store => store.getters).should('have.property', 'hasCriticalErrors', false)
 }
 
@@ -108,7 +110,7 @@ function login(username, password, impersonate) {
         cy.url().should('not.contain', 'admin')
 
         if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-          cy.visit(`/${DASHBOARD_DEST}`)
+          cy.visit(dashboardPath(``))
         }
       }
     }
@@ -156,7 +158,7 @@ function login(impersonateUser) {
       }
       win.sessionStorage['unfurl-trace'] = 't'
     })
-    cy.visit(`/${DASHBOARD_DEST}`)
+    cy.visit(dashboardPath(``))
   },
   {
     cacheAcrossSpecs: false,

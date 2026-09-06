@@ -16,10 +16,8 @@ describe('nested tabs', () => {
         cy.getInputOrTextarea('[placeholder="value"]').type('5000')
 
         cy.contains('a', 'Properties').click()
-        cy.contains('.formily-element-form-item-label', 'ports').next().within(() => {
-          cy.contains('button:visible', 'Add').click()
-          cy.get('input.el-input__inner').type('5000:5000')
-        })
+        cy.get('[data-testid="oc-input-the_app-container.ports-add"]').click()
+        cy.getInputOrTextarea('[data-testid="oc-input-the_app-container.ports-value"]').last().type('5000:5000')
       },
       patchAssertions(req) {
         const the_app = req.body.patch.find(p => p.name == 'the_app')

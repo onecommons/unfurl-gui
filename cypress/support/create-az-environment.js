@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const ENVIRONMENT_NAME = Cypress.env('AZ_ENVIRONMENT_NAME')
 const ARM_CLIENT_ID = Cypress.env('ARM_CLIENT_ID')
 const ARM_TENANT_ID = Cypress.env('ARM_TENANT_ID')
@@ -52,7 +53,7 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
   let environmentCreated
 
   cy.whenEnvironmentAbsent(environmentName, () => {
-    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    cy.visit(dashboardPath(`/-/environments`))
     createEnvironmentButton().click()
     cy.azCompleteEnvironmentDialog({environmentName})
     cy.url().should('include', environmentName)
@@ -61,7 +62,7 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
 
     cy.wait(BASE_TIMEOUT / 2)
 
-    //cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}?provider`)
+    //cy.visit(dashboardPath(`/-/environments/${environmentName}?provider`))
 
     cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_CLIENT_ID"]').type(ARM_CLIENT_ID)
     cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-AZURE_SECRET"]').type(ARM_CLIENT_SECRET)
@@ -84,7 +85,7 @@ Cypress.Commands.add('createAzEnvironment', (options) => {
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
-      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      environmentCreated || cy.visit(dashboardPath(`/-/environments/${environmentName}`))
       cy.contains('a', 'Resources').click()
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)

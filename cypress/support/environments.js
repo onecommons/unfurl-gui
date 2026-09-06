@@ -18,6 +18,7 @@ const
   AWS_DNS_TYPE = 'Route53DNSZone'
 
 import slugify from '../../packages/oc-pages/vue_shared/slugify'
+import {dashboardPath} from './dashboard-path'
 
 /**
  * Custom Cypress command to wait until the environment is ready,
@@ -98,7 +99,7 @@ Cypress.Commands.add('completeEnvironmentDialog', options => {
 })
 
 Cypress.Commands.add('deleteEnvironment', environmentName => {
-  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+  cy.visit(dashboardPath(`/-/environments/${environmentName}`))
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Delete Environment', {timeout: BASE_TIMEOUT * 2}).click({force: true})
   cy.contains('button.js-modal-action-primary', 'Delete').click()
@@ -106,7 +107,7 @@ Cypress.Commands.add('deleteEnvironment', environmentName => {
 })
 
 Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
-  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+  cy.visit(dashboardPath(`/-/environments/${environmentName}`))
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
@@ -127,7 +128,7 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
   //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
-  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+  cy.visit(dashboardPath(`/-/environments/${environmentName}`))
   cy.getInputOrTextarea(`[data-testid="oc-input-${digitalOceanName}-name"]`).should(
     "have.value",
     "untrusted.me"
@@ -254,7 +255,7 @@ Cypress.Commands.add('checkMail', checkMail)
 
 Cypress.Commands.add('createMailResource', environmentName => {
   if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
-  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+  cy.visit(dashboardPath(`/-/environments/${environmentName}`))
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
@@ -288,7 +289,7 @@ Cypress.Commands.add('createMailResource', environmentName => {
   //cy.contains("Environment was saved successfully!").should("exist")
 
   // check if external instance save properly
-  cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+  cy.visit(dashboardPath(`/-/environments/${environmentName}`))
   cy.getInputOrTextarea(`[data-testid="oc-input-${mailResourceName}-host"]`).should(
     "have.value",
     SMTP_HOST

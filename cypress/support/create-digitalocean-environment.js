@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const ENVIRONMENT_NAME = Cypress.env('DO_ENVIRONMENT_NAME')
 const DO_DEFAULT_REGION = Cypress.env('DO_DEFAULT_REGION')
 const DIGITALOCEAN_TOKEN = Cypress.env('DIGITALOCEAN_TOKEN')
@@ -45,7 +46,7 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
   let environmentCreated
 
   cy.whenEnvironmentAbsent(environmentName, () => {
-    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+    cy.visit(dashboardPath(`/-/environments`))
     createEnvironmentButton().click()
     cy.digitalOceanCompleteEnvironmentDialog({environmentName})
     cy.url().should('include', environmentName)
@@ -54,7 +55,7 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
 
     cy.wait(BASE_TIMEOUT / 2)
 
-    //cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}?provider`)
+    //cy.visit(dashboardPath(`/-/environments/${environmentName}?provider`))
 
     cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
 
@@ -74,7 +75,7 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
   // create external resource
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
-      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      environmentCreated || cy.visit(dashboardPath(`/-/environments/${environmentName}`))
       cy.contains('a', 'Resources').click()
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)

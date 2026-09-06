@@ -1,8 +1,9 @@
+import {dashboardPath} from './dashboard-path'
 const USER = Cypress.env('OC_IMPERSONATE')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 function jobToJSONEndpoint(job) {
-  return `/${DASHBOARD_DEST}/-/jobs/${job}.json`
+  return dashboardPath(`/-/jobs/${job}.json`)
 }
 
 function withCompletedJob(job, cb) {
@@ -45,7 +46,7 @@ function withJob(cb) {
 }
 
 function assertDeploymentRunning(deploymentTitle) {
-  cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=running`)
+  cy.visit(dashboardPath(`/-/deployments?show=running`))
   // this becomes slow after a deployment completes on large dashboards
   cy.contains('td', deploymentTitle, {timeout: BASE_TIMEOUT * 2}).within(() => {
     //cy.get('[data-testid="status_success_solid-icon"]').should('exist')

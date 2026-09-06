@@ -1,0 +1,153 @@
+/*
+ * Visits every route in dashboard/router/routes.js and
+ * project_overview/router/routes.js plus the public_cloud page, asserts the
+ * route's landmark testid renders, and screenshots it.
+ *
+ * This is the migration baseline: it covers the dashboard pages the blueprint
+ * specs skip, and it is the first thing that breaks when a gl-* component
+ * changes shape. Keep it free of component-library selectors.
+ *
+ * Blocking failures are uncaught exceptions and window errors. console.error
+ * is counted and logged but does not fail the run — the app emits some today,
+ * and a spec that is red on day one never becomes a baseline.
+ */
+
+const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
+const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
+const SMOKE_PROJECT = Cypress.env('SMOKE_PROJECT') || (REPOS_NAMESPACE && `${REPOS_NAMESPACE}/minecraft`)
+
+// $DELIMITER in dashboard/router/routes.js is substituted in router/index.js
+const DELIMITER = '/-'
+
+// Standalone serves the dashboard at the root and DASHBOARD_DEST is a
+// filesystem path for the server, not a URL segment. The fork mounts it under
+// the dashboard project's path.
+const STANDALONE = !DASHBOARD_DEST || DASHBOARD_DEST.startsWith('/') || DASHBOARD_DEST.includes(':')
+const DASHBOARD_BASE = STANDALONE ? '' : `/${DASHBOARD_DEST}`
+
+const pageErrors = []
+
+function collectErrors() {
+  Cypress.on('window:before:load', win => {
+    win.addEventListener('error', e => {
+      pageErrors.push(`[windowerror] ${e.message} at ${e.filename}:${e.lineno}`)
+    })
+    win.addEventListener('unhandledrejection', e => {
+      const r = e.reason
+      pageErrors.push(`[unhandledrejection] ${r instanceof Error ? r.message : String(r)}`)
+    })
+    const origError = win.console.error.bind(win.console)
+    win.console.error = (...args) => {
+      consoleErrors.push(String(args[0]))
+      origError(...args)
+    }
+  })
+  Cypress.on('uncaught:exception', err => {
+    // cypress's own runner throws this from ProxyLogging.logIncomingRequest
+    // while decoding a websocket message; e2e.js swallows it for the same
+    // reason. It is not an application error.
+    if (!(err.stack || '').includes('ProxyLogging.logIncomingRequest')) {
+      pageErrors.push(`[uncaught] ${err.message}`)
+    }
+    return false
+  })
+}
+
+const consoleErrors = []
+
+/* Visit a route, wait for its landmark, screenshot it, and assert the page
+ * raised no blocking error while it rendered. */
+function smoke(name, url, landmark) {
+  it(`renders ${name}`, () => {
+    pageErrors.length = 0
+    consoleErrors.length = 0
+
+    cy.visit(url, {failOnStatusCode: false})
+    cy.get(`[data-testid="${landmark}"]`, {timeout: Cypress.config('defaultCommandTimeout') * 2})
+      .should('exist')
+
+    cy.screenshot(`route-smoke/${name}`, {capture: 'viewport', overwrite: true})
+
+    cy.then(() => {
+      if (consoleErrors.length) {
+        cy.task('log', `[route-smoke] ${name}: ${consoleErrors.length} console.error(s): ${JSON.stringify(consoleErrors.slice(0, 5))}`)
+      }
+      expect(pageErrors, `page errors on ${name}`).to.deep.equal([])
+    })
+  })
+}
+
+describe('Route smoke', () => {
+  before(collectErrors)
+
+  describe('dashboard', () => {
+    const base = DASHBOARD_BASE
+
+    smoke('dashboard-home', base || '/', 'dashboard-home-page')
+    smoke('dashboard-deployments-index', `${base}${DELIMITER}/deployments`, 'dashboard-deployments-page')
+    smoke('dashboard-environments-index', `${base}${DELIMITER}/environments`, 'dashboard-environments-page')
+
+    // Parameterized routes need real names. Derive them from the store rather
+    // than hardcoding, and skip when the fixture project has none yet.
+    it('renders dashboard-environment and dashboard-deployment', function () {
+      cy.visit(`${base}${DELIMITER}/environments`)
+      cy.withStore().then(store => {
+        const environments = store.getters.getEnvironments || []
+        // each entry carries _environment, assigned on fetch in the
+        // environments store
+        const deployments = store.getters.getDeployments || []
+
+        if (!environments.length) {
+          cy.task('log', '[route-smoke] no environments in fixture project; skipping parameterized routes')
+          return
+        }
+
+        const environmentName = environments[0].name
+        pageErrors.length = 0
+        cy.visit(`${base}${DELIMITER}/environments/${environmentName}`)
+        cy.get('[data-testid="dashboard-environment-page"]').should('exist')
+        cy.screenshot('route-smoke/dashboard-environment', {capture: 'viewport', overwrite: true})
+        cy.then(() => expect(pageErrors, 'page errors on dashboard-environment').to.deep.equal([]))
+
+        const deployment = deployments[0]
+        if (!deployment) {
+          cy.task('log', '[route-smoke] no deployments in fixture project; skipping deployment route')
+          return
+        }
+
+        pageErrors.length = 0
+        cy.visit(`${base}${DELIMITER}/deployments/${deployment._environment || environmentName}/${deployment.name}`)
+        cy.get('[data-testid="dashboard-deployment-page"]').should('exist')
+        cy.screenshot('route-smoke/dashboard-deployment', {capture: 'viewport', overwrite: true})
+        cy.then(() => expect(pageErrors, 'page errors on dashboard-deployment').to.deep.equal([]))
+      })
+    })
+  })
+
+  describe('project overview', () => {
+    if (!SMOKE_PROJECT) {
+      it.skip('needs REPOS_NAMESPACE or SMOKE_PROJECT to locate a blueprint project', () => {})
+      return
+    }
+
+    smoke('project-home', `/${SMOKE_PROJECT}`, 'project-home-page')
+  })
+
+  // The chart needs cloudmap data, which a bare `unfurl init` fixture project
+  // does not have — 00_visitor/visit_cloudchart.cy.js fails standalone for the
+  // same reason. Opt in where the cloudmap is configured.
+  describe('public cloud', () => {
+    if (!Cypress.env('UNFURL_CLOUDMAP_PATH')) {
+      it.skip('needs UNFURL_CLOUDMAP_PATH to render the cloud chart', () => {})
+      return
+    }
+
+    it('renders the cloud chart', () => {
+      pageErrors.length = 0
+      cy.visit('/cloud')
+      cy.get('#chart svg').should('be.visible')
+      cy.screenshot('route-smoke/public-cloud', {capture: 'viewport', overwrite: true})
+      cy.then(() => expect(pageErrors, 'page errors on public-cloud').to.deep.equal([]))
+    })
+  })
+})

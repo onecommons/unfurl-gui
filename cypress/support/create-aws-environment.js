@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const ENVIRONMENT_NAME = Cypress.env('AWS_ENVIRONMENT_NAME')
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
@@ -89,7 +90,7 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
 
       cy.reload()
     } else {
-      cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+      cy.visit(dashboardPath(`/-/environments`))
       createEnvironmentButton().click()
       cy.awsCompleteEnvironmentDialog({environmentName})
       cy.url().should('include', environmentName)
@@ -110,7 +111,7 @@ Cypress.Commands.add('createAWSEnvironment', (options) => {
         return
       }
 
-      viewingEnv || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      viewingEnv || cy.visit(dashboardPath(`/-/environments/${environmentName}`))
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
       }

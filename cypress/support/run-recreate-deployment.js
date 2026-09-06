@@ -186,7 +186,7 @@ Cypress.Commands.add('recreateDeployment', options => {
           // }
           for (const property of template.properties) {
             if(property.value == null) continue
-            cy.get('.el-card__body > [class^="formily-element-form"]').should('exist')
+            cy.get('[data-testid="oc-inputs-form"]').should('exist')
             let value = property.value
             let name = property.name
             if(name == 'subdomain') {
@@ -215,27 +215,27 @@ Cypress.Commands.add('recreateDeployment', options => {
             inputWait = 100
 
             cy.document().then($document2 => {
-              // NOTE coupled tightly with element ui
-              let q = `
-                [data-testid="oc-input-${template.name}-${property.name}"].el-input,
-                [data-testid="oc-input-${template.name}-${property.name}"].el-input-number
-              `
-              let qChecked = `label[data-testid="oc-input-${template.name}-${property.name}"].el-checkbox`
-              let el
-              if($document2.querySelector(q)) {
-                cy.get(`[data-testid="oc-input-${template.name}-${property.name}"]`)
+              // data-input-type is the schema type, set alongside data-testid
+              // in oc_inputs.vue, so this branches on widget kind without
+              // depending on the component library's own classes
+              const q = `[data-testid="oc-input-${template.name}-${property.name}"]`
+              const el = $document2.querySelector(q)
+              const inputType = el?.getAttribute('data-input-type')
+
+              if(!el) {
+                cy.log(`Could not find ${property.name} on ${template.name}`)
+                cy.log(`Used selector ${q}`)
+              } else if (inputType == 'boolean') {
+                cy.getInputOrTextarea(q).then($input => {
+                  if($input.prop('checked') != !!value) {
+                    cy.getInputOrTextarea(q).click({force: true})
+                  }
+                })
+              } else {
+                cy.getInputOrTextarea(q)
                   .last()
                   .invoke('val', '')
                   .type(value)
-              } else if (el = $document2.querySelector(qChecked)) {
-                if(el.classList.contains('is-checked') && !value) {
-                  cy.get(qChecked).click()
-                } else if(!el.classList.contains('is-checked') && value) {
-                  cy.get(qChecked).click()
-                }
-              } else {
-                cy.log(`Could not find ${property.name} on ${template.name}`)
-                cy.log(`Used selector ${q}`)
               }
             })
           }

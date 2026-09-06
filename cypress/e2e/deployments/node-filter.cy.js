@@ -19,9 +19,12 @@ describe('Node filter', () => {
   })
 
   it('Can apply a min constraint', () => {
-    const selector = ['ec2-instance', 'compute'].map(
-      name => `[data-testid="oc-input-${name}-mem_size"] input`
-    ).join(', ')
+    // only one of the two templates is present; match the input itself
+    // whether the testid lands on it or on a wrapper around it
+    const selector = ['ec2-instance', 'compute'].flatMap(name => {
+      const testid = `[data-testid="oc-input-${name}-mem_size"]`
+      return [`input${testid}`, `textarea${testid}`, `${testid} input`]
+    }).join(', ')
     cy.get(selector).invoke('val', '').type('1999')
     cy.get(selector).blur()
     cy.contains('The field value cannot be less than 2000').should('be.visible')

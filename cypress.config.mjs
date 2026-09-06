@@ -5,6 +5,9 @@ const defaultCommandTimeout = parseInt(process.env.CY_COMMAND_TIMEOUT) || 15000
 
 export default defineConfig({
   defaultCommandTimeout,
+  // pinned so baseline screenshots stay comparable across cypress versions
+  viewportWidth: 1280,
+  viewportHeight: 800,
   videoCompression: false,
   video: false,
   numTestsKeptInMemory: 1,

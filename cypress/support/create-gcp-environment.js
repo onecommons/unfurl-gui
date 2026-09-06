@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const GOOGLE_APPLICATION_CREDENTIALS = Cypress.env('GOOGLE_APPLICATION_CREDENTIALS')
 const GCP_ZONE = Cypress.env('CLOUDSDK_COMPUTE_ZONE') || 'us-central1-a'
 const GCP_DNS_ZONE = Cypress.env('GCP_DNS_ZONE')
@@ -5,25 +6,57 @@ const GCP_DNS_TYPE = Cypress.env('GCP_DNS_TYPE')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const USERNAME = Cypress.env('OC_IMPERSONATE')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
+const STANDALONE_UNFURL = Cypress.env('STANDALONE_UNFURL')
 
 function createGCPEnvironment({environmentName, shouldCreateExternalResource, shouldCreateDNS}) {
   let environmentCreated
 
   cy.whenEnvironmentAbsent(environmentName, () => {
-    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
-    cy.clickCreateEnvironmentButton()
-    cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
-    cy.url().should('include', environmentName)
-    authenticateGCP()
+    if(STANDALONE_UNFURL) {
+      // there is no environment-creation UI standalone; write the environment
+      // into the dashboard project directly, as createAWSEnvironment does
+      const UNFURL_TEST_TMPDIR = Cypress.env('UNFURL_TEST_TMPDIR')
+      cy.execLoud(`testing-shared/ufhome-add-environment.sh gcp "${UNFURL_TEST_TMPDIR}/ufsv" "${environmentName}"`)
 
-    validateGCPEnvironment()
+      // fixtures/environments/gcp.yaml resolves credentials from the project's
+      // secrets/ dir; without them the environment is incomplete and the
+      // deployment dialog's Next button stays disabled.
+      // GOOGLE_APPLICATION_CREDENTIALS is a cypress *fixture* path here —
+      // integration-test.js copies the real file into cypress/fixtures/tmp/ —
+      // so read it through cy.fixture rather than treating it as a filesystem path.
+      cy.fixture(GOOGLE_APPLICATION_CREDENTIALS).then(credentials => {
+        cy.writeFile(`${UNFURL_TEST_TMPDIR}/ufsv/secrets/application-credentials.json`, credentials)
+      })
+
+      cy.wait(1000)
+
+      cy.window().then(win => {
+        cy.request({
+          method: 'POST',
+          url: `/clear_project_file_cache?auth_project=${win.gon.home_project}`
+        })
+      })
+
+      cy.reload()
+    } else {
+      cy.visit(dashboardPath(`/-/environments`))
+      cy.clickCreateEnvironmentButton()
+      cy.completeEnvironmentDialog({environmentName, provider: 'gcp'})
+      cy.url().should('include', environmentName)
+      authenticateGCP()
+
+      validateGCPEnvironment()
+    }
     environmentCreated = true
   })
 
   // create external resource
-  if (shouldCreateExternalResource) {
+  // The external-resource (DNS/mail) flow is GUI-only; standalone has no
+  // "Add External Resource" UI. Specs that only exercise the deployment form
+  // do not need it.
+  if (shouldCreateExternalResource && !STANDALONE_UNFURL) {
     cy.whenInstancesAbsent(environmentName, () => {
-      environmentCreated || cy.visit(`/${DASHBOARD_DEST}/-/environments/${environmentName}`)
+      environmentCreated || cy.visit(dashboardPath(`/-/environments/${environmentName}`))
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(GCP_DNS_TYPE, GCP_DNS_ZONE)
       }

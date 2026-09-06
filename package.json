@@ -32,7 +32,8 @@
     "set-repo-visibility": "./scripts/set-repo-visibility",
     "push-local-repo": "./scripts/push-local-repo",
     "clean-har": "./scripts/src/clean-har.js",
-    "membership-test": "./scripts/src/membership-test.js"
+    "membership-test": "./scripts/src/membership-test.js",
+    "test:packages": "jest packages --runInBand"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.11",
@@ -101,6 +102,8 @@
     "jest": "^29.6.0",
     "jest-environment-jsdom": "^29.7.0",
     "node-gyp": "^10.1.0",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "prettier": "^1.19.1",
     "thread-loader": "3.0.4",
     "vue-cli-plugin-apollo": "^0.22.2",

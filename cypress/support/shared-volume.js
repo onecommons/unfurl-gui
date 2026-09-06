@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 
@@ -16,7 +17,7 @@ export function deploySharedVolume1(dep, fixture, cardTestId) {
     subdomain
   })
 
-  cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=running`)
+  cy.visit(dashboardPath(`/-/deployments?show=running`))
 
   cy.contains("a", dep).click()
 
@@ -40,7 +41,7 @@ export function deploySharedVolume2(dep1, dep2, fixture, cardTestId) {
     subdomain
   })
 
-  cy.visit(`/${DASHBOARD_DEST}/-/deployments`)
+  cy.visit(dashboardPath(`/-/deployments`))
 
   cy.contains("a", dep1).click()
 

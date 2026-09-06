@@ -1,4 +1,5 @@
 import axios from 'axios'
+import {DANGER_ALERT} from '../../support/alerts'
 
 const OC_URL = Cypress.env('OC_URL')
 const NAMESPACE_PROJECTS = Cypress.env('NAMESPACE_PROJECTS')
@@ -27,7 +28,7 @@ describe('Blueprints namespace', () => {
       })
 
       afterEach(() => {
-        cy.get('.flash-container .gl-alert-danger').should('not.exist')
+        cy.get(DANGER_ALERT).should('not.exist')
       })
 
       function thisProject(assertion, cb) {
@@ -88,7 +89,7 @@ describe('Blueprints namespace', () => {
       thisProject('can click star', project => {
         cy.contains('button.toggle-star', 'Star').click()
         cy.wait(3000) // give flash a chance to trigger
-        cy.get('.flash-container .gl-alert-danger').should('not.exist')
+        cy.get(DANGER_ALERT).should('not.exist')
         cy.url().should('contain', '/users/sign_in')
       })
     })

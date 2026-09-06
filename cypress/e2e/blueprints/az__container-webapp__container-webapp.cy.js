@@ -54,18 +54,14 @@ function spec() {
       verificationArgs: {repository: repoName},
       fixture: deploymentFixturePath(SPEC),
       afterRecreateDeployment() {
-        cy.contains('.el-input-group__prepend', 'Github Project').next().type(`${GITHUB_USERNAME}/${repoName}`)
+        cy.getInputOrTextarea('[data-testid="oc-input-github-project"]').type(`${GITHUB_USERNAME}/${repoName}`)
         cy.contains('button', 'Import').click({force: true})
         cy.contains('a', 'Container').click()
-        cy.contains('.formily-element-form-item-label', 'environment').next().within(() => {
-          cy.contains('button:visible', 'Add').click()
-          cy.getInputOrTextarea('[placeholder="key"]').type('PORT')
-          cy.getInputOrTextarea('[placeholder="value"]').type('5000')
-        })
-        cy.contains('.formily-element-form-item-label', 'ports').next().within(() => {
-          cy.contains('button:visible', 'Add').click()
-          cy.get('input.el-input__inner').type('5000:5000')
-        })
+        cy.get('[data-testid="oc-input-the_app-container.environment-add"]').click()
+        cy.getInputOrTextarea('[data-testid="oc-input-the_app-container.environment-key"]').last().type('PORT')
+        cy.getInputOrTextarea('[data-testid="oc-input-the_app-container.environment-value"]').last().type('5000')
+        cy.get('[data-testid="oc-input-the_app-container.ports-add"]').click()
+        cy.getInputOrTextarea('[data-testid="oc-input-the_app-container.ports-value"]').last().type('5000:5000')
         cy.contains('Redeploy every time').click()
         cy.contains('button', 'Imported', {timeout: BASE_TIMEOUT * 3})
         cy.wait(500)

@@ -1,3 +1,4 @@
+import {dashboardPath} from './dashboard-path'
 const ENVIRONMENT_NAME = 'generic'
 const AWS_ACCESS_KEY = Cypress.env('AWS_ACCESS_KEY_ID')
 const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
@@ -40,7 +41,7 @@ Cypress.Commands.add('createGenericEnvironment', (options) => {
     options
   )
 
-  cy.visit(`/${DASHBOARD_DEST}/-/environments`)
+  cy.visit(dashboardPath(`/-/environments`))
   createEnvironmentButton().click()
   cy.genericCompleteEnvironmentDialog({environmentName})
   cy.url().should('include', environmentName)

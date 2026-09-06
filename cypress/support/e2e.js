@@ -16,6 +16,7 @@
 // Import commands.js using ES2015 syntax:
 import 'cypress-fail-fast'
 import './commands'
+import {dashboardPath} from './dashboard-path'
 
 const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')
@@ -259,7 +260,7 @@ before(() => {
           cy.url().should('not.contain', 'admin')
 
           if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-            cy.visit(`/${DASHBOARD_DEST}`)
+            cy.visit(dashboardPath(``))
           }
         }
       } else if (GENERATED_PASSWORD && IMPERSONATE) {
@@ -278,7 +279,7 @@ before(() => {
       }
 
       if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-        cy.visit(`/${DASHBOARD_DEST}`)
+        cy.visit(dashboardPath(``))
       }
     }
   })

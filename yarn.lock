@@ -17232,6 +17232,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pixelmatch@npm:^7.2.0":
+  version: 7.2.0
+  resolution: "pixelmatch@npm:7.2.0"
+  dependencies:
+    pngjs: ^7.0.0
+  bin:
+    pixelmatch: bin/pixelmatch
+  checksum: bcd8a8787f021e0a33d4e7e5a048fb4899fabe6d0a23475867cc29f82f3151652add05a55c55bb788b36b7e98a6af6764247fbf855e7fa9ac98a9e46753f6496
+  languageName: node
+  linkType: hard
+
 "pkg-dir@npm:^1.0.0":
   version: 1.0.0
   resolution: "pkg-dir@npm:1.0.0"
@@ -17263,6 +17274,13 @@ __metadata:
   version: 8.0.0
   resolution: "pluralize@npm:8.0.0"
   checksum: 08931d4a6a4a5561a7f94f67a31c17e6632cb21e459ab3ff4f6f629d9a822984cf8afef2311d2005fbea5d7ef26016ebb090db008e2d8bce39d0a9a9d218736e
+  languageName: node
+  linkType: hard
+
+"pngjs@npm:^7.0.0":
+  version: 7.0.0
+  resolution: "pngjs@npm:7.0.0"
+  checksum: b19a018930d27de26229c1b3ff250b3a25d09caa22cbb0b0459987d91eb0a560a18ab5d67da45a38ed7514140f26d1db58de83c31159ec101f2bb270a3c707f1
   languageName: node
   linkType: hard
 
@@ -20938,6 +20956,8 @@ __metadata:
     mkdirp: ^0.5.5
     node-gyp: ^10.1.0
     pikaday: ^1.8.0
+    pixelmatch: ^7.2.0
+    pngjs: ^7.0.0
     prettier: ^1.19.1
     regenerator-runtime: ^0.14.0
     sass: 1.34.1
