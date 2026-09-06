@@ -27,7 +27,17 @@ try {
 }
 
 const ROOT = path.resolve(__dirname, '../..')
-const BASELINE_DIR = path.join(ROOT, 'cypress/baseline')
+
+// Font rendering differs enough between macOS and Linux to move ~4-6% of
+// pixels, which would swamp a real regression. Keep a baseline per platform so
+// the comparison is always same-platform; SCREENSHOT_PLATFORM overrides it
+// (e.g. to check a CI baseline locally). Falls back to a flat
+// cypress/baseline/ if no per-platform directory exists.
+const PLATFORM = process.env.SCREENSHOT_PLATFORM || process.platform
+const platformDir = path.join(ROOT, 'cypress/baseline', PLATFORM)
+const BASELINE_DIR = fs.existsSync(platformDir)
+  ? platformDir
+  : path.join(ROOT, 'cypress/baseline')
 const CURRENT_DIR = path.join(ROOT, 'cypress/screenshots')
 const OUT_DIR = path.join(ROOT, 'cypress/screenshot-diffs')
 
@@ -133,6 +143,7 @@ const report = [
 ].join('\n')
 
 console.log('=== screenshot comparison ===')
+console.log(`baseline: ${path.relative(ROOT, BASELINE_DIR)}`)
 console.log(report)
 for (const key of ['changed', 'sizeMismatch', 'missingBaseline', 'added', 'unreadable']) {
   if (results[key].length) {

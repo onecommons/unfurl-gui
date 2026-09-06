@@ -189,13 +189,30 @@ Each route asserts one landmark testid: `dashboard-home-page`,
 
 `route_smoke.cy.js` writes `cypress/screenshots/route-smoke/<route>.png`. The
 viewport is pinned in `cypress.config.mjs` (1280x800) so images stay
-comparable.
+comparable; CI confirmed `size mismatch: 0`, so only rendering differs across
+platforms.
 
-Commit the first green run's screenshots to `cypress/baseline/`, then:
+Baselines are **per platform** — `cypress/baseline/darwin/` and
+`cypress/baseline/linux/` — because font rendering moves ~4-6% of pixels
+between macOS and Linux, which would swamp a real regression. Raising the
+threshold past that is the wrong fix: it would also hide any regression
+smaller than 6%. The comparison always runs same-platform, so the diff means
+"did this change break something", not "which OS am I on".
 
 ```bash
 ./scripts/src/compare-screenshots.js               # report only, always exits 0
+SCREENSHOT_PLATFORM=linux ./scripts/src/compare-screenshots.js   # check CI's set
 ./scripts/src/compare-screenshots.js --strict 'route-smoke/*'
+```
+
+The platform comes from `process.platform`, overridable with
+`SCREENSHOT_PLATFORM`. If no per-platform directory exists it falls back to a
+flat `cypress/baseline/`. Refresh a platform's set from a green run:
+
+```bash
+gh run download <run-id> -n cypress-screenshots -D /tmp/ci-shots
+rm -rf cypress/baseline/linux/route-smoke
+cp -R /tmp/ci-shots/00_visitor/route_smoke.cy.js/route-smoke cypress/baseline/linux/
 ```
 
 It tolerates a missing baseline and a dimension change rather than throwing,
