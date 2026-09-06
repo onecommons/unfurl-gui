@@ -89,7 +89,7 @@ export default {
         <div v-if="this.getCurrentContext != 'environment'" class="d-flex mt-5 p align-items-center">
             <detect-icon size="24" name="expire" />
             <div class="ml-5">
-                <el-checkbox v-model="incrementalDeploymentEnabled" :label="_label"/>
+                <el-checkbox data-testid="incremental-deployment-checkbox" v-model="incrementalDeploymentEnabled" :label="_label"/>
             </div>
         </div>
 

@@ -132,13 +132,13 @@ export default {
 </script>
 <template>
     <el-card class="d-flex flex-column">
-        <el-autocomplete label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions">
+        <el-autocomplete data-testid="oc-input-local-project" label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions">
             <template #prepend>Local Project</template>
         </el-autocomplete>
-        <el-autocomplete label="Container Image" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="repository_id" :fetch-suggestions="getRepositoryIdSuggestions">
+        <el-autocomplete data-testid="oc-input-local-image" label="Container Image" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="repository_id" :fetch-suggestions="getRepositoryIdSuggestions">
             <template #prepend>Container Image</template>
         </el-autocomplete> 
-        <el-input label="Tag" clearable class="mt-4" style="width: min(300px, 100%)" v-if="project_id" v-model="repository_tag" :fetch-suggestions="getRepositoryIdSuggestions">
+        <el-input data-testid="oc-input-local-tag" label="Tag" clearable class="mt-4" style="width: min(300px, 100%)" v-if="project_id" v-model="repository_tag" :fetch-suggestions="getRepositoryIdSuggestions">
             <template #prepend>Tag</template>
         </el-input> 
 

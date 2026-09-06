@@ -32,7 +32,7 @@ export default {
 
 </script>
 <template>
-    <div>
+    <div data-testid="dashboard-deployments-page">
       <dashboard-breadcrumbs :items="breadcrumbItems" />
       <deployments-index-table tabs :items="deployments"/>
     </div>

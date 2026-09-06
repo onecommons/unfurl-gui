@@ -24,13 +24,19 @@ export default {
     },
     methods: {
         assignGenerated(force=false) {
-            let sharedAncestor = this.$el.parentNode
+            const testid = this.property['x-component-props']['data-testid']
+            // scope to the field's decorator rather than walking up to a
+            // widget-library class name
+            const sharedAncestor = this.$el.closest(`[data-testid="${testid}-item"]`) || document
 
-            while(!sharedAncestor.classList.contains('formily-element-form-item-control-content')) {
-                sharedAncestor = sharedAncestor.parentNode
+            // the testid may sit on the input itself or on a wrapper around it
+            const tagged = sharedAncestor.querySelector(`[data-testid="${testid}"]`)
+            const el = tagged?.matches('input, textarea')? tagged: tagged?.querySelector('input, textarea')
+
+            if(!el) {
+                console.warn(`Could not resolve an input for ${testid}`)
+                return
             }
-
-            const el = sharedAncestor.querySelector(`[data-testid="${this.property['x-component-props']['data-testid']}"] input`)
 
             if((!force) && el.value) {
                 this.showModal = true
@@ -47,7 +53,7 @@ export default {
 </script>
 <template>
     <div class="position-absolute ml-1">
-        <el-button icon="el-icon-s-opportunity" @click="assignGenerated(false)">Generate</el-button>
+        <el-button :data-testid="`${property['x-component-props']['data-testid']}-generate`" icon="el-icon-s-opportunity" @click="assignGenerated(false)">Generate</el-button>
         <gl-modal
             v-model="showModal"
             @primary="assignGenerated(true)"

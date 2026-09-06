@@ -936,7 +936,7 @@ export default {
 };
 </script>
 <template>
-  <div>
+  <div data-testid="project-templates-page">
     <div v-if="shouldRenderTemplates" :key="componentKey">
 
       <!-- Header of templates -->

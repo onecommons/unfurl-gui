@@ -140,10 +140,10 @@ export default {
 </script>
 <template>
     <el-card class="d-flex flex-column">
-        <el-autocomplete label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions" :disabled="readonly">
+        <el-autocomplete data-testid="oc-input-uc-project" label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions" :disabled="readonly">
             <template #prepend>Local Project</template>
         </el-autocomplete>
-        <el-autocomplete label="Branch" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="branch" :fetch-suggestions="getBranchSuggestions" :disabled="readonly">
+        <el-autocomplete data-testid="oc-input-uc-branch" label="Branch" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="branch" :fetch-suggestions="getBranchSuggestions" :disabled="readonly">
             <template #prepend>Branch</template>
         </el-autocomplete> 
         <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>

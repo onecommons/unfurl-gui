@@ -106,7 +106,7 @@ export default {
 
 </script>
 <template>
-<div>
+<div data-testid="dashboard-home-page">
     <dashboard-breadcrumbs />
     <div style="width: fit-content; margin: auto;">
         <dashboard-welcome v-if="!standalone && totalDeploymentsCount == 0" />

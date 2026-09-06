@@ -439,7 +439,7 @@ export default {
 }
 </script>
 <template>
-    <div class="environment">
+    <div class="environment" data-testid="dashboard-environment-page">
         <dashboard-breadcrumbs :items="breadcrumbItems" />
         <div class="mt-6 row">
             <div class="col">

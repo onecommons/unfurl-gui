@@ -12,12 +12,6 @@ export default [
     path: '/',
     component: DashboardHome,
   },
-    // redundant
-  {
-    //name: constants.OC_DASHBOARD_HOME,
-    path: '/home',
-    component: DashboardHome,
-  },
   {
     name: constants.OC_DASHBOARD_ENVIRONMENTS,
     path: '$DELIMITER/environments/:name',

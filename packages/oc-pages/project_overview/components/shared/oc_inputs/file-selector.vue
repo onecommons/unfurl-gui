@@ -348,18 +348,18 @@ export default {
                 <a :href="linkForDisplayValue" target="_blank">
                     <b class="text-monospace" style="font-size: 12px;">{{displayValue}}</b>
                 </a>
-                <el-button @click="clear" icon="el-icon-close" round class="p-1" style="font-size: 12px;"/>
+                <el-button data-testid="file-selector-clear" @click="clear" icon="el-icon-close" round class="p-1" style="font-size: 12px;"/>
             </div>
             <div v-else-if="!selecting">
                 <label style="font-size: 0.85em;" class="mb-4">
                     Relative to:
-                    <el-select v-model="location">
+                    <el-select data-testid="file-selector-location" v-model="location">
                         <el-option label="Dashboard root" value="project" />
                         <el-option v-if="!forbidEnsembleDirectory" label="Deployment directory" value="." />
                         <el-option label="Blueprint repository root" value="spec" />
                     </el-select>
                 </label>
-                <el-button @click="selecting=true" class="p-2 w-100">Choose file</el-button>
+                <el-button data-testid="file-selector-choose" @click="selecting=true" class="p-2 w-100">Choose file</el-button>
             </div>
             <div v-if="value || !selecting" class="mb-4"/> <!--spacer-->
         </div>
@@ -369,13 +369,13 @@ export default {
         <div v-if="selecting">
             <div class="d-flex justify-content-between align-items-center ml-3">
                 <a style="font-size: 0.9em;" title="View and make changes to repository files" :href="linkForViewInRepository" target="_blank">View in repository tree</a>
-                <el-button title="Check for new files" icon="el-icon-refresh" style="padding: 6px; font-size: 1em;" circle @click="fetchFilesList"></el-button>
+                <el-button data-testid="file-selector-refresh" title="Check for new files" icon="el-icon-refresh" style="padding: 6px; font-size: 1em;" circle @click="fetchFilesList"></el-button>
             </div>
-            <tree ref="stupidTree" v-if="treeDisplayData.length > 0" :custom-styles="$options.treeStyles" :custom-options="treeOptions" :nodes="treeDisplayData"/>
+            <tree data-testid="file-selector-tree" ref="stupidTree" v-if="treeDisplayData.length > 0" :custom-styles="$options.treeStyles" :custom-options="treeOptions" :nodes="treeDisplayData"/>
 
             <div class="d-flex">
-                <el-button v-if="fileSelection !== null" @click="confirm" type="primary" class="p-2 w-100">Confirm <b class="text-monospace">{{fileSelection.split('/').pop()}}</b></el-button>
-                <el-button @click="selecting=false" class="p-2 w-100">Cancel</el-button>
+                <el-button data-testid="file-selector-confirm" v-if="fileSelection !== null" @click="confirm" type="primary" class="p-2 w-100">Confirm <b class="text-monospace">{{fileSelection.split('/').pop()}}</b></el-button>
+                <el-button data-testid="file-selector-cancel" @click="selecting=false" class="p-2 w-100">Cancel</el-button>
             </div>
         </div>
     </div>

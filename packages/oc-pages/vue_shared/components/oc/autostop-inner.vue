@@ -107,8 +107,8 @@ export default {
             Automatically stop the deployment at a specified time:
         </div>
         <div>
-            <el-date-picker class="ml-2" type="date" v-model="scheduledAutostop" :picker-options="pickerOptions"/>
-            <el-input style="width: 220px;" type="time" v-model="scheduledAutostopTime" clearable/>
+            <el-date-picker data-testid="autostop-date" class="ml-2" type="date" v-model="scheduledAutostop" :picker-options="pickerOptions"/>
+            <el-input data-testid="autostop-time" style="width: 220px;" type="time" v-model="scheduledAutostopTime" clearable/>
         </div>
     </div>
 </template>

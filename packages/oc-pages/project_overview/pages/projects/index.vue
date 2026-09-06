@@ -449,7 +449,7 @@ export default {
 }
 </script>
 <template>
-    <div>
+    <div data-testid="project-home-page">
         <HeaderProjectView :project-info="getApplicationBlueprint" />
 
         <div v-if="getApplicationBlueprint && getApplicationBlueprint.name">

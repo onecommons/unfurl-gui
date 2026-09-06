@@ -100,7 +100,9 @@ export default {
     schema() {
       return {
         type: this.inputsSchema?.type,
-        properties: this.convertProperties(this.schemaFields),
+        // seeded with propertyPath so a nested tab's field can't collide
+        // with a same-named top-level one (both stay in the DOM under v-show)
+        properties: this.convertProperties(this.schemaFields, this.propertyPath),
       }
     },
 
@@ -172,9 +174,17 @@ export default {
         )
       }
     },
-    convertProperties(properties) {
+    inputTestid(namePath) {
+      return `oc-input-${this.card.name}-${namePath.join('.')}`
+    },
+
+    // namePath is the chain of parent property names. It only affects test
+    // ids: nested properties would otherwise collide with same-named
+    // top-level ones, which is why specs used to scope by .el-popover.
+    convertProperties(properties, namePath = []) {
       return _.mapValues(properties, (value, name) => {
         const currentValue = {...value, name};
+        const testid = this.inputTestid([...namePath, name])
 
         if(currentValue.sensitive && !this.userCanEdit) return null
 
@@ -184,7 +194,9 @@ export default {
 
         currentValue.title = currentValue.title ?? name;
         currentValue['x-decorator'] = 'FormItem'
-        currentValue['x-decorator-props'] = {}
+        // the decorator wraps label, tooltip, addonAfter and feedback; the
+        // widget itself carries data-testid
+        currentValue['x-decorator-props'] = {'data-testid': `${testid}-item`}
 
         if(currentValue.type == 'number') {
           currentValue['x-decorator-props'].className = 'oc-input-number'
@@ -203,7 +215,7 @@ export default {
 
         currentValue['x-component-props'] = {
           placeholder: currentValue.placeholder || ' ',
-          'data-testid': `oc-input-${this.card.name}-${currentValue.name}`,
+          'data-testid': testid,
           componentType,
           name,
           schema: value,
@@ -218,7 +230,7 @@ export default {
           return null;
         }
         if (componentType === 'object' && currentValue.properties) {
-          currentValue.properties = this.convertProperties(currentValue.properties)
+          currentValue.properties = this.convertProperties(currentValue.properties, [...namePath, name])
         } else if (componentType === 'object' && currentValue.additionalProperties) {
           currentValue.items = {
             type: 'object',
@@ -232,20 +244,27 @@ export default {
                     'x-decorator': 'FormItem',
                     'x-component': 'Input',
                     'x-component-props': {
-                      placeholder: 'key'
+                      placeholder: 'key',
+                      'data-testid': `${testid}-key`,
+                      'data-input-type': 'string'
                     }
                   },
                   value: {
                     'x-decorator': 'FormItem',
                     'x-component': ComponentMap[currentValue.additionalProperties.type],
                     'x-component-props': {
-                      placeholder: 'value'
+                      placeholder: 'value',
+                      'data-testid': `${testid}-value`,
+                      'data-input-type': currentValue.additionalProperties.type || 'string'
                     }
                   },
                   remove: {
                     type: 'void',
                     'x-decorator': 'FormItem',
                     'x-component': 'ArrayItems.Remove',
+                    'x-component-props': {
+                      'data-testid': `${testid}-remove`
+                    }
                   }
                 }
               }
@@ -255,12 +274,16 @@ export default {
             add: {
               type: 'void',
               title: currentValue.additionalPropertiesAddLabel || 'Add',
-              'x-component': 'ArrayItems.Addition'
+              'x-component': 'ArrayItems.Addition',
+              'x-component-props': {
+                'data-testid': `${testid}-add`
+              }
             }
           }
 
           currentValue['x-decorator'] = 'FormItem'
           currentValue['x-component'] = 'ArrayItems'
+          currentValue['x-component-props']['data-input-type'] = 'array'
           currentValue['type'] = 'array'
 
           // NOTE since this has 'type: object' but using the array component
@@ -281,12 +304,19 @@ export default {
                   input: {
                     ...items,
                     'x-decorator': 'FormItem',
-                    'x-component': ComponentMap[items.type]
+                    'x-component': ComponentMap[items.type],
+                    'x-component-props': {
+                      'data-testid': `${testid}-value`,
+                      'data-input-type': items.type || 'string'
+                    }
                   },
                   remove: {
                     type: 'void',
                     'x-decorator': 'FormItem',
-                    'x-component': 'ArrayItems.Remove'
+                    'x-component': 'ArrayItems.Remove',
+                    'x-component-props': {
+                      'data-testid': `${testid}-remove`
+                    }
                   }
                 }
               }
@@ -296,7 +326,10 @@ export default {
             add: {
               type: 'void',
               title: 'Add',
-              'x-component': 'ArrayItems.Addition'
+              'x-component': 'ArrayItems.Addition',
+              'x-component-props': {
+                'data-testid': `${testid}-add`
+              }
             }
           }
         } else {
@@ -316,6 +349,11 @@ export default {
         if(currentValue.input_type) {
           componentType = currentValue.input_type
         }
+
+        // set after componentType is final so enum/password/textarea report the
+        // widget actually rendered; specs branch on this instead of the widget
+        // library's own classes
+        currentValue['x-component-props']['data-input-type'] = componentType
 
         currentValue['x-component'] = ComponentMap[componentType]
         return currentValue;
@@ -526,6 +564,7 @@ export default {
   </gl-tabs>
   <FormProvider v-if="form" v-show="displayForm" :form="form">
     <FormLayout
+        data-testid="oc-inputs-form"
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"
         :label-align="['left', 'left']"

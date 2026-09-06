@@ -287,7 +287,7 @@ export default {
 }
 </script>
 <template>
-    <div id="deployment-view-container">
+    <div id="deployment-view-container" data-testid="dashboard-deployment-page">
         <dashboard-breadcrumbs style="overflow-anchor: auto" :items="breadcrumbItems" />
         <deployment-index-table :items="tableItems" hide-filter />
         <gl-tabs ref="tabs" class="mt-4" v-model="currentTab">

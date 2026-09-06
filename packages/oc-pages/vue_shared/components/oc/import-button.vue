@@ -62,5 +62,5 @@ export default {
 }
 </script>
 <template>
-    <el-button v-if="repoImport" :loading="loading" :disabled="disabled" :type="type" @click="dispatchClick">{{text}}</el-button>
+    <el-button data-testid="import-button" v-if="repoImport" :loading="loading" :disabled="disabled" :type="type" @click="dispatchClick">{{text}}</el-button>
 </template>

@@ -140,7 +140,7 @@ export default {
         <ol>
             <error-small class="m-0" :condition="!subdomain">A subdomain is required to use a CNAME.</error-small>
             <li>Enter the domain you would like to use below:</li>
-            <el-input v-model="name" class="mb-2">
+            <el-input data-testid="oc-input-dns-name" v-model="name" class="mb-2">
                 <template #prepend>Domain</template>
             </el-input>
             <li v-bind="descAttrs">Visit your DNS provider or registrar's site to create a CNAME record for this service. This functionality will usually be available under "Advanced DNS".
@@ -179,7 +179,7 @@ export default {
                     <div>
                         (Optional) Verify your CNAME record <br>
                         <div class="d-flex">
-                            <el-button :type="verifiedStatus == ERROR? 'danger': 'primary'" :loading="verifiedStatus == VERIFYING" @click="checkCName">
+                            <el-button data-testid="dns-check-cname" :type="verifiedStatus == ERROR? 'danger': 'primary'" :loading="verifiedStatus == VERIFYING" @click="checkCName">
                                 <span v-if="verifiedStatus == VERIFYING">Verifying CNAME</span>
                                 <span v-else-if="verifiedStatus == COMPLETE">CNAME was verified successfully</span>
                                 <span v-else-if="verifiedStatus == ERROR">Couldn't connect to DNS service</span>

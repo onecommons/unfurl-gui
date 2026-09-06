@@ -27,12 +27,12 @@ export default {
     <div class="map-controls-inner d-flex flex-wrap justify-content-end ml-5 mr-5" style="pointer-events: none;">
       <div class="d-flex flex-column align-items-end">
         <div class="d-flex flex-column zoom-buttons" style="width: 60px;">
-          <el-button @click="$emit('center')" size="mini" icon="el-icon-aim" style="" />
-          <el-button @click="$emit('zoomin')" size="mini" icon="el-icon-plus" style="" class="ml-0"/>
-          <el-button @click="$emit('zoomout')" size="mini" icon="el-icon-minus" style="" class="ml-0"/>
+          <el-button data-testid="map-center" @click="$emit('center')" size="mini" icon="el-icon-aim" style="" />
+          <el-button data-testid="map-zoomin" @click="$emit('zoomin')" size="mini" icon="el-icon-plus" style="" class="ml-0"/>
+          <el-button data-testid="map-zoomout" @click="$emit('zoomout')" size="mini" icon="el-icon-minus" style="" class="ml-0"/>
         </div>
         <div class="d-flex zoom-buttons">
-          <el-select v-model="selected">
+          <el-select data-testid="map-select" v-model="selected">
             <el-option label="Categories First" value="Categories First"/>
             <el-option label="Providers First" value="Providers First"/>
           </el-select>

@@ -115,7 +115,7 @@ export default {
             @secondary="clearSettings(); modal = false;"
             v-model="modal"
         >
-            <el-card class="settings-modal-body">
+            <el-card data-testid="experimental-settings-card" class="settings-modal-body">
 
                 <experimental-setting-input
                     v-for="option in CONFIGURABLE_HIDDEN_OPTIONS"
@@ -127,9 +127,9 @@ export default {
                 <error-small :condition="changed" message="Changes will be reflected after page refresh" />
 
                 <div class="d-flex justify-content-end mt-4">
-                    <el-button @click="downloadState" type="text" icon="el-icon-download"> Download app state </el-button>
+                    <el-button data-testid="experimental-download-state" @click="downloadState" type="text" icon="el-icon-download"> Download app state </el-button>
                     <div class="border-right mr-2 ml-2" />
-                    <el-button @click="uploadState" type="text" icon="el-icon-upload2"> Upload app state </el-button>
+                    <el-button data-testid="experimental-upload-state" @click="uploadState" type="text" icon="el-icon-upload2"> Upload app state </el-button>
                 </div>
 
             </el-card>

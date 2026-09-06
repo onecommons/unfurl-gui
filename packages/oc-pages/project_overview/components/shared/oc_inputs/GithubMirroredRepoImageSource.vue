@@ -272,13 +272,13 @@ export default {
         <div>
             <div class="d-flex flex-wrap justify-content-between">
                 <div style="flex-grow: 1;" class="d-flex flex-column">
-                    <el-autocomplete label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions" :disabled="readonly">
+                    <el-autocomplete data-testid="oc-input-github-project" label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions" :disabled="readonly">
                         <template #prepend>Github Project</template>
                     </el-autocomplete>
                     <div class="mt-4">
-                        <el-autocomplete :disabled="useDefaultBranch || readonly" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
+                        <el-autocomplete data-testid="oc-input-github-branch" :disabled="useDefaultBranch || readonly" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
                             <template #prepend>Branch</template>
-                            <template #append> <el-checkbox :disabled="readonly" class="mb-0" v-model="useDefaultBranch">Default Branch</el-checkbox> </template>
+                            <template #append> <el-checkbox data-testid="oc-input-github-default-branch" :disabled="readonly" class="mb-0" v-model="useDefaultBranch">Default Branch</el-checkbox> </template>
                         </el-autocomplete>
                         <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
                             <span v-if="!useDefaultBranch && branchError" style="color: red;">

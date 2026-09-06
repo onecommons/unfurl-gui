@@ -51,7 +51,7 @@ export default {
 }
 </script>
 <template>
-    <el-popover v-model="popover" trigger="click">
+    <el-popover data-testid="autostop-popover" v-model="popover" trigger="click">
         <autostop-inner v-model="autostop"/>
         <div v-if="popover" class="mt-2 d-flex justify-content-end">
             <gl-button class="mr-2" @click="popover = false">Cancel</gl-button>
