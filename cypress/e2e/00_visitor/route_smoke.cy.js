@@ -117,6 +117,10 @@ describe('Route smoke', () => {
         cy.visit(`${base}${DELIMITER}/environments/${environmentName}`)
         cy.get('[data-testid="dashboard-environment-page"]').should('exist')
         cy.contains('Environment Name').should('be.visible')
+        // The external resource card renders its body lazily, so screenshotting
+        // on the page landmark alone catches it mid-render: the fixture
+        // environment always has _default_provider, so wait for its form.
+        cy.get('[data-testid="oc-inputs-form"]', {timeout: 10000}).should('be.visible')
         cy.screenshotPage('route-smoke/dashboard-environment')
         cy.then(() => expect(pageErrors, 'page errors on dashboard-environment').to.deep.equal([]))
 
@@ -128,6 +132,8 @@ describe('Route smoke', () => {
           .should('be.visible')
           .invoke('text')
           .should('match', /Complete|Incomplete/)
+        // and capture how it looks, not just that it exists
+        cy.screenshotPage('route-smoke/tooltip-card-validation')
         cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseleave')
 
         const deployment = deployments[0]
