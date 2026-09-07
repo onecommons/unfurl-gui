@@ -1,4 +1,17 @@
 /*
+ * 136's utilities are generated, and their values come from design tokens.
+ * The generated rules are `margin-right: var(--gl-spacing-scale-3)` and the
+ * like, and public/assets/*.css -- a GitLab 15.11 snapshot -- defines none of
+ * those custom properties, so without these imports the utilities parse but
+ * compute to nothing. The light set is the base (796 of 1102 tokens, all the
+ * spacing and sizing, are theme-independent); the dark set overrides the
+ * remaining 306 under .gl-dark-scope, which public/*.html puts on <body>
+ * because standalone links application_dark unconditionally.
+ */
+@import '@gitlab/ui/src/tokens/build/css/tokens.css';
+@import '@gitlab/ui/src/tokens/build/css/tokens.dark.css';
+
+/*
  * @gitlab/ui 136 stopped shipping the gl-* utilities as built CSS; the
  * consumer generates them from its own Tailwind build using the shipped
  * preset. Without these directives every gl-* utility in our templates is
