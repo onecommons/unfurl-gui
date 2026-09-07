@@ -23,18 +23,26 @@ const ENTRIES = [
   'map-controls',
 ]
 
+/*
+ * autostop-inner derives its default date and time from Date.now() in data(),
+ * so anything rendering it drifts without a frozen clock. Cypress restores the
+ * clock after every test, and the popover builds its own autostop-inner when
+ * it opens -- so this has to run per test, not once. Only Date is stubbed;
+ * stubbing timers as well breaks popper and Vue's nextTick.
+ */
+const freezeClock = () => cy.clock(new Date('2026-03-04T10:20:00Z').getTime(), ['Date'])
+
 describe('component gallery', () => {
   const pageErrors = []
+
+  beforeEach(freezeClock)
 
   before(() => {
     Cypress.on('window:before:load', win => {
       win.addEventListener('error', e => pageErrors.push(e.message))
     })
     Cypress.on('uncaught:exception', err => { pageErrors.push(err.message); return false })
-    // autostop-inner derives its default date and time from Date.now() in
-    // data(), so without this its two screenshots drift every run. Only Date
-    // is stubbed -- stubbing timers as well breaks popper and Vue's nextTick.
-    cy.clock(new Date('2026-03-04T10:20:00Z').getTime(), ['Date'])
+    freezeClock()
     // file-selector builds its tree from a flat file list over two endpoints
     cy.intercept('GET', '**/repository/branches', [{name: 'main', default: true}])
     cy.intercept('GET', '**/-/files/**', [
@@ -243,11 +251,9 @@ describe('component gallery', () => {
     cy.get('[data-testid="autostop-trigger"]').click()
     // clicking leaves the trigger's own tooltip up, covering the panel
     cy.get('[data-testid="autostop-trigger"]').trigger('mouseleave')
-    cy.get('.gl-tooltip, .el-tooltip__popper').should('not.be.visible')
-    // the panel is appended to <body>; autostop.vue's data-testid lands on the
-    // trigger, not on it. 2A.2 must repoint this when el-popover goes.
-    cy.get('.el-popover').should('be.visible')
-    cy.screenshotElement('.el-popover', 'gallery/autostop-popover')
+    cy.get('.gl-tooltip').should('not.exist')
+    cy.get('[data-testid="autostop-popover"]').should('be.visible')
+    cy.screenshotElement('[data-testid="autostop-popover"]', 'gallery/autostop-popover')
   })
 
   after(() => {
