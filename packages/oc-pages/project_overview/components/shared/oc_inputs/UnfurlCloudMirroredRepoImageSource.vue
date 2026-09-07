@@ -3,7 +3,8 @@ import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
- import {Card as ElCard, Autocomplete as ElAutocomplete} from 'element-ui'
+import {GlCard} from '@gitlab/ui'
+import SuggestionInput from './suggestion-input.vue'
 
 import {connectedRepo} from './mixins'
 
@@ -20,8 +21,8 @@ export default {
     },
     components: {
         DeploymentScheduler,
-        ElCard,
-        ElAutocomplete
+        GlCard,
+        SuggestionInput
     },
     mixins: [connectedRepo],
     data() {
@@ -139,14 +140,22 @@ export default {
 }
 </script>
 <template>
-    <el-card class="d-flex flex-column">
-        <el-autocomplete data-testid="oc-input-uc-project" label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions" :disabled="readonly">
-            <template #prepend>Local Project</template>
-        </el-autocomplete>
-        <el-autocomplete data-testid="oc-input-uc-branch" label="Branch" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="branch" :fetch-suggestions="getBranchSuggestions" :disabled="readonly">
-            <template #prepend>Branch</template>
-        </el-autocomplete> 
+    <gl-card body-class="gl-flex gl-flex-col">
+        <suggestion-input
+            data-testid="oc-input-uc-project"
+            label="Local Project"
+            style="width: min(500px, 100%)"
+            v-model="project_id"
+            :fetch-suggestions="getUserProjectSuggestions"
+            :disabled="readonly"/>
+        <suggestion-input
+            data-testid="oc-input-uc-branch"
+            label="Branch"
+            style="width: min(500px, 100%)"
+            v-if="project_id"
+            v-model="branch"
+            :fetch-suggestions="getBranchSuggestions"
+            :disabled="readonly"/>
         <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
-    </el-card>
-
+    </gl-card>
 </template>

@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>fork-only inputs fixture</title>
+    <style>
+      .gallery { padding: 1rem 2rem; }
+      .gallery-entry { margin-bottom: 2rem; padding: 1rem; border: 1px solid #4a4a52;
+                       position: relative; min-height: 3rem; }
+      .gallery-title { font: 600 13px/1.4 monospace; margin: 0 0 0.75rem; color: #89888d; }
+      .gallery-error { color: #ec5941; white-space: pre-wrap; margin: 0; }
+    </style>
+
+    <!-- the same vendored GitLab stylesheets public/index.html links, so
+         components here render the way they do in the app -->
+  <link rel="stylesheet"
+    href="/assets/application_utilities_dark-16c38341f642b0f5428918ef4f53f17c9e7cecad60f773060ca19405025c91f1.css">
+  <link rel="stylesheet"
+    href="/assets/application_dark-d9f4929389470258b89a0b91df3dc1aed8dc757985639bae0f4345a258b3362c.css">
+  <link rel="stylesheet" href="/assets/white-e4a0a599c798742d5817c43bbc1ddf7745ac1b7f9c4fadf6e24a6b9bc49ffec4.css">
+  </head>
+
+  <script>
+      /*
+       * Its own page because these four are fork-only, and unfurl_gui must be
+       * false for them: fetchProjectInfo short-circuits to `{name}` when it is
+       * true, which leaves registry_url deriving itself from an undefined
+       * container_registry_image_prefix. On the gallery page that flag would
+       * put every other component into fork mode, which is not what ships.
+       */
+      window.gon = {
+        unfurl_gui: false,
+        home_project: 'onecommons/blueprints/gallery',
+        gitlab_url: 'https://gallery.test'
+      }
+    </script>
+  <body class="gl-dark gl-dark-scope">
+    <div id="fork-inputs"></div>
+  </body>
+</html>

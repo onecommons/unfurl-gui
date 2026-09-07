@@ -1,8 +1,7 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
 import {sleep} from 'oc_vue_shared/client_utils/misc'
-import {GlTooltipDirective} from '@gitlab/ui'
-import {Card as ElCard, Input as ElInput, Button as ElButton, Tag as ElTag} from 'element-ui'
+import {GlTooltipDirective, GlBadge, GlButton, GlCard, GlFormInput, GlFormInputGroup} from '@gitlab/ui'
 import axios from '~/lib/utils/axios_utils'
 import { XhrIFrame } from 'oc_vue_shared/client_utils/crossorigin-xhr'
 import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
@@ -48,7 +47,7 @@ export default {
         GlTooltip: GlTooltipDirective,
     },
     components: {
-        ElCard, ElInput, ElButton, ElTag,
+        GlBadge, GlButton, GlCard, GlFormInput, GlFormInputGroup,
         CodeClipboard,
         ErrorSmall
     },
@@ -140,13 +139,16 @@ export default {
 }
 </script>
 <template>
-    <el-card>
+    <gl-card>
         <ol>
             <error-small class="m-0" :condition="!subdomain">A subdomain is required to use a CNAME.</error-small>
             <li>Enter the domain you would like to use below:</li>
-            <el-input data-testid="oc-input-dns-name" v-model="name" class="mb-2">
-                <template #prepend>Domain</template>
-            </el-input>
+            <gl-form-input-group class="mb-2">
+                <template #prepend>
+                    <span class="input-group-text">Domain</span>
+                </template>
+                <gl-form-input data-testid="oc-input-dns-name" v-model="name" type="text"/>
+            </gl-form-input-group>
             <li v-bind="descAttrs">Visit your DNS provider or registrar's site to create a CNAME record for this service. This functionality will usually be available under "Advanced DNS".
             <ul>
                 <li>
@@ -170,20 +172,20 @@ export default {
                     <div>
                         (Optional) Verify your CNAME record <br>
                         <div class="d-flex">
-                            <el-button data-testid="dns-check-cname" :type="verifiedStatus == ERROR? 'danger': 'primary'" :loading="verifiedStatus == VERIFYING" @click="checkCName">
+                            <gl-button data-testid="dns-check-cname" :variant="verifiedStatus == ERROR? 'danger': 'confirm'" :loading="verifiedStatus == VERIFYING" @click="checkCName">
                                 <span v-if="verifiedStatus == VERIFYING">Verifying CNAME</span>
                                 <span v-else-if="verifiedStatus == COMPLETE">CNAME was verified successfully</span>
                                 <span v-else-if="verifiedStatus == ERROR">Couldn't connect to DNS service</span>
                                 <span v-else>Verify CNAME</span>
-                            </el-button>
+                            </gl-button>
                             <div class="d-flex align-items-center ml-3">
-                                <el-tag v-for="resolved in nameserversResolved" type="success" class="mr-2" effect="dark" :key="resolved"><i class="el-icon-success mr-1"/>{{resolved}}</el-tag>
+                                <gl-badge v-for="resolved in nameserversResolved" variant="success" icon="check-circle" class="mr-2" :key="resolved">{{resolved}}</gl-badge>
                             </div>
                         </div>
                 </div>
             </li>
         </ol>
-    </el-card>
+    </gl-card>
 </template>
 <style scoped>
 .transparent {

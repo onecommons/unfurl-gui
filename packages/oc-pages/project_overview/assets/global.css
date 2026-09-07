@@ -35,6 +35,15 @@
     min-width: 0.5rem;
 }
 
+/*
+ * Same gap: 136 separates a badge's icon from its content, 60 had no icon
+ * slot to separate. Only reaches badges given an `icon` -- a text-only badge
+ * is a single flex child.
+ */
+.gl-badge {
+    gap: 0.25rem;
+}
+
 h2.oc-title-section {
     font-style: normal;
     font-weight: bold;

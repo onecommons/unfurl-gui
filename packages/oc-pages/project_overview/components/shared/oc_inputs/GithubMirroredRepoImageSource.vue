@@ -1,7 +1,8 @@
 <script>
 import Vue from 'vue'
 import axios from '~/lib/utils/axios_utils'
-import {Autocomplete as ElAutocomplete, Card as ElCard, Checkbox as ElCheckbox} from 'element-ui'
+import {GlFormCheckbox} from '@gitlab/ui'
+import SuggestionInput from './suggestion-input.vue'
 import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
@@ -24,7 +25,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'GithubMirroredRepoImageSource',
-    components: {ElAutocomplete, GithubAuth, ImportButton, ElCheckbox},
+    components: {SuggestionInput, GithubAuth, ImportButton, GlFormCheckbox},
     mixins: [connectedRepo],
     props: {
         card: Object,
@@ -272,14 +273,31 @@ export default {
         <div>
             <div class="d-flex flex-wrap justify-content-between">
                 <div style="flex-grow: 1;" class="d-flex flex-column">
-                    <el-autocomplete data-testid="oc-input-github-project" label="Github Project" clearable style="width: min(500px, 100%)" v-model="github_project" :fetch-suggestions="getRepoSuggestions" :disabled="readonly">
-                        <template #prepend>Github Project</template>
-                    </el-autocomplete>
-                    <div class="mt-4">
-                        <el-autocomplete data-testid="oc-input-github-branch" :disabled="useDefaultBranch || readonly" :error="branchError" label="Branch" clearable style="width: min(500px, 100%)" v-model="branch" :fetch-suggestions="getBranchSuggestions">
-                            <template #prepend>Branch</template>
-                            <template #append> <el-checkbox data-testid="oc-input-github-default-branch" :disabled="readonly" class="mb-0" v-model="useDefaultBranch">Default Branch</el-checkbox> </template>
-                        </el-autocomplete>
+                    <suggestion-input
+                        data-testid="oc-input-github-project"
+                        label="Github Project"
+                        style="width: min(500px, 100%)"
+                        v-model="github_project"
+                        :fetch-suggestions="getRepoSuggestions"
+                        :disabled="readonly"/>
+                    <div>
+                        <!-- the checkbox was el-autocomplete's #append slot;
+                             GlFormCombobox has no append, so it sits beside
+                             the field and aligns to its bottom edge -->
+                        <div class="gl-flex gl-items-end gl-gap-4" style="width: min(500px, 100%)">
+                            <suggestion-input
+                                class="gl-grow"
+                                data-testid="oc-input-github-branch"
+                                label="Branch"
+                                v-model="branch"
+                                :fetch-suggestions="getBranchSuggestions"
+                                :disabled="useDefaultBranch || readonly"/>
+                            <gl-form-checkbox
+                                class="gl-mb-5"
+                                data-testid="oc-input-github-default-branch"
+                                :disabled="readonly"
+                                v-model="useDefaultBranch">Default Branch</gl-form-checkbox>
+                        </div>
                         <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
                             <span v-if="!useDefaultBranch && branchError" style="color: red;">
                                 The {{branch}} branch doesn't exist or wasn't imported successfully.
@@ -299,7 +317,6 @@ export default {
             <oc-deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
         </div>
     </github-auth>
-    </el-card>
 </template>
 <style scoped>
 </style>

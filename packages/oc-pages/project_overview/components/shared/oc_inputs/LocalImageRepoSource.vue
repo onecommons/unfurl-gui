@@ -1,7 +1,8 @@
 <script>
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql-shim'
-import {Autocomplete as ElAutocomplete, Input as ElInput, Card as ElCard} from 'element-ui'
+import {GlCard, GlFormGroup, GlFormInput} from '@gitlab/ui'
+import SuggestionInput from './suggestion-input.vue'
 import {fetchProjects, fetchRegistryRepositories, fetchContainerRepositories, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
@@ -16,7 +17,7 @@ function callbackFilter(query, items) {
 
 export default {
     name: 'LocalImageRepoSource',
-    components: {ElAutocomplete, ElInput, ElCard, DeploymentScheduler},
+    components: {GlCard, GlFormGroup, GlFormInput, SuggestionInput, DeploymentScheduler},
     props: {
         card: Object
     },
@@ -131,19 +132,28 @@ export default {
 }
 </script>
 <template>
-    <el-card class="d-flex flex-column">
-        <el-autocomplete data-testid="oc-input-local-project" label="Local Project" clearable style="width: min(500px, 100%)" v-model="project_id" :fetch-suggestions="getUserProjectSuggestions">
-            <template #prepend>Local Project</template>
-        </el-autocomplete>
-        <el-autocomplete data-testid="oc-input-local-image" label="Container Image" clearable class="mt-4" style="width: min(500px, 100%)" v-if="project_id" v-model="repository_id" :fetch-suggestions="getRepositoryIdSuggestions">
-            <template #prepend>Container Image</template>
-        </el-autocomplete> 
-        <el-input data-testid="oc-input-local-tag" label="Tag" clearable class="mt-4" style="width: min(300px, 100%)" v-if="project_id" v-model="repository_tag" :fetch-suggestions="getRepositoryIdSuggestions">
-            <template #prepend>Tag</template>
-        </el-input> 
+    <gl-card body-class="gl-flex gl-flex-col">
+        <suggestion-input
+            data-testid="oc-input-local-project"
+            label="Local Project"
+            style="width: min(500px, 100%)"
+            v-model="project_id"
+            :fetch-suggestions="getUserProjectSuggestions"/>
+        <suggestion-input
+            data-testid="oc-input-local-image"
+            label="Container Image"
+            style="width: min(500px, 100%)"
+            v-if="project_id"
+            v-model="repository_id"
+            :fetch-suggestions="getRepositoryIdSuggestions"/>
+        <!-- a label above, like the two comboboxes: an input-group addon here
+             would be the only one in the card -->
+        <gl-form-group v-if="project_id" label="Tag" style="width: min(300px, 100%)">
+            <gl-form-input data-testid="oc-input-local-tag" v-model="repository_tag" type="text"/>
+        </gl-form-group>
 
-            <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
-    </el-card>
+        <deployment-scheduler v-if="project_id" :deploymentName="getDeploymentTemplate.name" :resourceName="card.name" :upstreamProject="project_id"/>
+    </gl-card>
 </template>
 <style scoped>
 </style>

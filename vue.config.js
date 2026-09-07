@@ -148,6 +148,15 @@ module.exports = {
       entry: "src/pages/dev-settings/index.js",
       template: "public/dev-settings.html",
       filename: "dev-settings.html"
+    },
+
+    // The four fork-only inputs, which the app compiles out and no standalone
+    // route renders. Also needs gon.unfurl_gui false -- see
+    // public/fork-inputs.html -- so it cannot share the gallery either.
+    'fork-inputs': {
+      entry: "src/pages/fork-inputs/index.js",
+      template: "public/fork-inputs.html",
+      filename: "fork-inputs.html"
     }
   }
 };
