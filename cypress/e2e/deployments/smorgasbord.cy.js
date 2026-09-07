@@ -122,6 +122,15 @@ describe('Smorgasbord blueprint test', () => {
     cy.get('[data-testid="deploy-button-tooltip"]').trigger('mouseleave')
 
     /*
+     * The object popover is still open here and covers the tab row -- the
+     * blur above dismisses it only sometimes, which passed locally and failed
+     * in CI. gl-popover is triggers:'click', so the trigger toggles it --
+     * an outside click does not.
+     */
+    cy.get('[data-testid="oc-input-the_app-object_inputs"]').click()
+    cy.get('.popover-body').should('not.exist')
+
+    /*
      * The same widget set one level down, plus the additionalProperties map.
      * This is what deployments/nested-tabs.cy.js covers, and that spec is
      * fork-only because its container-webapp fixture pulls in the image-source
