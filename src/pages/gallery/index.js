@@ -70,8 +70,22 @@ const ENTRIES = [
     component: GithubAuth,
     props: {importHandler: {status: oauthStatus.UNAUTHENTICATED}}
   },
+  // the only v-loading in the app became a gl-loading-icon; it needs a state
+  // to be visible in
+  {
+    name: 'github-auth-loading',
+    component: GithubAuth,
+    props: {importHandler: {status: null}}
+  },
   {name: 'import-button', component: ImportButton, props: {repoImport: {}}},
-  {name: 'import-link', component: ImportLink, props: {card: {name: 'env__deployment__resource', imported: true}}},
+  // padded so the popover, which centres on the badge, is not clipped by the
+  // left edge of the page
+  {
+    name: 'import-link',
+    component: ImportLink,
+    props: {card: {name: 'env__deployment__resource', imported: true}},
+    style: {paddingLeft: '10rem'}
+  },
   {
     // a real option, so the fixture cannot drift from the shape the component
     // is actually given -- and `type` is not part of it

@@ -1,8 +1,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
-import {GlBadge} from '@gitlab/ui'
-import {Tooltip as ElTooltip} from 'element-ui'
+import {GlBadge, GlPopover} from '@gitlab/ui'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 export default {
@@ -13,10 +12,13 @@ export default {
     components: {
         DetectIcon,
         GlBadge,
-        ElTooltip
+        GlPopover
     },
     computed: {
         ...mapGetters(['getHomeProjectPath', 'lookupDeployment']),
+        popoverId() {
+            return `import-link-${this.card.name}`.replace(/[^\w-]/g, '-')
+        },
         split() {
             return this.card.name.split('__').filter(s => s)
         },
@@ -46,12 +48,12 @@ export default {
     <gl-badge size="md" v-if="show">
 
         <a style="color: inherit; display: contents;" :href="deploymentLink" target="blank"><detect-icon :size="16" name="connected" /></a>
-        <el-tooltip v-if="show" class="d-content">
-            <template #content>
-                Shared from <a class="inverted-link" target="_blank" :href="deploymentLink">{{deploymentTitle}}</a> in <a class="inverted-link" target="_blank" :href="environmentLink">{{environmentName}}</a>
-            </template>
-            <div class="ml-1">Shared</div>
-        </el-tooltip>
+        <div :id="popoverId" data-testid="import-link-trigger" class="ml-1">Shared</div>
+        <!-- the content carries links, so it has to stay reachable: a popover,
+             not a tooltip -->
+        <gl-popover :target="popoverId" triggers="hover focus" placement="top">
+            Shared from <a class="inverted-link" target="_blank" :href="deploymentLink">{{deploymentTitle}}</a> in <a class="inverted-link" target="_blank" :href="environmentLink">{{environmentName}}</a>
+        </gl-popover>
 
     </gl-badge>
 

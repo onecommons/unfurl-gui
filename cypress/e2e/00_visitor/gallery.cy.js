@@ -14,6 +14,7 @@ const ENTRIES = [
   'autostop-inner',
   'deployment-scheduler',
   'github-auth',
+  'github-auth-loading',
   'import-button',
   'import-link',
   'experimental-settings-input',
@@ -54,6 +55,15 @@ describe('component gallery', () => {
     // its icon and an element shot of the entry clips it
     cy.screenshotPage('gallery/cloud-table-tooltip')
     cy.get('[data-testid="public-cloud-help"]').trigger('mouseleave')
+  })
+
+  it('shows the import-link popover', () => {
+    // it holds links, so it has to be a popover -- and only exists on hover
+    cy.get('[data-testid="import-link-trigger"]').trigger('mouseenter')
+    cy.get('.popover').should('be.visible').and('contain.text', 'Shared from')
+    cy.screenshotPage('gallery/import-link-popover')
+    cy.get('[data-testid="import-link-trigger"]').trigger('mouseleave')
+    cy.get('.popover').should('not.exist')
   })
 
   it('opens the autostop popover', () => {

@@ -1,7 +1,7 @@
 <script>
 import GithubReposAuthenticate from './github-repos/github-repos-authenticate.vue'
 import {oauthStatus} from '../../client_utils/github-import'
-import { Card as ElCard } from 'element-ui'
+import { GlCard, GlLoadingIcon } from '@gitlab/ui'
 export default {
     name: 'GithubAuth',
     data() {
@@ -9,7 +9,8 @@ export default {
     },
     components: {
         GithubReposAuthenticate,
-        ElCard
+        GlCard,
+        GlLoadingIcon
     },
     props: {
         importHandler: Object
@@ -18,7 +19,10 @@ export default {
 }
 </script>
 <template>
-    <el-card data-testid="github-auth-card" class="auth-container" v-loading="!importHandler.status">
+    <gl-card data-testid="github-auth-card" class="auth-container">
+        <div v-if="!importHandler.status" class="gl-flex gl-justify-center gl-py-5">
+            <gl-loading-icon size="lg" />
+        </div>
         <div v-if="importHandler.status == oauthStatus.UNAUTHENTICATED" class="mb-5">
           <slot name="unauthenticated-pre"></slot>
         </div>
@@ -30,14 +34,11 @@ export default {
         <div v-show="importHandler.status == oauthStatus.AUTHENTICATED" class="d-contents">
             <slot></slot>
         </div>
-    </el-card>
+    </gl-card>
 </template>
 <style scoped>
 .auth-container {
     min-height: 75px;
-}
-.auth-container >>> .el-loading-mask {
-    background-color: rgb(50 50 50 / 90%);
 }
 
 </style>
