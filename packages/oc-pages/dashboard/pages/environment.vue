@@ -481,7 +481,7 @@ export default {
             </template>
         </oc-properties-list>
         <div v-if="userCanEdit" class="mt-3">
-            <gl-button variant="confirm" @click="addProvider">
+            <gl-button data-testid="add-provider" variant="confirm" @click="addProvider">
                 <div>
                     <gl-icon name="plus"/>
                     {{__('Add a Provider')}}

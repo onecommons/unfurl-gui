@@ -155,6 +155,17 @@ describe('Route smoke', () => {
           cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseleave')
         })
 
+        // A gl-modal is fixed-position, and screenshotStable hides fixed
+        // elements so a full-page shot does not repeat the sticky nav -- which
+        // meant every modal in the app was unphotographable until
+        // screenshotOverlay.
+        cy.get('[data-testid="add-provider"]').click()
+        cy.get('.modal.show').should('be.visible')
+        cy.screenshotOverlay('.modal.show', 'route-smoke/modal-add-provider')
+        cy.get('.modal.show .modal-header .close, .modal.show [aria-label="Close"]')
+          .first().click({force: true})
+        cy.get('.modal.show').should('not.exist')
+
         const deployment = deployments[0]
         if (!deployment) {
           cy.task('log', '[route-smoke] no deployments in fixture project; skipping deployment route')

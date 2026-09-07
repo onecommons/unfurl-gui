@@ -196,10 +196,14 @@ Cypress.Commands.add('logout', logout)
  *
  * Pass {selector} to shoot one element instead of the page.
  */
-function screenshotStable(name, {selector, ...options} = {}) {
+function screenshotStable(name, {selector, keepFixed, ...options} = {}) {
   cy.document().then(doc => {
     const restore = []
+    // keepFixed is for when the fixed element IS the subject -- a modal, an
+    // overlay. Hiding those would photograph an empty page.
+    const subject = keepFixed && selector ? doc.querySelector(selector) : null
     doc.querySelectorAll('*').forEach(el => {
+      if (subject && (el === subject || el.contains(subject) || subject.contains(el))) return
       const pos = doc.defaultView.getComputedStyle(el).position
       if (pos === 'fixed') {
         restore.push([el, 'display', el.style.display])
@@ -227,6 +231,15 @@ function screenshotStable(name, {selector, ...options} = {}) {
 Cypress.Commands.add('screenshotPage', (name, options) => screenshotStable(name, options))
 Cypress.Commands.add('screenshotElement', (selector, name, options) =>
   screenshotStable(name, {selector, ...options}))
+
+/*
+ * Element screenshot of something fixed-position -- a gl-modal, an overlay.
+ * screenshotStable hides fixed elements so a full-page capture does not repeat
+ * the sticky nav down the page; that reasoning does not apply when the fixed
+ * element is what you are photographing.
+ */
+Cypress.Commands.add('screenshotOverlay', (selector, name, options) =>
+  screenshotStable(name, {selector, keepFixed: true, ...options}))
 
 /*
  * Visit a standalone page built into dist/ that isn't one of the app's routes.
