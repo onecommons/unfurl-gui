@@ -227,3 +227,25 @@ function screenshotStable(name, {selector, ...options} = {}) {
 Cypress.Commands.add('screenshotPage', (name, options) => screenshotStable(name, options))
 Cypress.Commands.add('screenshotElement', (selector, name, options) =>
   screenshotStable(name, {selector, ...options}))
+
+/*
+ * Visit a standalone page built into dist/ that isn't one of the app's routes.
+ *
+ * `unfurl serve --gui` sends every request whose Accept includes text/html to
+ * its project-document handler, which resolves the path as a project and 404s
+ * for anything else -- so dist/gallery.html is built and shipped but
+ * unreachable by navigation. Its hashed js/css subresources are fine: those
+ * requests don't ask for html, so they take the static-file branch.
+ *
+ * Stubbing just the document is enough, and keeps this out of the server.
+ */
+Cypress.Commands.add('visitBuiltPage', filename => {
+  cy.readFile(`dist/${filename}`).then(html => {
+    cy.intercept('GET', `**/${filename}`, {
+      statusCode: 200,
+      headers: {'content-type': 'text/html; charset=utf-8'},
+      body: html,
+    })
+  })
+  cy.visit(`/${filename}`)
+})

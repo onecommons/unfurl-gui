@@ -113,6 +113,14 @@ describe('Smorgasbord blueprint test', () => {
 
     cy.wait(1000)
 
+    // deploy_button carries four of 2A.2's tooltips and is the only converted
+    // file besides oc_card that a spec renders; tooltips are hover-only, so
+    // this is the shot that would catch losing one
+    cy.get('[data-testid="deploy-button-tooltip"]').trigger('mouseenter')
+    cy.get('.gl-tooltip', {timeout: 4000}).should('be.visible').and('not.have.text', '')
+    cy.screenshotPage('formily/tooltip-deploy-button')
+    cy.get('[data-testid="deploy-button-tooltip"]').trigger('mouseleave')
+
     cy.withStore().then(store => {
       const currentState = JSON.parse(
         JSON.stringify(store.state.templateResources.resourceTemplates)

@@ -110,7 +110,7 @@ export default {
 <template>
     <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper position-relative">
         <autostop v-if="canAutoStop" class="mr-2"/>
-            <div class="d-flex flex-column position-relative" v-gl-tooltip.hover :title="deployTooltip">
+            <div class="d-flex flex-column position-relative" data-testid="deploy-button-tooltip" v-gl-tooltip.hover :title="deployTooltip">
                 <gl-button-group class="deploy-button">
                     <gl-button
                         :aria-label="deployButtonText"

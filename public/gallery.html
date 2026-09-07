@@ -2,12 +2,13 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>oc_inputs fixture</title>
+    <title>component gallery</title>
     <style>
-      /* formily's vertical layout puts labels left of the field, off-page
-         without this. On body, not #form-fixture: Vue replaces that element
-         with the rendered root when it mounts. */
-      body { padding: 1rem 2rem; }
+      .gallery { padding: 1rem 2rem; }
+      .gallery-entry { margin-bottom: 2rem; padding: 1rem; border: 1px solid #4a4a52;
+                       position: relative; min-height: 3rem; }
+      .gallery-title { font: 600 13px/1.4 monospace; margin: 0 0 0.75rem; color: #89888d; }
+      .gallery-error { color: #ec5941; white-space: pre-wrap; margin: 0; }
     </style>
 
     <!-- the same vendored GitLab stylesheets public/index.html links, so
@@ -31,9 +32,9 @@
 
   <script>
       // the shared cypress support file reads gon.home_project
-      window.gon = { unfurl_gui: true, home_project: 'fixture' }
+      window.gon = { unfurl_gui: true, home_project: 'gallery' }
     </script>
   <body class="gl-dark gl-dark-scope">
-    <div id="form-fixture"></div>
+    <div id="gallery"></div>
   </body>
 </html>

@@ -116,6 +116,14 @@ module.exports = {
       entry: "src/pages/form-fixture/index.js",
       template: "public/form-fixture.html",
       filename: "form-fixture.html"
+    },
+
+    // Components 2A.2 rewrites that render on no route the specs visit.
+    // Without this they would be converted with nothing watching.
+    gallery: {
+      entry: "src/pages/gallery/index.js",
+      template: "public/gallery.html",
+      filename: "gallery.html"
     }
   }
 };

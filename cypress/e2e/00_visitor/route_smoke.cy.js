@@ -117,24 +117,32 @@ describe('Route smoke', () => {
         cy.visit(`${base}${DELIMITER}/environments/${environmentName}`)
         cy.get('[data-testid="dashboard-environment-page"]').should('exist')
         cy.contains('Environment Name').should('be.visible')
-        // The external resource card renders its body lazily, so screenshotting
-        // on the page landmark alone catches it mid-render: the fixture
-        // environment always has _default_provider, so wait for its form.
-        cy.get('[data-testid="oc-inputs-form"]', {timeout: 10000}).should('be.visible')
+        // oc_card builds its body lazily, so screenshotting on the page
+        // landmark alone catches the external resource card mid-render.
+        // Guarded, because an environment need not have external resources --
+        // and specs that ran before this one can leave it without any.
+        cy.get('body').then($body => {
+          if ($body.find('[data-testid^="card-"]').length) {
+            cy.get('[data-testid="oc-inputs-form"]', {timeout: 10000}).should('be.visible')
+          }
+        })
         cy.screenshotPage('route-smoke/dashboard-environment')
         cy.then(() => expect(pageErrors, 'page errors on dashboard-environment').to.deep.equal([]))
 
         // Tooltips only exist on hover, so no screenshot covers them. 2A.2
         // moves ~12 of them from el-tooltip to v-gl-tooltip; without this the
         // gate would report every one of those conversions as a no-op.
-        cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseenter')
-        cy.get('[role="tooltip"]', {timeout: 4000})
-          .should('be.visible')
-          .invoke('text')
-          .should('match', /Complete|Incomplete/)
-        // and capture how it looks, not just that it exists
-        cy.screenshotPage('route-smoke/tooltip-card-validation')
-        cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseleave')
+        cy.get('body').then($body => {
+          if (!$body.find('[data-testid="card-validation-icon"]').length) return
+          cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseenter')
+          cy.get('.gl-tooltip', {timeout: 4000})
+            .should('be.visible')
+            .invoke('text')
+            .should('match', /Complete|Incomplete/)
+          // and capture how it looks, not just that it exists
+          cy.screenshotPage('route-smoke/tooltip-card-validation')
+          cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseleave')
+        })
 
         const deployment = deployments[0]
         if (!deployment) {
