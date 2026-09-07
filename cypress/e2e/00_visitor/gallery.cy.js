@@ -80,17 +80,140 @@ describe('component gallery', () => {
     cy.get('.popover').should('not.exist')
   })
 
-  it('browses the file tree', () => {
-    // the tree only mounts once the picker is in selecting mode
+  /*
+   * The file tree. Every test here shares one page load, so each opens the
+   * picker and closes it again; Cancel and Confirm both return it to the
+   * closed state, because the gallery never feeds the emitted value back in
+   * as `value`. Closing destroys the tree, so expansion and selection reset
+   * on their own and no test has to undo its own clicks.
+   *
+   * Node ids are the tree's own paths. The repository root is '/', so its
+   * children are '//README.md', '//configs' and so on.
+   */
+  const TREE = '[data-testid="file-selector-tree"]'
+  const treeRow = id => cy.get(`${TREE} [data-id="${id}"]`).children('.file-tree-row')
+  const checkedBoxes = () => cy.get(`${TREE} input[type="checkbox"]:checked`)
+
+  function openPicker() {
     cy.get('[data-testid="file-selector-choose"]').click()
-    cy.get('[data-testid="file-selector-tree"]').should('be.visible')
+    cy.get(TREE).should('be.visible')
+  }
+
+  function closePicker() {
+    cy.get('[data-testid="file-selector-cancel"]').click()
+    cy.get(TREE).should('not.exist')
+  }
+
+  it('browses the file tree', () => {
+    openPicker()
+    // the root is expanded, everything below it starts collapsed
+    treeRow('//configs').should('be.visible')
+    cy.get(`${TREE} [data-id="//configs/tls"]`).should('not.exist')
     cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-tree')
-    // the label has pointer-events: none; vuejs-tree puts the expand handler
-    // on the row's first span, which file-selector stretches full width as
-    // the click overlay
-    cy.get('[data-testid="file-selector-tree"] .row_data').contains('configs')
-      .closest('.row_data').find('span').first().click()
+
+    treeRow('//configs').click()
+    treeRow('//configs/nginx.conf').should('be.visible')
+    treeRow('//configs/tls').click()
+    treeRow('//configs/tls/cert.pem').should('be.visible')
+    treeRow('//configs/tls/key.pem').should('be.visible')
     cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-expanded')
+
+    // collapsing the inner folder leaves the outer one open
+    treeRow('//configs/tls').click()
+    cy.get(`${TREE} [data-id="//configs/tls/cert.pem"]`).should('not.exist')
+    treeRow('//configs/nginx.conf').should('be.visible')
+
+    treeRow('//configs').click()
+    cy.get(`${TREE} [data-id="//configs/nginx.conf"]`).should('not.exist')
+    // expanding never selects anything
+    checkedBoxes().should('have.length', 0)
+    closePicker()
+  })
+
+  it('draws an icon for every row but the root', () => {
+    openPicker()
+    treeRow('//README.md').find('[data-testid="doc-text-icon"]').should('be.visible')
+    treeRow('//configs').find('[data-testid="folder-o-icon"]').should('be.visible')
+    treeRow('//configs').click()
+    treeRow('//configs').find('[data-testid="folder-open-icon"]').should('be.visible')
+    // the root row names the repository and carries no icon
+    treeRow('/').should('contain.text', 'onecommons/blueprints/gallery')
+      .find('[data-testid$="-icon"]').should('not.exist')
+    closePicker()
+  })
+
+  it('puts the checkbox to the left of the name', () => {
+    openPicker()
+    treeRow('//README.md').then($row => {
+      const box = $row.find('input[type="checkbox"]')[0].getBoundingClientRect()
+      const name = $row.find('.file-tree-text')[0].getBoundingClientRect()
+      expect(box.right).to.be.lessThan(name.left)
+    })
+    closePicker()
+  })
+
+  it('selects a file by its row and offers to confirm it', () => {
+    openPicker()
+    cy.get('[data-testid="file-selector-confirm"]').should('not.exist')
+
+    treeRow('//README.md').click()
+    treeRow('//README.md').find('input[type="checkbox"]').should('be.checked')
+    cy.get('[data-testid="file-selector-confirm"]').should('contain.text', 'README.md')
+    cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-selected')
+
+    // clicking the selected row again clears it
+    treeRow('//README.md').click()
+    checkedBoxes().should('have.length', 0)
+    cy.get('[data-testid="file-selector-confirm"]').should('not.exist')
+    closePicker()
+  })
+
+  it('selects by checkbox and holds only one selection at a time', () => {
+    openPicker()
+    treeRow('//configs').click()
+
+    treeRow('//configs/nginx.conf').find('input[type="checkbox"]').click()
+    cy.get('[data-testid="file-selector-confirm"]').should('contain.text', 'nginx.conf')
+
+    treeRow('//README.md').find('input[type="checkbox"]').click()
+    treeRow('//configs/nginx.conf').find('input[type="checkbox"]').should('not.be.checked')
+    checkedBoxes().should('have.length', 1)
+    cy.get('[data-testid="file-selector-confirm"]').should('contain.text', 'README.md')
+
+    treeRow('//README.md').find('input[type="checkbox"]').click()
+    checkedBoxes().should('have.length', 0)
+    closePicker()
+  })
+
+  it('checks a directory rather than expanding it when its checkbox is clicked', () => {
+    // this schema names no file types, so directoriesAllowed is true and every
+    // row is checkable
+    openPicker()
+    treeRow('//configs').find('input[type="checkbox"]').click()
+    treeRow('//configs').find('input[type="checkbox"]').should('be.checked')
+    cy.get('[data-testid="file-selector-confirm"]').should('contain.text', 'configs')
+    // the checkbox selects, the row around it still expands
+    cy.get(`${TREE} [data-id="//configs/nginx.conf"]`).should('not.exist')
+    cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-directory')
+
+    treeRow('//configs').click()
+    treeRow('//configs/nginx.conf').should('be.visible')
+    treeRow('//configs').find('input[type="checkbox"]').should('be.checked')
+    closePicker()
+  })
+
+  it('closes on confirm and returns to the closed picker', () => {
+    openPicker()
+    treeRow('//service').click()
+    treeRow('//service/main.py').click()
+
+    cy.get('[data-testid="file-selector-confirm"]').should('contain.text', 'main.py').click()
+    cy.get(TREE).should('not.exist')
+    // the gallery does not feed the emitted value back in, so it reopens empty
+    cy.get('[data-testid="file-selector-choose"]').should('be.visible')
+    openPicker()
+    checkedBoxes().should('have.length', 0)
+    closePicker()
   })
 
   it('opens the C2 preset listbox', () => {
