@@ -2,6 +2,10 @@ import FileSelector from './file-selector.vue'
 import { createLocalVue, shallowMount } from '@vue/test-utils'
 import Vuex from 'vuex'
 
+// file-tree pulls in @gitlab/ui, which ships untransformed esm that jest does
+// not transpile out of node_modules; shallowMount never renders it anyway
+jest.mock('@gitlab/ui', () => ({GlIcon: {render(h) { return h('span') }}}))
+
 
 const localVue = createLocalVue()
 localVue.use(Vuex)
@@ -217,7 +221,7 @@ describe('file selector component', () => {
       }
 
       if(select) {
-        vm.handleSelect(select, true)
+        vm.handleSelect(select)
         await vm.$nextTick()
         vm.confirm()
         await vm.$nextTick()

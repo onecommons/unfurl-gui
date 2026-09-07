@@ -1,8 +1,8 @@
 <script>
-import Tree from 'vuejs-tree'
+import FileTree from './file-tree.vue'
 import { mapGetters, mapActions } from 'vuex'
 import { listProjectFiles } from 'oc_vue_shared/client_utils/projects'
-import { Button as ElButton, Select as ElSelect, Option as ElOption } from 'element-ui'
+import { GlButton, GlFormSelect } from '@gitlab/ui'
 import _ from 'lodash'
 import * as mime from 'mime-types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
@@ -32,36 +32,7 @@ export default {
     name: 'FileSelector',
     mixins: [blueprintDefaultBranch, homeProjectDefaultBranch],
     components: {
-        ElButton, Tree,
-        ElSelect, ElOption,
-    },
-    treeStyles: {
-        row: {
-            width: '340px',
-            child: {
-                style: {
-                    height: '30px',
-                    maxWidth: '100%'
-                },
-                active: {
-                    style: {
-                        height: '30px',
-                        maxWidth: '100%'
-                    }
-                }
-            }
-        },
-        tree: {
-            overflow: 'hidden',
-            maxHeight: 'unset' // asinine default of 500px
-        },
-        rowIndent: {padding: '0 0 0 10px'},
-        selectIcon: {
-            class: 'select-icon',
-            active: {
-                class: 'select-icon'
-            }
-        }
+        GlButton, GlFormSelect, FileTree,
     },
     props: {
         value: Object,
@@ -69,16 +40,9 @@ export default {
     },
     data() {
         return {
-            treeOptions: {
-                events: {
-                    checked: {
-                        state: true,
-                        fn: (...args) => this.handleChecked(...args)
-                    }
-                }
-            },
             filesList: [],
             selecting: false,
+            selectedNodeId: null,
             fileSelection: null,
             showAllFiles: false,
             chosenLocation: null,
@@ -116,28 +80,11 @@ export default {
             return result
         },
 
-        handleSelect(path, val) {
-            if(val) {
-                this.fileSelection = path.replace(/\/+/, '/').slice(this.schemaDefaultPrefix.length + 1)
-            } else {
-                this.fileSelection = null
-            }
-        },
-
-        handleChecked({id, state}) {
-            const tree = this.$refs.stupidTree
-            const {selected} = state
-
-            const checkboxes = tree.$el.querySelectorAll('input[type="checkbox"]')
-            if(!selected) {
-                tree.selectNode(id)
-                this.handleSelect(id, true)
-                checkboxes.forEach(cb => {if(cb.dataset.id != id) cb.checked = false})
-            } else {
-                tree.deselectAllNodes()
-                this.handleSelect(id, false)
-                checkboxes.forEach(cb => cb.checked = false)
-            }
+        handleSelect(path) {
+            this.selectedNodeId = path
+            this.fileSelection = path === null
+                ? null
+                : path.replace(/\/+/, '/').slice(this.schemaDefaultPrefix.length + 1)
         },
 
         confirm() {
@@ -168,9 +115,16 @@ export default {
 
     },
     computed: {
+        locationOptions() {
+            return [
+                {value: 'project', text: 'Dashboard root'},
+                ...(this.forbidEnsembleDirectory? []: [{value: '.', text: 'Deployment directory'}]),
+                {value: 'spec', text: 'Blueprint repository root'},
+            ]
+        },
+
         ...mapGetters(['getHomeProjectPath', 'getCurrentEnvironmentName', 'getCurrentProjectPath', 'getDeploymentTemplate']),
         treeDisplayData() {
-            // this also serves to clean up vendor tree state
             if(!this.selecting) return []
 
             const entryToNode = (_path, [key, value]) => {
@@ -192,14 +146,10 @@ export default {
 
                 if(Array.isArray(nodes)) {
                     result.nodes = nodes
-                    if(nodes.length == 0) {
-                        result.definition = 'empty-folder'
-                    }
                 }
 
                 if(!key) {
                     result.state.expanded = true
-                    result.definition = 'root'
                 }
 
                 return result
@@ -304,7 +254,7 @@ export default {
         },
 
         defaultEditBranch() {
-            // location is always one of the el-select's values: project, . or spec
+            // location is always one of the select's values: project, . or spec
             return this.location == 'spec'
                 ? this.blueprintDefaultBranch
                 : this.homeProjectDefaultBranch
@@ -312,7 +262,7 @@ export default {
     },
     watch: {
         selecting() {
-            this.fileSelection = null
+            this.handleSelect(null)
         },
 
         fileRepository: {
@@ -347,18 +297,14 @@ export default {
                 <a :href="linkForDisplayValue" target="_blank">
                     <b class="text-monospace" style="font-size: 12px;">{{displayValue}}</b>
                 </a>
-                <el-button data-testid="file-selector-clear" @click="clear" icon="el-icon-close" round class="p-1" style="font-size: 12px;"/>
+                <gl-button data-testid="file-selector-clear" @click="clear" icon="close" category="tertiary" size="small"/>
             </div>
             <div v-else-if="!selecting">
                 <label style="font-size: 0.85em;" class="mb-4">
                     Relative to:
-                    <el-select data-testid="file-selector-location" v-model="location">
-                        <el-option label="Dashboard root" value="project" />
-                        <el-option v-if="!forbidEnsembleDirectory" label="Deployment directory" value="." />
-                        <el-option label="Blueprint repository root" value="spec" />
-                    </el-select>
+<gl-form-select data-testid="file-selector-location" v-model="location" :options="locationOptions"/>
                 </label>
-                <el-button data-testid="file-selector-choose" @click="selecting=true" class="p-2 w-100">Choose file</el-button>
+                <gl-button data-testid="file-selector-choose" @click="selecting=true" block>Choose file</gl-button>
             </div>
             <div v-if="value || !selecting" class="mb-4"/> <!--spacer-->
         </div>
@@ -368,13 +314,13 @@ export default {
         <div v-if="selecting">
             <div class="d-flex justify-content-between align-items-center ml-3">
                 <a style="font-size: 0.9em;" title="View and make changes to repository files" :href="linkForViewInRepository" target="_blank">View in repository tree</a>
-                <el-button data-testid="file-selector-refresh" title="Check for new files" icon="el-icon-refresh" style="padding: 6px; font-size: 1em;" circle @click="fetchFilesList"></el-button>
+                <gl-button data-testid="file-selector-refresh" title="Check for new files" icon="retry" category="tertiary" size="small" @click="fetchFilesList"/>
             </div>
-            <tree data-testid="file-selector-tree" ref="stupidTree" v-if="treeDisplayData.length > 0" :custom-styles="$options.treeStyles" :custom-options="treeOptions" :nodes="treeDisplayData"/>
+            <file-tree data-testid="file-selector-tree" v-if="treeDisplayData.length > 0" :nodes="treeDisplayData" :selected="selectedNodeId" @select="handleSelect"/>
 
-            <div class="d-flex">
-                <el-button data-testid="file-selector-confirm" v-if="fileSelection !== null" @click="confirm" type="primary" class="p-2 w-100">Confirm <b class="text-monospace">{{fileSelection.split('/').pop()}}</b></el-button>
-                <el-button data-testid="file-selector-cancel" @click="selecting=false" class="p-2 w-100">Cancel</el-button>
+            <div class="gl-flex gl-gap-3 gl-mt-3">
+                <gl-button data-testid="file-selector-confirm" v-if="fileSelection !== null" @click="confirm" variant="confirm">Confirm</gl-button>
+                <gl-button data-testid="file-selector-cancel" @click="selecting=false">Cancel</gl-button>
             </div>
         </div>
     </div>
@@ -387,142 +333,4 @@ export default {
     justify-content: center;
     margin: 4px 0;
 }
-
-.file-selector >>> ul {
-    padding-left: 0;
-    display: block;
-}
-
-.file-selector >>> li {
-    max-width: 100%;
-    display: flex;
-    flex-wrap: wrap;
-    overflow-x: visible;
-}
-
-.file-selector >>> .row_data {
-    position: relative;
-    display: inline-block;
-    padding-left: 16px;
-    padding-right: 16px;
-    overflow: hidden;
-}
-
-.file-selector >>> .row_data > input[type="checkbox"] {
-    position: absolute;
-    right: calc(-50% + 7px);
-    top: 10px;
-    padding: 0 50%;
-    width: 100%;
-}
-
-.file-selector >>> .row_data > input[type="checkbox"]:before {
-    content: "";
-    width: 100%;
-    height: 30px;
-    display: block;
-    position: relative;
-    z-index: 10;
-    top: -7.5px;
-    left: -50%;
-}
-
-.file-selector >>> .row_data > input[type="checkbox"]:nth-child(3):before {
-    z-index: 12;
-}
-
-.file-selector >>> .row_data > :last-child {
-    user-select: none;
-    margin-left: 16px;
-    pointer-events: none;
-    max-width: calc(100% - 25px);
-
-}
-
-.file-selector >>> .row_data > span[title="root"] {
-    margin-left: 0;
-    display: inline-block;
-    max-width: 100%;
-}
-
-.file-selector >>> .row_data > span[title="empty-folder"] {
-    margin-left: 0;
-    display: inline-block;
-    max-width: 100%;
-    height: 30px;
-}
-
-.file-selector >>> .row_data > span[title="empty-folder"]:before {
-    margin-left: 0;
-    margin-right: -1px;
-    content: '\1F5C0';
-    font-size: 16px;
-    height: 100%;
-    height: 30px;
-    display: inline-block;
-    vertical-align: middle;
-
-}
-
-.file-selector >>> .row_data > span:nth-child(4) {
-    max-width: calc(100% - 7px);
-}
-
-.file-selector >>> .row_data > i {
-    margin-right: -18px;
-    margin-top: 1px;
-}
-
-.file-selector >>> .capitalize {
-    text-transform: none;
-
-    /* copied from .text-monospace */
-    font-family: "Menlo", "DejaVu Sans Mono", "Liberation Mono", "Consolas", "Ubuntu Mono", "Courier New", "andale mono", "lucida console", monospace !important;
-    font-size: 14px;
-    text-overflow: ellipsis;
-    overflow: hidden;
-    white-space: nowrap;
-}
-
-.file-selector >>> .expanded_icon {
-    margin-left: -12px;
-    margin-right: 7px;
-}
-
-.file-selector >>> .row_data > span:first-child {
-    display: inline-block;
-    width: 100%;
-    margin-right: -100%;
-    z-index: 11;
-    position: relative;
-}
-
-.file-selector >>> .row_data i.expanded_icon:after {
-    font-style: normal;
-    content: '\1F5C0';
-    position: absolute;
-    left: 5px;
-    top: -17px;
-    transition: all .2s ease;
-}
-
-.file-selector >>> .row_data i.expanded.expanded_icon:after  {
-    content: '\1F5C1';
-    left: -12px;
-    top: -35px;
-    transform: rotate(270deg);
-}
-
-.file-selector >>> ul {
-    margin-bottom: 0;
-}
-
-.file-selector >>> .select-icon:before {
-    content: "\1F5CE";
-    font-style: normal;
-    height: 30px;
-    display: inline-block;
-    vertical-align: middle;
-}
-
 </style>

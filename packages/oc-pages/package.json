@@ -10,8 +10,7 @@
     "dompurify": "3.4.0",
     "marked": "^4.0.18",
     "mime-types": "^2.1.12",
-    "semver": "^7.3.4",
-    "vuejs-tree": "^2.0.3"
+    "semver": "^7.3.4"
   },
   "devDependencies": {
     "@gitlab/eslint-plugin": "9.4.0",
