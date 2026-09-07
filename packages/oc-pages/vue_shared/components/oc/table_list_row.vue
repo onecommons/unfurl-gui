@@ -56,7 +56,7 @@ export default {
 <template>
     <div>
         <div v-if="items.length > 0">
-            <div v-for="(item, index) in items.filter(item => item)" :key="item + index" class="gl-responsive-table-row oc_table_row">
+            <div v-for="(item, index) in items.filter(item => item)" :key="item + index" class="gl-responsive-table-row oc_table_row oc-table-row">
                 <div class="table-section oc-table-section section-wrap text-truncate section-25">
                     <span class=" title">{{ item.title || item.name }}</span>
                 </div>

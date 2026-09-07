@@ -187,10 +187,29 @@ Each route asserts one landmark testid: `dashboard-home-page`,
 
 ## Screenshots and the baseline
 
-`route_smoke.cy.js` writes `cypress/screenshots/route-smoke/<route>.png`. The
-viewport is pinned in `cypress.config.mjs` (1280x800) so images stay
-comparable; CI confirmed `size mismatch: 0`, so only rendering differs across
-platforms.
+`route_smoke.cy.js` writes `route-smoke/<route>.png` and `smorgasbord.cy.js`
+writes `formily/*.png`. The viewport is pinned in `cypress.config.mjs`
+(1280x800), and captures are **full page** via `cy.screenshotPage()` /
+`cy.screenshotElement()` rather than viewport-limited.
+
+Two things those helpers exist for:
+
+- A fullPage capture scrolls and stitches, so anything `position: fixed` is
+  redrawn in every slice — the nav bar repeated three times down the taller
+  pages, *covering real content* (a whole deploy-blueprint row on
+  project-home). The helpers hide fixed elements for the shot. They do **not**
+  set `position: static`: that puts the element into flow, which grew every
+  page by 40px and re-parented absolutely-positioned descendants, landing the
+  environment page's credential card on top of the provider row.
+- Screenshot only after asserting on content, never on a page wrapper. See
+  below.
+
+The `smoke()` helper takes both a `landmark` (the page wrapper) and a
+`content` selector that only exists once data has rendered — `.oc-table-row`,
+set by `table.vue`/`table_list_row.vue` on data rows only, or
+`[data-testid^="deploy-template-"]`. Asserting only the wrapper passes the
+instant the component mounts, which screenshots a blank page and detects
+nothing; that is exactly what the first version of this spec did.
 
 Baselines are **per platform** — `cypress/baseline/darwin/` and
 `cypress/baseline/linux/` — because font rendering moves ~4-6% of pixels
@@ -207,7 +226,11 @@ SCREENSHOT_PLATFORM=linux ./scripts/src/compare-screenshots.js   # check CI's se
 
 The platform comes from `process.platform`, overridable with
 `SCREENSHOT_PLATFORM`. If no per-platform directory exists it falls back to a
-flat `cypress/baseline/`. Refresh a platform's set from a green run:
+flat `cypress/baseline/`. The `linux/` set is currently absent: the captures changed shape when full-page
+was introduced, and it can only be regenerated from CI. Until then the
+comparison there reports `no baseline yet` rather than false positives.
+
+Refresh a platform's set from a green run:
 
 ```bash
 gh run download <run-id> -n cypress-screenshots -D /tmp/ci-shots

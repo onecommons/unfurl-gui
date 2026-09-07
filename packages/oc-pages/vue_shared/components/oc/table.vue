@@ -170,6 +170,18 @@ export default {
   },
 
   computed: {
+    // Tags rendered data rows with our own class so specs can wait for content
+    // without keying off gl-table's markup. Composed with any rowClass the
+    // consumer passed, and only applied when there is an item -- the empty
+    // state must not satisfy a "content rendered" assertion.
+    markedRowClass() {
+      const given = this.rowClass
+      return (item, type) => [
+        item ? 'oc-table-row' : null,
+        typeof given === 'function' ? given(item, type) : given || null
+      ]
+    },
+
     _items() {
       const result = [];
       let i = 0;
@@ -332,7 +344,7 @@ export default {
           filter="{}"
           id="accounts-table"
           ref="selectableTable"
-          :tbody-tr-class="rowClass"
+          :tbody-tr-class="markedRowClass"
           :responsive="true"
           :items="_items"
           :fields="_fields"

@@ -97,9 +97,17 @@ describe('Smorgasbord blueprint test', () => {
     // oc-inputs element, so assert it here rather than inside fillInputs.
     cy.get('[data-testid="tab-environment-the_app"]').should('exist')
 
+    // capture the top-level form before the object popover covers it
+    cy.wait(500)
+    cy.screenshotElement('[data-testid="oc-inputs-the_app"]', 'formily/the_app-filled')
+
     cy.get('[data-testid="oc-input-the_app-object_inputs"]').click()
 
     fillInputs('object_inputs.')
+
+    // and the popover's own form, which renders the same widgets nested
+    cy.wait(500)
+    cy.screenshotPage('formily/object-popover')
 
     cy.get('input:first').blur({ force: true })
 

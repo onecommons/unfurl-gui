@@ -179,3 +179,51 @@ Cypress.Commands.add('getInputOrTextarea', getInputOrTextarea)
 Cypress.Commands.add('execLoud', execLoud)
 Cypress.Commands.add('login', login)
 Cypress.Commands.add('logout', logout)
+
+/*
+ * A fullPage capture scrolls and stitches, so anything pinned to the viewport
+ * is redrawn in every slice -- the nav bar ends up repeating down the image.
+ *
+ * Hide those elements for the shot rather than un-pinning them. A fixed
+ * element is already out of the document flow, so hiding it changes nothing
+ * else; setting `position: static` instead puts it *into* flow, which grew
+ * every page by the nav's height and re-parented absolutely-positioned
+ * descendants (the environment page's credential card landed on top of the
+ * provider row). Sticky elements are in flow, so they only lose their pinning.
+ *
+ * The nav comes from public/index.html, not oc-pages, so it is not a surface
+ * the migration needs to photograph.
+ *
+ * Pass {selector} to shoot one element instead of the page.
+ */
+function screenshotStable(name, {selector, ...options} = {}) {
+  cy.document().then(doc => {
+    const restore = []
+    doc.querySelectorAll('*').forEach(el => {
+      const pos = doc.defaultView.getComputedStyle(el).position
+      if (pos === 'fixed') {
+        restore.push([el, 'display', el.style.display])
+        el.style.display = 'none'
+      } else if (pos === 'sticky') {
+        restore.push([el, 'position', el.style.position])
+        el.style.position = 'relative'
+      }
+    })
+    doc.__cyPinnedRestore = restore
+  })
+
+  if (selector) {
+    cy.get(selector).screenshot(name, {overwrite: true, ...options})
+  } else {
+    cy.screenshot(name, {capture: 'fullPage', overwrite: true, ...options})
+  }
+
+  cy.document().then(doc => {
+    ;(doc.__cyPinnedRestore || []).forEach(([el, prop, prev]) => { el.style[prop] = prev })
+    doc.__cyPinnedRestore = null
+  })
+}
+
+Cypress.Commands.add('screenshotPage', (name, options) => screenshotStable(name, options))
+Cypress.Commands.add('screenshotElement', (selector, name, options) =>
+  screenshotStable(name, {selector, ...options}))

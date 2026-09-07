@@ -55,9 +55,14 @@ function collectErrors() {
 
 const consoleErrors = []
 
-/* Visit a route, wait for its landmark, screenshot it, and assert the page
- * raised no blocking error while it rendered. */
-function smoke(name, url, landmark) {
+/* Visit a route, wait for content to render, screenshot it, and assert the page
+ * raised no blocking error while it rendered.
+ *
+ * `content` must be an element that only exists once the page has its data --
+ * not the page's outermost div. Asserting the wrapper passes the instant the
+ * component mounts, which screenshots a blank page and detects nothing.
+ */
+function smoke(name, url, landmark, content) {
   it(`renders ${name}`, () => {
     pageErrors.length = 0
     consoleErrors.length = 0
@@ -65,8 +70,10 @@ function smoke(name, url, landmark) {
     cy.visit(url, {failOnStatusCode: false})
     cy.get(`[data-testid="${landmark}"]`, {timeout: Cypress.config('defaultCommandTimeout') * 2})
       .should('exist')
+    cy.get(content, {timeout: Cypress.config('defaultCommandTimeout') * 2})
+      .should('be.visible')
 
-    cy.screenshot(`route-smoke/${name}`, {capture: 'viewport', overwrite: true})
+    cy.screenshotPage(`route-smoke/${name}`)
 
     cy.then(() => {
       if (consoleErrors.length) {
@@ -83,9 +90,12 @@ describe('Route smoke', () => {
   describe('dashboard', () => {
     const base = DASHBOARD_BASE
 
-    smoke('dashboard-home', base || '/', 'dashboard-home-page')
-    smoke('dashboard-deployments-index', `${base}${DELIMITER}/deployments`, 'dashboard-deployments-page')
-    smoke('dashboard-environments-index', `${base}${DELIMITER}/environments`, 'dashboard-environments-page')
+    // set by table.vue / table_list_row.vue on rendered data rows only
+    const ROW = '.oc-table-row'
+
+    smoke('dashboard-home', base || '/', 'dashboard-home-page', ROW)
+    smoke('dashboard-deployments-index', `${base}${DELIMITER}/deployments`, 'dashboard-deployments-page', ROW)
+    smoke('dashboard-environments-index', `${base}${DELIMITER}/environments`, 'dashboard-environments-page', ROW)
 
     // Parameterized routes need real names. Derive them from the store rather
     // than hardcoding, and skip when the fixture project has none yet.
@@ -106,7 +116,8 @@ describe('Route smoke', () => {
         pageErrors.length = 0
         cy.visit(`${base}${DELIMITER}/environments/${environmentName}`)
         cy.get('[data-testid="dashboard-environment-page"]').should('exist')
-        cy.screenshot('route-smoke/dashboard-environment', {capture: 'viewport', overwrite: true})
+        cy.contains('Environment Name').should('be.visible')
+        cy.screenshotPage('route-smoke/dashboard-environment')
         cy.then(() => expect(pageErrors, 'page errors on dashboard-environment').to.deep.equal([]))
 
         const deployment = deployments[0]
@@ -118,7 +129,8 @@ describe('Route smoke', () => {
         pageErrors.length = 0
         cy.visit(`${base}${DELIMITER}/deployments/${deployment._environment || environmentName}/${deployment.name}`)
         cy.get('[data-testid="dashboard-deployment-page"]').should('exist')
-        cy.screenshot('route-smoke/dashboard-deployment', {capture: 'viewport', overwrite: true})
+        cy.get('.oc-table-row').should('be.visible')
+        cy.screenshotPage('route-smoke/dashboard-deployment')
         cy.then(() => expect(pageErrors, 'page errors on dashboard-deployment').to.deep.equal([]))
       })
     })
@@ -130,7 +142,8 @@ describe('Route smoke', () => {
       return
     }
 
-    smoke('project-home', `/${SMOKE_PROJECT}`, 'project-home-page')
+    // the blueprint's deploy buttons: absent until the project data loads
+    smoke('project-home', `/${SMOKE_PROJECT}`, 'project-home-page', '[data-testid^="deploy-template-"]')
   })
 
   // The chart needs cloudmap data, which a bare `unfurl init` fixture project
@@ -146,7 +159,7 @@ describe('Route smoke', () => {
       pageErrors.length = 0
       cy.visit('/cloud')
       cy.get('#chart svg').should('be.visible')
-      cy.screenshot('route-smoke/public-cloud', {capture: 'viewport', overwrite: true})
+      cy.screenshotPage('route-smoke/public-cloud')
       cy.then(() => expect(pageErrors, 'page errors on public-cloud').to.deep.equal([]))
     })
   })
