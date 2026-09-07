@@ -56,6 +56,9 @@ describe('component gallery', () => {
       // component, which is a failure worth naming rather than screenshotting
       cy.get(`[data-testid="gallery-${name}-error"]`).should('not.exist')
       cy.get(`[data-testid="gallery-${name}"]`).should('be.visible')
+      // an async component leaves the wrapper holding only its title until it
+      // resolves, so asserting the wrapper alone passes against an empty entry
+      cy.get(`[data-testid="gallery-${name}"] > :not(.gallery-title)`).should('exist')
       cy.screenshotElement(`[data-testid="gallery-${name}"]`, `gallery/${name}`)
     })
   })
