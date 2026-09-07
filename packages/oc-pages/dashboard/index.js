@@ -5,7 +5,6 @@ import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import '../project_overview/assets/global.css' // TODO move this somewhere better
 import {normpath} from 'oc_vue_shared/lib/normalize'
@@ -14,7 +13,6 @@ Vue.use(GlToast);
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 
-setupTheme(Vue)
 
 const router = createRouter(store)
 

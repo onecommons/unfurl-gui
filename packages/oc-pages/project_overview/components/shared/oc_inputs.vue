@@ -581,7 +581,7 @@ export default {
   border: unset;
   background: unset;
 }
-.gl-dark >>> input::placeholder {
+.gl-dark .oc-inputs >>> input::placeholder {
     opacity: 0.7;
 }
 .oc-inputs {
@@ -624,11 +624,11 @@ export default {
   margin: 0 0 0 4px;
 }
 
-.gl-dark >>> .formily-element-form-item-label-content > label {
+.gl-dark .oc-inputs >>> .formily-element-form-item-label-content > label {
   color: white;
 }
 
-.gl-dark >>> .formily-element-form-item-colon {
+.gl-dark .oc-inputs >>> .formily-element-form-item-colon {
   color: white;
 }
 
@@ -693,15 +693,6 @@ export default {
 .gl-dark .oc-inputs.gl-card,
 .gl-dark-scope .oc-inputs.gl-card {
   background-color: #222933 !important;
-}
-
-.oc-inputs >>> .gl-dark
-    :is(
-      .formily-element-array-items-card .formily-element-form-item:not(.formily-element-form-item-feedback-layout-popover) .formily-element-form-item-help,
-      .formily-element-array-items .formily-element-array-base-addition:is(:hover, :focus) /*TODO change this value for element-ui so it's not #FFFFFF (and then delete this selector)*/
-    )
-  {
-  background-color: #DDDDDD
 }
 
 @media only screen and (min-width: 430px) {

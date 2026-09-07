@@ -5,7 +5,6 @@ import DigitalOceanIcon from 'oc_vue_shared/components/oc/icons/digital_ocean.sv
 import K8sIcon from 'oc_vue_shared/components/oc/icons/k8s.svg'
 import GcpIcon from 'oc_vue_shared/components/oc/icons/gcp.svg'
 import Vue from 'vue'
-import {setupTheme} from 'oc_vue_shared/theme'
 import _ from 'lodash'
 import Tooltip from './tooltip.vue'
 import Navbar from './navbar.vue'
@@ -19,7 +18,6 @@ import getFormattedData from './formatted-data'
 import getData from './raw-data'
 import './public-cloud.css'
 
-setupTheme(Vue)
 
 // Assigned when the page is initialized, not at import time: the standalone build
 // has no welcome banner and the DOM isn't guaranteed to exist when this module loads.

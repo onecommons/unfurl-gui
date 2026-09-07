@@ -122,7 +122,7 @@ export default {
         }
     },
     data() {
-        const glDark = document.querySelector('body.gl-dark') // not getting gl dark for some reason on this component
+        const glDark = !!document.querySelector('body.gl-dark')
         const self = this
         const fields = [
             {key: 'deployment', groupBy: deploymentGroupBy, label: 'Deployment'},

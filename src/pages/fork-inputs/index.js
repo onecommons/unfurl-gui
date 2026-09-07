@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
-import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import 'oc_pages/project_overview/assets/global.css'
 import store from '../gallery/store'
@@ -30,7 +29,6 @@ Vue.use(Vuex)
 Vue.use(VueRouter)
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
-setupTheme(Vue)
 
 // the shared updateValue mixin reads $route.params.slug
 const router = new VueRouter({

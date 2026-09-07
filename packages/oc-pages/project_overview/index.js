@@ -6,7 +6,6 @@ import store from './store';
 import {GlTooltipDirective} from '@gitlab/ui';
 import __ from '~/locale';
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
-import {setupTheme} from 'oc_vue_shared/theme'
 import {normpath} from '../vue_shared/lib/normalize'
 
 import './assets/global.css';
@@ -14,7 +13,6 @@ import './assets/global.css';
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 
-setupTheme(Vue)
 
 export default (elemId='js-oc-project-overview') => {
   const element = document.getElementById(elemId);

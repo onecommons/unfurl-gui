@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
-import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 // the design tokens, the tailwind gl-* utilities and the badge shim
 import 'oc_pages/project_overview/assets/global.css'
@@ -37,7 +36,6 @@ const router = new VueRouter({mode: 'history', routes: [{path: '/:slug*', compon
  */
 Vue.use(OcComponents)
 Vue.directive('gl-tooltip', GlTooltipDirective)
-setupTheme(Vue)
 
 /*
  * Every component 2A.2 touches that renders on no route the specs visit.
