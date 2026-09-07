@@ -8,6 +8,7 @@ import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import 'oc_pages/project_overview/assets/global.css'
 import store from './store'
 import {oauthStatus} from 'oc_vue_shared/client_utils/github-import'
+import {CONFIGURABLE_HIDDEN_OPTIONS} from 'oc_vue_shared/storage-keys'
 
 import Autostop from 'oc_vue_shared/components/oc/autostop.vue'
 import AutostopInner from 'oc_vue_shared/components/oc/autostop-inner.vue'
@@ -72,9 +73,11 @@ const ENTRIES = [
   {name: 'import-button', component: ImportButton, props: {repoImport: {}}},
   {name: 'import-link', component: ImportLink, props: {card: {name: 'env__deployment__resource', imported: true}}},
   {
+    // a real option, so the fixture cannot drift from the shape the component
+    // is actually given -- and `type` is not part of it
     name: 'experimental-settings-input',
     component: ExperimentalSettingInput,
-    props: {option: {key: 'GALLERY_OPTION', label: 'Gallery option', type: 'boolean'}}
+    props: {option: CONFIGURABLE_HIDDEN_OPTIONS.find(o => o.key === 'defaultSeverityLevel')}
   },
   {name: 'cloud-table', component: CloudTable, props: {data: CLOUD_TABLE_DATA}},
   // map-controls-shell is `position: absolute; bottom: 1rem`, so it needs a

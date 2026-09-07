@@ -9,6 +9,16 @@
                        position: relative; min-height: 3rem; }
       .gallery-title { font: 600 13px/1.4 monospace; margin: 0 0 0.75rem; color: #89888d; }
       .gallery-error { color: #ec5941; white-space: pre-wrap; margin: 0; }
+      /*
+       * experimental-settings-input gets both its width and its 250px prepend
+       * from its parent's scoped styles (.settings-modal-body in
+       * experimental-settings-indicator.vue, inside a default-size gl-modal).
+       * Rendered bare it stretches to the page and the label collapses, which
+       * is not what the component looks like anywhere. Mirrored here; the
+       * parent is fork-only, so this cannot be rendered the real way.
+       */
+      [data-testid="gallery-experimental-settings-input"] { max-width: 500px; }
+      [data-testid="gallery-experimental-settings-input"] .el-input-group__prepend { width: 250px; }
     </style>
 
     <!-- the same vendored GitLab stylesheets public/index.html links, so
