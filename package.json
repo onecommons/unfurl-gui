@@ -23,7 +23,7 @@
     "integration-test": "./scripts/src/integration-test.js",
     "generate:gitlab-ci": "./scripts/src/generate-ci-tests.js",
     "generate:readme": "./scripts/src/generate-readme.js",
-    "lint": "vue-cli-service lint",
+    "lint": "eslint --ext .js,.vue src packages/oc-pages",
     "apollo": "vue-cli-service apollo:dev --generate-schema",
     "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",
     "apollo:schema:publish": "vue-cli-service apollo:schema:publish",
@@ -33,7 +33,8 @@
     "push-local-repo": "./scripts/push-local-repo",
     "clean-har": "./scripts/src/clean-har.js",
     "membership-test": "./scripts/src/membership-test.js",
-    "test:packages": "jest packages --runInBand"
+    "test:packages": "jest packages --runInBand",
+    "lint:fix": "eslint --fix --ext .js,.vue src packages/oc-pages"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.11",

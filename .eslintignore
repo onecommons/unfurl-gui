@@ -1,0 +1,15 @@
+node_modules/
+dist/
+
+# src/gitlab-oc is a symlink to packages/oc-pages. Linting through it would
+# double-report every file, and its nested node_modules holds
+# eslint-loader@2.2.1, whose package.json eslintConfig extends a config that
+# isn't installed -- eslint fails on that while resolving, before any file is
+# linted. Lint packages/oc-pages directly instead.
+src/gitlab-oc/
+
+# Abandoned vue-cli scaffolding: imported only by src/router/index.ts, which is
+# itself unused, and none of it is a vue.config.js entry. It doesn't parse under
+# our babel config (decorators before export). Migration plan step 2A.8 deletes
+# the whole cluster; until then, don't lint it.
+src/views/

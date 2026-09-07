@@ -304,11 +304,10 @@ export default {
         },
 
         defaultEditBranch() {
-            if(['.', 'project'].includes(this.location)) {
-                return this.homeProjectDefaultBranch
-            } else if(this.location == 'spec') {
-                return this.blueprintDefaultBranch
-            }
+            // location is always one of the el-select's values: project, . or spec
+            return this.location == 'spec'
+                ? this.blueprintDefaultBranch
+                : this.homeProjectDefaultBranch
         }
     },
     watch: {

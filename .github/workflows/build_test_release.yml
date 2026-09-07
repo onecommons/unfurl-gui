@@ -55,6 +55,8 @@ jobs:
       - name: Install yarn dependencies
         run: npm i -g yarn && YARN_ENABLE_IMMUTABLE_INSTALLS=false yarn install
         # TODO add back ufsv-patch -- --runInBand
+      - name: Lint
+        run: yarn lint
       - name: Run unit tests
         run: yarn test packages -- --runInBand
       # Warnings are errors here: the build is clean as of this commit, so any
