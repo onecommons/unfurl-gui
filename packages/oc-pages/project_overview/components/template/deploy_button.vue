@@ -1,8 +1,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import { Tooltip as ElTooltip } from 'element-ui'
-import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox} from '@gitlab/ui';
+import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox, GlTooltipDirective} from '@gitlab/ui';
 import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import Autostop from 'oc_vue_shared/components/oc/autostop.vue'
 import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
@@ -11,8 +10,10 @@ const standalone = window.gon.unfurl_gui
 
 export default {
     name: 'DeployButton',
+    directives: {
+        GlTooltip: GlTooltipDirective,
+    },
     components: {
-        ElTooltip,
         ErrorSmall,
         Autostop,
         GlButton, GlButtonGroup, GlDropdown, GlFormCheckbox
@@ -109,14 +110,7 @@ export default {
 <template>
     <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper position-relative">
         <autostop v-if="canAutoStop" class="mr-2"/>
-        <el-tooltip :disabled="!deployTooltip">
-            <template #content>
-                <div>
-                    {{deployTooltip}}
-                </div>
-            </template>
-
-            <div class="d-flex flex-column position-relative">
+            <div class="d-flex flex-column position-relative" v-gl-tooltip.hover :title="deployTooltip">
                 <gl-button-group class="deploy-button">
                     <gl-button
                         :aria-label="deployButtonText"
@@ -134,29 +128,16 @@ export default {
                     <gl-dropdown v-if="userCanEdit && !standalone" :disabled="deployStatus == 'disabled'" right>
                         <div class="mt-2"/>
                             <gl-form-checkbox v-if="!localDeployOnly" data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'" placement="right">
-                                    <template #content>
-                                        Use Unfurl to deploy this from the command line
-                                    </template>
-                                <span> Deploy Locally </span>
-                                </el-tooltip>
+                                <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
+                                      title="Use Unfurl to deploy this from the command line"> Deploy Locally </span>
                             </gl-form-checkbox>
                             <gl-form-checkbox data-testid="toggle-force-check" @input="onInputForceCheck" style="margin: 0.25rem 1rem;" >
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'" placement="right">
-                                    <template #content>
-                                        Check status of a resource before creating or updating
-                                    </template>
-
-                                <span> Force Check </span>
-                                </el-tooltip>
+                                <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
+                                      title="Check status of a resource before creating or updating"> Force Check </span>
                             </gl-form-checkbox>
                             <gl-form-checkbox v-if="isCypress" data-testid="toggle-dry-run" @input="onInputDryRun" style="margin: 0.25rem 1rem;">
-                                <el-tooltip v-if="userCanEdit && deployStatus != 'disabled'" placement="right">
-                                    <template #content>
-                                        Run a workflow without provisioning any cloud resources
-                                    </template>
-                                <span> Dry Run </span>
-                                </el-tooltip>
+                                <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
+                                      title="Run a workflow without provisioning any cloud resources"> Dry Run </span>
                             </gl-form-checkbox>
                     </gl-dropdown>
                 </gl-button-group>
@@ -166,7 +147,6 @@ export default {
                     </div>
                 </error-small>
             </div>
-        </el-tooltip>
     </div>
 
 </template>

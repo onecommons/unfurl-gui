@@ -1,6 +1,5 @@
 <script>
-import { GlButton } from '@gitlab/ui';
-import { Tooltip as ElTooltip } from 'element-ui'
+import { GlButton, GlTooltipDirective } from '@gitlab/ui';
 import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
@@ -8,10 +7,12 @@ import DeployButton from './deploy_button.vue'
 
 export default {
     name: 'TemplateButtons',
+    directives: {
+        GlTooltip: GlTooltipDirective,
+    },
     components: {
         GlButton,
-        DeployButton,
-        ElTooltip
+        DeployButton
     },
     props: {
         deployStatus: {type: String, default: () => 'disabled'},
@@ -115,11 +116,7 @@ export default {
                 @click.prevent="cancelDeployment"
                 >{{ __(editingDeployed? 'Cancel': 'Cancel Deployment') }}
             </gl-button>
-            <el-tooltip :disabled="!saveTooltip">
-                <template #content>
-                    {{saveTooltip}}
-                </template>
-                <div>
+                <div v-gl-tooltip.hover :title="saveTooltip">
                 <gl-button
                     v-if="saveStatus != 'hidden'"
                     data-testid="save-template-btn"
@@ -146,7 +143,6 @@ export default {
                     >{{ editingDeployed? __('Save Changes'): __('Save as Draft') }}
                 </gl-button>
                 </div>
-            </el-tooltip>
 
             <gl-button
                 v-if="mergeRequest"

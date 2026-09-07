@@ -1,7 +1,8 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
 import {sleep} from 'oc_vue_shared/client_utils/misc'
-import {Card as ElCard, Input as ElInput, Button as ElButton, Tooltip as ElTooltip, Tag as ElTag} from 'element-ui'
+import {GlTooltipDirective} from '@gitlab/ui'
+import {Card as ElCard, Input as ElInput, Button as ElButton, Tag as ElTag} from 'element-ui'
 import axios from '~/lib/utils/axios_utils'
 import { XhrIFrame } from 'oc_vue_shared/client_utils/crossorigin-xhr'
 import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
@@ -43,8 +44,11 @@ export default {
 
         return data
     },
+    directives: {
+        GlTooltip: GlTooltipDirective,
+    },
     components: {
-        ElCard, ElInput, ElButton, ElTooltip, ElTag,
+        ElCard, ElInput, ElButton, ElTag,
         CodeClipboard,
         ErrorSmall
     },
@@ -147,26 +151,13 @@ export default {
             <ul>
                 <li>
                     Enter the subdomain for this service in the 
-                    <el-tooltip>
-                        <template #content>
-                            <div style="max-width: 300px;">
-                                This is the left side of the CNAME record, also referred to as the "name", "host", or "alias".
-                            </div>
-                        </template>
-                        <u>host</u>
-                    </el-tooltip>
+                    <u v-gl-tooltip.hover title="This is the left side of the CNAME record, also referred to as the &quot;name&quot;, &quot;host&quot;, or &quot;alias&quot;.">host</u>
                     field:
                     <b v-if="subdomain" class="user-select-all"><code-clipboard>{{subdomain}}</code-clipboard></b>
                 </li>
                 <li>
                     Enter into the 
-                    <el-tooltip>
-                        <template #content>
-                            <div style="max-width: 300px;">
-                                This is the right side of the CNAME record.  Somewhat counter-intuitively, this will be the Canonical Name (CNAME) for this service, though you will not need to expose it to your users.  It may also be called the "value" or "target" by your DNS provider.
-                            </div>
-                        </template>
-                        <u>target</u></el-tooltip>
+                    <u v-gl-tooltip.hover title="This is the right side of the CNAME record. Somewhat counter-intuitively, this will be the Canonical Name (CNAME) for this service, though you will not need to expose it to your users. It may also be called the &quot;value&quot; or &quot;target&quot; by your DNS provider.">target</u>
                     field:
                     <b class="user-select-all">
                         <code-clipboard>{{target}}</code-clipboard>
