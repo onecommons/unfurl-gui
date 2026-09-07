@@ -107,6 +107,15 @@ module.exports = {
     // templated by public/public_cloud.html
     public_cloud: {
       entry: "src/pages/public_cloud/index.js"
+    },
+
+    // Mounts oc_inputs.vue against a synthetic schema with a stub store, so the
+    // formily layer can be exercised without a server. Built for spike 2.0 and
+    // kept: 2A.3 rewrites every widget it renders.
+    'form-fixture': {
+      entry: "src/pages/form-fixture/index.js",
+      template: "public/form-fixture.html",
+      filename: "form-fixture.html"
     }
   }
 };
