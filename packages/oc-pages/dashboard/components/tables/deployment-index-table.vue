@@ -319,11 +319,10 @@ export default {
                     const upstreamCommit = deploymentItem.pipeline.upstream_commit_id
                     const upstreamPipeline = deploymentItem.pipeline.upstream_pipeline_id
                     const upstreamProject = deploymentItem.pipeline.upstream_project_id
-                    const result = await triggerIncrementalDeployment(
+                    await triggerIncrementalDeployment(
                         this.pipelinesPath,
                         {variables, upstreamBranch, upstreamCommit, upstreamPipeline, upstreamProject}
                     )
-                    console.log(result)
                     return
                 case 'edit':
                     window.location.href = sessionStorage['editing-target']

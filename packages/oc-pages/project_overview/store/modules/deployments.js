@@ -174,10 +174,8 @@ const actions = {
         const url = `${projectPathToHomeRoute(rootGetters.getHomeProjectPath)}/-/subscriptions?upstream=${encodeURIComponent(projectPath)}`
 
         if(op == 'inc' && items?.length == 1) {
-            console.log(`POST ${url}`)
             await axios.post(url)
         } else if(op == 'dec' && items?.length == 0) {
-            console.log(`DELETE ${url}`)
             await axios.delete(url)
         }
 

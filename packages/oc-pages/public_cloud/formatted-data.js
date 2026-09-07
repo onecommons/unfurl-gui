@@ -77,7 +77,6 @@ export default async function getFormattedData() {
       const params = typeToTemplateParams(type)
       if(params) {
         type.details_url = template(params)
-        console.log(type.details_url)
       }
     }
 

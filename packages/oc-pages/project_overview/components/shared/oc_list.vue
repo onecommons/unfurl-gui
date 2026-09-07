@@ -9,7 +9,6 @@ import Dependency from './dependency.vue'
 import {getCustomInputComponent} from './oc_inputs/index.js'
 import templateMixin from './template-mixin'
 
-console.log(getCustomInputComponent)
 export default {
     name: 'OcList',
     components: {

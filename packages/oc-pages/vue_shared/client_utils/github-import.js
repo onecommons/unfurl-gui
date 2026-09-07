@@ -102,7 +102,6 @@ export class GithubImportHandler {
         async function loadReposInner() {
             try {
                 const result = await axios.get('/import/github/status.json')
-                console.log(result)
                 if(result.status < 300) {
                     this.status = AUTHENTICATED
                     Object.assign(this, result.data)
@@ -114,7 +113,7 @@ export class GithubImportHandler {
                     this.status = UNAUTHENTICATED
                     // CORS redirect
                 } else {
-                    console.log(Object.entries(e))
+                    console.error(e)
                 }
             }
         }

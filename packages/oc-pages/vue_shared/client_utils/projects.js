@@ -207,6 +207,7 @@ export async function fetchLastCommit(projectPath, _branch) {
     // the working tree changed.
     const isDirty = typeof id === 'string' && id.endsWith('-dirty')
     if (isDirty) {
+        // eslint-disable-next-line no-console -- deliberate diagnostic, see above
         console.debug(`fetchLastCommit got dirty commit: ${projectPath}#${name} -> ${id}`)
     }
     if (lastInSessionStorage?.commit && !isDirty && fromStore > fromAPI) {
@@ -263,7 +264,6 @@ export async function createBranch(projectId, branch, ref) {
 }
 
 export async function generateProjectAccessToken(projectId, options) {
-    console.log(`Generating a project token for ${projectId}`)
     const _options = Object.assign({
         name: 'DashboardProjectAccessToken',
         scopes: ['read_repository', 'read_registry']

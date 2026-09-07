@@ -272,7 +272,6 @@ Serializers = {
             if(resource.hasOwnProperty(key)) delete resource[key]
         }
         Object.assign(resource, newObject)
-        console.log('resource!', resource)
     },
     '*': function(any) {
         excludePrefixedFields(any)
@@ -966,6 +965,7 @@ const actions = {
         // send environment variables before trying to commit changes
         try {
             if(o?.dryRun) {
+                // eslint-disable-next-line no-console -- dryRun's output is the point
                 console.log(state.env, state.environmentScope, state.projectPath)
             } else {
                 await patchEnv(state.env, state.environmentScope, state.projectPath, 0)

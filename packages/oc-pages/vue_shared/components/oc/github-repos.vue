@@ -44,13 +44,12 @@ export default {
                     this.status = AUTHENTICATED
                     Object.assign(this, result.data)
                 }
-                console.log(result)
             } catch(e) {
                 if(e.request.status === 0) {
                     this.status = UNAUTHENTICATED
                     // CORS redirect
                 } else {
-                    console.log(Object.entries(e))
+                    console.error(e)
                 }
             }
 

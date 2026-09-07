@@ -138,6 +138,8 @@ export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = window.gon.unfurl_server_url || '/services/unfurl-server'
 
 
+// a developer console helper: printing is the point
 window.lsHiddenOptions = function() {
+    // eslint-disable-next-line no-console
     for(const opt of Object.values(HIDDEN_OPTION_KEYS)) console.log(opt)
 }

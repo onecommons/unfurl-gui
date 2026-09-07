@@ -64,7 +64,6 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
 export async function deleteEnvironmentByName(projectPath, environmentName) {
     const environments = await fetchGitlabEnvironments(projectPath, environmentName)
     const env = environments.find(env => env.name == environmentName)
-    console.log({env, projectPath, environmentName})
 
     const stop_path = env?.stop_path
     const delete_path = env?.delete_path

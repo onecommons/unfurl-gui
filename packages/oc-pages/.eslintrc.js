@@ -23,7 +23,11 @@ module.exports = {
     semi: 'off', // XXX [1]
     "vue/multi-word-component-names": "off",
     "vue/no-v-text-v-html-on-component": "off",
-    "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
+    // warn/error/assert are diagnostics we want to keep; console.log is not
+    "no-console":
+      process.env.NODE_ENV === "production"
+        ? ["warn", { allow: ["warn", "error", "assert"] }]
+        : "off",
     "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
     /*
     "graphql/template-strings": [

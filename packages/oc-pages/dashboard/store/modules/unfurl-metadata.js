@@ -18,7 +18,6 @@ const getters = {
 
     taskLineNo(state) {
         return function({target, operation}) {
-            console.log({target, operation, messages: state.messages})
             return _.find(state.messages, (item) => {
                 return item.target == target && item.operation == operation
             })?.lineNumber

@@ -426,7 +426,7 @@ const actions = {
 
                 const fetchedTypes = (await unfurlServerGetTypes(exportParams, {implementations, implementation_requirements, 'extends': _extends})).ResourceType
 
-                Object.values(fetchedTypes).filter(t => t.directives?.includes('substitute')).forEach(t => {console.log({t});root.ResourceType[t.name] = t})
+                Object.values(fetchedTypes).filter(t => t.directives?.includes('substitute')).forEach(t => {root.ResourceType[t.name] = t})
             }))
         }
 
