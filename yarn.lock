@@ -16642,7 +16642,6 @@ __metadata:
     sass-loader: ^8.0.2
     semver: ^7.3.4
     vue: 2.7.16
-    vuejs-tree: ^2.0.3
   peerDependencies:
     element-ui: ~2.15.6
     vue: ^2.7.16
@@ -21835,22 +21834,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue@npm:2.7.16, vue@npm:^2.6.10":
+"vue@npm:2.7.16":
   version: 2.7.16
   resolution: "vue@npm:2.7.16"
   dependencies:
     "@vue/compiler-sfc": 2.7.16
     csstype: ^3.1.0
   checksum: 42eb129edbd2b647b7a5e0655d69fb2dfcba55009bd4cc6a80da5006ba19054bcbf56554599d9b4379f4aa3bfabc0b4e68c0d7fb47d92b5e41d56b38791553eb
-  languageName: node
-  linkType: hard
-
-"vuejs-tree@npm:^2.0.3":
-  version: 2.1.0
-  resolution: "vuejs-tree@npm:2.1.0"
-  dependencies:
-    vue: ^2.6.10
-  checksum: d844d612d0467f72549584ab6a7d8fe59b4bdf42681c739b81fcca68df4027d2055732e2ec90206c01b35e8dab41087aa3e533c0b09494a27bf694d6ab562ce3
   languageName: node
   linkType: hard
 
