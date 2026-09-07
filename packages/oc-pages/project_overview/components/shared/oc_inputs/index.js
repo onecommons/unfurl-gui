@@ -6,6 +6,8 @@ import UnfurlCloudMirroredRepoImageSource from './UnfurlCloudMirroredRepoImageSo
 import UnfurlCNamedDNSZone from './UnfurlCNamedDNSZone.vue'
 // #!endif
 
+import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
+
 import EnvironmentTooltip from './tooltips/EnvironmentTooltip.vue'
 
 import GenerateDirective from './directives/GenerateDirective.vue'
@@ -47,11 +49,15 @@ import FakePassword from './formily-fake-password'
 import FileSelector from './formily-file-selector'
 // #!endif
 
-const formilyElement = async function() {
-    if(!formilyElement.promise) {
-        formilyElement.promise = import('@formily/element')
+const formilyGl = async function() {
+    if(!formilyGl.promise) {
+        formilyGl.promise = import('./formily-gl').then(module => {
+            // descriptions are markdown; FormItem renders them through this
+            module.registerExtraRenderer(text => parseMarkdown(text))
+            return module
+        })
     }
-    const {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = await formilyElement.promise
+    const {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space} = await formilyGl.promise
     return {FormLayout, FormItem, ArrayItems, Input, InputNumber, Checkbox, Select, Editable, Space}
 }
 
@@ -66,7 +72,7 @@ const formilyVue = async function() {
 export const fields =  async function() {
     const [_formilyVue, _formilyElement] = await Promise.all([
         formilyVue(),
-        formilyElement(),
+        formilyGl(),
     ])
 
     const {createSchemaField} = _formilyVue
@@ -90,7 +96,7 @@ export const fields =  async function() {
 
 
 export const FormProvider = async() => (await formilyVue()).FormProvider
-export const FormLayout = async() => (await formilyElement()).FormLayout
+export const FormLayout = async() => (await formilyGl()).FormLayout
 
 export const schemaFieldComponents = {}
 for(const schemaFieldComponentName of ['SchemaField', 'FormItem', 'ArrayItems', 'Input', 'InputNumber', 'Checkbox', 'Select', 'Editable', 'Space']) {

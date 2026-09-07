@@ -1,12 +1,11 @@
 <script>
 import _ from 'lodash';
 import {__} from '~/locale';
-import Vue from 'vue'
+import {nextTick} from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {Card as ElCard} from 'element-ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
 import {fields, schemaFieldComponents, FormProvider, FormLayout, getCustomTooltip, getUiDirective} from './oc_inputs/index.js'
-import {parseMarkdown} from 'oc_vue_shared/client_utils/markdown'
 import { GlTabs } from '@gitlab/ui';
 
 import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
@@ -541,14 +540,10 @@ export default {
         this.triggerSave(input, input.value ?? input.initialValue, true)
       }
     }
-    const container = this.$refs.container
-
     form.onMount = async () => {
       // we have to wait for the components to exist for formily to validate?
       await fields()
-      await Vue.nextTick()
-      // we're somehow now always getting the element here
-      container.$el?.querySelectorAll('.formily-element-form-item-extra').forEach(el => el.innerHTML = parseMarkdown(el.textContent))
+      await nextTick()
       this.validate()
     }
   }
