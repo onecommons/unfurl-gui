@@ -325,10 +325,7 @@ export default {
     </div>
     <div class="row-fluid no-gutters">
       <div class="col-md-12">
-        <div v-if="$apollo.loading" class="loading apollo">{{ __("Loading...") }}</div>
-        <!--div v-else-if="error" class="error apollo">{{ __("An error occured") }}</div-->
-
-      <div class="oc-table" :class="{'secondary-is-primary': !useCollapseAll}" v-else>
+      <div class="oc-table" :class="{'secondary-is-primary': !useCollapseAll}">
         <!-- Table -->
         <gl-table
           :filter-function="filterFn"
