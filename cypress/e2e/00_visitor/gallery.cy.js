@@ -12,8 +12,6 @@
 const ENTRIES = [
   'autostop',
   'autostop-inner',
-  'autostop-c2',
-  'autostop-c2-custom',
   'deployment-scheduler',
   'github-auth',
   'github-auth-loading',
@@ -93,18 +91,19 @@ describe('component gallery', () => {
     cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-expanded')
   })
 
-  it('opens the C2 preset listbox', () => {
-    cy.get('[data-testid="gallery-autostop-c2"] button').first().click()
-    cy.get('.gl-new-dropdown-panel, [role="listbox"]').should('be.visible')
-    cy.screenshotPage('gallery/autostop-c2-open')
+  it('opens the autostop preset listbox', () => {
+    cy.get('[data-testid="gallery-autostop-inner"] [data-testid="autostop-preset"] button').click()
+    cy.get('[role="listbox"]').should('be.visible').and('contain.text', 'In One Week')
+    cy.screenshotPage('gallery/autostop-presets')
     cy.get('body').click(1100, 10)
   })
 
   it('opens the autostop date picker', () => {
-    // the picker's dropdown is where its shortcut presets live, and nothing
-    // static shows them
-    cy.get('[data-testid="gallery-autostop-inner"] [data-testid="autostop-date"] input').click()
-    cy.get('.el-picker-panel, .pika-single').should('be.visible')
+    // only reachable once the preset is Custom, which is the default. The
+    // trigger is gl-datepicker's calendar button, not the field.
+    cy.get('[data-testid="gallery-autostop-inner"] [data-testid="autostop-date"] .gl-datepicker-actions button')
+      .click()
+    cy.get('.pika-single:not(.is-hidden)').should('be.visible')
     cy.screenshotPage('gallery/autostop-datepicker')
     cy.get('body').click(1000, 10)
   })
@@ -114,9 +113,9 @@ describe('component gallery', () => {
     // appended to <body> and positioned by popper, so a page shot catches it
     // mid-reposition when the fullPage capture resizes the viewport -- and it
     // lands on top of the entries below it either way. Shoot the panel itself.
-    cy.get('[data-testid="gallery-autostop"] button').first().click()
+    cy.get('[data-testid="autostop-trigger"]').click()
     // clicking leaves the trigger's own tooltip up, covering the panel
-    cy.get('[data-testid="gallery-autostop"] button').first().trigger('mouseleave')
+    cy.get('[data-testid="autostop-trigger"]').trigger('mouseleave')
     cy.get('.gl-tooltip, .el-tooltip__popper').should('not.be.visible')
     // the panel is appended to <body>; autostop.vue's data-testid lands on the
     // trigger, not on it. 2A.2 must repoint this when el-popover goes.

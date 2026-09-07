@@ -19,7 +19,6 @@ import ImportLink from 'oc_vue_shared/components/oc/import-link.vue'
 import ExperimentalSettingInput from 'oc_vue_shared/components/oc/experimental-settings-indicator/experimental-settings-input.vue'
 import CloudTable from 'oc_pages/public_cloud/cloud-table.vue'
 import MapControls from 'oc_pages/public_cloud/map-controls.vue'
-import AutostopC2Prototype from './autostop-c2-prototype.vue'
 // Imported directly. oc_inputs/index.js hides it behind a standalone
 // preprocessor conditional, but that loader only runs on .js, so the .vue
 // itself is still reachable from here.
@@ -67,13 +66,6 @@ const ENTRIES = [
   // both real mount points are ~470-500px wide (a popover and a gl-modal),
   // so a full-width entry would show a layout that exists nowhere
   {name: 'autostop-inner', component: AutostopInner, style: {maxWidth: '500px'}},
-  {name: 'autostop-c2', component: AutostopC2Prototype, style: {maxWidth: '500px'}},
-  {
-    name: 'autostop-c2-custom',
-    component: AutostopC2Prototype,
-    props: {initialPreset: 'custom'},
-    style: {maxWidth: '500px'}
-  },
   {
     name: 'deployment-scheduler',
     component: DeploymentScheduler,

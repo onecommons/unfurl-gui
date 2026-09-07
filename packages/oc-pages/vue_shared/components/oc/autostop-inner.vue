@@ -1,36 +1,51 @@
 <script>
-import {
-    DatePicker as ElDatePicker,
-    Input as ElInput
-} from 'element-ui'
+import {GlCollapsibleListbox, GlDatepicker, GlFormInput} from '@gitlab/ui'
 import {mapMutations} from 'vuex'
 
 export default {
     name: 'AutostopInner',
     components: {
-        ElDatePicker,
-        ElInput
+        GlCollapsibleListbox,
+        GlDatepicker,
+        GlFormInput
     },
+    // gl-datepicker has no shortcut concept, so the presets element-ui drew
+    // inside the calendar become the listbox in front of it
+    PRESETS: [
+        {value: 'tomorrow', text: 'Tomorrow'},
+        {value: 'inOneWeek', text: 'In One Week'},
+        {value: 'inTwoWeeks', text: 'In Two Weeks'},
+        {value: 'inOneMonth', text: 'In One Month'},
+        {value: 'custom', text: 'Custom date...'}
+    ],
     data() {
         const d = new Date(Date.now() + 2 * 60 * 60 * 1000)
         const scheduledAutostopTime = `${('0' + d.getHours()).slice(-2)}:${('0' + d.getMinutes()).slice(-2)}`
         return {
             scheduledAutostop: new Date(d.getYear() + 1900, d.getMonth(), d.getDate()),
             scheduledAutostopTime, // TODO remember the user's last choice
+            // the default is today at now+2h, which no preset expresses
+            preset: 'custom',
         }
     },
 
     methods: {
         ...mapMutations(['setAutostop']),
-        disabledDate(d) {
-            return d < Date.now() - 60 * 60 * 24 * 1000
-        },
     },
 
     computed: {
         todayArgs() {
             const d = new Date()
             return [d.getYear() + 1900, d.getMonth(), d.getDate()]
+        },
+
+        // replaces the picker's disabledDate: no point stopping in the past
+        today() {
+            return new Date(...this.todayArgs)
+        },
+
+        presetText() {
+            return this.$options.PRESETS.find(p => p.value == this.preset).text
         },
 
         tomorrow() {
@@ -49,20 +64,6 @@ export default {
             return new Date(this.todayArgs[0], this.todayArgs[1] + 1, this.todayArgs[2])
         },
 
-        shortcuts() {
-            return [
-                ['Tomorrow', this.tomorrow],
-                ['In One Week', this.inOneWeek],
-                ['In Two Weeks', this.inTwoWeeks],
-                ['In One Month', this.inOneMonth],
-            ].map(([text, value]) => {
-                return {
-                    text,
-                    onClick: (picker) => picker.$emit('pick', value)
-                }
-            })
-        },
-
         autostopTime() {
             if(!this.scheduledAutostopTime) return 0
             const [hours, min] =  this.scheduledAutostopTime.split(':')
@@ -76,16 +77,13 @@ export default {
             }
             return null
         },
-
-        pickerOptions() {
-            return {
-                shortcuts: this.shortcuts,
-                disabledDate: this.disabledDate
-            }
-        }
     },
 
     watch: {
+        preset(value) {
+            if(value != 'custom') this.scheduledAutostop = this[value]
+        },
+
         autostop: {
             handler(val) {
                 this.$emit('input', val)
@@ -94,11 +92,6 @@ export default {
         }
     },
 
-    pickerOptions: {
-        disabledDate(d) {
-            return d < Date.now() - 60 * 60 * 24 * 1000
-        },
-    }
 }
 </script>
 <template>
@@ -106,9 +99,20 @@ export default {
         <div class="ml-2 m-1">
             Automatically stop the deployment at a specified time:
         </div>
-        <div>
-            <el-date-picker data-testid="autostop-date" class="ml-2" type="date" v-model="scheduledAutostop" :picker-options="pickerOptions"/>
-            <el-input data-testid="autostop-time" style="width: 220px;" type="time" v-model="scheduledAutostopTime" clearable/>
+        <div class="gl-flex gl-items-center gl-flex-wrap gl-gap-3 ml-2">
+            <gl-collapsible-listbox
+                data-testid="autostop-preset"
+                v-model="preset"
+                :items="$options.PRESETS"
+                :toggle-text="presetText"
+            />
+            <gl-datepicker
+                v-if="preset == 'custom'"
+                data-testid="autostop-date"
+                v-model="scheduledAutostop"
+                :min-date="today"
+            />
+            <gl-form-input data-testid="autostop-time" style="width: 130px;" type="time" v-model="scheduledAutostopTime"/>
         </div>
     </div>
 </template>

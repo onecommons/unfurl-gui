@@ -65,7 +65,7 @@ export default {
                     <div> Automatically stop the deployment at a specified time </div>
                 </template>
 
-            <gl-button :variant="enabledAutostop? 'confirm': 'default'">
+            <gl-button data-testid="autostop-trigger" :variant="enabledAutostop? 'confirm': 'default'">
                 <i style="font-size: 16px;" class="el-icon-timer"></i>
                 <span>
                     {{enabledAutostop? 'Auto Stop Scheduled': 'Schedule Auto Stop'}}
