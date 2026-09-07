@@ -1,7 +1,6 @@
 <script>
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
-import {GlCard} from '@gitlab/ui'
-import {Tooltip as ElTooltip} from 'element-ui'
+import {GlCard, GlTooltipDirective} from '@gitlab/ui'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import graphJson from './cloud-graph-inspector-mock.data.json'
@@ -9,6 +8,7 @@ import graphJson from './cloud-graph-inspector-mock.data.json'
 
 export default {
   name: 'CloudTable',
+  directives: {GlTooltip: GlTooltipDirective},
   components: {TableComponent, DetectIcon, GlCard},
   props: {
     data: Object
@@ -64,15 +64,8 @@ export default {
       <div class="d-flex justify-content-center">
         <h1 style="font-size: 28px; cursor: default" class="m-0">
           Public Cloud Testbeds
-          <el-tooltip>
-            <template #content>
-              <div style="max-width: 300px; font-size: 1.1rem;">
-                Here are some of the open-source application and services available in our public cloud. Click on a deployment to see details or to clone.  Or join one of  a testbed project to get full access to our public cloud infrastructure.
-              </div>
-            </template>
-
-            <i class="el-icon-info"></i>
-          </el-tooltip>
+          <i v-gl-tooltip.hover data-testid="public-cloud-help" class="el-icon-info"
+             title="Here are some of the open-source application and services available in our public cloud. Click on a deployment to see details or to clone.  Or join one of  a testbed project to get full access to our public cloud infrastructure."></i>
         </h1>
       </div>
     </template>

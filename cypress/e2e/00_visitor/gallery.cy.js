@@ -47,6 +47,15 @@ describe('component gallery', () => {
     })
   })
 
+  it('shows the public cloud help tooltip', () => {
+    cy.get('[data-testid="public-cloud-help"]').trigger('mouseenter')
+    cy.get('.gl-tooltip').should('be.visible').and('contain.text', 'open-source')
+    // a page shot, like the other tooltip captures: the tooltip sits above
+    // its icon and an element shot of the entry clips it
+    cy.screenshotPage('gallery/cloud-table-tooltip')
+    cy.get('[data-testid="public-cloud-help"]').trigger('mouseleave')
+  })
+
   it('opens the autostop popover', () => {
     // The popover only exists once clicked, so no static shot covers it. It is
     // appended to <body> and positioned by popper, so a page shot catches it

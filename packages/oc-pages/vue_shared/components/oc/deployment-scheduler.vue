@@ -1,6 +1,6 @@
 <script>
 import { mapGetters, mapActions } from 'vuex'
-import { Checkbox as ElCheckbox} from 'element-ui'
+import { GlFormCheckbox } from '@gitlab/ui'
 import { DetectIcon } from 'oc_vue_shared/components/oc'
 
 const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
@@ -9,7 +9,7 @@ export default {
     name: 'DeploymentScheduler',
     components: {
         DetectIcon,
-        ElCheckbox
+        GlFormCheckbox
     },
     props: {
         resourceName: String,
@@ -89,7 +89,7 @@ export default {
         <div v-if="this.getCurrentContext != 'environment'" class="d-flex mt-5 p align-items-center">
             <detect-icon size="24" name="expire" />
             <div class="ml-5">
-                <el-checkbox data-testid="incremental-deployment-checkbox" v-model="incrementalDeploymentEnabled" :label="_label"/>
+                <gl-form-checkbox data-testid="incremental-deployment-checkbox" v-model="incrementalDeploymentEnabled">{{_label}}</gl-form-checkbox>
             </div>
         </div>
 
