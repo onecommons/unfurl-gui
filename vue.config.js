@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack')
 const _ = require('lodash')
 const {createProxyMiddleware} = require('http-proxy-middleware')
 
@@ -66,6 +67,14 @@ module.exports = {
     // project entry 2.21 MiB) so growth has to be a deliberate decision --
     // phase 2 swaps @gitlab/ui 60 -> 137 and adds Tailwind, which will move
     // these.
+    plugins: [
+      // pikaday, under gl-datepicker, requires moment as an optional dependency
+      // inside a try/catch. Webpack resolves that statically, and moment's own
+      // dynamic require of ./locale/<name> then drags in all 135 locales --
+      // 203 KiB of the 262 moment costs. The core stays, so moment still works.
+      new webpack.IgnorePlugin({resourceRegExp: /^\.\/locale$/, contextRegExp: /moment$/})
+    ],
+
     performance: {
       maxAssetSize: 2 * 1024 * 1024,
       maxEntrypointSize: 2.6 * 1024 * 1024

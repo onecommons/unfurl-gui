@@ -19,10 +19,13 @@ import ImportLink from 'oc_vue_shared/components/oc/import-link.vue'
 import ExperimentalSettingInput from 'oc_vue_shared/components/oc/experimental-settings-indicator/experimental-settings-input.vue'
 import CloudTable from 'oc_pages/public_cloud/cloud-table.vue'
 import MapControls from 'oc_pages/public_cloud/map-controls.vue'
-// Imported directly. oc_inputs/index.js hides it behind a standalone
-// preprocessor conditional, but that loader only runs on .js, so the .vue
-// itself is still reachable from here.
-import FileSelector from 'oc_pages/project_overview/components/shared/oc_inputs/file-selector.vue'
+// Imported directly, because oc_inputs/index.js hides it behind a standalone
+// preprocessor conditional and that loader only runs on .js. Async, so its
+// mime-types dependency lands in the gallery's own chunk: the vendors
+// cacheGroup only collects initial chunks, and a static import here would put
+// 144 KiB into the bundle every page shares for a component the app compiles
+// out.
+const FileSelector = () => import('oc_pages/project_overview/components/shared/oc_inputs/file-selector.vue')
 
 Vue.use(Vuex)
 /*
