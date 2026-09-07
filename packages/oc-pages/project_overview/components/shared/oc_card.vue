@@ -6,7 +6,6 @@ import { bus } from 'oc_vue_shared/bus';
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateCardId} from 'oc_vue_shared/util'
-import {Tooltip as ElTooltip} from 'element-ui'
 import templateMixin from './template-mixin'
 
 import { __ } from '~/locale';
@@ -22,8 +21,7 @@ export default {
         GlIcon,
         GlBadge,
         StatusIcon,
-        DetectIcon,
-        ElTooltip
+        DetectIcon
     },
     mixins: [templateMixin, commonMethods],
     props: {
@@ -158,6 +156,10 @@ export default {
             return {name, size, 'class': className, title, isProtected}
         },
 
+        validationIconProps() {
+            return {...this.statusIconProps, title: this.tooltip || this.statusIconProps.title}
+        },
+
         _readonly() {
             return this.readonly || this.card?.imported || this.card?.readonly
         },
@@ -289,18 +291,7 @@ export default {
                                 <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                                 <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
                             </div>
-                            <!-- Avoid mounting el-tooltip (popper + listeners)
-                                 when there's no tooltip text. -->
-                            <el-tooltip v-if="tooltip">
-                                <template #content>
-                                    <div>
-                                        {{tooltip}}
-                                    </div>
-                                </template>
-
-                                <detect-icon v-if="_displayValidation" v-bind="statusIconProps" />
-                            </el-tooltip>
-                            <detect-icon v-else-if="_displayValidation" v-bind="statusIconProps" />
+                            <detect-icon v-if="_displayValidation" v-gl-tooltip.hover data-testid="card-validation-icon" v-bind="validationIconProps" />
                             <div v-if="_displayStatus" class="d-flex pt-1 pb-1 badges-container">
                                 <slot name="status">
                                     <gl-badge v-if="!isMobileLayout && badgeHeaderText" class="gl-tab-counter-badge gl-mr-3" >

@@ -120,6 +120,16 @@ describe('Route smoke', () => {
         cy.screenshotPage('route-smoke/dashboard-environment')
         cy.then(() => expect(pageErrors, 'page errors on dashboard-environment').to.deep.equal([]))
 
+        // Tooltips only exist on hover, so no screenshot covers them. 2A.2
+        // moves ~12 of them from el-tooltip to v-gl-tooltip; without this the
+        // gate would report every one of those conversions as a no-op.
+        cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseenter')
+        cy.get('[role="tooltip"]', {timeout: 4000})
+          .should('be.visible')
+          .invoke('text')
+          .should('match', /Complete|Incomplete/)
+        cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseleave')
+
         const deployment = deployments[0]
         if (!deployment) {
           cy.task('log', '[route-smoke] no deployments in fixture project; skipping deployment route')
