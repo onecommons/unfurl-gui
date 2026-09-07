@@ -74,9 +74,14 @@ describe('component gallery', () => {
   it('shows the public cloud help tooltip', () => {
     cy.get('[data-testid="public-cloud-help"]').trigger('mouseenter')
     cy.get('.gl-tooltip').should('be.visible').and('contain.text', 'open-source')
-    // a page shot, like the other tooltip captures: the tooltip sits above
-    // its icon and an element shot of the entry clips it
-    cy.screenshotPage('gallery/cloud-table-tooltip')
+    /*
+     * The panel itself, for the same reason autostop-popover is shot that way:
+     * popper positions it, and a fullPage capture resizes the viewport, so a
+     * page shot sometimes catches it mid-reposition and sometimes misses it
+     * entirely. That was a 0.91% intermittent diff -- the tooltip absent, the
+     * page background showing through where it should have been.
+     */
+    cy.screenshotElement('.gl-tooltip', 'gallery/cloud-table-tooltip')
     cy.get('[data-testid="public-cloud-help"]').trigger('mouseleave')
   })
 
