@@ -22,6 +22,14 @@ const alias = {
 // }
 
 module.exports = {
+  // Component <style scoped> blocks land in chunk-common in a different order
+  // per entry point, which mini-css-extract-plugin reports as a conflict. The
+  // order between scoped styles is meaningless by construction -- each is
+  // namespaced to its own component -- so the ordering it can't satisfy is one
+  // that never mattered.
+  css: {
+    extract: { ignoreOrder: true }
+  },
   devServer: {
     allowedHosts: 'all',
     // gdk's nginx serves the unfurl server under this path, with the prefix stripped
@@ -53,6 +61,15 @@ module.exports = {
     }
   },
   configureWebpack: {
+    // A budget rather than webpack's 244 KiB default, which nothing here has
+    // ever met. Set just above today's largest (chunk-vendors 1.78 MiB, the
+    // project entry 2.21 MiB) so growth has to be a deliberate decision --
+    // phase 2 swaps @gitlab/ui 60 -> 137 and adds Tailwind, which will move
+    // these.
+    performance: {
+      maxAssetSize: 2 * 1024 * 1024,
+      maxEntrypointSize: 2.6 * 1024 * 1024
+    },
     resolve: {
       alias,
       symlinks: false

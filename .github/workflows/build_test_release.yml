@@ -57,8 +57,18 @@ jobs:
         # TODO add back ufsv-patch -- --runInBand
       - name: Run unit tests
         run: yarn test packages -- --runInBand
+      # Warnings are errors here: the build is clean as of this commit, so any
+      # new lint or webpack warning should fail rather than scroll past. Covers
+      # both, since eslint runs inside the webpack build.
       - name: Compile
-        run: yarn build
+        run: |
+          set -o pipefail
+          yarn build 2>&1 | tee /tmp/build.log
+          if sed 's/\x1b\[[0-9;]*m//g' /tmp/build.log \
+             | grep -qE "Compiled with [0-9]+ warning|[0-9]+ problems? \("; then
+            echo "::error::build produced warnings (see log above); the build is expected to be warning-free"
+            exit 1
+          fi
       - name: Pull unfurl server image
         # The :<branch>-server image is built by unfurl's dev_images.yml and
         # bundles both the rust unfurl-server binary AND the optional Python
