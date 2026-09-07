@@ -128,10 +128,17 @@ jobs:
         with:
           name: cypress-screenshots
           path: cypress/screenshots
-      # Non-blocking until an image has been stable for a few runs.
       - name: Compare screenshots against baseline
         if: ${{ !cancelled() }}
-        run: ./scripts/src/compare-screenshots.js
+        run: |
+          # Report on everything, non-blocking.
+          ./scripts/src/compare-screenshots.js
+          # Gate the formily form: it guards every widget 2A.3 rewrites, and is
+          # pixel-identical across runs. Most others are not -- the deployment
+          # tables carry a Last Update timestamp and object-popover the random
+          # deployment-title suffix, which only pass today because 0.01% falls
+          # under the 0.5% threshold. Add them here if they prove stable.
+          ./scripts/src/compare-screenshots.js --strict 'formily/the_app-filled.png'
       - name: Upload screenshot diffs
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

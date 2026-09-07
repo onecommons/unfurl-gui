@@ -221,14 +221,24 @@ smaller than 6%. The comparison always runs same-platform, so the diff means
 ```bash
 ./scripts/src/compare-screenshots.js               # report only, always exits 0
 SCREENSHOT_PLATFORM=linux ./scripts/src/compare-screenshots.js   # check CI's set
-./scripts/src/compare-screenshots.js --strict 'route-smoke/*'
+./scripts/src/compare-screenshots.js --strict 'formily/the_app-filled.png'
+SCREENSHOT_DIFF_THRESHOLD=0 ./scripts/src/compare-screenshots.js # true determinism
 ```
+
+CI runs the report non-blocking, then gates `formily/the_app-filled.png`,
+which guards every widget 2A.3 rewrites. Only that one is gated, because at
+`SCREENSHOT_DIFF_THRESHOLD=0` three images are not deterministic between runs:
+both deployment tables carry a `Last Update` timestamp, and `object-popover`
+the random deployment-title suffix. They pass today only because 0.01% falls
+under the 0.5% threshold — masked, not stable. The other four route-smoke
+images are pixel-identical across runs and are candidates for the gate once
+they have proven so on CI too.
 
 The platform comes from `process.platform`, overridable with
 `SCREENSHOT_PLATFORM`. If no per-platform directory exists it falls back to a
-flat `cypress/baseline/`. The `linux/` set is currently absent: the captures changed shape when full-page
-was introduced, and it can only be regenerated from CI. Until then the
-comparison there reports `no baseline yet` rather than false positives.
+flat `cypress/baseline/`. Both sets are from full-page captures and have identical dimensions, so only
+text rendering differs between them: 0.5-3% of pixels, against a 0.5%
+threshold. Same-platform comparisons should sit at 0%.
 
 Refresh a platform's set from a green run:
 
