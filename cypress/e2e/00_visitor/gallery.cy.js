@@ -12,12 +12,15 @@
 const ENTRIES = [
   'autostop',
   'autostop-inner',
+  'autostop-c2',
+  'autostop-c2-custom',
   'deployment-scheduler',
   'github-auth',
   'github-auth-loading',
   'import-button',
   'import-link',
   'experimental-settings-input',
+  'file-selector',
   'cloud-table',
   'map-controls',
 ]
@@ -34,6 +37,17 @@ describe('component gallery', () => {
     // data(), so without this its two screenshots drift every run. Only Date
     // is stubbed -- stubbing timers as well breaks popper and Vue's nextTick.
     cy.clock(new Date('2026-03-04T10:20:00Z').getTime(), ['Date'])
+    // file-selector builds its tree from a flat file list over two endpoints
+    cy.intercept('GET', '**/repository/branches', [{name: 'main', default: true}])
+    cy.intercept('GET', '**/-/files/**', [
+      'README.md',
+      'ensemble-template.yaml',
+      'configs/nginx.conf',
+      'configs/tls/cert.pem',
+      'configs/tls/key.pem',
+      'service/main.py',
+      'service/requirements.txt',
+    ])
     cy.visitBuiltPage('gallery.html')
     cy.get('[data-testid="gallery-map-controls"]', {timeout: 20000}).should('exist')
   })
@@ -64,6 +78,35 @@ describe('component gallery', () => {
     cy.screenshotPage('gallery/import-link-popover')
     cy.get('[data-testid="import-link-trigger"]').trigger('mouseleave')
     cy.get('.popover').should('not.exist')
+  })
+
+  it('browses the file tree', () => {
+    // the tree only mounts once the picker is in selecting mode
+    cy.get('[data-testid="file-selector-choose"]').click()
+    cy.get('[data-testid="file-selector-tree"]').should('be.visible')
+    cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-tree')
+    // the label has pointer-events: none; vuejs-tree puts the expand handler
+    // on the row's first span, which file-selector stretches full width as
+    // the click overlay
+    cy.get('[data-testid="file-selector-tree"] .row_data').contains('configs')
+      .closest('.row_data').find('span').first().click()
+    cy.screenshotElement('[data-testid="gallery-file-selector"]', 'gallery/file-selector-expanded')
+  })
+
+  it('opens the C2 preset listbox', () => {
+    cy.get('[data-testid="gallery-autostop-c2"] button').first().click()
+    cy.get('.gl-new-dropdown-panel, [role="listbox"]').should('be.visible')
+    cy.screenshotPage('gallery/autostop-c2-open')
+    cy.get('body').click(1100, 10)
+  })
+
+  it('opens the autostop date picker', () => {
+    // the picker's dropdown is where its shortcut presets live, and nothing
+    // static shows them
+    cy.get('[data-testid="gallery-autostop-inner"] [data-testid="autostop-date"] input').click()
+    cy.get('.el-picker-panel, .pika-single').should('be.visible')
+    cy.screenshotPage('gallery/autostop-datepicker')
+    cy.get('body').click(1000, 10)
   })
 
   it('opens the autostop popover', () => {

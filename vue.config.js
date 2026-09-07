@@ -72,7 +72,14 @@ module.exports = {
     },
     resolve: {
       alias,
-      symlinks: false
+      symlinks: false,
+      fallback: {
+        // file-selector pulls in mime-types, which wants node's path. The fork
+        // build supplies a polyfill; standalone did not, which is part of why
+        // the component was unreachable here at all. Only the gallery chunk
+        // imports it, so nothing else grows.
+        path: require.resolve('path-browserify')
+      }
     },
     module: {
       rules: [

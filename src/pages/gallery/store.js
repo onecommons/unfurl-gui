@@ -25,12 +25,17 @@ export default new Vuex.Store({
     getDeploymentTemplate: () => ({name: 'gallery-template'}),
     getCurrentEnvironment: () => ({name: 'gallery-environment'}),
     getCurrentContext: () => 'deployment',
-    windowWidth: () => 1280
+    windowWidth: () => 1280,
+    // file-selector
+    getCurrentProjectPath: () => 'onecommons/blueprints/gallery',
+    getCurrentEnvironmentName: () => 'gallery-environment',
+    getApplicationBlueprint: () => ({name: 'gallery', projectPath: 'onecommons/blueprints/gallery'})
   },
   mutations: {
     setAutostop(state, value) { state.autostop = value }
   },
   actions: {
-    setEnvironmentVariable({state}, {name, value}) { state.environmentVariables[name] = value }
+    setEnvironmentVariable({state}, {name, value}) { state.environmentVariables[name] = value },
+    createFlash() {}
   }
 })
