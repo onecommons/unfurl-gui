@@ -1,8 +1,7 @@
 <script>
 import {mapGetters} from 'vuex'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
-import {Button as ElButton} from 'element-ui'
-import {GlModal} from '@gitlab/ui'
+import {GlButton, GlModal} from '@gitlab/ui'
 
 export default {
     name: 'GenerateDirective',
@@ -11,7 +10,7 @@ export default {
         return {...this.$options.f(), showModal: false}
     },
     components: {
-        ElButton, GlModal
+        GlButton, GlModal
     },
     computed: {
         ...mapGetters(['resolveResourceTypeFromAny']),
@@ -53,7 +52,7 @@ export default {
 </script>
 <template>
     <div class="position-absolute ml-1">
-        <el-button :data-testid="`${property['x-component-props']['data-testid']}-generate`" icon="el-icon-s-opportunity" @click="assignGenerated(false)">Generate</el-button>
+        <gl-button :data-testid="`${property['x-component-props']['data-testid']}-generate`" icon="bulb" @click="assignGenerated(false)">Generate</gl-button>
         <gl-modal
             v-model="showModal"
             @primary="assignGenerated(true)"
