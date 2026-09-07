@@ -62,11 +62,6 @@ module.exports = {
     }
   },
   configureWebpack: {
-    // A budget rather than webpack's 244 KiB default, which nothing here has
-    // ever met. Set just above today's largest (chunk-vendors 1.78 MiB, the
-    // project entry 2.21 MiB) so growth has to be a deliberate decision --
-    // phase 2 swaps @gitlab/ui 60 -> 137 and adds Tailwind, which will move
-    // these.
     plugins: [
       // pikaday, under gl-datepicker, requires moment as an optional dependency
       // inside a try/catch. Webpack resolves that statically, and moment's own
@@ -75,9 +70,21 @@ module.exports = {
       new webpack.IgnorePlugin({resourceRegExp: /^\.\/locale$/, contextRegExp: /moment$/})
     ],
 
+    /*
+     * CI fails the build on any webpack warning, so these are a gate rather
+     * than advice. Roughly 10% over what the build actually produces, which is
+     * enough room for ordinary work and tight enough to catch a dependency
+     * arriving: the two that have bitten so far were moment's locales at
+     * 203 KiB and element-ui at 792 KiB, and either would trip this.
+     *
+     * Measured after element-ui was removed -- largest asset chunk-vendors.js
+     * at 1167 KiB, largest entrypoint project.html at 1768 KiB. Source maps
+     * are exempt by webpack's default assetFilter. Re-measure and re-tighten
+     * after 2B; the Vue 3 switch moves both numbers.
+     */
     performance: {
-      maxAssetSize: 2 * 1024 * 1024,
-      maxEntrypointSize: 2.6 * 1024 * 1024
+      maxAssetSize: 1.25 * 1024 * 1024,
+      maxEntrypointSize: 1.9 * 1024 * 1024
     },
     resolve: {
       alias,
