@@ -1,16 +1,14 @@
 import FakePassword from './fake-password.vue'
 
 export const Password = async function () {
-    const [element, vue, formilyBuiltin] = await Promise.all([
-        import('@formily/element'),
+    const [formilyGl, vue] = await Promise.all([
+        import('./formily-gl'),
         import('@formily/vue'),
-        import('@formily/element/lib/__builtins__/shared')
     ])
 
 
-    const { PreviewText } = element
+    const { PreviewText, composeExport, transformComponent } = formilyGl
     const { connect, mapProps, mapReadPretty } = vue
-    const { composeExport, transformComponent } = formilyBuiltin
 
     const TransformFakePassword = transformComponent(FakePassword, {
         change: 'input'
