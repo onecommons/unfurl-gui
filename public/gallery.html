@@ -19,6 +19,7 @@
        */
       [data-testid="gallery-experimental-settings-input"] { max-width: 500px; }
       [data-testid="gallery-experimental-settings-input"] .input-group-prepend { width: 280px; }
+      [data-testid="gallery-experimental-settings-input"] .input-group-prepend > .input-group-text { width: 100%; }
     </style>
 
     <!-- the same vendored GitLab stylesheets public/index.html links, so
@@ -45,6 +46,11 @@
       window.gon = { unfurl_gui: true, home_project: 'gallery' }
     </script>
   <body class="gl-dark gl-dark-scope">
+    <!-- experimental-settings-indicator measures the fork's navbar to place
+         itself; without a stub its watcher throws on the first render -->
+    <div data-qa-selector="navbar" style="position: absolute; visibility: hidden">
+      <div class="navbar-collapse collapse"></div>
+    </div>
     <div id="gallery"></div>
   </body>
 </html>

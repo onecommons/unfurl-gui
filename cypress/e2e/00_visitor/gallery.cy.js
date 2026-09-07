@@ -226,6 +226,7 @@ describe('component gallery', () => {
     closePicker()
   })
 
+
   it('opens the autostop preset listbox', () => {
     cy.get('[data-testid="gallery-autostop-inner"] [data-testid="autostop-preset"] button').click()
     cy.get('[role="listbox"]').should('be.visible').and('contain.text', 'In One Week')
@@ -259,4 +260,5 @@ describe('component gallery', () => {
   after(() => {
     cy.then(() => { cy.task('log', `[gallery] page errors: ${JSON.stringify(pageErrors.slice(0, 8))}`) })
   })
+
 })

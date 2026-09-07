@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
+import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
 import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 import {setupTheme} from 'oc_vue_shared/theme'
@@ -28,6 +29,9 @@ import MapControls from 'oc_pages/public_cloud/map-controls.vue'
 const FileSelector = () => import('oc_pages/project_overview/components/shared/oc_inputs/file-selector.vue')
 
 Vue.use(Vuex)
+Vue.use(VueRouter)
+// experimental-settings-indicator drives its modal off $route.query
+const router = new VueRouter({mode: 'history', routes: [{path: '/:slug*', component: {render: h => h('div')}}]})
 /*
  * Everything dashboard/index.js and project_overview/index.js do before
  * mounting. setupTheme is the one that matters most: it loads element-ui's
@@ -135,6 +139,7 @@ const Boundary = {
 
 new Vue({
   store,
+  router,
   render: h => h('div', {class: 'gallery'}, ENTRIES.map(({name, component, props, style}) =>
     h(Boundary, {props: {name, style}, key: name}, [h(component, {props: props || {}})])
   ))

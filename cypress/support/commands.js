@@ -252,13 +252,13 @@ Cypress.Commands.add('screenshotOverlay', (selector, name, options) =>
  *
  * Stubbing just the document is enough, and keeps this out of the server.
  */
-Cypress.Commands.add('visitBuiltPage', filename => {
+Cypress.Commands.add('visitBuiltPage', (filename, query = '') => {
   cy.readFile(`dist/${filename}`).then(html => {
-    cy.intercept('GET', `**/${filename}`, {
+    cy.intercept('GET', `**/${filename}*`, {
       statusCode: 200,
       headers: {'content-type': 'text/html; charset=utf-8'},
       body: html,
     })
   })
-  cy.visit(`/${filename}`)
+  cy.visit(`/${filename}${query}`)
 })

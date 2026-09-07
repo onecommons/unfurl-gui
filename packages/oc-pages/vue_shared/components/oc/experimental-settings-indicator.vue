@@ -1,7 +1,6 @@
 <script>
 import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
-import {GlButton, GlIcon, GlModal} from '@gitlab/ui'
-import {Card as ElCard, Button as ElButton} from 'element-ui'
+import {GlButton, GlCard, GlIcon, GlModal} from '@gitlab/ui'
 import ErrorSmall from './ErrorSmall.vue'
 import {mapGetters} from 'vuex'
 import ExperimentalSettingInput from './experimental-settings-indicator/experimental-settings-input.vue'
@@ -10,7 +9,7 @@ const enabled = !window.gon.unfurl_gui
 
 export default {
     name: 'ExperimentalSettingIndicator',
-    components: {GlButton, GlIcon, GlModal, ElCard, ElButton, ErrorSmall, ExperimentalSettingInput},
+    components: {GlButton, GlCard, GlIcon, GlModal, ErrorSmall, ExperimentalSettingInput},
     data() {
         return {
             yPos: '0px',
@@ -115,7 +114,7 @@ export default {
             @secondary="clearSettings(); modal = false;"
             v-model="modal"
         >
-            <el-card data-testid="experimental-settings-card" class="settings-modal-body">
+            <gl-card data-testid="experimental-settings-card" class="settings-modal-body">
 
                 <experimental-setting-input
                     v-for="option in CONFIGURABLE_HIDDEN_OPTIONS"
@@ -127,12 +126,12 @@ export default {
                 <error-small :condition="changed" message="Changes will be reflected after page refresh" />
 
                 <div class="d-flex justify-content-end mt-4">
-                    <el-button data-testid="experimental-download-state" @click="downloadState" type="text" icon="el-icon-download"> Download app state </el-button>
+                    <gl-button data-testid="experimental-download-state" @click="downloadState" category="tertiary" icon="download"> Download app state </gl-button>
                     <div class="border-right mr-2 ml-2" />
-                    <el-button data-testid="experimental-upload-state" @click="uploadState" type="text" icon="el-icon-upload2"> Upload app state </el-button>
+                    <gl-button data-testid="experimental-upload-state" @click="uploadState" category="tertiary" icon="upload"> Upload app state </gl-button>
                 </div>
 
-            </el-card>
+            </gl-card>
         </gl-modal>
         <div class="position-fixed" style=" z-index: 1000; pointer-events: none;" :style="{left: xPos, top: yPos}">
             <div v-if="indicateExperimentalSetting" class="d-inline-block position-relative" style="transform: translateX(-100%); pointer-events: all">
@@ -148,6 +147,10 @@ export default {
     </div>
 </template>
 <style scoped>
+.settings-modal-body >>> .input-group-prepend > .input-group-text {
+    width: 100%;
+}
+
 .settings-modal-body >>> .input-group-prepend {
     /* 250px fit Element's prepend; bootstrap's input-group-text adds
        padding, and the longest label clips under it */

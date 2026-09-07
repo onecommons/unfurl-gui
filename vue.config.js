@@ -140,6 +140,14 @@ module.exports = {
       entry: "src/pages/gallery/index.js",
       template: "public/gallery.html",
       filename: "gallery.html"
+    },
+
+    // experimental-settings-indicator needs gon.unfurl_gui false, which cannot
+    // share a page with the gallery -- see public/dev-settings.html
+    'dev-settings': {
+      entry: "src/pages/dev-settings/index.js",
+      template: "public/dev-settings.html",
+      filename: "dev-settings.html"
     }
   }
 };
