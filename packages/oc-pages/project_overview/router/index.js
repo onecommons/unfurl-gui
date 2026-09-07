@@ -27,7 +27,8 @@ const isPrivateRoute = createDenyList(
     }
 )
 
-export default function createRouter(base) {
+// see the dashboard router: store is passed in, not read off router.app
+export default function createRouter(base, store) {
     if(!base)
     throw new Error(`
         Could not initialize router without a projectPath.
@@ -112,8 +113,8 @@ export default function createRouter(base) {
         else _next = next
 
 
-        if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
-            router.app.$store.getters.getRouterHook(to, from, _next)
+        if(typeof store?.getters?.getRouterHook == 'function') {
+            store.getters.getRouterHook(to, from, _next)
         }
         else _next()
     })
@@ -136,7 +137,7 @@ export default function createRouter(base) {
                     setLocalStorageKey(HIDDEN_OPTION_KEYS.unfurlServerUrlDev, {project: base, url: devUrl})
 
                     if(!unfurlServerUrlDev(base)) {
-                        router.app.$store.commit('createError', {
+                        store.commit('createError', {
                             message: `Failed to set Unfurl Server URL - '${devUrl}' is likely an invalid URL`,
                             severity: 'major'
                         })
@@ -161,7 +162,7 @@ export default function createRouter(base) {
                 const linkTo = newRoute
                 const linkTarget = '_self'
                 const linkText = 'End development session'
-                router.app.$store.dispatch('createFlash', {message, linkTo, linkText, linkTarget, type: FLASH_TYPES.WARNING})
+                store.dispatch('createFlash', {message, linkTo, linkText, linkTarget, type: FLASH_TYPES.WARNING})
 
                 // Uncomment to restore previous behavior of using local server only while editing.
                 // const editView = [routeNames.OC_PROJECT_VIEW_EDIT_DEPLOYMENT, routeNames.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT].includes(to.name)
@@ -171,7 +172,7 @@ export default function createRouter(base) {
                 }
             } catch(e) {
                 console.error(e)
-                router.app.$store.commit('createError', {
+                store.commit('createError', {
                     // e.message is useless
                     message: `An error occurred while connecting to Unfurl Server: ${e.message}`,
                     // message: `An error occurred while connecting to Unfurl Server`,

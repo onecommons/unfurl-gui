@@ -19,7 +19,7 @@ Vue.component('el-popover', ElPopover) // needed for formily to have tooltips
 
 setupTheme(Vue)
 
-const router = createRouter()
+const router = createRouter(store)
 
 Vue.config.errorHandler = function(err, vm, info) {
     console.error(err)

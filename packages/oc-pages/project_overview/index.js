@@ -50,7 +50,7 @@ export default (elemId='js-oc-project-overview') => {
   const base = window.location.pathname.includes('/-/overview') ?
     `${projectPath}/-/overview` : projectPath
 
-  const router = createRouter(base);
+  const router = createRouter(base, store);
 
   Vue.prototype.$projectGlobal = {
     projectPath,

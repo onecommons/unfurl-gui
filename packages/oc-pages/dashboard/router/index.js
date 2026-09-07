@@ -31,7 +31,10 @@ try {
     document.querySelector('.top-nav-button[title="Dashboard"]').classList.add('active')
 } catch(e) {}
 
-export default function createRouter() {
+// store is passed in rather than reached through router.app: router.app does
+// not exist in vue-router 4, and it couples the router to whichever root
+// instance registered first
+export default function createRouter(store) {
     /*
     if(!base)
     throw new Error(`
@@ -98,8 +101,8 @@ export default function createRouter() {
 
         // #!endif
 
-        if(typeof router.app.$store?.getters?.getRouterHook == 'function') {
-            router.app.$store.getters.getRouterHook(to, from, next)
+        if(typeof store?.getters?.getRouterHook == 'function') {
+            store.getters.getRouterHook(to, from, next)
         }
         else next()
 

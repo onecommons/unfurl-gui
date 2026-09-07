@@ -61,6 +61,7 @@
     "lodash": "4.17.20",
     "lowdb": "^1.0.0",
     "marked": "^0.3.12",
+    "mitt": "^3.0.1",
     "mkdirp": "^0.5.5",
     "pikaday": "^1.8.0",
     "regenerator-runtime": "^0.14.0",

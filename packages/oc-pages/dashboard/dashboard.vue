@@ -52,7 +52,7 @@ export default {
     async mounted() {
         this.initUserSettings({username: this.getUsername})
 
-        const pathComponents = this.$router.options.base.split('/').filter(s => s);
+        const pathComponents = (this.$router.options.base ?? this.$router.options.history?.base ?? '').split('/').filter(s => s);
         const currentNamespace = pathComponents.slice(0, -1).join('/')
 
         if(!window.gon.home_project) {
