@@ -1,9 +1,10 @@
 <script>
-import {Button as ElButton, Select as ElSelect, Option as ElOption} from 'element-ui'
+import {GlButton} from '@gitlab/ui'
+import {Select as ElSelect, Option as ElOption} from 'element-ui'
 export default {
   name: 'MapControls',
   components: {
-    ElButton,
+    GlButton,
     ElSelect,
     ElOption
   },
@@ -27,9 +28,9 @@ export default {
     <div class="map-controls-inner d-flex flex-wrap justify-content-end ml-5 mr-5" style="pointer-events: none;">
       <div class="d-flex flex-column align-items-end">
         <div class="d-flex flex-column zoom-buttons" style="width: 60px;">
-          <el-button data-testid="map-center" @click="$emit('center')" size="mini" icon="el-icon-aim" style="" />
-          <el-button data-testid="map-zoomin" @click="$emit('zoomin')" size="mini" icon="el-icon-plus" style="" class="ml-0"/>
-          <el-button data-testid="map-zoomout" @click="$emit('zoomout')" size="mini" icon="el-icon-minus" style="" class="ml-0"/>
+          <gl-button data-testid="map-center" @click="$emit('center')" size="small" icon="maximize" />
+          <gl-button data-testid="map-zoomin" @click="$emit('zoomin')" size="small" icon="plus" class="ml-0" />
+          <gl-button data-testid="map-zoomout" @click="$emit('zoomout')" size="small" icon="dash" class="ml-0" />
         </div>
         <div class="d-flex zoom-buttons">
           <el-select data-testid="map-select" v-model="selected">

@@ -133,6 +133,11 @@ jobs:
         run: |
           # Report on everything, non-blocking.
           ./scripts/src/compare-screenshots.js
+          # The gallery and fixture images are deterministic and each frames a
+          # small component in a wide box, so the 0.5% threshold above hides
+          # real changes -- three converted buttons scored 0.35%. Report those
+          # at a threshold that can see them.
+          SCREENSHOT_DIFF_THRESHOLD=0.001 ./scripts/src/compare-screenshots.js 'gallery/*' 'formily/fixture.png'
           # Gate the formily form: it guards every widget 2A.3 rewrites, and is
           # pixel-identical across runs. Most others are not -- the deployment
           # tables carry a Last Update timestamp and object-popover the random

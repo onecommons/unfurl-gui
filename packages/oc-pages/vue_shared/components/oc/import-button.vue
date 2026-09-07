@@ -1,5 +1,5 @@
 <script>
-import {Button as ElButton} from 'element-ui'
+import {GlButton} from '@gitlab/ui'
 import {importStatus} from '../../client_utils/github-import'
 import {mapGetters} from 'vuex'
 
@@ -8,7 +8,7 @@ const {DISABLED, PENDING, AVAILABLE, IMPORTED} = importStatus
 export default {
     name: 'ImportButton',
     components: {
-        ElButton
+        GlButton
     },
     props: {
         repoImport: Object
@@ -18,8 +18,8 @@ export default {
         state() {return this.repoImport?.importStatus},
         loading() {return this.state == PENDING},
         disabled() {return this.state == DISABLED || this.state == IMPORTED},
-        type() {
-            return this.state >= 1? 'primary': 'default'
+        variant() {
+            return this.state >= 1? 'confirm': 'default'
         },
         text() {
             switch(this.state) {
@@ -62,5 +62,5 @@ export default {
 }
 </script>
 <template>
-    <el-button data-testid="import-button" v-if="repoImport" :loading="loading" :disabled="disabled" :type="type" @click="dispatchClick">{{text}}</el-button>
+    <gl-button data-testid="import-button" v-if="repoImport" :loading="loading" :disabled="disabled" :variant="variant" @click="dispatchClick">{{text}}</gl-button>
 </template>
