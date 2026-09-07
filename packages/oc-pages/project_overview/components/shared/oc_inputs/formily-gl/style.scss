@@ -356,14 +356,6 @@ $label-top-line-height: 40px;
     --oc-control-border: #{$color-success};
 }
 
-/* fake-password.vue is still an el-input, which drew its own status border */
-.#{$prefix}-form-item-error {
-    .el-input__inner,
-    .el-textarea__inner {
-        border-color: var(--oc-control-border);
-    }
-}
-
 .#{$prefix}-form-item {
     .gl-form-input,
     select.gl-form-select {

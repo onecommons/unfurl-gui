@@ -1,7 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
-import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 // same global setup the real entry points do; without setupTheme the element
@@ -13,8 +12,6 @@ import { card } from './schema'
 
 Vue.use(VueRouter)
 Vue.use(OcComponents)
-Vue.component('el-popover', ElPopover)
-Vue.directive('loading', ElLoading)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 setupTheme(Vue)
 

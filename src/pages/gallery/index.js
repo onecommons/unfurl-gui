@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
-import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 // the design tokens, the tailwind gl-* utilities and the badge shim
@@ -34,14 +33,9 @@ Vue.use(VueRouter)
 const router = new VueRouter({mode: 'history', routes: [{path: '/:slug*', component: {render: h => h('div')}}]})
 /*
  * Everything dashboard/index.js and project_overview/index.js do before
- * mounting. setupTheme is the one that matters most: it loads element-ui's
- * theme-chalk and the dark overrides, and without it every el-* here renders
- * as an unstyled native control -- which makes the screenshots a poor guide
- * to what the component looks like in the app.
+ * mounting.
  */
 Vue.use(OcComponents)
-Vue.component('el-popover', ElPopover)
-Vue.directive('loading', ElLoading)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 setupTheme(Vue)
 

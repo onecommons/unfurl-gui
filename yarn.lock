@@ -1886,80 +1886,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@formily/element@npm:^2.0.7":
-  version: 2.3.7
-  resolution: "@formily/element@npm:2.3.7"
-  dependencies:
-    "@formily/core": 2.3.7
-    "@formily/grid": 2.3.7
-    "@formily/json-schema": 2.3.7
-    "@formily/reactive": 2.3.7
-    "@formily/reactive-vue": 2.3.7
-    "@formily/shared": 2.3.7
-    "@formily/vue": 2.3.7
-    portal-vue: ^2.1.7
-    vue-demi: ">=0.13.6"
-    vue-slicksort: ^1.2.0
-  peerDependencies:
-    "@vue/composition-api": ^1.0.0-beta.1
-    element-ui: ^2.14.0
-    vue: ^2.6.0
-  peerDependenciesMeta:
-    "@vue/composition-api":
-      optional: true
-  checksum: 2650ab5cfc3bc51f5ab3908ce8b2e62abb1e05f104ec46eda02f157747b4f756c52ae5209cd826a2288cc53736a1721d05d5e78e82e997d581893c9776a01138
-  languageName: node
-  linkType: hard
-
-"@formily/element@npm:~2.2.0":
-  version: 2.2.30
-  resolution: "@formily/element@npm:2.2.30"
-  dependencies:
-    "@formily/core": 2.2.30
-    "@formily/grid": 2.2.30
-    "@formily/json-schema": 2.2.30
-    "@formily/reactive": 2.2.30
-    "@formily/reactive-vue": 2.2.30
-    "@formily/shared": 2.2.30
-    "@formily/vue": 2.2.30
-    portal-vue: ^2.1.7
-    vue-demi: ^0.13.6
-    vue-slicksort: ^1.2.0
-  peerDependencies:
-    "@vue/composition-api": ^1.0.0-beta.1
-    element-ui: ^2.14.0
-    vue: ^2.6.0
-  peerDependenciesMeta:
-    "@vue/composition-api":
-      optional: true
-  checksum: a15e1952c03279a58ea26295f04af7ac07fb02eb52f7be1297c82bf561436331480bac0afef05d1591efd74902c718b4f9b0b2f8e8f6b517341f4628d1f59fe7
-  languageName: node
-  linkType: hard
-
-"@formily/grid@npm:2.2.30":
-  version: 2.2.30
-  resolution: "@formily/grid@npm:2.2.30"
-  dependencies:
-    "@formily/reactive": 2.2.30
-    "@juggle/resize-observer": ^3.3.1
-  peerDependencies:
-    typescript: 4.x || 5.x
-  checksum: 52416f6eff73fe774eb724df767c68a3e063924daaa6f8033f068f27adc8282f044851e6016ff23cea6588c57ed9723988b8bf334985134fa1b32c4d2558d14c
-  languageName: node
-  linkType: hard
-
-"@formily/grid@npm:2.3.7":
-  version: 2.3.7
-  resolution: "@formily/grid@npm:2.3.7"
-  dependencies:
-    "@formily/reactive": 2.3.7
-    "@juggle/resize-observer": ^3.3.1
-  peerDependencies:
-    typescript: 4.x || 5.x
-  checksum: ae17a2cdf8ade1ea4e11944acf6a7887f588a01b4227ef86bfc0f695f78081f783e7768f5b6d0123ffbfc1e1070224d8b8cb57f1c5208ab177d09beae2e0b84f
-  languageName: node
-  linkType: hard
-
 "@formily/json-schema@npm:2.2.30":
   version: 2.2.30
   resolution: "@formily/json-schema@npm:2.2.30"
@@ -2094,33 +2020,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@formily/vue@npm:2.2.30, @formily/vue@npm:~2.2.0":
-  version: 2.2.30
-  resolution: "@formily/vue@npm:2.2.30"
-  dependencies:
-    "@formily/core": 2.2.30
-    "@formily/json-schema": 2.2.30
-    "@formily/reactive": 2.2.30
-    "@formily/reactive-vue": 2.2.30
-    "@formily/shared": 2.2.30
-    "@formily/validator": 2.2.30
-    fs-extra: ^10.0.0
-    vue-demi: ^0.13.6
-    vue-frag: ^1.1.4
-  peerDependencies:
-    "@vue/composition-api": ^1.0.0-beta.1
-    vue: ^2.6.0 || >=3.0.0-rc.0
-  peerDependenciesMeta:
-    "@vue/composition-api":
-      optional: true
-  bin:
-    formily-vue-fix: bin/formily-vue-fix.js
-    formily-vue-switch: bin/formily-vue-switch.js
-  checksum: 188b2b9b6a8c0d82607e975e40762b5adf662fedad20d20e1aa8df09bda95cac8324b47ecec6446d8e55aaac4565425cf42a0fc43d45f78907d1415cdfceae30
-  languageName: node
-  linkType: hard
-
-"@formily/vue@npm:2.3.7, @formily/vue@npm:^2.0.7":
+"@formily/vue@npm:^2.0.7":
   version: 2.3.7
   resolution: "@formily/vue@npm:2.3.7"
   dependencies:
@@ -2143,6 +2043,32 @@ __metadata:
     formily-vue-fix: bin/formily-vue-fix.js
     formily-vue-switch: bin/formily-vue-switch.js
   checksum: cb21cd5928fa17bacdeebb74c548a4bd97485e8ec235d6d1c74e5ec6a088a71c849097d25fe7fd0bad7900aa5d9d7f1b2daa7005d863e72390b30179fd187b15
+  languageName: node
+  linkType: hard
+
+"@formily/vue@npm:~2.2.0":
+  version: 2.2.30
+  resolution: "@formily/vue@npm:2.2.30"
+  dependencies:
+    "@formily/core": 2.2.30
+    "@formily/json-schema": 2.2.30
+    "@formily/reactive": 2.2.30
+    "@formily/reactive-vue": 2.2.30
+    "@formily/shared": 2.2.30
+    "@formily/validator": 2.2.30
+    fs-extra: ^10.0.0
+    vue-demi: ^0.13.6
+    vue-frag: ^1.1.4
+  peerDependencies:
+    "@vue/composition-api": ^1.0.0-beta.1
+    vue: ^2.6.0 || >=3.0.0-rc.0
+  peerDependenciesMeta:
+    "@vue/composition-api":
+      optional: true
+  bin:
+    formily-vue-fix: bin/formily-vue-fix.js
+    formily-vue-switch: bin/formily-vue-switch.js
+  checksum: 188b2b9b6a8c0d82607e975e40762b5adf662fedad20d20e1aa8df09bda95cac8324b47ecec6446d8e55aaac4565425cf42a0fc43d45f78907d1415cdfceae30
   languageName: node
   linkType: hard
 
@@ -3133,13 +3059,6 @@ __metadata:
     "@jridgewell/resolve-uri": ^3.1.0
     "@jridgewell/sourcemap-codec": ^1.4.14
   checksum: af8fda2431348ad507fbddf8e25f5d08c79ecc94594061ce402cf41bc5aba1a7b3e59bf0fd70a619b35f33983a3f488ceeba8faf56bff784f98bb5394a8b7d47
-  languageName: node
-  linkType: hard
-
-"@juggle/resize-observer@npm:^3.3.1":
-  version: 3.4.0
-  resolution: "@juggle/resize-observer@npm:3.4.0"
-  checksum: 2505028c05cc2e17639fcad06218b1c4b60f932a4ebb4b41ab546ef8c157031ae377e3f560903801f6d01706dbefd4943b6c4704bf19ed86dfa1c62f1473a570
   languageName: node
   linkType: hard
 
@@ -6756,15 +6675,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"async-validator@npm:~1.8.1":
-  version: 1.8.5
-  resolution: "async-validator@npm:1.8.5"
-  dependencies:
-    babel-runtime: 6.x
-  checksum: 3c526e3578119cf1c54bb033a931d63772bcf022ca1edb81f2a4799a90666e90b28d8c48fd82c9e67b1756f130dffdaad051bee1b7c3da7243d232356a388b93
-  languageName: node
-  linkType: hard
-
 "async@npm:^3.2.0, async@npm:^3.2.6":
   version: 3.2.6
   resolution: "async@npm:3.2.6"
@@ -6887,13 +6797,6 @@ __metadata:
   peerDependencies:
     eslint: ">= 4.12.1"
   checksum: bdc1f62b6b0f9c4d5108c96d835dad0c0066bc45b7c020fcb2d6a08107cf69c9217a99d3438dbd701b2816896190c4283ba04270ed9a8349ee07bd8dafcdc050
-  languageName: node
-  linkType: hard
-
-"babel-helper-vue-jsx-merge-props@npm:^2.0.0":
-  version: 2.0.3
-  resolution: "babel-helper-vue-jsx-merge-props@npm:2.0.3"
-  checksum: 94d354b401fae665137433632d6ecb4f212217c115feb06b2544987939fdb2735b35bc856eb99e306e8ead5f840b7891d8e050916a76c025b2380ee052a3b8df
   languageName: node
   linkType: hard
 
@@ -7089,16 +6992,6 @@ __metadata:
   peerDependencies:
     "@babel/core": ^7.0.0
   checksum: aa4ff2a8a728d9d698ed521e3461a109a1e66202b13d3494e41eea30729a5e7cc03b3a2d56c594423a135429c37bf63a9fa8b0b9ce275298be3095a88c69f6fb
-  languageName: node
-  linkType: hard
-
-"babel-runtime@npm:6.x":
-  version: 6.26.0
-  resolution: "babel-runtime@npm:6.26.0"
-  dependencies:
-    core-js: ^2.4.0
-    regenerator-runtime: ^0.11.0
-  checksum: 8aeade94665e67a73c1ccc10f6fd42ba0c689b980032b70929de7a6d9a12eb87ef51902733f8fefede35afea7a5c3ef7e916a64d503446c1eedc9e3284bd3d50
   languageName: node
   linkType: hard
 
@@ -8511,13 +8404,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"core-js@npm:^2.4.0":
-  version: 2.6.12
-  resolution: "core-js@npm:2.6.12"
-  checksum: 44fa9934a85f8c78d61e0c8b7b22436330471ffe59ec5076fe7f324d6e8cf7f824b14b1c81ca73608b13bdb0fef035bd820989bf059767ad6fa13123bb8bd016
-  languageName: node
-  linkType: hard
-
 "core-js@npm:^3.0.1, core-js@npm:^3.37.1, core-js@npm:^3.8.3":
   version: 3.49.0
   resolution: "core-js@npm:3.49.0"
@@ -9513,7 +9399,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"deepmerge@npm:^1.2.0, deepmerge@npm:^1.5.2":
+"deepmerge@npm:^1.5.2":
   version: 1.5.2
   resolution: "deepmerge@npm:1.5.2"
   checksum: 5ecfe328e0105f2c554b90af555cbba052ab4468f1893e3b26800cb8869d3c1a1c590a5bbe1fdf481a8cc89b1bc47b5ac73a7153d5a0e4b702ea6eca081038a8
@@ -9990,29 +9876,6 @@ __metadata:
   version: 1.0.1
   resolution: "elegant-spinner@npm:1.0.1"
   checksum: d6a773d950c5d403b5f0fa402787e37dde99989ab6c943558fe8491cf7cd0df0e2747a9ff4d391d5a5f20a447cc9e9a63bdc956354ba47bea462f1603a5b04fe
-  languageName: node
-  linkType: hard
-
-"element-theme-dark@npm:^1.0.3":
-  version: 1.0.3
-  resolution: "element-theme-dark@npm:1.0.3"
-  checksum: 801be028193162e22b6d0a4dc07220fba697da5081129fd5eb45a0961a6f11fa6ebec85d774890d2881ab6f38aaf5e00c791fcb58f0a78f09324794602f37b55
-  languageName: node
-  linkType: hard
-
-"element-ui@npm:^2.15.6, element-ui@npm:~2.15.6":
-  version: 2.15.14
-  resolution: "element-ui@npm:2.15.14"
-  dependencies:
-    async-validator: ~1.8.1
-    babel-helper-vue-jsx-merge-props: ^2.0.0
-    deepmerge: ^1.2.0
-    normalize-wheel: ^1.0.1
-    resize-observer-polyfill: ^1.5.0
-    throttle-debounce: ^1.0.1
-  peerDependencies:
-    vue: ^2.5.17
-  checksum: 937b211ce3437ce3627fe07a098800805d6c6babc527edfff711dcc160d3c52cbaadd25663d8a03408200d996d7c745afdd60339804537fbf2875554a6edeb2f
   languageName: node
   linkType: hard
 
@@ -16393,13 +16256,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"normalize-wheel@npm:^1.0.1":
-  version: 1.0.1
-  resolution: "normalize-wheel@npm:1.0.1"
-  checksum: 00b32efa040bad9438e732385a4ca27f8532fa2c8c06b54be43b9f75b2da6642bf41a0b4f81e542639dc8d682cde8b059b0a02ae0723fb8ebc3c8f036c8e51d8
-  languageName: node
-  linkType: hard
-
 "npm-run-path@npm:^2.0.0":
   version: 2.0.2
   resolution: "npm-run-path@npm:2.0.2"
@@ -16621,7 +16477,6 @@ __metadata:
   resolution: "oc-pages@workspace:packages/oc-pages"
   dependencies:
     "@formily/core": ~2.2.0
-    "@formily/element": ~2.2.0
     "@formily/vue": ~2.2.0
     "@gitlab/eslint-plugin": 9.4.0
     "@typescript-eslint/eslint-plugin": ^2.33.0
@@ -16631,7 +16486,6 @@ __metadata:
     "@vue/eslint-config-typescript": ^5.0.2
     d3: ^7.6.1
     dompurify: 3.4.0
-    element-ui: ~2.15.6
     eslint: ^6.7.2
     eslint-plugin-graphql: ^2.1.1
     eslint-plugin-prettier: ^3.1.3
@@ -16643,11 +16497,8 @@ __metadata:
     semver: ^7.3.4
     vue: 2.7.16
   peerDependencies:
-    element-ui: ~2.15.6
     vue: ^2.7.16
   peerDependenciesMeta:
-    element-ui:
-      optional: false
     vue:
       optional: false
   languageName: unknown
@@ -17353,7 +17204,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"portal-vue@npm:2.1.7, portal-vue@npm:^2.1.7":
+"portal-vue@npm:2.1.7":
   version: 2.1.7
   resolution: "portal-vue@npm:2.1.7"
   peerDependencies:
@@ -18421,13 +18272,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"regenerator-runtime@npm:^0.11.0":
-  version: 0.11.1
-  resolution: "regenerator-runtime@npm:0.11.1"
-  checksum: 3c97bd2c7b2b3247e6f8e2147a002eb78c995323732dad5dc70fac8d8d0b758d0295e7015b90d3d444446ae77cbd24b9f9123ec3a77018e81d8999818301b4f4
-  languageName: node
-  linkType: hard
-
 "regenerator-runtime@npm:^0.14.0":
   version: 0.14.1
   resolution: "regenerator-runtime@npm:0.14.1"
@@ -18640,13 +18484,6 @@ __metadata:
   version: 1.0.0
   resolution: "requires-port@npm:1.0.0"
   checksum: eee0e303adffb69be55d1a214e415cf42b7441ae858c76dfc5353148644f6fd6e698926fc4643f510d5c126d12a705e7c8ed7e38061113bdf37547ab356797ff
-  languageName: node
-  linkType: hard
-
-"resize-observer-polyfill@npm:^1.5.0":
-  version: 1.5.1
-  resolution: "resize-observer-polyfill@npm:1.5.1"
-  checksum: 57e7f79489867b00ba43c9c051524a5c8f162a61d5547e99333549afc23e15c44fd43f2f318ea0261ea98c0eb3158cca261e6f48d66e1ed1cd1f340a43977094
   languageName: node
   linkType: hard
 
@@ -20517,13 +20354,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"throttle-debounce@npm:^1.0.1":
-  version: 1.1.0
-  resolution: "throttle-debounce@npm:1.1.0"
-  checksum: f465f06b11aa6d4b70281615b3d13b610f685220a63d56f40c0caf7257a7be55c72868b974f5438591f509cb1b9756cf10cfad5b409e487e4ed022e9bb61e61f
-  languageName: node
-  linkType: hard
-
 "throttle-debounce@npm:^2.1.0":
   version: 2.3.0
   resolution: "throttle-debounce@npm:2.3.0"
@@ -21126,7 +20956,6 @@ __metadata:
     "@babel/runtime": ^7.22.11
     "@babel/runtime-corejs3": ^7.22.11
     "@formily/core": ^2.0.7
-    "@formily/element": ^2.0.7
     "@formily/vue": ^2.0.7
     "@gitlab/eslint-plugin": ^19.5.0
     "@gitlab/favicon-overlay": 2.0.0
@@ -21151,8 +20980,6 @@ __metadata:
     cypress-file-upload: ^5.0.8
     cypress-wait-until: ^1.7.2
     dompurify: 3.4.0
-    element-theme-dark: ^1.0.3
-    element-ui: ^2.15.6
     eslint: ^7.2.0
     eslint-plugin-graphql: ^4.0.0
     eslint-plugin-prettier: ^5.1.3
@@ -21795,15 +21622,6 @@ __metadata:
   version: 1.1.2
   resolution: "vue-runtime-helpers@npm:1.1.2"
   checksum: 70e0999b1152113808f3160074255ea41159a7172a563d793546f70b0a1ae2551e712f71499cfb99c5bbcfdc899ae37f9ffbd211f32f9f2d38c84162436bfb9d
-  languageName: node
-  linkType: hard
-
-"vue-slicksort@npm:^1.2.0":
-  version: 1.2.0
-  resolution: "vue-slicksort@npm:1.2.0"
-  peerDependencies:
-    vue: ">=2.2.0"
-  checksum: 7d811094a833e248c0aad31a2dea3a146e5c1c8c90c2ffc22dfacf1c7d74f98af81703588862966a1ddd8699c02c3641d23f0f77258aeede1ea79b5e6935d512
   languageName: node
   linkType: hard
 

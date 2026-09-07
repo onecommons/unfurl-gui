@@ -1,65 +1,31 @@
-import lang from 'element-ui/lib/locale/lang/en'
-import locale from 'element-ui/lib/locale'
+/*
+ * All this used to do besides the mixin was pull in element-ui's theme-chalk
+ * and the 33 element-theme-dark overrides. Nothing renders an element-ui
+ * component any more, so only the mixin is left.
+ *
+ * It stamps .gl-dark on every component root. That looks redundant next to
+ * body.gl-dark and is not: oc_inputs.vue matches `.oc-inputs >>> .gl-dark ...`,
+ * which needs a .gl-dark *inside* .oc-inputs.
+ *
+ * standalone's own index.html is light (gl-dark-scope, no gl-dark), so this is
+ * a no-op there; the fork's layout sets gl-dark for dark-mode users, and the
+ * fixture pages set it unconditionally.
+ */
+export function setupTheme(app) {
+    if(!document.querySelector('body.gl-dark')) return
 
-locale.use(lang)
-
-const stylesheets = [
-  'autocomplete.css',
-  'container.css',
-  'form.css',
-  'dialog.css',
-  'dropdown.css',
-  'dropdown-item.css',
-  'dropdown-menu.css',
-  'element-variables.css',
-  'form-item.css',
-  'input.css',
-  'card.css',
-  'input-number.css',
-  'option.css',
-  'option-group.css',
-  'popover.css',
-  'popper.css',
-  'radio-button.css',
-  'radio.css',
-  'radio-group.css',
-  'row.css',
-  'select.css',
-  'select-dropdown.css',
-  'slider.css',
-  'spinner.css',
-  'step.css',
-  'steps.css',
-  'submenu.css',
-  'time-picker.css',
-  'time-select.css',
-  'tooltip.css',
-  'upload.css',
-  'loading.css',
-]
-
-
-export async function setupTheme(app) {
-  if(document.querySelector('body.gl-dark')) {
-    await import('element-ui/lib/theme-chalk/index.css')
-    for(const stylesheet of stylesheets) {
-      import(`element-theme-dark/lib/${stylesheet}`)
-    }
     function addDark(el) {
-      el.classList?.add('gl-dark')
-
+        el.classList?.add('gl-dark')
     }
+
     app.mixin({
-      watch: {
-        $el() {
-          addDark(this.$el)
+        watch: {
+            $el() {
+                addDark(this.$el)
+            }
+        },
+        mounted() {
+            addDark(this.$el)
         }
-      },
-      mounted() {
-        addDark(this.$el)
-      }
     })
-  } else {
-    import('element-ui/lib/theme-chalk/index.css')
-  }
 }

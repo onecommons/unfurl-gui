@@ -1,5 +1,4 @@
 import * as d3 from 'd3'
-import ElementUI from 'element-ui'
 import AwsIcon from 'oc_vue_shared/components/oc/icons/aws.svg'
 import AzureIcon from 'oc_vue_shared/components/oc/icons/azure.svg'
 import DigitalOceanIcon from 'oc_vue_shared/components/oc/icons/digital_ocean.svg'
@@ -20,7 +19,6 @@ import getFormattedData from './formatted-data'
 import getData from './raw-data'
 import './public-cloud.css'
 
-Vue.use(ElementUI)
 setupTheme(Vue)
 
 // Assigned when the page is initialized, not at import time: the standalone build

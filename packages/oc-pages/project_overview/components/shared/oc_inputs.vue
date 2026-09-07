@@ -3,7 +3,7 @@ import _ from 'lodash';
 import {__} from '~/locale';
 import {nextTick} from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
-import {Card as ElCard} from 'element-ui'
+import {GlCard} from '@gitlab/ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
 import {fields, schemaFieldComponents, FormProvider, FormLayout, getCustomTooltip, getUiDirective} from './oc_inputs/index.js'
 import { GlTabs } from '@gitlab/ui';
@@ -30,7 +30,7 @@ export default {
     FormLayout,
     OcTab,
     GlTabs,
-    ElCard,
+    GlCard,
     ...schemaFieldComponents
   },
 
@@ -44,7 +44,7 @@ export default {
     },
     wrapper: {
       type: String,
-      default: () => 'el-card'
+      default: () => 'gl-card'
     }
   },
 
@@ -665,8 +665,34 @@ export default {
   width: 100%;
 }
 
-.oc-inputs >>> .el-card__body {
+.oc-inputs >>> .gl-card-body {
   overflow: hidden;
+  /* where el-card put it, so the form's inner width is unchanged */
+  padding: 20px;
+}
+
+/*
+ * The panel el-card used to draw. The fork's own stylesheet has
+ * `#OcAppDeployments .gl-card { background-color: #121212 }`, which flattens
+ * every card on the deployments page -- it never reached the form before,
+ * because the form was an el-card. Without this the form sits flush with the
+ * page background.
+ *
+ * Scoped to the card wrapper: `wrapper="div"` is a nested tab inside this
+ * same panel and must not draw a second one.
+ */
+.oc-inputs.gl-card {
+  /* !important because that rule is an id selector, which outranks any
+     number of classes -- and it is not aimed at this card */
+  background-color: #fff !important;
+  padding: 0;
+}
+
+/* the fill element-theme-dark's card.css drew, kept so the panel does not
+   change appearance with element-ui gone */
+.gl-dark .oc-inputs.gl-card,
+.gl-dark-scope .oc-inputs.gl-card {
+  background-color: #222933 !important;
 }
 
 .oc-inputs >>> .gl-dark

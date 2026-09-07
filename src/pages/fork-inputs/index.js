@@ -2,7 +2,6 @@ import Vue from 'vue'
 import Vuex from 'vuex'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
-import {Popover as ElPopover, Loading as ElLoading} from 'element-ui'
 import {setupTheme} from 'oc_vue_shared/theme'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import 'oc_pages/project_overview/assets/global.css'
@@ -30,8 +29,6 @@ const UnfurlCNamedDNSZone = () => import('oc_pages/project_overview/components/s
 Vue.use(Vuex)
 Vue.use(VueRouter)
 Vue.use(OcComponents)
-Vue.component('el-popover', ElPopover)
-Vue.directive('loading', ElLoading)
 Vue.directive('gl-tooltip', GlTooltipDirective)
 setupTheme(Vue)
 

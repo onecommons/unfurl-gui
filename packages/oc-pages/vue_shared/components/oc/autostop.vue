@@ -1,6 +1,6 @@
 <script>
 import AutostopInner from './autostop-inner.vue'
-import { GlButton, GlPopover, GlTooltipDirective } from '@gitlab/ui'
+import { GlButton, GlIcon, GlPopover, GlTooltipDirective } from '@gitlab/ui'
 import {mapMutations} from 'vuex'
 
 export default {
@@ -11,6 +11,7 @@ export default {
     components: {
         GlPopover,
         GlButton,
+        GlIcon,
         AutostopInner,
     },
     data() {
@@ -59,7 +60,7 @@ export default {
             :variant="enabledAutostop? 'confirm': 'default'"
             @click="popover = !popover"
         >
-            <i style="font-size: 16px;" class="el-icon-timer"></i>
+            <gl-icon name="timer" :size="16"/>
             <span>
                 {{enabledAutostop? 'Auto Stop Scheduled': 'Schedule Auto Stop'}}
             </span>

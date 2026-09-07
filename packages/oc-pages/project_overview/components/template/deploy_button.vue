@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox, GlTooltipDirective} from '@gitlab/ui';
+import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox, GlIcon, GlTooltipDirective} from '@gitlab/ui';
 import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import Autostop from 'oc_vue_shared/components/oc/autostop.vue'
 import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
@@ -16,7 +16,7 @@ export default {
     components: {
         ErrorSmall,
         Autostop,
-        GlButton, GlButtonGroup, GlDropdown, GlFormCheckbox
+        GlButton, GlButtonGroup, GlDropdown, GlFormCheckbox, GlIcon
     },
     data() {
         return {
@@ -143,7 +143,7 @@ export default {
                 </gl-button-group>
                 <error-small class="position-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
                     <div class="d-flex align-items-center justify-content-end">
-                        <span style="line-height: 1;">Deployment is incomplete</span><i style="font-size: 1.25em;" class="el-icon-info ml-1"/>
+                        <span style="line-height: 1;">Deployment is incomplete</span><gl-icon name="information-o" :size="16" class="ml-1"/>
                     </div>
                 </error-small>
             </div>

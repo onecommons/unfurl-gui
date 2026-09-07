@@ -542,8 +542,8 @@ export default {
                     <h2 style="margin: 0 1.25em">
                         {{__('External Resources used by')}}
                         <span style="font-weight: 400">{{environment.name}}</span>
-                        <i v-if="showDeploymentResources" id="external-resources-help"
-                           data-testid="external-resources-help" class="el-icon-info"></i>
+                        <gl-icon v-if="showDeploymentResources" id="external-resources-help"
+                           data-testid="external-resources-help" name="information-o" :size="16"/>
                     </h2>
                     <!-- two paragraphs, so a tooltip won't do -->
                     <gl-popover v-if="showDeploymentResources" target="external-resources-help" triggers="hover focus">
