@@ -1,10 +1,10 @@
 <script>
 import {lookupKey, setLocalStorageKey} from '../../../storage-keys'
-import {Input as ElInput} from 'element-ui'
+import {GlFormInput, GlFormInputGroup} from '@gitlab/ui'
 import Vue from 'vue'
 export default {
     name: 'ExperimentalSettingInput',
-    components: {ElInput},
+    components: {GlFormInput, GlFormInputGroup},
     props: {
         option: String
     },
@@ -28,11 +28,15 @@ export default {
 }
 </script>
 <template>
-    <el-input
-        v-model="value"
-        :placeholder="option.placeholder"
-        :type="option.type || 'text'"
-    >
-        <template slot="prepend"><span style="font-size: 12px;" class="text-monospace">{{option.label}}</span></template>
-    </el-input>
+    <!-- gl-form-input has no prepend slot; the group provides it -->
+    <gl-form-input-group>
+        <template #prepend>
+            <span style="font-size: 12px;" class="input-group-text text-monospace">{{option.label}}</span>
+        </template>
+        <gl-form-input
+            v-model="value"
+            :placeholder="option.placeholder"
+            :type="option.type || 'text'"
+        />
+    </gl-form-input-group>
 </template>
