@@ -1,13 +1,16 @@
 <script>
-import {GlButton} from '@gitlab/ui'
-import {Select as ElSelect, Option as ElOption} from 'element-ui'
+import {GlButton, GlFormSelect} from '@gitlab/ui'
 export default {
   name: 'MapControls',
   components: {
     GlButton,
-    ElSelect,
-    ElOption
+    GlFormSelect
   },
+  // not searchable, so gl-form-select rather than gl-collapsible-listbox
+  viewOptions: [
+    {value: 'Categories First', text: 'Categories First'},
+    {value: 'Providers First', text: 'Providers First'}
+  ],
   data() {
     const selected = location.search.includes('show=providers') ? 'Providers First': 'Categories First'
     return {selected}
@@ -33,10 +36,7 @@ export default {
           <gl-button data-testid="map-zoomout" @click="$emit('zoomout')" size="small" icon="dash" class="ml-0" />
         </div>
         <div class="d-flex zoom-buttons">
-          <el-select data-testid="map-select" v-model="selected">
-            <el-option label="Categories First" value="Categories First"/>
-            <el-option label="Providers First" value="Providers First"/>
-          </el-select>
+          <gl-form-select data-testid="map-select" v-model="selected" :options="$options.viewOptions" />
         </div>
       </div>
     </div>
