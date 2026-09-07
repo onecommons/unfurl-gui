@@ -121,6 +121,32 @@ describe('Smorgasbord blueprint test', () => {
     cy.screenshotPage('formily/tooltip-deploy-button')
     cy.get('[data-testid="deploy-button-tooltip"]').trigger('mouseleave')
 
+    /*
+     * The same widget set one level down, plus the additionalProperties map.
+     * This is what deployments/nested-tabs.cy.js covers, and that spec is
+     * fork-only because its container-webapp fixture pulls in the image-source
+     * widgets that `#!if !standalone` compiles out. The nesting itself is not
+     * fork-only -- the smorgasbord blueprint carries a nested_tabs property
+     * with the full widget set, so it is reachable here.
+     */
+    cy.get('[data-testid="tab-nested_tabs-the_app"]').click()
+    cy.wait(500)
+    fillInputs('nested_tabs.')
+    cy.wait(500)
+    // the nested form is its own oc-inputs; the outer testid is the top-level one
+    cy.get('[data-testid="oc_inputs"]').should('have.length', 1)
+    cy.screenshotElement('[data-testid="oc_inputs"]', 'formily/the_app-nested-tab')
+
+    // an additionalProperties map: Add appends a key/value row rather than a
+    // single-value row, which is the one ArrayItems shape the top-level form
+    // never renders
+    cy.get('[data-testid="tab-environment-the_app"]').click()
+    cy.wait(500)
+    cy.get('[data-testid="oc-input-the_app-environment.$additionalProperties-add"]').click()
+    cy.getInputOrTextarea('[placeholder="key"]').last().type('PORT')
+    cy.getInputOrTextarea('[placeholder="value"]').last().type('5000')
+    cy.wait(500)
+
     cy.withStore().then(store => {
       const currentState = JSON.parse(
         JSON.stringify(store.state.templateResources.resourceTemplates)
@@ -143,6 +169,12 @@ describe('Smorgasbord blueprint test', () => {
         expect(byName.select, 'select (enum default)').to.equal('alpha')
         expect(byName.array, 'array').to.deep.equal(['first'])
       }
+
+      // the nested tab and the map, which only the fork-only spec used to reach
+      expect(byName.nested_tabs, 'nested_tabs').to.include({
+        text: 'hello world', number: 12, checkbox: true, textarea: 'hello world'
+      })
+      expect(byName.environment, 'environment map').to.deep.equal({PORT: '5000'})
 
 
       const pw = currentState.the_app.properties.find(p => p.name == 'password')
