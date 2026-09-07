@@ -89,8 +89,8 @@ export default {
 <template>
     <div v-if="enabled" class="project-home-panel js-show-on-project-root gl-my-5">
 
-        <div class="gl-display-flex gl-justify-content-space-between gl-flex-wrap gl-sm-flex-direction-column gl-mb-3">
-            <div class="home-panel-title-row gl-display-flex">
+        <div class="gl-flex gl-justify-between gl-flex-wrap sm:gl-flex-col gl-mb-3">
+            <div class="home-panel-title-row gl-flex">
                 <div class="avatar-container rect-avatar s48 gl-flex-shrink-0 gl-w-11 gl-h-11 gl-mr-3 float-none">
                     <img v-if="project.globalVars && project.globalVars.projectIcon" :src="project.globalVars.projectIcon" class="w-100" style="object-fit: contain">
                 </div>
@@ -100,12 +100,12 @@ export default {
                             {{projectInfo.title || projectInfo.name}}
                         </h1>
                     </div>
-                    <div class="home-panel-metadata d-flex flex-wrap text-secondary gl-font-base gl-font-weight-normal gl-line-height-normal">
+                    <div class="home-panel-metadata d-flex flex-wrap text-secondary gl-text-base gl-font-normal gl-leading-normal">
                         <a class="view-project-link" :href="visitProject">{{__('View Project')}}</a>
                     </div>
                 </div>
             </div>
-            <div class="project-repo-buttons gl-display-flex gl-justify-content-md-end gl-align-items-start gl-flex-wrap gl-mt-3">
+            <div class="project-repo-buttons gl-flex md:gl-justify-end gl-items-start gl-flex-wrap gl-mt-3">
                 <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 uf-header-project uf-deploy-count">
                 <gl-icon
                     name="upload"

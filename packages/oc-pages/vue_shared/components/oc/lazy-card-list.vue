@@ -87,11 +87,11 @@ export default {
 <template>
     <!-- Wrapped (collapsible) mode -->
     <div v-if="title != null" class="row-fluid gl-mb-6 lazy-card-list">
-        <gl-card class="oc-card" :header-class="['gl-display-flex', 'header-oc']">
+        <gl-card class="oc-card" :header-class="['gl-flex', 'header-oc']">
             <template #header>
                 <div class="d-flex position-relative w-100 justify-content-between">
                     <div class="d-flex oc-card-header justify-content-between w-100 gl-cursor-pointer" @click="toggle">
-                        <div class="align_left gl-display-flex align-items-center flex-one flex-wrap">
+                        <div class="align_left gl-flex align-items-center flex-one flex-wrap">
                             <div class="d-flex pt-1 pb-1 gl-mr-3">
                                 <h4 class="gl-my-0 oc_card_title">{{ title }} ({{ cards.length }})</h4>
                             </div>

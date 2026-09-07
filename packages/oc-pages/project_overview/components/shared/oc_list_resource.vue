@@ -112,7 +112,7 @@ export default {
             :key="resource.name"
             class="gl-responsive-table-row oc_table_row"
         >
-            <div class="table-section oc-table-section section-wrap text-truncate section-30 align_left gl-display-flex gl-pl-2">
+            <div class="table-section oc-table-section section-wrap text-truncate section-30 align_left gl-flex gl-pl-2">
                 <gl-form-radio name="platform" v-model="selectedVal" :value="resource" class="gl-mt-4" />
                 <div :data-testid="`resource-selection-${resource._localName || resource.name}`" @click="selectedVal = resource" class="modal-label d-flex justify-content-center flex-column">
                     <div class="d-flex">
@@ -123,7 +123,7 @@ export default {
             </div>
             <!--div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ cloudProviderMappings[idx] }} </div>
             <div class="table-section oc-table-section section-wrap text-truncate section-20 text-center"> {{ resourceType }} </div-->
-            <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-display-flex gl-pl-2">
+            <div class="table-section oc-table-section section-wrap text-truncate section-60 align_left gl-flex gl-pl-2">
                 <span class=" oc_resource-type"><oc-markdown-view :content="description(resource)" /></span>
             </div>
             <div v-if="resource.details_url" class="table-section oc-table-section section-wrap text-truncate section-10 text-center">

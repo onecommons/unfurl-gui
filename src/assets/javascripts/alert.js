@@ -122,7 +122,7 @@ const createAlert = function createFlash({
 
   removeFlashClickListener(flashEl, fadeTransition);
 
-  flashContainer.classList.add('gl-display-block');
+  flashContainer.classList.add('gl-block');
 
   if (addBodyClass) document.body.classList.add('flash-shown');
 

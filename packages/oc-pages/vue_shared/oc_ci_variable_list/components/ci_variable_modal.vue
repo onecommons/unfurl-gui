@@ -218,7 +218,7 @@ export default {
           rows="3"
           max-rows="6"
           data-qa-selector="ci_variable_value_field"
-          class="gl-font-monospace!"
+          class="!gl-font-monospace"
         />
       </gl-form-group>
 
@@ -296,7 +296,7 @@ export default {
         data-testid="aws-guidance-tip"
         @dismiss="dismissTip"
       >
-        <div class="gl-display-flex gl-flex-direction-row">
+        <div class="gl-flex gl-flex-row">
           <div>
             <p>
               <gl-sprintf :message="$options.awsTipMessage">
@@ -314,7 +314,7 @@ export default {
                 target="_blank"
                 category="secondary"
                 variant="info"
-                class="gl-overflow-wrap-break"
+                class="gl-break-words"
                 >{{ __('Learn more about deploying to AWS') }}</gl-button
               >
             </p>

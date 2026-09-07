@@ -39,7 +39,7 @@ export default {
   <div id="popover-container">
     <gl-popover :target="target" placement="top" container="popover-container">
       <div
-        class="gl-display-flex gl-justify-content-space-between gl-align-items-center gl-word-break-all"
+        class="gl-flex gl-justify-between gl-items-center gl-break-all"
       >
         <div class="ci-popover-value gl-pr-3">
           {{ displayValue }}

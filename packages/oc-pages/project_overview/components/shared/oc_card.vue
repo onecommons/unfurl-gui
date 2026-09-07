@@ -279,12 +279,12 @@ export default {
 
 </script>
 <template>
-    <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-display-flex',  'header-oc']">
+    <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-flex',  'header-oc']">
         <template #header>
             <div :id="id" :data-testid="card && ('card-' + card.name)" class="d-flex position-relative w-100 justify-content-between" :class="{'oc-card-header-clickable': !isPrimary}" @click="onHeaderClick">
                 <div class="d-flex oc-card-header justify-content-between w-100">
                     <slot name="header">
-                        <div v-if="card" class="align_left gl-display-flex align-items-center flex-one flex-wrap">
+                        <div v-if="card" class="align_left gl-flex align-items-center flex-one flex-wrap">
                             <div class="d-flex pt-1 pb-1 gl-mr-3">
                                 <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                                 <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
@@ -303,7 +303,7 @@ export default {
                             <detect-icon v-else-if="_displayValidation" v-bind="statusIconProps" />
                             <div v-if="_displayStatus" class="d-flex pt-1 pb-1 badges-container">
                                 <slot name="status">
-                                    <gl-badge v-if="!isMobileLayout && badgeHeaderText" size="md" class="gl-tab-counter-badge gl-mr-3" >
+                                    <gl-badge v-if="!isMobileLayout && badgeHeaderText" class="gl-tab-counter-badge gl-mr-3" >
                                         <detect-icon :size="16" name="tag"/>
                                         <div class="ml-1">{{ badgeHeaderText }}</div>
 
@@ -510,7 +510,9 @@ export default {
   margin-bottom: -0.914px;
 }
 
-.oc-card >>> .oc-card-header .gl-badge.md {
+/* @gitlab/ui 136 dropped the size prop, so the .md class this used to key on
+   is gone; the padding trim is still wanted. */
+.oc-card >>> .oc-card-header .gl-badge {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
 }

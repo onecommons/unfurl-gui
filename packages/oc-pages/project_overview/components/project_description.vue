@@ -117,8 +117,8 @@ export default {
         <div class="col-lg-8 right-description">
             <div class="row">
                 <div class="col-lg-12">
-                    <div class="gl-display-flex">
-                        <h4 class="project-title gl-display-flex">
+                    <div class="gl-flex">
+                        <h4 class="project-title gl-flex">
                             {{ projectInfo.title || projectInfo.name }}
                         </h4>
                     </div>
@@ -136,16 +136,16 @@ export default {
                         <oc-tab title="Components" :titleCount="requirements.length" v-if="shouldRenderRequirements">
                             <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
-                                    <div class="gl-display-flex gl-justify-content-space-between">
-                                        <div class="gl-display-flex">
-                                            <div class="gl-display-flex align-items-center">
+                                    <div class="gl-flex gl-justify-between">
+                                        <div class="gl-flex">
+                                            <div class="gl-flex align-items-center">
                                                 <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
-                                            <div class="gl-display-flex">
+                                            <div class="gl-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
                                             </div>
                                         </div>
-                                        <div class="gl-display-flex">
+                                        <div class="gl-flex">
                                             <gl-badge v-if="requirement.resourceType && requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge>
                                         </div>
                                     </div>
@@ -159,16 +159,16 @@ export default {
                         <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderRequirements && shouldRenderExtras">
                             <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
-                                    <div class="gl-display-flex gl-justify-content-space-between">
-                                        <div class="gl-display-flex">
-                                            <div class="gl-display-flex align-items-center">
+                                    <div class="gl-flex gl-justify-between">
+                                        <div class="gl-flex">
+                                            <div class="gl-flex align-items-center">
                                                 <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
-                                            <div class="gl-display-flex">
+                                            <div class="gl-flex">
                                                 <h6 class="title-gray gl-m-0 gl-p-0 gl-ml-2">{{ requirement.title }}</h6>
                                             </div>
                                         </div>
-                                        <div class="gl-display-flex">
+                                        <div class="gl-flex">
                                             <gl-badge v-if="requirement.resourceType && requirement.resourceType.badge" size="sm" class="gl-tab-counter-badge">{{capitalizeFirstLetter(requirement.resourceType.badge)}}</gl-badge>
                                         </div>
                                     </div>

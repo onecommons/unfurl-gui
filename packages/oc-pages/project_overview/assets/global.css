@@ -1,3 +1,27 @@
+/*
+ * @gitlab/ui 136 stopped shipping the gl-* utilities as built CSS; the
+ * consumer generates them from its own Tailwind build using the shipped
+ * preset. Without these directives every gl-* utility in our templates is
+ * inert. See tailwind.config.js.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * public/assets/*.css is a snapshot of the fork's GitLab 15.11 build, so it
+ * carries @gitlab/ui 60's component CSS. 136 wraps badge slot content in
+ * .gl-badge-content, which that stylesheet has no rule for: as an unstyled
+ * flex item it blockifies and any block child drops to a second line.
+ * Copied from @gitlab/ui/dist/index.css; drop it when the vendored CSS is
+ * refreshed from the 19.4 fork.
+ */
+.gl-badge .gl-badge-content {
+    display: flex;
+    justify-content: center;
+    min-width: 0.5rem;
+}
+
 h2.oc-title-section {
     font-style: normal;
     font-weight: bold;
