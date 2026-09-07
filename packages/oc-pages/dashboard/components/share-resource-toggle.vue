@@ -152,12 +152,12 @@ export default {
             </div>
         </template>
         <template #button-content>
-            <div class="d-flex align-items-center">
+            <div class="gl-flex gl-items-center">
                 <detect-icon name="share" :size="18" /> <span>{{dropdownText}}</span>
             </div>
         </template>
         <gl-dropdown-item v-if="sharedStatus != 'environment'" @click="shareWithEnvironment">
-            <div class="d-inline-flex">Share in current environment</div>
+            <div class="gl-inline-flex">Share in current environment</div>
         </gl-dropdown-item>
         <gl-dropdown-item v-if="sharedStatus != 'dashboard'" @click="shareWithDashboard">Share with all environments</gl-dropdown-item>
         <gl-dropdown-item v-if="openCloudPublish" @click="sharePublic">Share publicly</gl-dropdown-item>

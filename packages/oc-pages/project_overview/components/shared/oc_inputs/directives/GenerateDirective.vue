@@ -51,7 +51,7 @@ export default {
 }
 </script>
 <template>
-    <div class="position-absolute ml-1">
+    <div class="gl-absolute gl-ml-2">
         <gl-button :data-testid="`${property['x-component-props']['data-testid']}-generate`" icon="bulb" @click="assignGenerated(false)">Generate</gl-button>
         <gl-modal
             v-model="showModal"

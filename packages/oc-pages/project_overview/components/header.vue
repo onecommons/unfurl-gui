@@ -92,21 +92,21 @@ export default {
         <div class="gl-flex gl-justify-between gl-flex-wrap sm:gl-flex-col gl-mb-3">
             <div class="home-panel-title-row gl-flex">
                 <div class="avatar-container rect-avatar s48 gl-flex-shrink-0 gl-w-11 gl-h-11 gl-mr-3 float-none">
-                    <img v-if="project.globalVars && project.globalVars.projectIcon" :src="project.globalVars.projectIcon" class="w-100" style="object-fit: contain">
+                    <img v-if="project.globalVars && project.globalVars.projectIcon" :src="project.globalVars.projectIcon" class="gl-w-full" style="object-fit: contain">
                 </div>
-                <div class="d-flex flex-column flex-wrap align-items-baseline">
-                    <div class="d-inline-flex align-items-baseline">
+                <div class="gl-flex gl-flex-col gl-flex-wrap gl-items-baseline">
+                    <div class="gl-inline-flex gl-items-baseline">
                         <h1 class="oc-home-panel-title gl-mt-0 gl-mb-0">
                             {{projectInfo.title || projectInfo.name}}
                         </h1>
                     </div>
-                    <div class="home-panel-metadata d-flex flex-wrap text-secondary gl-text-base gl-font-normal gl-leading-normal">
+                    <div class="home-panel-metadata gl-flex gl-flex-wrap text-secondary gl-text-base gl-font-normal gl-leading-normal">
                         <a class="view-project-link" :href="visitProject">{{__('View Project')}}</a>
                     </div>
                 </div>
             </div>
             <div class="project-repo-buttons gl-flex md:gl-justify-end gl-items-start gl-flex-wrap gl-mt-3">
-                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 uf-header-project uf-deploy-count">
+                <div class="count-badge gl-inline-flex align-item-stretch gl-mr-3 uf-header-project uf-deploy-count">
                 <gl-icon
                     name="upload"
                     :size="16"
@@ -114,7 +114,7 @@ export default {
                 {{ this.$projectGlobal.deploymentCount }}
                 <span>{{ __("Deploys") }}</span>
                 </div>
-                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
+                <div class="count-badge gl-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
                         @click="toggleStar">
@@ -126,7 +126,7 @@ export default {
                     </gl-button>
                     <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
-                <div class="count-badge d-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
+                <div class="count-badge gl-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
                         class="btn-sm star-btn toggle-star"
                         @click="openShareModal">
@@ -137,7 +137,7 @@ export default {
                         <span>Share</span>
                     </gl-button>
                 </div>
-                <gl-button v-if="livePreview" :href="livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm ml-1" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
+                <gl-button v-if="livePreview" :href="livePreview" target="_blank" rel="noreferrer noopener" class="btn-sm gl-ml-2" variant="confirm"> {{__('View Live')}} <gl-icon name="external-link" /></gl-button>
             </div>
         </div>
         <overview-share-modal ref="shareModal" />

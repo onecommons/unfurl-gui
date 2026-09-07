@@ -72,7 +72,7 @@ export default {
             <div style="height: 1.875em; width: 1.875em;" />
         </template>
         <template #draft="{item}">
-            <div class="d-flex align-items-center">
+            <div class="gl-flex gl-items-center">
                 <span style="display: inline-block; margin-left: -30px; margin-right: -10px; width: 40px;">
                     <a :href="item.draft.web_url" style="color: inherit">
                         <gl-icon v-if="item.draft.ready" name="check-circle" title="Ready" v-gl-tooltip.hover :size="16"/>
@@ -81,7 +81,7 @@ export default {
                 <!-- link to edit directly -->
                 <!-- <a :href="item.draft.description && item.draft.description.split(/[\(\)]/)[1]"><b>{{item.draft.title}}</b></a> -->
 
-                <div class="d-flex flex-column">
+                <div class="gl-flex gl-flex-col">
                     <a :href="item.draft.web_url"><b>{{item.draft.title}}</b></a>
                     <a v-if="item.draft.applicationBlueprintUrl" :href="item.draft.applicationBlueprintUrl">({{item.draft.applicationBlueprintTitle}})</a>
                 </div>

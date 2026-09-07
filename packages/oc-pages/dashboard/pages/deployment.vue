@@ -290,7 +290,7 @@ export default {
     <div id="deployment-view-container" data-testid="dashboard-deployment-page">
         <dashboard-breadcrumbs style="overflow-anchor: auto" :items="breadcrumbItems" />
         <deployment-index-table :items="tableItems" hide-filter />
-        <gl-tabs ref="tabs" class="mt-4" v-model="currentTab">
+        <gl-tabs ref="tabs" class="gl-mt-6" v-model="currentTab">
             <oc-tab title="Deployment" key="0"/>
             <oc-tab ref="consoleTab" v-if="jobsData" title="Console" key="1">
                 <div id="ensure-console-tab-mounted" />
@@ -301,16 +301,16 @@ export default {
         </gl-tabs>
         <deployment-resources ref="deploymentResources" v-show="currentTab == 0" v-if="viewReady" :custom-title="deployment.title" :display-validation="false" :display-status="true" :readonly="true" :bus="bus">
             <template #primary-controls="card">
-                <share-resource-toggle class="mr-1" :card="card" />
+                <share-resource-toggle class="gl-mr-2" :card="card" />
             </template>
 
             <template v-if="overrideStatus" #status>
-                <div v-if="autostopRemainingTimeDisplay && deploymentItem.autostopScheduled && deploymentItem.isRunning" class="d-inline-flex align-items-center ml-3">
+                <div v-if="autostopRemainingTimeDisplay && deploymentItem.autostopScheduled && deploymentItem.isRunning" class="gl-inline-flex gl-items-center gl-ml-5">
                     Deployment will be automatically stopped in {{autostopRemainingTimeDisplay}}
                 </div>
 
-                <div v-else-if="showStartingUpStatus" class="d-inline-flex align-items-center ml-3">
-                    <gl-loading-icon class="mr-1"/>
+                <div v-else-if="showStartingUpStatus" class="gl-inline-flex gl-items-center gl-ml-5">
+                    <gl-loading-icon class="gl-mr-2"/>
                     <span>Waiting for <b>{{deployment.title}}</b> to go live (eta: {{formattedDeploymentEta(deployment.name)}})</span>
                 </div>
             </template>

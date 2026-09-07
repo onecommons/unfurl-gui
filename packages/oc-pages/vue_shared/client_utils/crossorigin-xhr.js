@@ -11,7 +11,7 @@ export class XhrIFrame {
         }, options || {})
         const id = this.id = genUid()
         const element = this.element = document.createElement('IFRAME')
-        element.className = 'd-none'
+        element.className = 'gl-hidden'
         element.src = `${XHR_JAIL_URL}?${id}`
         document.body.appendChild(element)
         this.ready = new Promise(

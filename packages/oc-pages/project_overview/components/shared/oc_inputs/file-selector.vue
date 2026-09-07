@@ -291,7 +291,7 @@ export default {
 </script>
 <template>
     <div class="file-selector">
-        <div class="d-flex flex-column">
+        <div class="gl-flex gl-flex-col">
             <div v-if="value" style="font-size: 14px;">
                 Selected:
                 <a :href="linkForDisplayValue" target="_blank">
@@ -300,19 +300,19 @@ export default {
                 <gl-button data-testid="file-selector-clear" @click="clear" icon="close" category="tertiary" size="small"/>
             </div>
             <div v-else-if="!selecting">
-                <label style="font-size: 0.85em;" class="mb-4">
+                <label style="font-size: 0.85em;" class="gl-mb-6">
                     Relative to:
 <gl-form-select data-testid="file-selector-location" v-model="location" :options="locationOptions"/>
                 </label>
                 <gl-button data-testid="file-selector-choose" @click="selecting=true" block>Choose file</gl-button>
             </div>
-            <div v-if="value || !selecting" class="mb-4"/> <!--spacer-->
+            <div v-if="value || !selecting" class="gl-mb-6"/> <!--spacer-->
         </div>
-        <div v-if="selecting && mimeTypes.length > 0" class="mb-0">
+        <div v-if="selecting && mimeTypes.length > 0" class="gl-mb-0">
             <label> Show all files <input v-model="showAllFiles" type="checkbox"> </label>
         </div>
         <div v-if="selecting">
-            <div class="d-flex justify-content-between align-items-center ml-3">
+            <div class="gl-flex gl-justify-between gl-items-center gl-ml-5">
                 <a style="font-size: 0.9em;" title="View and make changes to repository files" :href="linkForViewInRepository" target="_blank">View in repository tree</a>
                 <gl-button data-testid="file-selector-refresh" title="Check for new files" icon="retry" category="tertiary" size="small" @click="fetchFilesList"/>
             </div>

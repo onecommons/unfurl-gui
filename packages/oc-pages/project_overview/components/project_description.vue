@@ -138,7 +138,7 @@ export default {
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
                                     <div class="gl-flex gl-justify-between">
                                         <div class="gl-flex">
-                                            <div class="gl-flex align-items-center">
+                                            <div class="gl-flex gl-items-center">
                                                 <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-flex">
@@ -161,7 +161,7 @@ export default {
                                 <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
                                     <div class="gl-flex gl-justify-between">
                                         <div class="gl-flex">
-                                            <div class="gl-flex align-items-center">
+                                            <div class="gl-flex gl-items-center">
                                                 <detect-icon :size="12" :type="requirement.resourceType" />
                                             </div>
                                             <div class="gl-flex">
@@ -182,7 +182,7 @@ export default {
                         <oc-tab v-if="shouldRenderRequirements && outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
                             <div v-if="inputs.length">
                                 <div class="detail-heading">Inputs</div>
-                                <ul class="pl-4" v-if="inputs.length > 0">
+                                <ul class="gl-pl-6" v-if="inputs.length > 0">
                                     <li v-for="(input,idx) in inputs" :key="idx" class="gl-mb-3">
                                         <div class="li-inner">
                                             {{input.title}}
@@ -195,7 +195,7 @@ export default {
                             </div>
                             <div v-if="outputs.length">
                                 <div class="detail-heading">Outputs</div>
-                                <ul class="pl-4" v-if="outputs.length > 0">
+                                <ul class="gl-pl-6" v-if="outputs.length > 0">
                                     <li v-for="(output,idx) in outputs" :key="idx" class="gl-mb-3">
                                         <div class="li-inner">
                                             {{output.title}}

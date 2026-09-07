@@ -45,7 +45,7 @@ export default {
 }
 </script>
 <template>
-<div class="d-flex align-items-center">
+<div class="gl-flex gl-items-center">
     <deployment-status-icon :scope="scope" />
     <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem.viewableLink: deploymentItem.viewableTo">
         <div v-if="displayStatus && deployment" class="status-item">

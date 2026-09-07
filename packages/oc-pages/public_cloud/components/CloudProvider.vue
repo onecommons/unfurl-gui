@@ -27,8 +27,8 @@ export default {
 }
 </script>
 <template>
-  <div class="d-flex align-items-center">
-    <detect-icon :size="22" :name="item.data.name"/> <h6 class="ml-1">{{providerName}}</h6>
+  <div class="gl-flex gl-items-center">
+    <detect-icon :size="22" :name="item.data.name"/> <h6 class="gl-ml-2">{{providerName}}</h6>
   </div>
 </template>
 <style scoped>

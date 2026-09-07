@@ -41,10 +41,10 @@ export default {
 }
 </script>
 <template>
-    <div class="m-2 d-flex flex-wrap justify-content-between align-items-center">
-        <h1 @click="returnHome" class="template-title m-0"> <project-icon style="font-size: 0.83em; margin-right: 0.5em;" :project-icon="getApplicationBlueprint.projectIcon" /> {{ getApplicationBlueprint.title }}</h1>
-        <a v-if="getCurrentEnvironmentName" class="d-inline-flex align-items-center" :href="environmentURL" target="_blank">
-            <span class="gl-pl-2 oc_environment_name mr-2">{{ getCurrentEnvironmentName }}</span> 
+    <div class="gl-m-3 gl-flex gl-flex-wrap gl-justify-between gl-items-center">
+        <h1 @click="returnHome" class="template-title gl-m-0"> <project-icon style="font-size: 0.83em; margin-right: 0.5em;" :project-icon="getApplicationBlueprint.projectIcon" /> {{ getApplicationBlueprint.title }}</h1>
+        <a v-if="getCurrentEnvironmentName" class="gl-inline-flex gl-items-center" :href="environmentURL" target="_blank">
+            <span class="gl-pl-2 oc_environment_name gl-mr-3">{{ getCurrentEnvironmentName }}</span> 
             <detect-icon :size="18" :type="cloud" />
         </a>
         <detect-icon v-else-if="cloud" :size="18" :type="cloud" />

@@ -273,16 +273,16 @@ export default {
                             </div>
                         </template>
                         <template #button-text>
-                            <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="currentType" no-default/>{{currentText}} </div>
+                            <div style="display: flex; align-items: center;"> <detect-icon class="gl-mr-3" :type="currentType" no-default/>{{currentText}} </div>
                         </template>
                         <gl-dropdown-item :data-testid="`env-option-${CLUSTER_PROVIDER_NAMES[env] || env.replace(/\s+/g, '')}`" :key="env" v-for="env in environmentsList" @click="selectedCloudProvider = env">
-                            <div style="display: flex; align-items: center;"> <detect-icon class="mr-2" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
+                            <div style="display: flex; align-items: center;"> <detect-icon class="gl-mr-3" :type="env"/><div style="white-space: pre">{{env}}</div> </div>
                         </gl-dropdown-item>
                         <div v-if="showExistingProviders">
                             <gl-dropdown-divider />
                             <gl-dropdown-item @click="selectedCloudProvider = provider" :key="`${provider.template.name}.${provider.environment.name}`" v-for="provider in filteredAvailableProviders">
                                 <div style="display: flex; align-items: center;">
-                                    <detect-icon class="mr-2" :type="provider.template.type"/>
+                                    <detect-icon class="gl-mr-3" :type="provider.template.type"/>
                                     <div style="white-space: pre">{{displayProvider(provider)}}</div>
                                 </div>
                             </gl-dropdown-item>
@@ -290,7 +290,7 @@ export default {
                     </gl-dropdown>
                 </div>
         </gl-form-group>
-        <form class="d-none" ref="form" method="POST" :action="action">
+        <form class="gl-hidden" ref="form" method="POST" :action="action">
             <input name="authenticity_token" :value="token">
             <input name="environment[name]" :value="slugify(environmentName)">
             <input v-if="currentType" name="environment[external_url]" :value="`http://localhost/${currentType}`">

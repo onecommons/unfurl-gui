@@ -48,7 +48,7 @@ export default {
     <gl-badge size="md" v-if="show">
 
         <a style="color: inherit; display: contents;" :href="deploymentLink" target="blank"><detect-icon :size="16" name="connected" /></a>
-        <div :id="popoverId" data-testid="import-link-trigger" class="ml-1">Shared</div>
+        <div :id="popoverId" data-testid="import-link-trigger" class="gl-ml-2">Shared</div>
         <!-- the content carries links, so it has to stay reachable: a popover,
              not a tooltip -->
         <gl-popover :target="popoverId" triggers="hover focus" placement="top">

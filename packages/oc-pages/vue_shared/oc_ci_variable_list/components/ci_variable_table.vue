@@ -41,7 +41,7 @@ export default {
     {
       key: 'actions',
       label: '',
-      tdClass: 'text-right',
+      tdClass: 'gl-text-right',
       customStyle: { width: '35px' },
     },
   ],
@@ -98,8 +98,8 @@ export default {
         <col v-for="field in scope.fields" :key="field.key" :style="field.customStyle" />
       </template>
       <template #cell(key)="{ item }">
-        <div class="d-flex truncated-container">
-          <span :id="`ci-variable-key-${item.id}`" class="d-inline-block mw-100 text-truncate">{{
+        <div class="gl-flex truncated-container">
+          <span :id="`ci-variable-key-${item.id}`" class="gl-inline-block mw-100 gl-truncate">{{
             item.key
           }}</span>
           <ci-variable-popover
@@ -111,8 +111,8 @@ export default {
       </template>
       <template #cell(value)="{ item }">
         <span v-if="valuesHidden">*********************</span>
-        <div v-else class="d-flex truncated-container">
-          <span :id="`ci-variable-value-${item.id}`" class="d-inline-block mw-100 text-truncate">{{
+        <div v-else class="gl-flex truncated-container">
+          <span :id="`ci-variable-value-${item.id}`" class="gl-inline-block mw-100 gl-truncate">{{
             item.value
           }}</span>
           <ci-variable-popover
@@ -131,8 +131,8 @@ export default {
         <gl-icon v-else :size="$options.iconSize" :name="$options.falseIcon" />
       </template>
       <template #cell(environment_scope)="{ item }">
-        <div class="d-flex truncated-container">
-          <span :id="`ci-variable-env-${item.id}`" class="d-inline-block mw-100 text-truncate">{{
+        <div class="gl-flex truncated-container">
+          <span :id="`ci-variable-env-${item.id}`" class="gl-inline-block mw-100 gl-truncate">{{
             item.environment_scope
           }}</span>
           <ci-variable-popover
@@ -153,12 +153,12 @@ export default {
         />
       </template>
       <template #empty>
-        <p ref="empty-variables" class="text-center empty-variables text-plain">
+        <p ref="empty-variables" class="gl-text-center empty-variables text-plain">
           {{ __('There are no variables yet.') }}
         </p>
       </template>
     </gl-table>
-    <div class="ci-variable-actions" :class="{ 'justify-content-center': !tableIsNotEmpty }">
+    <div class="ci-variable-actions" :class="{ 'gl-justify-center': !tableIsNotEmpty }">
       <gl-button
         v-if="tableIsNotEmpty"
         ref="secret-value-reveal-button"

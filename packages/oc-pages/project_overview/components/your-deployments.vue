@@ -44,11 +44,11 @@ export default {
 </script>
 <template>
     <div v-if="yourDeployments.length">
-        <gl-card bodyClass="p-0">
+        <gl-card bodyClass="gl-p-0">
             <template #header>
-                <div class="d-flex align-items-center">
-                    <gl-icon name="package" class="mr-2"/>
-                        <h5 class="mb-0 mt-0">
+                <div class="gl-flex gl-items-center">
+                    <gl-icon name="package" class="gl-mr-3"/>
+                        <h5 class="gl-mb-0 gl-mt-0">
                             {{__('Your Deployments')}}
                         </h5>
                 </div>

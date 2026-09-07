@@ -89,14 +89,14 @@ export default {
     <div v-if="title != null" class="row-fluid gl-mb-6 lazy-card-list">
         <gl-card class="oc-card" :header-class="['gl-flex', 'header-oc']">
             <template #header>
-                <div class="d-flex position-relative w-100 justify-content-between">
-                    <div class="d-flex oc-card-header justify-content-between w-100 gl-cursor-pointer" @click="toggle">
-                        <div class="align_left gl-flex align-items-center flex-one flex-wrap">
-                            <div class="d-flex pt-1 pb-1 gl-mr-3">
+                <div class="gl-flex gl-relative gl-w-full gl-justify-between">
+                    <div class="gl-flex oc-card-header gl-justify-between gl-w-full gl-cursor-pointer" @click="toggle">
+                        <div class="align_left gl-flex gl-items-center flex-one gl-flex-wrap">
+                            <div class="gl-flex gl-pt-2 gl-pb-2 gl-mr-3">
                                 <h4 class="gl-my-0 oc_card_title">{{ title }} ({{ cards.length }})</h4>
                             </div>
                         </div>
-                        <div class="d-flex align-items-center">
+                        <div class="gl-flex gl-items-center">
                             <span class="card-toggle">
                                 <gl-icon :name="expandedVisual ? 'chevron-down' : 'chevron-left'" :size="24" />
                             </span>

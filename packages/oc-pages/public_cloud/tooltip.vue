@@ -90,7 +90,7 @@ export default {
     v-if="componentType"
     id="tooltip"
     ref="container"
-    class="position-fixed"
+    class="gl-fixed"
     :style="`z-index: ${zIndex}; left: ${adjustedLeft}px; top: ${adjustedTop}px; opacity: ${opacity}`"
     @mouseenter="isMousedOver = true"
     @mouseleave="isMousedOver = false"

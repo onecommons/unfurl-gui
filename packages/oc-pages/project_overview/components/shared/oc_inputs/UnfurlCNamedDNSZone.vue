@@ -141,9 +141,9 @@ export default {
 <template>
     <gl-card>
         <ol>
-            <error-small class="m-0" :condition="!subdomain">A subdomain is required to use a CNAME.</error-small>
+            <error-small class="gl-m-0" :condition="!subdomain">A subdomain is required to use a CNAME.</error-small>
             <li>Enter the domain you would like to use below:</li>
-            <gl-form-input-group class="mb-2">
+            <gl-form-input-group class="gl-mb-3">
                 <template #prepend>
                     <span class="input-group-text">Domain</span>
                 </template>
@@ -171,15 +171,15 @@ export default {
             <li v-bind="descAttrs">
                     <div>
                         (Optional) Verify your CNAME record <br>
-                        <div class="d-flex">
+                        <div class="gl-flex">
                             <gl-button data-testid="dns-check-cname" :variant="verifiedStatus == ERROR? 'danger': 'confirm'" :loading="verifiedStatus == VERIFYING" @click="checkCName">
                                 <span v-if="verifiedStatus == VERIFYING">Verifying CNAME</span>
                                 <span v-else-if="verifiedStatus == COMPLETE">CNAME was verified successfully</span>
                                 <span v-else-if="verifiedStatus == ERROR">Couldn't connect to DNS service</span>
                                 <span v-else>Verify CNAME</span>
                             </gl-button>
-                            <div class="d-flex align-items-center ml-3">
-                                <gl-badge v-for="resolved in nameserversResolved" variant="success" icon="check-circle" class="mr-2" :key="resolved">{{resolved}}</gl-badge>
+                            <div class="gl-flex gl-items-center gl-ml-5">
+                                <gl-badge v-for="resolved in nameserversResolved" variant="success" icon="check-circle" class="gl-mr-3" :key="resolved">{{resolved}}</gl-badge>
                             </div>
                         </div>
                 </div>

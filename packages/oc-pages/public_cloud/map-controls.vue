@@ -28,14 +28,14 @@ export default {
 </script>
 <template>
   <div id="map-controls" class="map-controls-shell">
-    <div class="map-controls-inner d-flex flex-wrap justify-content-end ml-5 mr-5" style="pointer-events: none;">
-      <div class="d-flex flex-column align-items-end">
-        <div class="d-flex flex-column zoom-buttons" style="width: 60px;">
+    <div class="map-controls-inner gl-flex gl-flex-wrap gl-justify-end gl-ml-7 gl-mr-7" style="pointer-events: none;">
+      <div class="gl-flex gl-flex-col gl-items-end">
+        <div class="gl-flex gl-flex-col zoom-buttons" style="width: 60px;">
           <gl-button data-testid="map-center" @click="$emit('center')" size="small" icon="maximize" />
-          <gl-button data-testid="map-zoomin" @click="$emit('zoomin')" size="small" icon="plus" class="ml-0" />
-          <gl-button data-testid="map-zoomout" @click="$emit('zoomout')" size="small" icon="dash" class="ml-0" />
+          <gl-button data-testid="map-zoomin" @click="$emit('zoomin')" size="small" icon="plus" class="gl-ml-0" />
+          <gl-button data-testid="map-zoomout" @click="$emit('zoomout')" size="small" icon="dash" class="gl-ml-0" />
         </div>
-        <div class="d-flex zoom-buttons">
+        <div class="gl-flex zoom-buttons">
           <gl-form-select data-testid="map-select" v-model="selected" :options="$options.viewOptions" />
         </div>
       </div>

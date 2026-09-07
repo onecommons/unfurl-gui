@@ -84,7 +84,7 @@ export default {
     </component>
     <open-live-app :component="component" v-if="hasButton('open')" v-bind="componentFor('open')" :deployment="deploymentItem.deployment" />
     <component :is='component' v-if="hasButton('schedule-autostop')" v-bind="componentFor('schedule-autostop')" @click="$emit('scheduleAutostop')">
-        <gl-icon name="timer" :size="16" class="mr-1"/>
+        <gl-icon name="timer" :size="16" class="gl-mr-2"/>
 
         {{deploymentItem.isAutostopCancelable? __('Rechedule Auto Stop'): __('Schedule Auto Stop')}}
     </component>

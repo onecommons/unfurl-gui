@@ -315,10 +315,10 @@ export default {
 };
 </script>
 <template>
-  <div class="p-0" :class="{'container-fluid': !noMargin,  'mt-4': !noMargin, 'no-margin': noMargin}">
+  <div class="gl-p-0" :class="{'container-fluid': !noMargin,  'gl-mt-6': !noMargin, 'no-margin': noMargin}">
     <div v-if="!hideFilter && _items.length > 1" class="row fluid no-gutters filter-searchbox" >
       <div class="col-lg-8 col-md-7 col-sm-2 "></div>
-      <div class="col-lg-4 col-md-5 col-sm-10 align-self-end">
+      <div class="col-lg-4 col-md-5 col-sm-10 gl-self-end">
         <div class="filter-container">
           <div class="filter-input-container">
             <gl-form-input

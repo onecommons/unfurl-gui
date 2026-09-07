@@ -39,23 +39,23 @@ export default {
 }
 </script>
 <template>
-  <div class="d-flex flex-column">
-    <div class="d-flex align-items-center">
-      <div class="d-flex align-items-center justify-content-center" style="width: 28px; height: 28px; background: white; border-radius: 50%;">
+  <div class="gl-flex gl-flex-col">
+    <div class="gl-flex gl-items-center">
+      <div class="gl-flex gl-items-center gl-justify-center" style="width: 28px; height: 28px; background: white; border-radius: 50%;">
         <detect-icon :type="item.data" no-invert :size="20"/>
       </div>
       <!-- <img style="width: 1.25em; height: 1.25em; border-radius: 0.75em;" :src="icon"> -->
-      <h6 class="ml-1" style="max-width: 365px">{{title}}</h6>
+      <h6 class="gl-ml-2" style="max-width: 365px">{{title}}</h6>
     </div>
     <a v-if="detailsUrl" target="_blank" :href="detailsUrl">View Documentation</a>
     <a v-else-if="sourceUrl" target="_blank" :href="sourceUrl">View Project</a>
-    <div style="max-width: 400px; max-height: 250px; overflow-y: auto; word-break: break-word;" class="mt-1 mb-1">
+    <div style="max-width: 400px; max-height: 250px; overflow-y: auto; word-break: break-word;" class="gl-mt-2 gl-mb-2">
       <markdown-view style="max-width: 100%;" v-if="description" :content="description" />
     </div>
     <div v-if="components.length > 0">
       <b>Components:</b>
       <div>
-        <span class="d-flex ml-1" :key="component.name" v-for="component in components">{{component.title}}<detect-icon class="m-1" :type="component"/></span>
+        <span class="gl-flex gl-ml-2" :key="component.name" v-for="component in components">{{component.title}}<detect-icon class="gl-m-2" :type="component"/></span>
       </div>
     </div>
   </div>

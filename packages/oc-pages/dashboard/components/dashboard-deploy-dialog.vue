@@ -215,7 +215,7 @@ export default {
         <gl-loading-icon v-if="stage == 'SelectAppBlueprint' && blueprints.length == 0" size="lg"/>
 
         <div v-if="stage == 'SelectTemplate'">
-            <gl-dropdown v-if="deploymentTemplates.length > 0" class="col-md-6 mb-4">
+            <gl-dropdown v-if="deploymentTemplates.length > 0" class="col-md-6 gl-mb-6">
                 <gl-dropdown-item v-for="dt in deploymentTemplates" :key="dt.name" @click="ts = dt.name">
                     <div class="">
                         <span class=" title">{{ dt.title || dt.name }}</span>

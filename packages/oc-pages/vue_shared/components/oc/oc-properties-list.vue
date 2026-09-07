@@ -150,9 +150,9 @@ export default {
                                         {{property.value}}
                                     </span>
                                 </div>
-                                <div v-if="property.outboundLink" class="outbound-link-container d-flex">
+                                <div v-if="property.outboundLink" class="outbound-link-container gl-flex">
                                     <a :href="property.outboundLink" target="_blank" rel="noreferrer noopener" style="display: contents">
-                                        <detect-icon class="mr-1" :size="14" name="external-link"/>
+                                        <detect-icon class="gl-mr-2" :size="14" name="external-link"/>
                                         {{__(property.outboundLinkText)}}
                                     </a>
                                 </div>

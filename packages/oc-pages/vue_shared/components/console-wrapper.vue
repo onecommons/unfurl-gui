@@ -52,7 +52,7 @@ export default {
             if(jobLogSection.content && jobLogSection.lineNumber > highestLineNumber) {
                 highestLineNumber = jobLogSection.lineNumber
                 for(const contentSection of jobLogSection.content) {
-                    if(contentSection.style == 'd-none') {
+                    if(contentSection.style == 'gl-hidden') {
                         try {
                           this.pushMessage({...JSON.parse(contentSection.text), lineNumber: jobLogSection.lineNumber})
                         } catch(e) {}

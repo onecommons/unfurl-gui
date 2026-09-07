@@ -41,7 +41,7 @@ export default {
         <div>
             The following environment variables can be made available to your application:
             <div :style="`max-height: ${maxHeight}; overflow: auto;`">
-                <ul class="mt-1" style="margin-left: -20px;">
+                <ul class="gl-mt-2" style="margin-left: -20px;">
                     <li v-for="variableName in environmentVariableNames" :key="variableName"> {{variableName}} </li>
                 </ul>
             </div>

@@ -53,7 +53,7 @@ export default {
 <template>
     <table-component no-margin hide-filter :use-collapse-all="false" :fields="$options.fields" :items="items">
         <template #cloud$head>
-            <span class="ml-4">Cloud</span>
+            <span class="gl-ml-6">Cloud</span>
         </template>
         <template #deployment="scope">
             <div>
@@ -61,9 +61,9 @@ export default {
             </div>
         </template>
         <template #cloud="scope">
-            <div class="d-flex align-items-center ml-4">
+            <div class="gl-flex gl-items-center gl-ml-6">
                 <detect-icon :size="20" :name="scope.item.cloud" />
-                <div class="ml-1"> {{cloudProviderFriendlyName(scope.item.cloud)}} </div>
+                <div class="gl-ml-2"> {{cloudProviderFriendlyName(scope.item.cloud)}} </div>
             </div>
         </template>
         <template #testbed="scope">

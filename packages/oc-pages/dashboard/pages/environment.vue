@@ -453,8 +453,8 @@ export default {
             v-if="!environment.primary_provider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
         >
             <template #header-text>
-                <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :type="primaryProvider && primaryProvider._localTypeName" class="mr-1"/> {{cloudProviderDisplayName}}
+                <div class="gl-flex gl-items-center" style="line-height: 20px;">
+                    <detect-icon :size="20" :type="primaryProvider && primaryProvider._localTypeName" class="gl-mr-2"/> {{cloudProviderDisplayName}}
                 </div>
             </template>
         </oc-properties-list>
@@ -465,22 +465,22 @@ export default {
             :containerStyle="{'font-size': '0.9em', ...width}"
             :properties="p.properties"
             :schema="schema(p)"
-            class="mt-3"
+            class="gl-mt-5"
         >
             <template #header-text>
-                <div class="d-flex align-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :type="p._localTypeName" class="mr-1"/> {{headerTitle(p)}}
+                <div class="gl-flex gl-items-center" style="line-height: 20px;">
+                    <detect-icon :size="20" :type="p._localTypeName" class="gl-mr-2"/> {{headerTitle(p)}}
                 </div>
             </template>
             <template v-if="userCanEdit" #header-controls>
                 <gl-button @click.stop="scrollToProvider(p.name)">
-                    <div class="d-flex">
+                    <div class="gl-flex">
                         <detect-icon name="pencil" :size="18" /> <span>Edit</span>
                     </div>
                 </gl-button>
             </template>
         </oc-properties-list>
-        <div v-if="userCanEdit" class="mt-3">
+        <div v-if="userCanEdit" class="gl-mt-5">
             <gl-button data-testid="add-provider" variant="confirm" @click="addProvider">
                 <div>
                     <gl-icon name="plus"/>
@@ -489,10 +489,10 @@ export default {
             </gl-button>
         </div>
 
-        <gl-tabs v-model="currentTab" class="mt-4">
+        <gl-tabs v-model="currentTab" class="gl-mt-6">
             <oc-tab title="Resources">
-                <div class="d-flex" v-if="!showDeploymentResources">
-                    <div class="mr-4">
+                <div class="gl-flex" v-if="!showDeploymentResources">
+                    <div class="gl-mr-6">
                         <p>
                             External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
                         </p>
@@ -515,7 +515,7 @@ export default {
                 <ci-variable-settings />
             </oc-tab>
         </gl-tabs>
-        <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions d-flex justify-content-end">
+        <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions gl-flex gl-justify-end">
             <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
                 <gl-icon name="remove"/>
                 Delete Environment
@@ -538,7 +538,7 @@ export default {
         >
             <template #header>
                 <!-- potentially tricky to translate -->
-                <div v-if="showingResourcesTab" class="d-flex align-items-center">
+                <div v-if="showingResourcesTab" class="gl-flex gl-items-center">
                     <h2 style="margin: 0 1.25em">
                         {{__('External Resources used by')}}
                         <span style="font-weight: 400">{{environment.name}}</span>
@@ -555,7 +555,7 @@ export default {
                         </p>
                     </gl-popover>
                 </div>
-                <div v-else-if="showingPublicCloudTab" class="d-flex align-items-center">
+                <div v-else-if="showingPublicCloudTab" class="gl-flex gl-items-center">
                     <h2 style="margin: 0 1.25em">Public Cloud Resources</h2>
                 </div>
                 <div></div>
@@ -585,7 +585,7 @@ export default {
         <!-- v-model doesn't work on this stupid component -->
         <gl-modal :visible="showingProviderModal" @hide="onHide" modalId="providerModal" ref="providerModal" size="lg" :hide-header="isNewProvider" :hide-footer="true">
 
-            <deployment-resources :class="{'mt-2': isNewProvider}" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
+            <deployment-resources :class="{'gl-mt-3': isNewProvider}" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
 
 
         </gl-modal>

@@ -12,7 +12,7 @@ export default {
 }
 </script>
 <template>
-  <div class="d-flex flex-column">
+  <div class="gl-flex gl-flex-col">
     <cloud-provider :item="item.parent"/>
     <div style="color: inherit">{{item.data.name}}</div>
   </div>

@@ -18,11 +18,11 @@ export default {
 }
 </script>
 <template>
-  <div class="d-flex flex-column">
-    <div class="d-flex align-items-center">
-      <img style="width: 1.25em; height: 1.25em; border-radius: 0.75em;" :src="item.data.icon"> <h6 class="ml-1">{{item.data.name}}</h6>
+  <div class="gl-flex gl-flex-col">
+    <div class="gl-flex gl-items-center">
+      <img style="width: 1.25em; height: 1.25em; border-radius: 0.75em;" :src="item.data.icon"> <h6 class="gl-ml-2">{{item.data.name}}</h6>
     </div>
-    <div v-if="dashboard" class="mt-1">{{dashboard}}</div>
+    <div v-if="dashboard" class="gl-mt-2">{{dashboard}}</div>
   </div>
 </template>
 <style scoped>

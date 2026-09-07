@@ -108,9 +108,9 @@ export default {
 
 </script>
 <template>
-    <div v-if="deployStatus != 'hidden' && !editingTorndown" class="d-flex deploy-button-wrapper position-relative">
-        <autostop v-if="canAutoStop" class="mr-2"/>
-            <div class="d-flex flex-column position-relative" data-testid="deploy-button-tooltip" v-gl-tooltip.hover :title="deployTooltip">
+    <div v-if="deployStatus != 'hidden' && !editingTorndown" class="gl-flex deploy-button-wrapper gl-relative">
+        <autostop v-if="canAutoStop" class="gl-mr-3"/>
+            <div class="gl-flex gl-flex-col gl-relative" data-testid="deploy-button-tooltip" v-gl-tooltip.hover :title="deployTooltip">
                 <gl-button-group class="deploy-button">
                     <gl-button
                         :aria-label="deployButtonText"
@@ -126,7 +126,7 @@ export default {
                         {{ localDeployOnly? 'Deploy Locally': deployButtonText}}
                     </gl-button>
                     <gl-dropdown v-if="userCanEdit && !standalone" :disabled="deployStatus == 'disabled'" right>
-                        <div class="mt-2"/>
+                        <div class="gl-mt-3"/>
                             <gl-form-checkbox v-if="!localDeployOnly" data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
                                 <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
                                       title="Use Unfurl to deploy this from the command line"> Deploy Locally </span>
@@ -141,9 +141,9 @@ export default {
                             </gl-form-checkbox>
                     </gl-dropdown>
                 </gl-button-group>
-                <error-small class="position-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
-                    <div class="d-flex align-items-center justify-content-end">
-                        <span style="line-height: 1;">Deployment is incomplete</span><gl-icon name="information-o" :size="16" class="ml-1"/>
+                <error-small class="gl-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
+                    <div class="gl-flex gl-items-center gl-justify-end">
+                        <span style="line-height: 1;">Deployment is incomplete</span><gl-icon name="information-o" :size="16" class="gl-ml-2"/>
                     </div>
                 </error-small>
             </div>

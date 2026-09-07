@@ -76,11 +76,11 @@ export default {
     <div class="dropdown-parent">
         <gl-dropdown v-if="environmentCreation || matchingEnvironments.length > 0" data-testid="deployment-environment-select" ref="dropdown">
             <template #button-text>
-                <span class="d-flex align-items-center" style="line-height: 1.1">
+                <span class="gl-flex gl-items-center" style="line-height: 1.1">
                     <!-- detect icon for thin copy of env -->
-                    <detect-icon v-if="env && env.type" class="mr-2" no-default :type="env.type" />
+                    <detect-icon v-if="env && env.type" class="gl-mr-3" no-default :type="env.type" />
                     <!-- detect icon loaded env -->
-                    <detect-icon v-else-if="env" class="mr-2" no-default :env="env" />
+                    <detect-icon v-else-if="env" class="gl-mr-3" no-default :env="env" />
 
                     <span>{{(env && env.name) || __("Select")}}</span>
                 </span>
@@ -88,10 +88,10 @@ export default {
 
             <div v-if="matchingEnvironments.length + externalEnvironments.length > 0">
                 <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="$emit('input', env)" :key="env.name">
-                    <div class="d-flex align-items-center"><detect-icon class="mr-2" :env="env" />{{ env.name }}</div>
+                    <div class="gl-flex gl-items-center"><detect-icon class="gl-mr-3" :env="env" />{{ env.name }}</div>
                 </gl-dropdown-item>
                 <gl-dropdown-item :data-testid="`deployment-environment-selection-${env._dashboard}/${env.name}`" v-for="env in externalEnvironments" @click="$emit('input', env)" :key="env._dashboard + '/' + env.name">
-                    <div class="d-flex align-items-center"><detect-icon class="mr-2" :type="env.type" />{{ env._dashboard }} <br> {{ env.name }}</div>
+                    <div class="gl-flex gl-items-center"><detect-icon class="gl-mr-3" :type="env.type" />{{ env._dashboard }} <br> {{ env.name }}</div>
                 </gl-dropdown-item>
 
                 <gl-dropdown-divider v-if="environmentCreation" />

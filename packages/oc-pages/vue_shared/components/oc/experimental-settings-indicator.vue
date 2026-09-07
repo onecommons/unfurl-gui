@@ -125,20 +125,20 @@ export default {
 
                 <error-small :condition="changed" message="Changes will be reflected after page refresh" />
 
-                <div class="d-flex justify-content-end mt-4">
+                <div class="gl-flex gl-justify-end gl-mt-6">
                     <gl-button data-testid="experimental-download-state" @click="downloadState" category="tertiary" icon="download"> Download app state </gl-button>
-                    <div class="border-right mr-2 ml-2" />
+                    <div class="border-right gl-mr-3 gl-ml-3" />
                     <gl-button data-testid="experimental-upload-state" @click="uploadState" category="tertiary" icon="upload"> Upload app state </gl-button>
                 </div>
 
             </gl-card>
         </gl-modal>
-        <div class="position-fixed" style=" z-index: 1000; pointer-events: none;" :style="{left: xPos, top: yPos}">
-            <div v-if="indicateExperimentalSetting" class="d-inline-block position-relative" style="transform: translateX(-100%); pointer-events: all">
+        <div class="gl-fixed" style=" z-index: 1000; pointer-events: none;" :style="{left: xPos, top: yPos}">
+            <div v-if="indicateExperimentalSetting" class="gl-inline-block gl-relative" style="transform: translateX(-100%); pointer-events: all">
                 <!-- shameless sizes without calculations - this might get moved somewhere else so it fits better inline -->
                 <gl-button @click="modal = true" variant="confirm" style="height: 32px; margin-top: 4px;">
-                    <div class="d-flex align-items-center justify-content-between" style="padding-top: 2px;">
-                        <gl-icon :size="16" name="code" class="mr-1"/>
+                    <div class="gl-flex gl-items-center gl-justify-between" style="padding-top: 2px;">
+                        <gl-icon :size="16" name="code" class="gl-mr-2"/>
                         <span style="font-size: 13px;">{{__('Developer settings enabled')}}</span>
                     </div>
                 </gl-button>

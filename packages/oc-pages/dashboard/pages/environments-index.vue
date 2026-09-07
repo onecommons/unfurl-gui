@@ -73,8 +73,8 @@ export default {
 <template>
     <div data-testid="dashboard-environments-page">
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <div class="row d-flex flex-wrap mx-3 my-5 justify-content-between">
-            <div class="mr-4">
+        <div class="row gl-flex gl-flex-wrap gl-mx-5 gl-my-7 gl-justify-between">
+            <div class="gl-mr-6">
                 <div v-show="getDashboardItems.length == 0">
                     This page will show all of your environments once you've created some. <br>
                     Click <a href="https://unfurl.cloud/help/glossary" target="_blank">here</a> to learn more about how environments work on unfurl.cloud.

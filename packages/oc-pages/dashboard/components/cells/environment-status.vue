@@ -39,7 +39,7 @@ export default {
 }
 </script>
 <template>
-<div class="w-100 d-flex justify-content-center">
+<div class="gl-w-full gl-flex gl-justify-center">
     <StatusIcon :size="18" :status="status"/>
 </div>
 </template>

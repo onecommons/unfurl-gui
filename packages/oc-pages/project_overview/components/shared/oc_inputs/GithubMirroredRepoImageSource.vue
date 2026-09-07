@@ -256,7 +256,7 @@ export default {
         <template v-if="isExternalUser" #unauthenticated-pre>
             <h3>Your profile must be set to developer mode to deploy with GitHub...</h3>
             Visit your <a target="_blank" href="/-/profile/account#user-mode">profile settings page</a> and select <b>"I want to develop applications"</b> for the <b>"User Interface"</b> setting.
-            <hr class="mb-5">
+            <hr class="gl-mb-7">
         </template>
 
         <template v-if="cardIsValid(card)" #unauthenticated>
@@ -268,11 +268,11 @@ export default {
         <div v-if="isExternalUser">
             <h3>Your profile must be set to developer mode to deploy with GitHub...</h3>
             Visit your <a target="_blank" href="/-/profile/account#user-mode">profile settings page</a> and select <b>"I want to develop applications"</b> for the <b>"User Interface"</b> setting.
-            <hr class="mb-5 mt-5">
+            <hr class="gl-mb-7 gl-mt-7">
         </div>
         <div>
-            <div class="d-flex flex-wrap justify-content-between">
-                <div style="flex-grow: 1;" class="d-flex flex-column">
+            <div class="gl-flex gl-flex-wrap gl-justify-between">
+                <div style="flex-grow: 1;" class="gl-flex gl-flex-col">
                     <suggestion-input
                         data-testid="oc-input-github-project"
                         label="Github Project"
@@ -298,7 +298,7 @@ export default {
                                 :disabled="readonly"
                                 v-model="useDefaultBranch">Default Branch</gl-form-checkbox>
                         </div>
-                        <div class="mt-1" style="opacity: 0.9; font-size: 0.9em;">
+                        <div class="gl-mt-2" style="opacity: 0.9; font-size: 0.9em;">
                             <span v-if="!useDefaultBranch && branchError" style="color: red;">
                                 The {{branch}} branch doesn't exist or wasn't imported successfully.
                             </span>
@@ -308,7 +308,7 @@ export default {
                         </div>
                     </div>
                 </div>
-                <div class="d-flex align-items-end">
+                <div class="gl-flex gl-items-end">
                     <div>
                         <import-button @importFinished="onImportFinished" :repoImport="repoImport"/>
                     </div>

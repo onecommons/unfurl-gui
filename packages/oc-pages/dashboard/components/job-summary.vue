@@ -76,8 +76,8 @@ export default {
 </script>
 <template>
     <div class="job-summary">
-        <h3 class="mt-0"> Job ID: {{getJobSummary.job.id}} </h3>
-        <div class="d-flex">
+        <h3 class="gl-mt-0"> Job ID: {{getJobSummary.job.id}} </h3>
+        <div class="gl-flex">
             <div v-for="key in ['ok', 'error', 'unknown', 'skipped', 'changed']" :key="key" >
                 <gl-badge v-if="getJobSummary.job[key] > 0" :variant="badgeVariantFor(key)">
                     {{getJobSummary.job[key]}} {{key}}

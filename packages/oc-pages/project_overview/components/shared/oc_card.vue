@@ -283,20 +283,20 @@ export default {
 <template>
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-flex',  'header-oc']">
         <template #header>
-            <div :id="id" :data-testid="card && ('card-' + card.name)" class="d-flex position-relative w-100 justify-content-between" :class="{'oc-card-header-clickable': !isPrimary}" @click="onHeaderClick">
-                <div class="d-flex oc-card-header justify-content-between w-100">
+            <div :id="id" :data-testid="card && ('card-' + card.name)" class="gl-flex gl-relative gl-w-full gl-justify-between" :class="{'oc-card-header-clickable': !isPrimary}" @click="onHeaderClick">
+                <div class="gl-flex oc-card-header gl-justify-between gl-w-full">
                     <slot name="header">
-                        <div v-if="card" class="align_left gl-flex align-items-center flex-one flex-wrap">
-                            <div class="d-flex pt-1 pb-1 gl-mr-3">
-                                <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="d-flex gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
+                        <div v-if="card" class="align_left gl-flex gl-items-center flex-one gl-flex-wrap">
+                            <div class="gl-flex gl-pt-2 gl-pb-2 gl-mr-3">
+                                <detect-icon v-if="card && card.type" :size="isPrimary? 24: 18" class="gl-flex gl-mr-2 icon-gray" :type="resolveResourceTypeFromAny(card.type)"/>
                                 <h4 class="gl-my-0 oc_card_title">{{ customTitle || _card.title }}</h4>
                             </div>
                             <detect-icon v-if="_displayValidation" v-gl-tooltip.hover data-testid="card-validation-icon" v-bind="validationIconProps" />
-                            <div v-if="_displayStatus" class="d-flex pt-1 pb-1 badges-container">
+                            <div v-if="_displayStatus" class="gl-flex gl-pt-2 gl-pb-2 badges-container">
                                 <slot name="status">
                                     <gl-badge v-if="!isMobileLayout && badgeHeaderText" class="gl-tab-counter-badge gl-mr-3" >
                                         <detect-icon :size="16" name="tag"/>
-                                        <div class="ml-1">{{ badgeHeaderText }}</div>
+                                        <div class="gl-ml-2">{{ badgeHeaderText }}</div>
 
                                     </gl-badge>
                                     <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
@@ -305,10 +305,10 @@ export default {
                         </div>
 
                     </slot>
-                    <div class="d-flex align-items-center">
+                    <div class="gl-flex gl-items-center">
                         <slot name="controls" v-bind="card">
                             <gl-button v-if="canRemove" @click="openDeletemodal" class="controls">
-                                <div class="d-flex align-items-center">
+                                <div class="gl-flex gl-items-center">
                                     <gl-icon name="remove" />
                                     <div> {{__(removeButtonText)}} </div>
                                 </div>
@@ -360,7 +360,7 @@ export default {
             </div>
         </div>
         <template v-if="$slots['footer-controls']" #footer>
-            <div class="d-flex justify-content-end">
+            <div class="gl-flex gl-justify-end">
                 <slot class="float-right" name="footer-controls" />
             </div>
         </template>

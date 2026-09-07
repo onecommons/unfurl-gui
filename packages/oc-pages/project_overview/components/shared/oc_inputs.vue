@@ -600,7 +600,7 @@ export default {
 .formily-element-form-default >>> [class^="formily-element-form-item"] {
   display: inline-flex !important;
   justify-content: space-between;
-  flex-wrap: wrap;
+  gl-flex-wrap: wrap;
 }
 
 .oc-inputs >>> .formily-element-form-item-label {

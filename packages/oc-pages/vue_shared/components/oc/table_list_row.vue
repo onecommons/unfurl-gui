@@ -57,14 +57,14 @@ export default {
     <div>
         <div v-if="items.length > 0">
             <div v-for="(item, index) in items.filter(item => item)" :key="item + index" class="gl-responsive-table-row oc_table_row oc-table-row">
-                <div class="table-section oc-table-section section-wrap text-truncate section-25">
+                <div class="table-section oc-table-section section-wrap gl-truncate section-25">
                     <span class=" title">{{ item.title || item.name }}</span>
                 </div>
-                <div class="table-section oc-table-section section-wrap text-truncate section-40">
+                <div class="table-section oc-table-section section-wrap gl-truncate section-40">
                     <div class="light-gray"><oc-markdown-view :content="item.description" /></div>
                 </div>
 
-                <div class="table-section oc-table-section section-wrap text-truncate section-15">
+                <div class="table-section oc-table-section section-wrap gl-truncate section-15">
                     <a v-if="item.totalDeployments" href="javascript:void(0);" @click="redirectToDeployment()">
                         <span>
                             <gl-icon
@@ -75,7 +75,7 @@ export default {
                     </a>
                 </div>
 
-                <div class="table-section oc-table-section section-wrap text-truncate section-20">
+                <div class="table-section oc-table-section section-wrap gl-truncate section-20">
                     <span class=" deploy-button-group">
                             <gl-button
                                 v-if="editable"
@@ -98,7 +98,7 @@ export default {
             </div>
         </div>
         <div v-else class="gl-responsive-table-row oc_table_row">
-            <div class="table-section oc-table-section section-wrap text-center section-100">
+            <div class="table-section oc-table-section section-wrap gl-text-center section-100">
                 <div>{{ __("Templates not found") }}</div>
             </div>
         </div>

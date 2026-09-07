@@ -684,25 +684,25 @@ export default {
             >
             <div
                 v-if="intent == 'delete' && !ableToDelete"
-                class="m-3">
+                class="gl-m-5">
                 <ol>
                     <li v-for="reason in intentToDeletePreventedBy" :key="reason" v-html="reason" />
                 </ol>
             </div>
             <div
                 v-else-if="deleteWarning"
-                class="m-3"
+                class="gl-m-5"
                 >
                 <div style="color: red">
                     If you delete a deployment before <b>teardown</b>, you will not be able to stop the deployment via unfurl.cloud.
                 </div>
-                <div class="mt-2">
+                <div class="gl-mt-3">
                     Please consider running teardown first if you have not already or reporting an issue as alternatives to deletion.
                 </div>
             </div>
             <div
                 v-if="intent == 'undeploy' && !ableToUndeploy && !standalone"
-                class="m-3">
+                class="gl-m-5">
                 <ol>
                     <li v-for="reason in intentToUndeployPreventedBy" :key="reason" v-html="reason" />
                 </ol>
@@ -712,17 +712,17 @@ export default {
                 v-model="autostop"
             />
             <div v-if="['clone', 'rename'].includes(intent)">
-                <gl-form-group class="m-3" label="New deployment title">
+                <gl-form-group class="gl-m-5" label="New deployment title">
                     <gl-form-input v-model="newDeploymentTitle"/>
                     <environment-selection
                         v-if="intent == 'clone'"
-                        class="mt-2"
+                        class="gl-mt-3"
                         v-model="cloneTargetEnvironment"
                         :provider="target.environment.primary_provider.type"
                     />
                 </gl-form-group>
             </div>
-            <div class="m-3" v-if="intent == 'edit'">
+            <div class="gl-m-5" v-if="intent == 'edit'">
                 <div v-if="deploymentItemDirect({deployment: target.deployment, environment: target.environment}, 'isUndeployed')">
                     <p>
                         <b>Warning</b>: Re-deploying after you've torn down a deployment is not supported
@@ -738,10 +738,10 @@ export default {
 
                 </div>
             </div>
-            <div class="m-3" v-if="intent == 'localDeploy'">
+            <div class="gl-m-5" v-if="intent == 'localDeploy'">
                 <local-deploy :environment="target.environment" :deployment="target.deployment" />
             </div>
-            <div class="m-3" v-if="intent == 'undeploy' && standalone">
+            <div class="gl-m-5" v-if="intent == 'undeploy' && standalone">
                 <local-deploy teardown :environment="target.environment" :deployment="target.deployment" />
             </div>
         </gl-modal>
@@ -750,7 +750,7 @@ export default {
         </gl-tabs>
         <table-component v-show="!showingMergeRequestsTab" :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>
-                <div class="ml-2" style="padding-left: 30px">
+                <div class="gl-ml-3" style="padding-left: 30px">
                     {{__('Deployment')}}
                 </div>
             </template>
@@ -791,7 +791,7 @@ export default {
             </template>
 
         </table-component>
-        <p class="mt-5"/>
+        <p class="gl-mt-7"/>
         <h3 v-if="tabs && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
         <merge-requests-table v-show="(tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
     </div>

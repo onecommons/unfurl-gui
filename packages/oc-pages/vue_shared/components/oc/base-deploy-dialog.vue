@@ -241,7 +241,7 @@ export default {
                 :error="deployDialogError" @createNewEnvironment="createNewEnvironment"
                 :environment-creation="!standalone || forceEnvCreation" />
 
-            <div v-if="shouldProvideVersionSelection" class="mt-5">
+            <div v-if="shouldProvideVersionSelection" class="gl-mt-7">
                 <gl-form-radio v-model="bprev" :value="currentTag.name">Use the current release of
                     {{ applicationBlueprint.title }} (<b>{{ currentTag.name }}</b>)</gl-form-radio>
                 <gl-form-radio v-model="bprev" :value="homeProjectDefaultBranch"> Use the latest (unreleased) version</gl-form-radio>

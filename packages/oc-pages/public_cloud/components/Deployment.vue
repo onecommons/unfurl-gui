@@ -24,11 +24,11 @@ export default {
 }
 </script>
 <template>
-  <div class="d-flex flex-column">
+  <div class="gl-flex gl-flex-col">
     <h6>{{item.data.name}}</h6>
     <a :href="item.data.visit" target="_blank">View Deployment</a>
     <div>{{resourcesCountLabel}}</div>
-    <div class="d-flex flex-wrap tooltip-icons">
+    <div class="gl-flex gl-flex-wrap tooltip-icons">
       <div v-for="resource in presentableResources" :key="resource.name" :title="resource.name">
         <a :href="`${item.data.visit}#${resource.name}`" target="_blank" style="color: inherit;">
           <img v-if="resource.name == 'the_app'" :src="item.data.icon">

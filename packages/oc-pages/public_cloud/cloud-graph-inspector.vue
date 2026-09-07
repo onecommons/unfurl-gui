@@ -197,7 +197,7 @@ export default {
 </script>
 
 <template>
-  <gl-card class="cloud-graph-inspector ml-5 mr-5">
+  <gl-card class="cloud-graph-inspector gl-ml-7 gl-mr-7">
     <template #header>
       <div class="inspector-head">
         <div>
@@ -330,7 +330,7 @@ export default {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  flex-wrap: wrap;
+  gl-flex-wrap: wrap;
 }
 
 .inspector-title {

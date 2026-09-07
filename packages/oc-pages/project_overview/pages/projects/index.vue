@@ -462,9 +462,9 @@ export default {
                     <div class="">
                         <gl-card>
                             <template #header>
-                                <div class="d-flex align-items-center">
-                                    <gl-icon name="archive" class="mr-2"/>
-                                    <h5 class="mb-0 mt-0">
+                                <div class="gl-flex gl-items-center">
+                                    <gl-icon name="archive" class="gl-mr-3"/>
+                                    <h5 class="gl-mb-0 gl-mt-0">
                                         {{__('Available Deployment Blueprints')}}
                                     </h5>
                                 </div>
@@ -476,9 +476,9 @@ export default {
                 <oc-tab v-if="hasEditPermissions && !standalone" ref="developmentTab" title="Develop">
                     <gl-card>
                         <template #header>
-                            <div class="d-flex align-items-center">
-                                <gl-icon name="archive" class="mr-2"/>
-                                    <h5 class="mb-0 mt-0">
+                            <div class="gl-flex gl-items-center">
+                                <gl-icon name="archive" class="gl-mr-3"/>
+                                    <h5 class="gl-mb-0 gl-mt-0">
                                         Local Unfurl Server Development
                                     </h5>
                             </div>
@@ -497,9 +497,9 @@ export default {
                 <oc-tab v-if="commentsIssueUrl" ref="commentsTab" title="Comments" :title-count="commentsCount">
                     <gl-card>
                         <template #header>
-                            <div class="d-flex align-items-center">
-                                <gl-icon name="comments" class="mr-2"/>
-                                <h5 class="mb-0 mt-0">
+                            <div class="gl-flex gl-items-center">
+                                <gl-icon name="comments" class="gl-mr-3"/>
+                                <h5 class="gl-mb-0 gl-mt-0">
                                     {{__('General Comments')}}
                                 </h5>
                             </div>
@@ -512,9 +512,9 @@ export default {
 
             <gl-card v-if="$projectGlobal.readme || $projectGlobal.readmeRaw">
                 <template #header>
-                    <div class="d-flex align-items-center">
-                        <gl-icon name="information-o" class="mr-2"/>
-                        <h5 class="mb-0 mt-0">
+                    <div class="gl-flex gl-items-center">
+                        <gl-icon name="information-o" class="gl-mr-3"/>
+                        <h5 class="gl-mb-0 gl-mt-0">
                             {{__('README.md')}}
                         </h5>
                     </div>
@@ -577,7 +577,7 @@ export default {
                                 environment-creation
                             />
 
-                            <div v-if="shouldProvideVersionSelection" class="mt-5">
+                            <div v-if="shouldProvideVersionSelection" class="gl-mt-7">
                                 <gl-form-radio v-model="version" :value="currentTag.name">Use the current release of {{ getApplicationBlueprint.title }}  (<b>{{ currentTag.name }}</b>)</gl-form-radio>
                                 <gl-form-radio v-model="version" value="main"> Use the latest (unreleased) version</gl-form-radio>
                             </div>

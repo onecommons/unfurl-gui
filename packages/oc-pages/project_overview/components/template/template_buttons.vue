@@ -82,8 +82,8 @@ export default {
 }
 </script>
 <template>
-    <div class="gl-mt-6 gl-mb-6 d-flex justify-content-between template-buttons flex-wrap">
-        <div class="d-flex">
+    <div class="gl-mt-6 gl-mb-6 gl-flex gl-justify-between template-buttons gl-flex-wrap">
+        <div class="gl-flex">
             <gl-button
                 v-show="mergeStatus != 'hidden'"
                 title="Merge Request"

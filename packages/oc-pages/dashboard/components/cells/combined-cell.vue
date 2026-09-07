@@ -52,7 +52,7 @@ export default {
 }
 </script>
 <template>
-<div class="d-flex">
+<div class="gl-flex">
     <deployment-status-icon :scope="scope" width="40px"/>
     <div v-if="application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${deployment.name}` == $route.hash}">
         <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem.viewableLink: deploymentItem.viewableTo">

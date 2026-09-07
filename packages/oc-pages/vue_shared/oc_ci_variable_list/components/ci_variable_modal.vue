@@ -222,12 +222,12 @@ export default {
         />
       </gl-form-group>
 
-      <div class="d-flex">
+      <div class="gl-flex">
         <gl-form-group
           :label="__('Type')"
           label-for="ci-variable-type"
           class="w-50 gl-mr-5"
-          :class="{ 'w-100': isGroup }"
+          :class="{ 'gl-w-full': isGroup }"
         >
           <gl-form-select id="ci-variable-type" v-model="variable_type" :options="typeOptions" />
         </gl-form-group>
@@ -236,11 +236,11 @@ export default {
           v-if="!isGroup"
           :label="__('Environment scope')"
           label-for="ci-variable-env"
-          class="w-50 d-none"
+          class="w-50 gl-hidden"
           data-testid="environment-scope"
         >
           <ci-environments-dropdown
-            class="w-100"
+            class="gl-w-full"
             :value="environment_scope"
             @selectEnvironment="setEnvironmentScope"
             @createClicked="addWildCardScope"
@@ -248,10 +248,10 @@ export default {
         </gl-form-group>
       </div>
 
-      <gl-form-group class="d-flex" :label="__('Flags')" label-for="ci-variable-flags">
+      <gl-form-group class="gl-flex" :label="__('Flags')" label-for="ci-variable-flags">
         <gl-form-checkbox
           v-model="protected_variable"
-          class="mb-0 d-none"
+          class="gl-mb-0 gl-hidden"
           data-testid="ci-variable-protected-checkbox"
         >
           {{ __('Protect variable') }}
@@ -265,7 +265,7 @@ export default {
 
         <gl-form-checkbox
           ref="masked-ci-variable"
-          class="ml-2"
+          class="gl-ml-3"
           v-model="masked"
           data-testid="ci-variable-masked-checkbox"
         >

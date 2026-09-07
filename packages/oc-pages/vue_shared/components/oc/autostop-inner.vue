@@ -96,10 +96,10 @@ export default {
 </script>
 <template>
     <div>
-        <div class="ml-2 m-1">
+        <div class="gl-ml-3 gl-m-2">
             Automatically stop the deployment at a specified time:
         </div>
-        <div class="gl-flex gl-items-center gl-flex-wrap gl-gap-3 ml-2">
+        <div class="gl-flex gl-items-center gl-flex-wrap gl-gap-3 gl-ml-3">
             <gl-collapsible-listbox
                 data-testid="autostop-preset"
                 v-model="preset"

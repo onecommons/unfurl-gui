@@ -61,7 +61,7 @@ export default {
     <a v-if="environment" :href="destination.href">
         <div class="status-item font-weight-bold">
             <detect-icon :size="20" v-if="primaryProvider" :type="primaryProvider"/>
-            <div class="ml-1">{{environment.name}}</div>
+            <div class="gl-ml-2">{{environment.name}}</div>
         </div>
     </a>
 </template>

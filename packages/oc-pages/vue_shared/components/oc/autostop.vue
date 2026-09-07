@@ -75,8 +75,8 @@ export default {
             placement="top"
         >
             <autostop-inner v-model="autostop"/>
-            <div v-if="popover" class="mt-2 d-flex justify-content-end">
-                <gl-button class="mr-2" @click="popover = false">Cancel</gl-button>
+            <div v-if="popover" class="gl-mt-3 gl-flex gl-justify-end">
+                <gl-button class="gl-mr-3" @click="popover = false">Cancel</gl-button>
                 <gl-button v-if="!enabledAutostop" :disabled="disabledSchedule" variant="confirm" @click="popover = false; enabledAutostop = true">Confirm</gl-button>
                 <gl-button v-else @click="popover = false; enabledAutostop = false">Unschedule</gl-button>
             </div>

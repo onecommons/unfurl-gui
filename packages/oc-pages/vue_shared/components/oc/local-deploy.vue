@@ -190,16 +190,16 @@ export default {
             <p v-if="instruction">{{instruction}}</p>
             <p v-if="!standalone">
                 Install Unfurl if needed:
-                <code-clipboard class="mt-1">python -m pip install -U unfurl[full]</code-clipboard>
+                <code-clipboard class="gl-mt-2">python -m pip install -U unfurl[full]</code-clipboard>
             </p>
             <p v-if="!standalone">
                 Clone this Unfurl project if you haven't already:
-                <code-clipboard class="mt-1">{{localCloneInvocation}}</code-clipboard>
+                <code-clipboard class="gl-mt-2">{{localCloneInvocation}}</code-clipboard>
                 (Or if you have, run <code>git pull</code> to get latest.)
             </p>
             <p v-if="!noDeploy">
                 Deploy the blueprint:
-                <code-clipboard class="mt-1">{{cdInstruction}}{{localDeployInvocation}}</code-clipboard>
+                <code-clipboard class="gl-mt-2">{{cdInstruction}}{{localDeployInvocation}}</code-clipboard>
             </p>
             <p>Learn more at <a href="https://github.com/onecommons/unfurl" target="_blank">https://github.com/onecommons/unfurl</a>.</p>
         </div>

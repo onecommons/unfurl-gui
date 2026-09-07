@@ -1,5 +1,5 @@
 <template>
-  <div class="d-inline-flex align-items-center justify-content-center status-container">
+  <div class="gl-inline-flex gl-items-center gl-justify-center status-container">
     <component v-if="status !== undefined" :is="badgeComponent" size="md" class="gl-mr-3">
       <div v-if="status < StatusIndicators.length" class="icon-only gl-badge" :class="hackyBadgeClass" :style="{height: `${size}px`}">
         <!--
@@ -26,11 +26,11 @@
            :title="__(StatusIndicators[status][2])"
            />
       </div>
-    <div v-if="_displayText" class="ml-1">{{_text}}</div>
+    <div v-if="_displayText" class="gl-ml-2">{{_text}}</div>
     </component>
     <component :is="badgeComponent" v-if="isProtected" size="md" :class="_displayText? 'gl-mr-3': ''">
       <detect-icon v-gl-tooltip.hover class="gl-ml-1" title="Protected" name="protected" :size="size" />
-      <div v-if="_displayText" class="ml-1">Protected</div>
+      <div v-if="_displayText" class="gl-ml-2">Protected</div>
     </component>
     <import-link v-if="card" :card="card" />
   </div>

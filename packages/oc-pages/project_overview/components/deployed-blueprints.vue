@@ -27,20 +27,20 @@ export default {
 }
 </script>
 <template>
-  <div class="d-flex">
+  <div class="gl-flex">
       <div class="col-lg-4"></div>
       <gl-card class="col-lg-8" style="margin-right: 30px">
           <template #header>
-              <div class="d-flex align-items-center">
-                  <gl-icon name="package" class="mr-2"/>
-                  <h5 class="mb-0 mt-0">
+              <div class="gl-flex gl-items-center">
+                  <gl-icon name="package" class="gl-mr-3"/>
+                  <h5 class="gl-mb-0 gl-mt-0">
                       {{__('Deployment Blueprints')}}
                   </h5>
               </div>
           </template>
           <div v-for="(blueprint, idx) in getTemplatesList" :key="blueprint.name">
               <hr v-if="idx != 0">
-              <div class="row m-2">
+              <div class="row gl-m-3">
                   <div class="col-md-4">
                       <router-link to="#"><div> {{blueprint.title}} </div></router-link>
                       <!-- TODO put this back -->

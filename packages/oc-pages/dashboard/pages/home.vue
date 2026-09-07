@@ -111,7 +111,7 @@ export default {
     <div style="width: fit-content; margin: auto;">
         <dashboard-welcome v-if="!standalone && totalDeploymentsCount == 0" />
         <div class="quantity-cards">
-            <div class="d-flex flex-wrap justify-content-center">
+            <div class="gl-flex gl-flex-wrap gl-justify-center">
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_HOME}"
                     :count="applicationsCount"
@@ -127,7 +127,7 @@ export default {
                     class="qcard2"
                     :secondary-link="!standalone && {name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
             </div>
-            <div class="d-flex flex-wrap justify-content-center">
+            <div class="gl-flex gl-flex-wrap gl-justify-center">
                 <quantity-card
                     :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'running'}}"
                     :count="runningDeploymentsCount"
@@ -152,7 +152,7 @@ export default {
 
     <TableComponent v-if="totalDeploymentsCount > 0" :items="tableItems" :fields="tableFields">
       <template #empty>
-        <center class="my-5" style="font-size: 1.3em;">
+        <center class="gl-my-7" style="font-size: 1.3em;">
           You haven't deployed anything yet. Browse our <a href="/explore/blueprints" target="_blank">Cloud Blueprints</a> to get started!
         </center>
       </template>
@@ -173,9 +173,9 @@ export default {
     <!-- card like on bluperint page -->
     <gl-card v-if="readme || readmeRaw" class="mt-6 consistent-card">
         <template #header>
-            <div class="d-flex align-items-center">
-                <gl-icon name="information-o" class="mr-2"/>
-                <h5 class="mb-0 mt-0">
+            <div class="gl-flex gl-items-center">
+                <gl-icon name="information-o" class="gl-mr-3"/>
+                <h5 class="gl-mb-0 gl-mt-0">
                     {{__('README.md')}}
                 </h5>
             </div>
@@ -212,7 +212,7 @@ export default {
   display: flex;
   justify-content: center;
   margin: 2em -0.5em 4em -0.5em;
-  flex-wrap: wrap;
+  gl-flex-wrap: wrap;
 }
 
 </style>

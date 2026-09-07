@@ -27,7 +27,7 @@ export default {
 
 <template>
     <div v-if="value" class="redacted-container">
-        <div class="mr-1" style="max-width: calc(100% - 16px)" :style="isHidden? 'overflow: hidden': 'overflow: auto'">
+        <div class="gl-mr-2" style="max-width: calc(100% - 16px)" :style="isHidden? 'overflow: hidden': 'overflow: auto'">
 
             <span v-if="isHidden"> {{value.replace(/./g, '*')}}</span>
             <span v-else style="line-break: anywhere">{{ value }}</span>

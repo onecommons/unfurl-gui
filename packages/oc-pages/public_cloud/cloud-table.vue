@@ -59,10 +59,10 @@ export default {
 }
 </script>
 <template>
-  <gl-card id="public-cloud-deployments" class="ml-5 mr-5">
+  <gl-card id="public-cloud-deployments" class="gl-ml-7 gl-mr-7">
     <template #header>
-      <div class="d-flex justify-content-center">
-        <h1 style="font-size: 28px; cursor: default" class="m-0">
+      <div class="gl-flex gl-justify-center">
+        <h1 style="font-size: 28px; cursor: default" class="gl-m-0">
           Public Cloud Testbeds
           <gl-icon v-gl-tooltip.hover data-testid="public-cloud-help" name="information-o" :size="24"
              title="Here are some of the open-source application and services available in our public cloud. Click on a deployment to see details or to clone.  Or join one of  a testbed project to get full access to our public cloud infrastructure."/>
@@ -71,9 +71,9 @@ export default {
     </template>
     <table-component v-if="items.length" :items="items" no-margin hide-filter :fields="$options.fields" style="font-size: 1.125em;">
       <template #provider="scope">
-        <div class="d-flex">
+        <div class="gl-flex">
           <detect-icon :size="20" :name="lookupCloudProviderAlias(scope.item.provider)" />
-          <div class="ml-1">
+          <div class="gl-ml-2">
             <a href="#" @click.prevent="$emit('focus', {type: 'cloudProvider', node: scope.item.provider})">
               {{scope.item.provider}}
             </a>

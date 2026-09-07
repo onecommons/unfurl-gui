@@ -41,7 +41,7 @@ export default {
 <template>
   <div class="self" :style="`top: ${top}px`">
     <div class="inner">
-      <div v-for="(item, i) in navItems" :key="i" class="d-flex section justify-content-center" :class="{active: i < path.length}" @click="onClick(i)">
+      <div v-for="(item, i) in navItems" :key="i" class="gl-flex section gl-justify-center" :class="{active: i < path.length}" @click="onClick(i)">
         {{item}}
       </div>
     </div>

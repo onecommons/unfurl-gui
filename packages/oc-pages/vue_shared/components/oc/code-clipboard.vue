@@ -23,9 +23,9 @@ export default{
 }
 </script>
 <template>
-    <div class="position-relative ufgui-code-clipboard">
+    <div class="gl-relative ufgui-code-clipboard">
         <pre><code ref="code"><slot></slot></code></pre>
-        <gl-icon v-gl-tooltip.hover @mouseenter="clipboardTitle = CLIPBOARD_TITLE_COPY" @click="copyLocalCloneInvocation" class="position-absolute" style="bottom: 8px; right: 8px; cursor: pointer;" :size="18" :title="clipboardTitle" name="copy-to-clipboard" />
+        <gl-icon v-gl-tooltip.hover @mouseenter="clipboardTitle = CLIPBOARD_TITLE_COPY" @click="copyLocalCloneInvocation" class="gl-absolute" style="bottom: 8px; right: 8px; cursor: pointer;" :size="18" :title="clipboardTitle" name="copy-to-clipboard" />
     </div>
 
 </template>

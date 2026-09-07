@@ -86,9 +86,9 @@ export default {
 }
 </script>
 <template>
-        <div v-if="this.getCurrentContext != 'environment'" class="d-flex mt-5 p align-items-center">
+        <div v-if="this.getCurrentContext != 'environment'" class="gl-flex gl-mt-7 p gl-items-center">
             <detect-icon size="24" name="expire" />
-            <div class="ml-5">
+            <div class="gl-ml-7">
                 <gl-form-checkbox data-testid="incremental-deployment-checkbox" v-model="incrementalDeploymentEnabled">{{_label}}</gl-form-checkbox>
             </div>
         </div>

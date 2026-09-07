@@ -960,7 +960,7 @@ export default {
           >
           <template #content>
             <!-- Inputs -->
-            <div class="m-2">
+            <div class="gl-m-3">
               <oc-inputs :data-testid="`oc-inputs-${getPrimaryCard.name}`" :card="getPrimaryCard" :main-inputs="getPrimaryCard.properties" :component-key="1"  />
             </div>
 

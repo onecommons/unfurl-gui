@@ -149,9 +149,9 @@ export default {
 <template>
     <div class="oc_table_row">
         <div
-            class="table-section oc-table-section section-wrap align_left d-flex justify-content-between align-items-center">
+            class="table-section oc-table-section section-wrap align_left gl-flex gl-justify-between gl-items-center">
             <div>
-                <div class="title d-flex align-items-center">
+                <div class="title gl-flex gl-items-center">
                     <detect-icon :size="16" class="gl-mr-2 icon-gray" :type="dependencyType" />
                     <span class="oc_requirement_title">{{ dependencyConstraint.title || dependencyConstraint.name }}</span>
                 </div>
@@ -160,7 +160,7 @@ export default {
                 </div>
 
             </div>
-            <div v-if="isMobileLayout && !requirementFilled" class="ml-2 mr-2 validation">
+            <div v-if="isMobileLayout && !requirementFilled" class="gl-ml-3 gl-mr-3 validation">
                 <detect-icon
                     v-if="displayValidation"
                     v-gl-tooltip.hover
@@ -169,15 +169,15 @@ export default {
                 <span v-if="matchIsValid" class=" oc_resource-details">
 
                     <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
-                      <status-icon v-if="displayStatus" class="mr-1" :status="cardStatus(dependency.target)" />
+                      <status-icon v-if="displayStatus" class="gl-mr-2" :status="cardStatus(dependency.target)" />
                       {{ resolveRequirementMatchTitle(dependency) }}
                     </a>
                 </span>
             </div>
         </div>
         <div v-if="!isMobileLayout || requirementFilled"
-            class="table-section oc-table-section section-wrap d-flex align-items-center validation"
-            :class="{'justify-content-center': !readonly}"
+            class="table-section oc-table-section section-wrap gl-flex gl-items-center validation"
+            :class="{'gl-justify-center': !readonly}"
         >
             <detect-icon
                 v-if="displayValidation"
@@ -187,7 +187,7 @@ export default {
 
             <span v-if="matchIsValid" class="oc_resource-details">
                 <a href="#" @click.prevent="findElementToScroll({requirement: dependency}) ">
-                  <status-icon v-if="displayStatus" class="mr-1" :status="cardStatus(dependency.target)" />
+                  <status-icon v-if="displayStatus" class="gl-mr-2" :status="cardStatus(dependency.target)" />
                   <span style="margin-bottom: -0.1em"> {{ resolveRequirementMatchTitle(dependency) }} </span>
                 </a>
             </span>
@@ -195,7 +195,7 @@ export default {
 
         <div
             v-if="!readonly && matchIsValid"
-            class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
+            class="table-section oc-table-section section-wrap gl-flex gl-flex-wrap gl-items-center gl-justify-end">
             <div style="height: 32px;">
                 <gl-button
                     v-if="actionLabel !== 'Disconnect'"
@@ -221,7 +221,7 @@ export default {
         <!-- TODO get rid of duplication here -->
         <div
             v-else-if="!readonly"
-            class="table-section oc-table-section section-wrap d-flex flex-wrap align-items-center justify-content-end">
+            class="table-section oc-table-section section-wrap gl-flex gl-flex-wrap gl-items-center gl-justify-end">
             <div style="height: 32px;">
                 <gl-button
                     v-if="canConnectServices"
