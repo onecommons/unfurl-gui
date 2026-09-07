@@ -3,8 +3,7 @@ import * as routes from '../router/constants'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
-import {GlFormInput, GlButton, GlIcon, GlTabs, GlModal} from '@gitlab/ui'
-import {Tooltip as ElTooltip} from 'element-ui'
+import {GlFormInput, GlButton, GlIcon, GlTabs, GlModal, GlPopover} from '@gitlab/ui'
 import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue_shared/components/oc'
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
@@ -32,10 +31,9 @@ export default {
         OcTab,
         CiVariableSettings,
         DashboardBreadcrumbs,
-        GlTabs, GlFormInput, GlButton, GlIcon, GlModal,
+        GlTabs, GlFormInput, GlButton, GlIcon, GlModal, GlPopover,
         DeploymentResources,
-        DetectIcon,
-        ElTooltip
+        DetectIcon
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
@@ -544,20 +542,18 @@ export default {
                     <h2 style="margin: 0 1.25em">
                         {{__('External Resources used by')}}
                         <span style="font-weight: 400">{{environment.name}}</span>
-                        <el-tooltip v-if="showDeploymentResources">
-                            <template #content>
-                                <div style="max-width: 300px;">
-                                    <p>
-                                        External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
-                                    </p>
-                                    <p>
-                                        External resources are a convenient way to reuse configurations across many deployments.
-                                    </p>
-                                </div>
-                            </template>
-                            <i class="el-icon-info"></i>
-                        </el-tooltip>
+                        <i v-if="showDeploymentResources" id="external-resources-help"
+                           data-testid="external-resources-help" class="el-icon-info"></i>
                     </h2>
+                    <!-- two paragraphs, so a tooltip won't do -->
+                    <gl-popover v-if="showDeploymentResources" target="external-resources-help" triggers="hover focus">
+                        <p>
+                            External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
+                        </p>
+                        <p class="gl-mb-0">
+                            External resources are a convenient way to reuse configurations across many deployments.
+                        </p>
+                    </gl-popover>
                 </div>
                 <div v-else-if="showingPublicCloudTab" class="d-flex align-items-center">
                     <h2 style="margin: 0 1.25em">Public Cloud Resources</h2>

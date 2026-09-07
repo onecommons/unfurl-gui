@@ -132,6 +132,17 @@ describe('Route smoke', () => {
         // Tooltips only exist on hover, so no screenshot covers them. 2A.2
         // moves ~12 of them from el-tooltip to v-gl-tooltip; without this the
         // gate would report every one of those conversions as a no-op.
+        // the external-resources help is a gl-popover, not a tooltip: two
+        // paragraphs. Like a tooltip it exists only once provoked.
+        cy.get('body').then($body => {
+          if (!$body.find('[data-testid="external-resources-help"]').length) return
+          cy.get('[data-testid="external-resources-help"]').trigger('mouseenter')
+          cy.get('.popover').should('be.visible').and('contain.text', 'third-party resources')
+          cy.screenshotPage('route-smoke/popover-external-resources')
+          cy.get('[data-testid="external-resources-help"]').trigger('mouseleave')
+          cy.get('.popover').should('not.exist')
+        })
+
         cy.get('body').then($body => {
           if (!$body.find('[data-testid="card-validation-icon"]').length) return
           cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseenter')
