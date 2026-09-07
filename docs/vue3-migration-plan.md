@@ -339,7 +339,12 @@ recursive component of our own. The only API the component relies on is the
 validated in 2C; write a jest test for it now since it has no store
 dependency.
 
-**2A.5 vue-apollo.** No component in oc-pages has an `apollo:` option. The
+**2A.5 vue-apollo.** *Partly done: `$apollo.loading` is removed.* The rest is
+blocked on 1.7 — `graphql-shim.js` compiles the provider out standalone
+(`#!if !standalone`, so it is `null` here), which makes all eight query sites
+fork-only and untestable until a fork environment exists.
+
+No component in oc-pages has an `apollo:` option. The
 only reference is `$apollo.loading` in `vue_shared/components/oc/table.vue`,
 which would throw at render once the provider is gone, so delete that
 reference first, then `src/vue-apollo.js` and the `apolloProvider` option in
@@ -357,7 +362,12 @@ Vue 3 lane.
 importers change only their import. Works on both versions. Leave the
 `Vue.extend` calls in `public_cloud/index.js` for 2B; they need `createApp`.
 
-**2A.8 Dead standalone scaffolding.** `src/views/*.vue`, `src/App.vue`,
+**2A.8 Dead standalone scaffolding.** *Done.* All of it imported
+`src/components/`, which does not exist, so none of it could build.
+`src/pages/form/test-cases.js` was kept: it is a synthetic JSON schema and is
+the obvious starting point for the 2.0 Spike B fixture.
+
+`src/views/*.vue`, `src/App.vue`,
 `src/main.ts`, `src/router/`, and `src/pages/form/` are the vue-cli template
 and an abandoned demo, and none are entries in `vue.config.js`. Delete them
 and drop `vue-class-component`, `vue-property-decorator`,

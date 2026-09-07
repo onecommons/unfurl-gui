@@ -8,8 +8,3 @@ dist/
 # linted. Lint packages/oc-pages directly instead.
 src/gitlab-oc/
 
-# Abandoned vue-cli scaffolding: imported only by src/router/index.ts, which is
-# itself unused, and none of it is a vue.config.js entry. It doesn't parse under
-# our babel config (decorators before export). Migration plan step 2A.8 deletes
-# the whole cluster; until then, don't lint it.
-src/views/
