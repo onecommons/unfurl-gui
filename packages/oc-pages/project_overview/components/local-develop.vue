@@ -6,7 +6,6 @@ export default {
     components: {
         CodeClipboard
     },
-    data() {},
     computed: {
         ...mapGetters(['getGlobalVars']),
         cloneURL() {
