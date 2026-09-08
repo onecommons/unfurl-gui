@@ -1,3 +1,4 @@
+import '../../assets/standalone-tokens.css'
 import Vue from 'vue'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'

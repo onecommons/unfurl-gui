@@ -1,0 +1,16 @@
+/*
+ * @gitlab/ui 136's design tokens, for the standalone build only.
+ *
+ * public/assets/*.css is a GitLab 15.11 snapshot, which predates the token
+ * system, so without these every gl-* utility parses and computes to nothing.
+ * GitLab 19.3's own application.css already defines all of them, so importing
+ * them inside oc-pages would duplicate ~260 KB in the fork and re-apply the
+ * dark set -- and GitLab's css-loader 2.1.1 cannot resolve a bare package path
+ * in @import anyway. Hence: imported from the standalone entry points, never
+ * from oc-pages.
+ *
+ * The light set is the base (796 of 1102 tokens -- all the spacing and sizing
+ * -- are theme-independent); the dark set overrides the remaining 306.
+ */
+@import '@gitlab/ui/src/tokens/build/css/tokens.css';
+@import '@gitlab/ui/src/tokens/build/css/tokens.dark.css';

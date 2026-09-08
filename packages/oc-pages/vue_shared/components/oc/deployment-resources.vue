@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import axios from '~/lib/utils/axios_utils';
-import { redirectTo } from '~/lib/utils/url_utility';
+import { visitUrl } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../../project_overview/components/shared/oc_card.vue';
 import OcList from '../../../project_overview/components/shared/oc_list.vue';
@@ -475,7 +475,7 @@ export default {
                 await this.createDeploymentPathPointer({projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
                 const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName });
                 createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
-                return redirectTo(`${this.pipelinesPath}/${data.id}`);
+                return visitUrl(`${this.pipelinesPath}/${data.id}`);
             } catch (err) {
                 const { errors = [] } = err?.response?.data;
                 const [error] = errors;

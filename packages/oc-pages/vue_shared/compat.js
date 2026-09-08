@@ -8,7 +8,7 @@
 
 // #!if !standalone
 import csrf from '~/lib/utils/csrf'
-import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf-badge.js'
+import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf_badge'
 let mountJobsConsole
 let mountNotesApp
 // #!endif
@@ -23,7 +23,7 @@ token = csrf.token
 compatibilityUnfurlBadgeUrlBuilder = initUnfurlBadgeUrlBuilder
 compatibilityMountJobConsole = async function(...args) {
     if(!mountJobsConsole) {
-        mountJobsConsole = import('~/jobs').then(module => module.default)
+        mountJobsConsole = import('~/ci/job_details').then(module => module.initJobDetails)
     }
 
     return (await mountJobsConsole)(...args)

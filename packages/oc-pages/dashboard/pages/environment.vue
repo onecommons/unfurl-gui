@@ -11,7 +11,7 @@ import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_v
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
-import { redirectTo } from '~/lib/utils/url_utility';
+import { visitUrl } from '~/lib/utils/url_utility';
 
 
 const PROP_MAP = {
@@ -278,7 +278,7 @@ export default {
             await deleteEnvironment(window.gon.projectPath, window.gon.projectId, environment.name, window.gon.environmentId)
 
             sessionStorage['oc_flash'] = JSON.stringify({type: FLASH_TYPES.SUCCESS, message: `${environment.name} was deleted successfully.`})
-            return redirectTo(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
+            return visitUrl(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         },
 
         headerTitle(provider) {

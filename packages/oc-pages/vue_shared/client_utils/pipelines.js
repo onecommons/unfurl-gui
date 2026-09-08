@@ -1,5 +1,5 @@
 import axios from '~/lib/utils/axios_utils'
-import { redirectTo } from '~/lib/utils/url_utility';
+import { visitUrl } from '~/lib/utils/url_utility';
 import { getOrFetchDefaultBranch } from './projects'
 
 const MASK_VARIABLES = ['UNFURL_ACCESS_TOKEN']
@@ -158,7 +158,7 @@ export async function redirectToJobConsole({pipelineData}, options) {
             window.open(redirectTarget, '_blank')
         } else {
             if(typeof options?.beforeRedirect == 'function') options.beforeRedirect()
-            redirectTo(redirectTarget)
+            visitUrl(redirectTarget)
         }
         return true
     }
