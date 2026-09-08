@@ -153,7 +153,7 @@ export default {
 }
 
 /*
-#console-container >>> .content-wrapper {
+#console-container :deep(.content-wrapper) {
   padding-bottom: 0;
 }
 */

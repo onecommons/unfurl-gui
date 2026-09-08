@@ -390,7 +390,7 @@ export default {
 
 <style scoped>
 /*issue with line height on other header items*/
-.dropdown-container >>> button.dropdown-toggle {
+.dropdown-container :deep(button.dropdown-toggle) {
     margin: -0.5rem 0;
 }
 .card-content-outer {
@@ -429,23 +429,23 @@ export default {
         margin-right: -1em;
     }
 
-    .oc-card >>> .gl-card-body {
+    .oc-card :deep(.gl-card-body) {
         padding: 0
     }
-    .oc-card.primary >>> .gl-card-footer {
+    .oc-card.primary :deep(.gl-card-footer) {
         /* TODO move this into global css */
         background: rgb(227, 247, 255);
     }
-    .gl-dark .oc-card.primary >>> .gl-card-footer {
+    .gl-dark .oc-card.primary :deep(.gl-card-footer) {
         background:  transparent !important;
     }
 }
 
-.oc-card:not(.primary) >>> .gl-card-body {
+.oc-card:not(.primary) :deep(.gl-card-body) {
     background-color: white;
     /* sorry Mathew */
 }
-.gl-dark .oc-card:not(.primary) >>> .gl-card-body {
+.gl-dark .oc-card:not(.primary) :deep(.gl-card-body) {
     background-color: transparent;
 }
 
@@ -461,10 +461,10 @@ export default {
     align-items: center;
 }
 
-.oc-card >>> .gl-card-body {
+.oc-card :deep(.gl-card-body) {
     background-color: #FBFBFB;
 }
-.gl-dark .oc-card >>> .gl-card-body {
+.gl-dark .oc-card :deep(.gl-card-body) {
     background-color: transparent;
 }
 .oc-card {
@@ -487,7 +487,7 @@ export default {
 }
 */
 
-.card-content-container >>> .gl-card-body {
+.card-content-container :deep(.gl-card-body) {
     padding: 0 1em;
 }
 
@@ -496,19 +496,19 @@ export default {
     margin: 0 0.25em;
 }
 
-.oc-card >>> .oc-card-header > * {
+.oc-card :deep(.oc-card-header > *) {
   min-height: 32px;
   margin-bottom: -0.914px;
 }
 
 /* @gitlab/ui 136 dropped the size prop, so the .md class this used to key on
    is gone; the padding trim is still wanted. */
-.oc-card >>> .oc-card-header .gl-badge {
+.oc-card :deep(.oc-card-header .gl-badge) {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
 }
 
-.oc-card >>> .gl-card-header {
+.oc-card :deep(.gl-card-header) {
   display: flex;
   align-items: center;
 }

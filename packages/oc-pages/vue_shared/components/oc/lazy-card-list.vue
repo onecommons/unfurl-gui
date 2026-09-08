@@ -159,12 +159,12 @@ export default {
 </template>
 <style scoped>
 /* Match the padding collapse that primary-card nested children get via
-   `.card-content-container >>> .gl-card-body` in oc_card.vue — our
+   `.card-content-container :deep(.gl-card-body` in oc_card.vue — our)
    nested cards aren't inside a card-content-container so they'd
    otherwise pick up the default 16px padding and show as ~32px tall
    empty bodies when collapsed. */
-.card-group >>> .oc-card > .gl-card-body,
-.lazy-card-list >>> .oc-card > .gl-card-body {
+.card-group :deep(.oc-card > .gl-card-body),
+.lazy-card-list :deep(.oc-card > .gl-card-body) {
     padding: 0 1em;
 }
 </style>

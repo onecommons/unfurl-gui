@@ -147,11 +147,11 @@ export default {
     </div>
 </template>
 <style scoped>
-.settings-modal-body >>> .input-group-prepend > .input-group-text {
+.settings-modal-body :deep(.input-group-prepend > .input-group-text) {
     width: 100%;
 }
 
-.settings-modal-body >>> .input-group-prepend {
+.settings-modal-body :deep(.input-group-prepend) {
     /* 250px fit Element's prepend; bootstrap's input-group-text adds
        padding, and the longest label clips under it */
     width: 280px;

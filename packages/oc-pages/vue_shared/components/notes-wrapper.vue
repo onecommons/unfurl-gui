@@ -63,23 +63,23 @@ export default {
 <style scoped>
 
 /* hide timeline events such as added labels */
-#comments-container >>> ul#notes-list > li.system-note {
+#comments-container :deep(ul#notes-list > li.system-note) {
     display: none;
 }
 
 /* hide close issue button */
-#comments-container >>> button[data-testid="close-reopen-button"] {
+#comments-container :deep(button[data-testid="close-reopen-button"]) {
     display: none;
 }
 
 /* hide non-functional fullscreen button */
-#comments-container >>> button[title$="full screen"] {
+#comments-container :deep(button[title$="full screen"]) {
     display: none;
 }
 
 /* hide "Markdown and quick actions are supported" */
 /* TODO find a way to show just markdown link */
-#comments-container >>> .toolbar-text {
+#comments-container :deep(.toolbar-text) {
     display: none;
 }
 </style>

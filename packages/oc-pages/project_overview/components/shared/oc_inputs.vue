@@ -577,11 +577,11 @@ export default {
 </component>
 </template>
 <style scoped>
-.oc-inputs >>> .formily-element-array-items-card {
+.oc-inputs :deep(.formily-element-array-items-card) {
   border: unset;
   background: unset;
 }
-.gl-dark .oc-inputs >>> input::placeholder {
+.gl-dark .oc-inputs :deep(input::placeholder) {
     opacity: 0.7;
 }
 .oc-inputs {
@@ -594,46 +594,46 @@ export default {
   flex-direction: column;
 }
 
-.formily-element-form-default >>> :not([role="tooltip"], [role="button"]) {
+.formily-element-form-default :deep(:not([role="tooltip"]), [role="button"]) {
 }
 
-.formily-element-form-default >>> [class^="formily-element-form-item"] {
+.formily-element-form-default :deep([class^="formily-element-form-item"]) {
   display: inline-flex !important;
   justify-content: space-between;
   gl-flex-wrap: wrap;
 }
 
-.oc-inputs >>> .formily-element-form-item-label {
+.oc-inputs :deep(.formily-element-form-item-label) {
   flex-basis: fit-content;
 }
 
 
-.oc-inputs >>> .formily-element-form-item-control {
+.oc-inputs :deep(.formily-element-form-item-control) {
   flex-basis: content;
   flex-grow: 0;
 }
 
-.oc-inputs >>> .formily-element-form-item-label-content {
+.oc-inputs :deep(.formily-element-form-item-label-content) {
   /* required asterisk after label */
   display: flex;
   flex-direction: row-reverse;
 }
 
-.oc-inputs >>> .formily-element-form-item-asterisk {
+.oc-inputs :deep(.formily-element-form-item-asterisk) {
   /* required asterisk after label */
   margin: 0 0 0 4px;
 }
 
-.gl-dark .oc-inputs >>> .formily-element-form-item-label-content > label {
+.gl-dark .oc-inputs :deep(.formily-element-form-item-label-content > label) {
   color: white;
 }
 
-.gl-dark .oc-inputs >>> .formily-element-form-item-colon {
+.gl-dark .oc-inputs :deep(.formily-element-form-item-colon) {
   color: white;
 }
 
-.oc-inputs >>> .formily-element-form-item-control-content { justify-content: flex-end; }
-.oc-inputs >>> .formily-element-form-item-extra {
+.oc-inputs :deep(.formily-element-form-item-control-content) { justify-content: flex-end; }
+.oc-inputs :deep(.formily-element-form-item-extra) {
   left: calc(100% - 350px);
   position: absolute;
   font-size: 0.8em;
@@ -644,28 +644,28 @@ export default {
   bottom: 0;
 }
 
-.oc-inputs >>> .formily-element-form-item-control-content-component {
+.oc-inputs :deep(.formily-element-form-item-control-content-component) {
   width: 350px !important;
   max-width: 350px;
 }
 
-.oc-inputs>>> .formily-element-array-items-card {
+.oc-inputs :deep(.formily-element-array-items-card) {
   padding: 0;
 }
 
-.oc-inputs >>> .formily-element-array-base-addition {
+.oc-inputs :deep(.formily-element-array-base-addition) {
   margin-bottom: 8px;
 }
 
-.oc-inputs >>> .formily-element-form-item-addon-after {
+.oc-inputs :deep(.formily-element-form-item-addon-after) {
   margin-bottom: 8px;
 }
 
-.oc-inputs >>> .formily-element-form-item-control-content-component > :not(.formily-element-array-base-remove) {
+.oc-inputs :deep(.formily-element-form-item-control-content-component > :not(.formily-element-array-base-remove)) {
   width: 100%;
 }
 
-.oc-inputs >>> .gl-card-body {
+.oc-inputs :deep(.gl-card-body) {
   overflow: hidden;
   /* where el-card put it, so the form's inner width is unchanged */
   padding: 20px;
@@ -696,25 +696,25 @@ export default {
 }
 
 @media only screen and (min-width: 430px) {
-    .oc-inputs >>> .oc-input-number .formily-element-form-item-control-content-component {
+    .oc-inputs :deep(.oc-input-number .formily-element-form-item-control-content-component) {
       width: 150px !important;
       max-width: 150px;
       margin-right: 200px;
     }
 }
 
-.oc-inputs >>> .formily-element-form-item {
+.oc-inputs :deep(.formily-element-form-item) {
   font-size: 1rem !important;
   position: relative;
   padding-bottom: 1.6em;
   margin-bottom: 1em;
 }
-.oc-inputs >>> .formily-element-form-item-control .formily-element-form-item-control-content .formily-element-form-item-addon-after {
+.oc-inputs :deep(.formily-element-form-item-control .formily-element-form-item-control-content .formily-element-form-item-addon-after) {
   margin-left: 0;
 }
 
 /* hide the colon */
-.oc-inputs >>> .formily-element-form-item-colon {
+.oc-inputs :deep(.formily-element-form-item-colon) {
   opacity: 0;
 }
 </style>

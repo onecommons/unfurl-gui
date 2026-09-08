@@ -427,25 +427,25 @@ export default {
 }
 
 
-.oc-table >>> .table-responsive {
+.oc-table :deep(.table-responsive) {
   margin-bottom: 0;
 }
 
-.oc-table >>> tbody tr {
+.oc-table :deep(tbody tr) {
   height: 4.25em;
 }
 
-.oc-table >>> table {
+.oc-table :deep(table) {
   margin-top: -1px;
   border-bottom-style: solid;
   border-bottom-color: white;
 }
 
-.oc-table >>> tr:last-child .table-body {
+.oc-table :deep(tr:last-child .table-body) {
   border-bottom-style: none;
 }
 
-.oc-table >>> table tr th {
+.oc-table :deep(table tr th) {
   padding: 0.25em;
   white-space: nowrap;
   font-family: 'Noto Sans';
@@ -458,7 +458,7 @@ export default {
   vertical-align: middle;
 }
 
-.oc-table >>> table tr td {
+.oc-table :deep(table tr td) {
   font-family: 'Noto Sans';
   white-space: nowrap;
   font-size: 0.8125em;
@@ -480,7 +480,7 @@ export default {
 }
 
 
-.table-body >>> * {
+.table-body :deep(*) {
   position: relative;
 }
 
@@ -515,7 +515,7 @@ export default {
   margin-bottom: 2em;
 }
 
-.filter-container >>> input {
+.filter-container :deep(input) {
   background-color: #EEEEEE;
   outline: none;
   border-style: none;
@@ -528,20 +528,20 @@ export default {
   position: relative;
 }
 
-.oc-table >>> tr {
+.oc-table :deep(tr) {
   box-sizing: border-box;
   border-color: white;
 }
-.oc-table >>> td {
+.oc-table :deep(td) {
   border-color: inherit;
   box-sizing: border-box;
 }
 
-.oc-table >>> tr.table-expanded {
+.oc-table :deep(tr.table-expanded) {
   border-color: #D1CFD7;
   height: 0;
 }
-.oc-table >>> tr.table-expanded > td {
+.oc-table :deep(tr.table-expanded > td) {
   height: 3em;
 }
 
@@ -559,18 +559,18 @@ th .control-cell {
 
 .control-cell.right { border-left-style: solid; }
 
-.oc-table >>> .collapsable {
+.oc-table :deep(.collapsable) {
   margin-left: -0.5em;
 }
 
-.oc-table.second-is-primary >>> td:nth-child(2) {
+.oc-table.second-is-primary :deep(td:nth-child(2)) {
   color: #0099FF;
   font-weight: bold;
   font-size: 0.88em;
 }
 
 .collapsable { cursor: pointer; }
-.collapsable >>> span {display: flex;}
+.collapsable :deep(span) {display: flex;}
 
 .expanded-row  {
   background-color: #F4F4F4;
@@ -585,7 +585,7 @@ th .control-cell {
   margin-right: 1em;
 }
 
-.primary-toggle >>> svg {
+.primary-toggle :deep(svg) {
   box-sizing: content-box; color:#00D2D9; height: 1.875em; width: 1.875em;
   cursor: pointer;
 }
@@ -595,7 +595,7 @@ th .control-cell {
 }
 
 .no-margin { margin: -1px; }
-.no-margin >>> table { border-bottom-width: 0; }
+.no-margin :deep(table) { border-bottom-width: 0; }
 
 </style>
 

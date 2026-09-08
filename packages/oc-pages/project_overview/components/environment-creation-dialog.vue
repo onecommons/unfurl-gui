@@ -300,5 +300,5 @@ export default {
 </template>
 <style scoped>
 
-.dropdown-parent >>> ul { width: unset; }
+.dropdown-parent :deep(ul) { width: unset; }
 </style>

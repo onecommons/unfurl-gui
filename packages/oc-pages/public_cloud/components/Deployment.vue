@@ -51,15 +51,15 @@ h6 {
   margin: 0 -0.15em;
 }
 
-.tooltip-icons >>> img {
+.tooltip-icons :deep(img) {
   width: 32px; height: 32px; padding: 0.15em;
 }
 
-.tooltip-icons >>> svg {
+.tooltip-icons :deep(svg) {
   width: 32px; height: 32px; padding: 0.15em;
 }
 
-.tooltip-icons >>> .custom-icon {
+.tooltip-icons :deep(.custom-icon) {
   width: 32px; height: 32px;
 }
 

@@ -57,5 +57,5 @@ export default {
 }
 
 .zoom-buttons { pointer-events: all; }
-.zoom-buttons >>> i { font-size: 1.5em; }
+.zoom-buttons :deep(i) { font-size: 1.5em; }
 </style>

@@ -98,7 +98,7 @@ export default {
 </template>
 
 <style scoped>
-#public-cloud-deployments  >>> .gl-card-body {
+#public-cloud-deployments :deep(.gl-card-body) {
   padding: 0;
 }
 </style>

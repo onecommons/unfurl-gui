@@ -802,25 +802,25 @@ export default {
 </style>
 <style scoped>
 
-.deployment-index-table >>> .highlight {
+.deployment-index-table :deep(.highlight) {
     background-color: white;
     transition: background-color 0.5s;
 }
 
-.deployment-index-table.transition >>> .highlight {
+.deployment-index-table.transition :deep(.highlight) {
     background-color: #FDFFE3;
 }
 
-.deployment-index-table.gl-dark >>> .highlight {
+.deployment-index-table.gl-dark :deep(.highlight) {
     background-color: black;
     transition: background-color 0.5s;
 }
 
-.deployment-index-table.gl-dark.transition >>> .highlight {
+.deployment-index-table.gl-dark.transition :deep(.highlight) {
     background-color: #181A00;
 }
 
-.external-link-container >>> button {
+.external-link-container :deep(button) {
     font-size: 1em;
     padding: 6px 9px;
     bottom: -2px

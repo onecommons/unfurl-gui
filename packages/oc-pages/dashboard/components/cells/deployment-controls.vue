@@ -280,7 +280,7 @@ export default {
 <style scoped>
 .deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
 .deployment-controls > * { display: flex; margin: 0 0.25em;}
-.deployment-controls >>> .dropdown-menu {
+.deployment-controls :deep(.dropdown-menu) {
     top: 95px !important; /* not sure why this became necessary */
 }
 </style>

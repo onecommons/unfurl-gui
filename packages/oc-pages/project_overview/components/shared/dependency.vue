@@ -275,7 +275,7 @@ export default {
     color: #999;
 }
 /* TODO fix formily label color
-.gl-dark .oc-inputs >>> label {
+.gl-dark .oc-inputs :deep(label) {
     color: #999 !important;
 }
 */

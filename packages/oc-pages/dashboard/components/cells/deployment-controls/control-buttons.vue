@@ -124,14 +124,14 @@ export default {
 </div>
 </template>
 <style scoped>
-.control-button-container >>> .gl-button-text {
+.control-button-container :deep(.gl-button-text) {
     font-size: 0.95em;
     font-weight: 600;
     display: flex;
     align-items: center;
 }
-.control-button-container >>> .gl-button { width: 10.5em; padding: 0.2em 0; height: 100%;}
-.control-button-container >>> .gl-new-dropdown-item-text-primary { display: flex; align-items: center; }
-.control-button-container >>> .gl-icon { margin-right: 0.25em; }
-.control-button-container >>> .disabled { opacity: 0.7; }
+.control-button-container :deep(.gl-button) { width: 10.5em; padding: 0.2em 0; height: 100%;}
+.control-button-container :deep(.gl-new-dropdown-item-text-primary) { display: flex; align-items: center; }
+.control-button-container :deep(.gl-icon) { margin-right: 0.25em; }
+.control-button-container :deep(.disabled) { opacity: 0.7; }
 </style>

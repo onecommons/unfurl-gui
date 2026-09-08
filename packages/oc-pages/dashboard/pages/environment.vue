@@ -598,22 +598,22 @@ h2 {
     margin: 1.5em 0 0.5em 0;
     height: 1em;
 }
-.external-resource-controls >>> button {
+.external-resource-controls :deep(button) {
     padding: 0.4em;
     margin: 0 0.25em;
 }
 .confirm-container {
     margin-left: auto;
 }
-.confirm-container >>> button {
+.confirm-container :deep(button) {
     padding: 0.5em;
 }
 
-.environment >>> td.name-column {
+.environment :deep(td.name-column) {
     width: 11em;
 }
 
-.environment >>> td.value-column {
+.environment :deep(td.value-column) {
     width: calc(max(500px, 50%) - 11em);
 }
 

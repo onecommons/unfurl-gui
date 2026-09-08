@@ -132,7 +132,7 @@ export default {
     </div>
 </template>
 <style scoped>
-.job-summary >>> .badge-pill, .job-summary >>> .operation {
+.job-summary :deep(.badge-pill), .job-summary :deep(.operation) {
     text-transform: capitalize;
 }
 

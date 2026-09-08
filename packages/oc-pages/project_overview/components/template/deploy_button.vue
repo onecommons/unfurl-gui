@@ -151,20 +151,20 @@ export default {
 
 </template>
 <style scoped>
-.deploy-button >>> .gl-button {
+.deploy-button :deep(.gl-button) {
     margin: 0!important;
     /* padding: 8px 12px !important; */
 }
 
 /*
-.deploy-button >>> svg {
+.deploy-button :deep(svg) {
     margin-left: 0!important;
 }
 */
 
 /* Branding colors */
-.deploy-button-wrapper >>> .gl-form-checkbox.custom-control .custom-control-input:checked ~ .custom-control-label::before,
-.deploy-button-wrapper >>> .gl-form-radio.custom-control .custom-control-input:checked ~ .custom-control-label::before {
+.deploy-button-wrapper :deep(.gl-form-checkbox.custom-control .custom-control-input:checked ~ .custom-control-label::before),
+.deploy-button-wrapper :deep(.gl-form-radio.custom-control .custom-control-input:checked ~ .custom-control-label::before) {
     background-color: #00D2D9 !important;
 }
 </style>

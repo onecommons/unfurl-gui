@@ -63,7 +63,7 @@ span.count {
 }
 span.text {margin-bottom: 0.4em;}
 
-.card-container >>> a { text-decoration: none !important; }
+.card-container :deep(a) { text-decoration: none !important; }
 .card-container {margin: 0.5em 1em;}
 .count {font-weight: bold}
 
@@ -95,6 +95,6 @@ span.text {margin-bottom: 0.4em;}
 
 }
 
-.card >>> a, .card a { text-decoration: underline !important; }
+.card :deep(a), .card a { text-decoration: underline !important; }
 
 </style>

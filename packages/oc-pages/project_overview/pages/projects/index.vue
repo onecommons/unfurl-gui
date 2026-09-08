@@ -595,9 +595,9 @@ h2.oc-title-section {
     line-height: 24px;
 }
 
-.dropdown-parent >>> ul { width: unset; }
+.dropdown-parent :deep(ul) { width: unset; }
 
-.deploy-dialog >>> .custom-control-input:checked ~ .custom-control-label::before {
+.deploy-dialog :deep(.custom-control-input:checked ~ .custom-control-label::before) {
     background-color: #00D2D9 !important;
 }
 </style>

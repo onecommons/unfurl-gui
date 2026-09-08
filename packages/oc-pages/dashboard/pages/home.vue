@@ -192,19 +192,19 @@ export default {
 <style scoped>
 
 /* currently unused */
-.gl-dark .consistent-card >>> .gl-card-header {
+.gl-dark .consistent-card :deep(.gl-card-header) {
   background-color: #2F3030;
 }
 
-.consistent-card >>> .gl-card-header {
+.consistent-card :deep(.gl-card-header) {
   background-color: #E3F7FF;
 }
 
-.gl-dark .consistent-card >>> .gl-card-body {
+.gl-dark .consistent-card :deep(.gl-card-body) {
   background-color: rgb(18, 18, 18);
 }
 
-.consistent-card >>> .gl-card-body {
+.consistent-card :deep(.gl-card-body) {
   background-color: white;
 }
 

@@ -162,7 +162,7 @@ export default {
     </div>
 </template>
 <style scoped>
-.template-buttons  >>> .gl-button {
+.template-buttons :deep(.gl-button) {
     margin: 0.5em;
     margin-top: 0;
 }

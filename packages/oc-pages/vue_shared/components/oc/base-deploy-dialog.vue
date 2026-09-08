@@ -251,7 +251,7 @@ export default {
 </template>
 <style scoped>
 /* TODO move this into gitlab oc */
-.deploy-dialog >>> .custom-control-input:checked ~ .custom-control-label::before {
+.deploy-dialog :deep(.custom-control-input:checked ~ .custom-control-label::before) {
     background-color: #00D2D9 !important;
 }
 </style>

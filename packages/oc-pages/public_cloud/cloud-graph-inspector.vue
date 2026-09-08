@@ -306,7 +306,7 @@ export default {
   height: 100%;
 }
 
-.cloud-graph-inspector >>> .gl-card-body {
+.cloud-graph-inspector :deep(.gl-card-body) {
   height: 100%;
   padding: 0;
 }
