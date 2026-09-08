@@ -9,7 +9,8 @@
     "dompurify": "3.4.0",
     "marked": "^4.0.18",
     "mime-types": "^2.1.12",
-    "semver": "^7.3.4"
+    "semver": "^7.3.4",
+    "vue-json-component": "^0.4.1"
   },
   "devDependencies": {
     "@gitlab/eslint-plugin": "9.4.0",

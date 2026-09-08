@@ -16496,6 +16496,7 @@ __metadata:
     sass-loader: ^8.0.2
     semver: ^7.3.4
     vue: 2.7.16
+    vue-json-component: ^0.4.1
   peerDependencies:
     vue: ^2.7.16
   peerDependenciesMeta:
