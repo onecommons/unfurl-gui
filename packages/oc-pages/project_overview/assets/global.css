@@ -1,14 +1,4 @@
 /*
- * @gitlab/ui 136 stopped shipping the gl-* utilities as built CSS; the
- * consumer generates them from its own Tailwind build using the shipped
- * preset. Without these directives every gl-* utility in our templates is
- * inert. See tailwind.config.js.
- */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/*
  * public/assets/*.css is a snapshot of the fork's GitLab 15.11 build, so it
  * carries @gitlab/ui 60's component CSS. 136 wraps badge slot content in
  * .gl-badge-content, which that stylesheet has no rule for: as an unstyled
@@ -41,6 +31,8 @@ h2.oc-title-section {
     font-size: 1.64rem;
     font-weight: 700;
     line-height: 28px;
+    /* it inherited, which left it dark-on-dark in the fork's dark mode */
+    color: var(--gl-text-color-heading);
   }
   h4.project-title {
     margin-top: 0px;

@@ -1,5 +1,8 @@
 /*
- * @gitlab/ui 136's design tokens, for the standalone build only.
+ * The GitLab CSS that standalone has to produce for itself.
+ *
+ * Both halves exist only here: in the fork, GitLab's own build supplies
+ * them, and emitting them from oc-pages would duplicate its output.
  *
  * public/assets/*.css is a GitLab 15.11 snapshot, which predates the token
  * system, so without these every gl-* utility parses and computes to nothing.
@@ -14,3 +17,13 @@
  */
 @import '@gitlab/ui/src/tokens/build/css/tokens.css';
 @import '@gitlab/ui/src/tokens/build/css/tokens.dark.css';
+
+/*
+ * The gl-* utilities. 136 stopped shipping them as built CSS -- the consumer
+ * generates them from the shipped preset. GitLab's own Tailwind build covers
+ * oc-pages (its content globs include oc/), so these belong to standalone
+ * alone. See tailwind.config.js.
+ */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

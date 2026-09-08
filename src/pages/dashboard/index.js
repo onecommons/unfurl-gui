@@ -1,4 +1,4 @@
-import '../../assets/standalone-tokens.css'
+import '../../assets/standalone-base.css'
 import '~/locale'
 import initTableComponent from 'oc_dashboard';
 
