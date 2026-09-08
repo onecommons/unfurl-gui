@@ -1,4 +1,4 @@
-import { ApolloLink } from 'apollo-link';
+import { ApolloLink } from '@apollo/client/core';
 import { visit } from 'graphql/language';
 import _ from "lodash";
 import typeDefs from './graphql/client-schema.graphql';
