@@ -26,6 +26,7 @@
 //
 //
 
+const {DIR: FIXTURE_DIR} = require('../../scripts/src/fixture-pages.js')
 import './undeploy' // should be imported before run-recreate-deployment
 import './run-recreate-deployment'
 import './create-aws-environment'
@@ -242,23 +243,26 @@ Cypress.Commands.add('screenshotOverlay', (selector, name, options) =>
   screenshotStable(name, {selector, keepFixed: true, ...options}))
 
 /*
- * Visit a standalone page built into dist/ that isn't one of the app's routes.
+ * Visit a fixture page built into dist/fixtures/ -- see
+ * scripts/src/fixture-pages.js for what lives there and why the release
+ * tarball leaves the directory out.
  *
  * `unfurl serve --gui` sends every request whose Accept includes text/html to
  * its project-document handler, which resolves the path as a project and 404s
- * for anything else -- so dist/gallery.html is built and shipped but
- * unreachable by navigation. Its hashed js/css subresources are fine: those
- * requests don't ask for html, so they take the static-file branch.
+ * for anything else, so these are built but unreachable by navigation. Their
+ * hashed js/css subresources are fine: those requests don't ask for html, so
+ * they take the static-file branch.
  *
  * Stubbing just the document is enough, and keeps this out of the server.
  */
 Cypress.Commands.add('visitBuiltPage', (filename, query = '') => {
-  cy.readFile(`dist/${filename}`).then(html => {
-    cy.intercept('GET', `**/${filename}*`, {
+  const built = `${FIXTURE_DIR}/${filename}`
+  cy.readFile(`dist/${built}`).then(html => {
+    cy.intercept('GET', `**/${built}*`, {
       statusCode: 200,
       headers: {'content-type': 'text/html; charset=utf-8'},
       body: html,
     })
   })
-  cy.visit(`/${filename}${query}`)
+  cy.visit(`/${built}${query}`)
 })

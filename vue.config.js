@@ -1,6 +1,11 @@
 const path = require('path');
 const webpack = require('webpack')
 const _ = require('lodash')
+const {PAGES: FIXTURE_PAGES, isFixtureOnly, DIR: FIXTURE_DIR} = require('./scripts/src/fixture-pages.js')
+
+// vue-cli's production defaults, with fixture-only chunks moved under fixtures/
+const chunkPath = ext => pathData =>
+  `${ext}/${isFixtureOnly(pathData.chunk) ? FIXTURE_DIR + '/' : ''}[name].[contenthash:8].${ext}`
 const {createProxyMiddleware} = require('http-proxy-middleware')
 
 
@@ -29,7 +34,11 @@ module.exports = {
   // namespaced to its own component -- so the ordering it can't satisfy is one
   // that never mattered.
   css: {
-    extract: { ignoreOrder: true }
+    extract: {
+      ignoreOrder: true,
+      filename: chunkPath('css'),
+      chunkFilename: chunkPath('css')
+    }
   },
   devServer: {
     allowedHosts: 'all',
@@ -62,6 +71,10 @@ module.exports = {
     }
   },
   configureWebpack: {
+    output: {
+      filename: chunkPath('js'),
+      chunkFilename: chunkPath('js')
+    },
     plugins: [
       // pikaday, under gl-datepicker, requires moment as an optional dependency
       // inside a try/catch. Webpack resolves that statically, and moment's own
@@ -132,40 +145,15 @@ module.exports = {
       entry: "src/pages/public_cloud/index.js"
     },
 
-    // Mounts oc_inputs.vue against a synthetic schema with a stub store, so the
-    // formily layer can be exercised without a server. Built for spike 2.0 and
-    // kept: 2A.3 rewrites every widget it renders.
-    'form-fixture': {
-      entry: "src/pages/form-fixture/index.js",
-      template: "public/form-fixture.html",
-      filename: "form-fixture.html"
-    },
-
-    // Components 2A.2 rewrites that render on no route the specs visit.
-    // Without this they would be converted with nothing watching.
-    gallery: {
-      entry: "src/pages/gallery/index.js",
-      template: "public/gallery.html",
-      filename: "gallery.html"
-    },
-
-    // experimental-settings-indicator needs gon.unfurl_gui false, which cannot
-    // share a page with the gallery -- see public/dev-settings.html
-    'dev-settings': {
-      entry: "src/pages/dev-settings/index.js",
-      template: "public/dev-settings.html",
-      filename: "dev-settings.html"
-    },
-
-    // The four fork-only inputs, which the app compiles out and no standalone
-    // route renders. Also needs gon.unfurl_gui false -- see
-    // public/fork-inputs.html -- so it cannot share the gallery either.
-    'fork-inputs': {
-      entry: "src/pages/fork-inputs/index.js",
-      template: "public/fork-inputs.html",
-      filename: "fork-inputs.html"
-    }
+    // Test fixtures -- see scripts/src/fixture-pages.js for why they exist and
+    // how they are kept out of the release tarball.
+    ..._.mapValues(FIXTURE_PAGES, ({entry}, name) => ({
+      entry,
+      template: `public/${name}.html`,
+      filename: `${FIXTURE_DIR}/${name}.html`
+    }))
   }
+
 };
 
 

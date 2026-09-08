@@ -165,9 +165,12 @@ jobs:
           path: ${{ env.UNFURL_TEST_TMPDIR }}/unfurl.log
       - name: Create release artifacts
         if: startsWith(github.ref, 'refs/tags/')
+        # dist/fixtures/ is the cypress fixture pages, which the specs above
+        # need and the product does not -- see scripts/src/fixture-pages.js.
         run: |
           echo ${{  github.ref_name }} > dist/RELEASE.txt
-          tar -czvf unfurl-gui-dist.tar.gz dist
+          tar --exclude='dist/fixtures' --exclude='dist/js/fixtures' \
+              --exclude='dist/css/fixtures' -czvf unfurl-gui-dist.tar.gz dist
       - name: Upload dist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
