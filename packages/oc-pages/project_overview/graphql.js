@@ -1,2 +1,2 @@
-import apolloProvider from "oc/graphql-shim.js";
+import apolloProvider from "oc/graphql_shim";
 export default apolloProvider;

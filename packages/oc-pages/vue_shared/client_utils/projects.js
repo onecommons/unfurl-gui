@@ -1,5 +1,5 @@
 import gql from 'graphql-tag'
-import graphqlClient from 'oc/graphql-shim'
+import graphqlClient from 'oc/graphql_shim'
 import axios from '~/lib/utils/axios_utils'
 import * as semver from 'semver'
 

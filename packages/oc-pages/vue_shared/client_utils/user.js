@@ -1,7 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 import csrf from '~/lib/utils/csrf'
 import gql from 'graphql-tag'
-import graphqlClient from 'oc/graphql-shim'
+import graphqlClient from 'oc/graphql_shim'
 import {postFormDataWithEntries} from './forms.js'
 
 const getUserProjectsQuery = gql`

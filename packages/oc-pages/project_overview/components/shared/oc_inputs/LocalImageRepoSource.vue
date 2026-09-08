@@ -1,6 +1,6 @@
 <script>
 import gql from 'graphql-tag'
-import graphqlClient from 'oc/graphql-shim'
+import graphqlClient from 'oc/graphql_shim'
 import {GlCard, GlFormGroup, GlFormInput} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
 import {fetchProjects, fetchRegistryRepositories, fetchContainerRepositories, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
