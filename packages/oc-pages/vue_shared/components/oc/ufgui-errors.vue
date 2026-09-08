@@ -1,5 +1,6 @@
 <script>
 import {mapGetters, mapMutations} from 'vuex'
+import {headerBounds} from 'oc_vue_shared/client_utils/gitlab-chrome'
 import {defaultSeverityLevel} from '../../storage-keys'
 import {GlAlert, GlTabs, GlPagination} from '@gitlab/ui'
 import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
@@ -14,8 +15,7 @@ export default {
         CodeClipboard
     },
     data() {
-        const headerElement = document.querySelector('[data-qa-selector="navbar"]')
-        const {y, height} = headerElement.getBoundingClientRect()
+        const {y, height} = headerBounds()
         return {
             currentTab: ERROR_LEVELS.indexOf(defaultSeverityLevel()),
             defaultSeverityLevel: defaultSeverityLevel(),

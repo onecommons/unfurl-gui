@@ -1,5 +1,6 @@
 <script>
 import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
+import {headerContentBounds} from 'oc_vue_shared/client_utils/gitlab-chrome'
 import {GlButton, GlCard, GlIcon, GlModal} from '@gitlab/ui'
 import ErrorSmall from './ErrorSmall.vue'
 import {mapGetters} from 'vuex'
@@ -21,7 +22,7 @@ export default {
     },
     methods: {
         computePosition() {
-            const {y, height, x, width} = document.querySelector('[data-qa-selector="navbar"] .navbar-collapse.collapse').getBoundingClientRect()
+            const {y, x} = headerContentBounds()
             this.yPos = y + 'px'
             this.xPos = x + 'px'
         },
