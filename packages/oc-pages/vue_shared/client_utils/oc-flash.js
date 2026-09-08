@@ -20,7 +20,16 @@ export function hideLastFlash() {
 
 export function createFlash(messageOrOptions, ...args) {
     const options = typeof messageOrOptions == 'string'? Object.assign({message: messageOrOptions}, ...args): messageOrOptions
-    let message = options.message || ''
+    /*
+     * An alert with no text tells the user nothing -- it renders as an empty
+     * coloured box. Keep the signal for whoever is debugging and render
+     * nothing, rather than showing a blank alert.
+     */
+    if(!options?.message) {
+        console.error('createFlash called without a message', options)
+        return null
+    }
+    let message = options.message
     let type = options.type
     if(options.issue) {
         if(!type) {type = FLASH_TYPES.ALERT}
