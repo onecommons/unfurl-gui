@@ -445,5 +445,6 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     } else {
         throw new Error('@unfurlServerUpdate: failed to set last commit')
     }
+    setProjectCurrentBranch(projectPath, branch)
     return data
 }
