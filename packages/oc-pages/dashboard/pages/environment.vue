@@ -542,7 +542,10 @@ export default {
                     <h2 style="margin: 0 1.25em">
                         {{__('External Resources used by')}}
                         <span style="font-weight: 400">{{environment.name}}</span>
+                        <!-- explicit gap: it used to come from the newline before
+                             this tag, which 19.3's icon rendering collapses away -->
                         <gl-icon v-if="showDeploymentResources" id="external-resources-help"
+                           class="gl-ml-2"
                            data-testid="external-resources-help" name="information-o" :size="16"/>
                     </h2>
                     <!-- two paragraphs, so a tooltip won't do -->

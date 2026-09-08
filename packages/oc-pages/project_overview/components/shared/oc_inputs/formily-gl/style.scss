@@ -405,6 +405,21 @@ $label-top-line-height: 40px;
         text-align: center;
     }
 
+    /*
+     * This component draws its own stepper, so Chrome's native one would sit
+     * beside it on hover. GitLab's `hide-spinners` utility did this in 15.11
+     * but 19.3 dropped it, so own the rule here rather than depend on either.
+     */
+    input[type='number']::-webkit-inner-spin-button,
+    input[type='number']::-webkit-outer-spin-button {
+        appearance: none;
+        margin: 0;
+    }
+
+    input[type='number'] {
+        -moz-appearance: textfield;
+    }
+
     &__increase,
     &__decrease {
         position: absolute;

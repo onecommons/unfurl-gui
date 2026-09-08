@@ -109,7 +109,12 @@ describe('Smorgasbord blueprint test', () => {
     cy.wait(500)
     cy.screenshotPage('formily/object-popover')
 
-    cy.get('input:first').blur({ force: true })
+    // clicking outside dismisses it -- el-popover did this by default and the
+    // gl-popover port lost it until editable.js took the rule back
+    cy.get('body').click(5, 5)
+    // by its own nested field, not `.popover-body` -- the validation feedback
+    // popovers are .popover-body too and are legitimately on screen here
+    cy.get('[data-testid="oc-input-the_app-object_inputs.array-add"]').should('not.exist')
 
     cy.wait(1000)
 
@@ -121,14 +126,6 @@ describe('Smorgasbord blueprint test', () => {
     cy.screenshotPage('formily/tooltip-deploy-button')
     cy.get('[data-testid="deploy-button-tooltip"]').trigger('mouseleave')
 
-    /*
-     * The object popover is still open here and covers the tab row -- the
-     * blur above dismisses it only sometimes, which passed locally and failed
-     * in CI. gl-popover is triggers:'click', so the trigger toggles it --
-     * an outside click does not.
-     */
-    cy.get('[data-testid="oc-input-the_app-object_inputs"]').click()
-    cy.get('.popover-body').should('not.exist')
 
     /*
      * The same widget set one level down, plus the additionalProperties map.

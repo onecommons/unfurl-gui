@@ -56,7 +56,8 @@ export default {
 }
 .template-title {
   font-size: 1.5rem;
-  color: #303030;
+    /* hardcoded, so unreadable on the fork's dark ground */
+    color: var(--gl-text-color-heading);
   font-style: normal;
   line-height: 24px;
   align-items: center;

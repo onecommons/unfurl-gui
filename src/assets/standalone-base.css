@@ -1,22 +1,18 @@
 /*
  * The GitLab CSS that standalone has to produce for itself.
  *
- * Both halves exist only here: in the fork, GitLab's own build supplies
- * them, and emitting them from oc-pages would duplicate its output.
+ * This used to also @import @gitlab/ui's design tokens, because
+ * public/assets/*.css was a GitLab 15.11 snapshot that predated them. It is
+ * now a 19.3 snapshot, which ships all 1102 of those tokens itself -- and,
+ * crucially, ships the fork's overrides of them.
  *
- * public/assets/*.css is a GitLab 15.11 snapshot, which predates the token
- * system, so without these every gl-* utility parses and computes to nothing.
- * GitLab 19.3's own application.css already defines all of them, so importing
- * them inside oc-pages would duplicate ~260 KB in the fork and re-apply the
- * dark set -- and GitLab's css-loader 2.1.1 cannot resolve a bare package path
- * in @import anyway. Hence: imported from the standalone entry points, never
- * from oc-pages.
- *
- * The light set is the base (796 of 1102 tokens -- all the spacing and sizing
- * -- are theme-independent); the dark set overrides the remaining 306.
+ * Importing them here put a second, stock copy in chunk-vendors.css, which the
+ * page loads *after* application_dark.css. Every fork override lost: panels
+ * resolved stock neutrals and accent fills fell back to neutral-50, so checked
+ * checkboxes and selected dates rendered grey. The fork's element rules still
+ * won, which is why the page ground and headings looked right and only
+ * token-driven surfaces were wrong.
  */
-@import '@gitlab/ui/src/tokens/build/css/tokens.css';
-@import '@gitlab/ui/src/tokens/build/css/tokens.dark.css';
 
 /*
  * The gl-* utilities. 136 stopped shipping them as built CSS -- the consumer

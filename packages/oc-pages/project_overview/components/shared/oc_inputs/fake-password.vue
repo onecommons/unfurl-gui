@@ -61,15 +61,25 @@ export default {
         position: relative;
     }
 
+    /*
+     * Sized to the icon rather than stretched to the field's height. It used to
+     * be top:0/bottom:0, so its focus ring drew a full-height box inside the
+     * input's own border -- a box within a box. The ring should outline what
+     * looks clickable.
+     */
     .fake-password > .fake-password-toggle {
         position: absolute;
-        top: 0;
-        bottom: 0;
+        top: 50%;
         right: 8px;
+        transform: translateY(-50%);
         display: flex;
         align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
         padding: 0;
         border: 0;
+        border-radius: 4px;
         background: none;
         color: inherit;
         cursor: pointer;

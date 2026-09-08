@@ -671,30 +671,6 @@ export default {
   padding: 20px;
 }
 
-/*
- * The panel el-card used to draw. The fork's own stylesheet has
- * `#OcAppDeployments .gl-card { background-color: #121212 }`, which flattens
- * every card on the deployments page -- it never reached the form before,
- * because the form was an el-card. Without this the form sits flush with the
- * page background.
- *
- * Scoped to the card wrapper: `wrapper="div"` is a nested tab inside this
- * same panel and must not draw a second one.
- */
-.oc-inputs.gl-card {
-  /* !important because that rule is an id selector, which outranks any
-     number of classes -- and it is not aimed at this card */
-  background-color: #fff !important;
-  padding: 0;
-}
-
-/* the fill element-theme-dark's card.css drew, kept so the panel does not
-   change appearance with element-ui gone */
-.gl-dark .oc-inputs.gl-card,
-.gl-dark-scope .oc-inputs.gl-card {
-  background-color: #222933 !important;
-}
-
 @media only screen and (min-width: 430px) {
     .oc-inputs :deep(.oc-input-number .formily-element-form-item-control-content-component) {
       width: 150px !important;

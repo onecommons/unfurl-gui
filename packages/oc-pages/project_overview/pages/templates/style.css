@@ -39,7 +39,8 @@
 }
 .template-title {
   font-size: 21px;
-  color: #303030;
+    /* hardcoded, so unreadable on the fork's dark ground */
+    color: var(--gl-text-color-heading);
   font-style: normal;
   line-height: 24px;
 }

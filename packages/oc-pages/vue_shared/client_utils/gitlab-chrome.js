@@ -30,11 +30,23 @@ export function headerBounds() {
 }
 
 /*
- * The header's inner content box, which is where the settings indicator wants
- * to sit. 15.11 nests it in .navbar-collapse; 19.x has no such element, so
- * fall back to the header itself.
+ * Where the settings indicator's RIGHT edge should sit -- the button carries
+ * translateX(-100%), so the value is its right edge, not its left.
+ *
+ * 15.11 nests a content box in .navbar-collapse that starts right of the logo,
+ * so anchoring to its left edge tucked the gear beside the nav. 19.x has no
+ * such element: falling back to the header rect gave x = 0, which put the
+ * button's right edge at the viewport edge and the button off-screen. Hang it
+ * off the header's right edge there instead.
  */
-export function headerContentBounds() {
+const INDICATOR_MARGIN = 8
+
+export function settingsIndicatorAnchor() {
     const inner = document.querySelector('[data-qa-selector="navbar"] .navbar-collapse.collapse')
-    return inner ? inner.getBoundingClientRect() : headerBounds()
+    if(inner) {
+        const {x, y} = inner.getBoundingClientRect()
+        return {x, y}
+    }
+    const header = headerBounds()
+    return {x: header.right - INDICATOR_MARGIN, y: header.bottom}
 }

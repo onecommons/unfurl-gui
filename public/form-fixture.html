@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="gl-dark">
   <head>
     <meta charset="utf-8">
     <title>oc_inputs fixture</title>
@@ -13,27 +13,22 @@
     <!-- the same vendored GitLab stylesheets public/index.html links, so
          components here render the way they do in the app -->
 
+  
 
-  <link rel="stylesheet"
-    href="/assets/application_utilities_dark-16c38341f642b0f5428918ef4f53f17c9e7cecad60f773060ca19405025c91f1.css">
-  <link rel="stylesheet"
-    href="/assets/application_dark-d9f4929389470258b89a0b91df3dc1aed8dc757985639bae0f4345a258b3362c.css">
-  <link rel="stylesheet" href="/assets/white-e4a0a599c798742d5817c43bbc1ddf7745ac1b7f9c4fadf6e24a6b9bc49ffec4.css">
-  <link rel="stylesheet" media="print"
-    href="/assets/application_dark-d9f4929389470258b89a0b91df3dc1aed8dc757985639bae0f4345a258b3362c.css">
-  <link rel="stylesheet" media="print"
-    href="/assets/application_utilities_dark-16c38341f642b0f5428918ef4f53f17c9e7cecad60f773060ca19405025c91f1.css">
-  <link rel="stylesheet" media="print"
-    href="/assets/fonts-e5e361ec3ef92404baf30e4334c249b476959b8588f33ccc695d5e1f83cd155f.css">
-  <link rel="stylesheet" media="print"
-    href="/assets/white-e4a0a599c798742d5817c43bbc1ddf7745ac1b7f9c4fadf6e24a6b9bc49ffec4.css">
+  
+
+  
+    <link rel="stylesheet" href="/assets/application_dark.css">
+  <link rel="stylesheet" href="/assets/tailwind.css">
+  <link rel="stylesheet" href="/assets/fonts.css">
+  <link rel="stylesheet" href="/assets/highlight-white.css">
   </head>
 
   <script>
       // the shared cypress support file reads gon.home_project
       window.gon = { unfurl_gui: true, home_project: 'fixture' }
     </script>
-  <body class="gl-dark gl-dark-scope">
+  <body>
     <div id="form-fixture"></div>
   </body>
 </html>
