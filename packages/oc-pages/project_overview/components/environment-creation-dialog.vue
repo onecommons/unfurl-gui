@@ -135,7 +135,7 @@ export default {
     },
     methods: {
         ...mapActions(['environmentFromProvider']),
-        ...mapMutations(['createError']),
+        ...mapMutations(['createError', 'addProjectEnvironment']),
 
         async createEnvironmentWithoutCluster(instances={}) {
             const primary_provider = this.selectedCloudProvider == 'Kubernetes' ? {
@@ -145,7 +145,7 @@ export default {
             } : undefined
 
             try {
-                await initUnfurlEnvironment(
+                const created = await initUnfurlEnvironment(
                     this.getHomeProjectPath,
                     {
                         name: slugify(this.environmentName),
@@ -153,6 +153,10 @@ export default {
                         instances
                     }
                 )
+                // Nothing re-reads between here and the redirect: the store was
+                // populated before this environment existed, and the page we go to
+                // looks it up rather than fetching it.
+                this.addProjectEnvironment(created)
             } catch(e) {
                 this.createError({
                     message: `@createEnvironmentWithoutCluster: ${e.message}`,

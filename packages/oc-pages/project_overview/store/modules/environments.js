@@ -117,6 +117,16 @@ const mutations = {
         state.resourceTypeDictionaries[environment?.name || environment] = dict
     },
 
+    // Creation writes to the unfurl server and nothing re-reads before the UI
+    // shows the new environment, so seed it here. This is a write-shaped record;
+    // the next authoritative export replaces the whole list wholesale.
+    addProjectEnvironment(state, environment) {
+        state.projectEnvironments = [
+            ...state.projectEnvironments.filter(env => env.name != environment.name),
+            environment
+        ]
+    },
+
     // TODO maybe add something that will delete the environment, that can also keep the state of the application consistent
     discardEnvironment(state, environmentName) {
         state.projectEnvironments = state.projectEnvironments.filter(env => env.name != environmentName)

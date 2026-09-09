@@ -127,11 +127,15 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
         }
     })
 
-    const patch = [{
+    const created = {
         ...environment,
-        connections: {primary_provider: environment.primary_provider},
+        instances: environment.instances || {},
+        // an absent primary_provider must not become a connection of undefined --
+        // the environment page maps over Object.values(connections)
+        connections: environment.primary_provider? {primary_provider: environment.primary_provider}: {},
         __typename: 'DeploymentEnvironment'
-    }]
+    }
+    const patch = [created]
 
     const method = variables.deployment_path? 'create_provider': 'update_environment'
 
@@ -144,6 +148,8 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
         path: 'unfurl.yaml',
         variables
     })
+
+    return created
 }
 
 export async function postGitlabEnvironmentForm() {
