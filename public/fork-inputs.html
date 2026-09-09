@@ -1,6 +1,29 @@
 <!DOCTYPE html>
-<html lang="en" class="gl-dark">
+<html lang="en" class="gl-dark ui-neutral">
   <head>
+  <script>
+    /*
+     * Colour mode, applied before paint so there is no flash of the wrong theme.
+     *
+     * 19.3 keys its design tokens off gl-dark / gl-light on <html>. ui-neutral is
+     * the fork's default nav theme; it carries the teal tint in light and is a
+     * no-op in dark -- all 1109 tokens resolve identically with and without it,
+     * so it is set unconditionally.
+     *
+     * Defaults to dark, which is what standalone has always rendered. Following
+     * prefers-color-scheme instead would silently flip every existing user, and
+     * the screenshot baselines with them. The class on <html> is the no-JS
+     * fallback; this only ever overrides it to light.
+     */
+    (function () {
+      try {
+        if (localStorage.getItem('oc-color-mode') === 'light') {
+          document.documentElement.className = 'gl-light ui-neutral'
+        }
+      } catch (e) { /* private mode: keep the default */ }
+    })()
+  </script>
+
     <meta charset="utf-8">
     <title>fork-only inputs fixture</title>
     <style>
