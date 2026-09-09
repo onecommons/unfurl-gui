@@ -47,9 +47,15 @@ Cypress.Commands.add('createGenericEnvironment', (options) => {
   cy.withStore()
   createEnvironmentButton().should('be.visible').click()
   cy.genericCompleteEnvironmentDialog({environmentName})
-  cy.url().should('include', environmentName)
+  // No URL assertion here: Cypress's AUT window reference goes stale across the
+  // app's navigation -- cy.url() yields null and cy.state('window') reports the
+  // pre-navigation href, while the app's own window.location is correct. The DOM
+  // assertions below are what establish that we landed on the environment.
   cy.contains(environmentName).should('exist')
-  cy.contains('Generic').should('exist')
+  // 'Generic' is unreachable text: cloudProviderFriendlyName falls back to
+  // 'Self-Hosted', and for a non-gcp/aws primary provider the whole provider
+  // block is v-if'd away anyway. Assert the provider card the env actually renders.
+  cy.get('[data-testid="card-_default_provider"]').should('exist')
 
   cy.wait(5000)
 
