@@ -134,7 +134,7 @@ export default {
         }
     },
     methods: {
-        ...mapActions(['environmentFromProvider']),
+        ...mapActions(['environmentFromProvider', 'ocFetchEnvironments']),
         ...mapMutations(['createError', 'addProjectEnvironment']),
 
         async createEnvironmentWithoutCluster(instances={}) {
@@ -155,8 +155,11 @@ export default {
                 )
                 // Nothing re-reads between here and the redirect: the store was
                 // populated before this environment existed, and the page we go to
-                // looks it up rather than fetching it.
+                // looks it up rather than fetching it. Seed it so the page can render,
+                // then re-read -- the seed is write-shaped and lacks the resource
+                // templates the page needs, which only the export supplies.
                 this.addProjectEnvironment(created)
+                await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
             } catch(e) {
                 this.createError({
                     message: `@createEnvironmentWithoutCluster: ${e.message}`,

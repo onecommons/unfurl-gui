@@ -146,7 +146,11 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
         patch,
         branch,
         path: 'unfurl.yaml',
-        variables
+        variables,
+        // Queued writes land up to a batch window later and signal nothing back,
+        // so the UI cannot know when it is safe to read the environment it just
+        // created. Sync applies and pushes before responding, and returns the commit.
+        sync: true
     })
 
     return created
