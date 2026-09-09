@@ -134,7 +134,10 @@ export function clearMatchingStorage(re, visit) {
     }
 }
 
-export const XHR_JAIL_URL = '/oc/assets/-/crossorigin-xhr.html'
+// Only the fork serves this, from public/-/oc/assets/ -- under the already
+// reserved '-' because path_regex derives reserved words from the top-level
+// names in public/, so a public/oc/ would burn 'oc' as a namespace.
+export const XHR_JAIL_URL = '/-/oc/assets/crossorigin-xhr.html'
 export const DEFAULT_UNFURL_SERVER_URL = window.gon.unfurl_server_url || '/services/unfurl-server'
 
 
