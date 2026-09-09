@@ -51,19 +51,29 @@ standalone — the server does not serve the dashboard HTML for it.
 
 ## Standalone vs fork-only specs
 
-The PR gate (`build_test_release.yml`) runs:
+The PR gate (`build_test_release.yml`) runs nine specs. Keep this list in step
+with the `-s` argument there:
 
 - `00_visitor/route_smoke.cy.js`
+- `00_visitor/light_mode.cy.js`
+- `00_visitor/gallery.cy.js`
+- `00_visitor/dev_settings.cy.js`
+- `00_visitor/fork_inputs.cy.js`
+- `00_visitor/form_fixture.cy.js`
+- `00_visitor/visit_cloudchart.cy.js`
 - `deployments/smorgasbord.cy.js`
 - `blueprints/aws__minecraft__minecraft.cy.js`
 
 Also runnable standalone:
 
 - `00_visitor/crawl_blueprints.cy.js` and most of `blueprints/`
-- `00_visitor/visit_cloudchart.cy.js` — **currently fails standalone**: a bare
-  `unfurl init` fixture project has no cloudmap data, so `#chart svg` never
-  renders. `route_smoke.cy.js` skips the same route unless
-  `UNFURL_CLOUDMAP_PATH` is set.
+
+`visit_cloudchart.cy.js` passes standalone and is in the gate. Its
+`Application` category case is commented out: no `<text>` renders for that
+category, and whether the cloudmap lacks it or the layout drops the label is
+unresolved. The chart also renders `Repository` and `Self-Hosted` labels the
+spec's list does not name, so the list and the data have drifted apart in both
+directions.
 
 `deployments/smorgasbord.cy.js` is the formily widget contract (migration plan
 1.3). It resolves its own project — `onecommons/testing/smorgasbord`, override
@@ -88,15 +98,48 @@ Fork-only — these need a GitLab instance and cannot run against
 `unfurl serve --gui`:
 
 - `01_environments/aws.cy.js`, `digitalocean.cy.js`, `gcp.cy.js`,
-  `generic.cy.js`, `github_token.cy.js`
+  `generic.cy.js`, `github_token.cy.js` — drive the environment-creation UI,
+  which `unfurl serve --gui` does not have
 - `01_environments/create_dashboard.cy.js` — uses the GitLab project-creation
-  UI (`[data-qa-title="Create new project"]`, `#project_name`). The migration
-  plan listed this as "confirm whether it runs standalone"; it does not.
-- `01_environments/a10.cy.js` — still to confirm.
-- `blueprints/*container-webapp*` (4 specs) — need the GitHub import flow and
-  `GithubMirroredRepoImageSource`, which is inside a `#!if !standalone` block
+  UI. The migration plan listed this as "confirm whether it runs standalone";
+  it does not.
+- `01_environments/a10.cy.js` — imports a GitLab project export through
+  `/projects/new`, so it is fork-only. (Previously "still to confirm".)
+- `blueprints/*container-webapp*` (5 specs, including
+  `k8s__container-webapp5__container-webapp.cy.js`) — need the GitHub import
+  flow and `GithubMirroredRepoImageSource`, which is inside a
+  `#!if !standalone` block
 - `deployments/shared-dashboard.cy.js`
 - `deployments/nested-tabs.cy.js` — uses a container-webapp fixture
+
+The container-webapp five are not dryrun tests and are excluded by default
+twice over: `SPEC_SKIP_GLOBS` defaults to `*container-webapp* *nestedcloud*
+*draft*`, and three of them additionally wrap their `describe` in
+`if(!DRYRUN)` or `if(!NO_FLAKY)`, both of which `STANDALONE_UNFURL` sets.
+Running them costs real resources -- the `before()` hook deletes every
+`buildpack-test-app-*` repo on the GitHub account, forks
+`AjBreidenbach/buildpack-test-app` and renames it, and the deployment that
+follows is real. Schedule them deliberately; do not fold them into a
+verification pass.
+
+Three of these cannot pass on 19.3 as written. They navigate GitLab's own UI
+by `data-qa-selector`, which 19 removed, and none of the hooks they name still
+exist: `a10.cy.js` (`data-qa-panel-name="import_project"`,
+`gitlab_import_button`, `project_name_field`, `import_project_button`),
+`create_dashboard.cy.js` (`data-qa-title="Create new project"`, `panel_link`,
+`project_name` -- now `data-testid="project-name"`), and
+`shared-dashboard.cy.js` (`mr_widget_content`, `description_content`). Half of
+what `create_dashboard` needs is `oc/`-patched UI, so port them against a
+running 19.3 instance rather than by reading markup. The assertions in all
+three are ours; only the setup navigation is stale, so driving that setup
+through the API instead would make them immune to the next redesign.
+
+Running them today gets as far as the page and no further: the oc-pages
+dashboard app does not finish its mount on a fork dashboard page, so
+`withStore` times out waiting for `environmentsAreReady`. The console carries a
+`Cannot read properties of undefined (reading '_base')` from `<GlModal>` inside
+upstream's `<SuperSidebar>`. Auth, user creation and the dashboard push all
+work, so start there rather than re-deriving them.
 
 The `#!if !standalone` preprocessor blocks in
 `project_overview/components/shared/oc_inputs/index.js` are the reason: the
