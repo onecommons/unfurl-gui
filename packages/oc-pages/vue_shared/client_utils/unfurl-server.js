@@ -429,6 +429,13 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
             setLastCommit(projectPath, branch, undefined)
         }
 
+        // The server explains itself in the body ({code, message}) -- "stale queueid",
+        // or which upstream status discarded a queued write. axios only ever sets
+        // e.message to "Request failed with status code N", and callers interpolate
+        // e.message straight into what the user reads, so prefer the body's message.
+        const serverMessage = e.response?.data?.message
+        if(serverMessage) e.message = serverMessage
+
         throw e
     }
 
