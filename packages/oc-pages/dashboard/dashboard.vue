@@ -82,7 +82,10 @@ export default {
 
         if(!window.gon.unfurl_gui) {
             for(const {environment, deployment} of this.getDashboardItems) {
+                // unawaited, so a rejection here escapes as an unhandled error
+                // and rspack's dev server raises an overlay over the whole page
                 this.addUrlPoll({deployment, environment})
+                    .catch(e => console.error('addUrlPoll', deployment?.name, e))
             }
         }
 

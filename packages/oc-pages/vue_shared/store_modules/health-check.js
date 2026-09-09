@@ -58,7 +58,9 @@ const actions = {
         const lastWorkflow = deploymentItem?.pipeline?.variables?.WORKFLOW
 
         if(!lastWorkflow) {
-            console.error(`No last workflow for ${deployPath.name}`)
+            // a dashboard with no deploy path yet is the state this branch
+            // exists to report, so it cannot assume the lookup found one
+            console.error(`No last workflow for ${deployPath?.name ?? deployment.name}`)
         }
         if(!( //NOT
             deployment.status &&
