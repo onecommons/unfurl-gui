@@ -166,7 +166,10 @@ export default {
             return this.getCardsStacked.filter(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card._localTypeName))
         },
         editableProviders() {
-            if(!this.primaryProvider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(this.primaryProvider._localTypeName)) {
+            // getPrimaryCard falls back to {}, which is truthy, so an environment with
+            // no primary template reaches the else branch and prepends it -- rendering a
+            // properties panel with no key, header or properties. Require a real card.
+            if(!this.primaryProvider?.name || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(this.primaryProvider._localTypeName)) {
                 return this.additionalProviders
             }
             else return [this.primaryProvider, ...this.additionalProviders]

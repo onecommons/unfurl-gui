@@ -283,7 +283,7 @@ export default {
 <template>
     <gl-card class="oc-card" :class="{primary: isPrimary}" :header-class="['gl-flex',  'header-oc']">
         <template #header>
-            <div :id="id" :data-testid="card && ('card-' + card.name)" class="gl-flex gl-relative gl-w-full gl-justify-between" :class="{'oc-card-header-clickable': !isPrimary}" @click="onHeaderClick">
+            <div :id="id" :data-testid="card?.name && ('card-' + card.name)" class="gl-flex gl-relative gl-w-full gl-justify-between" :class="{'oc-card-header-clickable': !isPrimary}" @click="onHeaderClick">
                 <div class="gl-flex oc-card-header gl-justify-between gl-w-full">
                     <slot name="header">
                         <div v-if="card" class="align_left gl-flex gl-items-center flex-one gl-flex-wrap">
