@@ -130,7 +130,7 @@ jobs:
           # widget contract, and the recreate path. -s takes a comma-separated list.
           # smorgasbord resolves its own project (onecommons/testing/smorgasbord,
           # public) rather than --namespace, which points at the deployable blueprints.
-          yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/00_visitor/route_smoke.cy.js,cypress/e2e/00_visitor/light_mode.cy.js,cypress/e2e/00_visitor/gallery.cy.js,cypress/e2e/00_visitor/dev_settings.cy.js,cypress/e2e/00_visitor/fork_inputs.cy.js,cypress/e2e/00_visitor/form_fixture.cy.js,cypress/e2e/deployments/smorgasbord.cy.js,cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
+          yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/00_visitor/route_smoke.cy.js,cypress/e2e/00_visitor/light_mode.cy.js,cypress/e2e/00_visitor/gallery.cy.js,cypress/e2e/00_visitor/dev_settings.cy.js,cypress/e2e/00_visitor/fork_inputs.cy.js,cypress/e2e/00_visitor/form_fixture.cy.js,cypress/e2e/00_visitor/visit_cloudchart.cy.js,cypress/e2e/deployments/smorgasbord.cy.js,cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
       # - name: Integration test (staging upstream)
       #   run: yarn integration-test run --namespace onecommons/blueprints -- -e GENERATE_SUBDOMAINS=true --browser chrome -s cypress/e2e/blueprints/aws__baserow__baserow.cy.js
       #   env:
