@@ -22,8 +22,13 @@ import {GlFormCombobox, GlFormGroup, GlFormInput} from '@gitlab/ui'
 export default {
     name: 'SuggestionInput',
     components: {GlFormCombobox, GlFormGroup, GlFormInput},
+    // MODE 3 and modelValue are one change: @vue/compat rewrites modelValue
+    // back to value for any component still in MODE 2, so a component cannot
+    // move to the Vue 3 v-model contract on its own. Callers keep v-model.
+    compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
+    emits: ['update:modelValue'],
     props: {
-        value: {type: String, default: null},
+        modelValue: {type: String, default: null},
         label: {type: String, required: true},
         fetchSuggestions: {type: Function, required: true},
         disabled: {type: Boolean, default: false},
@@ -41,7 +46,7 @@ export default {
             })
         },
         onInput(value) {
-            this.$emit('input', value)
+            this.$emit('update:modelValue', value)
             /*
              * Not loaded on mount: a non-empty value plus a populated
              * tokenList is exactly the state GlFormCombobox renders expanded,
@@ -55,11 +60,11 @@ export default {
 </script>
 <template>
     <gl-form-group v-if="disabled" :label="label">
-        <gl-form-input :value="value" disabled type="text"/>
+        <gl-form-input :value="modelValue" disabled type="text"/>
     </gl-form-group>
     <gl-form-combobox
         v-else
-        :value="value || ''"
+        :value="modelValue || ''"
         :label-text="label"
         :token-list="suggestions"
         :placeholder="placeholder"

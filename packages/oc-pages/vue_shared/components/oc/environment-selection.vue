@@ -9,10 +9,15 @@ let GLOBAL_providersLoaded = false
 
 export default {
     name: 'EnvironmentSelection',
+    // MODE 3 and modelValue are one change: @vue/compat rewrites modelValue
+    // back to value for any component still in MODE 2, so a component cannot
+    // move to the Vue 3 v-model contract on its own. Callers keep v-model.
+    compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
+    emits: ['update:modelValue'],
     props: {
         provider: String,
         error: String,
-        value: Object,
+        modelValue: Object,
         environmentCreation: Boolean,
     },
     data() {return {}},
@@ -27,7 +32,7 @@ export default {
         env: {
             immediate: true,
             handler(env) {
-                this.$emit('input', env)
+                this.$emit('update:modelValue', env)
             }
         }
     },
@@ -49,10 +54,10 @@ export default {
         },
         env() {
             let result
-            if(typeof this.value == 'string') {
-                result = this.lookupEnvironment(this.value || this.defaultEnvironmentName)
+            if(typeof this.modelValue == 'string') {
+                result = this.lookupEnvironment(this.modelValue || this.defaultEnvironmentName)
             } else {
-                result = this.value
+                result = this.modelValue
             }
 
             if(result?.name && this.matchingEnvironments.concat(this.externalEnvironments).some(env => env.name == result.name)) {
@@ -87,10 +92,10 @@ export default {
             </template>
 
             <div v-if="matchingEnvironments.length + externalEnvironments.length > 0">
-                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="$emit('input', env)" :key="env.name">
+                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env.name}`" v-for="env in matchingEnvironments" @click="$emit('update:modelValue', env)" :key="env.name">
                     <div class="gl-flex gl-items-center"><detect-icon class="gl-mr-3" :env="env" />{{ env.name }}</div>
                 </gl-dropdown-item>
-                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env._dashboard}/${env.name}`" v-for="env in externalEnvironments" @click="$emit('input', env)" :key="env._dashboard + '/' + env.name">
+                <gl-dropdown-item :data-testid="`deployment-environment-selection-${env._dashboard}/${env.name}`" v-for="env in externalEnvironments" @click="$emit('update:modelValue', env)" :key="env._dashboard + '/' + env.name">
                     <div class="gl-flex gl-items-center"><detect-icon class="gl-mr-3" :type="env.type" />{{ env._dashboard }} <br> {{ env.name }}</div>
                 </gl-dropdown-item>
 

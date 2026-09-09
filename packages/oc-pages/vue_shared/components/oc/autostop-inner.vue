@@ -4,6 +4,8 @@ import {mapMutations} from 'vuex'
 
 export default {
     name: 'AutostopInner',
+    compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
+    emits: ['update:modelValue'],
     components: {
         GlCollapsibleListbox,
         GlDatepicker,
@@ -86,7 +88,7 @@ export default {
 
         autostop: {
             handler(val) {
-                this.$emit('input', val)
+                this.$emit('update:modelValue', val)
             },
             immediate: true
         }
