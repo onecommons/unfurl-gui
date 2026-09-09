@@ -1,9 +1,7 @@
 import VueRouter from 'vue-router';
 import {baseRouteNaive} from './base-route';
-import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
 import { PageNotFound } from 'oc_vue_shared/components/oc'
-import * as ROUTES from './constants'
 
 routes.push({ path: "*", component: PageNotFound })
 
@@ -11,23 +9,6 @@ const base = baseRouteNaive(window.location.pathname);
 
 // no longer relevant?
 const delimiter = /*base.includes('dashboard')? '': */'/-'
-
-
-const navigationElements = {
-    dashboard:  document.querySelector(`aside.nav-sidebar li a[href$="${base}"]`)?.parentElement,
-    environments: document.querySelector('aside.nav-sidebar li a[href$="environments"]')?.parentElement,
-    deployments: document.querySelector('aside.nav-sidebar li a[href$="deployments"]')?.parentElement
-}
-
-const navigationElementRouteMapping = {
-    dashboard: ROUTES.OC_DASHBOARD_HOME,
-    environments: ROUTES.OC_DASHBOARD_ENVIRONMENTS_INDEX,
-    deployments: ROUTES.OC_DASHBOARD_DEPLOYMENTS_INDEX
-}
-
-try {
-    document.querySelector('.top-nav-button[title="Dashboard"]').classList.add('active')
-} catch(e) {}
 
 // store is passed in rather than reached through router.app: router.app does
 // not exist in vue-router 4, and it couples the router to whichever root
@@ -51,54 +32,7 @@ export default function createRouter(store) {
 
     router.name = 'dashboard'
 
-    // #!if !standalone
-
-    try {
-        for(const [key, navigationElement] of Object.entries(navigationElements)) {
-            navigationElement.onclick = e => {
-                e.preventDefault()
-                router.push({name: navigationElementRouteMapping[key]})
-            }
-        }
-    } catch(e) {
-        console.error('Could not create router links on side navigation;', e.message)
-    }
-
-    // #!endif
-
-
     router.beforeEach((to, from, next) => {
-
-        // #!if !standalone
-
-        try {
-            let navigationElement
-            switch(to.name) {
-                case ROUTES.OC_DASHBOARD_DEPLOYMENTS_INDEX:
-                case ROUTES.OC_DASHBOARD_DEPLOYMENTS:
-                    navigationElement = 'deployments'
-                    break
-                case ROUTES.OC_DASHBOARD_ENVIRONMENTS_INDEX:
-                case ROUTES.OC_DASHBOARD_ENVIRONMENTS:
-                    navigationElement = 'environments'
-                    break
-                default:
-                    navigationElement = 'dashboard'
-            }
-
-            Object.entries(navigationElements).forEach(([name, value]) => {
-                if(name == navigationElement) {
-                    value.className = 'active'
-                } else {
-                    value.className = ''
-                }
-            })
-        } catch(e) {
-            console.error("Couldn't set class on side navigation;", e.message)
-        }
-
-        // #!endif
-
         if(typeof store?.getters?.getRouterHook == 'function') {
             store.getters.getRouterHook(to, from, next)
         }
