@@ -62,10 +62,17 @@ jobs:
       # .component, .prototype, .nextTick and `new Vue` all reach it through
       # this import. Named imports are fine; the fork's vue facade re-exports
       # everything from @vue/compat.
-      - name: No default Vue import in oc-pages
+      - name: No Vue 2 idioms in oc-pages
         run: |
           if grep -rn "^import Vue from 'vue'" packages/oc-pages --include='*.js' --include='*.vue' | grep -v node_modules; then
             echo "::error::oc-pages must not import the default Vue export; use named imports"
+            exit 1
+          fi
+          # Vue 2's v-bind merged an array of objects into one; Vue 3 drops it
+          # silently, taking every binding in the array with it. gl-modal's
+          # action button config is the shape that bit us.
+          if grep -rnE "(^|[^_])attributes:[[:space:]]*\[|v-bind=\"\[" packages/oc-pages --include='*.js' --include='*.vue' | grep -v node_modules; then
+            echo "::error::v-bind does not merge arrays in Vue 3; pass a single object"
             exit 1
           fi
       - name: Run unit tests
