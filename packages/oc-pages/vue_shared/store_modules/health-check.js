@@ -53,6 +53,16 @@ const mutations = {
 
 const actions = {
     async addUrlPoll({state, commit, dispatch, rootGetters}, {deployment, environment}) {
+        // a dashboard item can arrive before its deployment or environment does,
+        // and there is nothing to poll without both. Guarded here rather than
+        // below because lookupDeployPath dereferences a name off each -- and the
+        // report itself must not, which is the mistake this replaces.
+        if(!(deployment && environment)) {
+            console.warn('Skipping polling: incomplete dashboard item', {deployment, environment})
+            if(deployment?.name) commit('clearPollingStateFor', deployment.name)
+            return
+        }
+
         const deployPath = rootGetters.lookupDeployPath(deployment.name, environment.name)
         const deploymentItem = rootGetters.deploymentItemDirect({deployment, environment})
         const lastWorkflow = deploymentItem?.pipeline?.variables?.WORKFLOW
