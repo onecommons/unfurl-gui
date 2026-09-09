@@ -16,7 +16,11 @@ function toGlVariablesAttributes(variables, variable_type='unencrypted_var') {
         result.push({
             key,
             masked: MASK_VARIABLES.includes(key),
+            // 15.11 permits only secret_value, 19.3 only value, and strong params
+            // drops the unpermitted one silently -- so send both until the fork
+            // upgrade lands and secret_value can go
             secret_value,
+            value: secret_value,
             variable_type
         })
     })
