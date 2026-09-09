@@ -17,6 +17,7 @@
 import 'cypress-fail-fast'
 import './commands'
 import {dashboardPath} from './dashboard-path'
+import {signIn, impersonateUser} from './auth'
 
 const USERNAME = Cypress.env('OC_USERNAME')
 const PASSWORD = Cypress.env('OC_PASSWORD')
@@ -241,48 +242,32 @@ before(() => {
     throw err
   })
   if(Cypress.spec.name.startsWith('00_visitor')) return
-  if((USERNAME && PASSWORD) || (GENERATED_PASSWORD && IMPERSONATE)) {
-    cy.visit(`/users/sign_in`).wait(100)
-  }
-  else {
+
+  // see ./auth -- these post to the sign-in endpoint rather than typing into a
+  // form that GitLab 19 no longer renders the same way
+  if(USERNAME && PASSWORD) {
+    signIn(USERNAME, PASSWORD)
+    if(IMPERSONATE) impersonateUser(IMPERSONATE)
+  } else if(GENERATED_PASSWORD && IMPERSONATE) {
+    signIn(IMPERSONATE, GENERATED_PASSWORD)
+
+    // a user created moments ago is redirected to the welcome form; there is no
+    // endpoint worth posting blind, so drive it if it appears
+    cy.visit('/')
+    cy.document().then(doc => {
+      if(doc.querySelector('form[action="/users/sign_up/welcome"]')) {
+        const selection = EXTERNAL == '0'? 'software_developer': 'other'
+        cy.contains('label', 'Choose User Interface').next().select(selection)
+        cy.get('[data-qa-selector="get_started_button"]').click()
+      }
+    })
+  } else {
     cy.visit('/')
   }
-  cy.url().then(url => {
-    if(url.endsWith('sign_in')) {
-      if(USERNAME && PASSWORD)  {
-        cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
-        cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(PASSWORD)
-        cy.get(`[data-qa-selector="sign_in_button"]`).click()
 
-        if(IMPERSONATE) {
-          cy.visit(`/admin/users/${IMPERSONATE}`)
-          cy.get('[data-qa-selector="impersonate_user_link"]').click()
-          cy.url().should('not.contain', 'admin')
-
-          if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-            cy.visit(dashboardPath(``))
-          }
-        }
-      } else if (GENERATED_PASSWORD && IMPERSONATE) {
-        cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(IMPERSONATE)
-        cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(GENERATED_PASSWORD)
-        cy.get(`[data-qa-selector="sign_in_button"]`).click()
-
-        cy.document().then(doc => {
-          if(doc.querySelector('form[action="/users/sign_up/welcome"]')) {
-            const selection = EXTERNAL == '0'? 'software_developer': 'other'
-            cy.contains('label', 'Choose User Interface').next().select(selection)
-            cy.get('[data-qa-selector="get_started_button"]').click()
-          }
-        })
-
-      }
-
-      if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-        cy.visit(dashboardPath(``))
-      }
-    }
-  })
+  if(INTEGRATION_TEST_ARGS.dashboardRepo) {
+    cy.visit(dashboardPath(``))
+  }
 
   setIntercept()
 

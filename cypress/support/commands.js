@@ -41,6 +41,7 @@ import './ci-jobs'
 import 'cypress-wait-until'
 import 'cypress-file-upload'
 import {dashboardPath} from './dashboard-path'
+import {signIn, impersonateUser, signOut} from './auth'
 import {DANGER_ALERT} from './alerts'
 
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
@@ -70,8 +71,11 @@ function whenGitlab(cb) {
 }
 
 function withStore(cb) {
+  // $store is assigned as the app boots, so it is legitimately absent on the
+  // first polls -- reading through it unguarded threw out of waitUntil instead
+  // of retrying, which failed instantly on any page slower than standalone
   return cy.waitUntil(() => cy.window().then(win => {
-    if(win.$store.getters.environmentsAreReady) {
+    if(win.$store?.getters?.environmentsAreReady) {
       cb && cb(win.$store)
       return cy.wrap(win.$store)
     }
@@ -98,79 +102,23 @@ function execLoud(...args) {
 }
 
 function login(username, password, impersonate) {
-  cy.visit(`/users/sign_in`).wait(100)
-  cy.url().then(url => {
-    if(username && password && url.endsWith('sign_in'))  {
-      cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(username)
-      cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(password)
-      cy.getInputOrTextarea(`[data-qa-selector="sign_in_button"]`).click()
+  if(!(username && password)) return
 
-      if(impersonate) {
-        cy.visit(`/admin/users/${impersonate}`)
-        cy.get('[data-qa-selector="impersonate_user_link"]').click()
-        cy.url().should('not.contain', 'admin')
+  signIn(username, password)
 
-        if(INTEGRATION_TEST_ARGS.dashboardRepo) {
-          cy.visit(dashboardPath(``))
-        }
-      }
+  if(impersonate) {
+    impersonateUser(impersonate)
+
+    if(INTEGRATION_TEST_ARGS.dashboardRepo) {
+      cy.visit(dashboardPath(``))
     }
-  })
+  }
 }
 
 function logout() {
-  cy.get('[data-qa-selector="stop_impersonation_link"]').click()
-  cy.get('[data-qa-selector="user_menu"]').click()
-  cy.get('[data-qa-selector="sign_out_link"]').click()
-  cy.url().should('include', 'sign_')
+  signOut()
 }
 
-/*
- * Cypress 12.x
-function login(impersonateUser) {
-  cy.session(impersonateUser || USERNAME, () => {
-    cy.visit(`/users/sign_in`).wait(100)
-    cy.url().then(url => {
-      if(USERNAME && PASSWORD && url.endsWith('sign_in'))  {
-        cy.getInputOrTextarea(`[data-qa-selector="login_field"]`).type(USERNAME)
-        cy.getInputOrTextarea(`[data-qa-selector="password_field"]`).type(PASSWORD)
-        cy.getInputOrTextarea(`[data-qa-selector="sign_in_button"]`).click()
-
-        if(impersonateUser) {
-          cy.visit(`/admin/users/${impersonateUser}`)
-          cy.get('[data-qa-selector="impersonate_user_link"]').click()
-          cy.url().should('not.contain', 'admin')
-
-        }
-      }
-    })
-    cy.window().then(win => {
-      if(DEPLOY_IMAGE) {
-        win.sessionStorage['deploy-image'] = DEPLOY_IMAGE
-      }
-      if(MOCK_DEPLOY) {
-        win.sessionStorage['mock-deploy'] = 't'
-      }
-      if(UNFURL_VALIDATION_MODE) {
-        win.sessionStorage['unfurl-validation-mode'] = UNFURL_VALIDATION_MODE
-      }
-      if(UNFURL_SERVER_URL) {
-        win.sessionStorage['unfurl-server-url'] = UNFURL_SERVER_URL
-      }
-      win.sessionStorage['unfurl-trace'] = 't'
-    })
-    cy.visit(dashboardPath(``))
-  },
-  {
-    cacheAcrossSpecs: false,
-    validate() {
-      cy.visit('/')
-      cy.url().should('not.contain', 'login')
-    }
-  })
-
-}
-*/
 
 Cypress.Commands.add('whenGitlab', whenGitlab)
 Cypress.Commands.add('whenUnfurlGUI', whenUnfurlGUI)
