@@ -215,10 +215,15 @@ export default {
                 await this.createEnvironmentWithoutCluster(instances)
                 if(this.hasCriticalErrors) return
                 sessionStorage['redirectOnProviderSaved'] = redirectTarget
-                if(provider) {
-                  window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider`
+                const environmentRoute = `/-/environments/${this.environmentName}${provider? '?provider': ''}`
+                // A reload here discards the whole SPA to reach a route the dashboard
+                // router already declares. Only that app has it: this dialog is also
+                // mounted in project_overview, which cannot route into an app that
+                // isn't mounted, so that case still needs a full navigation.
+                if(this.$router?.name == 'dashboard') {
+                    this.$router.push(environmentRoute)
                 } else {
-                  window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+                    window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}${environmentRoute}`
                 }
             } else {
                 const url = `${window.origin}${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`

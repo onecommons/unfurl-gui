@@ -426,6 +426,13 @@ export default {
 
     },
     watch: {
+        // Routing between two /-/environments/:name routes reuses this component,
+        // so created() does not fire again and the page would show the previous
+        // environment's state. Reachable from the deploy dialog, which sits at the
+        // dashboard root and so is present on an environment page.
+        async '$route.params.name'() {
+            await this.freshState()
+        },
         async showingProviderModal(val) {
             if(!val) {
                 await this.freshState()
