@@ -1,15 +1,14 @@
 <script>
-import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormRadio } from '@gitlab/ui';
+import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormRadio, GlLink } from '@gitlab/ui';
 import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import _ from 'lodash'
-import { s__, __ } from '~/locale';
+import { s__, __, n__ } from '~/locale';
 import HeaderProjectView from '../../components/header.vue';
 import ProjectDescriptionBox from '../../components/project_description.vue';
 import EnvironmentCreationDialog from '../../components/environment-creation-dialog.vue'
 import YourDeployments from '../../components/your-deployments.vue'
 import OpenCloudDeployments from '../../components/open-cloud-deployments.vue'
-import NotesWrapper from 'oc_vue_shared/components/notes-wrapper.vue'
 import LocalDevelop from '../../components/local-develop.vue'
 import { MarkdownView, OcTab, EnvironmentSelection, BaseDeployDialog } from 'oc_vue_shared/components/oc'
 import { bus } from 'oc_vue_shared/bus';
@@ -45,7 +44,7 @@ export default {
         OpenCloudDeployments,
         GlMarkdown,
         MarkdownView,
-        NotesWrapper,
+        GlLink,
         LocalDevelop
     },
     directives: {
@@ -181,14 +180,8 @@ export default {
                 this.getLastUsedEnvironment({ cloud: this.templateSelected?.cloud }) || this.selectedEnvironment || this.getDefaultEnvironmentName(this.templateSelected?.cloud)
             )
         },
-        activeTab() {
-            const { availableBlueprintsTab, developmentTab, openCloudDeploymentsTab, yourDeploymentsTab, commentsTab } = this.$refs
-            if(availableBlueprintsTab?.active) return 'availableBlueprintsTab'
-            if(developmentTab?.active) return 'developmentTab'
-            if(openCloudDeploymentsTab?.active) return 'openCloudDeploymentsTab'
-            if(yourDeploymentsTab?.active) return 'yourDeploymentsTab'
-            if(commentsTab?.active) return 'commentsTab'
-            return null
+        commentsLinkText() {
+            return n__('%d comment', '%d comments', this.commentsCount || 0)
         },
         mainAtLastest() {
             if(!this.mainBranchCommitId || !this.currentTag?.commit?.id) return false
@@ -457,6 +450,11 @@ export default {
                     :project-info="getApplicationBlueprint"
                     />
 
+            <gl-link v-if="commentsIssueUrl" :href="commentsIssueUrl" class="gl-mb-4 gl-inline-flex gl-items-center">
+                <gl-icon name="comments" class="gl-mr-2"/>
+                {{commentsLinkText}}
+            </gl-link>
+
             <gl-tabs v-model="currentTab">
                 <oc-tab ref="availableBlueprintsTab" title="Available Blueprints">
                     <div class="">
@@ -493,20 +491,6 @@ export default {
                 </oc-tab>
                 <oc-tab v-if="openCloudDeployments.length > 0" ref="openCloudDeploymentsTab" title="Open Cloud Deployments">
                     <open-cloud-deployments />
-                </oc-tab>
-                <oc-tab v-if="commentsIssueUrl" ref="commentsTab" title="Comments" :title-count="commentsCount">
-                    <gl-card>
-                        <template #header>
-                            <div class="gl-flex gl-items-center">
-                                <gl-icon name="comments" class="gl-mr-3"/>
-                                <h5 class="gl-mb-0 gl-mt-0">
-                                    {{__('General Comments')}}
-                                </h5>
-                            </div>
-                        </template>
-
-                        <notes-wrapper :poll="activeTab == 'commentsTab'"/>
-                    </gl-card>
                 </oc-tab>
             </gl-tabs>
 
