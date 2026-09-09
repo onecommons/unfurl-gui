@@ -294,7 +294,7 @@ query getContainerRepositories($fullPath: ID!) {
 `
 
 export async function fetchContainerRepositories(fullPath) {
-    const response = await graphqlClient.clients.defaultClient.query({
+    const response = await graphqlClient.query({
         query,
         variables: {fullPath}
     })
@@ -317,7 +317,7 @@ const getUserPermissions = gql`
 export async function fetchUserHasWritePermissions(projectPath) {
 
     // #!if !standalone
-    const result = await graphqlClient.defaultClient.query({
+    const result = await graphqlClient.query({
         query: getUserPermissions,
         variables: {projectPath},
         errorPolicy: 'all'

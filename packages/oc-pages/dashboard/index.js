@@ -1,6 +1,5 @@
 import {createApp, h} from 'vue';
 import Dashboard from './dashboard.vue';
-import apolloProvider from './graphql';
 import { GlToast, GlTooltipDirective } from '@gitlab/ui';
 import store from './store';
 import createRouter from './router';
@@ -27,7 +26,6 @@ export default (elemId='js-table-component') => {
 
     app.use(store)
     app.use(router)
-    app.use(apolloProvider)
     app.use(GlToast)
     app.use(OcComponents)
     app.directive('gl-tooltip', GlTooltipDirective)

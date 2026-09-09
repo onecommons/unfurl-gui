@@ -1,5 +1,4 @@
 import {createApp, h} from 'vue';
-import apolloProvider from './graphql';
 import MainComponent from './components/main.vue';
 import createRouter from './router';
 import store from './store';
@@ -66,7 +65,6 @@ export default (elemId='js-oc-project-overview') => {
 
   app.use(store)
   app.use(router)
-  app.use(apolloProvider)
   app.use(OcComponents)
   app.directive('gl-tooltip', GlTooltipDirective)
   app.config.globalProperties.$projectGlobal = projectGlobal

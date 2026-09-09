@@ -28,7 +28,7 @@ export async function fetchUserProjects(_options) {
         minimumAccessLevel: 30
     }, _options)
 
-    const response = await graphqlClient.clients.defaultClient.query({
+    const response = await graphqlClient.query({
         query: getUserProjectsQuery
     })
 
@@ -60,7 +60,7 @@ query getUserPublicEmail {
 `
 
 export async function fetchUserPublicEmail() {
-    const response = await graphqlClient.clients.defaultClient.query({
+    const response = await graphqlClient.query({
         query: getUserPublicEmailQuery
     })
 

@@ -1,6 +1,6 @@
 import DeploymentItem from './deployment-info/deployment-item'
 import gql from 'graphql-tag'
-import graphqlClient from '../../graphql'
+import graphqlClient from 'oc/graphql_shim'
 import _ from 'lodash'
 import {freeze} from 'oc_vue_shared/client_utils/misc'
 
@@ -131,7 +131,7 @@ const actions = {
         let result
 
         // #!if !standalone
-        result = await graphqlClient.defaultClient.query({
+        result = await graphqlClient.query({
             query: LOOKUP_JOBS,
             fetchPolicy: 'network-only',
             variables: {fullPath: rootGetters.getHomeProjectPath}

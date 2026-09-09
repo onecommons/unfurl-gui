@@ -4514,18 +4514,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vue/apollo-option@npm:^4.0.0-beta.4":
-  version: 4.2.2
-  resolution: "@vue/apollo-option@npm:4.2.2"
-  dependencies:
-    throttle-debounce: ^5.0.0
-  peerDependencies:
-    "@apollo/client": ^3.2.1
-    vue: ^3.1.0
-  checksum: 941e0703959d80e3def03fec480cf90cb17d2cf53a61ef03446b3ca933fbee560bdbbb8af6413b9e32430a43a43fe620203cec5bdd8879b577cf8b0d54643e1d
-  languageName: node
-  linkType: hard
-
 "@vue/babel-helper-vue-jsx-merge-props@npm:^1.4.0":
   version: 1.4.0
   resolution: "@vue/babel-helper-vue-jsx-merge-props@npm:1.4.0"
@@ -20491,13 +20479,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"throttle-debounce@npm:^5.0.0":
-  version: 5.0.2
-  resolution: "throttle-debounce@npm:5.0.2"
-  checksum: 90d026691bfedf692d9a5addd1d5b30460c6a87a9c588ae05779402e3bfd042bad2bf828edb05512f2e9e601566e8663443d929cf963a998207e193fb1d7eff8
-  languageName: node
-  linkType: hard
-
 "throttleit@npm:^1.0.0":
   version: 1.0.1
   resolution: "throttleit@npm:1.0.1"
@@ -21101,7 +21082,6 @@ __metadata:
     "@gitlab/vue-router-vue3": "npm:vue-router@4.5.1"
     "@gitlab/vuex-vue3": "npm:vuex@4.1.0"
     "@lifeomic/json-schema-to-graphql-types": ^1.4.2
-    "@vue/apollo-option": ^4.0.0-beta.4
     "@vue/cli-plugin-babel": ^5.0.8
     "@vue/cli-plugin-eslint": ^5.0.8
     "@vue/cli-service": ^5.0.8

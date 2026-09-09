@@ -16,9 +16,9 @@ installApiStub()
 /*
  * Imported directly, because oc_inputs/index.js hides these four behind a
  * standalone preprocessor conditional and that loader only runs on .js.
- * Async, so vue-apollo and graphql-tag -- which the app itself compiles out --
- * land in this page's own chunk instead of the vendors bundle every page
- * loads.
+ * Async, so graphql-tag -- which the app itself compiles out, and which these
+ * reach through client_utils/projects -- lands in this page's own chunk instead
+ * of the vendors bundle every page loads.
  */
 const LocalImageRepoSource = () => import('oc_pages/project_overview/components/shared/oc_inputs/LocalImageRepoSource.vue')
 const UnfurlCloudMirroredRepoImageSource = () => import('oc_pages/project_overview/components/shared/oc_inputs/UnfurlCloudMirroredRepoImageSource.vue')

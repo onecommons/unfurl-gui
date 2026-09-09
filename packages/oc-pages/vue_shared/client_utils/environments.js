@@ -466,7 +466,7 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
         }
     `
 
-    const response = await graphqlClient.defaultClient.query({
+    const response = await graphqlClient.query({
         query,
         variables: {username}
     })
@@ -500,7 +500,7 @@ export const fetchDashboardProviders = _.memoize(async function (projectPath) {
           }
         }
     `
-     const response = await graphqlClient.defaultClient.query({
+     const response = await graphqlClient.query({
         query,
         variables: {projectPath}
     })

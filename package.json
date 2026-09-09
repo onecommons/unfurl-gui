@@ -47,7 +47,6 @@
     "@gitlab/vue-router-vue3": "npm:vue-router@4.5.1",
     "@gitlab/vuex-vue3": "npm:vuex@4.1.0",
     "@lifeomic/json-schema-to-graphql-types": "^1.4.2",
-    "@vue/apollo-option": "^4.0.0-beta.4",
     "@vue/compat": "3.5.34",
     "@vue/compiler-sfc": "3.5.34",
     "axios": "^1.7.0",
