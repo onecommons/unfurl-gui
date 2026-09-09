@@ -42,7 +42,10 @@ Cypress.Commands.add('createGenericEnvironment', (options) => {
   )
 
   cy.visit(dashboardPath(`/-/environments`))
-  createEnvironmentButton().click()
+  // the table re-renders as environments arrive, which detaches the button
+  // between cy.contains and .click() -- wait for the store to settle first
+  cy.withStore()
+  createEnvironmentButton().should('be.visible').click()
   cy.genericCompleteEnvironmentDialog({environmentName})
   cy.url().should('include', environmentName)
   cy.contains(environmentName).should('exist')
