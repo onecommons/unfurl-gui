@@ -1,12 +1,5 @@
-import Vue from "vue";
-import VueApollo from "vue-apollo";
-import {
-  createApolloClient,
-  restartWebsockets
-} from "vue-cli-plugin-apollo/graphql-client";
-
-// Install the vue plugin
-Vue.use(VueApollo);
+import { createApolloProvider } from "@vue/apollo-option";
+import { createApolloClient } from "vue-cli-plugin-apollo/graphql-client";
 
 // Name of the localStorage item
 const AUTH_TOKEN = "apollo-token";
@@ -18,8 +11,6 @@ const httpEndpoint =
 export const filesRoot =
   process.env.VUE_APP_FILES_ROOT ||
   httpEndpoint.substr(0, httpEndpoint.indexOf("/graphql"));
-
-Vue.prototype.$filesRoot = filesRoot;
 
 // Config
 const defaultOptions = {
@@ -67,7 +58,7 @@ export function createProvider(options = {}) {
   apolloClientAny.wsClient = wsClient;
 
   // Create vue apollo provider
-  const apolloProvider = new VueApollo({
+  const apolloProvider = createApolloProvider({
     defaultClient: apolloClient,
     defaultOptions: {
       $query: {

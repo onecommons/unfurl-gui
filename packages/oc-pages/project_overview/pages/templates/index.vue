@@ -200,7 +200,7 @@ export default {
     primaryPropsDelete() {
       return {
         text: this.nodeAction || __('Delete'),
-        attributes: [{ category: 'primary' }, { variant: 'danger' }],
+        attributes: {category: 'primary', variant: 'danger'},
       };
     },
 
@@ -219,13 +219,13 @@ export default {
     ocTemplateResourcePrimary() {
         return {
             text: __("Next"),
-            attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0) }]
+            attributes: {category: 'primary', variant: 'info', disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0)}
         };
     },
     ocResourceToConnectPrimary() {
       return {
             text: __("Next"),
-            attributes: [{ category: 'primary' }, { variant: 'info' }, { disabled: Object.keys(this.selectedServiceToConnect).length === 0 }]
+            attributes: {category: 'primary', variant: 'info', disabled: Object.keys(this.selectedServiceToConnect).length === 0}
         };
     },
 
@@ -425,7 +425,7 @@ export default {
     });
   },
 
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('beforeunload', this.unloadHandler);
     this.resetTemplateResourceState();
     this.setRouterHook();

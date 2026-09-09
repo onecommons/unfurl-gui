@@ -57,6 +57,17 @@ jobs:
         # TODO add back ufsv-patch -- --runInBand
       - name: Lint
         run: yarn lint
+      # oc-pages runs on @vue/compat in both builds, and the global Vue object
+      # is the part of Vue 2 that has no Vue 3 equivalent -- Vue.set, .extend,
+      # .component, .prototype, .nextTick and `new Vue` all reach it through
+      # this import. Named imports are fine; the fork's vue facade re-exports
+      # everything from @vue/compat.
+      - name: No default Vue import in oc-pages
+        run: |
+          if grep -rn "^import Vue from 'vue'" packages/oc-pages --include='*.js' --include='*.vue' | grep -v node_modules; then
+            echo "::error::oc-pages must not import the default Vue export; use named imports"
+            exit 1
+          fi
       - name: Run unit tests
         run: yarn test packages -- --runInBand
       # Warnings are errors here: the build is clean as of this commit, so any

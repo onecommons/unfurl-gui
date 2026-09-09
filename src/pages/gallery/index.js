@@ -1,6 +1,5 @@
 import '../../assets/standalone-base.css'
-import Vue from 'vue'
-import Vuex from 'vuex'
+import {createApp, h} from 'vue'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
@@ -27,16 +26,8 @@ import MapControls from 'oc_pages/public_cloud/map-controls.vue'
 // out.
 const FileSelector = () => import('oc_pages/project_overview/components/shared/oc_inputs/file-selector.vue')
 
-Vue.use(Vuex)
-Vue.use(VueRouter)
 // experimental-settings-indicator drives its modal off $route.query
-const router = new VueRouter({mode: 'history', routes: [{path: '/:slug*', component: {render: h => h('div')}}]})
-/*
- * Everything dashboard/index.js and project_overview/index.js do before
- * mounting.
- */
-Vue.use(OcComponents)
-Vue.directive('gl-tooltip', GlTooltipDirective)
+const router = new VueRouter({mode: 'history', routes: [{path: '/:slug*', component: {render: () => h('div')}}]})
 
 /*
  * Every component 2A.2 touches that renders on no route the specs visit.
@@ -114,26 +105,40 @@ const ENTRIES = [
 // one component throwing should not cost the screenshots of the other eight
 const Boundary = {
   props: {name: String, style: Object},
+  /*
+   * Written as a Vue 3 render function, so it must opt out of @vue/compat's
+   * legacy render emulation -- that hands the render a Vue 2 `h` and turns
+   * $slots into the array form, where default is not callable.
+   */
+  compatConfig: {RENDER_FUNCTION: false},
+
   data: () => ({failed: null}),
   errorCaptured(err) { this.failed = err.message; return false },
-  render(h) {
+  render() {
     return h('div', {
-      attrs: {'data-testid': `gallery-${this.name}`},
+      'data-testid': `gallery-${this.name}`,
       class: 'gallery-entry',
       style: this.style || {}
     }, [
       h('h3', {class: 'gallery-title'}, this.name),
       this.failed
-        ? h('pre', {attrs: {'data-testid': `gallery-${this.name}-error`}, class: 'gallery-error'}, this.failed)
-        : this.$slots.default
+        ? h('pre', {'data-testid': `gallery-${this.name}-error`, class: 'gallery-error'}, this.failed)
+        : this.$slots.default?.()
     ])
   }
 }
 
-new Vue({
-  store,
-  router,
-  render: h => h('div', {class: 'gallery'}, ENTRIES.map(({name, component, props, style}) =>
-    h(Boundary, {props: {name, style}, key: name}, [h(component, {props: props || {}})])
+/*
+ * Everything dashboard/index.js and project_overview/index.js do before
+ * mounting.
+ */
+const app = createApp({
+  render: () => h('div', {class: 'gallery'}, ENTRIES.map(({name, component, props, style}) =>
+    h(Boundary, {name, style, key: name}, () => [h(component, props || {})])
   ))
-}).$mount('#gallery')
+})
+app.use(store)
+app.use(router)
+app.use(OcComponents)
+app.directive('gl-tooltip', GlTooltipDirective)
+app.mount('#gallery')

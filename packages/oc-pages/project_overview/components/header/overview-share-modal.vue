@@ -3,7 +3,7 @@
 const QUERY_PARAM = 'share'
 const DEPLOY_BUTTON_PARAM = 'deploy-btn'
 
-import Vue from 'vue'
+import {nextTick} from 'vue'
 import _ from 'lodash'
 import { mapState } from 'vuex'
 import {compatibilityUnfurlBadgeUrlBuilder as initUnfurlBadgeUrlBuilder} from 'oc_vue_shared/compat'
@@ -52,7 +52,7 @@ export default {
                 if(val) {
                     let imageEl
                     while(!(imageEl = document.querySelector('#js-uf-badge-img > img'))) {
-                        await Vue.nextTick()
+                        await nextTick()
                     }
 
                     initUnfurlBadgeUrlBuilder()

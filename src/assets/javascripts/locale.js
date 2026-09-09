@@ -70,6 +70,14 @@ export { pgettext as s__ };
 export default locale;
 
 
-Vue.prototype.__ = gettext;
-Vue.prototype.n__ = ngettext;
-Vue.prototype.s__ = pgettext;
+/*
+ * Templates all over oc-pages call __() unqualified, and the apps that render
+ * them are created inside oc-pages, not here -- so there is no app instance to
+ * install these on.
+ *
+ * A mixin rather than globalProperties: @vue/compat gives each createApp() a
+ * globalProperties that only *inherits* from the singleton's, and Vue 3
+ * resolves those with hasOwn, so anything set there is invisible to a template.
+ * Mixins it copies by value. This is what gitlab's own Translate plugin does.
+ */
+Vue.mixin({methods: {__: gettext, n__: ngettext, s__: pgettext}});

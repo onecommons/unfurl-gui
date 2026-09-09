@@ -148,7 +148,7 @@ export default {
         primaryProps() {
             return {
                 text: __('Next'),
-                attributes: [{ category: 'primary' }, { variant: 'confirm' }, { disabled: this.shouldDisableSubmitTemplate }],
+                attributes: {category: 'primary', variant: 'confirm', disabled: this.shouldDisableSubmitTemplate},
             };
         },
         cancelProps() {
@@ -274,7 +274,7 @@ export default {
             this.redirectToTemplateEditor();
         });
     },
-    beforeDestroy() {
+    beforeUnmount() {
         (function() {
             bus.$off('deployTemplate')
             bus.$off('editTemplate')

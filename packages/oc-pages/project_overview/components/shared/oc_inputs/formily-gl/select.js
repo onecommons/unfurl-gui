@@ -3,11 +3,10 @@
  * options, so formily's dataSource ({label, value}, or bare strings from a
  * schema `enum`) is normalised on the way in.
  */
-import { connect, h, mapProps, mapReadPretty } from '@formily/vue'
+import {h, mapProps, mapReadPretty} from '@formily/vue'
 import { GlFormSelect } from '@gitlab/ui'
-import { defineComponent } from 'vue-demi'
 import { PreviewText } from './preview-text'
-import { passthrough, transformComponent } from './shared'
+import {connect, defineAdapter, passthrough, transformComponent} from './shared'
 
 const normalize = options => (options || []).map(option => (
     typeof option === 'object' && option !== null
@@ -15,7 +14,7 @@ const normalize = options => (options || []).map(option => (
         : {value: option, text: option}
 ))
 
-const GlSelect = defineComponent({
+const GlSelect = defineAdapter({
     name: 'GlSelect',
     inheritAttrs: false,
     props: ['options'],

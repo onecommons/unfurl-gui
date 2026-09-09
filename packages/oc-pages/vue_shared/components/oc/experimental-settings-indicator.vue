@@ -110,8 +110,8 @@ export default {
         <gl-modal
             title="Developer Settings"
             modal-id="dev-settings-modal"
-            :action-primary="{text: 'OK', attributes: [{variant: 'info'}]}"
-            :action-secondary="{text: 'Restore Default Settings', attributes: [{variant: 'danger'}]}"
+            :action-primary="{text: 'OK', attributes: {variant: 'info'}}"
+            :action-secondary="{text: 'Restore Default Settings', attributes: {variant: 'danger'}}"
             @secondary="clearSettings(); modal = false;"
             v-model="modal"
         >

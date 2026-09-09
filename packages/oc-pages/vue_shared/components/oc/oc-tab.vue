@@ -21,10 +21,15 @@ export default {
             default: false
         }
     },
+    data() {
+        /*
+         * b-tab owns the active flag and syncs it back as update:active. This
+         * used to read it straight off the child instance
+         * ($refs.tab.$children[0].localActive); Vue 3 has no $children.
+         */
+        return {active: false}
+    },
     computed: {
-        active() {
-            return this.$refs.tab.$children[0]?.localActive
-        },
         showCount() {
             const parsed = parseInt(this.titleCount)
             if(this.noCountZero && parsed === 0) {
@@ -36,8 +41,8 @@ export default {
 }
 </script>
 <template>
-    <gl-tab ref="tab" class="gl-mt-3" :lazy="lazy" v-on="$listeners">
-        <template slot="title">
+    <gl-tab ref="tab" class="gl-mt-3" :lazy="lazy" @update:active="active = $event">
+        <template #title>
             <span :data-testid="titleTestid">{{ __(title)}}</span>
             <gl-badge v-if="showCount" size="sm" class="gl-tab-counter-badge">
                 {{ titleCount }}

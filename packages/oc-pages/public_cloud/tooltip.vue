@@ -4,7 +4,7 @@ import Deployment from './components/Deployment.vue'
 import Region from './components/Region.vue'
 import Account from './components/Account.vue'
 import ResourceType from './components/ResourceType.vue'
-import Vue from 'vue'
+import {nextTick} from 'vue'
 
 export default {
   name: 'Tooltip',
@@ -74,10 +74,10 @@ export default {
     async item(val) {
       this.zIndex = -1
       this.opacity = 0
-      await Vue.nextTick()
+      await nextTick()
       this.adjustedLeft = this.calcLeft()
       this.adjustedTop = this.calcTop()
-      await Vue.nextTick()
+      await nextTick()
       this.zIndex = 5
       this.opacity = 1
     }

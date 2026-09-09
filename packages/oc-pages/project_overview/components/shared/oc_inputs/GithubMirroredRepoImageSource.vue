@@ -1,5 +1,5 @@
 <script>
-import Vue from 'vue'
+import {nextTick} from 'vue'
 import axios from '~/lib/utils/axios_utils'
 import {GlFormCheckbox} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
@@ -33,7 +33,6 @@ export default {
     },
     data() {
         const importHandler = new GithubImportHandler()
-        importHandler.loadRepos()
         const data =  {
             importHandler,
             branch: null,
@@ -204,6 +203,16 @@ export default {
             }
         },
     },
+    created() {
+        /*
+         * Through `this`, not the instance data() built: Vue 3 hands the
+         * component a reactive proxy of that object, and loadRepos writes its
+         * status onto whatever it was called on. Starting it in data() wrote to
+         * the raw instance, so nothing re-rendered and the card sat on its
+         * loading spinner forever.
+         */
+        this.importHandler.loadRepos()
+    },
     async mounted() {
         this.updateValue()
         const github_project = this.card.properties.find(prop => prop.name == 'github_project')?.value
@@ -212,7 +221,7 @@ export default {
             this.github_project = github_project
         }
 
-        Vue.nextTick(() => {
+        nextTick(() => {
             this.branch = this.card.properties.find(prop => prop.name == 'branch')?.value
             if(!this.branch) {this.useDefaultBranch = true}
         })

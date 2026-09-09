@@ -110,7 +110,7 @@ export default {
         primaryPropsDelete() {
             return {
                 text: __("Delete"),
-                attributes: [{ category: "primary" }, { variant: "danger" }],
+                attributes: {category: "primary", variant: "danger"},
             };
         },
 
@@ -334,7 +334,7 @@ export default {
                 <slot name="content" v-bind="card"></slot>
 
                 <div v-if="_children.length > 0">
-                    <!-- could also be v-on="$listeners" -->
+                    <!-- could also be v-bind="$attrs" -->
                     <oc-card
                             v-for="card in _children"
                             :key="card.name"

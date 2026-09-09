@@ -1,12 +1,11 @@
 <script>
 import {lookupKey, setLocalStorageKey} from '../../../storage-keys'
 import {GlFormInput, GlFormInputGroup} from '@gitlab/ui'
-import Vue from 'vue'
 export default {
     name: 'ExperimentalSettingInput',
     components: {GlFormInput, GlFormInputGroup},
     props: {
-        option: String
+        option: Object
     },
     data() {
         return {

@@ -8,3 +8,9 @@ dist/
 # linted. Lint packages/oc-pages directly instead.
 src/gitlab-oc/
 
+
+# Verbatim copies of the fork's @vue/compat shims (see the header in each).
+# They lint against gitlab's own plugin set, not ours -- our config has no
+# @gitlab/require-i18n-strings, and eslint errors on the disable comment for a
+# rule it cannot find. Editing them to suit would defeat the point of copying.
+src/assets/javascripts/vue3compat/

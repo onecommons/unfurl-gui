@@ -1,4 +1,3 @@
-import Vue from 'vue'
 import _ from 'lodash'
 const ERROR_LEVELS = ['minor', 'major', 'critical']
 function stateFn() {
@@ -28,7 +27,7 @@ const mutations = {
         state.errors.push(err)
     },
     clearErrors(state) {
-        Vue.set(state, 'errorsClearedTo', state.errors.length)
+        state['errorsClearedTo'] = state.errors.length
     }
 }
 

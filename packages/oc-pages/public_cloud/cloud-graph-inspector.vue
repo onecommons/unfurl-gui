@@ -87,7 +87,7 @@ export default {
     this.restoreFromLocation()
     window.addEventListener('popstate', this.onPopState)
   },
-  beforeDestroy() {
+  beforeUnmount() {
     window.removeEventListener('popstate', this.onPopState)
   },
   methods: {
@@ -187,7 +187,7 @@ export default {
       return ''
     },
     toggleGroup(label) {
-      this.$set(this.expanded, label, !this.isExpanded(label))
+      this.expanded[label] = !this.isExpanded(label)
     },
     isExpanded(label) {
       return this.expanded[label] !== false

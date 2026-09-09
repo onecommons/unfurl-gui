@@ -4,11 +4,10 @@
  * the number field would lose ~38px of chrome that the committed screenshot
  * baselines contain.
  */
-import { connect, h, mapProps, mapReadPretty } from '@formily/vue'
+import {h, mapProps, mapReadPretty} from '@formily/vue'
 import { GlFormInput, GlIcon } from '@gitlab/ui'
-import { defineComponent } from 'vue-demi'
 import { PreviewText } from './preview-text'
-import { stylePrefix } from './shared'
+import {connect, defineAdapter, stylePrefix} from './shared'
 
 const toNumber = value => {
     if (value === '' || value === null || value === undefined) return undefined
@@ -16,7 +15,7 @@ const toNumber = value => {
     return Number.isNaN(parsed) ? undefined : parsed
 }
 
-const GlInputNumber = defineComponent({
+const GlInputNumber = defineAdapter({
     name: 'GlInputNumber',
     inheritAttrs: false,
     props: {

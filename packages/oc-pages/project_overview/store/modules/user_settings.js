@@ -1,4 +1,3 @@
-import Vue from 'vue'
 
 const LOCALSTORAGE_KEY = 'us'
 
@@ -16,7 +15,7 @@ const mutations = {
   },
   // not meant to be used publicly
   _applyUserSetting(state, {key, value}) {
-    Vue.set(state, key, value)
+    state[key] = value
   }
 }
 

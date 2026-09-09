@@ -6,7 +6,6 @@ import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import {fetchLastCommit, getOrFetchCurrentBranch} from 'oc_vue_shared/client_utils/projects'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {localNormalize} from 'oc_vue_shared/lib/normalize'
-import Vue from 'vue'
 import _ from 'lodash'
 import axios from '~/lib/utils/axios_utils'
 
@@ -39,7 +38,7 @@ const mutations = {
     },
 
     setShareState(state, {shareState, name}) {
-        Vue.set(state.shareStates, name, shareState)
+        state.shareStates[name] = shareState
     }
 };
 const actions = {

@@ -1,6 +1,5 @@
 import '../../assets/standalone-base.css'
-import Vue from 'vue'
-import Vuex from 'vuex'
+import {createApp, h} from 'vue'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
@@ -26,15 +25,10 @@ const UnfurlCloudMirroredRepoImageSource = () => import('oc_pages/project_overvi
 const GithubMirroredRepoImageSource = () => import('oc_pages/project_overview/components/shared/oc_inputs/GithubMirroredRepoImageSource.vue')
 const UnfurlCNamedDNSZone = () => import('oc_pages/project_overview/components/shared/oc_inputs/UnfurlCNamedDNSZone.vue')
 
-Vue.use(Vuex)
-Vue.use(VueRouter)
-Vue.use(OcComponents)
-Vue.directive('gl-tooltip', GlTooltipDirective)
-
 // the shared updateValue mixin reads $route.params.slug
 const router = new VueRouter({
   mode: 'history',
-  routes: [{path: '/:slug*', component: {render: h => h('div')}}]
+  routes: [{path: '/:slug*', component: {render: () => h('div')}}]
 })
 
 const card = (name, properties) => ({
@@ -124,25 +118,35 @@ const ENTRIES = [
 // one component throwing should not cost the others their screenshots
 const Boundary = {
   props: {name: String},
+  /*
+   * Written as a Vue 3 render function, so it must opt out of @vue/compat's
+   * legacy render emulation -- that hands the render a Vue 2 `h` and turns
+   * $slots into the array form, where default is not callable.
+   */
+  compatConfig: {RENDER_FUNCTION: false},
+
   data: () => ({failed: null}),
   errorCaptured(err) { this.failed = err.message; return false },
-  render(h) {
+  render() {
     return h('div', {
-      attrs: {'data-testid': `fork-inputs-${this.name}`},
+      'data-testid': `fork-inputs-${this.name}`,
       class: 'gallery-entry'
     }, [
       h('h3', {class: 'gallery-title'}, this.name),
       this.failed
-        ? h('pre', {attrs: {'data-testid': `fork-inputs-${this.name}-error`}, class: 'gallery-error'}, this.failed)
-        : this.$slots.default
+        ? h('pre', {'data-testid': `fork-inputs-${this.name}-error`, class: 'gallery-error'}, this.failed)
+        : this.$slots.default?.()
     ])
   }
 }
 
-new Vue({
-  store,
-  router,
-  render: h => h('div', {class: 'gallery'}, ENTRIES.map(({name, component, props}) =>
-    h(Boundary, {props: {name}, key: name}, [h(component, {props: props || {}})])
+const app = createApp({
+  render: () => h('div', {class: 'gallery'}, ENTRIES.map(({name, component, props}) =>
+    h(Boundary, {name, key: name}, () => [h(component, props || {})])
   ))
-}).$mount('#fork-inputs')
+})
+app.use(store)
+app.use(router)
+app.use(OcComponents)
+app.directive('gl-tooltip', GlTooltipDirective)
+app.mount('#fork-inputs')

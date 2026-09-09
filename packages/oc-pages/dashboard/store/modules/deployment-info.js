@@ -2,6 +2,7 @@ import DeploymentItem from './deployment-info/deployment-item'
 import gql from 'graphql-tag'
 import graphqlClient from '../../graphql'
 import _ from 'lodash'
+import {freeze} from 'oc_vue_shared/client_utils/misc'
 
 const LOOKUP_JOBS = gql`
     query lookupJobs($fullPath: ID!){
@@ -142,7 +143,7 @@ const actions = {
             const pipelineId = pipeline.id.split('/').pop()
             for(const job of pipeline.jobs.nodes) {
                 const jobId = job.id.split('/').pop()
-                newJobsByPipelineId[pipelineId] = Object.freeze({...job, id: jobId})
+                newJobsByPipelineId[pipelineId] = freeze({...job, id: jobId})
             }
         }
         commit('setJobsByPipelineId', newJobsByPipelineId)

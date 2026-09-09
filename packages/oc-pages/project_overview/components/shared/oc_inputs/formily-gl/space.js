@@ -4,8 +4,8 @@
  * reaching into a Vue 2 vnode's `componentOptions`.
  */
 import { h } from '@formily/vue'
-import { defineComponent, isVue2 } from 'vue-demi'
-import { stylePrefix } from './shared'
+import {isVue2} from 'vue-demi'
+import {defineAdapter, stylePrefix} from './shared'
 import { useFormLayout } from './form-layout'
 
 const spaceSize = {small: 8, middle: 16, large: 24}
@@ -25,7 +25,7 @@ const unwrapFragment = children => {
     return inner ?? children
 }
 
-export const Space = defineComponent({
+export const Space = defineAdapter({
     name: 'FSpace',
     props: ['size', 'direction', 'align'],
     setup(props, {attrs, slots}) {

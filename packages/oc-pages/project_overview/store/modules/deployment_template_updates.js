@@ -8,6 +8,7 @@ import {unfurl_cloud_vars_url} from 'oc_vue_shared/client_utils/unfurl-invocatio
 import {declareAvailableProviders} from "../../../vue_shared/client_utils/environments";
 import {unfurlServerUpdate} from "../../../vue_shared/client_utils/unfurl-server";
 import { getOrFetchCurrentBranch, createBranch } from "../../../vue_shared/client_utils/projects";
+import {freeze} from 'oc_vue_shared/client_utils/misc'
 
 export const UPDATE_TYPE = {
     deployment: 'deployment', DEPLOYMENT: 'deployment',
@@ -275,7 +276,7 @@ Serializers = {
     },
     '*': function(any) {
         excludePrefixedFields(any)
-        Object.freeze(any)
+        freeze(any)
     }
 }
 

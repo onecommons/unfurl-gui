@@ -1,7 +1,8 @@
-import Vue from 'vue';
+import {createApp, h} from 'vue';
 import { parseBoolean } from '~/lib/utils/common_utils';
 import CiVariableSettings from './components/ci_variable_settings.vue';
 import createStore from './store';
+import {mountReplacing} from '../lib/mount-app';
 
 const mountCiVariableListApp = (containerEl) => {
   const {
@@ -36,13 +37,10 @@ const mountCiVariableListApp = (containerEl) => {
     environmentName
   });
 
-  return new Vue({
-    el: containerEl,
-    store,
-    render(createElement) {
-      return createElement(CiVariableSettings);
-    },
-  });
+  const app = createApp({render: () => h(CiVariableSettings)})
+  app.use(store)
+
+  return mountReplacing(app, containerEl);
 };
 
 export default () => {

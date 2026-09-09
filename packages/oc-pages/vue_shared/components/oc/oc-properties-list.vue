@@ -2,7 +2,8 @@
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import {DetectIcon, Status} from 'oc_vue_shared/components/oc'
-import {JSONView} from 'vue-json-component'
+import JSONView from 'vue-json-pretty'
+import 'vue-json-pretty/lib/styles.css'
 import Redacted from './redacted.vue'
 
 export default {
@@ -139,7 +140,6 @@ export default {
                                     <json-view
                                         v-if="property.value && typeof property.value == 'object'"
                                         :data="property.value"
-                                        :rootKey="property.name"
                                     />
                                     <a v-else-if="property.url || isUrl(property.value)" :href="property.url || property.value" rel="noopener noreferrer" target="_blank" >{{ property.value }}</a>
                                     <a v-else-if="isEmail(property.value)" :href="`mailto:${property.value}`" rel="noopener noreferrer" target="_blank">{{ property.value }}</a>
@@ -268,7 +268,7 @@ export default {
     font-size: 0.9em;
 }
 
-.gl-dark .json-view-item {
+.gl-dark .vjs-tree {
     filter: invert(1) hue-rotate(180deg) brightness(1.1);
 }
 </style>

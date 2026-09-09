@@ -14,7 +14,7 @@ import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
 import { fetchTypeRepositories, importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
-import Vue from 'vue'
+import {freeze} from 'oc_vue_shared/client_utils/misc'
 
 
 const DASHBOARD_PROVIDERS_LIMIT = 15 // this is conservative - in local testing up to 18 was OK
@@ -129,7 +129,7 @@ const mutations = {
     setVariableByEnvironment(state, {environmentName, variableName, variableValue}) {
         const variables = state.variablesByEnvironment[environmentName] || {}
         variables[variableName] = variableValue
-        Vue.set(state.variablesByEnvironment, environmentName, variables)
+        state.variablesByEnvironment[environmentName] = variables
     },
 
     setAdditionalProviders(state, additionalDashboardProviders) {
@@ -806,7 +806,7 @@ const getters = {
             const environmentName = typeof environment == 'string'? environment: environment?.name
             const dict = state.resourceTypeDictionaries[environmentName]
             let result
-            if (dict) result = Object.freeze(dict[typename?.name || typename])
+            if (dict) result = freeze(dict[typename?.name || typename])
 
             if(dict && !result) {
                 const qualifiedPrefix = `${typename?.name || typename}@`
@@ -964,7 +964,7 @@ const getters = {
     },
 
     allDeploymentPaths(state) {
-        return Object.freeze(state.deploymentPaths)
+        return freeze(state.deploymentPaths)
     },
 
     getTypeCategory(state) {

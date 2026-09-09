@@ -1,8 +1,5 @@
-import Vue from 'vue'
 import Vuex from 'vuex'
 import { inputsSchema } from './schema'
-
-Vue.use(Vuex)
 
 /*
  * The smallest store oc_inputs.vue will run against: the five getters it maps,

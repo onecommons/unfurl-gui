@@ -95,7 +95,17 @@ export const fields =  async function() {
 }
 
 
-export const FormProvider = async() => (await formilyVue()).FormProvider
+/*
+ * formily-gl is awaited first even though FormProvider comes from @formily/vue:
+ * its shared module is what opts @formily/vue's Fragment out of @vue/compat's
+ * legacy render handling, and FormProvider renders a Fragment. These two chunks
+ * load in parallel, so without this the provider can mount first and the
+ * Fragment reads $slots.default as a Vue 2 array.
+ */
+export const FormProvider = async() => {
+    await formilyGl()
+    return (await formilyVue()).FormProvider
+}
 export const FormLayout = async() => (await formilyGl()).FormLayout
 
 export const schemaFieldComponents = {}

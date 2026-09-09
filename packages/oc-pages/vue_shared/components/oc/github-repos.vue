@@ -112,7 +112,7 @@ export default {
                         :per-page="REPOS_PER_PAGE"
                         :total-items="filteredRepos(tab).length"
                         align="center"
-                        @input="page => $set(repoPage, tab, page)"
+                        @input="page => repoPage[tab] = page"
                     />
                     <!-- <div v-for="repo in reposByTab[tab]">{{repo.full_name}}</div> -->
                 </oc-tab>

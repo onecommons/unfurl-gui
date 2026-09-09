@@ -106,7 +106,7 @@ export default {
         primaryProps() {
             return {
                 text: __('Next'),
-                attributes: [{ category: 'primary' }, { variant: 'confirm' }, {disabled: this.nextIsDisabled}],
+                attributes: {category: 'primary', variant: 'confirm', disabled: this.nextIsDisabled},
             };
         },
         cancelProps() {

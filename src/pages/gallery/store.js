@@ -1,7 +1,4 @@
-import Vue from 'vue'
 import Vuex from 'vuex'
-
-Vue.use(Vuex)
 
 /*
  * The union of what the gallery's components map from the store, and nothing

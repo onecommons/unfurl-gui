@@ -5,10 +5,8 @@
  */
 import { h } from '@formily/vue'
 import { isArr, isValid } from '@formily/shared'
-import {
-    defineComponent, getCurrentInstance, inject, onBeforeUnmount, onMounted, provide, ref, watch
-} from 'vue-demi'
-import { stylePrefix } from './shared'
+import {getCurrentInstance, inject, onBeforeUnmount, onMounted, provide, ref, watch} from 'vue-demi'
+import {defineAdapter, stylePrefix} from './shared'
 
 export const FormLayoutDeepContext = Symbol('FormLayoutDeepContext')
 export const FormLayoutShallowContext = Symbol('FormLayoutShallowContext')
@@ -70,7 +68,7 @@ const useResponsiveFormLayout = (props, root) => {
     return layoutProps
 }
 
-export const FormLayout = defineComponent({
+export const FormLayout = defineAdapter({
     name: 'FFormLayout',
     props: {
         className: {},
@@ -106,7 +104,9 @@ export const FormLayout = defineComponent({
 
         const props = useResponsiveFormLayout(customProps, root)
         const deepLayout = useFormDeepLayout()
-        const newDeepLayout = ref({...deepLayout})
+        // .value, not the ref: spreading a Vue 3 ref copies its own __v_isRef,
+        // so ref() hands the copy straight back and .value is undefined
+        const newDeepLayout = ref({...deepLayout.value})
         const shallowProps = ref({})
 
         watch([props, deepLayout], () => {

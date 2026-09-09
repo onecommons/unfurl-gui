@@ -1,14 +1,11 @@
 import FileSelector from './file-selector.vue'
-import { createLocalVue, shallowMount } from '@vue/test-utils'
+import { shallowMount } from '@vue/test-utils'
 import Vuex from 'vuex'
 
 // file-tree pulls in @gitlab/ui, which ships untransformed esm that jest does
 // not transpile out of node_modules; shallowMount never renders it anyway
 jest.mock('@gitlab/ui', () => ({GlIcon: {render(h) { return h('span') }}}))
 
-
-const localVue = createLocalVue()
-localVue.use(Vuex)
 
 const HOME_PROJECT_PATH = 'jest/dashboard'
 const CURRENT_ENVIRONMENT_NAME = 'gcp'
@@ -207,9 +204,8 @@ describe('file selector component', () => {
       const {expected, props, select, output} = caseData
 
       const wrapper = shallowMount(FileSelector, {
-        localVue,
-        store,
-        propsData: props,
+        global: {plugins: [store]},
+        props,
       })
 
       const vm = wrapper.vm

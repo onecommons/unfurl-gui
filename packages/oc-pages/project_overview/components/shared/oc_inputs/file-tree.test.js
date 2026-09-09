@@ -87,7 +87,7 @@ function chevronOf(wrapper, id) {
 }
 
 function visibleIds(wrapper) {
-  return wrapper.findAll('[data-testid="file-tree-node"]').wrappers.map(w => w.attributes('data-id'))
+  return wrapper.findAll('[data-testid="file-tree-node"]').map(w => w.attributes('data-id'))
 }
 
 describe('file tree component', () => {
@@ -139,7 +139,7 @@ describe('file tree component', () => {
   it('checks only the selected node', async () => {
     const wrapper = mountTree()
 
-    const checked = () => wrapper.findAll('input[type="checkbox"]').wrappers
+    const checked = () => wrapper.findAll('input[type="checkbox"]')
       .filter(w => w.element.checked)
       .map(w => w.element.closest('[data-id]').dataset.id)
 

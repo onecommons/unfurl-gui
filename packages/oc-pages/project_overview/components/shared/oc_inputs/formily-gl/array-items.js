@@ -7,15 +7,18 @@
  */
 import { observer } from '@formily/reactive-vue'
 import { h, RecursionField, useField, useFieldSchema } from '@formily/vue'
-import { defineComponent } from 'vue-demi'
 import { ArrayBase } from './array-base'
-import { composeExport, stylePrefix } from './shared'
+import {composeExport, defineAdapter, stylePrefix} from './shared'
 
 const isAdditionComponent = schema => schema['x-component']?.indexOf('Addition') > -1
 
-const ArrayItemsInner = observer(defineComponent({
+const ArrayItemsInner = observer(defineAdapter({
     name: 'FArrayItems',
-    setup() {
+    // ArrayBase renders a Fragment, so nothing falls through on its own and
+    // Vue drops the field's attributes (data-testid among them) with a warning.
+    // Put them on the wrapper this renders instead.
+    inheritAttrs: false,
+    setup(props, {attrs}) {
         const fieldRef = useField()
         const schemaRef = useFieldSchema()
         const prefixCls = `${stylePrefix}-array-items`
@@ -33,8 +36,11 @@ const ArrayItemsInner = observer(defineComponent({
                         : schema.items
                     const key = getKey(item, index)
                     return h(ArrayBase.Item, {key, props: {index, record: item}}, {
+                        // the array matters: for a plain element Vue 3 re-normalizes
+                        // whatever the default slot returns, and a lone vnode falls
+                        // through that as an object with no .default and is dropped
                         default: () => h('div', {class: [`${prefixCls}-item-inner`], key}, {
-                            default: () => h(RecursionField, {props: {schema: items, name: index}}, {})
+                            default: () => [h(RecursionField, {props: {schema: items, name: index}}, {})]
                         })
                     })
                 })
@@ -48,7 +54,7 @@ const ArrayItemsInner = observer(defineComponent({
             }, null)
 
             return h(ArrayBase, {props: {keyMap}}, {
-                default: () => h('div', {class: [prefixCls]}, {
+                default: () => h('div', {class: [prefixCls], attrs: {...attrs}}, {
                     default: () => [renderItems(), renderAddition()]
                 })
             })
@@ -56,7 +62,7 @@ const ArrayItemsInner = observer(defineComponent({
     }
 }))
 
-const ArrayItemsItem = defineComponent({
+const ArrayItemsItem = defineAdapter({
     name: 'FArrayItemsItem',
     props: ['type'],
     setup(props, {attrs, slots}) {

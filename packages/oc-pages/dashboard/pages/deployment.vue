@@ -1,6 +1,6 @@
 <script>
 import {mapGetters, mapActions} from 'vuex'
-import Vue from 'vue'
+import {nextTick} from 'vue'
 import {OcTab, DeploymentResources} from 'oc_vue_shared/components/oc'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
@@ -15,7 +15,7 @@ import {getJobsData} from 'oc_vue_shared/client_utils/pipelines'
 import {fetchProjectPipelines} from 'oc_vue_shared/client_utils/projects'
 import {FLASH_TYPES} from 'oc_vue_shared/client_utils/oc-flash'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
-import {sleep} from 'oc_vue_shared/client_utils/misc'
+import {freeze, sleep} from 'oc_vue_shared/client_utils/misc'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
 
 const ONE_DAY = 24 * 60 * 60
@@ -81,7 +81,7 @@ export default {
         },
         state() {
             if(! this.environmentsAreReady) return null
-            return Object.freeze(this.getDeploymentDictionary(this.deploymentName, this.environmentName))
+            return freeze(this.getDeploymentDictionary(this.deploymentName, this.environmentName))
         },
         tableItems() {
             return this.getDashboardItems.filter(item => {
@@ -207,7 +207,7 @@ export default {
         async jobsData(val) {
             // imagine my surprise when the tabs are reordering themselves
             await sleep(100)
-            await Vue.nextTick()
+            await nextTick()
 
             this.setTabToConsoleIfNeeded()
         },

@@ -1,9 +1,5 @@
-import { createLocalVue, shallowMount } from '@vue/test-utils'
 import Vuex from 'vuex'
 import template_resources from './template_resources'
-
-const localVue = createLocalVue()
-localVue.use(Vuex)
 
 function createStore(mockGetters) {
     return new Vuex.Store({

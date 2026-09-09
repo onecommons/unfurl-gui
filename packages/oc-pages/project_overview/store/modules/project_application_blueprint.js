@@ -6,7 +6,7 @@ import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node
 import { repoToExportParams, fetchTypeRepositories, unfurlServerGetTypes } from  'oc_vue_shared/client_utils/unfurl-server'
 import { deepClone as cloneDeep } from 'oc_vue_shared/util'
 import _ from 'lodash'
-import Vue from 'vue'
+import {freeze} from 'oc_vue_shared/client_utils/misc'
 
 function computeDependencyMap(root) {
     try {
@@ -61,9 +61,9 @@ const state = () => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
     setProjectState(state, {key, value}) {
         if (!state[key] || typeof value !== 'object') {
-            Vue.set(state, key, value)
+            state[key] = value
         } else {
-            Vue.set(state, key, {...state[key], ...value})
+            state[key] = {...state[key], ...value}
         }
         state.clean = false
     },
@@ -71,9 +71,9 @@ const mutations = {
     setProjectStateBatch(state, updates) {
         updates.forEach(({key, value}) => {
             if (!state[key] || typeof value !== 'object') {
-                Vue.set(state, key, value)
+                state[key] = value
             } else {
-                Vue.set(state, key, {...state[key], ...value})
+                state[key] = {...state[key], ...value}
             }
         })
         state.clean = false
@@ -90,7 +90,7 @@ const mutations = {
                 case 'clean':
                     value = true; break
             }
-            Vue.set(state, key, value)
+            state[key] = value
         }
     },
 
@@ -103,7 +103,7 @@ const mutations = {
     onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) },
 
     addTempRepository(state, repo) {
-        Vue.set(state.repositories, repo.url, {...repo, temp: true})
+        state.repositories[repo.url] = {...repo, temp: true}
     }
 
 }
@@ -582,7 +582,7 @@ function storeResolver(typename) {
                     result = Object.assign(result, entry)
                 }
                 else result = entry
-                return Object.freeze(result)
+                return freeze(result)
             } else {
                 if(typename == 'ResourceType') {
                     const qualifiedPrefix = `${name}@`

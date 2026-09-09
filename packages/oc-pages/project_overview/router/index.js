@@ -1,4 +1,3 @@
-import Vue from 'vue';
 import VueRouter from 'vue-router';
 import { joinPaths } from '~/lib/utils/url_utility';
 import routes from './routes';
@@ -8,8 +7,6 @@ import { filterFromRoutes, createDenyList } from './sign-in-filter'
 import { FLASH_TYPES, hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
 import { HIDDEN_OPTION_KEYS, lookupKey, setLocalStorageKey, clearMatchingStorage, unfurlServerUrlDev, unfurlServerUrlOverride } from 'oc_vue_shared/storage-keys.js'
 import { setTransientUnfurlServerOverride, getTransientUnfurlServerOverride, healthCheckIfNeeded } from 'oc_vue_shared/client_utils/unfurl-server'
-
-Vue.use(VueRouter);
 
 const PERSISTED_QUERY_PARAMS = ['blueprintPath']
 
@@ -41,7 +38,7 @@ export default function createRouter(base, store) {
     });
 
     if(window.gon.unfurl_gui) {
-        router.onReady(() => {
+        router.isReady().then(() => {
             // hack to share router
             if(sessionStorage['unfurl-gui:route']) {
                 const route = JSON.parse(sessionStorage['unfurl-gui:route'])
@@ -53,8 +50,6 @@ export default function createRouter(base, store) {
         })
     }
 
-    const { isNavigationFailure, NavigationFailureType } = VueRouter
-
     router.og = {
         push: router.push.bind(router),
         replace: router.replace.bind(router),
@@ -63,17 +58,20 @@ export default function createRouter(base, store) {
 
     if(window.gon.unfurl_gui) {
         for(const fn of ['push', 'replace']) {
+            // Vue Router 4 resolves with a NavigationFailure rather than
+            // rejecting, so the redirect this guarded never gets here any more
+            // and a rejection means a guard threw. Still swallowed: the Vue
+            // Router 3 version discarded its Promise.reject, so nothing
+            // downstream has ever seen one.
             router[fn] = function(...args) {
-                return router.og[fn](...args).catch(e => {
-                    if (!isNavigationFailure(e, NavigationFailureType.redirected)) {
-                        Promise.reject(e)
-                    }
-                })
+                return router.og[fn](...args).catch(() => {})
             }
         }
     }
 
     router.resolve = function(to, ...args) {
+        // the vue-router facade proxies the router and unwraps refs on read,
+        // so this is the route object, not the Ref that Vue Router 4 holds
         const from = router.currentRoute
         let modified = false
         const modifiedTo = {query: {}, ...to}

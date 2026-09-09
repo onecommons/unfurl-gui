@@ -3,13 +3,12 @@
  * `x-component-props.type = 'textarea'` (as el-input did), so the two
  * @gitlab/ui controls sit behind one widget rather than behind Input.TextArea.
  */
-import { connect, h, mapProps, mapReadPretty } from '@formily/vue'
+import {h, mapProps, mapReadPretty} from '@formily/vue'
 import { GlFormInput, GlFormTextarea } from '@gitlab/ui'
-import { defineComponent } from 'vue-demi'
 import { PreviewText } from './preview-text'
-import { composeExport, passthrough, transformComponent } from './shared'
+import {composeExport, connect, defineAdapter, passthrough, transformComponent} from './shared'
 
-const GlInput = defineComponent({
+const GlInput = defineAdapter({
     name: 'GlInput',
     inheritAttrs: false,
     props: {type: {default: 'text'}},

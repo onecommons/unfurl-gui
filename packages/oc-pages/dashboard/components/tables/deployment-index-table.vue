@@ -11,7 +11,7 @@ import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import Vue from 'vue'
+import {nextTick} from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import MergeRequestsTable from './merge-requests-table.vue'
@@ -266,7 +266,7 @@ export default {
             const {deployment, environment} = this.target
             const deploymentItem = this.deploymentItemDirect({deployment, environment})
 
-            await Vue.nextTick() // wait until modal is closed before doing anything
+            await nextTick() // wait until modal is closed before doing anything
 
             switch(intent) {
                 case 'rename':

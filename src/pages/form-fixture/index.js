@@ -1,5 +1,5 @@
 import '../../assets/standalone-base.css'
-import Vue from 'vue'
+import {createApp, h} from 'vue'
 import VueRouter from 'vue-router'
 import {GlTooltipDirective} from '@gitlab/ui'
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
@@ -9,21 +9,20 @@ import OcInputs from 'oc_pages/project_overview/components/shared/oc_inputs.vue'
 import store from './store'
 import { card } from './schema'
 
-Vue.use(VueRouter)
-Vue.use(OcComponents)
-Vue.directive('gl-tooltip', GlTooltipDirective)
-
 // oc_inputs reads $route.params.slug in triggerSave
 const router = new VueRouter({
   mode: 'history',
-  routes: [{ path: '/:slug*', name: 'fixture', component: { render: h => h('div') } }]
+  routes: [{ path: '/:slug*', name: 'fixture', component: { render: () => h('div') } }]
 })
 
 // so a spec can read what the form model produced
 window.$store = store
 
-new Vue({
-  store,
-  router,
-  render: h => h('div', [h(OcInputs, { props: { card, wrapper: 'div' } })])
-}).$mount('#form-fixture')
+const app = createApp({
+  render: () => h('div', [h(OcInputs, { card, wrapper: 'div' })])
+})
+app.use(store)
+app.use(router)
+app.use(OcComponents)
+app.directive('gl-tooltip', GlTooltipDirective)
+app.mount('#form-fixture')

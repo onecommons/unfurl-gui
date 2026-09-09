@@ -1,5 +1,3 @@
-import Vue from 'vue';
-
 export {default as DetectIcon} from 'oc_vue_shared/components/oc/detect-icon.vue'
 export {default as StatusIcon} from 'oc_vue_shared/components/oc/Status.vue'
 export {default as ProjectIcon} from 'oc_vue_shared/components/oc/project-icon.vue'
@@ -26,7 +24,10 @@ export {default as TableWithoutHeader} from 'oc_vue_shared/components/oc/table_w
 export {default as BaseDeployDialog} from 'oc_vue_shared/components/oc/base-deploy-dialog.vue'
 
 export let CiVariableSettings, createCiVariablesStore
-export const SignIn = Vue.component("sign-in", { template: "", })
+// A placeholder route target -- standalone has no sign-in page of its own.
+// Registering it with an empty template needed the runtime compiler, which
+// the Vue 3 build leaves out.
+export const SignIn = {name: 'sign-in', render: () => null}
 // #!if !standalone
 import _CiVariableSettings from 'oc_vue_shared/oc_ci_variable_list/components/ci_variable_settings.vue'
 // #!if !standalone

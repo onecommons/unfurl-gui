@@ -1,4 +1,4 @@
-import {deepFreeze} from 'oc_vue_shared/client_utils/misc'
+import {deepFreeze, freeze} from 'oc_vue_shared/client_utils/misc'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {useImportedStateOnBreakpointOrElse} from 'oc_vue_shared/storage-keys'
 
@@ -39,8 +39,8 @@ const actions = {
         function pushContext(id, iterationCounter, i) {
             if(i == iterationCounter) {
                 const item = {id, ...context, context: {...context}}
-                Object.freeze(item.context)
-                Object.freeze(item)
+                freeze(item.context)
+                freeze(item)
                 items.push(item)
             }
         }

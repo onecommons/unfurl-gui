@@ -1,4 +1,4 @@
-import Vue from 'vue';
+import {createApp, h} from 'vue';
 import apolloProvider from './graphql';
 import MainComponent from './components/main.vue';
 import createRouter from './router';
@@ -7,11 +7,9 @@ import {GlTooltipDirective} from '@gitlab/ui';
 import __ from '~/locale';
 import {OcComponents} from 'oc_vue_shared/components/oc/plugin'
 import {normpath} from '../vue_shared/lib/normalize'
+import {mountReplacing} from '../vue_shared/lib/mount-app'
 
 import './assets/global.css';
-
-Vue.use(OcComponents)
-Vue.directive('gl-tooltip', GlTooltipDirective)
 
 
 export default (elemId='js-oc-project-overview') => {
@@ -47,7 +45,7 @@ export default (elemId='js-oc-project-overview') => {
 
   const router = createRouter(base, store);
 
-  Vue.prototype.$projectGlobal = {
+  const projectGlobal = {
     projectPath,
     buttonStar : {
       text: buttonStarText,
@@ -64,18 +62,19 @@ export default (elemId='js-oc-project-overview') => {
     ...element.dataset
   };
 
-  const vm =  new Vue({
-    el: element,
-    apolloProvider,
-    store,
-    router,
-    render(createElement) {
-      return createElement(MainComponent);
-    },
-  });
+  const app = createApp({render: () => h(MainComponent)})
+
+  app.use(store)
+  app.use(router)
+  app.use(apolloProvider)
+  app.use(OcComponents)
+  app.directive('gl-tooltip', GlTooltipDirective)
+  app.config.globalProperties.$projectGlobal = projectGlobal
+
+  const vm = mountReplacing(app, element)
 
   if(window.Cypress || sessionStorage['debug']) {
-    window.$store = vm.$store
+    window.$store = store
   }
 
   return vm

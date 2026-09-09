@@ -7,6 +7,10 @@ export default {
     // and honoured them; the wrapper below is a plain div, so they are bound
     // to the control explicitly instead
     inheritAttrs: false,
+    // formily reaches the control through $attrs, and @vue/compat empties the
+    // onXxx out of it to reproduce Vue 2 -- which silently cost this field its
+    // focus and blur, the two formily drives validation timing from
+    compatConfig: {INSTANCE_LISTENERS: false},
     components: {
         GlFormInput, GlIcon
     },
@@ -16,6 +20,14 @@ export default {
     data() {
         return {
             hidingPassword: true,
+        }
+    },
+    computed: {
+        // onInput is bound explicitly below; leaving it here too would fire
+        // formily's handler twice per keystroke
+        controlAttrs() {
+            const {onInput, ...rest} = this.$attrs
+            return rest
         }
     },
     methods: {
@@ -29,7 +41,7 @@ export default {
     <!-- gl-form-input has no suffix slot, so the toggle is laid over the field
          rather than sitting inside it as element's suffix did -->
     <div class="fake-password" :class="{hidingPassword}">
-        <gl-form-input v-bind="$attrs" :value="value" @input="input" type="text"/>
+        <gl-form-input v-bind="controlAttrs" :value="value" @input="input" type="text"/>
         <button
             type="button"
             class="fake-password-toggle"

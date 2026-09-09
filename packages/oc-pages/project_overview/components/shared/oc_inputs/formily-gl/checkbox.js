@@ -3,10 +3,10 @@
  * value is renamed: leaving `value` in place would collide with gl's own
  * `value` prop (the value emitted when the box is ticked).
  */
-import { connect, mapProps, mapReadPretty } from '@formily/vue'
+import {mapProps, mapReadPretty} from '@formily/vue'
 import { GlFormCheckbox } from '@gitlab/ui'
 import { PreviewText } from './preview-text'
-import { transformComponent } from './shared'
+import {connect, transformComponent} from './shared'
 
 const TransformCheckbox = transformComponent(GlFormCheckbox, {change: 'input'})
 

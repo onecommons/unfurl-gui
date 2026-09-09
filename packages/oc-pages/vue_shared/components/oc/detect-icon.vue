@@ -83,6 +83,9 @@ function detectIconCustomSVG(type) {
 export default {
     name: 'DetectIcon',
     components: { GlIcon },
+    // two possible roots, so nothing falls through on its own; the gl-icon
+    // branch binds $attrs itself (which in Vue 3 carries the listeners too)
+    inheritAttrs: false,
     props: {
         type: {
             type: [Object, String]
@@ -164,7 +167,7 @@ export default {
     <span class="custom-icon" :style="customStyle" v-if="customIcon">
         <img :style="customImageStyle" :src="customURL">
     </span>
-    <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" v-on="$listeners" />
+    <gl-icon v-else-if="detectedIcon" :name="detectedIcon" v-bind="$attrs" />
 </template>
 <style scoped>
 .custom-icon {

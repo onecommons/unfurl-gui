@@ -4,10 +4,9 @@ import AzureIcon from 'oc_vue_shared/components/oc/icons/azure.svg'
 import DigitalOceanIcon from 'oc_vue_shared/components/oc/icons/digital_ocean.svg'
 import K8sIcon from 'oc_vue_shared/components/oc/icons/k8s.svg'
 import GcpIcon from 'oc_vue_shared/components/oc/icons/gcp.svg'
-import Vue from 'vue'
+import {createApp, h, reactive} from 'vue'
 import _ from 'lodash'
 import Tooltip from './tooltip.vue'
-import Navbar from './navbar.vue'
 import CloudTable from './cloud-table.vue'
 import CloudGraphInspector from './cloud-graph-inspector.vue'
 import cloudGraphData from './cloud-graph-inspector-mock.data.json'
@@ -81,7 +80,7 @@ const BASE_FONT = 20
 const MAX_FONT_SIZE = 28
 const MINIMUM_SCALE = 1
 
-let tooltip, navbar
+let tooltipVm, tooltipProps, navbarProps
 let focus, zoom
 let zoomIn, zoomOut
 let focusI = -1
@@ -229,11 +228,11 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 
   function fastUpdateTooltip({item, expectedNode}) {
     if(expectedNode && hoveredNode != expectedNode) return
-    if(tooltip.isMousedOver) return
+    if(tooltipVm.isMousedOver) return
     if(item) tooltipFocus = item
-    tooltip.$props.item = tooltipFocus
-    tooltip.$props.left = tooltipCursorX + 10
-    tooltip.$props.top = tooltipCursorY + 10
+    tooltipProps.item = tooltipFocus
+    tooltipProps.left = tooltipCursorX + 10
+    tooltipProps.top = tooltipCursorY + 10
   }
 
   const updateTooltip = _.debounce(fastUpdateTooltip, 500)
@@ -505,8 +504,8 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 
     transform = e.transform
     if(tooltip?.$props?.item && transform.k == prevTransform.k) {
-      tooltip.$props.left += transform.x - prevTransform.x
-      tooltip.$props.top += transform.y - prevTransform.y
+      tooltipProps.left += transform.x - prevTransform.x
+      tooltipProps.top += transform.y - prevTransform.y
     }
   }
 
@@ -836,16 +835,28 @@ export default async function initPublicCloud() {
 
   setupWelcomeBanner()
 
-  const TooltipConstructor = Vue.extend(Tooltip)
-  const NavbarConstructor = Vue.extend(Navbar)
-  const MapControlsConstructor = Vue.extend(MapControls)
+  /*
+   * The tooltip is driven from the d3 code above rather than by a parent
+   * component, which in Vue 2 meant writing to its `$props`. Vue 3's `$props`
+   * is readonly, so the props live in an object out here that the wrapper's
+   * render function reads -- mutating it re-renders the tooltip.
+   */
+  tooltipProps = reactive({item: null, left: -1000, top: -1000})
+  const tooltipApp = createApp({
+    render: () => h(Tooltip, {...tooltipProps, ref: 'tooltip'})
+  })
 
-  tooltip = new TooltipConstructor()
-  navbar = new NavbarConstructor()
-  const mapControls = new MapControlsConstructor()
+  /*
+   * Navbar has never been mounted: the page has a #navbar div for it, but
+   * nothing was ever attached, so the `top` written below lands on an object
+   * no one renders. Kept that way -- making the navbar appear is a UI change,
+   * not part of the Vue 3 switch.
+   */
+  navbarProps = reactive({top: 0, focus: null})
+
   const lowerPaneData = buildDemoCloudTableData()
 
-  const LowerPaneConstructor = Vue.extend({
+  const lowerPaneApp = createApp({
     name: 'PublicCloudLowerPane',
     components: {
       CloudTable,
@@ -859,7 +870,7 @@ export default async function initPublicCloud() {
     created() {
       window.addEventListener('hashchange', this.syncWithHash)
     },
-    beforeDestroy() {
+    beforeUnmount() {
       window.removeEventListener('hashchange', this.syncWithHash)
     },
     methods: {
@@ -867,41 +878,36 @@ export default async function initPublicCloud() {
         this.showingInspector = hasGraphSelection()
       },
     },
-    render(createElement) {
+    render() {
       if(this.showingInspector) {
-        return createElement(CloudGraphInspector, {
-          props: {
-            graph: cloudGraphData,
-          },
-        })
+        return h(CloudGraphInspector, {graph: cloudGraphData})
       }
 
-      return createElement(CloudTable, {
-        props: {
-          data: lowerPaneData,
-        },
-      })
+      return h(CloudTable, {data: lowerPaneData})
     },
   })
-  const lowerPane = new LowerPaneConstructor()
 
-
-  tooltip.$mount('#tooltip')
-  lowerPane.$mount('#cloud-table')
-  mapControls.$mount('#map-controls')
+  tooltipVm = tooltipApp.mount('#tooltip').$refs.tooltip
+  lowerPaneApp.mount('#cloud-table')
+  /*
+   * Handlers rather than the `$on` these used to be wired with -- Vue 3 has no
+   * instance event emitter. They go through wrappers because zoomIn/zoomOut and
+   * setFocus are only assigned when the chart mounts, further down.
+   */
+  createApp(MapControls, {
+    onZoomin: (...args) => zoomIn(...args),
+    onZoomout: (...args) => zoomOut(...args),
+    onCenter: (...args) => setFocus(...args)
+  }).mount('#map-controls')
 
   const rerenderChart = () => {
     const {topMargin} = mountChart(data)
-    navbar.$props.top = topMargin
+    navbarProps.top = topMargin
   }
 
   rerenderChart()
   setupSplitter(rerenderChart)
   window.addEventListener('resize', _.debounce(rerenderChart, 500))
-
-  mapControls.$on('zoomin', zoomIn)
-  mapControls.$on('zoomout', zoomOut)
-  mapControls.$on('center', setFocus)
 
   document.scrollingElement.style.overflow = ''
 }

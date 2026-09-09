@@ -8,7 +8,6 @@ import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template
 import { importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'
 import {isConfigurable} from 'oc_vue_shared/client_utils/resource_types'
-import Vue from 'vue'
 
 function dateSuffix() {
     return Date.now().toString(36)
@@ -44,7 +43,7 @@ const state = baseState();
 const mutations = {
     resetTemplateResourceState(state) {
         for(const [key, value] of Object.entries(baseState())){
-            Vue.set(state, key, value)
+            state[key] = value
         }
     },
 
@@ -52,10 +51,10 @@ const mutations = {
     setInputValidStatus(state, {card, path, status}) {
         const cardName = card?.name || card
         if(!state.inputValidationStatus[cardName]) {
-            Vue.set(state.inputValidationStatus, cardName, {[path]: status})
+            state.inputValidationStatus[cardName] = {[path]: status}
         }
         else {
-            Vue.set(state.inputValidationStatus[card?.name || card], path, status)
+            state.inputValidationStatus[card?.name || card][path] = status
         }
     },
 
@@ -68,7 +67,7 @@ const mutations = {
         _state.deploymentTemplate = {...deploymentTemplate};
     },
 
-    // Stored cards are intentionally NOT frozen. Freezing them lets Vue 2 skip
+    // Stored cards are intentionally NOT frozen. Freezing them lets Vue skip
     // its deep-reactive walk, but unsafe in-place mutations elsewhere block
     // the flip. See unfurl.cloud/onecommons/unfurl-gui#149 for the call sites to fix and
     // the steps to re-enable. Look for `/* Object.freeze */` markers below.
@@ -77,7 +76,7 @@ const mutations = {
         if(!target.name) return;
         // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
         const card = /* Object.freeze */ ({ ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name})
-        Vue.set(_state.resourceTemplates, target.name, card)
+        _state.resourceTemplates[target.name] = card
     },
 
     createReference(_state, { dependentName, dependentRequirement, resourceTemplate, fieldsToReplace, constraintFieldsToReplace}){
@@ -88,11 +87,7 @@ const mutations = {
         if (resourceTemplate && resourceTemplate.name && _state.resourceTemplates[resourceTemplate.name]) {
             const prev = _state.resourceTemplates[resourceTemplate.name];
             // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
-            Vue.set(
-                _state.resourceTemplates,
-                resourceTemplate.name,
-                /* Object.freeze */ ({...prev, dependentName, dependentRequirement})
-            );
+            _state.resourceTemplates[resourceTemplate.name] = /* Object.freeze */ ({...prev, dependentName, dependentRequirement});
         } else if (resourceTemplate) {
             // Not yet in state — safe to annotate the caller's object.
             resourceTemplate.dependentName = dependentName;
@@ -108,7 +103,7 @@ const mutations = {
             : dependent.dependencies.map((d, i) => i === index ? dependency : d)
         // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
         const card = /* Object.freeze */ ({...dependent, dependencies: newDependencies})
-        Vue.set(_state.resourceTemplates, dependentName, card)
+        _state.resourceTemplates[dependentName] = card
     },
 
     deleteReference(_state, { dependentName, dependentRequirement }) {
@@ -127,7 +122,7 @@ const mutations = {
             })
             // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
             const card = /* Object.freeze */ ({...dependent, dependencies: newDependencies})
-            Vue.set(_state.resourceTemplates, dependentName, card)
+            _state.resourceTemplates[dependentName] = card
             _state.resourceTemplates = {..._state.resourceTemplates};
         }
     },
@@ -138,7 +133,7 @@ const mutations = {
     },
 
     updateLastFetchedFrom(state, {projectPath, templateSlug, environmentName, noPrimary, sourceDeploymentTemplate}) {
-        Vue.set(state, 'lastFetchedFrom', {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate});
+        state['lastFetchedFrom'] = {projectPath, templateSlug, environmentName, noPrimary: noPrimary ?? false, sourceDeploymentTemplate};
     },
 
     setContext(state, context) {
@@ -160,7 +155,7 @@ const mutations = {
         }
         // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
         const card = /* Object.freeze */ ({...template, properties: newProperties})
-        Vue.set(state.resourceTemplates, templateName, card)
+        state.resourceTemplates[templateName] = card
     },
 }
 

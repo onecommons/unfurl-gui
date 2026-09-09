@@ -1,4 +1,3 @@
-import Vue from 'vue';
 import VueRouter from 'vue-router';
 import {baseRouteNaive} from './base-route';
 import { joinPaths } from '~/lib/utils/url_utility';
@@ -6,7 +5,6 @@ import routes from './routes';
 import { PageNotFound } from 'oc_vue_shared/components/oc'
 import * as ROUTES from './constants'
 
-Vue.use(VueRouter);
 routes.push({ path: "*", component: PageNotFound })
 
 const base = baseRouteNaive(window.location.pathname);

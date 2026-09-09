@@ -7,8 +7,8 @@
 import { clone, isValid, uid } from '@formily/shared'
 import { ExpressionScope, Fragment, h, useField, useFieldSchema } from '@formily/vue'
 import { GlButton } from '@gitlab/ui'
-import { defineComponent, inject, onBeforeUnmount, provide, ref, toRefs } from 'vue-demi'
-import { composeExport, stylePrefix } from './shared'
+import {inject, onBeforeUnmount, provide, ref, toRefs} from 'vue-demi'
+import {composeExport, defineAdapter, stylePrefix} from './shared'
 
 const ArrayBaseSymbol = Symbol('ArrayBaseContext')
 const ItemSymbol = Symbol('ItemContext')
@@ -55,7 +55,7 @@ const getDefaultValue = (defaultValue, schema) => {
     }
 }
 
-const ArrayBaseInner = defineComponent({
+const ArrayBaseInner = defineAdapter({
     name: 'ArrayBase',
     props: {
         disabled: {type: Boolean, default: false},
@@ -69,7 +69,7 @@ const ArrayBaseInner = defineComponent({
     }
 })
 
-const ArrayBaseItem = defineComponent({
+const ArrayBaseItem = defineAdapter({
     name: 'ArrayBaseItem',
     props: ['index', 'record'],
     setup(props, {slots}) {
@@ -80,7 +80,7 @@ const ArrayBaseItem = defineComponent({
     }
 })
 
-const ArrayBaseIndex = defineComponent({
+const ArrayBaseIndex = defineAdapter({
     name: 'ArrayBaseIndex',
     setup(props, {attrs}) {
         const index = useIndex()
@@ -91,7 +91,7 @@ const ArrayBaseIndex = defineComponent({
     }
 })
 
-const ArrayBaseAddition = defineComponent({
+const ArrayBaseAddition = defineAdapter({
     name: 'ArrayBaseAddition',
     props: ['title', 'method', 'defaultValue'],
     setup(props, {attrs}) {
@@ -115,7 +115,7 @@ const ArrayBaseAddition = defineComponent({
     }
 })
 
-const ArrayBaseRemove = defineComponent({
+const ArrayBaseRemove = defineAdapter({
     name: 'ArrayBaseRemove',
     props: ['title', 'index'],
     setup(props, {attrs}) {

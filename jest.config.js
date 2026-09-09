@@ -80,6 +80,14 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
+    // the same @vue/compat redirections vue.config.js sets up for the build
+    "^vue$": "<rootDir>/src/assets/javascripts/vue3compat/vue.js",
+    "^vuex$": "<rootDir>/src/assets/javascripts/vue3compat/vuex.js",
+    "^vuex/dist/logger$": "<rootDir>/src/assets/javascripts/vue3compat/vuex_logger.js",
+    "^vue-router$": "<rootDir>/src/assets/javascripts/vue3compat/vue_router.js",
+    "^portal-vue$": "<rootDir>/src/assets/javascripts/vue3compat/portal_vue_vue3.js",
+    // .mjs in node_modules is not transformed here; the cjs build is the same module
+    "^vue-demi$": "vue-demi/lib/v3/index.cjs",
     "^~/(.*)$": "<rootDir>/src/assets/javascripts/$1",
     '^oc_vue_shared(.*)$': '<rootDir>/packages/oc-pages/vue_shared/$1',
     '^oc_dashboard(.*)$': '<rootDir>/packages/oc-pages/dashboard/$1',
@@ -194,7 +202,7 @@ module.exports = {
     '\\.mjs$': 'babel-jest',
     '\\.js$': 'babel-jest',
     '\\.ts$': 'babel-jest',
-    ".*\\.(vue)$": "@vue/vue2-jest"
+    ".*\\.(vue)$": "@vue/vue3-jest"
   },
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation

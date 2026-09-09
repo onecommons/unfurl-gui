@@ -8,22 +8,47 @@ import { observer } from '@formily/reactive-vue'
 import { uid } from '@formily/shared'
 import { h, useField } from '@formily/vue'
 import { GlIcon, GlPopover } from '@gitlab/ui'
-import { defineComponent, getCurrentInstance, onBeforeUnmount, onMounted } from 'vue-demi'
+import {getCurrentInstance, onBeforeUnmount, onMounted, provide} from 'vue-demi'
 import { FormBaseItem } from './form-item'
-import { stylePrefix } from './shared'
+import {defineAdapter, stylePrefix} from './shared'
 
 const getParentPattern = fieldRef => {
     const field = fieldRef.value
     return field?.parent?.pattern || field?.form?.pattern
 }
 
-const EditablePopover = observer(defineComponent({
+const EditablePopover = observer(defineAdapter({
     name: 'FEditablePopover',
     setup(props, {attrs, slots}) {
         const fieldRef = useField()
         const prefixCls = `${stylePrefix}-editable`
         const triggerId = `editable-${uid()}`
         const popoverId = `${triggerId}-popover`
+
+        /*
+         * bootstrap-vue renders popover content from a root of its own, created
+         * with `new Vue`. @vue/compat turns that into a whole new app, whose
+         * provides start empty -- so formily's RecursionField inside the
+         * popover cannot find the schema options and throws. Hand the chain
+         * over explicitly. Walking it beats naming the symbols: formily has six
+         * of its own plus this directory's two layout contexts, and a missing
+         * one fails the same silent way.
+         */
+        const inherited = getCurrentInstance()?.provides
+        const Reprovide = defineAdapter({
+            name: 'FEditableProvides',
+            setup(_, {slots: inner}) {
+                const seen = new Set()
+                for (let o = inherited; o && o !== Object.prototype; o = Object.getPrototypeOf(o)) {
+                    for (const key of Reflect.ownKeys(o)) {
+                        if (seen.has(key)) continue
+                        seen.add(key)
+                        provide(key, o[key])
+                    }
+                }
+                return () => inner.default?.()
+            }
+        })
 
         /*
          * Dismiss on an outside click, which el-popover did by default.
@@ -77,7 +102,7 @@ const EditablePopover = observer(defineComponent({
                         ref: 'popover',
                         class: [`${prefixCls}-popover`],
                         attrs: {id: popoverId, target: triggerId, triggers: 'click', placement: 'top', title}
-                    }, {default: () => [slots.default?.()]})
+                    }, {default: () => [h(Reprovide, {}, {default: () => slots.default?.()})]})
                 ]
             })
         }

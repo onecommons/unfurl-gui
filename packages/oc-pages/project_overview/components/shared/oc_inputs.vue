@@ -557,8 +557,12 @@ export default {
     <oc-tab title="Properties" @click="currentTabTitle = null"/>
     <oc-tab v-for="title in Object.keys(tabTitles)" :key="title" :title="title" @click="currentTabTitle = title"/>
   </gl-tabs>
-  <FormProvider v-if="form" v-show="displayForm" :form="form">
+  <!-- v-show belongs on FormLayout, not FormProvider: the provider renders a
+       fragment, and Vue 3 cannot apply a runtime directive to one. FormLayout
+       renders the form's own div, which is what was being hidden anyway. -->
+  <FormProvider v-if="form" :form="form">
     <FormLayout
+        v-show="displayForm"
         data-testid="oc-inputs-form"
         :breakpoints="[680]"
         :layout="['vertical', 'horizontal']"

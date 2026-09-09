@@ -29,7 +29,7 @@ function mountAt(hash) {
 // .group-toggle is the top level of the stack; nested subgroups reuse .group-label under
 // .subgroup-toggle, so match on the toggle to keep this to one level
 function groupLabels(wrapper) {
-    return wrapper.findAll('.group-toggle .group-label').wrappers.map(w => w.text())
+    return wrapper.findAll('.group-toggle .group-label').map(w => w.text())
 }
 
 function isOverview(wrapper) {

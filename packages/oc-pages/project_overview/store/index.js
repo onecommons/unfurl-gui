@@ -1,4 +1,3 @@
-import Vue from "vue";
 import Vuex from "vuex";
 import createLogger from "vuex/dist/logger";
 import environments from "./modules/environments";
@@ -13,8 +12,6 @@ import user_settings from './modules/user_settings'
 import health_check from 'oc_vue_shared/store_modules/health-check'
 import errors from 'oc_vue_shared/store_modules/errors'
 import merge_requests from 'oc_vue_shared/store_modules/merge-requests'
-
-Vue.use(Vuex);
 
 const development = process.env.NODE_ENV !== "production";
 

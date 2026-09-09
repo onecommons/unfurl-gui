@@ -6,7 +6,7 @@ module.exports = {
   },
 
   extends: [
-    "plugin:vue/essential",
+    "plugin:vue/vue3-essential",
     // XXX the code shared with gitlab-oc should use the same lints
     // disabling because they generate too much noise
     // "plugin:@gitlab/i18n",

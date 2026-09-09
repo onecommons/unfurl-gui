@@ -11,11 +11,11 @@
  */
 import { isVoidField } from '@formily/core'
 import { uid } from '@formily/shared'
-import { connect, h, mapProps } from '@formily/vue'
+import {h, mapProps} from '@formily/vue'
 import { GlIcon, GlPopover } from '@gitlab/ui'
-import { defineComponent, provide, ref } from 'vue-demi'
+import {provide, ref} from 'vue-demi'
 import { FormLayoutShallowContext, useFormLayout } from './form-layout'
-import { composeExport, resolveComponent, stylePrefix } from './shared'
+import {composeExport, connect, defineAdapter, resolveComponent, stylePrefix} from './shared'
 
 const ICON_MAP = {
     error: 'error',
@@ -33,7 +33,7 @@ const ICON_MAP = {
 let extraRenderer = null
 export const registerExtraRenderer = fn => { extraRenderer = fn }
 
-export const FormBaseItem = defineComponent({
+export const FormBaseItem = defineAdapter({
     name: 'FormItem',
     props: {
         className: {},

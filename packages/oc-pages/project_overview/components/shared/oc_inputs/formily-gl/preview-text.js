@@ -7,14 +7,13 @@
  */
 import { isArr, isValid } from '@formily/shared'
 import { h } from '@formily/vue'
-import { defineComponent } from 'vue-demi'
-import { stylePrefix } from './shared'
+import {defineAdapter, stylePrefix} from './shared'
 
 const prefixCls = `${stylePrefix}-preview-text`
 
 const text = value => (isValid(value) && value !== '' ? value : 'N/A')
 
-const Input = defineComponent({
+const Input = defineAdapter({
     name: 'FPreviewTextInput',
     props: ['value'],
     setup(props, {attrs}) {
@@ -24,7 +23,7 @@ const Input = defineComponent({
     }
 })
 
-const Select = defineComponent({
+const Select = defineAdapter({
     name: 'FPreviewTextSelect',
     props: ['value', 'options', 'multiple'],
     setup(props, {attrs}) {

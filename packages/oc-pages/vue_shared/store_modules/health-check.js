@@ -1,6 +1,5 @@
 import {sleep} from '../client_utils/misc'
 import { XhrIFrame } from '../client_utils/crossorigin-xhr'
-import Vue from 'vue'
 
 const BASE_POLLING_INTERVAL = 1000
 const BACKOFF_EXPONENT = 1.25
@@ -24,34 +23,30 @@ const state = stateFn()
 const mutations = {
     _addUrlPoll(state, {url, name, initialStatus}) {
         state.urlPolls[name] = () => xhrIframe.doXhr('GET', url).then(res => res.data)
-        Vue.set(state.statuses, name, initialStatus)
+        state.statuses[name] = initialStatus
     },
     clearPollingStateFor(state, name) {
-        Vue.delete(state.urlPolls, name)
-        Vue.delete(state.etas, name)
-        Vue.delete(state.statuses, name)
+        delete state.urlPolls[name]
+        delete state.etas[name]
+        delete state.statuses[name]
     },
     markUrlPending(state, name) {
-        Vue.set(state.statuses, name, 'PENDING')
+        state.statuses[name] = 'PENDING'
     },
     completeUrlPolling(state, name) {
         delete state.urlPolls[name]
-        Vue.set(state.statuses, name, 'COMPLETE')
+        state.statuses[name] = 'COMPLETE'
     },
     setPollingLoopStarted(state) {
         state.pollingLoopStarted = true
     },
     insertEta(state, {name, deployTime, readinessEstimate}) {
         const value = (deployTime - Date.now()) / 1000 + readinessEstimate
-        Vue.set(
-            state.etas,
-            name,
-            Math.max(value, 0)
-        )
+        state.etas[name] = Math.max(value, 0)
     },
     decrimentEtas(state, quantity=1000) {
         Object.entries(state.etas).forEach(([key, value]) => {
-            Vue.set(state.etas, key, Math.max(value - quantity / 1000, 0))
+            state.etas[key] = Math.max(value - quantity / 1000, 0)
         })
     }
 }

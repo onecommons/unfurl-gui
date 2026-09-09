@@ -1,4 +1,3 @@
-import Vue from "vue";
 import Vuex from "vuex";
 // TODO move these modules to vue_shared
 import deployments from '../../project_overview/store/modules/deployments'
@@ -15,8 +14,6 @@ import health_check from 'oc_vue_shared/store_modules/health-check'
 import errors from 'oc_vue_shared/store_modules/errors'
 import merge_requests from 'oc_vue_shared/store_modules/merge-requests'
 import {createCiVariablesStore} from 'oc_vue_shared/components/oc'
-
-Vue.use(Vuex);
 
 const development = process.env.NODE_ENV !== "production";
 
