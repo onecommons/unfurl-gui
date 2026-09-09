@@ -46,14 +46,19 @@ const actions = {
         }
         let iterationCounter = 0
 
-        const environments = rootGetters.getEnvironments
-
+        /*
+         * A copy: getEnvironments hands back state.projectEnvironments itself,
+         * so pushing onto it appended 'defaults' to the store for good -- once
+         * per loadDashboard, from an action rather than a mutation. Vuex 4's
+         * strict mode reports it; the duplicates were there before it did.
+         */
+        const environments = [...rootGetters.getEnvironments]
 
         if(rootGetters.getDeploymentDictionaries.some(dep => dep._environment == 'defaults')) {
             environments.push(rootGetters.lookupEnvironment('defaults'))
         }
 
-        for(const environment of rootGetters.getEnvironments) {
+        for(const environment of environments) {
             deepFreeze(environment)
             context.deployment = null; context.application = null; context.resource = null; context.type = null;
             const i = ++iterationCounter
