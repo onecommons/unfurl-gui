@@ -100,8 +100,14 @@ const EditablePopover = observer(defineAdapter({
                     renderTrigger(),
                     h(GlPopover, {
                         ref: 'popover',
-                        class: [`${prefixCls}-popover`],
-                        attrs: {id: popoverId, target: triggerId, triggers: 'click', placement: 'top', title}
+                        // cssClasses, not class: gl-popover passes it through as
+                        // b-popover's custom-class, which is what reaches the
+                        // .popover element the portal renders. A plain class
+                        // landed on b-popover, which renders nothing in place.
+                        attrs: {
+                            cssClasses: [`${prefixCls}-popover`],
+                            id: popoverId, target: triggerId, triggers: 'click', placement: 'top', title
+                        }
                     }, {default: () => [h(Reprovide, {}, {default: () => slots.default?.()})]})
                 ]
             })

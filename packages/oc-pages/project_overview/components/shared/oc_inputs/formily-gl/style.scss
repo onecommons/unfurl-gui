@@ -312,6 +312,33 @@ $label-top-line-height: 40px;
         display: block;
     }
 
+    /*
+     * gl-popover caps itself at 17.5rem, which is narrower than the nested
+     * form this one holds -- the generate buttons hung outside the frame.
+     * 32rem is the width GitLab's own wide-popover rule uses. Compounded with
+     * .gl-popover so it wins regardless of stylesheet order.
+     */
+    /*
+     * gl-popover caps itself at 17.5rem, narrower than the nested form this
+     * one holds, so the in-flow content was being clipped. 32rem is the width
+     * GitLab own wide-popover rule uses; compounded with .gl-popover so it
+     * wins regardless of stylesheet order.
+     *
+     * The right gutter is what pulls the generate button inside. It is
+     * gl-absolute, so it adds nothing to the width the popover sizes itself
+     * to and sits just past the control -- widening alone never helps, since
+     * the control takes the extra and the button tracks it (measured: 107px
+     * outside at both 325px and 434px wide). Padding narrows the content box
+     * instead, so the button lands in the gutter. 7.5rem clears its 107px.
+     */
+    &-popover.gl-popover {
+        max-width: 32rem;
+
+        .popover-body {
+            padding-right: 7.5rem;
+        }
+    }
+
     .#{$prefix}-editable-edit-btn {
         transition: all 0.25s ease-in-out;
 
