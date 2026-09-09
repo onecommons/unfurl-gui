@@ -2,6 +2,7 @@
 import {mapGetters} from 'vuex'
 import {GlBreadcrumb} from '@gitlab/ui'
 import * as routes from '../router/constants'
+import {sectionLinkProps} from '../router/section-link'
 
 export default {
     name: 'DashboardBreadcrumbs',
@@ -16,7 +17,7 @@ export default {
         ...mapGetters(['getHomeProjectName']),
         _items() {
             return [
-                {avatarPath: document.querySelector('.project-avatar')?.src, text: this.getHomeProjectName, to: {name: routes.OC_DASHBOARD_HOME, query: {}}},
+                {avatarPath: document.querySelector('.project-avatar')?.src, text: this.getHomeProjectName, ...sectionLinkProps(this.$router, {name: routes.OC_DASHBOARD_HOME, query: {}})},
                 ...this.items
             ]
         }

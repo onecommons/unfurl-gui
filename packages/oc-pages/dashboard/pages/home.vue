@@ -15,6 +15,7 @@ import {mapGetters} from 'vuex';
 import _ from 'lodash';
 import { __ } from '~/locale';
 import * as routes from '../router/constants'
+import {sectionLinkProps as linkProps, sectionLinkHref as linkHref} from '../router/section-link'
 
 import { GlMarkdown, GlCard, GlIcon } from '@gitlab/ui'
 
@@ -87,13 +88,17 @@ export default {
         totalDeploymentsSecondary() {
             if(this.mergeRequests.length > 0) {
                 return {
-                    link: {name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'merge requests'}},
+                    link: this.sectionLinkHref({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'merge requests'}}),
                     text: `${this.mergeRequests.length} Merge Request${this.mergeRequests.length == 1? '': 's'}`
                 }
             } else {
                 return {link: null, text: null}
             }
         }
+    },
+    methods: {
+        sectionLinkProps(to) { return linkProps(this.$router, to) },
+        sectionLinkHref(to) { return linkHref(this.$router, to) },
     },
     mounted() {
         const cloneInstructions = document.querySelector('.gl-markdown a[href$="#clone-instructions"]')
@@ -120,16 +125,16 @@ export default {
                     class="qcard1"
                     :secondary-link="!standalone && '/projects/new#create_from_template'" />
                 <quantity-card
-                    :to="{name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}"
+                    v-bind="sectionLinkProps({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX})"
                     :count="environmentsCount"
                     s="Environment"
                     p="Environments"
                     class="qcard2"
-                    :secondary-link="!standalone && {name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}}"/>
+                    :secondary-link="!standalone && sectionLinkHref({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}})"/>
             </div>
             <div class="gl-flex gl-flex-wrap gl-justify-center">
                 <quantity-card
-                    :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'running'}}"
+                    v-bind="sectionLinkProps({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX, query: {show: 'running'}})"
                     :count="runningDeploymentsCount"
                     s="Running Deployment"
                     p="Running Deployments"
@@ -137,7 +142,7 @@ export default {
                     :secondary-link="standalone && '#new-deployment'" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
-                    :to="{name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}"
+                    v-bind="sectionLinkProps({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX})"
                     :count="totalDeploymentsCount"
                     s="Total Deployment"
                     p="Total Deployments"

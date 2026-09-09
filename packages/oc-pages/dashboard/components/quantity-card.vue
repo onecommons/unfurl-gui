@@ -10,6 +10,8 @@ export default {
             type: [Object, String],
             default: () =>  '#'
         },
+        // set instead of `to` to navigate for real rather than route in place
+        href: String,
         secondaryLink: [String, Object],
         secondaryLinkText: {
             type: String,
@@ -26,6 +28,9 @@ export default {
         cardCss() {
             return {backgroundColor: this.color}
         },
+        linkProps() {
+            return this.href? {href: this.href}: {to: this.to}
+        },
         secondaryLinkProps() {
             if(typeof this.secondaryLink == 'string') return {href: this.secondaryLink}
             return {to: this.secondaryLink}
@@ -41,7 +46,7 @@ export default {
 </script>
 <template>
     <div class="card-container">
-        <router-link :to="to">
+        <component :is="href? 'a': 'router-link'" v-bind="linkProps">
             <div class="card" :style="cardCss">
                 <span class="count"> {{count}} </span>
                 <span class="text"> {{n__(s, p, count)}} </span>
@@ -51,7 +56,7 @@ export default {
                     </component>
                 </div>
             </div>
-        </router-link>
+        </component>
     </div>
 </template>
 
