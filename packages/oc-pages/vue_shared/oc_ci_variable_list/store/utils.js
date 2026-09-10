@@ -26,6 +26,11 @@ export const prepareDataForDisplay = (variables) => {
 
 export const prepareDataForApi = (variable, destroy = false) => {
   const variableCopy = cloneDeep(variable);
+  // The modal only ever writes secret_value, but 19.3's VariablesController
+  // permits `value` and drops secret_value silently -- a create then fails
+  // masked validation, and an edit saves the stale `value` set for display.
+  // Send both until the fork upgrade lands, as pipelines.js and envvars.js do.
+  variableCopy.value = variableCopy.secret_value;
   variableCopy.protected = variableCopy.protected_variable.toString();
   delete variableCopy.protected_variable;
   variableCopy.masked = variableCopy.masked.toString();
