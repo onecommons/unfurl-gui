@@ -159,7 +159,11 @@ export default {
                 // then re-read -- the seed is write-shaped and lacks the resource
                 // templates the page needs, which only the export supplies.
                 this.addProjectEnvironment(created)
-                await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+                // Not awaited: this re-read can hang (its promise does not always
+                // settle), and blocking on it strands the dialog with no error --
+                // the seed above is what the page needs to render meanwhile.
+                this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+                    .catch(e => console.error('ocFetchEnvironments', e))
             } catch(e) {
                 this.createError({
                     message: `@createEnvironmentWithoutCluster: ${e.message}`,
