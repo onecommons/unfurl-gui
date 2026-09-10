@@ -66,8 +66,26 @@ Cypress.log = function (opts, ...other) {
   return origLog(opts, ...other)
 }
 
+// Browser-side diagnostics are buffered rather than pushed through cy.task at
+// the moment they happen. cy.task called from a console hook or a window event
+// enqueues a command *inside* whatever query chain is retrying, which breaks
+// the chain -- the next query then yields null ("expected null to exist",
+// "cy.find() ... subject received was null") even though the element is there.
+const LOG_BUF = []
+const emit = line => { if (LOG_BUF.length < 800) LOG_BUF.push(line) }
+function flushLogs() {
+  if (!LOG_BUF.length) return
+  const lines = LOG_BUF.splice(0, LOG_BUF.length)
+  cy.task('log', lines.join('\n'), {log: false})
+}
+afterEach(flushLogs)
+
 before(() => {
   Cypress.on('window:before:load', win => {
+    // Chrome's default 10 frames truncates exactly where it matters: vuex's
+    // strict-mode watcher runs synchronously off the proxy set trap, so the
+    // code that actually mutated state sits below the cut.
+    try { win.Error.stackTraceLimit = 60 } catch (_) {}
     console.log(win.gc)
     typeof win.gc == 'function' && win.gc()
     // Pipe browser console output into cypress task logs so we can see why
@@ -86,7 +104,7 @@ before(() => {
       win.console[level] = (...args) => {
         try {
           const msg = args.map(serialize).join(' ').replace(/\n/g, ' \\n ')
-          cy.task('log', `[browser ${level}] ${msg}`, {log: false})
+          emit(`[browser ${level}] ${msg}`)
           // When Apollo throws `Cannot create property '__typename' on number 'X'`,
           // dump where in the most-recent export payload that numeric value lives,
           // plus a synthesized stack so we can see the call site.
@@ -110,7 +128,7 @@ before(() => {
               paths,
               stack: new Error('apollo __typename trap').stack
             }
-            cy.task('log', `[diag __typename] ${JSON.stringify(diag).slice(0, 2000)}`, {log: false})
+            emit(`[diag __typename] ${JSON.stringify(diag).slice(0, 2000)}`)
           }
         } catch (_) {}
         orig(...args)
@@ -142,12 +160,12 @@ before(() => {
       }
     }
     win.addEventListener('error', e => {
-      try { cy.task('log', `[browser windowerror] ${e.message} at ${e.filename}:${e.lineno}:${e.colno} stack=${(e.error && e.error.stack || '').replace(/\n/g, ' \\n ')}`, {log: false}) } catch (_) {}
+      emit(`[browser windowerror] ${e.message} at ${e.filename}:${e.lineno}:${e.colno} stack=${(e.error && e.error.stack || '').replace(/\n/g, ' \\n ')}`)
     })
     win.addEventListener('unhandledrejection', e => {
       const r = e.reason
       const msg = r instanceof Error ? `${r.message} | ${(r.stack || '').replace(/\n/g, ' \\n ')}` : serialize(r)
-      try { cy.task('log', `[browser unhandledrejection] ${msg}`, {log: false}) } catch (_) {}
+      emit(`[browser unhandledrejection] ${msg}`)
     })
     // Catch notFoundError() calls explicitly with a stack trace so we know
     // which component triggered the 404 overlay.
@@ -158,7 +176,7 @@ before(() => {
       el.setAttribute = function (name, value) {
         if (name === 'id' && value === '404-overlay') {
           const stack = new Error('notFoundError() called here').stack
-          try { cy.task('log', `[browser 404-overlay] ${stack}`, {log: false}) } catch (_) {}
+          emit(`[browser 404-overlay] ${stack}`)
         }
         return origSetAttribute(name, value)
       }
@@ -175,13 +193,25 @@ before(() => {
     if (err.stack && err.stack.includes('ProxyLogging.logIncomingRequest')) {
       return false
     }
-    try { cy.task('log', `[browser uncaught] ${err.message}\n${err.stack}`, {log: false}) } catch (_) {}
+    emit(`[browser uncaught] ${err.message}\n${err.stack}`)
     return false
   })
 
   // Per-command trace into cy.task('log') so the failing command
   // shows in the run output. Cypress's Test Runner UI displays
   // commands, but a headless run only logs the raw failure text.
+  // Trace commands into an array in the spec frame rather than through
+  // cy.task: a task enqueued from command:start lands at the tail of the
+  // hook's queue and is dropped when the queue aborts, so the failing
+  // command is exactly the one that never gets logged.
+  const TRACE = []
+  const t0 = Date.now()
+  const dumpTrace = (label) => {
+    if (!TRACE.length) return
+    cy.task('log', `[trace ${label}] ${JSON.stringify(TRACE.slice(-80))}`, {log: false})
+    TRACE.length = 0
+  }
+
   Cypress.on('command:start', (cmd) => {
     try {
       const name = cmd.attributes && cmd.attributes.name
@@ -194,7 +224,7 @@ before(() => {
           if (typeof a === 'object') return '{…}'
           return String(a)
         }).join(', ')
-        cy.task('log', `[cmd] ${name}(${argRepr})`, {log: false})
+        TRACE.push(`+${((Date.now() - t0) / 1000).toFixed(1)}s ${name}(${argRepr})`)
       }
     } catch(_) {}
   })
@@ -203,22 +233,21 @@ before(() => {
   // command queue tail so we can see what was on screen and which
   // step the assertion fired against. Helps when failures look like
   // "expected null to exist" with no element context.
-  Cypress.on('fail', (err) => {
+  Cypress.on('fail', (err, runnable) => {
     try {
-      // Dump the last 20 commands from cy.queue / cy.state('runnable')
-      const queue = cy.queue || (Cypress.cy && Cypress.cy.queue)
-      const commands = queue?.commands?.()
-      if (commands) {
-        const tail = commands.slice(-20).map(c => {
-          const a = c.attributes || c
-          const args = (a.args || []).map(x => {
-            try { return typeof x === 'string' ? x.slice(0, 60) : (typeof x === 'object' ? '{}' : String(x)) }
-            catch(_) { return '?' }
-          }).join(', ')
-          return `${a.name || '?'}(${args})`
-        })
-        cy.task('log', `[fail cmd-tail] ${JSON.stringify(tail)}`, {log: false})
-      }
+      // Which runnable failed (test body vs which hook) and on which command,
+      // stated rather than inferred -- mocha attributes an afterEach failure
+      // to the test that just ran, so the reporter line cannot tell them apart.
+      try {
+        const cur = cy.state('current')
+        const curArgs = (cur && cur.get('args') || []).map(a =>
+          typeof a === 'string' ? a.slice(0, 60) : (typeof a === 'object' ? '{…}' : String(a))).join(', ')
+        cy.task('log', `[fail where] type=${runnable && runnable.type} hook=${runnable && runnable.hookName} title=${runnable && runnable.title}`, {log: false})
+        cy.task('log', `[fail command] ${cur && cur.get('name')}(${curArgs})`, {log: false})
+        cy.task('log', `[fail message] ${err && err.message && err.message.split('\n')[0]}`, {log: false})
+      } catch(e) { cy.task('log', `[fail where] unreadable: ${e.message}`, {log: false}) }
+      flushLogs()
+      dumpTrace('at-failure')
       const win = cy.state('window')
       if (win && win.document) {
         const card = Array.from(win.document.querySelectorAll('[data-testid^="card-"]'))

@@ -47,15 +47,17 @@ Cypress.Commands.add('createGenericEnvironment', (options) => {
   cy.withStore()
   createEnvironmentButton().should('be.visible').click()
   cy.genericCompleteEnvironmentDialog({environmentName})
-  // No URL assertion here: Cypress's AUT window reference goes stale across the
-  // app's navigation -- cy.url() yields null and cy.state('window') reports the
-  // pre-navigation href, while the app's own window.location is correct. The DOM
-  // assertions below are what establish that we landed on the environment.
-  cy.contains(environmentName).should('exist')
-  // 'Generic' is unreachable text: cloudProviderFriendlyName falls back to
-  // 'Self-Hosted', and for a non-gcp/aws primary provider the whole provider
-  // block is v-if'd away anyway. Assert the provider card the env actually renders.
-  cy.get('[data-testid="card-_default_provider"]').should('exist')
+  // The page carries the name only as a disabled input's value, which
+  // cy.contains cannot see; the breadcrumb that does carry it as text is
+  // injected by GitLab's own app and arrives after our timeout. Assert
+  // oc-pages' own DOM instead.
+  cy.get('[data-testid="dashboard-environment-page"]', {timeout: BASE_TIMEOUT * 2})
+    .find('input')
+    .first()
+    .should('have.value', environmentName)
+  // a generic environment has no primary provider, so cloudProviderDisplayName
+  // falls back to this -- there is no oc-card on this page to assert against
+  cy.contains('Self-Hosted').should('exist')
 
   cy.wait(5000)
 
@@ -68,5 +70,11 @@ Cypress.Commands.add('createGenericEnvironment', (options) => {
     }
     cy.uncheckedCreateMail();
     cy.saveExternalResources()
+
+    // checkMail only reads the inputs on the current page, which we just typed
+    // into -- reload from the server first so this asserts the save persisted
+    // rather than that the form still holds our own input.
+    cy.visit(dashboardPath(`/-/environments/${environmentName}`))
+    cy.checkMail()
   }
 });

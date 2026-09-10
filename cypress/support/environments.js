@@ -170,6 +170,9 @@ function uncheckedCreateMail() {
 }
 
 function checkMail() {
+  // uncheckedCreateMail/createMailResource no-op without these, so verifying
+  // would assert against inputs that were never created.
+  if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
   const mailResourceName = slugify(MAIL_RESOURCE_NAME)
 
   cy.getInputOrTextarea(
