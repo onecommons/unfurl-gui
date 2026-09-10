@@ -47,7 +47,13 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                     if(secret_value || secret_value === 0 || data._destroy) {
                         envPatch.push({
                             key,
+                            // 15.11 permits only secret_value, 19.3 only value, and strong
+                            // params drops the unpermitted one silently -- leaving the
+                            // record with a nil value, which fails masked validation as
+                            // "Variables value is invalid" and aborts the whole commit.
+                            // Same fix as pipelines.js.
                             secret_value,
+                            value: secret_value,
                             environment_scope: environmentScope,
                             variable_type: 'env_var',
                             masked:  typeof secret_value == 'string' && (secret_value.length >= 8 && !secret_value.includes('\n')),
