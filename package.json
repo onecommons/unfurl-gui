@@ -88,7 +88,7 @@
     "babel-core": "^7.0.0-bridge.0",
     "babel-eslint": "^10.1.0",
     "babel-jest": "^29.6.0",
-    "cypress": "11.2.0",
+    "cypress": "14",
     "cypress-fail-fast": "^7.1.0",
     "cypress-file-upload": "^5.0.8",
     "cypress-wait-until": "^1.7.2",

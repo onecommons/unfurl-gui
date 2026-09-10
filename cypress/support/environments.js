@@ -44,6 +44,10 @@ Cypress.Commands.add('withEnvironment', (environmentName, cb) => {
   }), {timeout: BASE_TIMEOUT * 2,  interval: 500})
     .then(store => {
       const env = store.getters.lookupEnvironment(environmentName) || null
+      if(!env) {
+        const have = (store.getters.getEnvironments || []).map(e => e && e.name)
+        cy.task('log', `[env-lookup] miss "${environmentName}" -- store has ${JSON.stringify(have)}`, {log: false})
+      }
       cb && cb(env, store) // store in callback for convenience
       return env
     })

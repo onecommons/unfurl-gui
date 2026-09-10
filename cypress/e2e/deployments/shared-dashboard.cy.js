@@ -62,7 +62,6 @@ describe('Shared dashboard test', () => {
   })
 
   it('Can deploy the draft', () => {
-    Cypress.Cookies.debug(true)
 
     // cy.logout()    // gitlab is a piece of work
     // cy.clearCookies() // doesn't work?

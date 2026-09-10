@@ -12,8 +12,7 @@ export default defineConfig({
   video: false,
   numTestsKeptInMemory: 1,
   watchForFileChanges: false,
-  // enable for Cypress 12.x
-  // experimentalMemoryManagement: true,
+  experimentalMemoryManagement: true,
   e2e: {
     // We've imported your old cypress plugins here.
     // You may want to clean this up later by importing these.
@@ -22,7 +21,7 @@ export default defineConfig({
     // },
     setupNodeEvents,
     baseUrl: BASE_URL,
-    // enable for Cypress 12.x
-    // testIsolation: false,
+    // replaces Cypress.Cookies.defaults({preserve: /.*/}), removed in 12
+    testIsolation: false,
   },
 })

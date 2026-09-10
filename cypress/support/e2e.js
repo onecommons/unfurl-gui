@@ -39,10 +39,6 @@ const UNFURL_VALIDATION_MODE = Cypress.env('UNFURL_VALIDATION_MODE') || Cypress.
 
 const EXTERNAL = Cypress.env('EXTERNAL')
 
-Cypress.Cookies.defaults({
-  preserve: /.*/
-})
-
 function setIntercept() {
   if(UNFURL_SERVER_URL) {
     cy.task('log', `Setting intercept for ${UNFURL_SERVER_URL}`)
@@ -231,6 +227,12 @@ before(() => {
           .map(el => el.getAttribute('data-testid')).slice(0, 80)
         const url = win.location && win.location.href
         cy.task('log', `[fail url] ${url}`, {log: false})
+        try {
+          const st = win.$store && win.$store.state
+          const envs = (st && st.environments && st.environments.projectEnvironments) || []
+          cy.task('log', `[fail store envs] ${JSON.stringify(envs.map(e => e && e.name))}`, {log: false})
+          cy.task('log', `[fail envsReady] ${win.$store && win.$store.getters && win.$store.getters.environmentsAreReady}`, {log: false})
+        } catch(e) { cy.task('log', `[fail store envs] unreadable: ${e.message}`, {log: false}) }
         cy.task('log', `[fail card-* testids] ${JSON.stringify(card)}`, {log: false})
         cy.task('log', `[fail all testids (80 max)] ${JSON.stringify(testidsAll)}`, {log: false})
         const bodyHtml = win.document.body && win.document.body.innerHTML
