@@ -266,7 +266,12 @@ export async function createBranch(projectId, branch, ref) {
 export async function generateProjectAccessToken(projectId, options) {
     const _options = Object.assign({
         name: 'DashboardProjectAccessToken',
-        scopes: ['read_repository', 'read_registry']
+        scopes: ['read_repository', 'read_registry'],
+        // 19.3 rejects a create without this: ResourceAccessTokens::CreateService
+        // requires expires_at, and require_personal_access_token_expiry leaves no
+        // permissive branch. The ceiling is 365 days; stop a day short so a leap
+        // year or a timezone rounding can't push the value over it.
+        expires_at: new Date(Date.now() + 364 * 864e5).toISOString().slice(0, 10)
     }, options)
     _options.id = projectId
     return (await axios.post(`/api/v4/projects/${projectId}/access_tokens`, _options))?.data?.token
