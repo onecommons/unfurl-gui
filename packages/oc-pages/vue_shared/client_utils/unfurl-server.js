@@ -105,7 +105,13 @@ async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCreden
         defaultSendCredentials === 'public-aware' &&
         !window.gon.unfurl_gui
     const fetchProjectInfoPromise = shouldFetchProjectInfo
-        ? fetchProjectInfo(encodeURIComponent(projectPath)).then(pinfo => pinfo?.visibility)
+        // The lookup only decides whether to skip credentials. A project the
+        // instance doesn't host (a dashboard importing types from elsewhere)
+        // 404s here, and letting that reject would abort the fetch it was only
+        // trying to optimise -- fall back to sending credentials instead.
+        ? fetchProjectInfo(encodeURIComponent(projectPath))
+            .then(pinfo => pinfo?.visibility)
+            .catch(() => undefined)
         : null
     const [password, visibility] = await Promise.all([
         fetchUserAccessToken(),
