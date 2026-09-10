@@ -21,12 +21,19 @@ function computeDependencyMap(root) {
     } catch(e) {console.error(e)}
 }
 
+// Memoised per application root. This cache used to be stashed on `root`
+// itself, which is store state: Vue 2 ignored a newly added property, so
+// vuex's strict-mode watcher never saw the write, while Vue 3's proxy traps
+// it and strict mode throws -- aborting createNodeResource mid-way and
+// leaving the resource uncreated. Keyed weakly so the lifetime is unchanged.
+const dependencyMapCache = new WeakMap()
+
 function lookupAncestors(rt, root, mutable=false) {
-    let computedDependencyMap = mutable? root.computedDependencyMap: null
+    let computedDependencyMap = (mutable && root)? dependencyMapCache.get(root): null
     if(!computedDependencyMap) {
         computedDependencyMap = computeDependencyMap(root)
-        if(mutable)  {
-            root.computedDependencyMap = computedDependencyMap
+        if(mutable && root && computedDependencyMap)  {
+            dependencyMapCache.set(root, computedDependencyMap)
         }
     }
 

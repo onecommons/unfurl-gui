@@ -24,22 +24,19 @@ export default {
         return {ready: true}
     },
 
-    // MODE 3 and modelValue are one change: @vue/compat rewrites modelValue
-    // back to value for any component still on the Vue 2 contract, so a
-    // component cannot move on its own. Callers keep v-model.
-    //
-    // COMPONENT_V_MODEL: false is not redundant with MODE 3. isCompatEnabled
-    // reads the flag before the mode, and under MODE 3 a flag still counts as
-    // on when its value is 'suppress-warning' -- which is what compat_config
-    // sets for nearly every flag. MODE 3 alone would change nothing here.
-    compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
-    emits: ['update:modelValue'],
+    // Stays on the Vue 2 v-model contract (value/input). Moving this one
+    // component to modelValue with COMPONENT_V_MODEL: false silently severed
+    // it from its callers: the child's setter still ran and emitted, and the
+    // parent's `selected` never changed, because the parent compiles v-model
+    // under the global MODE 2. Both sides have to move together.
+    compatConfig: {MODE: 3},
+    emits: ['input'],
     props: {
         validResourceTypes: {
           type: Array,
           required: true
         },
-        modelValue: {
+        value: {
             type: [Object, String],
             required: false,
             default: () => ''
@@ -53,10 +50,10 @@ export default {
     computed: {
         selectedVal: {
             get() {
-                return this.modelValue;
+                return this.value;
             },
             set(val) {
-                this.$emit("update:modelValue", val);
+                this.$emit("input", val);
             }
         },
 
