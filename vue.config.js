@@ -1,12 +1,12 @@
 const path = require('path');
 const webpack = require('webpack')
 const _ = require('lodash')
-const {PAGES: FIXTURE_PAGES, isFixtureOnly, DIR: FIXTURE_DIR} = require('./scripts/src/fixture-pages.js')
-
-// vue-cli's production defaults, with fixture-only chunks moved under fixtures/
-const chunkPath = ext => pathData =>
-  `${ext}/${isFixtureOnly(pathData.chunk) ? FIXTURE_DIR + '/' : ''}[name].[contenthash:8].${ext}`
+const {PAGES: FIXTURE_PAGES, DIR: FIXTURE_DIR} = require('./scripts/src/fixture-pages.js')
 const {createProxyMiddleware} = require('http-proxy-middleware')
+
+// The fixture pages compile on their own so the app's chunk graph is computed
+// over the app's entries alone -- see scripts/src/fixture-pages.js.
+const FIXTURE_BUILD = !!process.env.FIXTURE_BUILD
 
 
 const COMPAT = path.join(__dirname, 'src/assets/javascripts/vue3compat')
@@ -57,6 +57,9 @@ module.exports = {
   // through babel the way ours does -- the published src is not pre-compiled.
   transpileDependencies: ['@gitlab/ui'],
 
+  outputDir: FIXTURE_BUILD ? `dist/${FIXTURE_DIR}` : 'dist',
+  publicPath: FIXTURE_BUILD ? `/${FIXTURE_DIR}/` : '/',
+
   // Component <style scoped> blocks land in chunk-common in a different order
   // per entry point, which mini-css-extract-plugin reports as a conflict. The
   // order between scoped styles is meaningless by construction -- each is
@@ -64,9 +67,7 @@ module.exports = {
   // that never mattered.
   css: {
     extract: {
-      ignoreOrder: true,
-      filename: chunkPath('css'),
-      chunkFilename: chunkPath('css')
+      ignoreOrder: true
     }
   },
   devServer: {
@@ -100,10 +101,6 @@ module.exports = {
     }
   },
   configureWebpack: {
-    output: {
-      filename: chunkPath('js'),
-      chunkFilename: chunkPath('js')
-    },
     plugins: [
       // pikaday, under gl-datepicker, requires moment as an optional dependency
       // inside a try/catch. Webpack resolves that statically, and moment's own
@@ -125,7 +122,7 @@ module.exports = {
      * @gitlab/ui compiled from src tree-shakes better than its dist bundle,
      * which more than paid for the compat runtime.
      */
-    performance: {
+    performance: FIXTURE_BUILD ? false : {
       maxAssetSize: 1.25 * 1024 * 1024,
       maxEntrypointSize: 1.9 * 1024 * 1024
     },
@@ -170,6 +167,21 @@ module.exports = {
    * functions here than in the fork.
    */
   chainWebpack(config) {
+    // The app build already copied public/ into dist, and the fixture
+    // templates link its stylesheets by absolute path.
+    if (FIXTURE_BUILD) config.plugins.delete('copy')
+
+    // public/<name>.html is a page template only in the fixture build; to the
+    // app build it is just a file in public/, and would be copied into dist/.
+    if (!FIXTURE_BUILD) {
+      config.plugin('copy').tap(([options]) => {
+        options.patterns[0].globOptions.ignore.push(
+          ...Object.keys(FIXTURE_PAGES).map(name => path.join(__dirname, 'public', `${name}.html`))
+        )
+        return [options]
+      })
+    }
+
     config.module
       .rule('vue')
       .use('vue-loader')
@@ -190,28 +202,26 @@ module.exports = {
       }))
   },
 
-  pages: {
-    project: {
-      entry: "src/pages/project_overview/index.js"
-    },
+  pages: FIXTURE_BUILD
+    ? _.mapValues(FIXTURE_PAGES, ({entry}, name) => ({
+        entry,
+        template: `public/${name}.html`,
+        filename: `${name}.html`
+      }))
+    : {
+        project: {
+          entry: "src/pages/project_overview/index.js"
+        },
 
-    dashboard: {
-      entry: "src/pages/dashboard/index.js"
-    },
+        dashboard: {
+          entry: "src/pages/dashboard/index.js"
+        },
 
-    // templated by public/public_cloud.html
-    public_cloud: {
-      entry: "src/pages/public_cloud/index.js"
-    },
-
-    // Test fixtures -- see scripts/src/fixture-pages.js for why they exist and
-    // how they are kept out of the release tarball.
-    ..._.mapValues(FIXTURE_PAGES, ({entry}, name) => ({
-      entry,
-      template: `public/${name}.html`,
-      filename: `${FIXTURE_DIR}/${name}.html`
-    }))
-  }
+        // templated by public/public_cloud.html
+        public_cloud: {
+          entry: "src/pages/public_cloud/index.js"
+        }
+      }
 
 };
 

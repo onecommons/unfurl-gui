@@ -89,6 +89,10 @@ jobs:
             echo "::error::build produced warnings (see log above); the build is expected to be warning-free"
             exit 1
           fi
+      - name: Build cypress fixture pages
+        # Not part of the product -- the specs mount them and the release step
+        # excludes dist/fixtures. See scripts/src/fixture-pages.js.
+        run: FIXTURE_BUILD=1 yarn build
       - name: Pull unfurl server image
         # The :<branch>-server image is built by unfurl's dev_images.yml and
         # bundles both the rust unfurl-server binary AND the optional Python
@@ -187,8 +191,7 @@ jobs:
         # need and the product does not -- see scripts/src/fixture-pages.js.
         run: |
           echo ${{  github.ref_name }} > dist/RELEASE.txt
-          tar --exclude='dist/fixtures' --exclude='dist/js/fixtures' \
-              --exclude='dist/css/fixtures' -czvf unfurl-gui-dist.tar.gz dist
+          tar --exclude='dist/fixtures' -czvf unfurl-gui-dist.tar.gz dist
       - name: Upload dist
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:

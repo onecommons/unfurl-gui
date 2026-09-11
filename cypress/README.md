@@ -18,6 +18,7 @@ export GOOGLE_APPLICATION_CREDENTIALS=testing-shared/fixtures/service-account.js
 mkdir -p "$UNFURL_TEST_TMPDIR"
 
 yarn build                                           # unfurl serve --gui serves dist/
+FIXTURE_BUILD=1 yarn build                           # dist/fixtures/, mounted by 00_visitor
 yarn integration-test run --namespace onecommons/blueprints -- \
   --browser chrome -e GENERATE_SUBDOMAINS=true \
   -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
@@ -26,6 +27,14 @@ yarn integration-test run --namespace onecommons/blueprints -- \
 `UNFURL_TEST_TMPDIR` must be outside the checkout, or unfurl's parent-walk
 adopts this repo's own `_unfurl/` as the parent project. `-s` accepts a
 comma-separated list of specs.
+
+**The second build is a prerequisite, not an optional extra.** The fixture
+pages compile on their own so the app's chunk graph is computed over the app's
+entries alone -- sharing one compilation put whatever they imported into the
+app's shared chunks. `yarn build` by itself leaves `dist/fixtures/` absent and
+the `gallery`, `dev_settings`, `fork_inputs` and `form_fixture` specs fail. It
+only needs rerunning when a fixture page or something it mounts changes. See
+`scripts/src/fixture-pages.js`.
 
 Only reach for the container path (`UNFURL_SERVER_IMAGE`, redis,
 `CACHE_REDIS_URL`) when you specifically need the rust proxy / redis queue

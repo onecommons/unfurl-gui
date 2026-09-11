@@ -6,10 +6,11 @@
  * entirely (`#!if !standalone`), so without a page they would be rewritten
  * with nothing watching.
  *
- * Everything they own is emitted under a `fixtures/` directory so the release
- * tarball can leave it out: CI compiles once and ships the same dist/ it
- * tested, and these are not part of the product. Chunks the app also uses stay
- * where they are -- both sides need them, and they ship either way.
+ * They compile separately from the app (FIXTURE_BUILD=1, see vue.config.js)
+ * into dist/fixtures/, which the release tarball leaves out. Sharing the app's
+ * compilation made them part of its chunk graph instead: gallery/store.js
+ * shipped inside chunk-common on every page, and the split it forced cost the
+ * product 3-8 KiB gzipped per page.
  */
 
 const PAGES = {
@@ -33,19 +34,4 @@ const PAGES = {
   },
 }
 
-const NAMES = Object.keys(PAGES)
-
-/*
- * A chunk belongs under fixtures/ only if every runtime that pulls it is a
- * fixture entry. Async chunks carry a RuntimeSpec -- a string for one entry, a
- * set for several -- and a chunk shared with the app must keep its normal path
- * so the app's own HTML still resolves it.
- */
-function isFixtureOnly(chunk) {
-  const runtime = chunk && chunk.runtime
-  if (!runtime) return false
-  const owners = typeof runtime === 'string' ? [runtime] : [...runtime]
-  return owners.length > 0 && owners.every(name => NAMES.includes(name))
-}
-
-module.exports = {PAGES, NAMES, isFixtureOnly, DIR: 'fixtures'}
+module.exports = {PAGES, DIR: 'fixtures'}
