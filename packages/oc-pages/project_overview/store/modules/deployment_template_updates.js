@@ -1079,6 +1079,17 @@ const actions = {
 
             method = 'update_environment'
 
+            // The patch is seeded from the normalized store, where every
+            // ResourceTemplate carries `directives`, so an untouched provider
+            // round-trips an empty one into unfurl.yaml. The user never set it,
+            // so don't write it -- but leave a non-empty one alone.
+            for(const environmentPatch of patch) {
+                if(environmentPatch.__typename != 'DeploymentEnvironment') continue
+                for(const connection of Object.values(environmentPatch.connections || {})) {
+                    if(connection && !connection.directives?.length) delete connection.directives
+                }
+            }
+
             // TODO be more selective about which patches to run this on
             sync = Promise.all(
                 patch
