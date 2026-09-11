@@ -4,6 +4,7 @@ const USERNAME = Cypress.env('OC_IMPERSONATE')
 
 describe('importing a10', () => {
   before(() => {
+    cy.requireProjectCreation()
     cy.visit('/dashboard/projects')
     cy.document().then(doc => {
       if(doc.querySelector(`a[href="/${USERNAME}/a10dashboard"]`)) return

@@ -214,3 +214,17 @@ Cypress.Commands.add('visitBuiltPage', (filename, query = '', options = {}) => {
   })
   cy.visit(`/${built}${query}`, options)
 })
+
+/*
+ * External users get a 403 from /projects/new, which reaches the spec as an
+ * opaque `cy.visit() failed trying to load` with no mention of permissions.
+ * The harness creates users --external 1 by default, so any spec that creates
+ * a project through the UI needs EXTERNAL=0 and should say so up front rather
+ * than fail three commands later.
+ */
+Cypress.Commands.add('requireProjectCreation', () => {
+  expect(
+    String(Cypress.env('EXTERNAL')),
+    'this spec creates a project through the UI, which external users cannot do -- run it with EXTERNAL=0'
+  ).to.equal('0')
+})
