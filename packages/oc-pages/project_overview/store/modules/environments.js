@@ -937,8 +937,18 @@ const getters = {
                     throw new Error(`Environment not found ${environmentName}`)
                 }
 
+                // A freshly created environment is seeded from the write
+                // payload, which carries no repositories -- the export that
+                // would supply them is deliberately not awaited during
+                // creation. Falling back to the defaults environment's, where
+                // they are declared anyway, keeps a type lookup from resolving
+                // to null in the window before that export lands.
+                const repositories = Object.keys(environment.repositories || {}).length
+                    ? environment.repositories
+                    : (state.defaults?.repositories || {})
+
                 // call types on unique repositories
-                return Object.values(environment.repositories || {})
+                return Object.values(repositories)
             }
         }
     },
