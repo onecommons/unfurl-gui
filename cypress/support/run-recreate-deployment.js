@@ -304,12 +304,27 @@ Cypress.Commands.add('recreateDeployment', options => {
                   .prev()
                   .click()
 
-                // special case for inconsistent ordering of Unfurl Cloud DNS
-                if(USE_UNFURL_DNS) {
-                  cy.get(`[data-testid^="resource-selection-"]`).first().click()
-                } else {
-                  cy.get(`[data-testid^="resource-selection-"]`).not(`[data-testid="resource-selection-dns-zone"]`).first().click()
-                }
+                // Connect to the resource the fixture recorded, so this asserts
+                // *what* was connected and not merely that something was. Which
+                // DNS provider the environment offers is configurable (see
+                // AWS_DNS_ZONE in cypress/plugins/index.js), so fall back to
+                // first-match rather than failing when it differs.
+                const recorded = match?.name?.replace(/^__/, '')
+                cy.get(`[data-testid^="resource-selection-"]`).then($candidates => {
+                  const exact = recorded
+                    ? $candidates.filter(`[data-testid="resource-selection-${recorded}"]`)
+                    : $candidates.filter(() => false)
+                  if(!exact.length && recorded) {
+                    // cy.task, not cy.log: a headless run never shows cy.log, and
+                    // a silent fallback is how this assertion stops meaning what
+                    // it looks like it means.
+                    cy.task('log', `[connect] no resource-selection-${recorded}; connecting to the first offered`, {log: false})
+                  }
+                  const fallback = USE_UNFURL_DNS
+                    ? $candidates
+                    : $candidates.not(`[data-testid="resource-selection-dns-zone"]`)
+                  cy.wrap((exact.length ? exact : fallback).first()).click()
+                })
 
                 cy.contains('button', 'Next').click()
               } else {

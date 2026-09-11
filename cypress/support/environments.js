@@ -217,6 +217,15 @@ function uncheckedCreateGoogleCloudDNS(zone) {
 }
 
 function uncheckedCreateRoute53DNS(zone) {
+  // AWS_DNS_ZONE is what selects this helper (cypress/plugins/index.js), and it
+  // types the credentials straight into the form. Say so, rather than failing
+  // later as cy.type(undefined) or -- worse -- leaving the environment without
+  // the Route53 zone the fixtures expect and passing on whatever else is there.
+  expect(AWS_ACCESS_KEY, 'AWS_DNS_ZONE is set, so AWS_ACCESS_KEY_ID must be too')
+    .to.be.a('string').and.not.be.empty
+  expect(AWS_SECRET_ACCESS_KEY, 'AWS_DNS_ZONE is set, so AWS_SECRET_ACCESS_KEY must be too')
+    .to.be.a('string').and.not.be.empty
+
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-unfurl.nodes.DNSZone"], [data-testid="external-resource-tab-dns"]').click()
   cy.get('[data-testid="resource-selection-Route53DNSZone"]').click()
