@@ -54,3 +54,10 @@ if [ ! -z "$dashboard_project" ]; then
   # use --empty to just add the environment, don't create a new ensemble
   $unfurl -vv init "$dashboard_project" --empty --use-environment $name_or_type
 fi
+
+# The UI's save path refuses to commit when the project repo is dirty, and the
+# export it then serves reads committed content -- so leaving our unfurl.yaml
+# edit uncommitted makes every later save invisible to the page.
+git -C "$ufhome" add -A
+git -C "$ufhome" -c user.name=unfurl -c user.email=unfurl@example.com \
+  commit -q -m "add $name_or_type environment" || true
