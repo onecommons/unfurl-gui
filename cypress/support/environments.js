@@ -147,8 +147,8 @@ function uncheckedCreateMail() {
   cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
   cy.get('[data-testid="resource-selection-GenericSMTPServer"]').click()
 
-  // todo: use a test id for this input, and use different name
-  cy.get('input#input2')
+  // todo: use a different name
+  cy.get('[data-testid="create-resource-template-title"]')
     .clear()
     .type(MAIL_RESOURCE_NAME)
 
@@ -268,8 +268,8 @@ Cypress.Commands.add('createMailResource', environmentName => {
   cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
   cy.get('[data-testid="resource-selection-GenericSMTPServer"]').click()
 
-  // todo: use a test id for this input, and use different name
-  cy.get('input#input2')
+  // todo: use a different name
+  cy.get('[data-testid="create-resource-template-title"]')
     .clear()
     .type(MAIL_RESOURCE_NAME)
 
