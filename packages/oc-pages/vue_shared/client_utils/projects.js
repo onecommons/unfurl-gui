@@ -146,7 +146,17 @@ export async function fetchBranches(projectId) {
     const promise = async () => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
 
     setTimeout(() => delete branchesData[projectId], BRANCH_CACHE_DURATION)
-    return branchesData[projectId] = promise().then(branches => {
+    return branchesData[projectId] = promise().catch(e => {
+        // 404 means the project has no repository -- it was created moments
+        // ago, or it isn't at the path we looked for. Every caller treats the
+        // result as a list and copes with an empty one, whereas raising
+        // surfaces two calls up in fetchProjectEnvironments' catch as
+        // "Could not fetch project environments", which describes neither.
+        if(e?.response?.status != 404) throw e
+        // don't let a transient 404 sit in the cache for BRANCH_CACHE_DURATION
+        delete branchesData[projectId]
+        return []
+    }).then(branches => {
         if (!Array.isArray(branches)) return []
         const defaultBranch = branches.length == 1? branches[0]: branches.find(b => b.default)
         if(defaultBranch) {
