@@ -178,6 +178,33 @@ the fork branch out into that GDK, or build an image of the fork. Once one
 exists, run the fork-only specs listed above against it on 15.11 first, to
 produce the fork-side baseline that 2C is compared against.
 
+## Specs in one run share a user and a dashboard
+
+The harness creates **one** user and **one** dashboard per invocation, not per
+spec. Everything a spec writes -- environments, deployments, CI variables --
+is still there for the specs that follow it in the same run.
+
+So a spec can pass alone and fail in a batch. Worked example:
+`01_environments/digitalocean.cy.js` passes on its own, and fails reproducibly
+when run after `01_environments/generic.cy.js`, because a selector that matches
+one element against a dashboard with one environment matches two against a
+dashboard with two. The failure reads `cy.click() can only be called on a
+single element. Your subject contained 2 elements`, which says nothing about
+the real cause.
+
+Two practical consequences:
+
+- **Before believing a batch failure, re-run the spec alone.** A 29-spec
+  blueprint batch here failed entirely, including
+  `blueprints/aws__minecraft__minecraft`, which passes on its own in the PR
+  gate. That result was worthless; the control is the single-spec run.
+- **Scope selectors to the thing under test.** `cy.contains('a', 'Resources')`
+  is fine; a bare `cy.contains(environmentName)` is not, once a second
+  environment exists whose name contains the first as a substring.
+
+The gate's nine specs are ordered so this does not bite them, which is why it
+stays invisible until you run something new.
+
 ## Selector conventions
 
 The migration replaces element-ui and bumps @gitlab/ui by ~77 major versions,
