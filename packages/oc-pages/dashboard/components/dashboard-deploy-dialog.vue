@@ -3,7 +3,7 @@
 import { __ } from '~/locale'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import { GlModal, GlDropdown, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui';
-import { queryParamVar } from 'oc_vue_shared/util'
+import { queryParamVar, STD_REPOSITORY_URL } from 'oc_vue_shared/util'
 import { unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import OcListResource from '../../project_overview/components/shared/oc_list_resource.vue'
 import { BaseDeployDialog } from 'oc_vue_shared/components/oc'
@@ -37,7 +37,7 @@ export default {
                 environmentName: this.exportEnvironmentName,
                 options: {
                     fallbackTypeRepository: {
-                        url: 'https://unfurl.cloud/onecommons/std.git'
+                        url: STD_REPOSITORY_URL
                     }
                 }
             })

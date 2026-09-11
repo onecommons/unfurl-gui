@@ -7,7 +7,7 @@ import {GlFormInput, GlButton, GlIcon, GlTabs, GlModal, GlPopover} from '@gitlab
 import {OcTab, DetectIcon, CiVariableSettings, DeploymentResources} from 'oc_vue_shared/components/oc'
 import _ from 'lodash'
 import { __, n__ } from '~/locale'
-import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify} from 'oc_vue_shared/util'
+import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify, STD_REPOSITORY_URL} from 'oc_vue_shared/util'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
@@ -317,6 +317,17 @@ export default {
             const instances = _.cloneDeep(Object.values(environment.instances))
             const connections = _.cloneDeep(Object.values(environment.connections))
 
+            // Saved instances can't resolve their types unless something fetched
+            // them, and the only fetches here are the ones the Add buttons make.
+            // Without this a reloaded environment renders no resource cards.
+            if(instances.length) {
+                await this.environmentFetchTypesWithParams({
+                    environmentName,
+                    params: {implements: ['connect'], implementation_requirements: this.providerTypesForEnvironment(environment)},
+                    options: {fallbackTypeRepository: {url: STD_REPOSITORY_URL}}
+                })
+            }
+
             await Promise.all(
                 [
                     ...instances.map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot})),
@@ -365,7 +376,7 @@ export default {
         async fetchProviders() {
             if(!this.fetchedProviders) {
                 try {
-                    await this.environmentFetchTypesWithParams({environmentName: this.environment.name, params: {extends: "tosca.relationships.ConnectsTo"}})
+                    await this.environmentFetchTypesWithParams({environmentName: this.environment.name, params: {extends: "tosca.relationships.ConnectsTo"}, options: {fallbackTypeRepository: {url: STD_REPOSITORY_URL}}})
                     this.fetchedProviders = true
                 } catch(e) {
                     console.error(e)
@@ -382,7 +393,7 @@ export default {
         async addExternalResources() {
             if(!this.fetchedConnectable) {
                 try {
-                    await this.environmentFetchTypesWithParams({environmentName: this.environment.name, params: {implements: ['connect'], implementation_requirements: this.providerTypesForEnvironment(this.environment)}})
+                    await this.environmentFetchTypesWithParams({environmentName: this.environment.name, params: {implements: ['connect'], implementation_requirements: this.providerTypesForEnvironment(this.environment)}, options: {fallbackTypeRepository: {url: STD_REPOSITORY_URL}}})
                     this.setAvailableResourceTypes(this.environmentLookupDiscoverable(this.environment))
                     this.fetchedConnectable = true
                 } catch(e) {

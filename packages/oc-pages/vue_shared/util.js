@@ -2,6 +2,10 @@ export { default as slugify } from './slugify'
 
 export const USER_HOME_PROJECT = 'dashboard';
 
+// Fallback when an environment declares no type repositories of its own:
+// something has to be requested or no types come back at all.
+export const STD_REPOSITORY_URL = 'https://unfurl.cloud/onecommons/std.git';
+
 // TODO make this a const
 export function userDefaultPath() {
     return 'unfurl.json'
