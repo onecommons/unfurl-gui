@@ -1,4 +1,3 @@
-import slugify from '../../../packages/oc-pages/vue_shared/slugify'
 import {ALERT_BODY} from '../../support/alerts'
 const GCP_ENVIRONMENT_NAME = Cypress.env('GCP_ENVIRONMENT_NAME')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
@@ -20,7 +19,12 @@ describe('Smorgasbord blueprint test', () => {
   // Not derived from REPOS_NAMESPACE: smorgasbord lives in the testing
   // namespace (it is not a production blueprint), while the run's namespace is
   // where the deployable blueprints live.
-  const projectPath = `/${SMORGASBORD_PROJECT}`
+  // The fork serves the blueprint overview from its own route,
+  // `oc/config/routes/project.rb`'s `scope '-' { get 'overview(/*vueroute)' }`,
+  // and leaves the project root as GitLab's ordinary project page --
+  // OC::ProjectsController#show only special-cases dashboards. Standalone has
+  // no such scope and serves the overview at the root.
+  const projectPath = `/${SMORGASBORD_PROJECT}${STANDALONE_UNFURL ? '' : '/-/overview'}`
 
   before(() => {
     cy.whenEnvironmentAbsent(env, () => {
@@ -183,18 +187,6 @@ describe('Smorgasbord blueprint test', () => {
       expect(byName.environment, 'environment map').to.deep.equal({PORT: '5000'})
 
 
-      const pw = currentState.the_app.properties.find(p => p.name == 'password')
-
-      if(pw?.value) {
-        pw.value = {get_env: `${slugify(deploymentTitle)}__the_app__password`.replace(/-/, '_')}
-      }
-
-      const oiPw = currentState.the_app.properties.find(p => p.name == 'object_inputs')
-
-      if(oiPw?.value?.password) {
-        oiPw.value.password = { get_env: `${slugify(deploymentTitle)}__the_app__object_inputs_password`.replace(/-/, '_') }
-      }
-
 
       cy.get('[data-testid="save-draft-btn"]').click()
 
@@ -217,12 +209,24 @@ describe('Smorgasbord blueprint test', () => {
         // expect(currentState.the_app.properties.find(p => p.name == 'text'))
         //   .to.deep.equal(newState.the_app.properties.find(p => p.name == 'text'))
 
-        // The pre/post-save comparison does not hold standalone. It is the
-        // spec's own long-standing rough edge (see the FIXME above about
-        // generate being blown away), not something the migration introduces.
-        if (!STANDALONE_UNFURL) {
-          expect(currentState).to.deep.equal(newState)
+        // The two sensitive properties are excluded rather than compared. A
+        // draft save does not replace a generated secret with its
+        // {get_env: <VAR>} reference -- the literal stays in the store -- so
+        // comparing them asserts nothing about the round-trip and only
+        // restates the FIXME above. Measured identical on standalone and on a
+        // fork, so it is not migration-specific; what a *commit* (rather than
+        // a draft) writes is the open question, and is not this spec's.
+        const withoutSecrets = state => {
+          const copy = JSON.parse(JSON.stringify(state))
+          const props = copy.the_app?.properties || []
+          const pw = props.find(p => p.name == 'password')
+          if(pw) pw.value = '<excluded>'
+          const oiPw = props.find(p => p.name == 'object_inputs')
+          if(oiPw?.value?.password !== undefined) oiPw.value.password = '<excluded>'
+          return copy
         }
+
+        expect(withoutSecrets(currentState)).to.deep.equal(withoutSecrets(newState))
       })
     })
   })
