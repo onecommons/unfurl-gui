@@ -620,14 +620,14 @@ export default {
                     <slot name="status"></slot>
                 </template>
                 <template #controls="card">
-                    <slot name="primary-controls" v-bind="card"></slot>
+                    <slot name="primary-controls" v-bind="card || {}"></slot>
                 </template>
                 <template #footer-controls>
                     <slot name="primary-controls-footer"></slot>
                 </template>
                 <!-- slots can't be in nested templates -->
                 <template #child-controls="card">
-                    <slot name="controls" v-bind="card"></slot>
+                    <slot name="controls" v-bind="card || {}"></slot>
                 </template>
                 <template #child-content="card">
                     <slot name="card-content-pre"></slot>
@@ -676,7 +676,7 @@ export default {
             @deleteNode="onDeleteNode"
         >
             <template #controls="cardSlot">
-                <slot name="controls" v-bind="cardSlot"></slot>
+                <slot name="controls" v-bind="cardSlot || {}"></slot>
             </template>
             <template #content="cardSlot">
                 <oc-list

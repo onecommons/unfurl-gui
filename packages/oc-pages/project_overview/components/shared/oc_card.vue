@@ -306,7 +306,11 @@ export default {
 
                     </slot>
                     <div class="gl-flex gl-items-center">
-                        <slot name="controls" v-bind="card">
+                        <!-- `card` is null whenever the parent's filter rejects
+                             it. Vue 2 ignored v-bind of a nullish value; Vue 3's
+                             renderSlot reads .key off it and throws, taking the
+                             whole subtree down. -->
+                        <slot name="controls" v-bind="card || {}">
                             <gl-button v-if="canRemove" @click="openDeletemodal" class="controls">
                                 <div class="gl-flex gl-items-center">
                                     <gl-icon name="remove" />
@@ -331,7 +335,7 @@ export default {
                  margin trick depended on a real offsetHeight measurement
                  that's 0 while the parent is display:none. -->
             <div v-if="everExpanded" ref="container" class="card-content-container" :class="{collapsed: !expanded, active: setHeight}">
-                <slot name="content" v-bind="card"></slot>
+                <slot name="content" v-bind="card || {}"></slot>
 
                 <div v-if="_children.length > 0">
                     <!-- could also be v-bind="$attrs" -->
@@ -344,16 +348,16 @@ export default {
                             :class="childClass"
                     >
                         <template #child-controls="card">
-                            <slot name="child-controls" v-bind="card" />
+                            <slot name="child-controls" v-bind="card || {}" />
                         </template>
                         <template #child-content="card">
-                            <slot name="child-content" v-bind="card"/>
+                            <slot name="child-content" v-bind="card || {}"/>
                         </template>
                         <template #controls="card">
-                            <slot name="child-controls" v-bind="card" />
+                            <slot name="child-controls" v-bind="card || {}" />
                         </template>
                         <template #content="card">
-                            <slot name="child-content" v-bind="card"/>
+                            <slot name="child-content" v-bind="card || {}"/>
                         </template>
                     </oc-card>
                 </div>
