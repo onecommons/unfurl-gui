@@ -46,7 +46,7 @@ export const connectedRepo = {
                 throw new Error('setupRegistryCredentials requires "this.projectInfo" to be available')
             }
 
-            if(!this.getHomeProjectPath) {
+            if(this.getHomeProjectPath == null) {
                 throw new Error(`setupRegistryCredentials requires "this.getHomeProjectPath" to be available as a mapped getter`)
             }
 

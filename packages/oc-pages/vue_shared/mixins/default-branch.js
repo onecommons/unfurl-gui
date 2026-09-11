@@ -45,7 +45,8 @@ export const homeProjectDefaultBranch = {
         getHomeProjectPath: {
             immediate: true,
             handler(val, prev) {
-                if(val && val != prev) {
+                // '' is standalone's local project, not the absence of one
+                if(val != null && val != prev) {
                     this.homeProjectDefaultBranchPromise = (
                         getOrFetchDefaultBranch(encodeURIComponent(val))
                     )

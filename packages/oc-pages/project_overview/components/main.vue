@@ -31,7 +31,8 @@ export default {
 
         if(
             gon.current_user_id &&
-            this.$store.getters.getHomeProjectPath &&
+            // '' is standalone's local project; only null means there is none
+            this.$store.getters.getHomeProjectPath != null &&
             this.$route.name != routes.OC_PROJECT_VIEW_CREATE_TEMPLATE
         ) {
             this.$store.dispatch('populateCurrentUser').catch(() => {})

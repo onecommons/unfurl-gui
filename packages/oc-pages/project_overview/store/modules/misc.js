@@ -73,11 +73,17 @@ const getters = {
         return null
     },
     getHomeProjectPath(state, getters)  {
-        if(window.gon.home_project !== null) return normpath(`${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`)
+        if(window.gon.home_project !== null) {
+            // standalone serves a single local project and names no namespace;
+            // the endpoints read an empty path as that project. Qualifying it
+            // instead yields the bare USER_HOME_PROJECT, which does not exist.
+            if(!getters.getCurrentNamespace) return ''
+            return normpath(`${getters.getCurrentNamespace}/${state.dashboard || USER_HOME_PROJECT}`)
+        }
         return null
     },
     getHomeProjectName(state) {
-        if(window.gon.home_project !== null) 
+        if(window.gon.home_project !== null)
         return state.dashboardProjectInfo?.name || 'Dashboard'
         return null
     },
