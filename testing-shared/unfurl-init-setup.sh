@@ -12,5 +12,7 @@ $unfurl_cmd init $UNFURL_SERVER_CWD
 
 if [ -n "$UFSV_LOCAL" ]
 then
-  cp $local_unfurl_yaml local/unfurl.yaml
+  # $UNFURL_SERVER_CWD-relative: cwd here is the checkout, not the project, so
+  # the bare `local/unfurl.yaml` this used to name never existed.
+  cp "$local_unfurl_yaml" "$UNFURL_SERVER_CWD/local/unfurl.yaml"
 fi
