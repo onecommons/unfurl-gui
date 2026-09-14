@@ -194,36 +194,54 @@ const ENV_NAMING_FUNCTIONS = {
   identity(baseId) { return baseId}
 }
 
-// The fork builds a dashboard from a built-in project template and runs the
-// import in a worker, so create-user returns before the project is usable.
-// Waiting for refs to resolve is not enough: the repository is populated
-// slightly before GitLab marks the import finished, and until it does every
-// project page redirects to /-/import -- which is what cypress lands on.
-// So wait for the signal cypress actually needs, the project page itself.
+// The fork builds a dashboard from a built-in project template and imports it
+// in a worker, so create-user returns before the project is usable. Two signals
+// are needed, and neither is sufficient alone:
+//
+//   - the repository resolving a HEAD proves the import wrote something, but
+//     refs land slightly before GitLab marks the import finished, and until it
+//     does every project page redirects to /-/import;
+//   - the project page loading proves the flag is clear, but it is also clear
+//     *before* the worker schedules, when there is no import state at all --
+//     so on its own it passes immediately and the redirect appears later.
+//
+// Requiring both in the same iteration only holds once the import has really
+// finished. Polled rather than slept: the duration varies with what else
+// sidekiq is doing.
 async function waitForDashboardRepo(username, password, timeoutMs = 300000) {
   const sharedAxios = require('./shared/axios-instance.js')
   const login = require('./shared/login.js')
   await login(UNFURL_CLOUD_SERVER, username, password, undefined, true)
 
-  const url = `${UNFURL_CLOUD_SERVER}/${username}/dashboard`
-  const deadline = Date.now() + timeoutMs
-  let last = ''
-
-  // Assert where it landed, not merely where it did not: while the import runs
-  // GitLab redirects to /-/import, but an unauthenticated response redirects to
-  // /users/sign_in, and "not the import page" accepts that as ready.
+  const {protocol, host} = new URL(UNFURL_CLOUD_SERVER)
+  const auth = `${encodeURIComponent(username)}:${encodeURIComponent(password)}`
+  const cloneUrl = `${protocol}//${auth}@${host}/${username}/dashboard.git`
+  const pageUrl = `${UNFURL_CLOUD_SERVER}/${username}/dashboard`
   const ready = `/${username}/dashboard`
+  const deadline = Date.now() + timeoutMs
+  let why = ''
 
   for(;;) {
-    const response = await sharedAxios.get(url)
-    last = response.request?.res?.responseUrl || ''
-    if(response.status < 400 && new URL(last || url).pathname === ready) return true
+    const refs = spawnSync('git', ['ls-remote', cloneUrl, 'HEAD'], {encoding: 'utf-8'})
+    const hasHead = refs.status === 0 && (refs.stdout || '').trim()
+
+    if(hasHead) {
+      const response = await sharedAxios.get(pageUrl)
+      const landed = response.request?.res?.responseUrl || ''
+      // assert where it landed, not merely that it is not /-/import: an
+      // unauthenticated response lands on /users/sign_in, which is not the
+      // import page either
+      if(response.status < 400 && new URL(landed || pageUrl).pathname === ready) return true
+      why = `page ${response.status} at ${landed || pageUrl}`
+    } else {
+      why = 'repository has no HEAD yet'
+    }
 
     if(Date.now() >= deadline) {
       throw new Error(
-        `${username}/dashboard was not ready after ${Math.round(timeoutMs / 1000)}s ` +
-        `(status ${response.status}, landed on ${last || url}). The project template ` +
-        'import did not finish -- check project_mirror_data.status and that sidekiq is running.'
+        `${username}/dashboard was not ready after ${Math.round(timeoutMs / 1000)}s (${why}). ` +
+        'The project template import did not finish -- check project_mirror_data.status ' +
+        'and that sidekiq is running.'
       )
     }
     await new Promise(resolve => setTimeout(resolve, 5000))
