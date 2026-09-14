@@ -128,15 +128,15 @@ export default {
                     <gl-dropdown v-if="userCanEdit && !standalone" :disabled="deployStatus == 'disabled'" right>
                         <div class="gl-mt-3"/>
                             <gl-form-checkbox v-if="!localDeployOnly" data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
-                                <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
+                                <span v-gl-tooltip.hover.right
                                       title="Use Unfurl to deploy this from the command line"> Deploy Locally </span>
                             </gl-form-checkbox>
                             <gl-form-checkbox data-testid="toggle-force-check" @input="onInputForceCheck" style="margin: 0.25rem 1rem;" >
-                                <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
+                                <span v-gl-tooltip.hover.right
                                       title="Check status of a resource before creating or updating"> Force Check </span>
                             </gl-form-checkbox>
                             <gl-form-checkbox v-if="isCypress" data-testid="toggle-dry-run" @input="onInputDryRun" style="margin: 0.25rem 1rem;">
-                                <span v-if="userCanEdit && deployStatus != 'disabled'" v-gl-tooltip.hover.right
+                                <span v-gl-tooltip.hover.right
                                       title="Run a workflow without provisioning any cloud resources"> Dry Run </span>
                             </gl-form-checkbox>
                     </gl-dropdown>
