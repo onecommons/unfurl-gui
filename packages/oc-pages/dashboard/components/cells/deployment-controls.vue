@@ -1,5 +1,5 @@
 <script>
-import {GlDropdown, GlButtonGroup} from '@gitlab/ui'
+import {GlDisclosureDropdown, GlButtonGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
 import {homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
@@ -32,7 +32,7 @@ export default {
         }
     },
     components: {
-        GlDropdown,
+        GlDisclosureDropdown,
         GlButtonGroup,
         ControlButtons,
     },
@@ -264,23 +264,61 @@ export default {
                     component="gl-button"
                     v-on="handlers"
             />
-            <gl-dropdown v-if="contextMenuControlButtons.length" :popper-opts="{ positionFixed: true, placement: 'bottom-end' }">
+            <!-- Not gl-dropdown: it positions with popper v1, whose positionFixed
+                 assumes the viewport is the containing block. Upstream's .panel-content
+                 sets `contain: layout`, which makes it one, so the menu painted a
+                 panel's width and height away from its toggle. This positions with
+                 floating-ui, which resolves against the real containing block. -->
+            <gl-disclosure-dropdown
+                    v-if="contextMenuControlButtons.length"
+                    placement="bottom-end"
+                    positioning-strategy="fixed"
+                    icon="ellipsis_v"
+                    no-caret
+                    text-sr-only
+                    :toggle-text="__('Deployment actions')"
+            >
                 <control-buttons
                         v-bind="attrs"
                         :control-buttons="contextMenuControlButtons"
                         :issues-link-args="issuesLinkArgs"
-                        component="gl-dropdown-item"
+                        component="dropdown-action-item"
                         v-on="handlers"
                  />
-            </gl-dropdown>
+            </gl-disclosure-dropdown>
         </gl-button-group>
     </div>
 </div>
 </template>
 <style scoped>
-.deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between; margin: 0 1em;}
-.deployment-controls > * { display: flex; margin: 0 0.25em;}
-.deployment-controls :deep(.dropdown-menu) {
-    top: 95px !important; /* not sure why this became necessary */
+/* No horizontal margin: the controls are the widest column and the table has to
+   fit a limit-container-width panel, so the row cannot afford whitespace it does
+   not use. The dropdown-menu `top: 95px !important` that used to live here was
+   compensating for gl-dropdown painting its menu a panel away from the toggle --
+   fixed at the source by positioning with floating-ui, so it is gone. */
+.deployment-controls {font-size: 1em; display: flex; height: 2.5em; justify-content: space-between;}
+.deployment-controls > * { display: flex; }
+
+/* control-buttons wraps its buttons in a div, so they are not direct children
+   of gl-button-group and its `> .btn` corner rules never reach them -- leaving
+   the primary button fully rounded against the toggle, which then reads as two
+   controls that happen to touch. Square the adjoining edges and close the 1px
+   gap so the pair renders as one. */
+.deployment-controls :deep(.control-button-container > .btn:last-child) {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
 }
+.deployment-controls :deep(.gl-new-dropdown) { margin-left: -1px; }
+
+/* The button and the toggle are one control, so the button's right border just
+   draws a seam down the middle of it -- low contrast in dark mode, plainly
+   visible in light. */
+.deployment-controls :deep(.control-button-container > .btn:last-child) {
+    border-right-color: transparent;
+}
+
+/* Keeps the control off the table's right edge; the row is the widest column
+   so the space has to come from the environment name's cap, not from here. */
+.deployment-controls { padding-right: 8px; }
+
 </style>

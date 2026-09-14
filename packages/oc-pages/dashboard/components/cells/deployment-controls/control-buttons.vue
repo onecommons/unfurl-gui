@@ -1,5 +1,6 @@
 <script>
-import {GlIcon, GlButton, GlDropdown, GlDropdownItem} from '@gitlab/ui'
+import {GlIcon, GlButton} from '@gitlab/ui'
+import DropdownActionItem from './dropdown-action-item.vue'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import OpenLiveApp from './open-live-app.vue'
 export default {
@@ -18,7 +19,7 @@ export default {
             default: () => 'gl-button'
         }
     },
-    components: {GlIcon, GlButton, GlDropdown, GlDropdownItem, OpenLiveApp},
+    components: {GlIcon, GlButton, DropdownActionItem, OpenLiveApp},
     methods: {
         hasButton(id) { return this.controlButtons.includes(id) },
         hasDisabledButton(id) { return this.disabledButtons.includes(id) },

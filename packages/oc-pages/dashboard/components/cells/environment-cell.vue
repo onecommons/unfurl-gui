@@ -61,7 +61,7 @@ export default {
     <a v-if="environment" :href="destination.href">
         <div class="status-item font-weight-bold">
             <detect-icon :size="20" v-if="primaryProvider" :type="primaryProvider"/>
-            <div class="gl-ml-2">{{environment.name}}</div>
+            <div class="gl-ml-2 environment-name" :title="environment.name">{{environment.name}}</div>
         </div>
     </a>
 </template>
@@ -69,5 +69,16 @@ export default {
 .status-item {
     display: flex;
     align-items: center;
+}
+/* An environment name is user-chosen and can be arbitrarily long. Without a cap
+   it sets this column's width, pushes the table past the limit-container-width
+   panel it sits in, and the overflow clips the controls at the far right -- so
+   a long name elsewhere in the row made a button unreachable. Full name stays
+   available as the title. */
+.environment-name {
+    max-width: 10em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 </style>

@@ -1,7 +1,7 @@
 <script>
 import { mapGetters } from 'vuex'
 
-import { GlButton, GlButtonGroup, GlDropdown, GlDropdownItem, GlFormCheckbox, GlIcon, GlTooltipDirective} from '@gitlab/ui';
+import { GlButton, GlButtonGroup, GlDisclosureDropdown, GlFormCheckbox, GlIcon, GlTooltipDirective} from '@gitlab/ui';
 import ErrorSmall from 'oc_vue_shared/components/oc/ErrorSmall.vue'
 import Autostop from 'oc_vue_shared/components/oc/autostop.vue'
 import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unfurl-server'
@@ -16,7 +16,7 @@ export default {
     components: {
         ErrorSmall,
         Autostop,
-        GlButton, GlButtonGroup, GlDropdown, GlFormCheckbox, GlIcon
+        GlButton, GlButtonGroup, GlDisclosureDropdown, GlFormCheckbox, GlIcon
     },
     data() {
         return {
@@ -125,7 +125,18 @@ export default {
                     >
                         {{ localDeployOnly? 'Deploy Locally': deployButtonText}}
                     </gl-button>
-                    <gl-dropdown v-if="userCanEdit && !standalone" :disabled="deployStatus == 'disabled'" right>
+                    <!-- Not gl-dropdown: it positions with popper v1, which assumes
+                         the viewport is the containing block for a fixed menu. See
+                         dashboard/components/cells/deployment-controls.vue. -->
+                    <gl-disclosure-dropdown
+                        v-if="userCanEdit && !standalone"
+                        :disabled="deployStatus == 'disabled'"
+                        data-testid="deploy-options"
+                        placement="bottom-end"
+                        positioning-strategy="fixed"
+                        :toggle-text="__('Deploy options')"
+                        text-sr-only
+                    >
                         <div class="gl-mt-3"/>
                             <gl-form-checkbox v-if="!localDeployOnly" data-testid="toggle-local-deploy" @input="onInputLocalDeploy" style="margin: 0.25rem 1rem;" >
                                 <span v-gl-tooltip.hover.right
@@ -139,7 +150,7 @@ export default {
                                 <span v-gl-tooltip.hover.right
                                       title="Run a workflow without provisioning any cloud resources"> Dry Run </span>
                             </gl-form-checkbox>
-                    </gl-dropdown>
+                    </gl-disclosure-dropdown>
                 </gl-button-group>
                 <error-small class="gl-absolute" style="top: 2.25em; right: 0; width: 300px; text-align: right;" :condition="!canDeploy">
                     <div class="gl-flex gl-items-center gl-justify-end">
