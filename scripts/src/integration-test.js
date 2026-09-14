@@ -194,6 +194,42 @@ const ENV_NAMING_FUNCTIONS = {
   identity(baseId) { return baseId}
 }
 
+// The fork builds a dashboard from a built-in project template and runs the
+// import in a worker, so create-user returns before the project is usable.
+// Waiting for refs to resolve is not enough: the repository is populated
+// slightly before GitLab marks the import finished, and until it does every
+// project page redirects to /-/import -- which is what cypress lands on.
+// So wait for the signal cypress actually needs, the project page itself.
+async function waitForDashboardRepo(username, password, timeoutMs = 300000) {
+  const sharedAxios = require('./shared/axios-instance.js')
+  const login = require('./shared/login.js')
+  await login(UNFURL_CLOUD_SERVER, username, password, undefined, true)
+
+  const url = `${UNFURL_CLOUD_SERVER}/${username}/dashboard`
+  const deadline = Date.now() + timeoutMs
+  let last = ''
+
+  // Assert where it landed, not merely where it did not: while the import runs
+  // GitLab redirects to /-/import, but an unauthenticated response redirects to
+  // /users/sign_in, and "not the import page" accepts that as ready.
+  const ready = `/${username}/dashboard`
+
+  for(;;) {
+    const response = await sharedAxios.get(url)
+    last = response.request?.res?.responseUrl || ''
+    if(response.status < 400 && new URL(last || url).pathname === ready) return true
+
+    if(Date.now() >= deadline) {
+      throw new Error(
+        `${username}/dashboard was not ready after ${Math.round(timeoutMs / 1000)}s ` +
+        `(status ${response.status}, landed on ${last || url}). The project template ` +
+        'import did not finish -- check project_mirror_data.status and that sidekiq is running.'
+      )
+    }
+    await new Promise(resolve => setTimeout(resolve, 5000))
+  }
+}
+
 function createDashboardCommand(username, dashboardRepo) {
   const
     createUser = path.join(__dirname, 'create-user.js'),
@@ -361,6 +397,14 @@ async function main() {
 
 
   if(prepareUserCommand) prepareUserCommand()
+
+  // Only when the fork made the dashboard itself; a pushed --dashboard repo is
+  // already there, and standalone has no import at all.
+  if(username && !dashboardRepo && !STANDALONE_UNFURL) {
+    console.log(`Waiting for ${username}/dashboard to finish importing...`)
+    await waitForDashboardRepo(username, GENERATED_PASSWORD)
+    console.log(`${username}/dashboard is ready`)
+  }
 
   if(group) {
     console.log(`Attempting to create group ${group}`)

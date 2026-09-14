@@ -86,8 +86,15 @@ async function createUserBySignup(o) {
 
     const response = (await axios.post(`${UNFURL_CLOUD_SERVER}/users`, form, {headers}))
     if(response.status > 400) {
-      console.error(response.data)
-      return false
+      // Registration answers 302 and we follow it. A code matching
+      // UNFURL_APPROVE_MATCHING_CODES skips confirmation and onboarding, so
+      // that redirect can land on a page this session may not read -- which
+      // says nothing about whether the account was created. Ask.
+      const {exists} = (await axios.get(`${UNFURL_CLOUD_SERVER}/users/${username}/exists`))?.data || {}
+      if(!exists) {
+        console.error(response.data)
+        return false
+      }
     }
   }
 
