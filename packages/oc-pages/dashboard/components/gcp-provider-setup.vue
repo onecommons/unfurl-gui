@@ -48,6 +48,7 @@ export default {
             zone: '',
             gcpProjectId: '',
             gcpProjects: [],
+            projectSearchTerm: '',
             loadingProjects: false,
             saving: false,
             errorMessage: '',
@@ -73,6 +74,14 @@ export default {
         },
         projectItems() {
             return this.gcpProjects.map(({project_id, name}) => ({value: project_id, text: name || project_id}))
+        },
+        // `searchable` only renders the box and emits the term -- filtering the
+        // list is the consumer's job
+        filteredProjectItems() {
+            const term = this.projectSearchTerm.trim().toLowerCase()
+            if(!term) return this.projectItems
+            return this.projectItems.filter(({value, text}) =>
+                value.toLowerCase().includes(term) || text.toLowerCase().includes(term))
         },
         projectToggleText() {
             if(!this.gcpProjectId) return 'Select project'
@@ -101,7 +110,7 @@ export default {
         async loadProjects() {
             this.loadingProjects = true
             try {
-                this.gcpProjects = await fetchGcpProjects(this.getHomeProjectPath, this.environmentName)
+                this.gcpProjects = (await fetchGcpProjects(this.getHomeProjectPath, this.environmentName)) || []
             } catch(e) {
                 // No usable token: the only way forward is to sign in again.
                 this.signInExpired = true
@@ -234,9 +243,10 @@ export default {
                     searchable
                     search-placeholder="Search projects"
                     :loading="loadingProjects"
-                    :items="projectItems"
+                    :items="filteredProjectItems"
                     :selected="gcpProjectId"
                     :toggle-text="projectToggleText"
+                    @search="projectSearchTerm = $event"
                     @select="gcpProjectId = $event"
                 />
                 <p class="gl-mt-2 gl-text-subtle">
@@ -246,9 +256,10 @@ export default {
 
                 <h4 class="gl-mt-5">Zone</h4>
                 <gcp-zone-dropdown
-                    v-model="zone"
+                    :model-value="zone"
                     :disabled="!gcpProjectId"
                     :placeholder="zonePlaceholder"
+                    @update:modelValue="zone = $event"
                 />
                 <p class="gl-mt-2 gl-text-subtle">
                     Learn more about
@@ -289,7 +300,7 @@ export default {
                     </div>
                     <div class="gl-flex gl-items-center gl-gap-3">
                         <label class="gl-mb-0">Zone</label>
-                        <gcp-zone-dropdown v-model="zone"/>
+                        <gcp-zone-dropdown :model-value="zone" @update:modelValue="zone = $event"/>
                     </div>
                     <p class="gl-mt-2 gl-text-subtle">
                         Learn more about
