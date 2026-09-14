@@ -434,7 +434,10 @@ Cypress.Commands.add('recreateDeployment', options => {
       })
       cy.whenGitlab(() => {
         if(DRYRUN) {
-          cy.get('[data-testid="deploy-button"]').next().click()
+          // The toggle by testid, not the deploy button's next sibling: the
+          // disclosure dropdown puts a real button inside its wrapper, so
+          // clicking the wrapper no longer opens the menu.
+          cy.get('[data-testid="deploy-options"] [data-testid="base-dropdown-toggle"]').click()
           // By testid, not by label text: the label's text sits behind
           // `v-if="userCanEdit"`, and a user deploying somebody else's blueprint
           // cannot edit it, so on the fork the label renders empty.
