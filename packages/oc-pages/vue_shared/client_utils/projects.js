@@ -175,14 +175,21 @@ export function setLastCommit(projectId, branch, commit_data) {
     if (commit_data === undefined) {
         delete sessionStorage[commitSessionStorageKey(projectId, branch)]
     } else {
-        let {commit, queueid, when} = commit_data
-        if (!when) {
-            when = (new Date(Date.now())).toISOString()
+        let {commit, queueid, when, supersedes} = commit_data
+        if (supersedes === undefined) {
+            // The commit this one replaces, so fetchLastCommit can tell "/branches
+            // hasn't caught up with a write we just made" (it reports exactly this)
+            // from "something else moved the branch on" (it reports anything else).
+            // Carried forward when the commit is unchanged so a repeated write
+            // doesn't make us forget what we superseded.
+            const previous = getLastCommit(projectId, branch)
+            supersedes = previous?.commit === commit ? previous?.supersedes : previous?.commit
         }
         if (!queueid) {
             queueid = 0
         }
-        sessionStorage[commitSessionStorageKey(projectId, branch)] = JSON.stringify({commit, queueid, when})
+        sessionStorage[commitSessionStorageKey(projectId, branch)] =
+            JSON.stringify({commit, queueid, when, supersedes})
     }
 }
 
@@ -206,21 +213,20 @@ export async function fetchLastCommit(projectPath, _branch) {
     const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
     const {id, created_at} = commit || {}  // note: same as committed_date
 
-    const fromAPI = new Date(created_at)
-    const fromStore = new Date(lastInSessionStorage?.when || 0)
-
     // A `-dirty` suffix from /branches means the on-disk working tree was
-    // uncommitted at the time of the lookup; we must trust the API value
-    // unconditionally — the previously-cached sessionStorage commit (set
-    // from an /export response with `when=Date.now()`) will look "newer"
-    // because the outer repo's HEAD timestamp doesn't advance when only
-    // the working tree changed.
+    // uncommitted at the time of the lookup, so the sha is not a commit we
+    // could ever have superseded; trust the API value unconditionally.
     const isDirty = typeof id === 'string' && id.endsWith('-dirty')
     if (isDirty) {
         // eslint-disable-next-line no-console -- deliberate diagnostic, see above
         console.debug(`fetchLastCommit got dirty commit: ${projectPath}#${name} -> ${id}`)
     }
-    if (lastInSessionStorage?.commit && !isDirty && fromStore > fromAPI) {
+    // Keep ours only while the API is still reporting the commit ours replaced.
+    // This used to compare the API's committed_date against a wall-clock stamp
+    // taken when we cached the value; those measure different things, so a
+    // commit pushed by CI (its date older than our last cache write) lost the
+    // comparison and the stale commit was pinned for the rest of the session.
+    if (lastInSessionStorage?.commit && !isDirty && id === lastInSessionStorage.supersedes) {
         return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }
     const changed = id !== lastInSessionStorage?.commit
