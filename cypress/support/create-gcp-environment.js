@@ -86,13 +86,17 @@ function authenticateGCP(filePath=GOOGLE_APPLICATION_CREDENTIALS, click=true) {
     lastModified: new Date().getTime(),
     force: true
   })
-  cy.get('button[data-toggle="dropdown"]').click()
+  // the zone list is a GlCollapsibleListbox now: 15.11's dropdown/* components,
+  // which rendered the options as buttons, went with the cluster pages
+  cy.get('[data-testid="gcp-zone-dropdown"] [data-testid="base-dropdown-toggle"]').click()
   cy.getInputOrTextarea('[placeholder="Search zones"]').clear().type(GCP_ZONE)
-  cy.contains('button', GCP_ZONE).should('be.visible')
-  cy.contains('button', GCP_ZONE).click()
+  cy.get(`[data-testid="listbox-item-${GCP_ZONE}"]`).should('be.visible').click()
   if(click) {
-    cy.contains('button', 'Save').click()
-    cy.url({timeout: BASE_TIMEOUT * 2}).should('not.include', '/dashboard/-/clusters')
+    cy.get('[data-testid="gcp-provider-save"]').click()
+    // the panel is part of the environment page now, so there is no navigation
+    // to assert on -- what says it saved is the page coming back
+    cy.get('[data-testid="gcp-provider-setup"]', {timeout: BASE_TIMEOUT * 2}).should('not.exist')
+    cy.contains('Google Cloud Platform').should('be.visible')
   }
 }
 

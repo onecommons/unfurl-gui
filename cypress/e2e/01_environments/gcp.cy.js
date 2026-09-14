@@ -1,3 +1,5 @@
+import {DANGER_ALERT} from '../../support/alerts'
+
 const BASE_TIMEOUT = Cypress.env('BASE_TIMEOUT')
 const ENVIRONMENT_NAME = 'env-test-' + Cypress.env('GCP_ENVIRONMENT_NAME')
 const GOOGLE_APPLICATION_CREDENTIALS = Cypress.env('GOOGLE_APPLICATION_CREDENTIALS')
@@ -9,12 +11,11 @@ const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: BASE_TIMEOUT * 2, matchCase: false})
 
 function authenticateWithInvalidJSON() {
-  cy.url().should('not.include', `/${DASHBOARD_DEST}/-/environments`)
+  cy.get('[data-testid="gcp-provider-setup"]').should('be.visible')
   cy.authenticateGCP('malformed-service-account-key.json.txt', false) // txt extension to keep cypress from parsing
-  cy.get('.flash-alert').should('be.visible')
+  cy.get(DANGER_ALERT).should('be.visible')
   cy.contains('invalid JSON').should('be.visible')
   cy.contains('button', 'Save').should('be.disabled')
-
 }
 
 describe('GCP environments', () => {
@@ -31,20 +32,21 @@ describe('GCP environments', () => {
     cy.environmentShouldExist(ENVIRONMENT_NAME)
   })
 
+  // The dialog creates the environment before the panel opens now, so a
+  // rejected key leaves an environment with no credentials rather than none at
+  // all -- the second attempt happens on the same page instead of from the
+  // dialog again.
   it('Can gracefully handle invalid JSON', () => {
     cy.visit(`/${DASHBOARD_DEST}/-/environments`)
     cy.clickCreateEnvironmentButton()
     cy.completeEnvironmentDialog({environmentName: ENVIRONMENT_NAME, provider: 'gcp'})
     authenticateWithInvalidJSON()
 
-    cy.visit(`/${DASHBOARD_DEST}/-/environments`)
-    cy.environmentShouldNotExist(ENVIRONMENT_NAME)
-
-    cy.clickCreateEnvironmentButton()
-    cy.completeEnvironmentDialog({environmentName: ENVIRONMENT_NAME, provider: 'gcp'})
+    cy.reload()
     authenticateWithInvalidJSON()
 
     cy.authenticateGCP()
+    cy.validateGCPEnvironment()
   })
 
   it('Can create a gcp environment', () => {

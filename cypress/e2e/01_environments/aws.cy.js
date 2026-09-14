@@ -30,7 +30,9 @@ function authenticateWithAccessKeys() {
 
   cy.contains('AWS Secret access key').next().type(AWS_SECRET_ACCESS_KEY)
   cy.contains('button', 'Save').click()
-  cy.url().should('not.include', '/dashboard/-/clusters')
+  // the panel is part of the environment page now, so there is no navigation
+  // to assert on -- what says it saved is the page coming back
+  cy.get('[data-testid="aws-provider-setup"]', {timeout: 10000}).should('not.exist')
 }
 
 describe('AWS environments', () => {

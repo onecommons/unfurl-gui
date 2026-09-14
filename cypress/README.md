@@ -109,6 +109,10 @@ Fork-only — these need a GitLab instance and cannot run against
 - `01_environments/aws.cy.js`, `digitalocean.cy.js`, `gcp.cy.js`,
   `generic.cy.js`, `github_token.cy.js` — drive the environment-creation UI,
   which `unfurl serve --gui` does not have
+- `01_environments/aws_role_arn.cy.js`, `gcp_sign_in.cy.js` — the two provider
+  methods that talk to the fork's `/-/environments/:name/provider` endpoints.
+  Both stub the third party (`cy.intercept` on the provider endpoints) and stop
+  at Google's consent screen; everything up to it is real.
 - `01_environments/create_dashboard.cy.js` — uses the GitLab project-creation
   UI. The migration plan listed this as "confirm whether it runs standalone";
   it does not.
