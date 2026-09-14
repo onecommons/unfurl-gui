@@ -1,5 +1,4 @@
 import {dashboardPath} from '../../support/dashboard-path'
-import {DANGER_ALERT} from '../../support/alerts'
 
 // The role-ARN methods need an AWS account that trusts this instance, so the
 // server side is stubbed here and the spec covers what the browser does: the
@@ -67,8 +66,11 @@ describe('AWS role ARN', () => {
     cy.get('[data-testid="aws-provider-save"]').click()
 
     cy.wait('@saveProvider')
-    cy.get(DANGER_ALERT).should('be.visible')
-    cy.contains('sts:AssumeRole').should('be.visible')
+    // scoped to the panel's own alert: the dashboard's error container is a
+    // danger alert too, so a bare selector passes on somebody else's error
+    cy.get('[data-testid="aws-provider-error"]')
+      .should('be.visible')
+      .and('contain', 'sts:AssumeRole')
     // the user fixes the role in AWS and tries again; nothing was torn down
     cy.get('[data-testid="aws-provider-setup"]').should('be.visible')
   })

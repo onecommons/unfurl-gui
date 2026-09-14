@@ -22,6 +22,9 @@ function createEnvironment() {
 
 describe('GCP Google sign-in', () => {
   beforeEach(() => {
+    // the sign-in case ends on the stubbed consent screen, which has no app for
+    // the environment lookup below to read
+    cy.visit(dashboardPath('/-/environments'))
     cy.whenEnvironmentExists(ENVIRONMENT_NAME, () => {
       cy.deleteEnvironment(ENVIRONMENT_NAME)
     })
@@ -29,9 +32,15 @@ describe('GCP Google sign-in', () => {
   })
 
   it('asks the server to start the flow, with a return path on this origin', () => {
-    // stubbed rather than followed: the 302 to Google is the server's business
-    // and going there would take the browser off this instance
-    cy.intercept('GET', '**/provider/gcp/authorize*', {statusCode: 204}).as('authorize')
+    // Stubbed rather than followed: the 302 to Google is the server's business
+    // and going there would take the browser off this instance. It has to be a
+    // real page -- this is a top-level navigation, and cypress waits out the
+    // full page-load timeout on a response that never becomes a document.
+    cy.intercept('GET', '**/provider/gcp/authorize*', {
+      statusCode: 200,
+      headers: {'content-type': 'text/html'},
+      body: '<html><body>stub consent screen</body></html>',
+    }).as('authorize')
 
     createEnvironment()
     cy.get('[data-testid="gcp-sign-in-with-google"]').click()
@@ -95,7 +104,9 @@ describe('GCP Google sign-in', () => {
     cy.visit(dashboardPath(`/-/environments/${ENVIRONMENT_NAME}?provider=gcp&signed_in=1`))
     cy.wait('@gcpProjects')
 
-    cy.contains('Google Cloud authorizations required').should('be.visible')
+    cy.get('[data-testid="gcp-provider-error"]')
+      .should('be.visible')
+      .and('contain', 'Google Cloud authorizations required')
     cy.get('[data-testid="gcp-sign-in-with-google"]').should('be.visible')
   })
 })
