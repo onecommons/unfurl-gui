@@ -175,21 +175,67 @@ which copies `testing-shared/fixtures/environments/<provider>.yaml` in and runs
 skipped standalone. The other providers (azure, digitalocean, kubernetes,
 generic) still take the GUI path only and are therefore fork-only.
 
-## Fork-only validation path (migration plan 1.7)
+## Running against the fork (gdk.test)
 
-Two integration points and the specs above cannot be exercised from this
-repo, and they gate migration step 2C:
+`<GDK_OC>` -- a GDK checkout running the 19.3 fork -- serves gdk.test, and
+`aws__minecraft__minecraft` passes end to end against it. Paths and values in
+angle brackets below are placeholders; substitute your own. Two integration
+points still cannot be exercised from this repo and gate migration step 2C:
+the `environments/index.js` mount hook that mounts `oc/dashboard`, and
+`notes-wrapper.vue`, already broken by the work-items switch.
 
-- the `environments/index.js` mount hook that mounts `oc/dashboard`
-- `notes-wrapper.vue`, already broken by the work-items switch
+```bash
+env -u OC_USERNAME -u OC_PASSWORD OC_INVITE_CODE=cypress-e2e DRYRUN=1 \
+  AWS_ACCESS_KEY_ID=foobarbaz AWS_SECRET_ACCESS_KEY=... AWS_DEFAULT_REGION=eu-central-1 \
+  UNFURL_TEST_TMPDIR=<SCRATCH_DIR> \
+  GOOGLE_APPLICATION_CREDENTIALS=testing-shared/fixtures/service-account.json \
+  OC_URL=http://gdk.test:3000 \
+  yarn integration-test run --namespace onecommons/blueprints -- \
+    -e GENERATE_SUBDOMAINS=true --browser chrome \
+    -s cypress/e2e/blueprints/aws__minecraft__minecraft.cy.js
+```
 
-There is a GDK at `/Users/adam/_dev/gdk-oc`, but as of this writing its
-`gitlab/` checkout is on upstream `master` (19.4.0-premaster) with no `oc*`
-directories — it is a vanilla GitLab, not the unfurl.cloud fork. **Deciding
-the fork environment is still open** and is its own budget line: either check
-the fork branch out into that GDK, or build an image of the fork. Once one
-exists, run the fork-only specs listed above against it on 15.11 first, to
-produce the fork-side baseline that 2C is compared against.
+**`OC_USERNAME` and `OC_PASSWORD` must be unset.** With both set,
+`create-user.js:133` takes the admin path (`POST /admin/users`), which creates
+no dashboard — `create_dashboard_project!` is enqueued by the signup controller
+alone. Unsetting them routes through `createUserBySignup`, and the dashboard is
+built from the fork's own `unfurl_dashboard` project template. Do not substitute
+`--dashboard testing-shared/fixtures/dashboards/v2.tgz`: that fixture is the
+**standalone** dashboard, and pushing it at the fork tests the wrong artifact.
+
+The import runs in a worker, so the harness waits for the project page before
+starting cypress. Nothing else should be waited on: the repository is populated
+slightly before GitLab marks the import finished, and until it does every
+project page redirects to `/-/import`.
+
+### What the instance needs
+
+- **A running unfurl-server** on the port `gon.unfurl_server_url` names (8081),
+  started with a **dedicated** home — never `~/.unfurl_home`, whose
+  `defaults.connections` are inherited into every exported environment and
+  arrive as base types that `declareAvailableProviders` rejects:
+
+  ```bash
+  UNFURL_HOME=<THROWAWAY_UNFURL_HOME> \
+  UNFURL_PACKAGE_RULES='gitlab.com/onecommons/* unfurl.cloud/onecommons/* unfurl.cloud/onecommons/* http://gdk.test:3000/onecommons/*' \
+    unfurl -vvv serve --port 8081 --cloud-server http://gdk.test:3000
+  ```
+
+  The package rules are not optional: without them blueprints resolve from real
+  unfurl.cloud and pick the highest *tag* rather than gdk.test's `main`.
+  **Restart the server after editing unfurl** — python loads modules once, so a
+  running server serves the old code and the export quietly returns stale
+  results.
+
+- **Instance CI variables** `UNFURL_VALID_INVITE_CODES` (`cypress-e2e`) and
+  `UNFURL_APPROVE_MATCHING_CODES` (`\Acypress-e2e\z`), both protected. The code
+  list alone leaves the user `active` with `confirmed_at` NULL, and an
+  unconfirmed user cannot authenticate over git HTTP. Both are in gdk-oc's
+  documented instance-setup script.
+
+- **`registry.enabled: true`** in `config/gitlab.yml`, or the access-token
+  request 400s and no deployment can be triggered; and **`onecommons/ci`
+  seeded**, since every dashboard's `.gitlab-ci.yml` is only an `include:` of it.
 
 ## Specs in one run share a user and a dashboard
 
