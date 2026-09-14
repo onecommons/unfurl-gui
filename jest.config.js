@@ -80,6 +80,8 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
+    // image imports are URLs to webpack and unparseable to jest
+    '\\.(png|jpe?g|gif|webp)(\\?.*)?$': '<rootDir>/jest-file-stub.js',
     // the same @vue/compat redirections vue.config.js sets up for the build
     "^vue$": "<rootDir>/src/assets/javascripts/vue3compat/vue.js",
     "^vuex$": "<rootDir>/src/assets/javascripts/vue3compat/vuex.js",

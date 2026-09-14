@@ -1,5 +1,4 @@
 <script>
-import axios from '~/lib/utils/axios_utils';
 import { __ } from '~/locale';
 import _ from 'lodash'
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util'
@@ -31,12 +30,15 @@ if(lookupKey('azureCloudProvider')) {
 }
 */
 
-// using this for the environments POST
-// if provider is set while creating an environment, it tries to redirect to the cluster page and fails
-const PROVIDER_INPUT_MAPPING = {
-    'Google Cloud Platform': 'gcp',
-    'Amazon Web Services': 'aws',
-}
+// Providers whose template the dialog can write itself, because its type is all
+// the template needs -- the rest is credentials, which their own panel collects.
+// The others get theirs from the generic provider modal, which needs the user's
+// inputs before it has anything to write.
+const PROVIDER_TEMPLATE_AT_CREATION = ['Kubernetes', 'Google Cloud Platform', 'Amazon Web Services']
+
+// gcp and aws get a dedicated setup panel on the environment page rather than
+// the generic provider modal, so their query value names which one.
+const DEDICATED_PROVIDER_PANELS = ['gcp', 'aws']
 
 export default {
     components: {
@@ -114,9 +116,6 @@ export default {
         },
         currentText() {
             return this.displayProvider(this.selectedCloudProvider) || this.selectedCloudProvider || __('Select')
-        },
-        providerInput() {
-          return PROVIDER_INPUT_MAPPING[this.selectedCloudProvider]
         }
     },
     watch: {
@@ -138,7 +137,7 @@ export default {
         ...mapMutations(['createError', 'addProjectEnvironment']),
 
         async createEnvironmentWithoutCluster(instances={}) {
-            const primary_provider = this.selectedCloudProvider == 'Kubernetes' ? {
+            const primary_provider = PROVIDER_TEMPLATE_AT_CREATION.includes(this.selectedCloudProvider) ? {
                 name: 'primary_provider',
                 type: this.currentType,
                 __typename: 'ResourceTemplate'
@@ -194,7 +193,6 @@ export default {
             // rails is settings params weird
             if (!redirectTarget.includes('?')) redirectTarget += '?'
 
-            sessionStorage['cancelTo'] = window.location.href
             sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
             sessionStorage['environmentFormAction'] = this.action
 
@@ -204,7 +202,7 @@ export default {
                 await postGitlabEnvironmentForm();
                 await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: this.selectedCloudProvider})
                 window.location.href = redirectTarget;
-            } else if(! ['gcp', 'aws'].includes(provider)) {
+            } else {
                 let instances
                 if(provider == 'k8s') {
                     instances = {
@@ -226,7 +224,12 @@ export default {
                 await this.createEnvironmentWithoutCluster(instances)
                 if(this.hasCriticalErrors) return
                 sessionStorage['redirectOnProviderSaved'] = redirectTarget
-                const environmentRoute = `/-/environments/${this.environmentName}${provider? '?provider': ''}`
+                // A bare `?provider` opens the generic provider modal; naming one
+                // selects its own setup panel instead.
+                const query = DEDICATED_PROVIDER_PANELS.includes(provider)?
+                    `?provider=${provider}`:
+                    (provider? '?provider': '')
+                const environmentRoute = `/-/environments/${this.environmentName}${query}`
                 // A reload here discards the whole SPA to reach a route the dashboard
                 // router already declares. Only that app has it: this dialog is also
                 // mounted in project_overview, which cannot route into an app that
@@ -236,12 +239,6 @@ export default {
                 } else {
                     window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}${environmentRoute}`
                 }
-            } else {
-                const url = `${window.origin}${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/new_redirect?new_env_redirect_url=${encodeURIComponent(redirectTarget)}`
-                sessionStorage['expect_cloud_provider_for'] = slugify(this.environmentName)
-                await axios.get(url); // set redirect
-
-                window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/clusters/new?env=${slugify(this.environmentName)}&provider=${provider}`
             }
         },
         displayProvider(provider) {
@@ -310,7 +307,6 @@ export default {
             <input name="authenticity_token" :value="token">
             <input name="environment[name]" :value="slugify(environmentName)">
             <input v-if="currentType" name="environment[external_url]" :value="`http://localhost/${currentType}`">
-            <input name="provider" :value="providerInput">
         </form>
     </div>
 </template>

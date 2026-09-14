@@ -10,6 +10,8 @@ import { __, n__ } from '~/locale'
 import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify, STD_REPOSITORY_URL} from 'oc_vue_shared/util'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
+import {fetchProvider, deleteProvider} from 'oc_vue_shared/client_utils/environment-providers'
+import {defineAsyncComponent} from 'vue'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { visitUrl } from '~/lib/utils/url_utility';
 
@@ -23,6 +25,8 @@ const PROP_MAP = {
     AWS_ACCESS_KEY_ID(value) { return {name: 'Access key', value}}
 }
 
+const PROVIDER_SETUP_PANELS = ['aws', 'gcp']
+
 const standalone = window.gon.unfurl_gui
 
 export default {
@@ -33,11 +37,15 @@ export default {
         DashboardBreadcrumbs,
         GlTabs, GlFormInput, GlButton, GlIcon, GlModal, GlPopover,
         DeploymentResources,
-        DetectIcon
+        DetectIcon,
+        // Only the setup path needs these, and between them they carry the
+        // region and zone lists and Google's button image set.
+        AwsProviderSetup: defineAsyncComponent(() => import('../components/aws-provider-setup.vue')),
+        GcpProviderSetup: defineAsyncComponent(() => import('../components/gcp-provider-setup.vue'))
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone}
+        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false}
     },
     computed: {
         ...mapGetters([
@@ -141,6 +149,16 @@ export default {
                     }
                 }
             }
+        },
+        // gcp and aws collect their credentials in a panel of their own; the query
+        // names which one, and the page is theirs until it is saved or cancelled.
+        providerSetup() {
+            const provider = this.$route.query.provider
+            if(this.providerRecorded) return null
+            return PROVIDER_SETUP_PANELS.includes(provider)? provider: null
+        },
+        gcpSignedIn() {
+            return this.$route.query.hasOwnProperty('signed_in')
         },
         showingResourcesTab() {
             return this.currentTab == this.resourcesTabIndex
@@ -266,8 +284,41 @@ export default {
                 this.useBaseState(root)
             }
         },
+        onProviderSetupSaved(provider) {
+            // the blueprint overview page a redirect returns to preselects the
+            // environment it was sent away to create
+            sessionStorage['instantiate_env'] = this.environmentName
+            sessionStorage['instantiate_provider'] = provider
+
+            const redirect = sessionStorage['redirectOnProviderSaved']
+            delete sessionStorage['redirectOnProviderSaved']
+
+            // A full load rather than a route change: what the panel saved reaches
+            // this page through the server-rendered variables dataset and the
+            // environment export, and it updated neither in place.
+            return visitUrl(
+                redirect ||
+                `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
+            )
+        },
+
+        async onProviderSetupCancelled() {
+            // The environment exists by now, so cancelling leaves it without
+            // credentials rather than undoing anything -- the user deletes it from
+            // the page they land on if that is what they meant.
+            delete sessionStorage['redirectOnProviderSaved']
+
+            const query = {...this.$route.query}
+            delete query.provider
+            delete query.signed_in
+            this.$router.replace({...this.$route, query})
+            await this.freshState()
+        },
+
         async onDelete() {
             const environment = this.environment
+
+            await deleteProvider(this.getHomeProjectPath, environment.name)
 
             this.setUpdateObjectProjectPath(window.gon.projectPath)
             this.setUpdateType('delete-environment')
@@ -312,6 +363,11 @@ export default {
             }
             this.environment = environment
 
+            // An environment that already carries a provider row is set up; the
+            // panel exists only for one that does not.
+            this.providerRecorded = PROVIDER_SETUP_PANELS.includes(this.$route.query.provider) &&
+                !!(await fetchProvider(this.getHomeProjectPath, environmentName))
+
             await this.onSaveTemplate(false)
 
             const instances = _.cloneDeep(Object.values(environment.instances))
@@ -345,7 +401,9 @@ export default {
                 context: 'environment'
             })
 
-            if(connections.length == 0) {
+            // Not while a setup panel is up: that panel is what writes the
+            // provider, and this branch would open the generic modal over it.
+            if(connections.length == 0 && !this.providerSetup) {
                 const providers = (await fetchDashboardProviders(this.getHomeProjectPath))?.providersByEnvironment[environmentName] ?? []
                 if(providers?.length) {
                     // cheat to force agreement on primary card
@@ -460,68 +518,146 @@ export default {
 <template>
     <div class="environment" data-testid="dashboard-environment-page">
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <div class="mt-6 row">
-            <div class="col">
-                <h2>{{__('Environment Name')}}</h2>
-                <gl-form-input style="width: max(500px, 50%);" :value="environment.name" disabled/>
+        <aws-provider-setup
+            v-if="providerSetup == 'aws'"
+            :environment-name="environmentName"
+            @saved="onProviderSetupSaved"
+            @cancel="onProviderSetupCancelled"
+        />
+        <gcp-provider-setup
+            v-else-if="providerSetup == 'gcp'"
+            :environment-name="environmentName"
+            :signed-in="gcpSignedIn"
+            @saved="onProviderSetupSaved"
+            @cancel="onProviderSetupCancelled"
+        />
+        <div v-else>
+            <div class="mt-6 row">
+                <div class="col">
+                    <h2>{{__('Environment Name')}}</h2>
+                    <gl-form-input style="width: max(500px, 50%);" :value="environment.name" disabled/>
+                </div>
             </div>
-        </div>
-        <h2>{{n__('Cloud Provider', 'Cloud Providers', 1 + additionalProviders.length)}}</h2>
-        <oc-properties-list
-            :header="cloudProviderDisplayName"
-            :containerStyle="{'font-size': '0.9em', ...width}"
-            :properties="providerProps"
-            v-if="!environment.primary_provider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
-        >
-            <template #header-text>
-                <div class="gl-flex gl-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :type="primaryProvider && primaryProvider._localTypeName" class="gl-mr-2"/> {{cloudProviderDisplayName}}
-                </div>
-            </template>
-        </oc-properties-list>
-        <oc-properties-list
-            v-for="p in editableProviders"
-            :key="p.name"
-            :header="headerTitle(p)"
-            :containerStyle="{'font-size': '0.9em', ...width}"
-            :properties="p.properties"
-            :schema="schema(p)"
-            class="gl-mt-5"
-        >
-            <template #header-text>
-                <div class="gl-flex gl-items-center" style="line-height: 20px;">
-                    <detect-icon :size="20" :type="p._localTypeName" class="gl-mr-2"/> {{headerTitle(p)}}
-                </div>
-            </template>
-            <template v-if="userCanEdit" #header-controls>
-                <gl-button @click.stop="scrollToProvider(p.name)">
-                    <div class="gl-flex">
-                        <detect-icon name="pencil" :size="18" /> <span>Edit</span>
+            <h2>{{n__('Cloud Provider', 'Cloud Providers', 1 + additionalProviders.length)}}</h2>
+            <oc-properties-list
+                :header="cloudProviderDisplayName"
+                :containerStyle="{'font-size': '0.9em', ...width}"
+                :properties="providerProps"
+                v-if="!environment.primary_provider || [lookupCloudProviderAlias('gcp'), lookupCloudProviderAlias('aws')].includes(environment.primary_provider.type)"
+            >
+                <template #header-text>
+                    <div class="gl-flex gl-items-center" style="line-height: 20px;">
+                        <detect-icon :size="20" :type="primaryProvider && primaryProvider._localTypeName" class="gl-mr-2"/> {{cloudProviderDisplayName}}
+                    </div>
+                </template>
+            </oc-properties-list>
+            <oc-properties-list
+                v-for="p in editableProviders"
+                :key="p.name"
+                :header="headerTitle(p)"
+                :containerStyle="{'font-size': '0.9em', ...width}"
+                :properties="p.properties"
+                :schema="schema(p)"
+                class="gl-mt-5"
+            >
+                <template #header-text>
+                    <div class="gl-flex gl-items-center" style="line-height: 20px;">
+                        <detect-icon :size="20" :type="p._localTypeName" class="gl-mr-2"/> {{headerTitle(p)}}
+                    </div>
+                </template>
+                <template v-if="userCanEdit" #header-controls>
+                    <gl-button @click.stop="scrollToProvider(p.name)">
+                        <div class="gl-flex">
+                            <detect-icon name="pencil" :size="18" /> <span>Edit</span>
+                        </div>
+                    </gl-button>
+                </template>
+            </oc-properties-list>
+            <div v-if="userCanEdit" class="gl-mt-5">
+                <gl-button data-testid="add-provider" variant="confirm" @click="addProvider">
+                    <div>
+                        <gl-icon name="plus"/>
+                        {{__('Add a Provider')}}
                     </div>
                 </gl-button>
-            </template>
-        </oc-properties-list>
-        <div v-if="userCanEdit" class="gl-mt-5">
-            <gl-button data-testid="add-provider" variant="confirm" @click="addProvider">
-                <div>
-                    <gl-icon name="plus"/>
-                    {{__('Add a Provider')}}
-                </div>
-            </gl-button>
-        </div>
+            </div>
 
-        <gl-tabs v-model="currentTab" class="gl-mt-6">
-            <oc-tab title="Resources">
-                <div class="gl-flex" v-if="!showDeploymentResources">
-                    <div class="gl-mr-6">
-                        <p>
-                            External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
-                        </p>
-                        <p>
-                            External resources are a convenient way to reuse configurations across many deployments.
-                        </p>
+            <gl-tabs v-model="currentTab" class="gl-mt-6">
+                <oc-tab title="Resources">
+                    <div class="gl-flex" v-if="!showDeploymentResources">
+                        <div class="gl-mr-6">
+                            <p>
+                                External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
+                            </p>
+                            <p>
+                                External resources are a convenient way to reuse configurations across many deployments.
+                            </p>
+                        </div>
+                        <div v-if="userCanEdit">
+                            <gl-button variant="confirm" @click="addExternalResources">
+                                <div>
+                                    <gl-icon name="plus"/>
+                                    {{__('Add External Resource')}}
+                                </div>
+                            </gl-button>
+                        </div>
                     </div>
-                    <div v-if="userCanEdit">
+                </oc-tab>
+                <oc-tab title="Public Cloud" v-if="publicCloudResources.length > 0"></oc-tab>
+                <oc-tab title="Variables" v-if="userCanEdit && !standalone">
+                    <ci-variable-settings />
+                </oc-tab>
+            </gl-tabs>
+            <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions gl-flex gl-justify-end">
+                <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
+                    <gl-icon name="remove"/>
+                    Delete Environment
+                </gl-button>
+            </div>
+            <deployment-resources
+                :readonly="!userCanEdit || showingPublicCloudTab"
+                v-show="(showingDeploymentResourceTab && showDeploymentResources)"
+                style="margin-top: -1.5rem;"
+                @saveTemplate="onSaveTemplate"
+                @deleteResource="onDelete"
+                :save-status="saveStatus"
+                :filter="resourceFilter"
+                :delete-status="deleteStatus"
+                @addTopLevelResource="onExternalAdded"
+                @addProvider="onProviderAdded"
+                ref="deploymentResources"
+                external-status-indicator
+                display-validation
+            >
+                <template #header>
+                    <!-- potentially tricky to translate -->
+                    <div v-if="showingResourcesTab" class="gl-flex gl-items-center">
+                        <h2 style="margin: 0 1.25em">
+                            {{__('External Resources used by')}}
+                            <span style="font-weight: 400">{{environment.name}}</span>
+                            <!-- explicit gap: it used to come from the newline before
+                                 this tag, which 19.3's icon rendering collapses away -->
+                            <gl-icon v-if="showDeploymentResources" id="external-resources-help"
+                               class="gl-ml-2"
+                               data-testid="external-resources-help" name="information-o" :size="16"/>
+                        </h2>
+                        <!-- two paragraphs, so a tooltip won't do -->
+                        <gl-popover v-if="showDeploymentResources" target="external-resources-help" triggers="hover focus">
+                            <p>
+                                External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
+                            </p>
+                            <p class="gl-mb-0">
+                                External resources are a convenient way to reuse configurations across many deployments.
+                            </p>
+                        </gl-popover>
+                    </div>
+                    <div v-else-if="showingPublicCloudTab" class="gl-flex gl-items-center">
+                        <h2 style="margin: 0 1.25em">Public Cloud Resources</h2>
+                    </div>
+                    <div></div>
+                </template>
+                <template #primary-controls>
+                    <div v-if="!isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
                         <gl-button variant="confirm" @click="addExternalResources">
                             <div>
                                 <gl-icon name="plus"/>
@@ -529,90 +665,27 @@ export default {
                             </div>
                         </gl-button>
                     </div>
-                </div>
-            </oc-tab>
-            <oc-tab title="Public Cloud" v-if="publicCloudResources.length > 0"></oc-tab>
-            <oc-tab title="Variables" v-if="userCanEdit && !standalone">
-                <ci-variable-settings />
-            </oc-tab>
-        </gl-tabs>
-        <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions gl-flex gl-justify-end">
-            <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
-                <gl-icon name="remove"/>
-                Delete Environment
-            </gl-button>
+                </template>
+                <template #primary-controls-footer>
+                    <div v-if="isMobileLayout" class="confirm-container">
+                        <gl-button variant="confirm" @click="addExternalResources">
+                            <div>
+                                <gl-icon name="plus"/>
+                                {{__('Add External Resource')}}
+                            </div>
+                        </gl-button>
+                    </div>
+                </template>
+            </deployment-resources>
+
+            <!-- v-model doesn't work on this stupid component -->
+            <gl-modal :visible="showingProviderModal" @hide="onHide" modalId="providerModal" ref="providerModal" size="lg" :hide-header="isNewProvider" :hide-footer="true">
+
+                <deployment-resources :class="{'gl-mt-3': isNewProvider}" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
+
+
+            </gl-modal>
         </div>
-        <deployment-resources
-            :readonly="!userCanEdit || showingPublicCloudTab"
-            v-show="(showingDeploymentResourceTab && showDeploymentResources)"
-            style="margin-top: -1.5rem;"
-            @saveTemplate="onSaveTemplate"
-            @deleteResource="onDelete"
-            :save-status="saveStatus"
-            :filter="resourceFilter"
-            :delete-status="deleteStatus"
-            @addTopLevelResource="onExternalAdded"
-            @addProvider="onProviderAdded"
-            ref="deploymentResources"
-            external-status-indicator
-            display-validation
-        >
-            <template #header>
-                <!-- potentially tricky to translate -->
-                <div v-if="showingResourcesTab" class="gl-flex gl-items-center">
-                    <h2 style="margin: 0 1.25em">
-                        {{__('External Resources used by')}}
-                        <span style="font-weight: 400">{{environment.name}}</span>
-                        <!-- explicit gap: it used to come from the newline before
-                             this tag, which 19.3's icon rendering collapses away -->
-                        <gl-icon v-if="showDeploymentResources" id="external-resources-help"
-                           class="gl-ml-2"
-                           data-testid="external-resources-help" name="information-o" :size="16"/>
-                    </h2>
-                    <!-- two paragraphs, so a tooltip won't do -->
-                    <gl-popover v-if="showDeploymentResources" target="external-resources-help" triggers="hover focus">
-                        <p>
-                            External resources are third-party resources that already exist elsewhere that Unfurl Cloud connects to (i.e. a pre-existing DNS server, compute instance etc). Unfurl.cloud cannot delete or control the lifecycle of an external resource.
-                        </p>
-                        <p class="gl-mb-0">
-                            External resources are a convenient way to reuse configurations across many deployments.
-                        </p>
-                    </gl-popover>
-                </div>
-                <div v-else-if="showingPublicCloudTab" class="gl-flex gl-items-center">
-                    <h2 style="margin: 0 1.25em">Public Cloud Resources</h2>
-                </div>
-                <div></div>
-            </template>
-            <template #primary-controls>
-                <div v-if="!isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
-                    <gl-button variant="confirm" @click="addExternalResources">
-                        <div>
-                            <gl-icon name="plus"/>
-                            {{__('Add External Resource')}}
-                        </div>
-                    </gl-button>
-                </div>
-            </template>
-            <template #primary-controls-footer>
-                <div v-if="isMobileLayout" class="confirm-container">
-                    <gl-button variant="confirm" @click="addExternalResources">
-                        <div>
-                            <gl-icon name="plus"/>
-                            {{__('Add External Resource')}}
-                        </div>
-                    </gl-button>
-                </div>
-            </template>
-        </deployment-resources>
-
-        <!-- v-model doesn't work on this stupid component -->
-        <gl-modal :visible="showingProviderModal" @hide="onHide" modalId="providerModal" ref="providerModal" size="lg" :hide-header="isNewProvider" :hide-footer="true">
-
-            <deployment-resources :class="{'gl-mt-3': isNewProvider}" @saveTemplate="onSaveProviderTemplate" @deleteResource="onDelete" :save-status="saveStatus" :filter="isProvider" :delete-status="deleteStatus"  ref="providerResources" external-status-indicator display-validation />
-
-
-        </gl-modal>
     </div>
 </template>
 <style scoped>
