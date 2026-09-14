@@ -108,10 +108,11 @@ export default class DeploymentItem {
 
     get readonlyLink() { return `/${this.projectPath}/-/deployments/${this.environment.name}/${this.deployment.name}`}
     get editableLink() {
-        let overviewPath = this.deployment.projectPath
-        if(window.gon.unfurl_gui) {
-            overviewPath += '/-/overview'
-        }
+        // Unconditional: 15.11 routed deployment-drafts at the project root, so
+        // the fork was left without the prefix. 19.3 serves it from
+        // `overview(/*vueroute)` -- oc/config/routes/project.rb -- and a bare
+        // /<project>/deployment-drafts/... 404s there.
+        const overviewPath = `${this.deployment.projectPath}/-/overview`
         let result = `/${overviewPath}/deployment-drafts/${encodeURIComponent(this.projectPath)}/${this.environment.name}/${this.deployment.name}?fn=${this.deployment.title}`
         if(this.deployment.blueprintPath) {
             result += `&blueprintPath=${this.deployment.blueprintPath}`
