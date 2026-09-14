@@ -221,7 +221,9 @@ export default {
             return this.shouldRenderRequirements || (this.shouldRenderInputs && !this.customInputComponent) || this.shouldRenderExtras || this.shouldRenderAttributes || this.shouldRenderOutputs
         },
         _readonly() {
-            return this.card.name.startsWith('__') || this.readonly || this.card.readonly
+            // the card is {} when the route names a draft the store has no
+            // template for -- see the same guard in oc_inputs.vue
+            return this.card.name?.startsWith('__') || this.readonly || this.card.readonly
         },
         customInputComponent() {
             // NOTE: hardcoded names

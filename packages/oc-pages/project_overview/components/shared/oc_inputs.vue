@@ -550,7 +550,9 @@ export default {
 }
 </script>
 <template>
-<component :is="wrapper" ref="container" v-if="!card.properties.length == 0" class="oc-inputs" data-testid="oc_inputs">
+<!-- getPrimaryCard is {} when the route names a draft the store has no
+     template for, so properties has to be optional here -->
+<component :is="wrapper" ref="container" v-if="card.properties?.length" class="oc-inputs" data-testid="oc_inputs">
   <component :is="tabTooltip" v-if="tabTooltip" />
   <!-- TODO display description here as well -->
   <gl-tabs v-if="Object.keys(tabTitles).length > 0">
