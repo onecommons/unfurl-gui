@@ -132,7 +132,10 @@ Cypress.Commands.add('recreateDeployment', options => {
     }
 
 
-    cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}`)
+    // 19.3 moved the blueprint overview off the project root onto its own
+    // action, so the root now renders stock GitLab. `unfurl serve --gui` routes
+    // on the same suffix, so this address works standalone too.
+    cy.visit(`${OC_URL}/${projectPath.replace('simple-blueprint', SIMPLE_BLUEPRINT)}/-/overview`)
 
     cy.assertNoErrors()
 
@@ -432,8 +435,10 @@ Cypress.Commands.add('recreateDeployment', options => {
       cy.whenGitlab(() => {
         if(DRYRUN) {
           cy.get('[data-testid="deploy-button"]').next().click()
-          // cy.get('[data-testid="toggle-dry-run"]').click() // covered by label
-          cy.contains('label', 'Dry Run').click()
+          // By testid, not by label text: the label's text sits behind
+          // `v-if="userCanEdit"`, and a user deploying somebody else's blueprint
+          // cannot edit it, so on the fork the label renders empty.
+          cy.get('[data-testid="toggle-dry-run"]').check({force: true})
         }
 
         // cy.get('[data-testid="deploy-button"]:not([disabled])').click({position: 'bottomLeft'})

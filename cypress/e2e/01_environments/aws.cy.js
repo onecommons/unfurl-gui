@@ -58,7 +58,7 @@ describe('AWS environments', () => {
   })
 
   it('Can create an aws env from the overview page', () => {
-    cy.visit(`/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}`)
+    cy.visit(`/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}/-/overview`)
 
     cy.contains('.oc_table_row', 'Amazon Web Services') // TODO replace table row with testid
       .within(() => {

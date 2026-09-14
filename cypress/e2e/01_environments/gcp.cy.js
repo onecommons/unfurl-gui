@@ -57,7 +57,7 @@ describe('GCP environments', () => {
   })
 
   it('Can create a gcp env from the overview page', () => {
-    cy.visit(`/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}`)
+    cy.visit(`/${REPOS_NAMESPACE}/${SIMPLE_BLUEPRINT}/-/overview`)
 
     cy.contains('.oc_table_row', 'Google Cloud Platform') // TODO replace table row with testid
       .within(() => {
