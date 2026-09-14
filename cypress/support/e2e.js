@@ -307,16 +307,36 @@ before(() => {
 beforeEach(() => {
   setIntercept()
 
-  if(UNFURL_PACKAGE_RULES) {
-    cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
+  // Both concerns in one handler, because a later cy.intercept on this route
+  // shadows this one rather than chaining: a spec that registers its own (
+  // gcp_sign_in does) means nothing here runs for that request at all. Which
+  // also means the package rules above are silently dropped in those specs.
+  cy.intercept('POST', /^.*\/-\/deployments\/new$/, (req) => {
+    if(UNFURL_PACKAGE_RULES) {
       req.body.pipeline.variables_attributes.push({
         key: 'UNFURL_PACKAGE_RULES',
         masked: false,
         secret_value: UNFURL_PACKAGE_RULES,
         variable_type: 'unencrypted_var',
       })
+    }
+
+    // Every job in onecommons/ci is gated on WORKFLOW, so a missing or empty
+    // one yields an empty pipeline and a 400 whose body never reaches the
+    // browser log -- leaving the deployment with no job at all. Buffered, not
+    // cy.task'd: a task raised from here lands inside whatever chain is
+    // retrying and breaks it.
+    const vars = req.body?.pipeline?.variables_attributes || []
+    const workflow = vars.find(v => v.key == 'WORKFLOW')
+    emit(`[deploy-post] WORKFLOW=${JSON.stringify(workflow?.secret_value ?? workflow?.value)} ` +
+         `keys=${JSON.stringify(vars.map(v => v.key))}`)
+
+    req.continue(res => {
+      if(res.statusCode >= 300) {
+        emit(`[deploy-post] ${res.statusCode} ${JSON.stringify(res.body)}`)
+      }
     })
-  }
+  })
 
   // set via unfurl environment in standalone tests
   if(!STANDALONE_UNFURL) {
@@ -336,6 +356,11 @@ beforeEach(() => {
           "variables_attributes": [
             {
               "key": "UNFURL_SKIP_SAVE",
+              // Both, as prepareDataForApi does: 19.3's VariablesController
+              // permits `value` and drops secret_value as an unpermitted
+              // param -- the PATCH still answers 200, having stored nil, and
+              // unfurl then treats the dry run as one it must not record.
+              "value": "never",
               "secret_value": "never",
               "environment_scope": "*",
               "variable_type": "env_var",
@@ -344,6 +369,9 @@ beforeEach(() => {
             }
           ]
         }
+      }).then(({status, body}) => {
+        // it answered 200 for the wrong reason once already
+        if(status >= 300) throw new Error(`Could not set UNFURL_SKIP_SAVE: ${status} ${JSON.stringify(body)}`)
       })
     })
   }
