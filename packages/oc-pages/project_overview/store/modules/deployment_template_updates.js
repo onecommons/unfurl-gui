@@ -1083,11 +1083,22 @@ const actions = {
             // ResourceTemplate carries `directives`, so an untouched provider
             // round-trips an empty one into unfurl.yaml. The user never set it,
             // so don't write it -- but leave a non-empty one alone.
+            //
+            // Rebuilt rather than deleted in place: a patch entry is a shallow
+            // spread of the store's record, so its connections are still the
+            // store's own objects and vuex strict mode throws on the delete.
             for(const environmentPatch of patch) {
                 if(environmentPatch.__typename != 'DeploymentEnvironment') continue
-                for(const connection of Object.values(environmentPatch.connections || {})) {
-                    if(connection && !connection.directives?.length) delete connection.directives
-                }
+                if(!environmentPatch.connections) continue
+                environmentPatch.connections = Object.fromEntries(
+                    Object.entries(environmentPatch.connections).map(([name, connection]) => {
+                        if(connection && !connection.directives?.length) {
+                            const {directives, ...withoutDirectives} = connection
+                            return [name, withoutDirectives]
+                        }
+                        return [name, connection]
+                    })
+                )
             }
 
             // TODO be more selective about which patches to run this on
