@@ -8,7 +8,11 @@
  * Same approach as the fork's lib/utils/vue3compat/mount_wrapper.js; kept here
  * because these entries are compiled by both builds.
  */
+import {trackInputModality} from './input-modality'
+
 export function mountReplacing(app, element) {
+    trackInputModality()
+
     const wrapper = document.createElement('div')
     wrapper.style.display = 'contents'
     // attached before mounting: components read CSS custom properties on mount

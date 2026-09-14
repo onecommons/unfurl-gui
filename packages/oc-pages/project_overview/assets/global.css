@@ -65,3 +65,16 @@ h2.oc-title-section {
 }
 
 
+
+/*
+ * No focus ring on a control the pointer just activated. Components that manage
+ * focus (dropdown toggles, tabs) call .focus() themselves, which counts as
+ * :focus-visible, so the ring outlives the click. Keyboard focus keeps its ring
+ * -- see vue_shared/lib/input-modality.js for how the modality is tracked.
+ */
+html[data-input-modality='pointer'] .btn:focus,
+html[data-input-modality='pointer'] .gl-new-dropdown-toggle:focus,
+html[data-input-modality='pointer'] .nav-link:focus,
+html[data-input-modality='pointer'] [role='tab']:focus {
+    box-shadow: none;
+}
