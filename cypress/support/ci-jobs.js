@@ -28,30 +28,72 @@ function withCompletedJob(job, cb) {
 
 function expectSuccessfulJob(job) {
   withCompletedJob(job, job => {
-    expect(job.status.text).to.equal('passed')
+    // 19.x humanizes status.text ("Passed"), 15.11 does not. Not status.label:
+    // Build::Play overrides it to "manual play action" for any playable build,
+    // and a job that succeeded is still retryable, so still playable.
+    expect(job.status.text?.toLowerCase(), `job ${job.id} status`).to.equal('passed')
   })
 }
 
-function withJob(cb) {
+// A deployment only gets a job id once GitLab has actually created the
+// pipeline. When POST /-/deployments/new fails -- a 400 from an empty
+// pipeline, say -- that never happens, so this has to give up rather than
+// recurse forever: unbounded, the spec hangs silently to the run's timeout
+// with no failure to read.
+// each attempt waits BASE_TIMEOUT * 2; a healthy deploy has a job id well
+// inside the first few
+const WITH_JOB_ATTEMPTS = 10
+
+function withJob(cb, attempt = 1) {
   cy.wait(BASE_TIMEOUT * 2)
   return cy.withStore().then(async (store) => {
     const environment = store.getters.getCurrentEnvironment
     const deployment = store.getters.getDeploymentTemplate
     const deploymentItem = store.getters.deploymentItemDirect({deployment, environment})
     const result = deploymentItem && deploymentItem.job && deploymentItem.job.id
-    if(!result) return withJob(cb)
+    if(!result) {
+      if(attempt >= WITH_JOB_ATTEMPTS) {
+        throw new Error(
+          `withJob: no job id after ${attempt} attempts -- the deployment never got a pipeline. ` +
+          'Check that POST /-/deployments/new succeeded.'
+        )
+      }
+      return withJob(cb, attempt + 1)
+    }
     cb && cb(result)
     return result
   })
 }
 
-function assertDeploymentRunning(deploymentTitle) {
+// The page is rendered against whatever commit GitLab knew when it served it,
+// and the deploy job's own push lands in the same second the job reports
+// complete. Retrying the DOM query cannot see that push -- the app does not
+// refetch -- so reload instead of just waiting.
+const RUNNING_RELOAD_ATTEMPTS = 6
+
+function assertDeploymentRunning(deploymentTitle, attempt = 1) {
   cy.visit(dashboardPath(`/-/deployments?show=running`))
   // this becomes slow after a deployment completes on large dashboards
-  cy.contains('td', deploymentTitle, {timeout: BASE_TIMEOUT * 2}).within(() => {
-    //cy.get('[data-testid="status_success_solid-icon"]').should('exist')
-    cy.get('[data-testid="status_success_solid-icon"]').should('exist')
-    cy.get('[data-testid="status_success_solid-icon"]').scrollIntoView()
+  cy.get('[data-testid="dashboard-deployments-page"]', {timeout: BASE_TIMEOUT * 2})
+  cy.document().then(doc => {
+    const present = Array.from(doc.querySelectorAll('td'))
+      .some(td => td.textContent.includes(deploymentTitle))
+
+    if(!present) {
+      if(attempt >= RUNNING_RELOAD_ATTEMPTS) {
+        throw new Error(
+          `assertDeploymentRunning: "${deploymentTitle}" never reached the running tab after ` +
+          `${attempt} loads -- the deploy recorded no status, or the page is still on a pre-deploy commit.`
+        )
+      }
+      cy.wait(BASE_TIMEOUT)
+      return assertDeploymentRunning(deploymentTitle, attempt + 1)
+    }
+
+    cy.contains('td', deploymentTitle).within(() => {
+      cy.get('[data-testid="status_success_solid-icon"]').should('exist')
+      cy.get('[data-testid="status_success_solid-icon"]').scrollIntoView()
+    })
   })
 }
 
