@@ -26,9 +26,20 @@ export default {
     // back to value for any component still in MODE 2, so a component cannot
     // move to the Vue 3 v-model contract on its own. Callers keep v-model.
     compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
-    emits: ['update:modelValue'],
+    emits: ['update:modelValue', 'input'],
+    /*
+     * Callers are in global compat mode, so their `v-model` compiles to the
+     * Vue 2 contract and arrives as a plain `value` -- not the `modelValue`
+     * declared below. Undeclared, it fell through to the root element, which
+     * is the combobox, and overrode the guarded `:value` binding. A null then
+     * reaches GlFormCombobox, whose `value` is `required` and read as
+     * `value.length`, and the render throws. Declaring it as a prop is what
+     * takes it out of $attrs -- the call sites' data-testid, class and style
+     * still have to reach the root, so this must not set inheritAttrs.
+     */
     props: {
         modelValue: {type: String, default: null},
+        value: {type: String, default: undefined},
         label: {type: String, required: true},
         fetchSuggestions: {type: Function, required: true},
         disabled: {type: Boolean, default: false},
@@ -36,6 +47,12 @@ export default {
     },
     data() {
         return {suggestions: []}
+    },
+    computed: {
+        // whichever contract the caller's v-model compiled to
+        currentValue() {
+            return this.value ?? this.modelValue ?? ''
+        },
     },
     methods: {
         load(query) {
@@ -47,6 +64,8 @@ export default {
         },
         onInput(value) {
             this.$emit('update:modelValue', value)
+            // the Vue 2 contract the compat remap listens for
+            this.$emit('input', value)
             /*
              * Not loaded on mount: a non-empty value plus a populated
              * tokenList is exactly the state GlFormCombobox renders expanded,
@@ -60,11 +79,11 @@ export default {
 </script>
 <template>
     <gl-form-group v-if="disabled" :label="label">
-        <gl-form-input :value="modelValue" disabled type="text"/>
+        <gl-form-input :value="currentValue" disabled type="text"/>
     </gl-form-group>
     <gl-form-combobox
         v-else
-        :value="modelValue || ''"
+        :value="currentValue"
         :label-text="label"
         :token-list="suggestions"
         :placeholder="placeholder"
