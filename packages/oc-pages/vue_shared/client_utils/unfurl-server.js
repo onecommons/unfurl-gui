@@ -161,7 +161,29 @@ async function unfurlServerGet({
         username, password,
     })
 
-    const data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
+    let data
+    try {
+        data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
+    } catch(e) {
+        /*
+         * The write this read was waiting on was discarded, so the queueid we
+         * sent names a revision that will never exist and polling for it can
+         * only time out. Drop the queueid -- not the commit, which the backend
+         * rolled the batch back to and is still current -- so the next read
+         * takes the ordinary path, and rethrow: a read that silently succeeded
+         * here would put the pre-write state on screen as though nothing had
+         * been lost, which is the failure this whole path exists to remove.
+         */
+        if(e.response?.status == 409 && e.response?.data?.code == 'WRITE_DISCARDED') {
+            const stored = branch && getLastCommit(projectPath, branch)
+            if(stored) setLastCommit(projectPath, branch, {...stored, queueid: 0})
+        }
+        // as in unfurlServerUpdate: axios only sets e.message to "Request failed
+        // with status code N", and callers interpolate it into what the user reads
+        const serverMessage = e.response?.data?.message
+        if(serverMessage) e.message = serverMessage
+        throw e
+    }
 
     const projectId = encodeURIComponent(projectPath)
     const responseBranch = data?.branch

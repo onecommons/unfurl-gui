@@ -373,6 +373,38 @@ describe('unfurlServerUpdate 409 conflict clears sessionStorage', () => {
     })
 })
 
+// Mock-only: no live backend answers WRITE_DISCARDED yet.
+const describeWriteDiscarded = MODE === 'mock' ? describe : describe.skip
+describeWriteDiscarded('a read whose queued write was discarded', () => {
+    test('keeps the commit, drops the queueid, and reports what the server said', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 7, when: '2026-05-14T00:00:00.000Z'})
+
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/export')) {
+                return Promise.reject({response: {status: 409, data: {
+                    code: 'WRITE_DISCARDED',
+                    message: 'a queued write against this commit was discarded: backend returned 500',
+                    latest_commit: 'commit-A',
+                    queueid: 7,
+                }}})
+            }
+            if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse('commit-A'))
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        // the rejection is axios-shaped (a plain object), so match the message
+        // rather than using toThrow, which requires an Error instance
+        await expect(unfurlServerExport({format: 'environments', projectPath: TEST_PROJECT, branch: TEST_BRANCH}))
+            .rejects.toMatchObject({message: expect.stringContaining('discarded')})
+
+        // the commit survives -- the backend rolled the batch back to it, so it
+        // is still current; only the queueid named a revision that never existed
+        const stored = getLastCommit(TEST_PROJECT, TEST_BRANCH)
+        expect(stored?.commit).toBe('commit-A')
+        expect(stored?.queueid).toBe(0)
+    })
+})
+
 describe('back-to-back unfurlServerUpdate sends the prior response commit as latest_commit', () => {
     test('second update sees the first update\'s post-commit SHA', async () => {
         if (MODE === 'mock') {
