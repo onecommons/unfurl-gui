@@ -211,15 +211,35 @@ project page redirects to `/-/import`.
 ### What the instance needs
 
 - **A running unfurl-server** on the port `gon.unfurl_server_url` names (8081),
-  started with a **dedicated** home — never `~/.unfurl_home`, whose
-  `defaults.connections` are inherited into every exported environment and
-  arrive as base types that `declareAvailableProviders` rejects:
+  started from a directory **outside this checkout** and with a **dedicated**
+  home — never `~/.unfurl_home`, whose `defaults.connections` are inherited into
+  every exported environment and arrive as base types that
+  `declareAvailableProviders` rejects:
 
   ```bash
+  cd <SCRATCH_DIR>          # NOT the unfurl-gui checkout -- see below
   UNFURL_HOME=<THROWAWAY_UNFURL_HOME> \
   UNFURL_PACKAGE_RULES='gitlab.com/onecommons/* unfurl.cloud/onecommons/* unfurl.cloud/onecommons/* http://gdk.test:3000/onecommons/*' \
     unfurl -vvv serve --port 8081 --cloud-server http://gdk.test:3000
   ```
+
+  **The cwd is load-bearing, and getting it wrong fails silently.** Started
+  inside this checkout, unfurl's parent-walk adopts `unfurl-gui/_unfurl` as the
+  local project; that path has no `.git` of its own, so the repository it
+  resolves to is *unfurl-gui's*. Whenever that is dirty — any uncommitted work —
+  every write logs
+
+  ```
+  WARNING  UNFURL.SERVER local repository at .../unfurl-gui/_unfurl was dirty, not committing or pushing
+  ```
+
+  and is applied but never committed. The write still answers **200**, so the
+  client reports success; the dashboard repo stays at its import commit, the
+  environments export is legitimately empty, and specs fail far downstream with
+  `expected to find content 'Amazon Web Services'` or an empty environments
+  store. `UNFURL_SEARCH_ROOT=<SCRATCH_DIR>` caps the parent-walk if you must run
+  from here. The server's clone root (`repos/`) also lands in the cwd, which is
+  why it is gitignored.
 
   The package rules are not optional: without them blueprints resolve from real
   unfurl.cloud and pick the highest *tag* rather than gdk.test's `main`.

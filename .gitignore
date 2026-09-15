@@ -52,3 +52,8 @@ pnpm-debug.log*
 # because I'm an idiot - Andrew
 ./lsync.lua
 **/lsync.lua
+
+# `unfurl serve`'s clone root, created when the server is started with this
+# checkout as its cwd. Starting it here at all is a trap -- see
+# cypress/README.md -- but the directory should never be committable.
+/repos/
