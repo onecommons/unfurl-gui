@@ -60,7 +60,10 @@ standalone — the server does not serve the dashboard HTML for it.
 
 ## Standalone vs fork-only specs
 
-The PR gate (`build_test_release.yml`) runs nine specs. Keep this list in step
+`test-status.md` records which specs are known to pass where, and is the place
+to update after a run.
+
+The PR gate (`build_test_release.yml`) runs ten specs. Keep this list in step
 with the `-s` argument there:
 
 - `00_visitor/route_smoke.cy.js`
@@ -72,6 +75,7 @@ with the `-s` argument there:
 - `00_visitor/visit_cloudchart.cy.js`
 - `deployments/smorgasbord.cy.js`
 - `blueprints/aws__minecraft__minecraft.cy.js`
+- `blueprints/aws__baserow__baserow.cy.js`
 
 Also runnable standalone:
 
