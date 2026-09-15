@@ -171,11 +171,32 @@ const FORWARD_ENVIRONMENT_VARIABLES = [
 
 
 
+/*
+ * Values the suite needs *some* setting for, rather than none.
+ *
+ * The mail helpers used to return early when these were unset, so a run
+ * without them silently created no external resource and then clicked a
+ * "Save Changes" that was correctly disabled -- a failure that names a
+ * disabled button on the environment page and says nothing about the
+ * absent variable. Twice that has been debugged as a product bug. Nothing
+ * here is a credential: the specs only type these into a form and read them
+ * back, so a placeholder exercises the same path a real server would.
+ */
+const DEFAULTED_VARIABLES = {
+  // matches build_test_release.yml so a local run and CI exercise the same
+  // values; the password deliberately does not -- the specs only type it into
+  // a form and read it back, never authenticate with it, so there is nothing
+  // to gain from copying that file's plaintext credential into a second one
+  SMTP_HOST: 'mailu.untrusted.me',
+  MAIL_USERNAME: 'admin@mailu.untrusted.me',
+  MAIL_PASSWORD: 'cypress-placeholder-not-a-secret',
+}
+
 async function forwardedEnvironmentVariables(override) {
   const result = {}
 
   for(const envvar of FORWARD_ENVIRONMENT_VARIABLES) {
-    let value = override[envvar] || process.env[envvar]
+    let value = override[envvar] || process.env[envvar] || DEFAULTED_VARIABLES[envvar]
     if(value ?? null !== null) {
       result[`CYPRESS_${envvar}`] = transformEnvironmentVariables(envvar, value)
     }
@@ -456,6 +477,27 @@ async function main() {
 
     const UnfurlServer = (await import('../../testing-shared/unfurl-server.mjs')).default
 
+    /*
+     * `unfurl serve` launches the rust proxy in front of itself when it has a
+     * redis cache, so this is what decides whether a standalone run exercises
+     * the queued write path (queueid, batching, inc_queueid) or talks straight
+     * to Python and skips all of it. Off by default -- it needs a redis the
+     * caller has to provide.
+     *
+     * The key prefix is per-run because the queue keys outlive the run: a
+     * stale `queue:{project}:{commit}` from an earlier run answers the next
+     * one's inc_queueid and produces conflicts that have nothing to do with
+     * the code under test. Sharing a redis with other work is why this
+     * namespaces rather than flushing.
+     */
+    const CACHE_REDIS_URL = process.env.CACHE_REDIS_URL || ''
+    const CACHE_KEY_PREFIX = CACHE_REDIS_URL
+      ? (process.env.CACHE_KEY_PREFIX || `it-${process.pid}-${Date.now()}-`)
+      : ''
+    if(CACHE_REDIS_URL) {
+      console.log(`[integration-test] redis cache enabled, rust proxy expected (prefix ${CACHE_KEY_PREFIX})`)
+    }
+
     unfurlServer = new UnfurlServer({
       cwd: STANDALONE_PROJECT_DIR,
       gui: true,
@@ -463,7 +505,10 @@ async function main() {
         UNFURL_LOGGING: process.env.UNFURL_LOGGING || 'trace',
         UNFURL_HOME: process.env.UNFURL_HOME,
         UNFURL_SKIP_SAVE: 'never',
-        UNFURL_GUI_DIR: unfurlGuiRoot
+        UNFURL_GUI_DIR: unfurlGuiRoot,
+        // spread rather than assigned: an empty CACHE_REDIS_URL in the child's
+        // environment is not the same as an absent one
+        ...(CACHE_REDIS_URL ? {CACHE_REDIS_URL, CACHE_KEY_PREFIX} : {})
       },
       port: PORT,
       cloudServer: null,

@@ -142,7 +142,6 @@ Cypress.Commands.add('createDigitalOceanDNSInstance', environmentName => {
 
 
 function uncheckedCreateMail() {
-  if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
   cy.contains('button', 'Add External Resource').click()
   cy.get('[data-testid="external-resource-tab-SMTPServer"], [data-testid="external-resource-tab-mail"]').click()
   cy.get('[data-testid="resource-selection-GenericSMTPServer"]').click()
@@ -170,9 +169,6 @@ function uncheckedCreateMail() {
 }
 
 function checkMail() {
-  // uncheckedCreateMail/createMailResource no-op without these, so verifying
-  // would assert against inputs that were never created.
-  if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
   const mailResourceName = slugify(MAIL_RESOURCE_NAME)
 
   cy.getInputOrTextarea(
@@ -270,7 +266,6 @@ Cypress.Commands.add('saveExternalResources', saveExternalResources)
 Cypress.Commands.add('checkMail', checkMail)
 
 Cypress.Commands.add('createMailResource', environmentName => {
-  if(! (SMTP_HOST && MAIL_USERNAME && MAIL_PASSWORD)) return
   cy.visit(dashboardPath(`/-/environments/${environmentName}`))
   cy.wait(BASE_TIMEOUT)
   cy.contains('button', 'Add External Resource').click()
