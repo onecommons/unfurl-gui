@@ -55,7 +55,7 @@ export default {
 <div class="gl-flex">
     <deployment-status-icon :scope="scope" width="40px"/>
     <div v-if="application" style="display: flex; flex-direction: column;" :class="{'hash-fragment': `#${deployment.name}` == $route.hash}">
-        <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem.viewableLink: deploymentItem.viewableTo">
+        <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem?.viewableLink: deploymentItem?.viewableTo">
             <b>{{deployment.title}}:</b>
         </dashboard-router-link>
         <a :href="applicationLinkTarget">

@@ -47,7 +47,7 @@ export default {
 <template>
 <div class="gl-flex gl-items-center">
     <deployment-status-icon :scope="scope" />
-    <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem.viewableLink: deploymentItem.viewableTo">
+    <dashboard-router-link :noRouter="noRouter" :href="noRouter? deploymentItem?.viewableLink: deploymentItem?.viewableTo">
         <div v-if="displayStatus && deployment" class="status-item">
             <div class="font-weight-bold" style="line-height: 0">{{deployment.title}}</div>
         </div> 

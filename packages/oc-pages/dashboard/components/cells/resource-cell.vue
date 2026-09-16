@@ -35,7 +35,7 @@ export default {
         },
         to() {
             const href = this.noRouter?
-            `${this.deploymentItem.viewableLink}#${this.id}`:
+            `${this.deploymentItem?.viewableLink}#${this.id}`:
                 {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}, hash: `#${this.id}`}
             return this.noRouter ? href : {to: href}
         },

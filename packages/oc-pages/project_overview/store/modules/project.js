@@ -204,11 +204,14 @@ const getters = {
             }
 
             if(dict.Deployment && dict.Resource[Object.values(dict.Deployment)[0].primary]) {
-                obj.deployment = Object.values(dict.Deployment)[0]
+                const deployment = Object.values(dict.Deployment)[0]
                 resources = Object.values(dict.Resource)
-                obj.deployment.statuses = [resources.find(resource => resource.name == obj.deployment.primary)]
+                obj.deployment = {
+                    ...deployment,
+                    statuses: [resources.find(resource => resource.name == deployment.primary)],
+                }
             } else {
-                obj.deployment = Object.values(dict.DeploymentTemplate)[0]
+                obj.deployment = {...Object.values(dict.DeploymentTemplate)[0]}
             }
 
             obj.deployment.projectPath = deploymentTemplate.projectPath
