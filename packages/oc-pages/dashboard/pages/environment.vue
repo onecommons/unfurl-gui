@@ -13,24 +13,10 @@ import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_u
 import {fetchProvider, deleteProvider} from 'oc_vue_shared/client_utils/environment-providers'
 import {defineAsyncComponent} from 'vue'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
+import {mapProviderProps} from './provider-props'
 import { visitUrl } from '~/lib/utils/url_utility';
 
 
-// Keyed by both the server-rendered dataset's names and the environment
-// variables the panels actually write. aws already carried both; gcp had only
-// the dataset form, so its Project ID and Zone rendered from #js-oc-ci-variables
-// and therefore only after a full page load -- which is why removing the
-// self-reload blanked them.
-const PROP_MAP = {
-    primaryProviderGcpProjectId(value) {return {name: 'Project ID', value}},
-    primaryProviderGcpZone(value) { return {name: 'Zone', value} },
-    CLOUDSDK_CORE_PROJECT(value) { return {name: 'Project ID', value} },
-    CLOUDSDK_COMPUTE_ZONE(value) { return {name: 'Zone', value} },
-    primaryProviderAwsRoleArn(value) { return {name: 'Role ARN', value}},
-    primaryProviderAwsDefaultRegion(value) { return {name: 'Default region', value}},
-    AWS_DEFAULT_REGION(value) { return {name: 'Default region', value}},
-    AWS_ACCESS_KEY_ID(value) { return {name: 'Access key', value}}
-}
 
 const PROVIDER_SETUP_PANELS = ['aws', 'gcp']
 
@@ -58,7 +44,7 @@ export default {
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, variablesLoaded: false, savingProvider: false}
+        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, providerRecord: null, variablesLoaded: false, savingProvider: false}
     },
     computed: {
         ...mapGetters([
@@ -102,7 +88,7 @@ export default {
         },
         providerProps() {
             return this.mapCloudProviderProps({
-                ...this.$store.state.ci_variables,
+                ...(this.providerRecord || {}),
                 ...this.getVariables(this.environment)
             })
         },
@@ -463,10 +449,27 @@ export default {
             }
             this.environment = environment
 
+            // Cleared before the await, not just reassigned after it: until the
+            // fetch resolves providerProps would otherwise still be spreading
+            // the previous environment's record under this environment's name.
+            this.providerRecord = null
+            try {
+                // Fetched for every environment, not only while a setup panel is
+                // up: the Cloud Provider card's region, zone, project and role
+                // all come from here now. Answers null in standalone and for a
+                // user who may not read it.
+                this.providerRecord = await fetchProvider(this.getHomeProjectPath, environmentName)
+            } catch(e) {
+                // Everything below still renders the environment. Letting a
+                // provider endpoint that is merely down abort freshState would
+                // leave the page blank.
+                console.error('@freshState provider', e)
+            }
+
             // An environment that already carries a provider row is set up; the
             // panel exists only for one that does not.
             this.providerRecorded = PROVIDER_SETUP_PANELS.includes(this.$route.query.provider) &&
-                !!(await fetchProvider(this.getHomeProjectPath, environmentName))
+                !!this.providerRecord
 
             // An edit renders the stored credentials, which live in the
             // environment's CI variables rather than in the export. Covers
@@ -576,29 +579,8 @@ export default {
 
             this.$refs.deploymentResources.promptAddExternalResource()
         },
-        mapCloudProviderProps(ci_variables) {
-            const result = []
-            // Two keys can carry the same prop -- the server-rendered dataset's
-            // name and the environment variable the panel writes. Keep one row
-            // per name, and let the later key win: the caller spreads the
-            // API-backed variables after the dataset, so that is the fresh one.
-            const indexByName = {}
-            for(const variable in ci_variables) {
-                const mapping = PROP_MAP[variable]
-                if(typeof mapping == 'function') {
-                    const value = ci_variables[variable]
-                    const newProp = mapping(value)
-                    if(!newProp) continue
-                    const seen = indexByName[newProp.name]
-                    if(seen === undefined) {
-                        indexByName[newProp.name] = result.length
-                        result.push(newProp)
-                    } else if(newProp.value) {
-                        result[seen] = newProp
-                    }
-                }
-            }
-
+        mapCloudProviderProps(source) {
+            const result = mapProviderProps(source)
 
             const deploymentItem = this.deploymentItemDirect({
                 deployment: 'primary_provider',

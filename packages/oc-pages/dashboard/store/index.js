@@ -43,12 +43,20 @@ const variableDataEl = document.querySelector('#js-oc-ci-variables')
 // module that was never registered -- a flood of "[vuex] module namespace not
 // found in mapState(): ci_variables/".
 //
-// endpoint is project-level, so it is valid whichever environment is open;
-// environmentName is not, and the environment page sets it from the route.
+// Only the project-level keys are taken. The dataset is rendered from
+// `@environment`, so spreading it whole seeded the store with that one
+// environment's provider values -- primaryProviderGcpProjectId and friends --
+// which then outlived it: environment.vue read them back out of this state and
+// showed one environment's Project ID, Zone or Region on another's.
+//
+// endpoint is derived rather than read for the same reason it is safe to keep:
+// it is project-level, so it is valid whichever environment is open.
 if(!gon.unfurl_gui) {
+    const {projectId, maskableRegex} = variableDataEl?.dataset || {}
     const ci_variables = createCiVariablesStore({
         endpoint: `${projectPathToHomeRoute(normpath(gon.home_project))}/-/variables`,
-        ...(variableDataEl?.dataset || {}),
+        projectId,
+        maskableRegex,
         // TODO properly read these values
         isGroup: false,
         isProtectedByDefault: false
