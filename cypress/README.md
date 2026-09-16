@@ -43,13 +43,13 @@ redis running on this machine is socket-only (`port 0`) and cannot serve it.
 
 ## Where the dashboard lives
 
-Standalone and the fork address the dashboard differently, and specs must not
+Standalone and Unfurl Cloud address the dashboard differently, and specs must not
 hardcode either:
 
 | | dashboard home | sub-routes |
 |---|---|---|
 | standalone | `/` | `/-/environments`, `/-/deployments` |
-| fork | `/<dashboard project path>` | `/<path>/-/environments` |
+| unfurl cloud | `/<dashboard project path>` | `/<path>/-/environments` |
 
 `DASHBOARD_DEST` is a **filesystem path** in standalone (e.g.
 `local:/tmp/unfurl-debug/ufsv`), not a URL segment. `route_smoke.cy.js`
@@ -58,7 +58,7 @@ derives the base from it; copy that logic rather than re-deriving it.
 `/home` (the redundant alias in `dashboard/router/routes.js`) 404s in
 standalone — the server does not serve the dashboard HTML for it.
 
-## Standalone vs fork-only specs
+## Standalone vs Unfurl Cloud-only specs
 
 `test-status.md` records which specs are known to pass where, and is the place
 to update after a run.
@@ -97,7 +97,7 @@ points at the deployable blueprints.
 It asserts that every `ComponentMap` entry it fills round-trips into
 `store.state.templateResources` — that is the part the migration must not
 change. The **draft-save** half is skipped standalone: saving writes sensitive
-properties to a secrets store (CI variables in the fork,
+properties to a secrets store (CI variables on Unfurl Cloud,
 `secrets/secrets.yaml` standalone), and that write 500s with "Failed to update
 secrets -- aborting commit". The contract assertions still run.
 
@@ -107,21 +107,21 @@ property (Select), an `array` property (ArrayItems), and a property named
 `additionalProperties` exists as the "Additional Properties" tab but the spec
 does not yet drive it.
 
-Fork-only — these need a GitLab instance and cannot run against
+Unfurl Cloud only — these need a GitLab instance and cannot run against
 `unfurl serve --gui`:
 
 - `01_environments/aws.cy.js`, `digitalocean.cy.js`, `gcp.cy.js`,
   `generic.cy.js`, `github_token.cy.js` — drive the environment-creation UI,
   which `unfurl serve --gui` does not have
 - `01_environments/aws_role_arn.cy.js`, `gcp_sign_in.cy.js` — the two provider
-  methods that talk to the fork's `/-/environments/:name/provider` endpoints.
+  methods that talk to Unfurl Cloud's `/-/environments/:name/provider` endpoints.
   Both stub the third party (`cy.intercept` on the provider endpoints) and stop
   at Google's consent screen; everything up to it is real.
 - `01_environments/create_dashboard.cy.js` — uses the GitLab project-creation
   UI. The migration plan listed this as "confirm whether it runs standalone";
   it does not.
 - `01_environments/a10.cy.js` — imports a GitLab project export through
-  `/projects/new`, so it is fork-only. (Previously "still to confirm".)
+  `/projects/new`, so it is Unfurl Cloud-only. (Previously "still to confirm".)
 - `blueprints/*container-webapp*` (5 specs, including
   `k8s__container-webapp5__container-webapp.cy.js`) — need the GitHub import
   flow and `GithubMirroredRepoImageSource`, which is inside a
@@ -152,7 +152,7 @@ three are ours; only the setup navigation is stale, so driving that setup
 through the API instead would make them immune to the next redesign.
 
 Running them today gets as far as the page and no further: the oc-pages
-dashboard app does not finish its mount on a fork dashboard page, so
+dashboard app does not finish its mount on an Unfurl Cloud dashboard page, so
 `withStore` times out waiting for `environmentsAreReady`. The console carries a
 `Cannot read properties of undefined (reading '_base')` from `<GlModal>` inside
 upstream's `<SuperSidebar>`. Auth, user creation and the dashboard push all
@@ -177,11 +177,11 @@ testing-shared/ufhome-add-environment.sh <provider> "$UNFURL_TEST_TMPDIR/ufsv" <
 which copies `testing-shared/fixtures/environments/<provider>.yaml` in and runs
 `unfurl init --empty --use-environment`. `shouldCreateExternalResource` is
 skipped standalone. The other providers (azure, digitalocean, kubernetes,
-generic) still take the GUI path only and are therefore fork-only.
+generic) still take the GUI path only and are therefore Unfurl Cloud-only.
 
-## Running against the fork (gdk.test)
+## Running against Unfurl Cloud (gdk.test)
 
-`<GDK_OC>` -- a GDK checkout running the 19.3 fork -- serves gdk.test, and
+`<GDK_OC>` -- a GDK checkout running Unfurl Cloud 19.3 -- serves gdk.test, and
 `aws__minecraft__minecraft` passes end to end against it. Paths and values in
 angle brackets below are placeholders; substitute your own. Two integration
 points still cannot be exercised from this repo and gate migration step 2C:
@@ -203,9 +203,9 @@ env -u OC_USERNAME -u OC_PASSWORD OC_INVITE_CODE=cypress-e2e DRYRUN=1 \
 `create-user.js:133` takes the admin path (`POST /admin/users`), which creates
 no dashboard — `create_dashboard_project!` is enqueued by the signup controller
 alone. Unsetting them routes through `createUserBySignup`, and the dashboard is
-built from the fork's own `unfurl_dashboard` project template. Do not substitute
+built from Unfurl Cloud's own `unfurl_dashboard` project template. Do not substitute
 `--dashboard testing-shared/fixtures/dashboards/v2.tgz`: that fixture is the
-**standalone** dashboard, and pushing it at the fork tests the wrong artifact.
+**standalone** dashboard, and pushing it at Unfurl Cloud tests the wrong artifact.
 
 The import runs in a worker, so the harness waits for the project page before
 starting cypress. Nothing else should be waited on: the repository is populated
@@ -251,6 +251,81 @@ project page redirects to `/-/import`.
   running server serves the old code and the export quietly returns stale
   results.
 
+### `be.visible` on Unfurl Cloud: three failures, one Cypress rule
+
+`should('be.visible')` does **not** scroll -- only actionability commands like
+`click` do -- and Cypress reports an element clipped by a scrollable ancestor
+as hidden. Unfurl Cloud's nav, breadcrumb and welcome banner push content past
+the fold that standalone keeps within it, so the same assertion passes there and
+fails here. Three separate failures on 2026-09-15 were this and nothing else:
+
+- `route_smoke` / `light_mode`, the blueprint's deploy buttons at y=985 in an
+  800px viewport;
+- `create-gcp-environment.js`, asserting on the provider title after a save
+  that lands back on the long blueprint overview.
+
+**How to recognise it rather than re-derive it.** The element is present in the
+DOM, has no inline `display:none` or `aria-hidden`, and computes
+`visibility: visible` with a real width and height when you query it *after* the
+failure -- and its ancestor chain ends in a `gl-truncate` / `.table-section`
+inside a long page. Cypress's own `Cypress.dom.getReasonIsHidden($el)` says
+"clipped by one of its parent elements" outright; reach for that before
+inspecting computed styles by hand, because the styles look innocent.
+
+The fix is `.scrollIntoView()` before the assertion (`.first()` first when the
+subject can match several). It does not weaken anything: the content had
+rendered correctly in every one of these cases.
+
+### A spec that passes as root and fails on signup is not flaky
+
+It is testing a different user than the product has. Unfurl Cloud sets
+`user_default_external` instance-wide, and upstream's `user.rb` forces
+`projects_limit: 0` and `can_create_group: false` on any external user in a
+`before_save`, so a signup user cannot create GitLab projects. `EXTERNAL=0`
+reaches `Cypress.env` but never reaches GitLab: `--external` is only passed on
+the admin `POST /admin/users` path (`integration-test.js`), which
+`create-user.js` takes only when `OC_USERNAME` and `OC_PASSWORD` are set.
+
+The signup form's own field is `oc_interface` ("What would you like to do?",
+`deploy` or `develop`) -- 19.3 replaced 15.11's `role` with it, so a fixture
+still posting `role` chooses nothing and takes the form's default of `deploy`.
+`create-user.js` now sends `oc_interface` on both the sign-up form and the
+welcome step, `develop` when `EXTERNAL=0`. That is necessary but **not
+sufficient on its own**: `user.rb` applies `external` as an attribute default
+from the instance's `user_default_external` at `User.new`, and the signup path
+only ever assigns `external = true` (for `deploy`) -- it never assigns false,
+unlike the profile controller, which sets it both ways. So where
+`user_default_external` is true, choosing `develop` at signup leaves the
+account external regardless. Changing it later in the user's profile does work.
+
+A fix for that asymmetry is with Adam. Note when reading it that `oc_params`
+returns `{}` for an absent field, so a bare `resource.external =
+simple_interface?` maps **absence to internal** rather than to the form's
+default -- the form's default only ever reaches browsers, since a `select`
+always posts something. Guarding it with `if oc_params.key?(:oc_interface)`
+fixes the reported behaviour without changing what silence means for callers
+that send nothing. Either way this fixture now sends the field explicitly.
+
+Three separate failures on 2026-09-15 came down to this axis, so check it
+before assuming a regression:
+
+- `01_environments/create_dashboard.cy.js` and `a10.cy.js` 403 on
+  `/projects/new`. Correct product behaviour -- a dashboard user is not meant
+  to create raw GitLab projects -- so they are `n/a` here rather than failing.
+  They can be made to pass as an admin, but an admin is not the user the
+  product has, and the admin path now stalls anyway: it creates no dashboard
+  and `waitForDashboardRepo` waits for one.
+- `01_environments/digitalocean.cy.js` passed on 2026-09-10 and fails now. The
+  spec is unchanged; those runs pushed `--dashboard`, the **standalone**
+  fixture that pre-declares five environments, so a DigitalOcean provider
+  already existed. On a dashboard Unfurl Cloud builds there is none, and
+  nothing in the UI creates one -- aws and gcp have inline `*-provider-setup`
+  panels, DigitalOcean has none.
+
+The corollary: a pass obtained by pushing `--dashboard` at Unfurl Cloud is not
+evidence about Unfurl Cloud. It tests the standalone artifact on the wrong
+instance, and it hides exactly this class of gap.
+
 - **Instance CI variables** `UNFURL_VALID_INVITE_CODES` (`cypress-e2e`) and
   `UNFURL_APPROVE_MATCHING_CODES` (`\Acypress-e2e\z`), both protected. The code
   list alone leaves the user `active` with `confirmed_at` NULL, and an
@@ -260,6 +335,29 @@ project page redirects to `/-/import`.
 - **`registry.enabled: true`** in `config/gitlab.yml`, or the access-token
   request 400s and no deployment can be triggered; and **`onecommons/ci`
   seeded**, since every dashboard's `.gitlab-ci.yml` is only an `include:` of it.
+
+- **Import sources.** `01_environments/a10.cy.js` imports a project export
+  through the GitLab-export pane, which `_import_project_pane.html.haml` guards
+  with `- if gitlab_project_import_enabled?` -- so with `gitlab_project` missing
+  from the instance's import sources the button is not rendered at all, and the
+  spec fails looking for a selector rather than reporting a disabled feature.
+  gdk.test now carries production's full set: `github, bitbucket,
+  bitbucket_server, fogbugz, git, gitlab_project, gitea, manifest`. Note 19.3
+  removed `gitlab` (the GitLab.com importer) and `phabricator` **upstream**, so
+  no setting brings those back -- a spec depending on either needs rewriting,
+  not configuring.
+
+- **The instance CI variable `UNFURL_CLOUDMAP_JSON`**, for
+  `00_visitor/visit_cloudchart.cy.js`. `PublicCloudController#cloudmap` reads
+  it and `oc/app/views/public_cloud/index.html.haml` renders
+  `#chart{ data: { cloudmap: cloudmap } }`, so an unset variable emits
+  `<div id="chart">` with no attribute and the chart never draws -- all seven
+  of that spec's cases time out on `#chart svg` or a category label. Confirmed
+  on gdk.test 2026-09-15 by reading the served HTML.
+
+- **The blueprint projects the specs deploy.** Only `onecommons/blueprints/
+  minecraft` is seeded on gdk.test today, so `blueprints/aws__baserow__baserow`
+  -- in the PR gate standalone -- cannot run there at all.
 
 ## Specs in one run share a user and a dashboard
 
@@ -285,8 +383,96 @@ Two practical consequences:
   is fine; a bare `cy.contains(environmentName)` is not, once a second
   environment exists whose name contains the first as a substring.
 
-The gate's nine specs are ordered so this does not bite them, which is why it
+The gate's ten specs are ordered so this does not bite them, which is why it
 stays invisible until you run something new.
+
+### On Unfurl Cloud the shared dashboard is a dependency, not just a hazard
+
+The standalone harness pushes `testing-shared/fixtures/dashboards/v2.tgz`,
+which already contains environments and deployments. Unfurl Cloud builds its
+dashboard from its own `unfurl_dashboard` project template, and that one is
+**empty** -- so a spec that asserts on dashboard content has nothing to find
+until an earlier spec in the same invocation puts it there.
+
+`home.vue` renders its table under `v-if="totalDeploymentsCount > 0"`, so
+`.oc-table-row` does not exist on a fresh Unfurl Cloud dashboard at all. That makes
+`00_visitor/route_smoke.cy.js` and `00_visitor/light_mode.cy.js` runnable on Unfurl Cloud
+only after something has deployed: put `blueprints/aws__minecraft__minecraft`
+first in the `-s` list. Creating an *environment* is not enough -- the counter
+that gates the table counts deployments.
+
+Batching on Unfurl Cloud used to be impossible for an unrelated reason: the
+`UNFURL_SKIP_SAVE` before-each in `support/e2e.js` sent `variables_attributes`
+with no `id`, which GitLab treats as a create, so spec 2 failed with
+`Variables key (UNFURL_SKIP_SAVE) has already been taken`. It now reads the
+variable first and updates it by id.
+
+## What the provider specs do not cover
+
+`aws.cy.js`, `gcp.cy.js` and `digitalocean.cy.js` all passed on gdk through a
+run of provider bugs that made the feature unusable by hand. They were green
+and the feature was broken because they test a narrower thing than their names
+suggest. Three gaps, all found on 2026-09-16:
+
+- **They only ever created a provider, never edited one.** Every assertion ran
+  on first-time setup, which is the path that works. Editing an existing aws or
+  gcp provider had no entry point at all (`editableProviders` excludes their
+  primary; `providerRecorded` suppressed the panel) and no spec noticed.
+  `aws.cy.js` now has `Can edit an existing aws provider`, which covers the
+  round trip -- reopen, assert the stored values came back, change one field,
+  save with the write-only ones blank, reload, assert they survived. gcp has no
+  equivalent yet.
+- **`aws.cy.js` only uses the access-key method.** `selectAuthenticationMethod`
+  picks "Enter your AWS Access Key" every time, so the ARN/role path -- which
+  calls `provider/aws/role` and can 404 -- is never exercised.
+- **`digitalocean.cy.js` reloads before asserting.** It `cy.visit`s
+  `?provider` rather than asserting on the page creation navigated to, so it
+  only tested the reloaded state. That hid a bug where the provider's inputs
+  rendered empty on the first render and only appeared after a refresh -- the
+  exact thing a user hits first. A `cy.visit` between the action and the
+  assertion is worth suspecting for this reason, not just for speed.
+
+### "Add a provider connection" is hidden
+
+`ADD_PROVIDER_ENABLED` in `dashboard/pages/environment.vue` is false: the modal
+does not work well enough on an environment that already has a provider
+(2026-09-16, Adam). The modal, its handlers and `availableProviderTypes` are all
+still wired -- only the button is hidden, so turning it back on is that one
+flag.
+
+Two things follow for the specs. `route_smoke` guards its screenshot of that
+modal behind a `body.find` existence check rather than asserting the button, so
+it passes either way -- and `screenshotOverlay` has no other caller, so deleting
+that block would quietly drop the only coverage of it. And the list the modal
+offers was three of five hardcoded until it was pointed at
+`CLOUD_PROVIDER_TYPES`; that fix is real but unreachable while the flag is off.
+
+Generic is deliberately not in that list. It is not the absence of a provider --
+a Generic environment gets a `_default_provider` of type
+`unfurl.relationships.ConnectsTo.ComputeMachines` -- but that type is absent
+from `CLOUD_PROVIDER_ALIASES`, and `isProvider()` resolves through that map, so
+offering it without adding the alias would file the connection under Resources
+instead of Cloud Provider. Adding the alias reaches seven other call sites that
+map a provider to a logo and a friendly name it has neither of.
+
+### The overview-page tests are the ones that catch navigation
+
+`Can create a {aws,gcp} env from the overview page` is the only coverage of the
+cross-page hand-off: the deploy dialog sends the user away to build an
+environment and expects to land back on the blueprint with it preselected
+(`instantiate_env`). Both broke together on 2026-09-16 when
+`redirectOnProviderSaved` stopped defaulting to the current URL, and both
+failed on the same `deployment-environment-selection-*` assertion.
+
+Two of those failures had been written off as flake on the strength of a
+1-of-5 pass rate. They were deterministic. **Two specs failing on the same
+assertion is a regression, not flake** -- the pass rate came from runs that
+predated the change, not from nondeterminism.
+
+The shape to recognise: a spec that drives a feature through its happy path,
+once, on a freshly created object. Prefer asserting on the state the app
+navigated to, and cover the second visit -- reopening, editing, re-saving --
+because that is where the store is warm and the seeded data is not.
 
 ## Selector conventions
 
@@ -412,7 +598,7 @@ until an image has been stable for several runs.
   `Cypress.spec.name.startsWith('00_visitor')`, but `Cypress.spec.name` is the
   **basename** (`route_smoke.cy.js`), so the check never matches and the hook
   runs for every spec. Harmless standalone (there is no login), but do not
-  rely on it in the fork.
+  rely on it on Unfurl Cloud.
 - `e2e.js` pipes browser `console.*`, window errors and unhandled rejections
   into `cy.task('log')` as `[browser …]` lines, and its `uncaught:exception`
   handler returns `false` — so it never fails a test. A spec that wants to

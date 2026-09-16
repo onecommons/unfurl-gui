@@ -4,6 +4,9 @@ const AWS_SECRET_ACCESS_KEY = Cypress.env('AWS_SECRET_ACCESS_KEY')
 const REPOS_NAMESPACE = Cypress.env('REPOS_NAMESPACE')
 const SIMPLE_BLUEPRINT = Cypress.env('SIMPLE_BLUEPRINT')
 const DASHBOARD_DEST = Cypress.env('DASHBOARD_DEST')
+const AWS_DEFAULT_REGION = Cypress.env('AWS_DEFAULT_REGION') || 'us-east-2'
+// any region the harness does not already use, so the change is observable
+const EDITED_REGION = AWS_DEFAULT_REGION === 'us-west-1'? 'us-east-2': 'us-west-1'
 
 const createEnvironmentButton = () => cy.contains('button', 'Create New Environment', {timeout: 10000, matchCase: false})
 const ENVIRONMENT_NAME_INPUT = '[data-testid="environment-name-input"]'
@@ -55,6 +58,37 @@ describe('AWS environments', () => {
       environmentName: ENVIRONMENT_NAME,
       shouldCreateExternalResource: true,
     })
+  })
+
+  // The gap the other specs in this file leave: they only ever create a
+  // provider. Editing one has its own entry point, its own presentation, and
+  // seeds its fields from stored variables -- none of which creation exercises.
+  it('Can edit an existing aws provider', () => {
+    cy.createAWSEnvironment({environmentName: ENVIRONMENT_NAME})
+
+    cy.get('[data-testid="edit-provider-aws"]', {timeout: 10000}).click()
+    cy.get('[data-testid="aws-provider-setup"]').should('be.visible')
+
+    // what was saved comes back
+    cy.get('[data-testid="aws-region-dropdown"]').should('contain', AWS_DEFAULT_REGION)
+    cy.get('[data-testid="aws-access-key-id"]').should('have.value', AWS_ACCESS_KEY)
+    // write-only, so it stays blank and says why
+    cy.get('[data-testid="aws-secret-access-key"]')
+      .should('have.value', '')
+      .and('have.attr', 'placeholder', 'Leave blank to keep the current secret')
+
+    // changing only the region must not require re-entering the secret
+    cy.get('[data-testid="aws-region-dropdown"]').click()
+    cy.contains('.dropdown-item', EDITED_REGION).click()
+    cy.get('[data-testid="aws-provider-save"]').should('not.be.disabled').click()
+    cy.get('[data-testid="aws-provider-setup"]', {timeout: 10000}).should('not.exist')
+
+    // reload rather than trust the form: the access key must have survived a
+    // save that left its field empty
+    cy.visit(`/${DASHBOARD_DEST}/-/environments/${ENVIRONMENT_NAME}`)
+    cy.get('[data-testid="edit-provider-aws"]', {timeout: 10000}).click()
+    cy.get('[data-testid="aws-access-key-id"]').should('have.value', AWS_ACCESS_KEY)
+    cy.get('[data-testid="aws-region-dropdown"]').should('contain', EDITED_REGION)
   })
 
   it('Can create an aws env from the overview page', () => {

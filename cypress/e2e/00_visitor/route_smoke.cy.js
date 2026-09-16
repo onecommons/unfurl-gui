@@ -157,16 +157,23 @@ describe('Route smoke', () => {
           cy.get('[data-testid="card-validation-icon"]').first().trigger('mouseleave')
         })
 
-        // A gl-modal is fixed-position, and screenshotStable hides fixed
-        // elements so a full-page shot does not repeat the sticky nav -- which
-        // meant every modal in the app was unphotographable until
-        // screenshotOverlay.
-        cy.get('[data-testid="add-provider"]').click()
-        cy.get('.modal.show').should('be.visible')
-        cy.screenshotOverlay('.modal.show', 'route-smoke/modal-add-provider')
-        cy.get('.modal.show .modal-header .close, .modal.show [aria-label="Close"]')
-          .first().click({force: true})
-        cy.get('.modal.show').should('not.exist')
+        // "Add a provider connection" is hidden for now (ADD_PROVIDER_ENABLED in
+        // environment.vue), so there is no way into this modal to photograph.
+        // Kept rather than deleted: it is the only coverage of screenshotOverlay,
+        // and the reason that helper exists is worth not losing -- a gl-modal is
+        // fixed-position, and screenshotStable hides fixed elements so a
+        // full-page shot would otherwise repeat the sticky nav.
+        // via body.find, not cy.get: cy.get retries and then fails on a missing
+        // element rather than yielding an empty set
+        cy.get('body').then($body => {
+          if(!$body.find('[data-testid="add-provider"]').length) return
+          cy.get('[data-testid="add-provider"]').click()
+          cy.get('.modal.show').should('be.visible')
+          cy.screenshotOverlay('.modal.show', 'route-smoke/modal-add-provider')
+          cy.get('.modal.show .modal-header .close, .modal.show [aria-label="Close"]')
+            .first().click({force: true})
+          cy.get('.modal.show').should('not.exist')
+        })
 
         const deployment = deployments[0]
         if (!deployment) {
