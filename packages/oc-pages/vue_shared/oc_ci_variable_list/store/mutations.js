@@ -85,6 +85,10 @@ export default {
     state.showInputValue = false;
   },
 
+  [types.SET_ENVIRONMENT_NAME](state, environmentName) {
+    state.environmentName = environmentName;
+  },
+
   [types.SET_ENVIRONMENT_SCOPE](state, environment) {
     state.variable.environment_scope = environment;
   },

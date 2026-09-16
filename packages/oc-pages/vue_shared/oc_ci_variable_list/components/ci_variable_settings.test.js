@@ -63,7 +63,10 @@ function build() {
             },
         },
     })
-    const wrapper = mount(CiVariableSettings, { global: { plugins: [store] } })
+    const wrapper = mount(CiVariableSettings, {
+        props: { environmentName: ENVIRONMENT },
+        global: { plugins: [store] },
+    })
     return { wrapper, store }
 }
 
@@ -287,6 +290,46 @@ describe('deleting a variable', () => {
         await flush()
 
         expect(store.state.ci_variables.variables).toEqual([])
+    })
+})
+
+describe('the environment it reads variables for', () => {
+    // The dataset that used to supply this is rendered once per page load, and
+    // the environment page routes without reloading -- so a second environment
+    // showed the first one's variables.
+    it('takes the environment from the prop, not the store it was built with', async () => {
+        const store = new Vuex.Store({
+            modules: {
+                ci_variables: {
+                    namespaced: true,
+                    ...asModule({ endpoint: ENDPOINT, environmentName: 'stale-from-page-load', projectId: 1 }),
+                },
+            },
+        })
+        mount(CiVariableSettings, { props: { environmentName: ENVIRONMENT }, global: { plugins: [store] } })
+        await flush()
+
+        expect(store.state.ci_variables.environmentName).toBe(ENVIRONMENT)
+    })
+
+    it('follows a route change to another environment', async () => {
+        const { wrapper, store } = build()
+        await wrapper.setProps({ environmentName: 'another-environment' })
+        await flush()
+
+        expect(store.state.ci_variables.environmentName).toBe('another-environment')
+    })
+
+    it('only returns rows scoped to the current environment', async () => {
+        const { store } = build()
+        axios.get.mockResolvedValue(serverRows([
+            row({ id: 1, key: 'MINE' }),
+            row({ id: 2, key: 'THEIRS', environment_scope: 'another-environment' }),
+        ]))
+        await store.dispatch('ci_variables/fetchVariables')
+        await flush()
+
+        expect(store.state.ci_variables.variables.map((v) => v.key)).toEqual(['MINE'])
     })
 })
 

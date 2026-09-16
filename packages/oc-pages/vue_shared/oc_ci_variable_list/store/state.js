@@ -3,6 +3,9 @@ import { displayText } from '../constants';
 export default () => ({
   endpoint: null,
   projectId: null,
+  // Was supplied only by the #js-oc-ci-variables dataset, which exists on some
+  // page loads and not others. Declared here so it can be set from the route.
+  environmentName: null,
   isGroup: null,
   maskableRegex: null,
   isProtectedByDefault: null,

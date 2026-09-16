@@ -776,7 +776,7 @@ export default {
                 </oc-tab>
                 <oc-tab title="Public Cloud" v-if="publicCloudResources.length > 0"></oc-tab>
                 <oc-tab title="Variables" v-if="userCanEdit && !standalone">
-                    <ci-variable-settings />
+                    <ci-variable-settings :environment-name="environmentName" />
                 </oc-tab>
             </gl-tabs>
             <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions gl-flex gl-justify-end">

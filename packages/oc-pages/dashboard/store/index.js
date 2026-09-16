@@ -1,4 +1,6 @@
 import Vuex from "vuex";
+import {normpath} from 'oc_vue_shared/lib/normalize'
+import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 // TODO move these modules to vue_shared
 import deployments from '../../project_overview/store/modules/deployments'
 import environments from '../../project_overview/store/modules/environments'
@@ -34,9 +36,19 @@ const modules = {
 }
 const variableDataEl = document.querySelector('#js-oc-ci-variables')
 
-if(variableDataEl && !gon.unfurl_gui) {
+// Registered for the whole fork build, not only when the dataset element is on
+// the page. The element is rendered `- if @environment`, but this is an SPA:
+// land on /-/environments and route to one, and the Variables tab (gated on
+// `userCanEdit && !standalone`, which does not consult this) mounted against a
+// module that was never registered -- a flood of "[vuex] module namespace not
+// found in mapState(): ci_variables/".
+//
+// endpoint is project-level, so it is valid whichever environment is open;
+// environmentName is not, and the environment page sets it from the route.
+if(!gon.unfurl_gui) {
     const ci_variables = createCiVariablesStore({
-        ...variableDataEl.dataset,
+        endpoint: `${projectPathToHomeRoute(normpath(gon.home_project))}/-/variables`,
+        ...(variableDataEl?.dataset || {}),
         // TODO properly read these values
         isGroup: false,
         isProtectedByDefault: false

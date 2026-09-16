@@ -5,6 +5,13 @@ import { __ } from '~/locale';
 import * as types from './mutation_types';
 import { prepareDataForApi, prepareDataForDisplay, prepareEnvironments } from './utils';
 
+// The environment page routes without reloading, so this cannot come from a
+// server-rendered dataset read once at store construction: fetchVariables
+// filters on it, and a stale value shows another environment's variables.
+export const setEnvironmentName = ({ commit }, environmentName) => {
+  commit(types.SET_ENVIRONMENT_NAME, environmentName);
+};
+
 export const toggleValues = ({ commit }, valueState) => {
   commit(types.TOGGLE_VALUES, valueState);
 };

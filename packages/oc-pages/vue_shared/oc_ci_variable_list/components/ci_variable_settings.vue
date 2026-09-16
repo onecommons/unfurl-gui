@@ -28,6 +28,16 @@ export default {
       maskableRawRegex: MASKABLE_RAW_REGEX,
     }
   },
+  props: {
+    // From the route, not the dataset: the page navigates without reloading, so
+    // a value captured at store construction goes stale and fetchVariables --
+    // which filters on it -- then shows another environment's variables.
+    environmentName: {
+      type: String,
+      required: false,
+      default: '',
+    },
+  },
   data() {
     return {
       drawerMode: null,
@@ -46,6 +56,14 @@ export default {
       return this.environments || [];
     },
   },
+  watch: {
+    environmentName: {
+      immediate: true,
+      handler(name) {
+        if (name) this.setEnvironmentName(name);
+      },
+    },
+  },
   mounted() {
     if (!this.isGroup) {
       this.fetchEnvironments();
@@ -58,6 +76,7 @@ export default {
       'updateVariable',
       'deleteVariable',
       'editVariable',
+      'setEnvironmentName',
       'clearModal',
       'resetEditing',
     ]),
