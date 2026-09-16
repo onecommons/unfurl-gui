@@ -51,16 +51,43 @@ function lightShot(name, url, landmark, content) {
 describe('Light mode', () => {
   const ROW = '[data-testid$="-row"], tbody tr, .gl-card'
 
+  /*
+   * preferLight only reaches standalone's pre-paint script. Unfurl Cloud renders
+   * the class server-side from Gitlab::ColorModes, whose default is gl-system,
+   * so without this every shot below is whatever the OS asked for and
+   * assertLight fails on a page that is not wrong, only not light.
+   */
+  before(() => {
+    if (STANDALONE) return
+    cy.visit(DASHBOARD_BASE || '/')
+    cy.document().then(doc => {
+      cy.request({
+        method: 'PATCH',
+        url: '/-/profile/preferences',
+        headers: {
+          'X-CSRF-Token': doc.querySelector('meta[name="csrf-token"]')?.content,
+          'Accept': 'application/json',
+        },
+        body: {user: {color_mode_id: 1}},
+      }).its('status').should('eq', 200)
+    })
+  })
+
   lightShot('dashboard-home', DASHBOARD_BASE || '/', 'dashboard-home-page', ROW)
   lightShot('dashboard-environments', `${DASHBOARD_BASE}${DELIMITER}/environments`, 'dashboard-environments-page', ROW)
 
   if (SMOKE_PROJECT) {
-    lightShot('project-home', `/${SMOKE_PROJECT}`, 'project-home-page', '[data-testid^="deploy-template-"]')
+    lightShot('project-home', `/${SMOKE_PROJECT}${STANDALONE ? '' : `${DELIMITER}/overview`}`,
+              'project-home-page', '[data-testid^="deploy-template-"]')
   } else {
     it.skip('needs REPOS_NAMESPACE or SMOKE_PROJECT for the project overview', () => {})
   }
 
-  it('renders the formily widgets in light mode', () => {
+  // dist/fixtures/ is served by `unfurl serve --gui` and by nothing on the
+  // Unfurl Cloud, where visitBuiltPage's stub supplies the document and the absolute
+  // /fixtures/js/*.js it asks for 404s.
+  const formFixture = STANDALONE ? it : it.skip
+  formFixture('renders the formily widgets in light mode', () => {
     cy.visitBuiltPage('form-fixture.html', '', {onBeforeLoad: preferLight})
     cy.get('[data-testid="oc-inputs-form"]').should('exist')
     assertLight()

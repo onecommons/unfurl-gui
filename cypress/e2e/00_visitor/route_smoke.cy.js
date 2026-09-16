@@ -20,7 +20,7 @@ const SMOKE_PROJECT = Cypress.env('SMOKE_PROJECT') || (REPOS_NAMESPACE && `${REP
 const DELIMITER = '/-'
 
 // Standalone serves the dashboard at the root and DASHBOARD_DEST is a
-// filesystem path for the server, not a URL segment. The fork mounts it under
+// filesystem path for the server, not a URL segment. Unfurl Cloud mounts it under
 // the dashboard project's path.
 const STANDALONE = !DASHBOARD_DEST || DASHBOARD_DEST.startsWith('/') || DASHBOARD_DEST.includes(':')
 const DASHBOARD_BASE = STANDALONE ? '' : `/${DASHBOARD_DEST}`
@@ -188,8 +188,11 @@ describe('Route smoke', () => {
       return
     }
 
-    // the blueprint's deploy buttons: absent until the project data loads
-    smoke('project-home', `/${SMOKE_PROJECT}`, 'project-home-page', '[data-testid^="deploy-template-"]')
+    // the blueprint's deploy buttons: absent until the project data loads.
+    // Unfurl Cloud mounts the overview app at /-/overview (oc/config/routes/
+    // project.rb); the project root there is GitLab's own page.
+    smoke('project-home', `/${SMOKE_PROJECT}${STANDALONE ? '' : `${DELIMITER}/overview`}`,
+          'project-home-page', '[data-testid^="deploy-template-"]')
   })
 
   // The chart needs cloudmap data, which a bare `unfurl init` fixture project
