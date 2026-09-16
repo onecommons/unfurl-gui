@@ -218,7 +218,7 @@ export async function fetchEnvironments(options) {
     } catch(e) {
         const responseData = e.response?.data
         errors.push({
-            message: `@fetchEnvironments: An error occurred during an export request (${e.message})`,
+            message: `Load environments: An error occurred during an export request (${e.message})`,
             context: {
                 error: e.message,
                 format,
@@ -238,7 +238,7 @@ export async function fetchEnvironments(options) {
         .filter(([name, env]) => {
             if(env.error) {
                 errors.push({
-                    message: `@fetchEnvironments: An error occurred during an environment export`,
+                    message: `Load environments: An error occurred during an environment export`,
                     context: {
                         ...env,
                         name
@@ -345,7 +345,7 @@ export async function fetchEnvironments(options) {
         // shape (missing/null field, etc.). Surface it as a structured error rather
         // than letting it escape as an uncaught TypeError that breaks downstream pages.
         errors.push({
-            message: `@fetchEnvironments: An error occurred while processing the export response (${e.message})`,
+            message: `Load environments: An error occurred while processing the export response (${e.message})`,
             context: {
                 error: e.message,
                 stack: e.stack,
@@ -387,12 +387,12 @@ export async function declareAvailableProviders(projectPath, environmentName, pr
     const providers = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
 
     if(providers.some(p => !p)) {
-        throw new Error(`@declareAvailableProviders: unknown provider types among ${JSON.stringify(providerTypes)}`)
+        throw new Error(`Set up cloud providers: unknown provider types among ${JSON.stringify(providerTypes)}`)
     }
 
     const environmentId = await gitlabEnvironmentId(projectPath, environmentName)
     if (!_.isNumber(environmentId)) {
-        throw new Error(`@declareAvailableProviders: could not lookup environment ID for ${environmentName} in ${projectPath}`)
+        throw new Error(`Set up cloud providers: could not lookup environment ID for ${environmentName} in ${projectPath}`)
     }
 
     axios.put(
@@ -482,7 +482,7 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
 
     if(!Array.isArray(projects)) {
         console.error(data)
-        throw new Error(`@fetchAvailableProviderDashboards: could not read list of providers`)
+        throw new Error(`Load cloud providers: could not read list of providers`)
     }
 
     return projects.map(p => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
@@ -513,7 +513,7 @@ export const fetchDashboardProviders = _.memoize(async function (projectPath) {
 
     const {data, errors} = response
 
-    if(errors) { throw new Error('@fetchDashboardProviders: ' + JSON.stringify(errors, null, 2)) }
+    if(errors) { throw new Error('Load cloud providers: ' + JSON.stringify(errors, null, 2)) }
 
     return data?.project ? new DashboardProviders({project: data.project}): null
 })

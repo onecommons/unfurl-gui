@@ -634,7 +634,7 @@ const actions = {
 
         if(dashboardsOfLevel && dashboardsOfLevel.length > DASHBOARD_PROVIDERS_LIMIT) {
             commit('createError', {
-                message: `@loadAdditionalProviders: cannot list providers for all dashboards with access - too many dashboard memberships`,
+                message: `Load cloud providers: cannot list providers for all dashboards with access - too many dashboard memberships`,
                 context: {
                     skippedDashboards: dashboardsOfLevel.slice(DASHBOARD_PROVIDERS_LIMIT),
                 },
@@ -647,7 +647,7 @@ const actions = {
 
         let dashboardProviders = (await Promise.all(dashboards).catch(e => {
             commit('createError', {
-                message: `@loadAdditionalProviders: ${e.message}`,
+                message: `Load cloud providers: ${e.message}`,
                 context: {
                     dashboards,
                 },
@@ -692,7 +692,7 @@ const actions = {
             catch(e) {console.error(e)}
 
             commit('createError', {
-                message: `@environmentFetchTypesWithParams: failed to fetch types (${e.message})`,
+                message: `Load environment types: failed to fetch types (${e.message})`,
                 context,
                 severity: 'major'
             }, {root: true})

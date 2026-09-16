@@ -1156,7 +1156,7 @@ const actions = {
 
     async commitPreparedMutations({state, dispatch, commit, getters}, o) {
         if(!UPDATE_TYPE[state.updateType]) {
-            throw new Error('@commitPreparedMutations: An update type must be specified before committing mutations')
+            throw new Error('Save changes: An update type must be specified before committing mutations')
         }
 
         commit('setIsCommitting', true)

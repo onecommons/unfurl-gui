@@ -444,7 +444,7 @@ const actions = {
         } catch(e) {
             const responseData = e.response?.data
             commit('createError', {
-                message: `@fetchDeployment: An error occurred during an export request (${e.message})`,
+                message: `Load deployment: An error occurred during an export request (${e.message})`,
                 context: {
                     error: e.message,
                     format,

@@ -524,7 +524,7 @@ const actions = {
             catch(e) {console.error(e)}
 
             commit('createError', {
-                message: `@blueprintFetchTypesWithParams: failed to fetch types (${e.message})`,
+                message: `Load blueprint types: failed to fetch types (${e.message})`,
                 context,
                 severity: 'major'
             }, {root: true})

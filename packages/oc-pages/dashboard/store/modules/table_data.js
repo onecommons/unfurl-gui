@@ -75,7 +75,7 @@ const actions = {
                 try {
                     projectPath = Object.values(frozenDeploymentDict.DeploymentTemplate)[0].projectPath
                 } catch(context) {
-                    commit('createError', {message: `@loadDashboard: Couldn't find project path`, severity: 'minor', context})
+                    commit('createError', {message: `Load dashboard: Couldn't find project path`, severity: 'minor', context})
                 }
 
                 if(frozenDeploymentDict.Deployment && frozenDeploymentDict.Resource[Object.values(frozenDeploymentDict.Deployment)[0].primary]) {
@@ -114,7 +114,7 @@ const actions = {
                     try {
                         application.projectIcon = fetchProjectInfo(encodeURIComponent(application.projectPath)).then(projectInfo => projectInfo?.avatar_url)
                     } catch(e) {
-                        commit('createError', {message: `@loadDashboard: Couldn't fetch project icon for ${application.projectPath}`, severity: 'minor', context: e})
+                        commit('createError', {message: `Load dashboard: Couldn't fetch project icon for ${application.projectPath}`, severity: 'minor', context: e})
                     }
                 }
 
