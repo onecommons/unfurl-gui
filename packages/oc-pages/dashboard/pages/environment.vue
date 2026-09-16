@@ -325,7 +325,13 @@ export default {
             this.savingProvider = true
             this.showingProviderModal = false
 
-            await this.onSaveTemplate(...args)
+            // reload=false, explicitly. triggerSave emits saveTemplate with no
+            // arguments, so ...args is empty and onSaveTemplate's default fires
+            // window.location.reload() -- which raced the router push that
+            // clears ?provider and reloaded the page with the query still set,
+            // re-opening this modal. That looked like a modal that would not
+            // close; it was the page coming back with it open.
+            await this.onSaveTemplate(false)
 
             // Providers are written with patchEnv and read back through
             // fetchEnvironmentVariables, so refetching is enough -- the document

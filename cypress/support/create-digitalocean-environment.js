@@ -53,6 +53,16 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
     cy.contains(environmentName).should('exist')
     cy.contains('Digital Ocean').should('exist')
 
+    // Assert the inputs render on the page creation *navigated* to, before any
+    // cy.visit below reloads the app. The store is seeded from the write, which
+    // carries no `repositories`, so the provider's type could not resolve and
+    // the modal opened with no fields -- a bug every reload hid, and every
+    // assertion here used to run after one.
+    cy.get('[data-testid="edit-provider-primary_provider"]').click()
+    cy.get('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]', {timeout: BASE_TIMEOUT})
+      .should('exist')
+    cy.get('#providerModal button[aria-label="Close"], #providerModal .close').first().click({force: true})
+
     cy.wait(BASE_TIMEOUT / 2)
 
     // DigitalOcean has no inline *-provider-setup panel the way aws and gcp do,
@@ -83,6 +93,12 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
   if (shouldCreateExternalResource) {
     cy.whenInstancesAbsent(environmentName, () => {
       environmentCreated || cy.visit(dashboardPath(`/-/environments/${environmentName}`))
+
+      // Saving a provider closes the modal. It used to survive the save:
+      // onSaveTemplate defaulted to window.location.reload(), which raced the
+      // router push clearing ?provider, so the page came back with the modal
+      // open and this click failed as "covered by another element".
+      cy.get('.modal.show').should('not.exist')
       cy.contains('a', 'Resources').click()
       if(shouldCreateDNS) {
         cy.uncheckedCreateDNS(AWS_DNS_TYPE, AWS_DNS_ZONE)
