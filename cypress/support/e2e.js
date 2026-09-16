@@ -344,34 +344,57 @@ beforeEach(() => {
       const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
 
       const win = doc.parentView || doc.defaultView
+      const endpoint = `/${DASHBOARD_DEST || win.gon.home_project}/-/variables`
 
+      /*
+       * `variables_attributes` without an `id` is a create, and the harness
+       * makes one dashboard per *invocation* rather than per spec -- so the
+       * second spec in a run used to fail its before-each with
+       * "Variables key (UNFURL_SKIP_SAVE) has already been taken", which reads
+       * like an app error and is really just this hook running twice. Read
+       * what is there and update it by id.
+       */
       cy.request({
-        method: 'PATCH',
-        url: `/${DASHBOARD_DEST || win.gon.home_project}/-/variables`,
+        method: 'GET',
+        url: endpoint,
         failOnStatusCode: false,
         headers: {
-          'X-CSRF-Token': csrf
-        },
-        body: {
-          "variables_attributes": [
-            {
-              "key": "UNFURL_SKIP_SAVE",
-              // Both, as prepareDataForApi does: 19.3's VariablesController
-              // permits `value` and drops secret_value as an unpermitted
-              // param -- the PATCH still answers 200, having stored nil, and
-              // unfurl then treats the dry run as one it must not record.
-              "value": "never",
-              "secret_value": "never",
-              "environment_scope": "*",
-              "variable_type": "env_var",
-              "masked": false,
-              "protected": false
-            }
-          ]
+          'X-CSRF-Token': csrf,
+          'Accept': 'application/json'
         }
-      }).then(({status, body}) => {
-        // it answered 200 for the wrong reason once already
-        if(status >= 300) throw new Error(`Could not set UNFURL_SKIP_SAVE: ${status} ${JSON.stringify(body)}`)
+      }).then(({body: existingBody}) => {
+        const existing = (existingBody?.variables || [])
+          .find(v => v.key == 'UNFURL_SKIP_SAVE' && v.environment_scope == '*')
+
+        cy.request({
+          method: 'PATCH',
+          url: endpoint,
+          failOnStatusCode: false,
+          headers: {
+            'X-CSRF-Token': csrf
+          },
+          body: {
+            "variables_attributes": [
+              {
+                ...(existing ? {"id": existing.id} : {}),
+                "key": "UNFURL_SKIP_SAVE",
+                // Both, as prepareDataForApi does: 19.3's VariablesController
+                // permits `value` and drops secret_value as an unpermitted
+                // param -- the PATCH still answers 200, having stored nil, and
+                // unfurl then treats the dry run as one it must not record.
+                "value": "never",
+                "secret_value": "never",
+                "environment_scope": "*",
+                "variable_type": "env_var",
+                "masked": false,
+                "protected": false
+              }
+            ]
+          }
+        }).then(({status, body}) => {
+          // it answered 200 for the wrong reason once already
+          if(status >= 300) throw new Error(`Could not set UNFURL_SKIP_SAVE: ${status} ${JSON.stringify(body)}`)
+        })
       })
     })
   }
