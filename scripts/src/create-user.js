@@ -24,9 +24,8 @@ async function createUserAsAdmin(o) {
     username: o.username || o.name,
     projects_limit: 100000,
     can_create_group: 0,
-    access_level: 'reqular',
+    access_level: 'regular',
     external: o.external? 1: 0,
-    'credit_card_validation_attributes][credit_card_validated_at': 0,
   }
   options.email = o.email || `${options.username}@unfurl.cloud`
   const form = new FormData()
@@ -67,6 +66,12 @@ async function createUserBySignup(o) {
       'new_user[username]': username,
       'new_user[email]': `${username}@unfurl.cloud`,
       'new_user[password]': o.password,
+      // 19.3 replaced 15.11's `role` with `oc_interface` ("What would you like
+      // to do?"), and it decides whether the account is external: the fork
+      // sets external when it is 'deploy' (registrations_controller's
+      // simple_interface?). 'deploy' is the form's own default, so a spec that
+      // needs to create projects has to ask for 'develop' explicitly.
+      'new_user[oc_interface]': o.external ? 'deploy' : 'develop',
     }
 
     spawnSync('sleep', ['2'])
@@ -109,6 +114,9 @@ async function createUserBySignup(o) {
     form.append('_method', 'patch')
     form.append('authenticity_token', authenticity_token)
     form.append('user[invite_code]', inviteCode || '')
+    // Reached only when --select-role is passed, which integration-test.js does
+    // only for STANDALONE_UNFURL -- so this step never runs against Unfurl
+    // Cloud, and the interface choice it needs goes on the sign-up form above.
     form.append('user[role]', external? 'other': 'software_developer')
 
     const headers = {
