@@ -74,7 +74,10 @@ export default {
     },
 
     schemaFields() {
-      const schema = _.cloneDeep(this.inputsSchema)
+      // `|| {}`: resourceTemplateInputsSchema returns undefined for a type that
+      // isn't resolved yet, and reading .properties off that threw during render
+      // -- which Vue reports as nothing at all, so the card just looked empty.
+      const schema = _.cloneDeep(this.inputsSchema) || {}
 
       if(!schema.properties) schema.properties = {}
       if(schema.additionalProperties) {
@@ -550,9 +553,13 @@ export default {
 }
 </script>
 <template>
-<!-- getPrimaryCard is {} when the route names a draft the store has no
-     template for, so properties has to be optional here -->
-<component :is="wrapper" ref="container" v-if="card.properties?.length" class="oc-inputs" data-testid="oc_inputs">
+<!-- Gate on the schema, not on the card's properties. The fields come from
+     schemaFields; card.properties only supplies their current *values*, and a
+     provider that was just created has none yet -- so gating on it rendered an
+     "Inputs 4" tab with an empty body for every new DigitalOcean, Azure and
+     K8s environment. getPrimaryCard is also {} when the route names a draft
+     the store has no template for, hence the optional chaining. -->
+<component :is="wrapper" ref="container" v-if="Object.keys(schemaFields || {}).length" class="oc-inputs" data-testid="oc_inputs">
   <component :is="tabTooltip" v-if="tabTooltip" />
   <!-- TODO display description here as well -->
   <gl-tabs v-if="Object.keys(tabTitles).length > 0">
