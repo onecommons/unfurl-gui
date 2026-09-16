@@ -1,12 +1,10 @@
 <script>
-import { GlTable, GlButton, GlModalDirective, GlIcon } from '@gitlab/ui';
+import { GlTable, GlButton, GlIcon } from '@gitlab/ui';
 import { mapState, mapActions } from 'vuex';
 import { s__, __ } from '~/locale';
-import { ADD_CI_VARIABLE_MODAL_ID } from '../constants';
 import CiVariablePopover from './ci_variable_popover.vue';
 
 export default {
-  modalId: ADD_CI_VARIABLE_MODAL_ID,
   trueIcon: 'mobile-issue-close',
   falseIcon: 'close',
   iconSize: 16,
@@ -51,9 +49,7 @@ export default {
     GlIcon,
     CiVariablePopover,
   },
-  directives: {
-    GlModalDirective,
-  },
+  emits: ['edit-variable', 'add-variable'],
   computed: {
     ...mapState('ci_variables', ['variables', 'valuesHidden', 'isGroup', 'isLoading', 'isDeleting']),
     valuesButtonText() {
@@ -80,6 +76,11 @@ export default {
 
 <template>
   <div class="ci-variable-table" data-testid="ci-variable-table">
+    <!-- stacked="md", not "lg": 19.3 sets .with-gl-container-queries, so this
+         breakpoint is measured against the nearest container rather than the
+         viewport. That container is `main`, which limit-container-width keeps at
+         ~966px -- under `lg` (992px) at every window size, so the table stacked
+         permanently and lost its header row. -->
     <gl-table
       :fields="fields"
       :items="variables"
@@ -87,7 +88,7 @@ export default {
       data-qa-selector="ci_variable_table_content"
       sort-by="key"
       sort-direction="asc"
-      stacked="lg"
+      stacked="md"
       table-class="text-secondary"
       fixed
       show-empty
@@ -107,6 +108,17 @@ export default {
             :value="item.key"
             :tooltip-text="__('Copy key')"
           />
+        </div>
+        <!-- Under the key rather than in a column of its own: descriptions are
+             usually a sentence, and a sixth column squeezes the ones that carry
+             the data. The drawer has collected this since 19.3 and nothing
+             displayed it. -->
+        <div
+          v-if="item.description"
+          :data-testid="`ci-variable-description-${item.id}`"
+          class="gl-mt-1 gl-text-sm gl-text-subtle gl-truncate"
+        >
+          {{ item.description }}
         </div>
       </template>
       <template #cell(value)="{ item }">
@@ -145,11 +157,11 @@ export default {
       <template #cell(actions)="{ item }">
         <gl-button
           ref="edit-ci-variable"
-          v-gl-modal-directive="$options.modalId"
           icon="pencil"
           :aria-label="__('Edit')"
+          data-testid="edit-ci-variable"
           data-qa-selector="edit_ci_variable_button"
-          @click="editVariable(item)"
+          @click="$emit('edit-variable', item)"
         />
       </template>
       <template #empty>
@@ -169,10 +181,11 @@ export default {
       >
       <gl-button
         ref="add-ci-variable"
-        v-gl-modal-directive="$options.modalId"
+        data-testid="add-ci-variable"
         data-qa-selector="add_ci_variable_button"
         variant="success"
         category="primary"
+        @click="$emit('add-variable')"
         >{{ __('Add Variable') }}</gl-button
       >
     </div>

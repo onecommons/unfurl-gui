@@ -17,7 +17,26 @@ export default {
       required: false,
       default: '',
     },
+    // 19.3's drawer names the same thing differently and passes the list in
+    // rather than reading the store. Accept both so this stays usable from
+    // either caller.
+    selectedEnvironmentScope: {
+      type: String,
+      required: false,
+      default: '',
+    },
+    environments: {
+      type: Array,
+      required: false,
+      default: null,
+    },
+    areEnvironmentsLoading: {
+      type: Boolean,
+      required: false,
+      default: false,
+    },
   },
+  emits: ['selectEnvironment', 'select-environment', 'createClicked', 'search-environment-scope'],
   data() {
     return {
       searchTerm: '',
@@ -32,11 +51,18 @@ export default {
       return sprintf(__('Create wildcard: %{searchTerm}'), { searchTerm: this.searchTerm });
     },
     shouldRenderCreateButton() {
-      return this.searchTerm && !this.joinedEnvironments.includes(this.searchTerm);
+      return this.searchTerm && !this.availableEnvironments.includes(this.searchTerm);
+    },
+    // whichever the caller supplied
+    currentValue() {
+      return this.selectedEnvironmentScope || this.value;
+    },
+    availableEnvironments() {
+      return this.environments ?? this.joinedEnvironments;
     },
     filteredResults() {
       const lowerCasedSearchTerm = this.searchTerm.toLowerCase();
-      return this.joinedEnvironments.filter((resultString) =>
+      return this.availableEnvironments.filter((resultString) =>
         resultString.toLowerCase().includes(lowerCasedSearchTerm),
       );
     },
@@ -46,7 +72,11 @@ export default {
   },
   methods: {
     selectEnvironment(selected) {
+      // Vue 3 does not map a camelCase emit onto a kebab-case listener, and the
+      // drawer listens for the kebab one -- emit both rather than break either
+      // caller.
       this.$emit('selectEnvironment', selected);
+      this.$emit('select-environment', selected);
       this.searchTerm = '';
     },
     createClicked() {
@@ -54,7 +84,7 @@ export default {
       this.searchTerm = '';
     },
     isSelected(env) {
-      return this.value === env;
+      return this.currentValue === env;
     },
     clearSearch() {
       this.searchTerm = '';
@@ -63,7 +93,7 @@ export default {
 };
 </script>
 <template>
-  <gl-dropdown :text="value" @show="clearSearch">
+  <gl-dropdown :text="currentValue" :loading="areEnvironmentsLoading" @show="clearSearch">
     <gl-search-box-by-type v-model.trim="searchTerm" data-testid="ci-environment-search" />
     <gl-dropdown-item
       v-for="environment in filteredResults"
