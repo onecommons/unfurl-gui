@@ -55,9 +55,13 @@ Cypress.Commands.add('createGenericEnvironment', (options) => {
     .find('input')
     .first()
     .should('have.value', environmentName)
-  // a generic environment has no primary provider, so cloudProviderDisplayName
-  // falls back to this -- there is no oc-card on this page to assert against
-  cy.contains('Self-Hosted').should('exist')
+  // A generic environment *does* have a primary provider: unfurl's to_json sets
+  // `primary_provider = connections.primary_provider or connections._default_provider`,
+  // so the export carries `_default_provider` (ConnectsTo.ComputeMachines).
+  // That makes the summary block's `v-if` false -- it renders only for no
+  // primary provider, or a gcp/aws one -- so 'Self-Hosted' is never on the page
+  // and asserting it can only ever time out. Assert the card that does render.
+  cy.get('[data-testid="card-_default_provider"]').should('exist')
 
   cy.wait(5000)
 
