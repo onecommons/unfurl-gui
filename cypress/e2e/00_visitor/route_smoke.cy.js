@@ -70,8 +70,10 @@ function smoke(name, url, landmark, content) {
     cy.visit(url, {failOnStatusCode: false})
     cy.get(`[data-testid="${landmark}"]`, {timeout: Cypress.config('defaultCommandTimeout') * 2})
       .should('exist')
+    // scrollIntoView first: be.visible neither scrolls nor sees past a
+    // clipping ancestor -- see cypress/README.md
     cy.get(content, {timeout: Cypress.config('defaultCommandTimeout') * 2})
-      .should('be.visible')
+      .first().scrollIntoView().should('be.visible')
 
     cy.screenshotPage(`route-smoke/${name}`)
 

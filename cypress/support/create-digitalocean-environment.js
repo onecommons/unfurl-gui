@@ -55,9 +55,16 @@ Cypress.Commands.add('createDigitalOceanEnvironment', (options) => {
 
     cy.wait(BASE_TIMEOUT / 2)
 
-    //cy.visit(dashboardPath(`/-/environments/${environmentName}?provider`))
+    // DigitalOcean has no inline *-provider-setup panel the way aws and gcp do,
+    // so its inputs live in the generic #providerModal -- which opens only on
+    // `?provider` (environment.vue's showingProviderModal).
+    cy.visit(dashboardPath(`/-/environments/${environmentName}?provider`))
 
-    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]').type(DIGITALOCEAN_TOKEN)
+    // defaulted rather than required: a dry run never calls DigitalOcean, and an
+    // unset variable otherwise fails as `cy.type() ... You passed in: undefined`
+    // several steps after the real cause. environments.js already defaults it.
+    cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-DIGITALOCEAN_TOKEN"]')
+      .type(DIGITALOCEAN_TOKEN || 'cypress-placeholder-not-a-secret')
 
     if(DO_DEFAULT_REGION) {
       cy.getInputOrTextarea('[data-testid="oc-input-primary_provider-default_region"]').type(DO_DEFAULT_REGION)

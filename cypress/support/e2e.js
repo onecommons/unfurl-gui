@@ -340,6 +340,20 @@ beforeEach(() => {
 
   // set via unfurl environment in standalone tests
   if(!STANDALONE_UNFURL) {
+    /*
+     * This runs before the spec's own hooks, so the page is whatever the
+     * previous test left behind -- and a spec that ends on a stubbed page has
+     * no csrf-token meta to read (gcp_sign_in stubs Google's consent screen
+     * and stops there). Posting without the token answers 422 with a Rails
+     * InvalidAuthenticityToken page, which reads as an app error. Land on a
+     * real page first when there is no token.
+     */
+    cy.document().then(doc => {
+      if(!doc.querySelector('meta[name="csrf-token"]')) {
+        cy.visit(`/${DASHBOARD_DEST || doc.defaultView.gon.home_project}`)
+      }
+    })
+
     cy.document().then(doc => {
       const csrf = doc.querySelector('meta[name="csrf-token"]')?.content
 

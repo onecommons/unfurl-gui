@@ -13,9 +13,16 @@ describe('importing a10', () => {
 
       cy.get('[data-qa-panel-name="import_project"]').click()
 
-      cy.get('[data-qa-selector="gitlab_import_button"]').click()
+      // GitLab 19 dropped data-qa-selector product-wide; these became testids
+      // with hyphens (import/gitlab_projects/new.html.haml, _import_project_pane,
+      // _new_project_fields). Both spellings while gdk-ee is still 15.11.
+      cy.get('[data-testid="gitlab-import-button"], [data-qa-selector="gitlab_import_button"]').click()
 
-      cy.get('[data-qa-selector="project_name_field"]').type("a10dashboard")
+      // `project-name-field`, from import/shared/_new_project_form.html.haml --
+      // the import flow's own form. The create-from-scratch form uses
+      // `project-name` for the same logical field, so grep the view that
+      // actually renders rather than the first match.
+      cy.get('[data-testid="project-name-field"], [data-qa-selector="project_name_field"]').type("a10dashboard")
 
       cy.contains('.form-group', 'GitLab project export').within(() => {
         // cy.get('input[type="file"]').attachFile({
@@ -32,7 +39,7 @@ describe('importing a10', () => {
       })
 
       // cy.wait(BASE_TIMEOUT * 100)
-      cy.get('[data-qa-selector="import_project_button"]').click()
+      cy.get('[data-testid="import-project-button"], [data-qa-selector="import_project_button"]').click()
 
       cy.contains('No repository').should('not.exist')
       cy.contains('The repository could not be imported.', {timeout: BASE_TIMEOUT * 3}).should('not.exist')

@@ -41,8 +41,10 @@ function lightShot(name, url, landmark, content) {
       .should('exist')
     // wait for content, not just the landmark -- without this the project
     // overview photographed an empty page, 577px against the dark set's 1639
+    // scrollIntoView first: be.visible neither scrolls nor sees past a
+    // clipping ancestor -- see cypress/README.md
     cy.get(content, {timeout: Cypress.config('defaultCommandTimeout') * 2})
-      .should('be.visible')
+      .first().scrollIntoView().should('be.visible')
     assertLight()
     cy.screenshotPage(`light/${name}`)
   })

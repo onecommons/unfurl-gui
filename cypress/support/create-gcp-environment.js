@@ -96,7 +96,10 @@ function authenticateGCP(filePath=GOOGLE_APPLICATION_CREDENTIALS, click=true) {
     // the panel is part of the environment page now, so there is no navigation
     // to assert on -- what says it saved is the page coming back
     cy.get('[data-testid="gcp-provider-setup"]', {timeout: BASE_TIMEOUT * 2}).should('not.exist')
-    cy.contains('Google Cloud Platform').should('be.visible')
+    // scrollIntoView first: this lands back on the blueprint overview, whose
+    // template table sits below the fold, and `be.visible` reports content
+    // clipped by a scrollable ancestor as hidden without scrolling to it.
+    cy.contains('Google Cloud Platform').scrollIntoView().should('be.visible')
   }
 }
 

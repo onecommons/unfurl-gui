@@ -70,7 +70,12 @@ describe('GCP environments', () => {
     cy.completeEnvironmentDialog({environmentName: ENVIRONMENT_NAME})
     cy.authenticateGCP()
 
-    cy.contains('button', ENVIRONMENT_NAME, {timeout: 10000}).should('be.visible')
+    // The only <button> carrying the name is the entry in the environment
+    // dropdown, a closed menu -- `be.visible` asserted that a correctly hidden
+    // menu item was showing. Assert the durable outcome instead. Same change
+    // as aws.cy.js.
+    cy.get(`[data-testid="deployment-environment-selection-${ENVIRONMENT_NAME}"]`, {timeout: 10000})
+      .should('exist')
   })
 
 })

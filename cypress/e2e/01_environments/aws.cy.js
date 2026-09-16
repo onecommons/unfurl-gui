@@ -71,7 +71,14 @@ describe('AWS environments', () => {
     completeEnvironmentDialog(false)
     authenticateWithAccessKeys()
 
-    cy.contains('button', ENVIRONMENT_NAME, {timeout: 10000}).should('be.visible')
+    // The only <button> carrying the name is the entry in the environment
+    // dropdown, which is a closed menu -- so `be.visible` asserted that a
+    // correctly hidden menu item was showing. The name is also rendered
+    // visibly beside the environment icon, but that node is not a button and
+    // has no testid. Assert the durable outcome instead: the new environment
+    // exists and is offered for selection.
+    cy.get(`[data-testid="deployment-environment-selection-${ENVIRONMENT_NAME}"]`, {timeout: 10000})
+      .should('exist')
 
   })
 
