@@ -436,9 +436,10 @@ export async function awaitQueuedWrite(projectPath, branch, {timeoutMs = 90000, 
     const resolvedBranch = branch || getProjectCurrentBranch(encodeURIComponent(projectPath))
     if(!resolvedBranch) return null
 
+    const before = getLastCommit(projectPath, resolvedBranch)
     // no queueid means the write was applied synchronously, or has already
     // been waited on -- either way there is nothing outstanding
-    if(!getLastCommit(projectPath, resolvedBranch)?.queueid) return null
+    if(!before?.queueid) return null
 
     const deadline = Date.now() + timeoutMs
     for(;;) {
@@ -446,7 +447,31 @@ export async function awaitQueuedWrite(projectPath, branch, {timeoutMs = 90000, 
             const data = await unfurlServerExport({
                 format: 'environments', branch: resolvedBranch, projectPath,
             })
-            return data?.latest_commit ?? null
+            const after = data?.latest_commit ?? null
+            /*
+             * Waiting on the queueid is necessary but not sufficient. A batch
+             * that commits nothing answers 200 with the commit we sent, and the
+             * queueid resolves immediately, so the wait succeeds and reports
+             * nothing wrong -- from the queue's side the batch really did
+             * finish. The caller then pins a pipeline to a SHA that predates
+             * its own write. An unmoved commit is the only signal, so say so
+             * here rather than let it surface as a job that cannot find its
+             * deployment directory.
+             *
+             * Two causes, per unfurl-4a: the patch changed nothing on disk, or
+             * the server's working copy was already dirty on entry -- which it
+             * logs as "local repository at <path> was dirty, not committing or
+             * pushing" and then reports success anyway. The second is sticky:
+             * once dirty, every later write silently no-commits.
+             */
+            if(after && before.commit && after == before.commit) {
+                throw new Error(
+                    `the server reported success but committed nothing (still ${after.slice(0, 8)}). ` +
+                    'Either the patch changed nothing, or the server\'s working copy was dirty -- ' +
+                    'check its log for "was dirty, not committing or pushing".'
+                )
+            }
+            return after
         } catch(e) {
             // 503 is the proxy saying the batch has not drained yet. Everything
             // else -- 409 WRITE_DISCARDED included -- belongs to the caller.
@@ -459,13 +484,16 @@ export async function awaitQueuedWrite(projectPath, branch, {timeoutMs = 90000, 
 
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables, sync}) {
     if (!branch) {
-        throw new Error(`@unfurlServerUpdate: branch is required (method=${method}, projectPath=${projectPath})`)
+        throw new Error(`Update Unfurl Server: branch is required (method=${method}, projectPath=${projectPath})`)
     }
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const username = window.gon.current_username
-    let {commit, queueid, when} = getLastCommit(projectPath, branch)
+    // `|| {}`: a prior 409 can leave nothing stored, and destructuring undefined
+    // throws a TypeError naming the bundler's import instead of the real problem,
+    // which the check just below already states plainly.
+    let {commit, queueid, when} = getLastCommit(projectPath, branch) || {}
     if (!commit) {
-        throw new Error('@unfurlServerUpdate: no commit found for update, unable to proceed')
+        throw new Error('Update Unfurl Server: no commit found for update, unable to proceed')
     }
     let password = await fetchUserAccessToken()
     await healthCheckErrorHelper(projectPath)
@@ -495,6 +523,14 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         data = (await doXhr(projectPath, 'POST', url, body, headers)).data
     } catch(e) {
         if(e.response?.status == 409) {
+            /*
+             * Clear the stored commit *and* queueid. Resetting the queueid to 0
+             * and keeping the commit does not work: inc_queueid's script fails
+             * any request whose queueid is below the key's current value
+             * (`if last_queueid > queueid then return "error"`), so 0 loses
+             * against a key that has already advanced -- forever. Only a fresh
+             * export can supply a commit/queueid pair the server will accept.
+             */
             setLastCommit(projectPath, branch, undefined)
         }
 
@@ -519,7 +555,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         // tripping the "pending batch" sync-write rejection.
         setLastCommit(projectPath, branch, {commit, queueid: data.queueid, when})
     } else {
-        throw new Error('@unfurlServerUpdate: failed to set last commit')
+        throw new Error('Update Unfurl Server: failed to set last commit')
     }
     setProjectCurrentBranch(projectPath, branch)
     return data

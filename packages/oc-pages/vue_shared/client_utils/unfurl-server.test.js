@@ -630,6 +630,21 @@ describeAwaitQueued('awaitQueuedWrite holds until the queued write commits', () 
         expect(getLastCommit(TEST_PROJECT, TEST_BRANCH).commit).toBe('commit-B')
     })
 
+    test('reports a batch that committed nothing rather than returning happily', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 7, when: '2026-05-14T00:00:00.000Z'})
+
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse('commit-A'))
+            // a no-op batch answers 200 with the commit we sent; the queueid
+            // resolves immediately off the self-reference, so nothing here
+            // looks wrong except that the commit did not move
+            return Promise.resolve({data: {...mockExportResponse().data, latest_commit: 'commit-A'}})
+        })
+
+        await expect(awaitQueuedWrite(TEST_PROJECT, TEST_BRANCH, {intervalMs: 0}))
+            .rejects.toThrow('committed nothing')
+    })
+
     test('gives up at the deadline rather than waiting forever', async () => {
         setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 7, when: '2026-05-14T00:00:00.000Z'})
         axios.get.mockImplementation((url) => {
@@ -652,5 +667,47 @@ describeAwaitQueued('awaitQueuedWrite holds until the queued write commits', () 
 
         await expect(awaitQueuedWrite(TEST_PROJECT, TEST_BRANCH, {intervalMs: 0}))
             .rejects.toMatchObject({message: expect.stringContaining('discarded')})
+    })
+})
+
+/*
+ * Mock-only: reproduces the two-step failure Adam hit creating an Azure
+ * environment -- a "stale queueid" 409, then a TypeError on the next attempt.
+ */
+const describeQueueidConflict = MODE === 'mock' ? describe : describe.skip
+describeQueueidConflict('a queueid conflict clears the stored commit', () => {
+    test('clears it rather than resetting the queueid, which cannot win', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 4, when: '2026-05-14T00:00:00.000Z'})
+
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse('commit-A'))
+            return Promise.resolve(mockExportResponse())
+        })
+        axios.post.mockImplementation(() => Promise.reject({response: {status: 409, data: {
+            code: 'CONFLICT', message: 'stale queueid',
+        }}}))
+
+        await expect(unfurlServerUpdate({
+            method: TEST_METHOD, projectPath: TEST_PROJECT, branch: TEST_BRANCH,
+            patch: makeTestPatch(), commitMessage: 'conflicting write',
+        })).rejects.toMatchObject({message: expect.stringContaining('stale queueid')})
+
+        /*
+         * Cleared outright. Keeping the commit and resetting queueid to 0 looks
+         * kinder and is worse: INC_QUEUEID_SCRIPT fails anything whose queueid
+         * is below the key's current value (`if last_queueid > queueid then
+         * return "error"`), so 0 loses against an advanced key every time and
+         * the caller loops. Only a fresh export can supply a pair the server
+         * accepts.
+         */
+        expect(getLastCommit(TEST_PROJECT, TEST_BRANCH)).toBeFalsy()
+    })
+
+    test('an empty store gives the stated error, not a TypeError', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, undefined)
+        await expect(unfurlServerUpdate({
+            method: TEST_METHOD, projectPath: TEST_PROJECT, branch: TEST_BRANCH,
+            patch: makeTestPatch(), commitMessage: 'no stored commit',
+        })).rejects.toThrow('no commit found for update')
     })
 })
