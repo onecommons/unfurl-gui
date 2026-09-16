@@ -56,7 +56,7 @@ jest.mock('~/lib/utils/axios_utils', () => {
 })
 
 import axios from '~/lib/utils/axios_utils'
-import { unfurlServerExport, unfurlServerUpdate } from './unfurl-server'
+import { unfurlServerExport, unfurlServerUpdate, awaitQueuedWrite } from './unfurl-server'
 import { createBranch, fetchLastCommit, getLastCommit, setLastCommit, getProjectCurrentBranch, getProjectDefaultBranch } from './projects'
 
 const MODE = process.env.OC_URL
@@ -589,5 +589,68 @@ describe('fetchLastCommit short-circuits on a non-zero queueid', () => {
             expect(commit).toBe('queued-sha')
             expect(axios.get).not.toHaveBeenCalled()
         }
+    })
+})
+
+/*
+ * Mock-only: this asserts ordering against a proxy that answers 503 while the
+ * batch is draining, which a live backend will not reproduce on demand.
+ */
+const describeAwaitQueued = MODE === 'mock' ? describe : describe.skip
+describeAwaitQueued('awaitQueuedWrite holds until the queued write commits', () => {
+    test('returns immediately, without a request, when nothing is queued', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 0, when: '2026-05-14T00:00:00.000Z'})
+        axios.get.mockImplementation((url) => Promise.reject(new Error(`should not have been called: ${url}`)))
+
+        await expect(awaitQueuedWrite(TEST_PROJECT, TEST_BRANCH)).resolves.toBeNull()
+        expect(axios.get).not.toHaveBeenCalled()
+    })
+
+    test('retries while the proxy answers 503 and resolves with the committed sha', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 7, when: '2026-05-14T00:00:00.000Z'})
+
+        let exportCalls = 0
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse('commit-A'))
+            if (url.includes('/export')) {
+                exportCalls++
+                // the batch has not drained yet -- check_export_queue reports Retry
+                if (exportCalls < 3) {
+                    return Promise.reject({response: {status: 503, headers: {'retry-after': '0'}, data: {}}})
+                }
+                return Promise.resolve({data: {...mockExportResponse().data, latest_commit: 'commit-B'}})
+            }
+            return Promise.reject(new Error(`unexpected GET: ${url}`))
+        })
+
+        await expect(awaitQueuedWrite(TEST_PROJECT, TEST_BRANCH, {intervalMs: 0})).resolves.toBe('commit-B')
+        expect(exportCalls).toBe(3)
+        // the commit advanced and the queueid is spent, so a second wait is a no-op
+        expect(getLastCommit(TEST_PROJECT, TEST_BRANCH).queueid || 0).toBe(0)
+        expect(getLastCommit(TEST_PROJECT, TEST_BRANCH).commit).toBe('commit-B')
+    })
+
+    test('gives up at the deadline rather than waiting forever', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 7, when: '2026-05-14T00:00:00.000Z'})
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse('commit-A'))
+            return Promise.reject({response: {status: 503, headers: {}, data: {}}})
+        })
+
+        await expect(awaitQueuedWrite(TEST_PROJECT, TEST_BRANCH, {timeoutMs: 0, intervalMs: 0}))
+            .rejects.toMatchObject({response: {status: 503}})
+    })
+
+    test('does not swallow a discarded write', async () => {
+        setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 7, when: '2026-05-14T00:00:00.000Z'})
+        axios.get.mockImplementation((url) => {
+            if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse('commit-A'))
+            return Promise.reject({response: {status: 409, data: {
+                code: 'WRITE_DISCARDED', message: 'the queued write was discarded',
+            }}})
+        })
+
+        await expect(awaitQueuedWrite(TEST_PROJECT, TEST_BRANCH, {intervalMs: 0}))
+            .rejects.toMatchObject({message: expect.stringContaining('discarded')})
     })
 })

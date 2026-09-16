@@ -5,6 +5,7 @@ import {lookupCloudProviderAlias, slugify, deepClone as cloneDeep} from 'oc_vue_
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
+import {awaitQueuedWrite} from 'oc_vue_shared/client_utils/unfurl-server'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken, getOrFetchCurrentBranch} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, shareEnvironmentVariables, fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
@@ -283,6 +284,12 @@ const actions = {
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
+
+        // The pipeline pins whatever SHA the branch points at when GitLab
+        // creates it, so the write this deployment depends on has to be
+        // committed first -- awaiting the save is not enough, it returns as
+        // soon as the write is queued.
+        await awaitQueuedWrite(rootGetters.getHomeProjectPath)
 
         let data
 

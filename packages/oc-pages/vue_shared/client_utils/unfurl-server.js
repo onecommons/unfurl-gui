@@ -416,6 +416,47 @@ export async function fetchTypeRepositories(repositories, params) {
     // return _.cloneDeep(Object.assign.apply(null, typesDictionaries))
 }
 
+/*
+ * Block until a queued write has actually committed.
+ *
+ * A queued write is acknowledged when the proxy enqueues it, not when it
+ * commits: measured at 2-4ms against a batch that committed ~3s later. Anything
+ * that asks GitLab for a pipeline inside that window loses a race it cannot
+ * see, because GitLab resolves `ref` to a SHA when the pipeline is *created* --
+ * so the job checks out a commit that predates the write and the deployment
+ * directory is simply absent. Retrying in the runner cannot help; the SHA is
+ * already wrong.
+ *
+ * The proxy answers 503 while `check_export_queue` still reports Retry (the
+ * queue entry's queueid is behind ours) and nothing on this side was retrying.
+ * An export carrying the queueid is the same wait reads already do; on success
+ * unfurlServerGet stores the new commit, which clears the queueid.
+ */
+export async function awaitQueuedWrite(projectPath, branch, {timeoutMs = 90000, intervalMs = 500} = {}) {
+    const resolvedBranch = branch || getProjectCurrentBranch(encodeURIComponent(projectPath))
+    if(!resolvedBranch) return null
+
+    // no queueid means the write was applied synchronously, or has already
+    // been waited on -- either way there is nothing outstanding
+    if(!getLastCommit(projectPath, resolvedBranch)?.queueid) return null
+
+    const deadline = Date.now() + timeoutMs
+    for(;;) {
+        try {
+            const data = await unfurlServerExport({
+                format: 'environments', branch: resolvedBranch, projectPath,
+            })
+            return data?.latest_commit ?? null
+        } catch(e) {
+            // 503 is the proxy saying the batch has not drained yet. Everything
+            // else -- 409 WRITE_DISCARDED included -- belongs to the caller.
+            if(e.response?.status != 503 || Date.now() >= deadline) throw e
+            const retryAfter = Number(e.response.headers?.['retry-after']) * 1000
+            await new Promise(resolve => setTimeout(resolve, retryAfter > 0 ? retryAfter : intervalMs))
+        }
+    }
+}
+
 export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables, sync}) {
     if (!branch) {
         throw new Error(`@unfurlServerUpdate: branch is required (method=${method}, projectPath=${projectPath})`)
