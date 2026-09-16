@@ -420,7 +420,7 @@ export default {
 
             await deleteProvider(this.getHomeProjectPath, environment.name)
 
-            this.setUpdateObjectProjectPath(window.gon.projectPath)
+            this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             this.setUpdateType('delete-environment')
 
             this.pushPreparedMutation(function(accumulator) {
@@ -429,7 +429,7 @@ export default {
 
             await this.commitPreparedMutations()
 
-            await deleteEnvironment(window.gon.projectPath, window.gon.projectId, environment.name, window.gon.environmentId)
+            await deleteEnvironment(this.getHomeProjectPath, environment.name)
 
             sessionStorage['oc_flash'] = JSON.stringify({type: FLASH_TYPES.SUCCESS, message: `${environment.name} was deleted successfully.`})
             return visitUrl(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)

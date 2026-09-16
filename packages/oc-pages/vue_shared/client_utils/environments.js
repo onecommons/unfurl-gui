@@ -20,12 +20,24 @@ export async function fetchGitlabEnvironments(projectPath, environmentName) {
     return result
 }
 
+// ?name= is an exact match across every state. /-/environments.json cannot
+// answer this: it serves ACTIVE_STATES only and paginates, so an environment
+// that is already stopped, or simply far enough down the list, is missing.
+//
+// gitlabEnvironmentId below answers the same question off a module-level cache
+// and without the filter, so it is subject to both that staleness and the page
+// size. Deleting cannot use it; the two should probably converge on this one.
 export async function lookupEnvironmentId(projectPath, environmentName) {
-    let result = 0
+    let result = -1
+    // #!if !standalone
 
-    const environments = await fetchGitlabEnvironments(projectPath, environmentName)
-    result = environments.find(env => env.name == environmentName)?.id ?? -1
+    const {data} = await axios.get(
+        `/api/v4/projects/${encodeURIComponent(projectPath)}/environments`,
+        {params: {name: environmentName}}
+    )
+    result = data?.find(env => env.name == environmentName)?.id ?? -1
 
+    // #!endif
     return result
 }
 
@@ -77,19 +89,27 @@ export async function deleteEnvironmentByName(projectPath, environmentName) {
     }
     return false
 }
-export async function deleteEnvironment(projectPath, projectId, environmentName, environmentId) {
-    console.warn('TODO Use deleteEnvironmentByName instead')
+// The environment to delete is named, never passed by id: gon.environmentId is
+// whichever environment the server rendered, and the dashboard routes between
+// environments without reloading. Landing on one and deleting another stopped
+// and deleted the environment still recorded in the dataset -- and landing
+// anywhere the dataset omits it (the index, the home page) sent `undefined`.
+export async function deleteEnvironment(projectPath, environmentName) {
     // #!if !standalone
-    const {variables} = (await axios.get(`/${projectPath}/-/variables`)).data
-    const patchVariables = []
-
-    await deleteEnvironmentVariables(environmentName, projectPath)
-    if(patchVariables.length) {
-        await axios.patch(`/${projectPath}/-/variables`, {variables_attributes: patchVariables})
+    // Resolved before anything is destroyed, so a name that matches nothing
+    // leaves the environment's variables where they are.
+    const environmentId = await lookupEnvironmentId(projectPath, environmentName)
+    if(environmentId <= 0) {
+        throw new Error(`Could not find an environment named ${environmentName} to delete.`)
     }
 
+    await deleteEnvironmentVariables(environmentName, projectPath)
+
+    // stop stays on the html route it has always used -- the 01_environments
+    // specs exercise it and the api equivalent is untried here. Only the id
+    // being passed to it has changed.
     await axios.post(`/${projectPath}/-/environments/${environmentId}/stop`)
-    await axios.delete(`/api/v4/projects/${projectId}/environments/${environmentId}`)
+    await axios.delete(`/api/v4/projects/${encodeURIComponent(projectPath)}/environments/${environmentId}`)
     // #!endif
 }
 
