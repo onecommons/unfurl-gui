@@ -80,8 +80,11 @@ module.exports = {
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
-    // image imports are URLs to webpack and unparseable to jest
-    '\\.(png|jpe?g|gif|webp)(\\?.*)?$': '<rootDir>/jest-file-stub.js',
+    // image imports are URLs to webpack and unparseable to jest. svg is here
+    // too: vue-cli inlines it as markup, which jest reads as a stray '<'.
+    '\\.(png|jpe?g|gif|webp|svg)(\\?.*)?$': '<rootDir>/jest-file-stub.js',
+    // side-effect style imports; webpack extracts them, jest cannot parse them
+    '\\.(css|s[ac]ss|less)(\\?.*)?$': '<rootDir>/jest-file-stub.js',
     // the same @vue/compat redirections vue.config.js sets up for the build
     "^vue$": "<rootDir>/src/assets/javascripts/vue3compat/vue.js",
     "^vuex$": "<rootDir>/src/assets/javascripts/vue3compat/vuex.js",
@@ -95,6 +98,8 @@ module.exports = {
     '^oc_dashboard(.*)$': '<rootDir>/packages/oc-pages/dashboard/$1',
     // must precede the ^oc(.*)$ catch-all, which would rewrite this to src/assets/javascripts/_pages
     '^oc_pages(.*)$': '<rootDir>/packages/oc-pages$1',
+    // also before it: these resolve out of gitlab-oc, not this repo
+    '^oc/pages/(.*)$': '<rootDir>/jest-fork-module-stub.js',
     '^oc(.*)$': '<rootDir>/src/assets/javascripts/$1',
   },
 
