@@ -62,11 +62,28 @@ function ngettext(singular, plural, n) {
   return (n == 1) ? singular: plural
 }
 
+/*
+ * %{key} interpolation, the same contract as gitlab's own sprintf. It was left
+ * unexported here, so anything importing it from '~/locale' got undefined and
+ * threw the moment it formatted a message -- which standalone never noticed,
+ * because the components that use it (the ci variable drawer and its
+ * environments dropdown) are fork-only. jest resolves '~' to this file, so a
+ * test of those components hits it even though a browser does not.
+ *
+ * escapeHtml is accepted for signature compatibility and ignored: nothing here
+ * renders the result as html.
+ */
+function sprintf(input, parameters = {}, escapeHtml = true) {
+  return String(input).replace(/%\{(\w+)\}/g, (match, name) =>
+    Object.prototype.hasOwnProperty.call(parameters, name) ? String(parameters[name]) : match,
+  );
+}
+
 export { languageCode };
 export { gettext as __ };
 export { ngettext as n__ };
 export { pgettext as s__ };
-// export { sprintf };  
+export { sprintf };
 export default locale;
 
 

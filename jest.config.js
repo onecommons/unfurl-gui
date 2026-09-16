@@ -209,7 +209,9 @@ module.exports = {
 
   // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
   transformIgnorePatterns: [
-    "/node_modules/",
+    // lodash-es ships untranspiled esm and the 19.3 ci_variable_drawer imports
+    // it directly, so mounting that component for real needs it transformed.
+    "/node_modules/(?!lodash-es/)",
   //   "\\.pnp\\.[^\\/]+$"
   ],
 
