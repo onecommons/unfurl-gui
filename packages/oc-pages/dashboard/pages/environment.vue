@@ -201,6 +201,7 @@ export default {
             'commitPreparedMutations',
             'normalizeUnfurlData',
             'environmentFetchTypesWithParams',
+            'ocFetchEnvironments',
         ]),
 
 
@@ -250,15 +251,31 @@ export default {
             this.scrollToProvider(slugify(title))
         },
         async onSaveProviderTemplate(...args) {
+            // Close before the round-trip, not after: leaving the modal up while
+            // the save and re-read complete reads as a hang, and it covers the
+            // tabs underneath. The watcher's freshState is only a read, so running
+            // it against the in-flight save costs a fetch and corrupts nothing --
+            // the authoritative refresh is the one below.
             this.showingProviderModal = false
-            let redirect
-            if(redirect = sessionStorage['redirectOnProviderSaved']) {
+
+            await this.onSaveTemplate(...args)
+
+            // Providers are written with patchEnv and read back through
+            // fetchEnvironmentVariables, so refetching is enough -- the document
+            // reload this replaced existed only to re-seed the ci_variables store
+            // from its server-rendered dataset, which standalone never registers.
+            await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+
+            const redirect = sessionStorage['redirectOnProviderSaved']
+            if(redirect) {
+                // A caller sent the user here to make an environment: returning to
+                // it is a real cross-page hand-off, not the self-reload.
                 delete sessionStorage['redirectOnProviderSaved']
-                window.location.href = redirect
+                visitUrl(redirect)
+                return
             }
-            else {
-                await this.onSaveTemplate(...args)
-            }
+
+            await this.freshState()
         },
         async onSaveTemplate(reload=true) {
             const environment = this.environment
@@ -284,22 +301,28 @@ export default {
                 this.useBaseState(root)
             }
         },
-        onProviderSetupSaved(provider) {
+        async onProviderSetupSaved(provider) {
             // the blueprint overview page a redirect returns to preselects the
             // environment it was sent away to create
             sessionStorage['instantiate_env'] = this.environmentName
             sessionStorage['instantiate_provider'] = provider
 
             const redirect = sessionStorage['redirectOnProviderSaved']
-            delete sessionStorage['redirectOnProviderSaved']
+            if(redirect) {
+                delete sessionStorage['redirectOnProviderSaved']
+                return visitUrl(redirect)
+            }
 
-            // A full load rather than a route change: what the panel saved reaches
-            // this page through the server-rendered variables dataset and the
-            // environment export, and it updated neither in place.
-            return visitUrl(
-                redirect ||
-                `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}`
-            )
+            // The panel already wrote the credentials with patchEnv, so refetching
+            // brings them back; staying put also keeps the query clear, which a
+            // reload of this URL would not.
+            await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+
+            const query = {...this.$route.query}
+            delete query.provider
+            delete query.signed_in
+            this.$router.replace({...this.$route, query})
+            await this.freshState()
         },
 
         async onProviderSetupCancelled() {
@@ -376,7 +399,13 @@ export default {
             // Saved instances can't resolve their types unless something fetched
             // them, and the only fetches here are the ones the Add buttons make.
             // Without this a reloaded environment renders no resource cards.
-            if(instances.length) {
+            //
+            // Gated on connections too: the types this asks for come from
+            // `providerTypesForEnvironment`, which reads connections, so an
+            // environment whose provider is its only content -- every one that
+            // isn't Kubernetes -- skipped the fetch and rendered a provider with
+            // no inputs.
+            if(instances.length || connections.length) {
                 await this.environmentFetchTypesWithParams({
                     environmentName,
                     params: {implements: ['connect'], implementation_requirements: this.providerTypesForEnvironment(environment)},
@@ -386,10 +415,13 @@ export default {
 
             await Promise.all(
                 [
-                    ...instances.map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot})),
+                    ...[...instances, ...connections].map(entry => this.normalizeUnfurlData({key: 'ResourceTemplate', entry, projectPath: this.getHomeProjectPath, root: this.getApplicationRoot})),
                     this.$route.query.hasOwnProperty('newProvider')? this.fetchProviders(): null
                 ]
             )
+            // Connections are normalized too: primary_provider is one, and without
+            // this its type never resolves, so the provider card renders with no
+            // inputs at all. The TODO below still stands for the save direction.
             // TODO implement and test normalization for connections - this should account better for users making manual changes
 
             await this.populateEnvironmentResources({
@@ -566,7 +598,7 @@ export default {
                     </div>
                 </template>
                 <template v-if="userCanEdit" #header-controls>
-                    <gl-button @click.stop="scrollToProvider(p.name)">
+                    <gl-button :data-testid="`edit-provider-${p.name}`" @click.stop="scrollToProvider(p.name)">
                         <div class="gl-flex">
                             <detect-icon name="pencil" :size="18" /> <span>Edit</span>
                         </div>

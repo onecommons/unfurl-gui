@@ -34,11 +34,16 @@ if(lookupKey('azureCloudProvider')) {
 // the template needs -- the rest is credentials, which their own panel collects.
 // The others get theirs from the generic provider modal, which needs the user's
 // inputs before it has anything to write.
-const PROVIDER_TEMPLATE_AT_CREATION = ['Kubernetes', 'Google Cloud Platform', 'Amazon Web Services']
+const PROVIDER_TEMPLATE_AT_CREATION = ['Kubernetes', 'Digital Ocean', 'Azure', 'Google Cloud Platform', 'Amazon Web Services']
 
 // gcp and aws get a dedicated setup panel on the environment page rather than
 // the generic provider modal, so their query value names which one.
 const DEDICATED_PROVIDER_PANELS = ['gcp', 'aws']
+
+// How long to let the post-create export land before navigating on the seed.
+// Covers the batch window plus proxy latency; past that the dialog should not
+// keep the user waiting on a re-read that may never settle.
+const ENVIRONMENT_REREAD_TIMEOUT_MS = 8000
 
 export default {
     components: {
@@ -158,14 +163,23 @@ export default {
                 // then re-read -- the seed is write-shaped and lacks the resource
                 // templates the page needs, which only the export supplies.
                 this.addProjectEnvironment(created)
-                // Not awaited: this re-read can hang (its promise does not always
-                // settle), and blocking on it strands the dialog with no error --
-                // the seed above is what the page needs to render meanwhile.
-                this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
-                    .catch(e => console.error('ocFetchEnvironments', e))
+                // Bounded wait rather than fire-and-forget. The seed renders the
+                // name and the provider row, but it carries no `repositories`, so
+                // the page cannot resolve the provider's type and draws it with no
+                // inputs until something reloads -- which is what users hit. Only
+                // the export supplies that, so give it a moment to land.
+                //
+                // Still capped: this re-read does not always settle, and blocking
+                // on it indefinitely strands the dialog with no error. On timeout
+                // we navigate on the seed, which is the old behaviour.
+                await Promise.race([
+                    this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+                        .catch(e => console.error('ocFetchEnvironments', e)),
+                    new Promise(resolve => setTimeout(resolve, ENVIRONMENT_REREAD_TIMEOUT_MS))
+                ])
             } catch(e) {
                 this.createError({
-                    message: `@createEnvironmentWithoutCluster: ${e.message}`,
+                    message: `Create environment: ${e.message}`,
                     context: {
                         primary_provider,
                         instances,
@@ -223,12 +237,27 @@ export default {
                 }
                 await this.createEnvironmentWithoutCluster(instances)
                 if(this.hasCriticalErrors) return
-                sessionStorage['redirectOnProviderSaved'] = redirectTarget
                 // A bare `?provider` opens the generic provider modal; naming one
                 // selects its own setup panel instead.
+                //
+                // The generic modal exists to collect inputs *before* there is a
+                // template to write, so opening it for a provider whose template
+                // we just created shows an empty dialog -- the environment page's
+                // Edit button is where those inputs belong. Kubernetes is not an
+                // exception despite creating an ingress instance too: the modal
+                // filters its cards by `isProvider`, so the ingress is never in
+                // it and the empty provider card is all that renders.
+                const wroteTemplate = PROVIDER_TEMPLATE_AT_CREATION.includes(this.selectedCloudProvider)
+                const needsGenericModal = provider && !wroteTemplate
                 const query = DEDICATED_PROVIDER_PANELS.includes(provider)?
                     `?provider=${provider}`:
-                    (provider? '?provider': '')
+                    (needsGenericModal? '?provider': '')
+                // Only when a caller asked to be returned somewhere -- that is a
+                // cross-page hand-off (deploy-from-blueprint). The fallback to the
+                // current URL meant "reload yourself", which the environment page
+                // no longer needs now that it refetches in place.
+                if(_redirectTarget) sessionStorage['redirectOnProviderSaved'] = redirectTarget
+
                 const environmentRoute = `/-/environments/${this.environmentName}${query}`
                 // A reload here discards the whole SPA to reach a route the dashboard
                 // router already declares. Only that app has it: this dialog is also
