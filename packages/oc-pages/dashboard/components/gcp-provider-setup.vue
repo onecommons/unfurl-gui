@@ -12,6 +12,9 @@ import GcpZoneDropdown from './gcp-zone-dropdown.vue'
 
 const VALID_ZONE = /\w+-\w+\d-\w/
 const INVALID_KEY_MESSAGE = 'Your service credentials key is invalid JSON.'
+// Parsing is not the same as being a key: Save needs project_id, so a JSON file
+// that is not a service account key left the button dead with nothing said.
+const NOT_A_KEY_MESSAGE = 'That file is valid JSON but not a service account key: it has no "project_id".'
 
 export default {
     name: 'GcpProviderSetup',
@@ -39,20 +42,33 @@ export default {
             type: Boolean,
             default: false,
         },
+        // Reopened on an environment that already has a provider, rather than
+        // collecting one for the first time.
+        editing: {
+            type: Boolean,
+            default: false,
+        },
+        // Environment variables as already stored, so an edit shows what is set.
+        // The key itself is write-only and never comes back.
+        initialValues: {
+            type: Object,
+            default: () => ({}),
+        },
     },
     emits: ['saved', 'cancel'],
     data() {
         return {
             fileName: '',
             fileContents: null,
-            zone: '',
-            gcpProjectId: '',
+            zone: this.initialValues?.CLOUDSDK_COMPUTE_ZONE || '',
+            gcpProjectId: this.initialValues?.CLOUDSDK_CORE_PROJECT || '',
             gcpProjects: [],
             projectSearchTerm: '',
             loadingProjects: false,
             saving: false,
             errorMessage: '',
             signInExpired: false,
+            dragging: false,
         }
     },
     computed: {
@@ -60,7 +76,10 @@ export default {
         // The consent screen has to come back to a full page load, so this is a
         // path on this origin rather than a router route.
         signInHref() {
-            const returnTo = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider=gcp&signed_in=1`
+            // editProvider has to survive the round-trip: without it the user
+            // comes back from Google to a page that suppresses this panel.
+            const edit = this.editing? '&editProvider': ''
+            const returnTo = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.environmentName}?provider=gcp&signed_in=1${edit}`
             return gcpAuthorizeUrl(this.getHomeProjectPath, this.environmentName, returnTo)
         },
         usingGoogleSignIn() {
@@ -91,15 +110,40 @@ export default {
             if(this.usingGoogleSignIn && !this.gcpProjectId) return 'Select project to choose zone'
             return 'Select zone'
         },
-        showFooter() {
-            return this.hasKey || this.usingGoogleSignIn
+        // What to call the credential in the panel: the file just picked, or the
+        // one already stored, which has a project id but no filename.
+        keyLabel() {
+            if(this.hasKey) return this.fileName
+            return this.initialValues?.CLOUDSDK_CORE_PROJECT?
+                `Current key on file (${this.initialValues.CLOUDSDK_CORE_PROJECT})`:
+                'Current key on file'
+        },
+        keyOnFile() {
+            return !!(this.editing && this.initialValues?.CLOUDSDK_CORE_PROJECT)
         },
         saveDisabled() {
             if(this.saving) return true
             if(this.usingGoogleSignIn) return !(this.gcpProjectId && this.zone)
             // no project id means the key was rejected or is not a service
-            // account key, whatever the zone says
-            return !(this.keyProjectId && VALID_ZONE.test(this.zone))
+            // account key, whatever the zone says -- unless one is already on
+            // file, in which case a zone change alone is a legitimate edit
+            if(!VALID_ZONE.test(this.zone)) return true
+            return !(this.keyProjectId || this.keyOnFile)
+        },
+        // Say why Save is dead. Without this the zone requirement is invisible:
+        // the key uploads cleanly and the button simply never enables.
+        saveHint() {
+            if(this.saving || !this.saveDisabled) return ''
+            if(this.usingGoogleSignIn) {
+                if(!this.gcpProjectId) return __('Choose a project to continue.')
+                return this.zone? '': __('Choose a zone to continue.')
+            }
+            if(!this.keyProjectId && !this.keyOnFile) {
+                // a rejected file is already explained by the alert above;
+                // having picked nothing at all is not
+                return this.hasKey? '': __('Upload a service account key or sign in with Google to continue.')
+            }
+            return VALID_ZONE.test(this.zone)? '': __('Choose a zone to continue.')
         },
     },
     methods: {
@@ -119,35 +163,50 @@ export default {
                 this.loadingProjects = false
             }
         },
-        async onFileChanged(event) {
-            const file = event?.target?.files?.[0]
-            if(!file) return // the picker was dismissed
+        async readKeyFile(file) {
+            if(!file) return // the picker was dismissed, or a drop carried no file
             this.fileName = file.name
             try {
                 this.fileContents = JSON.parse(await file.text())
-                this.errorMessage = ''
+                this.errorMessage = this.keyProjectId? '': NOT_A_KEY_MESSAGE
             } catch(e) {
-                // an empty object rather than nothing, so the panel keeps showing
-                // the rejected file with "(Select a different file)" beside it
+                // an empty object rather than nothing, so the panel keeps naming
+                // the rejected file -- which says which one failed, while the
+                // Upload button above is how another gets picked
                 this.fileContents = {}
                 this.errorMessage = INVALID_KEY_MESSAGE
             }
         },
+        onFileChanged(event) {
+            return this.readKeyFile(event?.target?.files?.[0])
+        },
+        onFileDropped(event) {
+            this.dragging = false
+            return this.readKeyFile(event?.dataTransfer?.files?.[0])
+        },
         async saveServiceAccountKey() {
-            await patchEnv(
-                {
-                    GOOGLE_APPLICATION_CREDENTIALS: {
-                        value: JSON.stringify(this.fileContents),
-                        variable_type: 'file',
-                        masked: false,
-                        protected: true,
-                    },
-                    CLOUDSDK_CORE_PROJECT: {value: this.keyProjectId, masked: false, protected: true},
-                    CLOUDSDK_COMPUTE_ZONE: {value: this.zone, masked: false, protected: true},
-                },
-                this.environmentName,
-                this.getHomeProjectPath,
-            )
+            const patch = {
+                CLOUDSDK_COMPUTE_ZONE: {value: this.zone, masked: false, protected: true},
+            }
+
+            // Only when a file was actually picked. Editing an environment to
+            // change nothing but the zone leaves fileContents null, and writing
+            // JSON.stringify(null) here replaced a real service account key with
+            // the four-character string "null" -- silently, since patchEnv skips
+            // empty values but "null" is not empty. The stored key is unreadable
+            // from here, so there is nothing to round-trip and re-send: the only
+            // safe move is to leave it alone.
+            if(this.hasKey) {
+                patch.GOOGLE_APPLICATION_CREDENTIALS = {
+                    value: JSON.stringify(this.fileContents),
+                    variable_type: 'file',
+                    masked: false,
+                    protected: true,
+                }
+                patch.CLOUDSDK_CORE_PROJECT = {value: this.keyProjectId, masked: false, protected: true}
+            }
+
+            await patchEnv(patch, this.environmentName, this.getHomeProjectPath)
         },
         async saveGoogleSignIn() {
             try {
@@ -222,7 +281,14 @@ export default {
 }
 </script>
 <template>
-    <div class="gcp-provider-setup" data-testid="gcp-provider-setup">
+    <div
+        class="gcp-provider-setup"
+        data-testid="gcp-provider-setup"
+        @dragover.prevent
+        @dragenter.prevent="dragging = true"
+        @dragleave.self="dragging = false"
+        @drop.prevent="onFileDropped"
+    >
         <h3>Authenticate your Google Cloud Platform Account</h3>
 
         <gl-alert
@@ -274,10 +340,16 @@ export default {
                         <google-auth-button @click="googleAuthFlow"/>
                         <div class="gl-mt-2">Sign-in to Google to connect unfurl.cloud with your Google Cloud project.</div>
                     </div>
-                    <div>
+                    <!-- dragover must be prevented as well as drop, or the browser
+                         navigates to the file instead of handing it over -->
+                    <div
+                        class="gcp-key-dropzone gl-rounded-base gl-p-4"
+                        :class="{'is-dragging': dragging}"
+                        data-testid="gcp-key-dropzone"
+                    >
                         <gl-button data-testid="gcp-upload-key" icon="upload" @click="$refs.fileInput.click()">Upload Service Account Key</gl-button>
                         <div class="gl-mt-2">
-                            Upload credentials for <code>GOOGLE_APPLICATION_CREDENTIALS</code>.
+                            Drop the credentials for <code>GOOGLE_APPLICATION_CREDENTIALS</code> here, or upload them.
                             <br>
                             <gl-link :href="$options.SERVICE_ACCOUNT_HELP_URL" target="_blank">Learn more about service account authentication</gl-link>.
                         </div>
@@ -292,11 +364,13 @@ export default {
                     @change="onFileChanged"
                 >
 
-                <template v-if="hasKey">
+                <!-- keyOnFile as well as hasKey: editing an environment whose
+                     key is already stored has no fileName, and gating on that
+                     alone left the zone with nowhere to render. -->
+                <template v-if="hasKey || keyOnFile">
                     <hr>
                     <div class="gl-mb-4">
-                        <span class="gl-font-bold" data-testid="gcp-key-filename">{{fileName}}</span>
-                        <gl-button variant="link" @click="$refs.fileInput.click()">(Select a different file)</gl-button>
+                        <span class="gl-font-bold" data-testid="gcp-key-filename">{{keyLabel}}</span>
                     </div>
                     <div class="gl-flex gl-items-center gl-gap-3">
                         <label class="gl-mb-0">Zone</label>
@@ -310,7 +384,8 @@ export default {
             </template>
         </div>
 
-        <div v-if="showFooter" class="form-actions gl-mt-5 gl-flex gl-justify-end gl-gap-3">
+        <div class="gl-mt-5 gl-flex gl-justify-end gl-items-center gl-gap-3" :class="{'form-actions': !editing}">
+            <span v-if="saveHint" class="gl-text-subtle" data-testid="gcp-save-hint">{{saveHint}}</span>
             <gl-button
                 variant="confirm"
                 :disabled="saveDisabled"
@@ -321,11 +396,20 @@ export default {
                 <gl-icon name="disk"/>
                 {{__('Save')}}
             </gl-button>
-            <gl-button data-testid="gcp-provider-cancel" @click="$emit('cancel')">{{__('Cancel')}}</gl-button>
+            <gl-button v-if="!editing" data-testid="gcp-provider-cancel" @click="$emit('cancel')">{{__('Cancel')}}</gl-button>
         </div>
     </div>
 </template>
 <style scoped>
+.gcp-key-dropzone {
+    border: 1px dashed var(--gl-border-color-default, #dcdcde);
+    transition: background-color 0.1s ease-in-out, border-color 0.1s ease-in-out;
+}
+.gcp-key-dropzone.is-dragging {
+    border-color: var(--gl-color-blue-500, #1f75cb);
+    background-color: var(--gl-background-color-strong, rgba(31, 117, 203, 0.08));
+}
+
 .gcp-provider-setup .setup-container,
 .gcp-provider-setup .form-actions {
     /* 700px matches the AWS panel */

@@ -117,6 +117,59 @@ describe('gcp-provider-setup', () => {
         })
     })
 
+    describe('editing an environment whose key is already stored', () => {
+        const editing = {
+            editing: true,
+            initialValues: {
+                CLOUDSDK_CORE_PROJECT: 'my-project-1234',
+                CLOUDSDK_COMPUTE_ZONE: 'us-central1-a',
+            },
+        }
+
+        // The key is write-only: nothing can read it back to re-send it. Saving
+        // a zone change used to write JSON.stringify(fileContents) regardless,
+        // which replaced a real service account key with the string "null" --
+        // and patchEnv does not skip it, because "null" is not empty.
+        it('does not touch the stored credentials when no new file was picked', async () => {
+            const wrapper = mountPanel(editing)
+            wrapper.vm.zone = 'europe-west8-a'
+            await settle()
+
+            await wrapper.vm.onSave()
+
+            const [variables] = patchEnv.mock.calls[0]
+            expect(variables).not.toHaveProperty('GOOGLE_APPLICATION_CREDENTIALS')
+            expect(variables.CLOUDSDK_COMPUTE_ZONE.value).toBe('europe-west8-a')
+        })
+
+        it('never writes the string "null" as a credential', async () => {
+            const wrapper = mountPanel(editing)
+            wrapper.vm.zone = 'europe-west8-a'
+            await settle()
+
+            await wrapper.vm.onSave()
+
+            const [variables] = patchEnv.mock.calls[0]
+            const written = variables.GOOGLE_APPLICATION_CREDENTIALS?.value
+            expect(written === 'null' || written === null || written === undefined).toBe(true)
+            expect(written).not.toBe('null')
+        })
+
+        it('writes the credentials when a new file is picked', async () => {
+            const wrapper = mountPanel(editing)
+            await chooseFile(wrapper, 'new-key.json', '{"project_id": "replacement-5678"}')
+            wrapper.vm.zone = 'europe-west8-a'
+            await settle()
+
+            await wrapper.vm.onSave()
+
+            const [variables] = patchEnv.mock.calls[0]
+            expect(JSON.parse(variables.GOOGLE_APPLICATION_CREDENTIALS.value))
+                .toEqual({project_id: 'replacement-5678'})
+            expect(variables.CLOUDSDK_CORE_PROJECT.value).toBe('replacement-5678')
+        })
+    })
+
     describe('google sign-in', () => {
         it('returns to a path on this origin', () => {
             const wrapper = mountPanel()

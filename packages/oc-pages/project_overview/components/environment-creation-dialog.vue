@@ -215,7 +215,22 @@ export default {
             if(typeof this.selectedCloudProvider != 'string') {
                 await postGitlabEnvironmentForm();
                 await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: this.selectedCloudProvider})
-                window.location.href = redirectTarget;
+
+                // A caller that asked to be returned somewhere gets a real
+                // navigation; everyone else goes to the environment just made,
+                // in-app where the dashboard router can reach it. Reloading the
+                // page the user was already on -- the old behaviour -- threw the
+                // SPA away to end up where it started.
+                if(_redirectTarget) {
+                    window.location.href = redirectTarget
+                    return
+                }
+                const createdRoute = `/-/environments/${this.environmentName}`
+                if(this.$router?.name == 'dashboard') {
+                    this.$router.push(createdRoute)
+                } else {
+                    window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}${createdRoute}`
+                }
             } else {
                 let instances
                 if(provider == 'k8s') {

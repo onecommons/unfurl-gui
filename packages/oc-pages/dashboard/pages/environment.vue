@@ -16,9 +16,16 @@ import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import { visitUrl } from '~/lib/utils/url_utility';
 
 
+// Keyed by both the server-rendered dataset's names and the environment
+// variables the panels actually write. aws already carried both; gcp had only
+// the dataset form, so its Project ID and Zone rendered from #js-oc-ci-variables
+// and therefore only after a full page load -- which is why removing the
+// self-reload blanked them.
 const PROP_MAP = {
     primaryProviderGcpProjectId(value) {return {name: 'Project ID', value}},
     primaryProviderGcpZone(value) { return {name: 'Zone', value} },
+    CLOUDSDK_CORE_PROJECT(value) { return {name: 'Project ID', value} },
+    CLOUDSDK_COMPUTE_ZONE(value) { return {name: 'Zone', value} },
     primaryProviderAwsRoleArn(value) { return {name: 'Role ARN', value}},
     primaryProviderAwsDefaultRegion(value) { return {name: 'Default region', value}},
     AWS_DEFAULT_REGION(value) { return {name: 'Default region', value}},
@@ -26,6 +33,12 @@ const PROP_MAP = {
 }
 
 const PROVIDER_SETUP_PANELS = ['aws', 'gcp']
+
+// Temporarily off: "Add a provider connection" does not work well enough on an
+// environment that already has one -- see cypress/README.md. The modal and its
+// handlers are left in place; only the way in is hidden, so restoring it is
+// this flag.
+const ADD_PROVIDER_ENABLED = false
 
 const standalone = window.gon.unfurl_gui
 
@@ -45,7 +58,7 @@ export default {
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false}
+        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, variablesLoaded: false, savingProvider: false}
     },
     computed: {
         ...mapGetters([
@@ -154,8 +167,41 @@ export default {
         // names which one, and the page is theirs until it is saved or cancelled.
         providerSetup() {
             const provider = this.$route.query.provider
-            if(this.providerRecorded) return null
+            // providerRecorded suppresses the panel for a provider that already
+            // exists, so that saving one does not drop the user straight back
+            // into setup. `editProvider` is the user asking for it on purpose --
+            // otherwise gcp and aws have no edit path at all, since
+            // editableProviders leaves their primary out.
+            if(this.providerRecorded && !this.$route.query.hasOwnProperty('editProvider')) return null
             return PROVIDER_SETUP_PANELS.includes(provider)? provider: null
+        },
+        addProviderEnabled() {
+            return ADD_PROVIDER_ENABLED
+        },
+        editingProvider() {
+            return this.$route.query.hasOwnProperty('editProvider')
+        },
+        // A modal for an edit, nothing for first-time setup. `div` rather than a
+        // fragment so the @hide listener has somewhere to land.
+        providerSetupWrapper() {
+            return this.editingProvider? 'gl-modal': 'div'
+        },
+        providerSetupWrapperProps() {
+            if(!this.editingProvider) return {}
+            return {visible: true, modalId: 'providerSetupModal', size: 'lg', hideFooter: true, title: __('Edit provider')}
+        },
+        // What is already stored, so an edit opens showing it. The API-backed
+        // getter, not the server-rendered ci_variables dataset.
+        providerInitialValues() {
+            return this.getVariables(this.environment) || {}
+        },
+        // Which setup panel, if any, this environment's primary provider belongs
+        // to. gcp and aws keep their credentials there rather than in the
+        // generic card, so that is where Edit has to go.
+        primaryProviderSetupPanel() {
+            const type = this.primaryProvider?._localTypeName
+            if(!type) return null
+            return PROVIDER_SETUP_PANELS.find(panel => lookupCloudProviderAlias(panel) == type) || null
         },
         gcpSignedIn() {
             return this.$route.query.hasOwnProperty('signed_in')
@@ -222,6 +268,27 @@ export default {
             this.$refs.deploymentResources.cleanModalResource()
             this.$refs.deploymentResources.scrollDown(slugify(title))
         },
+        async loadProviderVariables() {
+            if(this.variablesLoaded) return
+            try {
+                await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+            } catch(e) {
+                console.error('@loadProviderVariables', e)
+            } finally {
+                // Always, even on failure: this flag gates the panel, and a
+                // refused fetch should leave an empty form rather than an Edit
+                // button that silently does nothing.
+                this.variablesLoaded = true
+            }
+        },
+
+        editPrimaryProvider() {
+            this.$router.push({
+                ...this.$route,
+                query: {...this.$route.query, provider: this.primaryProviderSetupPanel, editProvider: null}
+            })
+        },
+
         scrollToProvider(name) {
             // hoping this works in the vast majority of cases
             // the alternative seems to be to poll the DOM until this tab shows up
@@ -253,9 +320,9 @@ export default {
         async onSaveProviderTemplate(...args) {
             // Close before the round-trip, not after: leaving the modal up while
             // the save and re-read complete reads as a hang, and it covers the
-            // tabs underneath. The watcher's freshState is only a read, so running
-            // it against the in-flight save costs a fetch and corrupts nothing --
-            // the authoritative refresh is the one below.
+            // tabs underneath. The flag suppresses the watcher's refresh while
+            // this runs -- see the note there.
+            this.savingProvider = true
             this.showingProviderModal = false
 
             await this.onSaveTemplate(...args)
@@ -271,10 +338,12 @@ export default {
                 // A caller sent the user here to make an environment: returning to
                 // it is a real cross-page hand-off, not the self-reload.
                 delete sessionStorage['redirectOnProviderSaved']
+                this.savingProvider = false
                 visitUrl(redirect)
                 return
             }
 
+            this.savingProvider = false
             await this.freshState()
         },
         async onSaveTemplate(reload=true) {
@@ -321,6 +390,7 @@ export default {
             const query = {...this.$route.query}
             delete query.provider
             delete query.signed_in
+            delete query.editProvider
             this.$router.replace({...this.$route, query})
             await this.freshState()
         },
@@ -334,6 +404,7 @@ export default {
             const query = {...this.$route.query}
             delete query.provider
             delete query.signed_in
+            delete query.editProvider
             this.$router.replace({...this.$route, query})
             await this.freshState()
         },
@@ -390,6 +461,12 @@ export default {
             // panel exists only for one that does not.
             this.providerRecorded = PROVIDER_SETUP_PANELS.includes(this.$route.query.provider) &&
                 !!(await fetchProvider(this.getHomeProjectPath, environmentName))
+
+            // An edit renders the stored credentials, which live in the
+            // environment's CI variables rather than in the export. Covers
+            // arriving on the URL directly; the watcher covers the Edit button,
+            // which changes only the query and so re-runs nothing here.
+            if(this.editingProvider) await this.loadProviderVariables()
 
             await this.onSaveTemplate(false)
 
@@ -495,12 +572,24 @@ export default {
         },
         mapCloudProviderProps(ci_variables) {
             const result = []
+            // Two keys can carry the same prop -- the server-rendered dataset's
+            // name and the environment variable the panel writes. Keep one row
+            // per name, and let the later key win: the caller spreads the
+            // API-backed variables after the dataset, so that is the fresh one.
+            const indexByName = {}
             for(const variable in ci_variables) {
                 const mapping = PROP_MAP[variable]
                 if(typeof mapping == 'function') {
                     const value = ci_variables[variable]
                     const newProp = mapping(value)
-                    if(newProp) result.push(newProp)
+                    if(!newProp) continue
+                    const seen = indexByName[newProp.name]
+                    if(seen === undefined) {
+                        indexByName[newProp.name] = result.length
+                        result.push(newProp)
+                    } else if(newProp.value) {
+                        result[seen] = newProp
+                    }
                 }
             }
 
@@ -534,10 +623,30 @@ export default {
         async '$route.params.name'() {
             await this.freshState()
         },
+        async editingProvider(val) {
+            if(val) await this.loadProviderVariables()
+        },
         async showingProviderModal(val) {
             if(!val) {
-                await this.freshState()
-                this.$refs.providerModal.close()
+                // Not while a save is in flight. freshState is not just a read:
+                // on an environment whose connections look empty it calls
+                // onProviderAdded, which scrollToProvider re-opens this modal
+                // from. Closing before awaiting the save meant it ran against
+                // the pre-save state, took that branch, and the modal appeared
+                // never to close at all. onSaveProviderTemplate refreshes once
+                // the write has landed instead.
+                // Close first, and never behind an await: freshState can throw
+                // (a type that will not resolve, an environment not in the store
+                // yet), and with the close after it the modal simply stayed open
+                // while the error surfaced only as "Unhandled error during
+                // execution of watcher callback".
+                this.$refs.providerModal?.close()
+                if(this.savingProvider) return
+                try {
+                    await this.freshState()
+                } catch(e) {
+                    console.error('@showingProviderModal: refresh after close failed', e)
+                }
             }
         }
     },
@@ -550,19 +659,36 @@ export default {
 <template>
     <div class="environment" data-testid="dashboard-environment-page">
         <dashboard-breadcrumbs :items="breadcrumbItems" />
-        <aws-provider-setup
-            v-if="providerSetup == 'aws'"
-            :environment-name="environmentName"
-            @saved="onProviderSetupSaved"
-            @cancel="onProviderSetupCancelled"
-        />
-        <gcp-provider-setup
-            v-else-if="providerSetup == 'gcp'"
-            :environment-name="environmentName"
-            :signed-in="gcpSignedIn"
-            @saved="onProviderSetupSaved"
-            @cancel="onProviderSetupCancelled"
-        />
+        <!-- First-time setup owns the page -- it is a step in creating the
+             environment. Editing an existing provider is a modal, like every
+             other provider's inputs. -->
+        <!-- Not until the variables are in: the panels seed their fields from
+             initialValues in data(), which runs once, so mounting early leaves
+             an edit showing nothing that was already stored. -->
+        <component
+            :is="providerSetupWrapper"
+            v-if="providerSetup && (!editingProvider || variablesLoaded)"
+            v-bind="providerSetupWrapperProps"
+            @hide="onProviderSetupCancelled"
+        >
+            <aws-provider-setup
+                v-if="providerSetup == 'aws'"
+                :environment-name="environmentName"
+                :editing="editingProvider"
+                :initial-values="providerInitialValues"
+                @saved="onProviderSetupSaved"
+                @cancel="onProviderSetupCancelled"
+            />
+            <gcp-provider-setup
+                v-else
+                :environment-name="environmentName"
+                :signed-in="gcpSignedIn"
+                :editing="editingProvider"
+                :initial-values="providerInitialValues"
+                @saved="onProviderSetupSaved"
+                @cancel="onProviderSetupCancelled"
+            />
+        </component>
         <div v-else>
             <div class="mt-6 row">
                 <div class="col">
@@ -581,6 +707,13 @@ export default {
                     <div class="gl-flex gl-items-center" style="line-height: 20px;">
                         <detect-icon :size="20" :type="primaryProvider && primaryProvider._localTypeName" class="gl-mr-2"/> {{cloudProviderDisplayName}}
                     </div>
+                </template>
+                <template v-if="userCanEdit && primaryProviderSetupPanel" #header-controls>
+                    <gl-button :data-testid="`edit-provider-${primaryProviderSetupPanel}`" @click.stop="editPrimaryProvider">
+                        <div class="gl-flex">
+                            <detect-icon name="pencil" :size="18" /> <span>Edit</span>
+                        </div>
+                    </gl-button>
                 </template>
             </oc-properties-list>
             <oc-properties-list
@@ -605,7 +738,7 @@ export default {
                     </gl-button>
                 </template>
             </oc-properties-list>
-            <div v-if="userCanEdit" class="gl-mt-5">
+            <div v-if="userCanEdit && addProviderEnabled" class="gl-mt-5">
                 <gl-button data-testid="add-provider" variant="confirm" @click="addProvider">
                     <div>
                         <gl-icon name="plus"/>

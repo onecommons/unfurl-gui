@@ -420,7 +420,12 @@ export default {
             this.creatingEnvironment = true
         },
         redirectToNewEnvironment() {
-            this.$refs.environmentDialog.beginEnvironmentCreation()
+            // Pass this page as the return target: the user is sent away to make
+            // an environment and comes back here with it preselected. Without an
+            // explicit target the dialog treats the trip as one-way.
+            this.$refs.environmentDialog.beginEnvironmentCreation(
+                window.location.pathname + window.location.search
+            )
         },
         handleClose() {
             this.showBannerIntro = false;

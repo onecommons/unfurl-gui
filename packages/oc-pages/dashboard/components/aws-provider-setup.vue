@@ -1,5 +1,6 @@
 <script>
 import {GlAlert, GlButton, GlDropdown, GlDropdownItem, GlFormInput, GlIcon, GlLink} from '@gitlab/ui'
+import FakePassword from '../../project_overview/components/shared/oc_inputs/fake-password.vue'
 import {mapGetters} from 'vuex'
 import {__} from '~/locale'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
@@ -61,6 +62,7 @@ export default {
         GlFormInput,
         GlIcon,
         GlLink,
+        FakePassword,
     },
     AWS_REGIONS,
     AUTHENTICATION_OPTIONS,
@@ -79,13 +81,28 @@ export default {
             type: String,
             required: true,
         },
+        // Reopened on an environment that already has a provider, rather than
+        // collecting one for the first time.
+        editing: {
+            type: Boolean,
+            default: false,
+        },
+        // Environment variables as already stored, so an edit shows what is set.
+        // The secret key is masked and never comes back; patchEnv skips empty
+        // values, so leaving it blank keeps the stored one.
+        initialValues: {
+            type: Object,
+            default: () => ({}),
+        },
     },
     emits: ['saved', 'cancel'],
     data() {
         return {
-            selectedRegion: DEFAULT_REGION,
-            selectedMethod: '',
-            accessKey: '',
+            selectedRegion: this.initialValues?.AWS_DEFAULT_REGION || DEFAULT_REGION,
+            // an access key on file is the only method that leaves a readable
+            // trace, so it is the only one that can be preselected
+            selectedMethod: this.initialValues?.AWS_ACCESS_KEY_ID? ACCESS_KEY: '',
+            accessKey: this.initialValues?.AWS_ACCESS_KEY_ID || '',
             secretKey: '',
             roleName: 'UnfurlDeployRole',
             roleArn: '',
@@ -124,10 +141,21 @@ export default {
                 `&param_ExternalId=${encodeURIComponent(this.externalId)}` +
                 `&param_RoleName=${encodeURIComponent(this.roleName)}`
         },
+        secretPlaceholder() {
+            // a stored access key id implies a stored secret beside it
+            if(!this.editing || !this.initialValues?.AWS_ACCESS_KEY_ID) return ''
+            return __('Leave blank to keep the current secret')
+        },
         saveDisabled() {
             if(this.saving) return true
             if(this.usingRoleArn) return !this.arnIsValid
-            if(this.selectedMethod == ACCESS_KEY) return !(this.accessKey && this.secretKey)
+            if(this.selectedMethod == ACCESS_KEY) {
+                if(!this.accessKey) return true
+                // Editing keeps whatever secret is stored unless a new one is
+                // typed -- patchEnv skips blank values. Requiring it again to
+                // change a region, or because the id was edited, is busywork.
+                return !(this.secretKey || this.editing)
+            }
             return true
         },
     },
@@ -249,7 +277,12 @@ export default {
             <h4>1. AWS Access key ID:</h4>
             <gl-form-input v-model="accessKey" data-testid="aws-access-key-id"/>
             <h4 class="gl-mt-5">2. AWS Secret access key:</h4>
-            <gl-form-input v-model="secretKey" type="password" data-testid="aws-secret-access-key"/>
+            <fake-password
+                :value="secretKey"
+                :placeholder="secretPlaceholder"
+                data-testid="aws-secret-access-key"
+                @input="secretKey = $event"
+            />
         </section>
 
         <section v-if="selectedMethod == $options.ARN_MANUAL">
@@ -312,7 +345,7 @@ export default {
             <img :src="$options.SelectDeployRoleImage" alt="">
         </section>
 
-        <div class="form-actions gl-mt-5 gl-flex gl-justify-end gl-gap-3">
+        <div class="gl-mt-5 gl-flex gl-justify-end gl-gap-3" :class="{'form-actions': !editing}">
             <gl-button
                 variant="confirm"
                 :disabled="saveDisabled"
@@ -323,7 +356,7 @@ export default {
                 <gl-icon name="disk"/>
                 {{__('Save')}}
             </gl-button>
-            <gl-button data-testid="aws-provider-cancel" @click="$emit('cancel')">{{__('Cancel')}}</gl-button>
+            <gl-button v-if="!editing" data-testid="aws-provider-cancel" @click="$emit('cancel')">{{__('Cancel')}}</gl-button>
         </div>
     </div>
 </template>

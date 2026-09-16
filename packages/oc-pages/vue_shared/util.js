@@ -53,6 +53,12 @@ const AWS = 'unfurl.relationships.ConnectsTo.AWSAccount'
 const Azure = 'ConnectsTo.AzureEnvironment'
 const K8s = 'unfurl.relationships.ConnectsTo.K8sCluster'
 const DigitalOcean = 'ConnectsTo.DigitalOceanEnvironment'
+// The provider types a user can connect an environment to, in the order the
+// pickers offer them. Exported so those lists cannot drift from the aliases
+// below -- the "Add a provider connection" modal had three of the five
+// hardcoded, so gcp and aws could not be added at all.
+export const CLOUD_PROVIDER_TYPES = [K8s, DigitalOcean, Azure, GCP, AWS]
+
 const CLOUD_PROVIDER_ALIASES = {
     AWSAccount: AWS,
     aws: AWS,

@@ -2,8 +2,7 @@
 import {mapGetters} from 'vuex'
 import EnvironmentCreationDialog from '../../project_overview/components/environment-creation-dialog.vue'
 import {GlModal} from '@gitlab/ui'
-import {slugify, USER_HOME_PROJECT} from 'oc_vue_shared/util'
-import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
+import {USER_HOME_PROJECT} from 'oc_vue_shared/util'
 import {__} from '~/locale'
 export default {
     name: 'CreateEnvironmentModal',
@@ -31,7 +30,7 @@ export default {
     methods: {
         async redirectToNewEnvironment(e) {
             e.preventDefault()
-            await this.$refs.environmentDialog.beginEnvironmentCreation(`${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${slugify(this.$refs.environmentDialog.environmentName)}`)
+            await this.$refs.environmentDialog.beginEnvironmentCreation()
             if(this.hasCriticalErrors) {
                 this.$refs.modal.close()
             }
