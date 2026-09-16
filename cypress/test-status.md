@@ -45,6 +45,7 @@ an absolute `/fixtures/js/*.js` that only the standalone server serves -- so
 | `01_environments/gcp_sign_in.cy.js`                         | deploy? | n/a | pass 2026-09-15 | unknown |
 | `01_environments/generic.cy.js`                             |  | n/a | pass 2026-09-16 | unknown |
 | `01_environments/github_token.cy.js`                        |  | n/a | failed 2026-09-15 | unknown |
+| `01_environments/repeated_save.cy.js`                       |  | n/a | pass 2026-09-16 | unknown |
 | `blueprints/aws__baserow__baserow.cy.js`                    | dryrun, deploy | CI | n/a | unknown |
 | `blueprints/aws__container-webapp__container-webapp.cy.js`  | dryrun, deploy | skip | skip | unknown |
 | `blueprints/aws__container-webapp__dockerhub.cy.js`         | dryrun, deploy | skip | skip | unknown |

@@ -311,13 +311,12 @@ export default {
             this.savingProvider = true
             this.showingProviderModal = false
 
-            // reload=false, explicitly. triggerSave emits saveTemplate with no
-            // arguments, so ...args is empty and onSaveTemplate's default fires
-            // window.location.reload() -- which raced the router push that
-            // clears ?provider and reloaded the page with the query still set,
-            // re-opening this modal. That looked like a modal that would not
-            // close; it was the page coming back with it open.
-            await this.onSaveTemplate(false)
+            // Seed only: this method does its own re-read below, and the
+            // refresh onSaveTemplate performs would race the router push that
+            // clears ?provider. When that push lost, the page came back with
+            // the query still set and the modal re-opened -- which read as a
+            // modal that would not close.
+            await this.seedBaseState()
 
             // Providers are written with patchEnv and read back through
             // fetchEnvironmentVariables, so refetching is enough -- the document
@@ -338,29 +337,41 @@ export default {
             this.savingProvider = false
             await this.freshState()
         },
-        async onSaveTemplate(reload=true) {
+        // The base state the next save diffs against, rebuilt from what is
+        // loaded. Sound only while that is authoritative -- freshState has just
+        // fetched, or onSaveTemplate has just re-read.
+        async seedBaseState() {
             const environment = this.environment
             this.setUpdateType('environment')
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             this.setEnvironmentScope(environment.name)
 
-            if(reload) {
-                window.location.reload()
-            }
-            else {
-                // TODO this logic isn't working to reset everything properly
-                // my intuition is that it's not correctly using the new external external resources after this is saved, so they end up being lost when the user attempts to save again
-                const ResourceType = this.environmentResourceTypeDict(environment)
-                const root = _.cloneDeep({
-                    DeploymentEnvironment: {
-                        [environment.name]: environment,
-                        defaults: this.getEnvironmentDefaults
-                    },
-                    ResourceType
-                })
-                await this.useProjectState({root})
-                this.useBaseState(root)
-            }
+            const ResourceType = this.environmentResourceTypeDict(environment)
+            const root = _.cloneDeep({
+                DeploymentEnvironment: {
+                    [environment.name]: environment,
+                    defaults: this.getEnvironmentDefaults
+                },
+                ResourceType
+            })
+            await this.useProjectState({root})
+            this.useBaseState(root)
+        },
+        // Runs after deployment-resources has committed. It re-reads rather
+        // than reloading the document, and rather than reseeding from
+        // `this.environment`: that is the snapshot freshState took, so anything
+        // added since -- an external resource, most visibly -- was missing from
+        // the base state the next save diffed against and was dropped on it.
+        // That was the behaviour the old reload masked and the in-place branch
+        // carried a TODO about.
+        //
+        // It takes no argument by design. triggerSave emits saveTemplate with
+        // none, so a defaulted parameter here is read from whatever the
+        // template binding happens to pass -- which is how the reload used to
+        // fire on every save from that binding.
+        async onSaveTemplate() {
+            await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
+            await this.freshState()
         },
         async onProviderSetupSaved(provider) {
             // the blueprint overview page a redirect returns to preselects the
@@ -477,7 +488,7 @@ export default {
             // which changes only the query and so re-runs nothing here.
             if(this.editingProvider) await this.loadProviderVariables()
 
-            await this.onSaveTemplate(false)
+            await this.seedBaseState()
 
             const instances = _.cloneDeep(Object.values(environment.instances))
             const connections = _.cloneDeep(Object.values(environment.connections))
