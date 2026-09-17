@@ -17,14 +17,17 @@ Columns:
   checkout; see "Running against Unfurl Cloud" in the README.
 - **staging** — nothing has ever been recorded here.
 
-`skip` means `SPEC_SKIP_GLOBS` drops it by default (`*container-webapp*
-*nestedcloud* *draft*`) — it is excluded, not merely unrun. `n/a` for
-standalone means the spec needs a GitLab instance and cannot run against
-`unfurl serve --gui`. `n/a` for gdk covers two different things: the four
-`00_visitor` fixture rows mount a page out of `dist/fixtures/`, whose bundle is
-an absolute `/fixtures/js/*.js` that only the standalone server serves -- so
-`visitBuiltPage` gets its stubbed document and no application -- while
-`yarn test:ufsv-patch` targets no GitLab instance at all.
+`blocked` means the spec ran and the failure was the instance, not the code --
+something it needs is not seeded or configured there, so the cell says nothing
+about whether the spec works. `skip` means `SPEC_SKIP_GLOBS` drops it by
+default (`*container-webapp* *nestedcloud* *draft*`) — it is excluded, not
+merely unrun. `n/a` for standalone means the spec needs a GitLab instance and
+cannot run against `unfurl serve --gui`. `n/a` for gdk covers two different
+things: the four `00_visitor` fixture rows mount a page out of
+`dist/fixtures/`, whose bundle is an absolute `/fixtures/js/*.js` that only
+the standalone server serves -- so `visitBuiltPage` gets its stubbed document
+and no application -- while `yarn test:ufsv-patch` targets no GitLab instance
+at all.
 
 | Spec                                                        | type | standalone | gdk | staging |
 |-------------------------------------------------------------|------|------------|-----|---------|
@@ -37,7 +40,7 @@ an absolute `/fixtures/js/*.js` that only the standalone server serves -- so
 | `00_visitor/route_smoke.cy.js`                              |  | CI | pass 2026-09-15 | unknown |
 | `00_visitor/visit_cloudchart.cy.js`                         |  | CI | pass 2026-09-15 | unknown |
 | `01_environments/a10.cy.js`                                 |  | n/a | failed 2026-09-15 | unknown |
-| `01_environments/aws.cy.js`                                 |  | n/a | pass 2026-09-15 | unknown |
+| `01_environments/aws.cy.js`                                 |  | n/a | pass 2026-09-17 | unknown |
 | `01_environments/aws_role_arn.cy.js`                        |  | n/a | pass 2026-09-15 | unknown |
 | `01_environments/create_dashboard.cy.js`                    |  | n/a | n/a | unknown |
 | `01_environments/digitalocean.cy.js`                        |  | n/a | pass 2026-09-15 | unknown |
@@ -83,7 +86,7 @@ an absolute `/fixtures/js/*.js` that only the standalone server serves -- so
 | `blueprints/gcp__openvscode-server__openvscode-server.cy.js`| dryrun, deploy | unknown | unknown | unknown |
 | `blueprints/k8s__container-webapp5__container-webapp.cy.js` | dryrun, deploy | skip | skip | unknown |
 | `blueprints/k8s__ghost__ghost.cy.js`                        | dryrun, deploy | unknown | unknown | unknown |
-| `blueprints/k8s__wordpress__wordpress.cy.js`                | dryrun, deploy | unknown | unknown | unknown |
+| `blueprints/k8s__wordpress__wordpress.cy.js`                | dryrun, deploy | unknown | blocked 2026-09-17 | unknown |
 | `deployments/clone-draft.cy.js`                             | dryrun, deploy | skip | skip | unknown |
 | `deployments/drafts.cy.js`                                  | dryrun, deploy | skip | skip | unknown |
 | `deployments/index-table-actions.cy.js`                     | dryrun | n/a | pass 2026-09-16 | unknown |
@@ -275,6 +278,48 @@ an absolute `/fixtures/js/*.js` that only the standalone server serves -- so
   `- if gitlab_project_import_enabled?`, so it is not rendered at all rather
   than renamed. Needs `gitlab_project` added to the instance's import sources --
   instance configuration, like `UNFURL_CLOUDMAP_JSON` was.
+
+- **gdk, 2026-09-17** — `aws` is 3/3, and `create-kubernetes-environment`'s CI
+  variable block works again. Three things that cost time, in the order they
+  bite:
+
+  **`--namespace` is per spec, and there is no value that suits all of them.**
+  It decides where a spec looks for its blueprint, and the two seeded groups
+  hold different ones: `onecommons/blueprints` has `minecraft` and nothing
+  else, while `simple-blueprint` is under `onecommons/testing`. So the `...
+  env from the overview page` tests in `aws` and `gcp` need `--namespace
+  onecommons/testing` -- the README's `onecommons/blueprints` 404s the visit
+  and makes them look broken -- and anything on the minecraft fixture,
+  `index-table-actions` included, needs `onecommons/blueprints`. Both failures
+  are a `cy.visit` of a project that is not there, which reads as a spec fault
+  and is not one.
+
+  **`k8s__wordpress__wordpress` cannot pass on this instance** and the spec is
+  not at fault: `onecommons/blueprints` has only `minecraft` seeded, and there
+  is no wordpress blueprint anywhere. It is the only k8s fixture, so nothing
+  exercises `createK8SEnvironment` end to end here. Everything before the
+  blueprint visit does run, which is how the CI variable block was verified.
+
+  **`K8S_CONTEXT` and `K8S_CLUSTER_NAME` type into inputs the provider form
+  does not render.** These inputs are not GitLab's: they come from the TOSCA
+  type's inputsSchema, served by unfurl's export, and the type lives in
+  `unfurl/tosca_plugins/k8s.yaml`. The form rendered `api_server`, `token`,
+  `namespace`, `cluster_ca_certificate`, `insecure` and `expires_at` -- no
+  `context`, no `name`. `context` *is* defined on the type, so something
+  decides which properties surface and `user_settable` is not it; that is
+  unestablished. Both vars are `if(VAR)` gated, so they only bite when set,
+  and then the spec fails looking for an input that was never there.
+
+  **`addK8sAnnotations` was stale three ways**, each hidden behind the last:
+  the testids gained a `.$additionalProperties` segment, so
+  `[data-testid$="-annotations-add"]` matched nothing; the inputs sit behind a
+  tab; and the KUBECONFIG block above leaves the Variables tab showing, while
+  the cards are on Resources. The card's header is a *toggle*, so expanding it
+  unconditionally shuts one that was already open -- check the tab's
+  visibility first. Doing that instead removed every `{force: true}` the
+  earlier attempts had accumulated: the "covered by another element" errors
+  were all the card being shut, not a layout overlap. Verified with
+  `K8S_ANNOTATIONS="a=1, b=2"`.
 
 - **gdk, 2026-09-15** — `generic` alone, before the above was understood.
 - **gdk, 2026-09-14** — `gcp_sign_in` was 2/3; not investigated.

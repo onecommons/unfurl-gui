@@ -27,6 +27,7 @@
 //
 
 const {DIR: FIXTURE_DIR} = require('../../scripts/src/fixture-pages.js')
+import './deployment-row-menu' // used by undeploy
 import './undeploy' // should be imported before run-recreate-deployment
 import './run-recreate-deployment'
 import './create-aws-environment'

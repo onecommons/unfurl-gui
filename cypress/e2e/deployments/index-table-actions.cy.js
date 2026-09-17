@@ -22,21 +22,6 @@ describe('Deployments table actions', () => {
   // something it wants to warn about; address it by class rather than text.
   const confirmModal = () => cy.get('button.js-modal-action-primary:visible').click()
 
-  // Not `button.dropdown-toggle`. GlDropdown still exists and still renders
-  // that class -- several oc-pages components use it -- but these controls
-  // stopped being one in 2a42534e, which moved them to GlDisclosureDropdown to
-  // fix menu positioning. Its menu is positioned `fixed` and so is not inside
-  // the row; only the toggle is addressed within it.
-  const openRowMenu = title => {
-    cy.contains('tr', title).within(() => {
-      cy.get('.gl-new-dropdown-toggle').click()
-    })
-    cy.get('.gl-new-dropdown-panel:visible').should('exist')
-  }
-
-  const clickMenuItem = label => cy.get('.gl-new-dropdown-panel:visible')
-    .contains('.gl-new-dropdown-item', label).click()
-
   const visitDrafts = () => cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=drafts`)
 
   it('renames a deployment', () => {
@@ -50,8 +35,7 @@ describe('Deployments table actions', () => {
     visitDrafts()
     cy.contains('tr', title).should('exist')
 
-    openRowMenu(title)
-    clickMenuItem('Rename Deployment')
+    cy.deploymentRowAction(title, 'Rename Deployment')
 
     cy.get('.modal-body input').clear().type(renamed)
     confirmModal()
@@ -78,8 +62,7 @@ describe('Deployments table actions', () => {
     visitDrafts()
     cy.contains('tr', title).should('exist')
 
-    openRowMenu(title)
-    clickMenuItem('Delete')
+    cy.deploymentRowAction(title, 'Delete')
     confirmModal()
 
     // In place: deleteDeployment does not drop the row from the table's state

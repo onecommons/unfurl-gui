@@ -73,16 +73,40 @@ function addK8sAnnotations() {
   let annotations = []
 
   try {
-    annotations = K8S_ANNOTATIONS.split(/,\s*/g).map(ann => ann.split('='))
+    // filter: ''.split() yields [''], so an unset K8S_ANNOTATIONS still ran one
+    // iteration and looked for an Add button with no annotation to add
+    annotations = K8S_ANNOTATIONS.split(/,\s*/g).filter(Boolean).map(ann => ann.split('='))
   } catch(e) {
     console.error(e)
   }
 
+  if(!annotations.length) return
+
+  // The KUBECONFIG block above leaves the Variables tab showing, and the cards
+  // are on Resources -- without this the card below is in the DOM but hidden.
+  cy.contains('a', 'Resources').click()
+
+  // The inputs sit behind a tab on the card that carries them, and the card's
+  // header is a toggle -- so clicking it unconditionally closes a card that was
+  // already open, which leaves everything below in the DOM and invisible.
+  // Expand only when the tab is not already showing.
+  cy.get('[data-testid^="tab-annotations-"]').invoke('attr', 'data-testid').then(tab => {
+    const card = `[data-testid="card-${tab.replace('tab-annotations-', '')}"]`
+
+    cy.get(`[data-testid="${tab}"]`).then($tab => {
+      if (!$tab.is(':visible')) cy.get(card).click()
+    })
+
+    cy.get(`[data-testid="${tab}"]`).click()
+  })
+
   // providerName isn't in scope here, so match on the property suffix
   for(const [key, value] of annotations) {
-    cy.get('[data-testid$="-annotations-add"]').click()
-    cy.getInputOrTextarea('[data-testid$="-annotations-key"]').last().type(key)
-    cy.getInputOrTextarea('[data-testid$="-annotations-value"]').last().type(value)
+    cy.get('[data-testid$="annotations.$additionalProperties-add"]').click()
+    cy.getInputOrTextarea('[data-testid$="annotations.$additionalProperties-key"]')
+      .last().type(key)
+    cy.getInputOrTextarea('[data-testid$="annotations.$additionalProperties-value"]')
+      .last().type(value)
   }
 }
 
@@ -122,14 +146,38 @@ Cypress.Commands.add('createK8SEnvironment', (options) => {
       // easiest way to get rid of modal
       cy.visit(dashboardPath(`/-/environments/${environmentName}`))
 
+      // The 15.11 modal this used to drive is gone -- the Variables tab is
+      // 19.3's drawer now, so none of its data-qa-selectors resolve and
+      // #ci-variable-type is a screen-reader label on a listbox rather than
+      // the old <select>.
       cy.contains('a', 'Variables').click()
-      cy.get('[data-qa-selector="add_ci_variable_button"]').click()
-      cy.getInputOrTextarea('[data-qa-selector="ci_variable_key_field"]').type('KUBECONFIG')
-      // typing out KUBECONFIG is hilariously slow
-      cy.get('[data-qa-selector="ci_variable_value_field"]').invoke('val', KUBECONFIG)
-      cy.get('[data-qa-selector="ci_variable_value_field"]').type('\n')
-      cy.get('#ci-variable-type').select('File')
-      cy.get('[data-qa-selector="ci_variable_save_button"]').click()
+      cy.get('[data-testid="add-ci-variable"]').click()
+      cy.get('[data-testid="ci-variable-drawer"]').should('exist')
+
+      cy.getInputOrTextarea('[data-testid="ci-variable-key"]').type('KUBECONFIG')
+
+      // set rather than typed: a kubeconfig is thousands of characters. Vue
+      // reads v-model off the input event, which invoke('val') does not fire.
+      cy.getInputOrTextarea('[data-testid="ci-variable-value"]')
+        .invoke('val', KUBECONFIG)
+        .trigger('input')
+
+      // Visible, not the drawer's Masked default: masking requires 8+
+      // characters with no whitespace, and a kubeconfig is multi-line, so
+      // Masked leaves Save disabled.
+      // check({force}) rather than click(): the testid is on the radio input,
+      // which its own <label> covers
+      cy.get('[data-testid="ci-variable-visible-radio"]').check({force: true})
+
+      // File, so the job gets a path to a written-out kubeconfig rather than
+      // the yaml inline
+      // GlCollapsibleListbox, labelled by the #ci-variable-type sr-only span;
+      // its options are [data-testid="listbox-item-<value>"]
+      cy.get('#ci-variable-type').parent().find('[data-testid="base-dropdown-toggle"]').click()
+      cy.get('[data-testid="listbox-item-FILE"]').click()
+
+      cy.get('[data-testid="ci-variable-confirm-button"]').click()
+      cy.get('[data-testid="ci-variable-drawer"]', {timeout: BASE_TIMEOUT}).should('not.exist')
     }
     addK8sAnnotations()
 

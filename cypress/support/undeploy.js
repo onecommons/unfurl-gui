@@ -8,10 +8,7 @@ function undeploy(deploymentTitle, _options) {
   }, _options)
 
   cy.assertDeploymentRunning(deploymentTitle)
-  cy.contains('tr', deploymentTitle).within(() => {
-    cy.get('button.dropdown-toggle').click()
-    cy.contains('button', 'Teardown').click()
-  })
+  cy.deploymentRowAction(deploymentTitle, 'Teardown')
   cy.contains('button', 'Confirm').click()
   cy.url({timeout: 20000}).should('include', slugify(deploymentTitle))
 

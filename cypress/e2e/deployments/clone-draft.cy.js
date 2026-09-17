@@ -49,10 +49,7 @@ function editAndDeploy(title) {
 function cloneDeployment(ogTitle, cloneTitle) {
   cy.visit(`/${DASHBOARD_DEST}/-/deployments?show=drafts`)
 
-  cy.contains('tr', ogTitle).within(() => {
-    cy.get('button.dropdown-toggle').click()
-    cy.contains('button', 'Clone Deployment').click()
-  })
+  cy.deploymentRowAction(ogTitle, 'Clone Deployment')
 
   cy.get('.modal-body input').clear().type(cloneTitle)
   cy.contains('button', 'Confirm').click()
