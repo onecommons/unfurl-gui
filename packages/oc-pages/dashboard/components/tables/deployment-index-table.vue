@@ -272,7 +272,7 @@ export default {
                 case 'rename':
                     if(deployment.title == this.newDeploymentTitle) return
                     await this.renameDeployment({deploymentName: deployment.name, environmentName: environment.name, newTitle: this.newDeploymentTitle})
-                    if(! this.hasCriticalErrors) window.location.reload()
+                    if(! this.hasCriticalErrors) await this.refreshDashboard()
                     return
                 case 'undeploy':
                     if(deploymentItem.isAutostopCancelable) {
@@ -288,8 +288,10 @@ export default {
                     return
                 case 'delete':
                     await this.deleteDeployment({deploymentName: deployment.name, environmentName: environment.name})
+                    // The table scrolls to $route.hash, which still names the row
+                    // being removed. Load-bearing now that nothing reloads.
                     this.$router.replace({hash: '#_'})
-                    this.handleDeleteRedirect()
+                    await this.handleDeleteRedirect()
                     return
                 case 'clone':
                     const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment?.name)
@@ -402,12 +404,26 @@ export default {
           return 'No resources'
 
         },
-        handleDeleteRedirect() {
+        async handleDeleteRedirect() {
             if(this.$route.name == routes.OC_DASHBOARD_DEPLOYMENTS) {
                 window.location.href = this.$router.resolve({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX}).href
             } else {
-                window.location.reload()
+                await this.refreshDashboard()
             }
+        },
+        // commitPreparedMutations writes, and stops: it never reconciles
+        // table_data, which is what this table renders. So a rename leaves the
+        // old title on the row and a delete leaves the row. This is what
+        // scheduleAutostop already does with its own write.
+        async refreshDashboard() {
+            await Promise.all([
+                this.loadDashboard(),
+                this.populateJobsList()
+            ])
+
+            // loadDashboard rebuilds the rows; this rebuilds the items they are
+            // read through, which is what drops a deleted deployment.
+            await this.populateDeploymentItems(this.getDashboardItems)
         },
     },
     computed: {
