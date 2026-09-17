@@ -86,6 +86,7 @@ an absolute `/fixtures/js/*.js` that only the standalone server serves -- so
 | `blueprints/k8s__wordpress__wordpress.cy.js`                | dryrun, deploy | unknown | unknown | unknown |
 | `deployments/clone-draft.cy.js`                             | dryrun, deploy | skip | skip | unknown |
 | `deployments/drafts.cy.js`                                  | dryrun, deploy | skip | skip | unknown |
+| `deployments/index-table-actions.cy.js`                     | dryrun | n/a | pass 2026-09-16 | unknown |
 | `deployments/k8s-secondary-provider.cy.js`                  | dryrun, deploy | unknown | unknown | unknown |
 | `deployments/multiple-workflows.cy.js`                      | dryrun, deploy | unknown | unknown | unknown |
 | `deployments/nested-tabs.cy.js`                             | dryrun, deploy | unknown | unknown | unknown |
