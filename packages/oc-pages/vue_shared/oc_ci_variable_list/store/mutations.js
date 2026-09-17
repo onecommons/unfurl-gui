@@ -85,6 +85,9 @@ export default {
     state.showInputValue = false;
   },
 
+  [types.SET_ENDPOINT](state, endpoint) {
+    state.endpoint = endpoint;
+  },
   [types.SET_ENVIRONMENT_NAME](state, environmentName) {
     state.environmentName = environmentName;
   },

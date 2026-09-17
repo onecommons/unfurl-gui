@@ -49,12 +49,14 @@ const variableDataEl = document.querySelector('#js-oc-ci-variables')
 // which then outlived it: environment.vue read them back out of this state and
 // showed one environment's Project ID, Zone or Region on another's.
 //
-// endpoint is derived rather than read for the same reason it is safe to keep:
-// it is project-level, so it is valid whichever environment is open.
+// endpoint is not set here. It needs the home project path, and the only source
+// available at module scope is gon.home_project -- which the Jinja skeleton sets
+// for standalone and the fork never sets at all, so deriving it here yielded
+// `/-/variables` on exactly the build this module is registered for.
+// ci_variable_settings dispatches it from getHomeProjectPath instead.
 if(!gon.unfurl_gui) {
     const {projectId, maskableRegex} = variableDataEl?.dataset || {}
     const ci_variables = createCiVariablesStore({
-        endpoint: `${projectPathToHomeRoute(normpath(gon.home_project))}/-/variables`,
         projectId,
         maskableRegex,
         // TODO properly read these values

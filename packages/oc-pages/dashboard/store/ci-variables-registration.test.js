@@ -71,8 +71,22 @@ describe('ci_variables module registration', () => {
         expect(loadStore({withDataset: false}).state.ci_variables).toBeDefined()
     })
 
-    it('derives a project-level endpoint rather than trusting the dataset', () => {
-        expect(loadStore({withDataset: false}).state.ci_variables.endpoint).toBe('/group/dash/-/variables')
+    /*
+     * The endpoint cannot be built here. The only home-project value in scope at
+     * module load is gon.home_project, which standalone's Jinja skeleton sets
+     * and the fork never sets at all -- so deriving it here produced
+     * `/-/variables` on the one build this module is registered for, and the
+     * variables table answered "There was an error fetching the variables".
+     * ci_variable_settings dispatches it from getHomeProjectPath instead.
+     */
+    it('leaves the endpoint for the component to dispatch', () => {
+        expect(loadStore({withDataset: false}).state.ci_variables.endpoint).toBe(null)
+    })
+
+    it('does not build one out of gon.home_project, which the fork never sets', () => {
+        delete window.gon.home_project
+
+        expect(loadStore().state.ci_variables.endpoint).not.toBe('/-/variables')
     })
 
     it('keeps the project-level keys it does need', () => {

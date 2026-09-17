@@ -37,7 +37,9 @@ jest.mock('./ci_variable_table.vue', () => ({ name: 'CiVariableTable', render: (
 const DrawerStub = CiVariableDrawer
 const TableStub = CiVariableTable
 
-const ENDPOINT = '/jest/dashboard/-/variables'
+const HOME_PROJECT = 'jest/dashboard'
+// what the component must derive from getHomeProjectPath
+const ENDPOINT = `/${HOME_PROJECT}/-/variables`
 const ENVIRONMENT = 'production'
 
 // what the server hands back; environment_scope is filtered on by fetchVariables
@@ -56,10 +58,11 @@ const row = (over = {}) => ({
 
 function build() {
     const store = new Vuex.Store({
+        getters: { getHomeProjectPath: () => HOME_PROJECT },
         modules: {
             ci_variables: {
                 namespaced: true,
-                ...asModule({ endpoint: ENDPOINT, environmentName: ENVIRONMENT, projectId: 1, isGroup: false }),
+                ...asModule({ environmentName: ENVIRONMENT, projectId: 1, isGroup: false }),
             },
         },
     })
@@ -299,10 +302,11 @@ describe('the environment it reads variables for', () => {
     // showed the first one's variables.
     it('takes the environment from the prop, not the store it was built with', async () => {
         const store = new Vuex.Store({
+            getters: { getHomeProjectPath: () => HOME_PROJECT },
             modules: {
                 ci_variables: {
                     namespaced: true,
-                    ...asModule({ endpoint: ENDPOINT, environmentName: 'stale-from-page-load', projectId: 1 }),
+                    ...asModule({ environmentName: 'stale-from-page-load', projectId: 1 }),
                 },
             },
         })

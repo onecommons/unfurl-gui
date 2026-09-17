@@ -8,6 +8,10 @@ import { prepareDataForApi, prepareDataForDisplay, prepareEnvironments } from '.
 // The environment page routes without reloading, so this cannot come from a
 // server-rendered dataset read once at store construction: fetchVariables
 // filters on it, and a stale value shows another environment's variables.
+export const setEndpoint = ({ commit }, endpoint) => {
+  commit(types.SET_ENDPOINT, endpoint);
+};
+
 export const setEnvironmentName = ({ commit }, environmentName) => {
   commit(types.SET_ENVIRONMENT_NAME, environmentName);
 };

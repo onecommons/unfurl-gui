@@ -1,5 +1,6 @@
 <script>
-import { mapState, mapActions } from 'vuex';
+import { mapState, mapActions, mapGetters } from 'vuex';
+import { projectPathToHomeRoute } from 'oc_vue_shared/client_utils/dashboard';
 import CiVariableDrawer from './ci_variable_drawer.vue';
 import CiVariableTable from './ci_variable_table.vue';
 import { toStoreVariable, toDrawerVariable } from '../drawer_adapter';
@@ -45,8 +46,14 @@ export default {
     };
   },
   computed: {
+    ...mapGetters(['getHomeProjectPath']),
     ...mapState('ci_variables', ['isGroup', 'environments', 'isLoading', 'variables',
       'maskableRegex', 'isProtectedByDefault']),
+    // Derived from the getter, not gon.home_project: the fork never sets that,
+    // so anything built from it at store construction pointed at /-/variables.
+    variablesEndpoint() {
+      return `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/variables`;
+    },
     drawerOpen() {
       return Boolean(this.drawerMode);
     },
@@ -57,6 +64,12 @@ export default {
     },
   },
   watch: {
+    variablesEndpoint: {
+      immediate: true,
+      handler(endpoint) {
+        this.setEndpoint(endpoint);
+      },
+    },
     environmentName: {
       immediate: true,
       handler(name) {
@@ -76,6 +89,7 @@ export default {
       'updateVariable',
       'deleteVariable',
       'editVariable',
+      'setEndpoint',
       'setEnvironmentName',
       'clearModal',
       'resetEditing',
