@@ -1136,14 +1136,22 @@ const actions = {
                 'createError',
                 {
                     message: `Failed to commit update to ${path} (${e.message})`,
-                    context: {
+                    // The server's body *is* the context. Nesting it under
+                    // `response` put `details` a level below where the errors
+                    // store looks for it, so a python traceback rendered as
+                    // part of a property blob instead of in the panel built for
+                    // it -- and a write discarded asynchronously, which carries
+                    // the same body, would have rendered differently from this
+                    // one. `e` when the request never got a response: the store
+                    // unwraps an Error to its message.
+                    context: e.response?.data || e,
+                    request: {
                         method,
                         projectPath,
                         branch,
                         patch,
                         commitMessage: state.commitMessage,
                         variables,
-                        response: e.response?.data,
                     },
                     severity: 'critical'
                 },

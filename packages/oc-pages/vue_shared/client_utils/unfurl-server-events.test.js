@@ -1,4 +1,5 @@
-import {watchSetFor, applyEvent, ensureWatching, closeAllWatches, resumeWatching} from './unfurl-server-events'
+import {watchSetFor, applyEvent, ensureWatching, closeAllWatches, resumeWatching,
+    setEventErrorReporter} from './unfurl-server-events'
 import {setLastCommit, getLastCommit} from './projects'
 
 const PROJECT = 'group/sub/dashboard'
@@ -22,6 +23,7 @@ beforeEach(() => {
     closeAllWatches()
     FakeEventSource.instances = []
     global.EventSource = FakeEventSource
+    setEventErrorReporter(null)
 })
 
 describe('the watch set', () => {
@@ -207,5 +209,96 @@ describe('the connection', () => {
         ensureWatching(PROJECT)
 
         expect(() => FakeEventSource.last.onmessage({data: 'not json'})).not.toThrow()
+    })
+})
+
+/*
+ * The write is already gone by the time this arrives: unfurlServerUpdate's
+ * promise resolved when the proxy queued the patch, so there is no caller left
+ * to throw at. Reporting is the only way the failure reaches the user.
+ */
+describe('reporting a discarded write', () => {
+    let reported
+
+    beforeEach(() => {
+        reported = []
+        setEventErrorReporter(payload => reported.push(payload))
+        setLastCommit(PROJECT, 'main', {commit: 'aaa', queueid: 2})
+        ensureWatching(PROJECT)
+    })
+
+    const discard = (extra = {}) => FakeEventSource.last.emit({
+        status: 'discarded', code: 'WRITE_DISCARDED', branch: 'main',
+        latest_commit: 'aaa', queueid: 2,
+        message: 'a queued write against this commit was discarded: backend returned 400',
+        ...extra,
+    })
+
+    // the nested error is Python's own body, which is what the sync path
+    // already hands the errors store -- `details` and all
+    it('reports the backend error, not the proxy summary', () => {
+        const error = {
+            status: 400, code: 'BAD_REQUEST',
+            message: 'Cannot create environment with reserved name: "secrets"',
+            details: 'Traceback (most recent call last):\n  ...',
+        }
+        discard({error})
+
+        expect(reported).toEqual([{
+            message: 'Cannot create environment with reserved name: "secrets"',
+            context: error,
+            severity: 'critical',
+        }])
+    })
+
+    // read_batch_error returns null once its key has expired
+    it('falls back to the frame when the backend body is gone', () => {
+        discard({error: null, batch_queueid: 7})
+
+        expect(reported).toHaveLength(1)
+        expect(reported[0].message).toMatch(/backend returned 400/)
+        expect(reported[0].context).toEqual({
+            code: 'WRITE_DISCARDED',
+            message: 'a queued write against this commit was discarded: backend returned 400',
+            batch_queueid: 7,
+        })
+    })
+
+    it('says nothing when the write settled', () => {
+        FakeEventSource.last.emit({
+            status: 'ok', branch: 'main', latest_commit: 'aaa', new_commit: 'bbb', queueid: 2,
+        })
+
+        expect(reported).toEqual([])
+    })
+
+    // the frame lost to a later write, so it describes nothing the user is
+    // waiting on
+    it('says nothing about a frame the guard rejected', () => {
+        setLastCommit(PROJECT, 'main', {commit: 'aaa', queueid: 3})
+        discard()
+
+        expect(reported).toEqual([])
+    })
+
+    it('reports a repeated frame once', () => {
+        discard()
+        discard()
+
+        expect(reported).toHaveLength(1)
+    })
+
+    it('keeps the stream alive when the reporter throws', () => {
+        setEventErrorReporter(() => { throw new Error('store is gone') })
+
+        expect(() => discard()).not.toThrow()
+        expect(getLastCommit(PROJECT, 'main')).toMatchObject({commit: 'aaa', queueid: 0})
+    })
+
+    it('applies the event with no reporter registered', () => {
+        setEventErrorReporter(null)
+        discard()
+
+        expect(getLastCommit(PROJECT, 'main')).toMatchObject({commit: 'aaa', queueid: 0})
     })
 })

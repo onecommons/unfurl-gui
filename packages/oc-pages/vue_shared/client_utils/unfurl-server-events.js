@@ -20,6 +20,45 @@ const baseUrls = new Map()
 const watched = new Set()
 
 /*
+ * How a discarded write reaches the user. The store is not importable from
+ * here -- it imports this, through unfurl-server -- so whoever builds one
+ * registers a way to report instead. Unregistered is a normal state: a page
+ * with no store still watches, it just says nothing.
+ */
+let reporter = null
+
+export function setEventErrorReporter(fn) {
+    reporter = typeof fn === 'function' ? fn : null
+}
+
+/*
+ * Report a discarded write the way a synchronous one is reported. The frame's
+ * nested `error` is the body Python returned -- {status, code, message,
+ * details} -- which is what the sync path already passes through, so the
+ * errors store finds the traceback under `details` and renders it with the
+ * same code-clipboard. No new UI, and the two read alike.
+ *
+ * `error` is absent when the proxy could not read the stored body (the error
+ * key expired, or the sentinel predates it), so fall back to the frame's own
+ * account -- the proxy's one-liner, which at least names the upstream status.
+ */
+function reportDiscarded(ev) {
+    if (!reporter) return
+
+    const error = ev.error || {code: ev.code, message: ev.message, batch_queueid: ev.batch_queueid}
+    try {
+        reporter({
+            message: error.message || ev.message || 'A queued update was discarded',
+            context: error,
+            severity: 'critical',
+        })
+    } catch (e) {
+        // strictly additive: a reporter that throws must not take the stream
+        // down with it
+    }
+}
+
+/*
  * The watch set is not new state: an entry in sessionStorage with queueid > 0
  * already means "a queued write whose result has not been consumed". Read it
  * back rather than tracking it twice.
@@ -86,6 +125,11 @@ export function applyEvent(projectPath, ev) {
     if (stored.queueid > ev.queueid) return false
 
     if (ev.status === 'discarded') {
+        // Nothing in flight means nothing to discard. Without this a repeated
+        // frame applies a second time -- harmless while it only rewrote
+        // queueid 0 over queueid 0, but it now reports, and the user would see
+        // the same failure twice.
+        if (!(stored.queueid > 0)) return false
         // identical to the 409 WRITE_DISCARDED path in unfurl-server.js, and
         // shared with it so the two cannot drift
         return discardQueuedWrite(projectPath, ev.branch)
@@ -154,7 +198,10 @@ export function ensureWatching(projectPath, baseUrl) {
             return
         }
 
-        applyEvent(projectPath, ev)
+        // reported from here rather than from applyEvent, which stays a pure
+        // reconciliation of stored state -- and by then the guard has already
+        // decided the frame is ours to act on
+        if (applyEvent(projectPath, ev) && ev.status === 'discarded') reportDiscarded(ev)
     }
 
     es.onerror = () => closeWatch(projectPath)
