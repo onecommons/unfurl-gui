@@ -543,13 +543,22 @@ async function main() {
     }
     const jestResult = spawnSync(
       'yarn',
-      // the e2e suffix is excluded from the default run by jest.config; naming
-      // a file here is explicit enough to mean it
+      // The e2e suffix is excluded from the default run by jest.config; naming
+      // a file here is explicit enough to mean it, so the ignore list is
+      // replaced with the three that still apply.
+      //
+      // `--` is load-bearing. testPathIgnorePatterns is an array option, and
+      // yargs lets an array option swallow every positional that follows it --
+      // so without the separator each named test becomes an ignore pattern
+      // matching itself. Jest then runs with no filter at all: the named files
+      // are skipped, and everything the replaced list no longer excludes (all
+      // of ufsv-patch) runs instead. It reports "Ran all test suites" rather
+      // than "matching", which is the tell.
       ['jest', '--runInBand',
         '--testPathIgnorePatterns=/node_modules/',
         '--testPathIgnorePatterns=/.claude/',
         '--testPathIgnorePatterns=/cypress/',
-        ...jestTests],
+        '--', ...jestTests],
       {cwd: unfurlGuiRoot, env: jestEnv, stdio: 'inherit'}
     )
     if (jestResult.status !== 0) {
