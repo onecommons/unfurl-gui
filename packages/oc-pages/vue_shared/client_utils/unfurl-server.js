@@ -1,7 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
 import { fetchProjectInfo, getLastCommit, setLastCommit, discardQueuedWrite, getProjectCurrentBranch, setProjectCurrentBranch, getProjectDefaultBranch, setProjectDefaultBranch, createBranch } from "./projects";
-import { ensureWatching } from './unfurl-server-events';
+import { ensureWatching, beginWrite, endWrite } from './unfurl-server-events';
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
@@ -519,6 +519,10 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
 
     let data
 
+    // The counter moves when this request arrives; our queueid reaches storage
+    // a round trip later. Until it does, a supersession describing this very
+    // write is indistinguishable from someone else's.
+    beginWrite(projectPath, branch)
     try {
         data = (await doXhr(projectPath, 'POST', url, body, headers)).data
     } catch(e) {
@@ -542,6 +546,9 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         if(serverMessage) e.message = serverMessage
 
         throw e
+    } finally {
+        // reopened below with the new queueid, which re-evaluates the counter
+        endWrite(projectPath, branch)
     }
 
     if(data.commit) {

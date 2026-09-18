@@ -58,6 +58,7 @@ jest.mock('~/lib/utils/axios_utils', () => {
 import axios from '~/lib/utils/axios_utils'
 import { unfurlServerExport, unfurlServerUpdate, awaitQueuedWrite } from './unfurl-server'
 import { createBranch, fetchLastCommit, getLastCommit, setLastCommit, getProjectCurrentBranch, getProjectDefaultBranch } from './projects'
+import { applyEvent, setStaleHandler } from './unfurl-server-events'
 
 const MODE = process.env.OC_URL
     ? (process.env.GITLAB_TOKEN ? 'cloud' : 'gui')
@@ -711,4 +712,121 @@ describeQueueidConflict('a queueid conflict clears the stored commit', () => {
             patch: makeTestPatch(), commitMessage: 'no stored commit',
         })).rejects.toThrow('no commit found for update')
     })
+})
+
+/*
+ * The window beginWrite/endWrite exist for: the server moves the counter when
+ * the POST arrives, and our queueid reaches storage a round trip later, with
+ * the watch on the previous queueid open throughout. Only a response we hold
+ * open keeps that window still long enough to assert on -- so this is
+ * mock-only, and without it nothing checks that unfurlServerUpdate brackets
+ * its POST at all. The unit tests for the guard drive beginWrite by hand and
+ * would all pass with the bracketing deleted.
+ */
+const itMock = MODE === 'mock' ? it : it.skip
+
+itMock('suppresses a supersession raised by its own write in flight', async () => {
+    setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 1})
+
+    let release
+    axios.post.mockImplementation(() => new Promise(resolve => {
+        release = () => resolve({status: 200, data: {queueid: 2}})
+    }))
+
+    const stale = []
+    setStaleHandler(payload => stale.push(payload))
+
+    const pending = unfurlServerUpdate({
+        method: 'update_environment', projectPath: TEST_PROJECT, branch: TEST_BRANCH,
+        patch: [], commitMessage: 'in flight',
+    })
+    for (let i = 0; i < 100 && !release; i++) await new Promise(r => setTimeout(r, 0))
+    expect(release).toBeDefined()
+
+    // the counter has already moved; our queueid has not landed
+    const frame = {
+        status: 'superseded', branch: TEST_BRANCH,
+        latest_commit: 'commit-A', queueid: 1, observed: 2,
+    }
+    expect(applyEvent(TEST_PROJECT, frame)).toBe(false)
+
+    release()
+    await pending
+
+    // landed -- and the same counter is now plainly our own
+    expect(getLastCommit(TEST_PROJECT, TEST_BRANCH)).toMatchObject({queueid: 2})
+    expect(applyEvent(TEST_PROJECT, {...frame, queueid: 2, observed: 2})).toBe(false)
+    // while a higher one is somebody else's
+    expect(applyEvent(TEST_PROJECT, {...frame, queueid: 2, observed: 3})).toBe(true)
+
+    expect(stale).toEqual([])
+    setStaleHandler(null)
+})
+
+/*
+ * A reload does not clear sessionStorage -- only closing the tab does -- so a
+ * frozen branch survives one. What unfreezes it is the export the page makes
+ * on boot: it sends the stale commit and queueid, the proxy redirects it to
+ * whatever the batch produced, and the writeback here is a *fresh* object, so
+ * `stale` is dropped rather than carried forward.
+ *
+ * That is the whole recovery, and it is one word wide: spread the previous
+ * entry at that writeback instead of replacing it and a frozen tab can never
+ * recover, because the flag it is waiting to lose is the one being preserved.
+ */
+itMock('an export clears a frozen branch, which is how a reload recovers', async () => {
+    setLastCommit(TEST_PROJECT, TEST_BRANCH, {commit: 'commit-A', queueid: 1, stale: true})
+    expect(getLastCommit(TEST_PROJECT, TEST_BRANCH).stale).toBe(true)
+
+    axios.get.mockImplementation((url) => {
+        if (url.includes('/export')) {
+            return Promise.resolve({
+                status: 200,
+                data: {latest_commit: 'commit-B', branch: TEST_BRANCH, ResourceType: {}},
+            })
+        }
+        return Promise.resolve(mockBranchesResponse())
+    })
+
+    await unfurlServerExport({projectPath: TEST_PROJECT, branch: TEST_BRANCH, format: 'environments'})
+
+    // advanced, and unfrozen -- the commit arrived with the content, which is
+    // the only condition under which advancing it is safe
+    expect(getLastCommit(TEST_PROJECT, TEST_BRANCH)).toMatchObject({commit: 'commit-B'})
+    expect(getLastCommit(TEST_PROJECT, TEST_BRANCH).stale).toBeUndefined()
+})
+
+/*
+ * The probe rides along with the branch fetch, not with every read. Two
+ * reasons, and the second is the one users feel: the queue answer is joined to
+ * the commit `/branches` reports, so pairing a live one with a cached one says
+ * nothing -- and a standalone server started without CACHE_REDIS_URL runs no
+ * rust proxy at all, so every read would otherwise pay a round trip for an
+ * answer that is empty by construction.
+ */
+itMock('asks the queue only when the branch list is actually fetched', async () => {
+    // its own project: the branches cache is module-level and keyed by project,
+    // so a shared one is already warm from whatever ran before
+    const PROBE_PROJECT = 'fixtures/probe-project'
+    setLastCommit(PROBE_PROJECT, TEST_BRANCH, undefined)
+
+    const queueCalls = []
+    axios.get.mockImplementation((url) => {
+        if (url.includes('/queue_state')) {
+            queueCalls.push(url)
+            // what Python answers with no queue behind it: truthful, not a stub
+            return Promise.resolve({status: 200, data: {branch: TEST_BRANCH, commits: {}}})
+        }
+        if (url.includes('/repository/branches')) return Promise.resolve(mockBranchesResponse())
+        return Promise.resolve({status: 200, data: {}})
+    })
+
+    await fetchLastCommit(PROBE_PROJECT, TEST_BRANCH)
+    expect(queueCalls).toHaveLength(1)
+
+    // second read is served from the branches cache, so there is nothing new to
+    // join against and nothing worth asking
+    setLastCommit(PROBE_PROJECT, TEST_BRANCH, undefined)
+    await fetchLastCommit(PROBE_PROJECT, TEST_BRANCH)
+    expect(queueCalls).toHaveLength(1)
 })

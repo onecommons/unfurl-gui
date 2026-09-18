@@ -32,6 +32,60 @@ export function setEventErrorReporter(fn) {
 }
 
 /*
+ * How a supersession reaches the app. Deliberately not the error reporter: the
+ * write is still pending and will most likely land, so the failure chrome --
+ * and advice to reload -- would be wrong at the moment it fires. It also has
+ * no severity that makes sense, and the error alert's only dismissal clears
+ * every other error with it.
+ *
+ * Nothing registers this yet. The signal is real and the guards above are what
+ * make it reliable; what it should surface as is a UI decision, and the wrong
+ * surface is worse than none.
+ */
+let staleHandler = null
+
+export function setStaleHandler(fn) {
+    staleHandler = typeof fn === 'function' ? fn : null
+}
+
+/*
+ * Branches with a write in flight, as `${projectPath}#${branch}`.
+ *
+ * `observed > stored.queueid` reads "someone else queued after us", but only
+ * once our own queueid is stored. The server increments the counter when the
+ * POST arrives and we store the result a round trip later, and the watch on
+ * our *previous* queueid stays open across that gap -- so a 100ms poll lands a
+ * supersession describing our own write, against a stored queueid that has not
+ * caught up. Suppressing the window is what makes the comparison honest.
+ *
+ * Nothing is lost by suppressing: storing the new queueid reopens the watch,
+ * and a counter still ahead of it supersedes again on the new connection.
+ */
+const writing = new Set()
+
+const writeKey = (projectPath, branch) => `${projectPath}#${branch}`
+
+export function beginWrite(projectPath, branch) {
+    if (projectPath && branch) writing.add(writeKey(projectPath, branch))
+}
+
+export function endWrite(projectPath, branch) {
+    if (projectPath && branch) writing.delete(writeKey(projectPath, branch))
+}
+
+function reportSuperseded(projectPath, ev) {
+    if (!staleHandler) return
+    try {
+        staleHandler({
+            projectPath, branch: ev.branch, commit: ev.latest_commit,
+            queueid: ev.queueid, observed: ev.observed,
+        })
+    } catch (e) {
+        // as reportDiscarded: additive only, never take the stream down
+    }
+}
+
+/*
  * Report a discarded write the way a synchronous one is reported. The frame's
  * nested `error` is the body Python returned -- {status, code, message,
  * details} -- which is what the sync path already passes through, so the
@@ -80,6 +134,8 @@ export function watchSetFor(projectPath) {
 
         const stored = getLastCommit(projectPath, branch)
         if (!stored?.commit || !(stored.queueid > 0)) continue
+        // frozen by a supersession: we do not want the result, see applyEvent
+        if (stored.stale) continue
 
         result.push({branch, commit: stored.commit, queueid: stored.queueid})
     }
@@ -110,7 +166,9 @@ function eventsUrl(projectPath, baseUrl, watches) {
 }
 
 /*
- * Apply one event to stored state.
+ * Apply one event. True means the frame was ours to act on -- which for most
+ * statuses means stored state changed, and for `superseded` means it
+ * deliberately did not. See below.
  *
  * The guard is the whole of the difficulty. The event says "A@2 became B", but
  * the user may have saved again since, leaving storage at {A, 3}. Recording
@@ -121,7 +179,58 @@ export function applyEvent(projectPath, ev) {
     if (!ev?.branch) return false
 
     const stored = getLastCommit(projectPath, ev.branch)
+    /*
+     * Every status describes writes queued against this base commit, and the
+     * queue key -- its counter included -- is per (project, branch,
+     * latest_commit). So a frame for a base we have moved off is about a
+     * different key entirely, and neither its queueid nor its counter can be
+     * compared with ours.
+     */
     if (stored?.commit !== ev.latest_commit) return false
+
+    if (ev.status === 'superseded') {
+        /*
+         * `observed` is the key's counter; `ev.queueid` is only the watch's
+         * position in it. That is why the queueid guard below must not run
+         * here -- with 4 stored and a watch on 3 still live,
+         * `stored.queueid > ev.queueid` returns early and swallows exactly the
+         * write we needed to hear about.
+         *
+         * A counter no higher than ours moved because of our own write.
+         */
+        if (!(ev.observed > (stored.queueid || 0))) return false
+
+        // our own write may already have moved the counter without its queueid
+        // having reached storage yet -- see `writing`
+        if (writing.has(writeKey(projectPath, ev.branch))) return false
+
+        /*
+         * Stop listening, and record why.
+         *
+         * The settled frame is the danger. Our patch was composed without the
+         * write that superseded it, so applying `ok` would store the batch's
+         * new commit and leave us looking current while holding data that
+         * never saw their change. The next write would then be accepted
+         * against that commit and silently overwrite it.
+         *
+         * So the stored commit stays where it is, deliberately behind. A later
+         * write sends a latest_commit and queueid the key has moved past, the
+         * server refuses it as a conflict, and unfurlServerUpdate's 409 path
+         * clears the entry -- which forces the fresh export that is the only
+         * thing that can actually reconcile this.
+         *
+         * Losing the result is the point, not a cost: there is no commit we
+         * could record here that would be safe to write from.
+         */
+        setLastCommit(projectPath, ev.branch, {...stored, stale: true})
+        // recomputed without this branch, and closed outright if it was the only one
+        ensureWatching(projectPath)
+        return true
+    }
+
+    // a frame already in flight when the supersession froze us; the commit it
+    // carries is exactly the one we must not adopt
+    if (stored.stale) return false
     if (stored.queueid > ev.queueid) return false
 
     if (ev.status === 'discarded') {
@@ -201,7 +310,9 @@ export function ensureWatching(projectPath, baseUrl) {
         // reported from here rather than from applyEvent, which stays a pure
         // reconciliation of stored state -- and by then the guard has already
         // decided the frame is ours to act on
-        if (applyEvent(projectPath, ev) && ev.status === 'discarded') reportDiscarded(ev)
+        if (!applyEvent(projectPath, ev)) return
+        if (ev.status === 'discarded') reportDiscarded(ev)
+        else if (ev.status === 'superseded') reportSuperseded(projectPath, ev)
     }
 
     es.onerror = () => closeWatch(projectPath)
