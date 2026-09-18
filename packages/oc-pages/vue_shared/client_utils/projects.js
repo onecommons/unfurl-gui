@@ -234,6 +234,22 @@ export async function fetchLastCommit(projectPath, _branch) {
     return [id, name, 0, changed]
 }
 
+/*
+ * A queued write we were waiting on will never land: drop the queueid so the
+ * next read takes the ordinary path, but keep the commit, which the backend
+ * rolled the batch back to and is still current.
+ *
+ * Shared by the 409 WRITE_DISCARDED response and the `discarded` event, which
+ * are the same situation reached two ways.
+ */
+export function discardQueuedWrite(projectId, branch) {
+    const stored = branch && getLastCommit(projectId, branch)
+    if (!stored) return false
+
+    setLastCommit(projectId, branch, {...stored, queueid: 0})
+    return true
+}
+
 export function getLastCommit(projectId, branch) {
   let lastInSessionStorage
   try {

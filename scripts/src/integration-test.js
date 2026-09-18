@@ -543,7 +543,13 @@ async function main() {
     }
     const jestResult = spawnSync(
       'yarn',
-      ['jest', '--runInBand', ...jestTests],
+      // the e2e suffix is excluded from the default run by jest.config; naming
+      // a file here is explicit enough to mean it
+      ['jest', '--runInBand',
+        '--testPathIgnorePatterns=/node_modules/',
+        '--testPathIgnorePatterns=/.claude/',
+        '--testPathIgnorePatterns=/cypress/',
+        ...jestTests],
       {cwd: unfurlGuiRoot, env: jestEnv, stdio: 'inherit'}
     )
     if (jestResult.status !== 0) {

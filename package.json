@@ -33,6 +33,7 @@
     "push-local-repo": "./scripts/push-local-repo",
     "clean-har": "./scripts/src/clean-har.js",
     "membership-test": "./scripts/src/membership-test.js",
+    "test:e2e": "jest --testPathIgnorePatterns=/node_modules/ --testPathIgnorePatterns=/.claude/ --testPathIgnorePatterns=/cypress/ --runInBand '\\.e2e\\.test\\.js$'",
     "test:packages": "jest packages --runInBand",
     "lint:fix": "eslint --fix --ext .js,.vue src packages/oc-pages"
   },

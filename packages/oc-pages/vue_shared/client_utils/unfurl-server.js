@@ -1,6 +1,7 @@
 import axios from '~/lib/utils/axios_utils'
 import { fetchUserAccessToken } from './user';
-import { fetchProjectInfo, getLastCommit, setLastCommit, getProjectCurrentBranch, setProjectCurrentBranch, getProjectDefaultBranch, setProjectDefaultBranch, createBranch } from "./projects";
+import { fetchProjectInfo, getLastCommit, setLastCommit, discardQueuedWrite, getProjectCurrentBranch, setProjectCurrentBranch, getProjectDefaultBranch, setProjectDefaultBranch, createBranch } from "./projects";
+import { ensureWatching } from './unfurl-server-events';
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
@@ -175,8 +176,7 @@ async function unfurlServerGet({
          * been lost, which is the failure this whole path exists to remove.
          */
         if(e.response?.status == 409 && e.response?.data?.code == 'WRITE_DISCARDED') {
-            const stored = branch && getLastCommit(projectPath, branch)
-            if(stored) setLastCommit(projectPath, branch, {...stored, queueid: 0})
+            discardQueuedWrite(projectPath, branch)
         }
         // as in unfurlServerUpdate: axios only sets e.message to "Request failed
         // with status code N", and callers interpolate it into what the user reads
@@ -554,6 +554,9 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
         // so the next request takes inc_queueid's normal path instead of
         // tripping the "pending batch" sync-write rejection.
         setLastCommit(projectPath, branch, {commit, queueid: data.queueid, when})
+        // the entry just written is the watch set; ensureWatching re-reads it
+        // and no-ops when it has not changed
+        ensureWatching(projectPath, baseUrl)
     } else {
         throw new Error('Update Unfurl Server: failed to set last commit')
     }

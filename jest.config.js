@@ -188,6 +188,10 @@ module.exports = {
     // heavyweight suites with extra prereqs (unfurl CLI, GOOGLE_APPLICATION_CREDENTIALS,
     // setup.sh, SPEC_GLOBS); run them explicitly via their own scripts
     '/ufsv-patch/',
+    // opt-in suites that spawn a real server; run them with `yarn test:e2e`.
+    // Without this the suffix is decorative and they are collected, loaded and
+    // reported as skipped on every run.
+    '\\.e2e\\.test\\.js$',
   ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files
