@@ -96,18 +96,19 @@ if (MODE !== 'mock') jest.setTimeout(30000)
 // queued writes can get 409 "queueid conflict" if the queue key has
 // already been recorded. Tests that fire multiple updates back-to-back
 // need to give the worker time to drain in between. The default tolerates
-// the rust proxy's batch-window default (UNFURL_BATCH_WINDOW_SECS=5);
-// tests run faster when the server is launched with that env var set
-// lower (CI uses 1). Mock mode has no real worker, so this is a no-op.
+// the rust proxy's own batch-window default of 3s (rust/server/src/config.rs);
+// anything testing-shared/unfurl-server.mjs starts is given 1, as is CI, so
+// this fallback only covers a server started by hand. Mock mode has no real
+// worker, so this is a no-op.
 async function letQueueDrain(ms) {
   if (MODE === 'mock') return
   if (ms === undefined) {
     // Worst case: enqueue happens at t=0, worker wakes after batch_window,
     // checks every 250ms, forwards to Python, Python commits (~1s), updates
-    // queue key. Empirically 2× the window + 2s covers it; the default
-    // batch_window is 5s so we wait 12s, which feels long but reliably
-    // catches the worker's writeback.
-    const win = parseFloat(process.env.UNFURL_BATCH_WINDOW_SECS || '5')
+    // queue key. Empirically 2× the window + 2s covers it -- 4s at the window
+    // the harness and CI use. It is wall-clock either way, so this is the knob
+    // to turn if the suite feels slow.
+    const win = parseFloat(process.env.UNFURL_BATCH_WINDOW_SECS || '3')
     ms = Math.max(2000, Math.ceil(win * 1000) * 2 + 2000)
   }
   await new Promise(r => setTimeout(r, ms))

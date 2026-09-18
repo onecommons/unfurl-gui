@@ -15,6 +15,15 @@ const PORT = process.env.PORT || '5001'
 // which bundles the rust unfurl-server binary and all of unfurl's optional
 // Python deps (e.g. redis) that a pipx install would miss.
 const UNFURL_SERVER_IMAGE = process.env.UNFURL_SERVER_IMAGE || ''
+
+// The rust proxy's own default is 3s (rust/server/src/config.rs), and every
+// test that waits for a batch to drain sits through it -- so a local run was
+// three times slower than CI, which has always passed 1. Set on process.env
+// rather than per-spawn: both the docker and direct paths merge it, and
+// integration-test.js builds the jest env from it, so the server and the
+// tests waiting on it cannot disagree about the window. An explicit value
+// still wins.
+process.env.UNFURL_BATCH_WINDOW_SECS = process.env.UNFURL_BATCH_WINDOW_SECS || '1'
 // Container env vars to forward from the caller into the container.
 const DOCKER_ENV_FORWARD = [
   'UNFURL_LOGGING',
