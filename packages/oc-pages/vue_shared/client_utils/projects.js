@@ -1,6 +1,7 @@
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql_shim'
 import axios from '~/lib/utils/axios_utils'
+import {DEFAULT_UNFURL_SERVER_URL, unfurlServerUrlOverride} from '../storage-keys'
 import * as semver from 'semver'
 
 const BRANCH_CACHE_DURATION = 1000 * 60 * 5 // 5 minutes
@@ -175,7 +176,12 @@ export function setLastCommit(projectId, branch, commit_data) {
     if (commit_data === undefined) {
         delete sessionStorage[commitSessionStorageKey(projectId, branch)]
     } else {
-        let {commit, queueid, when, supersedes} = commit_data
+        // `stale` -- not `supersedes`, which is a different fact about the
+        // commit -- means a superseded frame told us another write was queued
+        // from this base. It has to persist: it is what keeps the branch out of
+        // the watch set across reconnects, and only a fresh read clears it,
+        // because only a fresh read has the data we are missing.
+        let {commit, queueid, when, supersedes, stale} = commit_data
         if (supersedes === undefined) {
             // The commit this one replaces, so fetchLastCommit can tell "/branches
             // hasn't caught up with a write we just made" (it reports exactly this)
@@ -189,7 +195,33 @@ export function setLastCommit(projectId, branch, commit_data) {
             queueid = 0
         }
         sessionStorage[commitSessionStorageKey(projectId, branch)] =
-            JSON.stringify({commit, queueid, when, supersedes})
+            JSON.stringify({commit, queueid, when, supersedes, stale})
+    }
+}
+
+/*
+ * The write queue's state for one branch: every base commit with a live key.
+ *
+ * `/branches` says what the repo is at, this says what is queued against it.
+ * They are independent facts joined on the commit, so they race rather than
+ * sequence -- which is the whole point, since a client with nothing in flight
+ * has no watch to carry any of this.
+ *
+ * Fail-soft by contract. The endpoint is the rust proxy's: a server with no
+ * redis answers 503 NO_QUEUE and one with no proxy in front of it 404s, and
+ * neither is a reason for an ordinary read to fail. Returns null when there is
+ * nothing to say.
+ */
+export async function fetchQueueState(projectPath, branch) {
+    const base = unfurlServerUrlOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
+    const url = `${base}/queue_state?auth_project=${encodeURIComponent(projectPath)}`
+        + `&branch=${encodeURIComponent(branch)}`
+
+    try {
+        const {data} = await axios.get(url.replace(/^\/+/, '/'))
+        return data?.commits || null
+    } catch (e) {
+        return null
     }
 }
 
@@ -207,8 +239,12 @@ export async function fetchLastCommit(projectPath, _branch) {
         return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }
 
-    // fetchBranches returns local branchesData if present
-    const branches = await fetchBranches(projectId)
+    // fetchBranches returns local branchesData if present. Raced with the
+    // queue, not sequenced: neither answer depends on the other.
+    const [branches, queued] = await Promise.all([
+        fetchBranches(projectId),
+        fetchQueueState(projectPath, branch),
+    ])
 
     const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
     const {id, created_at} = commit || {}  // note: same as committed_date
@@ -229,9 +265,24 @@ export async function fetchLastCommit(projectPath, _branch) {
     if (lastInSessionStorage?.commit && !isDirty && id === lastInSessionStorage.supersedes) {
         return [lastInSessionStorage.commit, branch, lastInSessionStorage.queueid, false]
     }
-    const changed = id !== lastInSessionStorage?.commit
-    setLastCommit(projectPath, branch, {commit: id, queueid: 0, when: created_at})
-    return [id, name, 0, changed]
+    /*
+     * Only this sha's entry means anything: the queue key, and the counter in
+     * it, are per base commit, so an entry for another sha is a fact about
+     * someone else's base.
+     *
+     * `new_commit` is the one rule here that changes what we store -- a batch
+     * against this commit already produced another, which `/branches` will not
+     * report until the push propagates. The queue's other answers are
+     * informational on this path: we reach it only with nothing in flight, so
+     * there is no queueid of ours for a larger one to invalidate and none for
+     * a `discarded` entry to strip.
+     */
+    const entry = !isDirty && queued?.[id]
+    const current = (entry?.new_commit && entry.new_commit !== id) ? entry.new_commit : id
+
+    const changed = current !== lastInSessionStorage?.commit
+    setLastCommit(projectPath, branch, {commit: current, queueid: 0, when: created_at})
+    return [current, name, 0, changed]
 }
 
 /*

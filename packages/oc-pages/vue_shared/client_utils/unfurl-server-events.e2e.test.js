@@ -43,8 +43,8 @@ import {MessageChannel as NodeMessageChannel, MessagePort as NodeMessagePort} fr
 import axios from '~/lib/utils/axios_utils'
 import {DEFAULT_UNFURL_SERVER_URL} from '../storage-keys'
 import {unfurlServerExport, unfurlServerUpdate} from './unfurl-server'
-import {closeAllWatches, setEventErrorReporter} from './unfurl-server-events'
-import {fetchLastCommit, getLastCommit} from './projects'
+import {closeAllWatches, setEventErrorReporter, setStaleHandler} from './unfurl-server-events'
+import {fetchLastCommit, getLastCommit, fetchQueueState} from './projects'
 
 // undici is a Node library; jsdom removes or replaces most of what it builds on
 for (const [name, value] of Object.entries({
@@ -100,6 +100,7 @@ let serverProc
 let exportsAfterUpdate = 0
 // what a store would have been handed; see setEventErrorReporter below
 const reported = []
+const stale = []
 
 const run = (cmd, args, opts = {}) =>
     execFileSync(cmd, args, {encoding: 'utf8', ...opts}).trim()
@@ -237,6 +238,7 @@ describeE2E('a queued write settled by the real stack', () => {
         // stands in for the store the app registers here, so the frame's error
         // can be checked the way the user would see it
         setEventErrorReporter(payload => reported.push(payload))
+        setStaleHandler(payload => stale.push(payload))
 
         // count exports issued after the update: with the blocking read also
         // working, a passing test proves nothing unless the export did not happen
@@ -568,5 +570,166 @@ describeE2E('a queued write settled by the real stack', () => {
         // what errors.js turns into the traceback panel
         expect(reported).toHaveLength(1)
         expect(reported[0].context.details.startsWith('Traceback')).toBe(true)
+    })
+
+    /*
+     * A supersession on the real stack, which is the only place the guard
+     * order can be proven: client one writes and keeps its watch, client two
+     * writes from the same commit, and the counter moves past client one's
+     * queueid while its own write is still pending.
+     *
+     * That is what makes it the earliest signal a view is behind -- earlier
+     * than any result, because there is no result yet. Client one's patch was
+     * composed without client two's and will be applied after it.
+     */
+    it('tells the first client its write was composed without the second', async () => {
+        // both module-level and accumulated across tests; the assertion at the
+        // end is that a supersession is reported as neither an error nor twice
+        stale.length = 0
+        reported.length = 0
+
+        await unfurlServerExport({projectPath: PROJECT, branch: BRANCH, format: 'environments'})
+        const base = getLastCommit(PROJECT, BRANCH).commit
+
+        const tag = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const mkPatch = name => [{
+            __typename: 'DeploymentEnvironment', name, connections: {}, instances: {},
+        }]
+
+        const first = await unfurlServerUpdate({
+            method: 'update_environment', projectPath: PROJECT, branch: BRANCH,
+            patch: mkPatch(`super-first-${tag}`), commitMessage: 'first client',
+        })
+        expect(first.queueid).toBeGreaterThan(0)
+
+        /*
+         * A second browser: same base commit, no share of this one's
+         * sessionStorage. It offers the queueid the key has reached, which is
+         * what distinguishes it from the stale-queueid client in the test
+         * above -- that one offered 0 and was refused.
+         */
+        const second = await axios.post(
+            `/update_environment?auth_project=${encodeURIComponent(PROJECT)}`,
+            {
+                branch: BRANCH, latest_commit: base, patch: mkPatch(`super-second-${tag}`),
+                commit_msg: 'second client', queueid: first.queueid,
+            },
+            {headers: {'Content-Type': 'application/json'}},
+        ).then(res => res.data)
+
+        expect(second.queueid).toBe(first.queueid + 1)
+
+        await waitFor(() => stale.length > 0, {timeout: 30000, label: 'the supersession'})
+        expect(stale).toHaveLength(1)
+        expect(stale[0]).toMatchObject({
+            projectPath: PROJECT,
+            branch: BRANCH,
+            commit: base,
+            // the watch's position, and the counter that passed it
+            queueid: first.queueid,
+            observed: second.queueid,
+        })
+
+        /*
+         * Frozen, deliberately. The watch is dropped so the settled frame never
+         * arrives: our patch was composed without client two's, so adopting the
+         * batch's new commit would leave this tab looking current on data that
+         * never saw their change.
+         */
+        expect(getLastCommit(PROJECT, BRANCH)).toMatchObject({
+            commit: base, queueid: first.queueid, stale: true,
+        })
+
+        // the batch lands regardless -- this is about what we are willing to
+        // believe about it, not whether it happened
+        await waitFor(() => headCommit() !== base, {label: 'the batch to commit'})
+        expect(getLastCommit(PROJECT, BRANCH).commit).toBe(base)
+
+        /*
+         * And the payoff. A later write from this tab carries the commit and
+         * queueid the key has moved past, so the server refuses it instead of
+         * accepting it and overwriting client two -- which is exactly what
+         * would have happened had we taken the new commit on trust.
+         */
+        await expect(unfurlServerUpdate({
+            method: 'update_environment', projectPath: PROJECT, branch: BRANCH,
+            patch: mkPatch(`super-third-${tag}`), commitMessage: 'from a frozen view',
+        })).rejects.toMatchObject({response: {status: 409}})
+
+        // the 409 path clears the entry outright, so the next read has to
+        // export -- the only thing that actually reconciles this
+        expect(getLastCommit(PROJECT, BRANCH)).toBeUndefined()
+        expect(reported).toEqual([])
+    })
+
+    /*
+     * The other half of the trade the freeze makes. A frozen client stops
+     * listening, so a batch that then fails never reaches it as a frame -- but
+     * the diagnosis is deferred, not lost: inc_queueid tests the failed
+     * sentinel before the staleness comparison (the Lua in queue.rs), so the
+     * write that gets refused for being behind is refused *with* the error the
+     * frame would have carried. Pull instead of push.
+     *
+     * Which is why there is no case for a discarded-only subscription: the
+     * refusal path already carries it, and the only client that never learns
+     * is one that never writes again, which has nothing pending to act on.
+     */
+    it('carries the batch failure to a frozen client on its next write', async () => {
+        stale.length = 0
+        reported.length = 0
+
+        await unfurlServerExport({projectPath: PROJECT, branch: BRANCH, format: 'environments'})
+        const base = getLastCommit(PROJECT, BRANCH).commit
+
+        const tag = `${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
+        const mkPatch = name => [{
+            __typename: 'DeploymentEnvironment', name, connections: {}, instances: {},
+        }]
+
+        const first = await unfurlServerUpdate({
+            method: 'update_environment', projectPath: PROJECT, branch: BRANCH,
+            patch: mkPatch(`frozen-first-${tag}`), commitMessage: 'first client',
+        })
+
+        // client two supersedes us *and* kills the batch: `secrets` is a
+        // reserved folder name
+        await axios.post(
+            `/update_environment?auth_project=${encodeURIComponent(PROJECT)}`,
+            {
+                branch: BRANCH, latest_commit: base, queueid: first.queueid,
+                patch: mkPatch('secrets'), commit_msg: 'second client',
+            },
+            {headers: {'Content-Type': 'application/json'}},
+        )
+
+        await waitFor(() => stale.length > 0, {timeout: 30000, label: 'the supersession'})
+        expect(getLastCommit(PROJECT, BRANCH)).toMatchObject({commit: base, stale: true})
+
+        // the probe, against the real queue: wait for the sentinel rather than
+        // for a duration, or the write below races the batch and is refused as
+        // merely stale
+        await waitFor(
+            async () => (await fetchQueueState(PROJECT, BRANCH))?.[base]?.status === 'discarded',
+            {timeout: 30000, label: 'the batch to fail'},
+        )
+
+        const refused = await unfurlServerUpdate({
+            method: 'update_environment', projectPath: PROJECT, branch: BRANCH,
+            patch: mkPatch(`frozen-third-${tag}`), commitMessage: 'from a frozen view',
+        }).then(() => null, e => e.response)
+
+        expect(refused.status).toBe(409)
+        expect(refused.data).toMatchObject({
+            code: 'WRITE_DISCARDED',
+            error: {
+                code: 'BAD_REQUEST',
+                rolled_back: false,
+                failed_request: {endpoint: 'update_environment', index: 1, count: 2, skipped: 0},
+            },
+        })
+        expect(refused.data.error.message).toMatch(/reserved name: "secrets"/)
+
+        // and the refusal clears the entry, so the next read must export
+        expect(getLastCommit(PROJECT, BRANCH)).toBeUndefined()
     })
 })
