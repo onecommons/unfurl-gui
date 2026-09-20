@@ -139,7 +139,7 @@ export default {
                     s="Running Deployment"
                     p="Running Deployments"
                     class="qcard3"
-                    :secondary-link="standalone && '#new-deployment'" />
+                    :secondary-link="standalone ? '#new-deployment' : '/explore/blueprints'" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
                     v-bind="sectionLinkProps({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX})"
