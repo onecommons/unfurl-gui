@@ -17,7 +17,7 @@ export default {
         ...mapGetters(['getHomeProjectName']),
         _items() {
             return [
-                {avatarPath: document.querySelector('.project-avatar')?.src, text: this.getHomeProjectName, ...sectionLinkProps(this.$router, {name: routes.OC_DASHBOARD_HOME, query: {}})},
+                {avatarPath: window.gon.projectAvatar, text: this.getHomeProjectName, ...sectionLinkProps(this.$router, {name: routes.OC_DASHBOARD_HOME, query: {}})},
                 ...this.items
             ]
         }
