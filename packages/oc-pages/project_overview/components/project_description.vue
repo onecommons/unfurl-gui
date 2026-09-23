@@ -132,8 +132,8 @@ export default {
             </div>
             <div class="row">
                 <div class="col-lg-12">
-                    <gl-tabs>
-                        <oc-tab title="Components" :titleCount="requirements.length" v-if="shouldRenderRequirements">
+                    <gl-tabs v-if="shouldRenderRequirements">
+                        <oc-tab title="Components" :titleCount="requirements.length">
                             <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in requirements" :key="idx" class="gl-mb-4">
                                     <div class="gl-flex gl-justify-between">
@@ -156,7 +156,7 @@ export default {
                             </ul>
 
                         </oc-tab>
-                        <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderRequirements && shouldRenderExtras">
+                        <oc-tab title="Extras" :titleCount="extras.length" v-if="shouldRenderExtras">
                             <ul class="oc-list-ordered" >
                                 <li v-for="(requirement, idx) in extras" :key="idx" class="gl-mb-4">
                                     <div class="gl-flex gl-justify-between">
@@ -179,7 +179,7 @@ export default {
                             </ul>
 
                         </oc-tab>
-                        <oc-tab v-if="shouldRenderRequirements && outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
+                        <oc-tab v-if="outputs.length + inputs.length" title="Details" :titleCount="outputs.length + inputs.length">
                             <div v-if="inputs.length">
                                 <div class="detail-heading">Inputs</div>
                                 <ul class="gl-pl-6" v-if="inputs.length > 0">

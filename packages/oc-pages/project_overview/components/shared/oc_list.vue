@@ -65,6 +65,7 @@ export default {
         return {
             resourceName: '',
             inputsLength: null,
+            currentTab: 0,
         }
     },
 
@@ -246,14 +247,38 @@ export default {
 
         inputsTitleCount() {
           return this.inputsLength ?? this.properties.length
-        }
+        },
+
+        // Which tabs are rendered, in order. Every condition below resolves
+        // from loaded data, so they flip in whatever order the data arrives --
+        // see the watcher.
+        visibleTabs() {
+            return JSON.stringify([
+                !!this.shouldRenderRequirements,
+                !!(this.shouldRenderInputs && !this.customInputComponent && this.inputsTitleCount),
+                this.inputTabs.map(tab => tab.tab_title),
+                !!this.shouldRenderAttributes,
+                !!this.shouldRenderOutputs,
+                !!this.shouldRenderExtras,
+            ])
+        },
+    },
+    watch: {
+        // b-tabs activates the first tab that registers and keeps it selected
+        // through later re-sorts ("We trust tab state over currentTab"), so a
+        // tab that mounts alone stays selected even once the earlier ones
+        // arrive. Selecting a tab does not change this signature, so the reset
+        // cannot fight the reader.
+        visibleTabs() {
+            this.currentTab = 0
+        },
     },
 }
 </script>
 <template>
     <div>
         <component :is="customInputComponent" :readonly="_readonly" v-if="customInputComponent" :card="_card"/>
-        <gl-tabs v-if="shouldRenderTabs" class="">
+        <gl-tabs v-if="shouldRenderTabs" v-model="currentTab" class="">
             <oc-tab lazy v-if="shouldRenderRequirements" :title-testid="`tab-requirements-${_card.name}`" title="Components" :titleCount="requirements.length">
                 <div class="row-fluid">
                     <div class="ci-table" role="grid"> <dependency :card="requirement.card" :readonly="_readonly" :display-status="displayStatus" :display-validation="displayValidation" :dependency="requirement.dependency" v-for="requirement in requirements" :key="requirementKey(requirement)"/>
