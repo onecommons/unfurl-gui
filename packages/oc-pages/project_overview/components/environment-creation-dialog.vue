@@ -271,6 +271,25 @@ export default {
                 // cross-page hand-off (deploy-from-blueprint). The fallback to the
                 // current URL meant "reload yourself", which the environment page
                 // no longer needs now that it refetches in place.
+                /*
+                 * The return trip is only ever fired by a provider panel's save
+                 * handler, so with no panel to open there is nothing to fire it:
+                 * the target would sit in sessionStorage unread while the user
+                 * waits on the environment page for a redirect that cannot come.
+                 * That is every provider whose template is written at creation
+                 * and has no dedicated panel -- Digital Ocean, Azure, Kubernetes.
+                 *
+                 * Nothing is left to collect in that case, so the hand-off is
+                 * complete as soon as the environment exists. Go straight back,
+                 * preselecting it the way onProviderSetupSaved would have.
+                 */
+                if(_redirectTarget && !query) {
+                    sessionStorage['instantiate_env'] = this.environmentName
+                    sessionStorage['instantiate_provider'] = provider
+                    window.location.href = redirectTarget
+                    return
+                }
+
                 if(_redirectTarget) sessionStorage['redirectOnProviderSaved'] = redirectTarget
 
                 const environmentRoute = `/-/environments/${this.environmentName}${query}`
