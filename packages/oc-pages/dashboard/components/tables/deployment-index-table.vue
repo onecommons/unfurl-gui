@@ -733,7 +733,8 @@ export default {
                     <environment-selection
                         v-if="intent == 'clone'"
                         class="gl-mt-3"
-                        v-model="cloneTargetEnvironment"
+                        :model-value="cloneTargetEnvironment"
+                        @update:modelValue="cloneTargetEnvironment = $event"
                         :provider="target.environment.primary_provider.type"
                     />
                 </gl-form-group>

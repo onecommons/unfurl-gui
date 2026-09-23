@@ -30,8 +30,11 @@ export default (elemId='js-oc-project-overview') => {
   window.gon.home_project = normpath(window.gon.home_project)
   window.gon.working_dir_project = normpath(window.gon.working_dir_project)
 
-  // force /-/overview for route consistence with standalone
-  if(window.gon.unfurl_gui && !window.location.pathname.includes('/-/overview')) {
+  // Force /-/overview, both builds. Not a standalone quirk: 19.3 serves this
+  // app from `overview(/*vueroute)` (oc/config/routes/project.rb), so a router
+  // base without the prefix resolves links the server has no route for and
+  // every one of them 404s.
+  if(!window.location.pathname.includes('/-/overview')) {
     window.history.replaceState(
       {},
       '',

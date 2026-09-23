@@ -242,7 +242,7 @@ export default {
         </gl-form-group>
         <div class="deploy-dialog col-md-6" v-if="instantiateAs != 'template'">
             <p>{{ __("Select an environment to deploy this template to:") }}</p>
-            <environment-selection v-model="selectedEnvironment" :provider="templateSelected && templateSelected.cloud"
+            <environment-selection :model-value="selectedEnvironment" @update:modelValue="selectedEnvironment = $event" :provider="templateSelected && templateSelected.cloud"
                 :error="deployDialogError" @createNewEnvironment="createNewEnvironment"
                 :environment-creation="!standalone || forceEnvCreation" />
 

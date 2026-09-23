@@ -325,7 +325,9 @@ export default {
         redirectToTemplateEditor(page = routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({ query: {} })
-            const dashboard = encodeURIComponent(this.selectedEnvironment?._dashboard || this.getHomeProjectPath)
+            // Raw: this is a route param, and $router.resolve encodes it. Encoding
+            // here too yields root%252Fdashboard, which matches no route.
+            const dashboard = this.selectedEnvironment?._dashboard || this.getHomeProjectPath
             // TODO re-enable this when we're able to update the current namespace
             // https://github.com/onecommons/gitlab-oc/issues/867
             // this.$router.push({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name }})
@@ -559,7 +561,8 @@ export default {
                         <div class="deploy-dialog col-md-6" v-if="instantiateAs != 'template'">
                             <p>{{ __("Select an environment to deploy this template to:") }}</p>
                             <environment-selection
-                                v-model="selectedEnvironment"
+                                :model-value="selectedEnvironment"
+                                @update:modelValue="selectedEnvironment = $event"
                                 :provider="templateSelected && templateSelected.cloud"
                                 :error="deployDialogError"
                                 @createNewEnvironment="createNewEnvironment"
