@@ -5,6 +5,10 @@ import {GlLoadingIcon, GlModal} from '@gitlab/ui'
 import {LocalDeploy} from 'oc_vue_shared/components/oc'
 import DashboardDeployDialog from './components/dashboard-deploy-dialog.vue'
 
+export function pollableDashboardItem(item) {
+    return Boolean(item?.deployment && item?.environment)
+}
+
 export default {
     name: 'Dashboard',
     data() {return {isLoaded: false, doNotRender: false, standalone: !!window.gon.unfurl_gui}},
@@ -81,7 +85,9 @@ export default {
         await this.populateDeploymentItems(this.getDashboardItems)
 
         if(!window.gon.unfurl_gui) {
-            for(const {environment, deployment} of this.getDashboardItems) {
+            // an environment with nothing deployed still gets a row, and there
+            // is no url to poll for one of those
+            for(const {environment, deployment} of this.getDashboardItems.filter(pollableDashboardItem)) {
                 // unawaited, so a rejection here escapes as an unhandled error
                 // and rspack's dev server raises an overlay over the whole page
                 this.addUrlPoll({deployment, environment})
