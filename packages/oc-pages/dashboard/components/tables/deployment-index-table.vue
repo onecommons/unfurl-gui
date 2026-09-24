@@ -725,7 +725,8 @@ export default {
             </div>
             <autostop-inner
                 v-if="intent == 'scheduleAutostop'"
-                v-model="autostop"
+                :model-value="autostop"
+                @update:modelValue="autostop = $event"
             />
             <div v-if="['clone', 'rename'].includes(intent)">
                 <gl-form-group class="gl-m-5" label="New deployment title">
