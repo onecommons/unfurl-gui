@@ -22,10 +22,12 @@ import {GlFormCombobox, GlFormGroup, GlFormInput} from '@gitlab/ui'
 export default {
     name: 'SuggestionInput',
     components: {GlFormCombobox, GlFormGroup, GlFormInput},
-    // MODE 3 and modelValue are one change: @vue/compat rewrites modelValue
-    // back to value for any component still in MODE 2, so a component cannot
-    // move to the Vue 3 v-model contract on its own. Callers keep v-model.
-    compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
+    // Callers keep v-model, which compat compiles to an `onModelCompat:input`
+    // listener. $emit only reaches that listener while COMPONENT_V_MODEL is
+    // enabled, so this inherits the global value ('suppress-warning', which
+    // counts as enabled) rather than setting it false -- which severed the
+    // emit, left `value` null, and stopped the dropdown ever opening.
+    compatConfig: {MODE: 3},
     emits: ['update:modelValue', 'input'],
     /*
      * Callers are in global compat mode, so their `v-model` compiles to the

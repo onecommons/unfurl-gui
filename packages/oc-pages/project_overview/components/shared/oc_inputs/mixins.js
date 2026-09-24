@@ -36,11 +36,27 @@ async function updateValue(propertyName) {
 }
 
 
+// The project comboboxes emit on every keystroke, so a watcher on their value
+// sees partial paths that match no project. Fetching those 404s once per
+// character, and an unawaited rejection raises the dev server's error overlay.
+async function isKnownProject(path) {
+    if(!this.userProjectSuggestionsPromise) {
+        throw new Error('isKnownProject requires "this.userProjectSuggestionsPromise" to be available')
+    }
+
+    const projects = await this.userProjectSuggestionsPromise.catch(() => [])
+
+    return projects.some(project => project.path_with_namespace == path)
+}
+
+
 export const connectedRepo = {
     data() {
         return {username: undefined, password: undefined}
     },
     methods: {
+        isKnownProject,
+
         async setupRegistryCredentials() {
             if(!this.projectInfo) {
                 throw new Error('setupRegistryCredentials requires "this.projectInfo" to be available')

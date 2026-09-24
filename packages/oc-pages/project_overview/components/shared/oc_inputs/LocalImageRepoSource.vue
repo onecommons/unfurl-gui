@@ -42,11 +42,14 @@ export default {
     },
     watch: {
         async project_id(val) {
-            this.containerRepositoriesPromise = fetchContainerRepositories(val)
             if(!val) {
                 this.repository_id = null
             }
             this.updateValue('project_id')
+
+            if(!val || !await this.isKnownProject(val)) return
+
+            this.containerRepositoriesPromise = fetchContainerRepositories(val)
             this.projectInfo = await fetchProjectInfo(encodeURIComponent(val))
         },
         repository_id(val) {
@@ -98,7 +101,7 @@ export default {
         },
         async getRepositoryIdSuggestions(queryString, callback) {
             if(!this.containerRepositoriesPromise) {
-                this.containerRepositoriesPromise = fetchRegistryRepositories(this.project_id)
+                this.containerRepositoriesPromise = fetchRegistryRepositories(encodeURIComponent(this.project_id))
             }
             const containerRepositories = this.containerRepositories = await this.containerRepositoriesPromise
             callback(

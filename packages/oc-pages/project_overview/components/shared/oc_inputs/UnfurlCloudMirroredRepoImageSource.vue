@@ -101,6 +101,8 @@ export default {
                 }
                 this.updateValue('project_id')
 
+                if(!await this.isKnownProject(val)) return
+
                 this.repositoryBranchesPromise = fetchRepositoryBranches(encodeURIComponent(this.project_id))
                 this.projectInfo = await fetchProjectInfo(encodeURIComponent(this.project_id))
                 const id = this.projectInfo.id
