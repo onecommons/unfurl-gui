@@ -219,13 +219,13 @@ export default {
     ocTemplateResourcePrimary() {
         return {
             text: __("Next"),
-            attributes: {category: 'primary', variant: 'info', disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0)}
+            attributes: {category: 'primary', variant: 'confirm', disabled: (this.resourceName.length === 0 || this.alertNameExists || Object.keys(this.selected).length === 0)}
         };
     },
     ocResourceToConnectPrimary() {
       return {
             text: __("Next"),
-            attributes: {category: 'primary', variant: 'info', disabled: Object.keys(this.selectedServiceToConnect).length === 0}
+            attributes: {category: 'primary', variant: 'confirm', disabled: Object.keys(this.selectedServiceToConnect).length === 0}
         };
     },
 

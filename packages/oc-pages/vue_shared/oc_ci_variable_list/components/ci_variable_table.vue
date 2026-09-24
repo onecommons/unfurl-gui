@@ -183,7 +183,7 @@ export default {
         ref="add-ci-variable"
         data-testid="add-ci-variable"
         data-qa-selector="add_ci_variable_button"
-        variant="success"
+        variant="confirm"
         category="primary"
         @click="$emit('add-variable')"
         >{{ __('Add Variable') }}</gl-button
