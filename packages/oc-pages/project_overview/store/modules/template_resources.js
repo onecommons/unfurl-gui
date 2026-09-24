@@ -501,7 +501,9 @@ const actions = {
             return
         }
 
-        console.assert(dependentName && state.resourceTemplates[dependentName], `Expected '${dependentName}' to exist for its child '${target || match}'`)
+        // populateEnvironmentResources initialises environment resources with no
+        // parent by design; only a named one is expected to be there already
+        console.assert(!dependentName || state.resourceTemplates[dependentName], `Expected '${dependentName}' to exist for its child '${target || match}'`)
 
         let resolvedDependencyMatch = getters.dtResolveResourceTemplate(match)
 
