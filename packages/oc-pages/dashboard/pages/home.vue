@@ -99,13 +99,28 @@ export default {
     methods: {
         sectionLinkProps(to) { return linkProps(this.$router, to) },
         sectionLinkHref(to) { return linkHref(this.$router, to) },
+
+        // vue-router 4 only listens for popstate, and a plain anchor fires
+        // hashchange, so letting the browser follow this link moves
+        // location.hash without ever moving $route.hash -- and the dashboard's
+        // modal is bound to the latter.
+        showCloneInstructions(e) {
+            if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+
+            e.preventDefault()
+            this.$router.replace({...this.$route, hash: '#clone-instructions'})
+        },
     },
     mounted() {
-        const cloneInstructions = document.querySelector('.gl-markdown a[href$="#clone-instructions"]')
+        this.cloneInstructions = document.querySelector('.gl-markdown a[href$="#clone-instructions"]')
 
-        if(cloneInstructions) {
-            cloneInstructions.href = '#clone-instructions'
+        if(this.cloneInstructions) {
+            this.cloneInstructions.href = '#clone-instructions'
+            this.cloneInstructions.addEventListener('click', this.showCloneInstructions)
         }
+    },
+    beforeUnmount() {
+        this.cloneInstructions?.removeEventListener('click', this.showCloneInstructions)
     }
 };
 
@@ -139,7 +154,7 @@ export default {
                     s="Running Deployment"
                     p="Running Deployments"
                     class="qcard3"
-                    :secondary-link="standalone ? '#new-deployment' : '/explore/blueprints'" />
+                    :secondary-link="standalone ? {hash: '#new-deployment'} : '/explore/blueprints'" />
                 <!-- TODO figure out a better way to show stopped deployments -->
                 <quantity-card
                     v-bind="sectionLinkProps({name: routes.OC_DASHBOARD_DEPLOYMENTS_INDEX})"

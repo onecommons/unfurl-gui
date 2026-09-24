@@ -83,7 +83,14 @@ export default {
             this.baseDialogComplete = false
         },
         backSelectAppBlueprint() {
-            window.location.hash = ''
+            this.navigateToHash('')
+        },
+        // vue-router 4 only listens for popstate, so assigning window.location.hash
+        // moved the URL without moving $route.hash -- which is what `enabled` reads.
+        navigateToHash(hash) {
+            if(this.$route.hash == hash) return
+
+            this.$router.push({...this.$route, hash})
         },
         back(e) {
             e?.preventDefault()
@@ -122,9 +129,8 @@ export default {
                 )
             },
             set(val) {
-                // avoids duplicated navigation error
                 if(val) {
-                    window.location.hash = NEW_DEPLOYMENT_HASH
+                    this.navigateToHash(NEW_DEPLOYMENT_HASH)
                 } else {
                     this.reset()
                 }
