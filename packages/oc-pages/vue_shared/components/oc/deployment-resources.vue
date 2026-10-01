@@ -736,7 +736,7 @@ export default {
 
                 <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
                     <gl-form-input id="input2" data-testid="create-resource-template-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
-                    <small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                    <small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
                 </gl-form-group>
             </div>
 
@@ -757,7 +757,7 @@ export default {
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
                 <gl-form-input id="input2" data-testid="create-provider-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
                 <small v-if="alertProviderExists" class="alert-input">{{ __("Your environment already has this type of provider.") }}</small>
-                <small v-else-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                <small v-else-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
             </gl-form-group>
 
         </gl-modal>
@@ -777,7 +777,7 @@ export default {
           <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(selectedRequirement)" :resourceType="selectedRequirement && selectedRequirement.type"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name can't be replicated. please edit the name!") }}</small>
+                <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
             </gl-form-group>
         </gl-modal>
 
