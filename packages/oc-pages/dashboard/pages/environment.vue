@@ -195,6 +195,9 @@ export default {
         showingResourcesTab() {
             return this.currentTab == this.resourcesTabIndex
         },
+        canAddExternalResources() {
+            return this.userCanEdit && this.showingResourcesTab
+        },
         publicCloudResources() {
             // NOTE: hardcoded names
             return this.getCardsStacked.filter(card => card._localTypeName == 'UnfurlUserDNSZone')
@@ -821,7 +824,7 @@ export default {
                     <div></div>
                 </template>
                 <template #primary-controls>
-                    <div v-if="!isMobileLayout && userCanEdit && showingResourcesTab" class="confirm-container">
+                    <div v-if="!isMobileLayout && canAddExternalResources" class="confirm-container">
                         <gl-button variant="confirm" @click="addExternalResources">
                             <div>
                                 <gl-icon name="plus"/>
@@ -831,7 +834,7 @@ export default {
                     </div>
                 </template>
                 <template #primary-controls-footer>
-                    <div v-if="isMobileLayout" class="confirm-container">
+                    <div v-if="isMobileLayout && canAddExternalResources" class="confirm-container">
                         <gl-button variant="confirm" @click="addExternalResources">
                             <div>
                                 <gl-icon name="plus"/>
