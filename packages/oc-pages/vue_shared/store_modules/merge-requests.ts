@@ -1,18 +1,24 @@
+import type {ActionContext, Module} from '@gitlab/vuex-vue3'
 import {listMergeRequests, getOrFetchDefaultBranch} from '../client_utils/projects'
-const stateFn = () => ({
+
+interface State {
+    mergeRequests: unknown[] | null
+}
+
+const stateFn = (): State => ({
     mergeRequests: []
 })
 
 const state = stateFn()
 
 const mutations = {
-    setMergeRequests(state, mergeRequests) {
+    setMergeRequests(state: State, mergeRequests: unknown[]) {
         state.mergeRequests = mergeRequests
     }
 }
 
 const actions = {
-    async fetchMergeRequests({commit, rootGetters}) {
+    async fetchMergeRequests({commit, rootGetters}: ActionContext<State, any>) {
         if(window.gon.unfurl_gui) {
             return
         }
@@ -33,7 +39,7 @@ const actions = {
 }
 
 const getters = {
-    mergeRequests(state) { return state.mergeRequests || [] }
+    mergeRequests(state: State) { return state.mergeRequests || [] }
 }
 
-export default {state, mutations, actions, getters}
+export default {state, mutations, actions, getters} satisfies Module<State, any>

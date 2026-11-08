@@ -26,7 +26,10 @@
       "oc_dashboard/*": ["packages/oc-pages/dashboard/*"],
       "oc_pages/*": ["packages/oc-pages/*"],
       "oc/*": ["src/assets/javascripts/*"],
-      "~/*": ["src/assets/javascripts/*"]
+      "~/*": ["src/assets/javascripts/*"],
+      // its exports map has no "types" condition, so bundler resolution misses
+      // the declarations it ships
+      "@gitlab/vuex-vue3": ["node_modules/@gitlab/vuex-vue3/types/index.d.ts"]
     }
   },
   // Cypress registers ts-node with this file to load its config, and ts-node then
