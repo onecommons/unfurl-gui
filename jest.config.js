@@ -220,7 +220,8 @@ module.exports = {
   transformIgnorePatterns: [
     // lodash-es ships untranspiled esm and the 19.3 ci_variable_drawer imports
     // it directly, so mounting that component for real needs it transformed.
-    "/node_modules/(?!lodash-es/)",
+    // d3 7 and its dependencies are esm-only too; public_cloud draws with it.
+    "/node_modules/(?!(lodash-es|d3|d3-[^/]+|internmap|delaunator|robust-predicates)/)",
   //   "\\.pnp\\.[^\\/]+$"
   ],
 

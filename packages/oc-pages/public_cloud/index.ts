@@ -21,32 +21,39 @@ import './public-cloud.css'
 // Assigned when the page is initialized, not at import time: the standalone build
 // has no welcome banner and the DOM isn't guaranteed to exist when this module loads.
 let glDark = false
-let welcomeBanner = null
+let welcomeBanner: HTMLElement | null = null
+
+// The unfurl export JSON; typed loosely until the payload types exist.
+type Json = Record<string, any>
+// a branch is a category or a cloud; a leaf is a resource type
+type Datum = Json & {name: string, kind?: string, children?: Datum[] | null, value?: number}
+type Node = d3.HierarchyCircularNode<Datum>
+type Transform = Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>
 
 
-function isFocusable(node) {
+function isFocusable(node: Node | null | undefined) {
   if(!node) return false
   const {data} = node
   return data.kind != 'type'
 }
 
-function cloudIcon({data}) {
+function cloudIcon({data}: Node) {
   if(data.kind == 'cloud') {
     return ProviderIcons[data.name]
   }
 }
 
-function cloudIconFilter({data}) {
+function cloudIconFilter({data}: Node) {
   if(!glDark) return null
   return data.name != lookupCloudProviderAlias('gcp') ? 'invert(1) hue-rotate(180deg)': null
 }
 
-function labelSize(node) {
+function labelSize(node: Node) {
   const base = BASE_FONT / 4
   // slowly (pow 1/3) scales up with radius
   // barely (pow 1/10) scales down with text length
   const labelText = toLabel(node)
-  const size = base * Math.pow(node.r, 1/3) / Math.pow(labelText?.length || 1, 1/10)
+  const size = base * Math.pow(node.r, 1/3) / Math.pow((labelText || '').length || 1, 1/10)
   return Math.min(
     size,
     MAX_FONT_SIZE
@@ -54,7 +61,7 @@ function labelSize(node) {
 
 }
 
-function toLabel({data}) {
+function toLabel({data}: Node): string | false | undefined {
   if(data.icon) return false
   switch(data.kind) {
     case 'type':
@@ -66,7 +73,7 @@ function toLabel({data}) {
   }
 }
 
-const LABEL_POSITIONS = [
+const LABEL_POSITIONS: [number, number][] = [
   [0, 0],
   [0, 2/3],
   [0, 1/2],
@@ -80,25 +87,28 @@ const BASE_FONT = 20
 const MAX_FONT_SIZE = 28
 const MINIMUM_SCALE = 1
 
-let tooltipVm, tooltipProps, navbarProps
-let focus, zoom
-let zoomIn, zoomOut
+let tooltipVm: {isMousedOver?: boolean}
+let tooltipProps: {item: Node | null, left: number, top: number}
+let navbarProps: {top: number, focus: Node | null}
+let focus: Node, zoom: d3.ZoomBehavior<SVGSVGElement, undefined>
+// assigned when the chart mounts
+let zoomIn: () => void, zoomOut: () => void
 let focusI = -1
-let tooltipFocus, tooltipCursorX, tooltipCursorY
-let cursorX, cursorY, inBounds
-let bounds = {}
-let setFocus = () => {}
-let root
+let tooltipFocus: Node | null | undefined, tooltipCursorX: number, tooltipCursorY: number
+let cursorX: number, cursorY: number, inBounds: boolean
+let bounds: {x1?: number, x2?: number, y1?: number, y2?: number} = {}
+let setFocus: (event?: unknown, d?: Node) => void = () => {}
+let root: Node
 
-const pack = (data, width, height) => d3.pack()
+const pack = (data: Datum, width: number, height: number) => d3.pack<Datum>()
   .size([width, height])
   .padding(20)
 (d3.hierarchy(data)
-  .sum(d => d.value)
-  .sort((a, b) => b.value - a.value))
+  .sum(d => d.value as number)
+  .sort((a, b) => (b.value as number) - (a.value as number)))
 
 
-function opacity({depth}) {
+function opacity({depth}: Node) {
   return (
     depth == 1? 0.15:
     depth == 2? 0.25:
@@ -107,7 +117,7 @@ function opacity({depth}) {
   )
 }
 
-function color({data, depth}) {
+function color({data, depth}: Node) {
   const defaultColor = glDark? 'white': 'gray'
   switch(data.kind) {
     case 'cloud':
@@ -130,14 +140,14 @@ function color({data, depth}) {
   }
 }
 
-const chart = (appendTo, data, width, height, reserveTop) => {
+const chart = (appendTo: HTMLElement, data: Datum, width: number, height: number, reserveTop: number) => {
   focus = root = pack(data, width, height - reserveTop / 2)
 
-  let hoveredNode, mouseDownOnNode
-  let prevTransform, transform
+  let hoveredNode: Element | undefined, mouseDownOnNode
+  let prevTransform: Transform, transform: Transform
   prevTransform = transform = d3.zoomIdentity
 
-  setFocus = function(_event, d) {
+  setFocus = function(_event?: unknown, d?: Node) {
     if(d && !isFocusable(d)) return
     if(d && (focus == d) && d.parent) {
       focus = d.parent
@@ -161,9 +171,9 @@ const chart = (appendTo, data, width, height, reserveTop) => {
   }
 
 
-  function labelPos(node) {
+  function labelPos(node: Node): [number, number] {
     const defaultPos = LABEL_POSITIONS[1]
-    const [x, y] = LABEL_POSITIONS[node.children?.length] || defaultPos
+    const [x, y] = (node.children && LABEL_POSITIONS[node.children.length]) || defaultPos
 
     return [
       width - node.x - node.r * x,
@@ -171,36 +181,36 @@ const chart = (appendTo, data, width, height, reserveTop) => {
     ]
   }
 
-  function labelX(node) {
+  function labelX(node: Node) {
     return labelPos(node)[0]
   }
 
-  function labelY(node) {
+  function labelY(node: Node) {
     return labelPos(node)[1]
   }
 
-  function cloudIconX(node) {
+  function cloudIconX(node: Node) {
     return labelX(node) - BASE_FONT
   }
 
-  function cloudIconY(node) {
+  function cloudIconY(node: Node) {
     return labelY(node) - BASE_FONT
   }
 
-  function circleWidthAtPos(node) {
+  function circleWidthAtPos(node: Node) {
     const defaultPos = LABEL_POSITIONS[1]
-    const [x, y] = LABEL_POSITIONS[node.children?.length] || defaultPos
+    const [x, y] = (node.children && LABEL_POSITIONS[node.children.length]) || defaultPos
     return Math.sqrt(Math.pow(node.r, 2) - Math.pow(Math.abs(y) * node.r, 2)) * 2 - (Math.abs(x) * node.r)
   }
 
-  function textWidthForPos(node) {
+  function textWidthForPos(node: Node) {
     const defaultPos = LABEL_POSITIONS[1]
-    const [x, y] = LABEL_POSITIONS[node.children?.length] || defaultPos
+    const [x, y] = (node.children && LABEL_POSITIONS[node.children.length]) || defaultPos
     const widthAtPos = circleWidthAtPos(node) * 0.9 // ~10% padding
     const labelText = toLabel(node)
     const fontSize = parseFloat(labelSize(node).slice(0, -2))
 
-    if(labelText.length  / 2 * fontSize > widthAtPos) { // guess whether we're over width
+    if((labelText as string).length  / 2 * fontSize > widthAtPos) { // guess whether we're over width
       // set textLength to appx. width of the circle
       return widthAtPos || null // Do not return 0 for firefox
     }
@@ -208,29 +218,29 @@ const chart = (appendTo, data, width, height, reserveTop) => {
     return null
   }
 
-  function onMouseMove(event, d) {
+  function onMouseMove(event: MouseEvent) {
     tooltipCursorX = event.clientX
     tooltipCursorY = event.clientY
   }
 
-  function onMouseDown(event, d) {
+  function onMouseDown() {
   }
 
-  function appIconHref({data}) {
+  function appIconHref({data}: Node): string | null {
     const url = data._sourceinfo.url
-    if(url.includes('onecommons/unfurl-types')) return
+    if(url.includes('onecommons/unfurl-types')) return null
     return url
   }
 
-  function onClickAppIcon(event, {data}) {
+  function onClickAppIcon(event: MouseEvent) {
     event.stopPropagation()
   }
 
-  function fastUpdateTooltip({item, expectedNode}) {
+  function fastUpdateTooltip({item, expectedNode}: {item?: Node | null, expectedNode?: Element}) {
     if(expectedNode && hoveredNode != expectedNode) return
     if(tooltipVm.isMousedOver) return
     if(item) tooltipFocus = item
-    tooltipProps.item = tooltipFocus
+    tooltipProps.item = tooltipFocus ?? null
     tooltipProps.left = tooltipCursorX + 10
     tooltipProps.top = tooltipCursorY + 10
   }
@@ -242,24 +252,24 @@ const chart = (appendTo, data, width, height, reserveTop) => {
     .attr("viewBox", `0 0 ${width} ${height}`)
     .style("display", "block")
     .style("cursor", "pointer")
-    .on('mousemove', function(e) {
+    .on('mousemove', function(e: MouseEvent) {
       cursorX = e.clientX
       cursorY = e.clientY
 
       inBounds = (
-        cursorX >= bounds.x1 && cursorX <= bounds.x2 &&
-        cursorY >= bounds.y1 && cursorY <= bounds.y2
+        cursorX >= bounds.x1! && cursorX <= bounds.x2! &&
+        cursorY >= bounds.y1! && cursorY <= bounds.y2!
       )
 
       if(!inBounds) {
-        document.querySelector('div#chart svg').style.cursor = 'default'
+        document.querySelector<SVGSVGElement>('div#chart svg')!.style.cursor = 'default'
       } else {
-        document.querySelector('div#chart svg').style.cursor = 'grab'
+        document.querySelector<SVGSVGElement>('div#chart svg')!.style.cursor = 'grab'
       }
     })
 
   const node = svg.append("g")
-    .selectAll("circle")
+    .selectAll<SVGCircleElement, Node>("circle")
     .data(root.descendants().slice(1).filter(d => d.depth < 5))
     .join("circle")
       .attr('class', d => `${d.data.kind} depth-${d.depth}`)
@@ -270,14 +280,14 @@ const chart = (appendTo, data, width, height, reserveTop) => {
       .attr("r", d => d.r)
       .attr("stroke-width", d => `${1 + d.r / 25}px`)
       .on("mousemove", onMouseMove)
-      .on("mouseover", function(event, d) {
+      .on("mouseover", function(this: SVGCircleElement, event: MouseEvent, d: Node) {
         hoveredNode = this
         tooltipCursorX = event.clientX
         tooltipCursorY = event.clientY
         updateTooltip({item: d, expectedNode: this})
         d3.select(this).attr("stroke", "#FFF")
       })
-      .on("mouseout", function(event, d) {
+      .on("mouseout", function(this: SVGCircleElement) {
         tooltipCursorX = -1000
         tooltipCursorY = -1000
         updateTooltip({item: null})
@@ -301,7 +311,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 
         let connectedNode
         if(!(connectedNode = root.descendants().find(target => d.data.connection == target.data.id))) {
-          return
+          return null
         }
 
         const endX = connectedNode.x, endY = connectedNode.y
@@ -314,7 +324,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 
 
   const appIcon = svg.append('g')
-    .selectAll('foreignObject')
+    .selectAll<SVGForeignObjectElement, Node>('foreignObject')
     .data(root.descendants().filter(d => d.data.kind == 'type'))
     .join('foreignObject')
       .attr('width', d => d.r * 2)
@@ -324,14 +334,14 @@ const chart = (appendTo, data, width, height, reserveTop) => {
       .attr('display', 'flex')
       .style('transition', 'opacity 1s')
       .on("mousemove", onMouseMove)
-      .on("mouseover", function(event, d) {
+      .on("mouseover", function(this: SVGForeignObjectElement, event: MouseEvent, d: Node) {
         hoveredNode = this
         tooltipCursorX = event.clientX
         tooltipCursorY = event.clientY
         updateTooltip({item: d, expectedNode: this})
         d3.select(this).attr("stroke", "#FFF")
       })
-      .on("mouseout", function(event, d) {
+      .on("mouseout", function(this: SVGForeignObjectElement) {
         tooltipCursorX = -1000
         tooltipCursorY = -1000
         tooltipFocus = null
@@ -411,7 +421,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
     .selectAll("image")
     .data(root.descendants().filter(cloudIcon))
     .join('image')
-      .attr('href', cloudIcon)
+      .attr('href', d => cloudIcon(d) as string)
       .attr('width', BASE_FONT * 2)
       .attr('height', BASE_FONT * 2)
       .attr('x', cloudIconX) // I don't understand this specific amount
@@ -419,7 +429,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
       .style('filter', cloudIconFilter)
       .style('pointer-events', 'none')
 
-  function showLabel(d) {
+  function showLabel(d: Node) {
     // don't show large label for single child
     if(d.parent?.children?.length == 1) return false
 
@@ -445,7 +455,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
       .attr('y', labelY)
       .attr('textLength', textWidthForPos)
       .style("font-size", labelSize)
-      .text(toLabel);
+      .text(d => toLabel(d) as string);
 
   function updatePreviousTransform() {
       if(transform) {
@@ -455,8 +465,8 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 
   let bouncing = false
 
-  function handleZoom(e) {
-    d3.selectAll('div#chart svg g').attr('transform', e.transform)
+  function handleZoom(this: SVGSVGElement, e: d3.D3ZoomEvent<SVGSVGElement, undefined>) {
+    d3.selectAll('div#chart svg g').attr('transform', e.transform.toString())
 
     if(bouncing) return false
     const cloudProviderRects = Array.from(document.querySelectorAll('circle.depth-1')).map(el => el.getBoundingClientRect())
@@ -503,7 +513,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
     }
 
     transform = e.transform
-    if(tooltip?.$props?.item && transform.k == prevTransform.k) {
+    if(tooltipProps?.item && transform.k == prevTransform.k) {
       tooltipProps.left += transform.x - prevTransform.x
       tooltipProps.top += transform.y - prevTransform.y
     }
@@ -511,7 +521,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 
 
 
-  zoom = d3.zoom()
+  zoom = d3.zoom<SVGSVGElement, undefined>()
     .on('zoom', handleZoom)
   svg
     .style('user-select', 'none')
@@ -545,7 +555,7 @@ const chart = (appendTo, data, width, height, reserveTop) => {
   // zoom.translateExtent([[-width, -height], [width , height]])
 
 
-  const result = svg.node();
+  const result = svg.node()!;
   appendTo.insertBefore(result, appendTo.children[0])
 
   if(reserveTop) {
@@ -561,32 +571,32 @@ const chart = (appendTo, data, width, height, reserveTop) => {
 }
 
 // gitlab's webpack loads svgs with raw-loader (markup), vue-cli resolves them to a url
-const ProviderIcons = _.mapValues({
-  [lookupCloudProviderAlias('do')]: DigitalOceanIcon,
-  [lookupCloudProviderAlias('aws')]: AwsIcon,
-  [lookupCloudProviderAlias('gcp')]: GcpIcon,
-  [lookupCloudProviderAlias('k8s')]: K8sIcon,
-}, icon => icon.startsWith('<svg')?
+const ProviderIcons: Record<string, string> = _.mapValues({
+  [lookupCloudProviderAlias('do') as string]: DigitalOceanIcon,
+  [lookupCloudProviderAlias('aws') as string]: AwsIcon,
+  [lookupCloudProviderAlias('gcp') as string]: GcpIcon,
+  [lookupCloudProviderAlias('k8s') as string]: K8sIcon,
+}, (icon: string) => icon.startsWith('<svg')?
   `data:image/svg+xml,${encodeURIComponent(icon)}`:
   icon)
 
 
 function getCloudLayoutElements() {
   return {
-    layout: document.querySelector('#public-cloud-layout'),
-    chartPane: document.querySelector('#public-cloud-chart-pane'),
-    splitter: document.querySelector('#cloud-splitter'),
+    layout: document.querySelector<HTMLElement>('#public-cloud-layout'),
+    chartPane: document.querySelector<HTMLElement>('#public-cloud-chart-pane'),
+    splitter: document.querySelector<HTMLElement>('#cloud-splitter'),
   }
 }
 
-function setChartPaneHeight(height) {
+function setChartPaneHeight(height: number) {
   const {layout} = getCloudLayoutElements()
   if(!layout) return
 
   layout.style.setProperty('--cloud-chart-height', `${height}px`)
 }
 
-function setupSplitter(onResize) {
+function setupSplitter(onResize: () => void) {
   const {layout, chartPane, splitter} = getCloudLayoutElements()
   if(!layout || !chartPane || !splitter) return
   if(splitter.dataset.initialized) return
@@ -596,7 +606,7 @@ function setupSplitter(onResize) {
   const minChartHeight = 280
   const minTableHeight = 60
 
-  const resizeFromClientY = clientY => {
+  const resizeFromClientY = (clientY: number) => {
     const layoutRect = layout.getBoundingClientRect()
     const splitterRect = splitter.getBoundingClientRect()
     const offset = clientY - layoutRect.top - splitterRect.height / 2
@@ -613,7 +623,7 @@ function setupSplitter(onResize) {
     window.removeEventListener('mouseup', stopDrag)
   }
 
-  const onMouseMove = event => {
+  const onMouseMove = (event: MouseEvent) => {
     resizeFromClientY(event.clientY)
   }
 
@@ -626,9 +636,9 @@ function setupSplitter(onResize) {
 }
 
 
-function mountChart(data) {
-  const container = document.querySelector('div#chart')
-  const chartPane = document.querySelector('#public-cloud-chart-pane')
+function mountChart(data: Datum) {
+  const container = document.querySelector<HTMLElement>('div#chart')!
+  const chartPane = document.querySelector<HTMLElement>('#public-cloud-chart-pane')!
 
   Array.from(container.children).forEach(child => {
     if(child.id != 'map-controls') child.remove()
@@ -650,27 +660,28 @@ function mountChart(data) {
 
 
 function dismissWelcomeBanner() {
-  welcomeBanner.style.display = 'none'
+  welcomeBanner!.style.display = 'none'
 }
 
 // the banner is part of gitlab's page chrome, absent when running standalone
 function setupWelcomeBanner() {
   if(!welcomeBanner) return
 
-  welcomeBanner.children[0].style.background = glDark?
+  const backdrop = welcomeBanner.children[0] as HTMLElement
+  backdrop.style.background = glDark?
     'radial-gradient(rgba(18, 18, 18, 0.6), rgba(18, 18, 18, 0))':
     'radial-gradient(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0))'
 
   const closeButton = document.querySelector('button.close')
   closeButton?.addEventListener('click', () => {
-    localStorage['uc-cloud-page-dismiss'] = true
+    localStorage['uc-cloud-page-dismiss'] = 'true'
     dismissWelcomeBanner()
   })
 
   if(!localStorage['uc-cloud-page-dismiss']) welcomeBanner.style.display = 'unset'
 }
 
-let categoryTitles = {}
+let categoryTitles: Record<string, string> = {}
 
 const ordering = location.search.includes('show=providers')?
 [
@@ -685,7 +696,7 @@ const ordering = location.search.includes('show=providers')?
 ]
 
 
-function identity(obj) {
+function identity(obj: Datum) {
   return obj.name
 }
 
@@ -750,7 +761,7 @@ export default async function initPublicCloud() {
   const formattedData = await getFormattedData()
   const rawData = await getData()
 
-  categoryTitles = _.mapValues(rawData.Overview.categories, category => category.title)
+  categoryTitles = _.mapValues(rawData.Overview.categories as Record<string, {title: string}>, category => category.title)
   /*
    * The bubble chart is built from two related JSON payloads:
    *
@@ -793,14 +804,14 @@ export default async function initPublicCloud() {
    * - default: category -> cloud -> type
    * - `?show=providers`: cloud -> category -> type
    */
-  function makeData(ancestors, ordering, depth=0) {
+  function makeData(ancestors: Datum[], ordering: string[], depth=0) {
     const parentClasses = ordering.slice(0, depth)
     const currentClass = ordering[depth]
-    const parent = _.last(ancestors)
+    const parent = _.last(ancestors)!
 
-    let validTypes = formattedData
+    let validTypes: Json[] = formattedData
 
-    for(const [ancestor, pClass] of _.zip(ancestors.slice(1), parentClasses)) {
+    for(const [ancestor, pClass] of _.zip(ancestors.slice(1), parentClasses) as [Datum, string][]) {
       validTypes = validTypes.filter(t => t[pClass] == identity(ancestor))
     }
 
@@ -830,7 +841,7 @@ export default async function initPublicCloud() {
     }
   }
 
-  const data = {name: '', children: []}
+  const data: Datum = {name: '', children: []}
   makeData([data], ordering)
 
   setupWelcomeBanner()
@@ -843,7 +854,7 @@ export default async function initPublicCloud() {
    */
   tooltipProps = reactive({item: null, left: -1000, top: -1000})
   const tooltipApp = createApp({
-    render: () => h(Tooltip, {...tooltipProps, ref: 'tooltip'})
+    render: () => h(Tooltip, {...tooltipProps, ref: 'tooltip'} as Record<string, unknown>)
   })
 
   /*
@@ -887,7 +898,7 @@ export default async function initPublicCloud() {
     },
   })
 
-  tooltipVm = tooltipApp.mount('#tooltip').$refs.tooltip
+  tooltipVm = tooltipApp.mount('#tooltip').$refs.tooltip as typeof tooltipVm
   lowerPaneApp.mount('#cloud-table')
   /*
    * Handlers rather than the `$on` these used to be wired with -- Vue 3 has no
@@ -895,9 +906,9 @@ export default async function initPublicCloud() {
    * setFocus are only assigned when the chart mounts, further down.
    */
   createApp(MapControls, {
-    onZoomin: (...args) => zoomIn(...args),
-    onZoomout: (...args) => zoomOut(...args),
-    onCenter: (...args) => setFocus(...args)
+    onZoomin: () => zoomIn(),
+    onZoomout: () => zoomOut(),
+    onCenter: () => setFocus()
   }).mount('#map-controls')
 
   const rerenderChart = () => {
@@ -909,5 +920,6 @@ export default async function initPublicCloud() {
   setupSplitter(rerenderChart)
   window.addEventListener('resize', _.debounce(rerenderChart, 500))
 
-  document.scrollingElement.style.overflow = ''
+  const scrollingElement = document.scrollingElement as HTMLElement
+  scrollingElement.style.overflow = ''
 }
