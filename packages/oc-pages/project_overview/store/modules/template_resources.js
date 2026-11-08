@@ -3,7 +3,7 @@ import _ from 'lodash'
 import { __ } from "~/locale";
 import { lookupCloudProviderAlias, slugify, generateCardId, deepClone as cloneDeep } from 'oc_vue_shared/util';
 import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
-import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates.js';
+import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import { importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
 import {applyInputsSchema, customMerge} from 'oc_vue_shared/lib/node-filter'

@@ -175,7 +175,7 @@ describe('normalizing a blueprint', () => {
 
     it('normalizes resources, deployments and environment connections', async () => {
         const root = exportRoot()
-        root.Resource = {web: {name: 'web', template: 'the_app', connections: [{name: 'db', constraint: {}}], attributes: [{name: 'pw', value: {secret: 'PW'}}]}}
+        root.Resource = {web: {name: 'web', template: 'the_app', connections: [{name: 'db', constraint: {}}, {name: 'old', constraint: {visibility: 'visibile'}}], attributes: [{name: 'pw', value: {secret: 'PW'}}]}}
         root.Deployment = {dep: {name: 'dep', deploymentTemplate: 'aws'}}
         root.DeploymentEnvironment = {prod: {name: 'prod', connections: {primary_provider: {name: 'primary_provider', type: 'Compute', dependencies: []}}}}
         unfurlServerExport.mockResolvedValue(root)
@@ -184,7 +184,8 @@ describe('normalizing a blueprint', () => {
         await store.dispatch('fetchProject', {projectPath: 'org/wp'})
 
         const state = store.state.blueprint
-        expect(state.Resource.web).toMatchObject({type: 'WordPress', visibility: 'inherit', __typename: 'Resource', dependencies: [{name: 'db', visibility: 'visible'}]})
+        // the second was saved with an earlier client's 'visibile' typo
+        expect(state.Resource.web).toMatchObject({type: 'WordPress', visibility: 'inherit', __typename: 'Resource', dependencies: [{name: 'db', visibility: 'visible'}, {name: 'old', visibility: 'visible'}]})
         expect(state.Resource.web.attributes[0].value.get_env).toBe('PW')
         // KNOWN BUG, pinned rather than fixed: the Deployment transform resolves
         // its template through the getters, but templates are committed only

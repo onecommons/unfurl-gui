@@ -1,7 +1,7 @@
 import {uniq} from 'lodash'
 import {unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import {fetchLastCommit} from 'oc_vue_shared/client_utils/projects'
-import {localNormalize} from 'oc_vue_shared/lib/normalize'
+import {localNormalize, dependencyVisibility} from 'oc_vue_shared/lib/normalize'
 import {applyInputsSchema, applyRequirementsFilter} from 'oc_vue_shared/lib/node-filter'
 import { repoToExportParams, fetchTypeRepositories, unfurlServerGetTypes } from  'oc_vue_shared/client_utils/unfurl-server'
 import { deepClone as cloneDeep } from 'oc_vue_shared/util'
@@ -404,7 +404,7 @@ const actions = {
                 resource._ancestors = lookupAncestors(resource, root, true)
 
                 resource.dependencies.forEach((dep: Json) => {
-                    const visibility = dep.visibility || dep.constraint.visibility || 'visible'
+                    const visibility = dependencyVisibility(dep)
                     dep.constraint.visibility = dep.visibility = visibility
                 })
 

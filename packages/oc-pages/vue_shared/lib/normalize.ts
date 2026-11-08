@@ -10,6 +10,12 @@ function normalizeDirectives(directives: string[] | undefined) {
     }
 }
 
+// Earlier clients saved a dependency's visibility as 'visibile'; it meant visible.
+export function dependencyVisibility(dep: {visibility?: string, constraint?: {visibility?: string}}) {
+    const visibility = dep.visibility || dep.constraint?.visibility || 'visible'
+    return visibility == 'visibile' ? 'visible' : visibility
+}
+
 export function normpath(path: unknown) {
     if(typeof path != 'string') return
     if(!path) return path
@@ -196,7 +202,7 @@ const transforms: Record<string, (object: Json, root: Json) => void> = {
         }
 
         resourceTemplate.dependencies.forEach((dep: Json) => {
-            const visibility = dep.visibility || dep.constraint.visibility || 'visible'
+            const visibility = dependencyVisibility(dep)
             dep.constraint.visibility = dep.visibility = visibility
         })
 

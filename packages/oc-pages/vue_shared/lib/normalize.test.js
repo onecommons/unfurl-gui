@@ -119,6 +119,14 @@ describe('localNormalize', () => {
             expect(rt.dependencies[1].constraint.visibility).toBe('visible')
         })
 
+        // earlier clients saved 'visibile'; it means visible
+        it('reads the saved visibility typo as visible', () => {
+            const rt = template({dependencies: [{name: 'db', constraint: {name: 'db', visibility: 'visibile'}, match: 'x'}]})
+            localNormalize(rt, 'ResourceTemplate')
+            expect(rt.dependencies[0].visibility).toBe('visible')
+            expect(rt.dependencies[0].constraint.visibility).toBe('visible')
+        })
+
         it('logs a type it cannot find the source of', () => {
             const error = jest.spyOn(console, 'error').mockImplementation(() => {})
             const rt = template()

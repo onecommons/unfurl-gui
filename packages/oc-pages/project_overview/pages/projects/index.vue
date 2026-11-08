@@ -16,7 +16,7 @@ import { slugify } from 'oc_vue_shared/util'
 import { fetchUserHasWritePermissions, fetchCurrentTag, fetchBranches } from 'oc_vue_shared/client_utils/projects'
 import { blueprintDefaultBranch } from 'oc_vue_shared/mixins/default-branch'
 import { lookupCloudProviderShortName, queryParamVar } from 'oc_vue_shared/util'
-import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates.js'
+import { createDeploymentTemplate } from '../../store/modules/deployment_template_updates'
 import * as routes from '../../router/constants'
 
 const standalone = window.gon.unfurl_gui

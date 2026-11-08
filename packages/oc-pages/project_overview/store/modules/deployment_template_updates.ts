@@ -1,5 +1,5 @@
-import { __ } from "~/locale";
 import _ from 'lodash'
+import type {ActionContext, Module} from '@gitlab/vuex-vue3'
 import {slugify, lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
@@ -21,7 +21,34 @@ export const UPDATE_TYPE = {
 const SECRET_DIRECTIVE = "get_env"
 const UNDERSCORE_PREFIX_WHITELIST = ['__typename', '_sourceinfo']
 
-const visitMutation = () => {}
+// The unfurl export JSON; typed loosely until the payload types exist.
+type Json = Record<string, any>
+
+// What prepared mutations read and write: the records being edited, by
+// typename (ResourceTemplate, DeploymentTemplate, ...) and then name.
+export type Accumulator = Record<string, Record<string, any>>
+
+// One record to write; a null patch deletes it.
+export interface PatchDefinition {
+    typename: string
+    target: string
+    patch: Json | null
+    env?: Record<string, unknown>
+}
+
+// Run against the accumulator when committing; may return further builders.
+export type PreparedMutation = (accumulator: Accumulator) => (PatchDefinition | PreparedMutation)[]
+
+// An input schema, as in a type's inputsSchema
+interface Schema {
+    type?: string
+    properties?: Record<string, Schema>
+    sensitive?: boolean
+    required?: boolean
+    [key: string]: unknown
+}
+
+const visitMutation = (_name: string) => {}
 // const visitMutation = console.log
 
 /*
@@ -49,9 +76,9 @@ const visitMutation = () => {}
  * [1] calls mutating resource templates such as updatePropertyInResourceTemplate, move templates from .DeploymentTemplate[<template>].ResourceTemplate to .ResourceTemplate
 */
 
-function convertFieldToDictionaryIfNeeded(node, field) {
+function convertFieldToDictionaryIfNeeded(node: Json, field: string) {
     if(Array.isArray(node[field])) {
-        const result = {}
+        const result: Json = {}
         for(const el of node[field]) {
             if(el.name) {
                 result[el.name] = el
@@ -65,13 +92,13 @@ function convertFieldToDictionaryIfNeeded(node, field) {
     }
 }
 
-function fieldsToDictionary(node, ...fields) {
+function fieldsToDictionary(node: Json, ...fields: string[]) {
     for(const field of fields) {
         convertFieldToDictionaryIfNeeded(node, field)
     }
 }
 
-function allowFields(node, ...fields) {
+function allowFields(node: Json, ...fields: string[]) {
     for(const field in node) {
         if(field == 'name' || UNDERSCORE_PREFIX_WHITELIST.includes(field)) continue
         if(!fields.includes(field)) {
@@ -80,27 +107,20 @@ function allowFields(node, ...fields) {
     }
 }
 
-function excludePrefixedFields(node) {
+function excludePrefixedFields(node: Json) {
     for(const field in node) {
         if(field.startsWith('_') && !UNDERSCORE_PREFIX_WHITELIST.includes(field)) {
             try {
                 // TODO this can fail if our node is frozen
                 delete node[field]
-            } catch(e) { console.error(`@excludePrefixedFields: ${e.message}`) }
+            } catch(e) { console.error(`@excludePrefixedFields: ${(e as Error).message}`) }
         }
     }
 }
 
-function normalizeEnvName(_name) {
-    let name = _name.startsWith('$')? _name.slice(1) : _name
-    name = name.replace(/-/g, '_')
-    if(! /^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(name)) {
-        name = `_` + key.split('').map(c => c.charCodeAt(0).toString(16)).join('')
-    }
-    return name
-}
-
-function normalizeUpdatedProperties(name, schema, props, envvarPrefix, pathComponents=[], env={}) {
+// Replaces a sensitive value in props with a reference to an environment
+// variable, and returns the variables to write (or destroy).
+function normalizeUpdatedProperties(name: string, schema: Schema | undefined, props: Json, envvarPrefix: string, pathComponents: string[] = [], env: Record<string, unknown> = {}) {
     const _pathComponents = pathComponents.concat([name])
     if(name == '$toscatype') return
 
@@ -114,7 +134,7 @@ function normalizeUpdatedProperties(name, schema, props, envvarPrefix, pathCompo
             normalizeUpdatedProperties(name, schema, innerProps, envvarPrefix, _pathComponents, env)
         })
     } else {
-        const envKey = schema.sensitive && `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')
+        const envKey = (schema.sensitive && `${envvarPrefix}__${_pathComponents.join('_')}`.replace(/-/g, '_')) as string
         let value = props[name]
 
         // allow 0 and empty strings unless the input is required
@@ -146,8 +166,8 @@ function normalizeUpdatedProperties(name, schema, props, envvarPrefix, pathCompo
 }
 
 
-let Serializers
-Serializers = {
+// Clean a patch for committing, per typename; '*' runs on every one.
+const Serializers: Record<string, (record: Json, state: Json) => Json[] | void> = {
     DeploymentEnvironment(env, state) {
         allowFields(env, 'connections', 'instances', 'external', 'repositories')
         fieldsToDictionary(env, 'connections', 'instances')
@@ -157,7 +177,7 @@ Serializers = {
             delete env.instances.primary_provider
         }
 
-        for(const [name, instance] of Object.entries(env.instances)) {
+        for(const [name, instance] of Object.entries(env.instances as Record<string, Json>)) {
             if(lookupCloudProviderAlias(instance?.type)) {
                 env.connections[name] = env.instances[name]
                 delete env.instances[name]
@@ -168,7 +188,7 @@ Serializers = {
             }
         }
 
-        return Object.values(env.instances || {}).concat(Object.values(env.connections))
+        return (Object.values(env.instances || {}) as Json[]).concat(Object.values(env.connections))
     },
     DeploymentTemplate(dt, state) {
         if(state.ResourceTemplate) {
@@ -188,7 +208,7 @@ Serializers = {
     },
     // TODO unit test
     ResourceTemplate(rt, state) {
-        if(rt.__typename == 'Resource') return Serializers.Resource(rt)
+        if(rt.__typename == 'Resource') return Serializers.Resource(rt, state)
 
         if(rt.directives?.includes('select')) {
             allowFields(rt, 'name', 'title', 'directives', 'imported', 'type', 'extends', 'metadata')
@@ -208,7 +228,7 @@ Serializers = {
             rt.metadata.visibility = 'hidden'
         }
 
-        rt.dependencies = rt.dependencies?.filter(dep => {
+        rt.dependencies = rt.dependencies?.filter((dep: Json) => {
             return dep.match || dep.target || dep.constraint.match
         })
 
@@ -216,34 +236,34 @@ Serializers = {
 
         // This won't filter out any required properties because the user shouldn't be allowed
         // to deploy with null required values
-        rt.properties = rt.properties?.filter(prop => {
+        rt.properties = rt.properties?.filter((prop: Json) => {
             return (prop.value ?? null) !== null
         })
 
         // check deep
         // TODO unit test this function
-        _.forOwn(rt.properties, (value, key) => {
+        _.forOwn(rt.properties, (value) => {
             if(typeof value == 'object') {
-                Object.entries(value).forEach(([childKey, childValue]) => {
+                Object.entries(value as Json).forEach(([childKey, childValue]) => {
                     if((childValue ?? null) === null)
-                        delete value[childKey]
+                        delete (value as Json)[childKey]
                 })
             }
         })
 
-        rt.dependencies?.forEach(dep => {
+        rt.dependencies?.forEach((dep: Json) => {
             excludePrefixedFields(dep)
             excludePrefixedFields(dep.constraint)
 
             if(! dep.constraint.visibility) {
-                dep.constraint.visibility = 'visibile' // ensure visibility is committed by the client
+                dep.constraint.visibility = 'visible' // ensure visibility is committed by the client
             }
         })
 
         if(rt.directives?.includes('substitute')) {
             rt.dependencies = rt.dependencies.filter(
-                dep => !(
-                    rt.dependencies.some(otherDep => otherDep.name == dep.match) &&
+                (dep: Json) => !(
+                    rt.dependencies.some((otherDep: Json) => otherDep.name == dep.match) &&
                     !state.ResourceTemplate[dep.match]
                 )
             )
@@ -274,40 +294,27 @@ Serializers = {
         }
         Object.assign(resource, newObject)
     },
-    '*': function(any) {
+    '*': function(any: Json) {
         excludePrefixedFields(any)
         freeze(any)
     }
 }
 
-function throwErrorsFromDeploymentUpdateResponse(...args) {
-    if(!args.length) return
-    let errors
-    let errorArgIndex = args.length
-    let data
-    if(Array.isArray(args[0])) {
-        errors = args[0]
-        errorArgIndex = 0
-    } else if (args.length > 1 && Array.isArray(args[1])) {
-        errors = args[1]
-        errorArgIndex = 1
-    }
-
-    if (errors?.length) throw new Error(errors)
-    data = args[args.length - errorArgIndex]
-    if(data?.errors?.length) throw new Error(data.errors)
-    if(data?.data?.errors?.length) throw new Error(data.data.errors)
-}
-
-export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, inputsSchema}) {
+export function updatePropertyInInstance({environmentName, templateName, propertyName, propertyValue, inputsSchema}: {
+    environmentName: string
+    templateName: string
+    propertyName: string
+    propertyValue: unknown
+    inputsSchema: Schema
+}): PreparedMutation {
     return function(accumulator) {
         visitMutation('updatePropertyInInstance')
         // let _propertyValue = _.cloneDeep(propertyValue)
         let _propertyValue = propertyValue // clone moved to caller
-        const schemaFor = inputsSchema.properties[propertyName]
+        const schemaFor = inputsSchema.properties![propertyName]
         const envvarPrefix = templateName
 
-        const props = {[propertyName]: _propertyValue}
+        const props: Json = {[propertyName]: _propertyValue}
         const env = normalizeUpdatedProperties(propertyName, schemaFor, props, envvarPrefix)
         _propertyValue = props[propertyName]
 
@@ -316,15 +323,15 @@ export function updatePropertyInInstance({environmentName, templateName, propert
         if(!patch.instances) patch.instances = []
 
         let instance = Array.isArray(patch.instances) ?
-            patch.instances.find(i => i.name == templateName) :
+            patch.instances.find((i: Json) => i.name == templateName) :
             patch.instances[templateName]
 
         if(!instance) {
             instance = Array.isArray(patch.connections) ?
-                patch.connections.find(i => i.name == templateName) :
+                patch.connections.find((i: Json) => i.name == templateName) :
                 patch.connections[templateName]
         }
-        const property = instance.properties.find(p => p.name == (propertyName))
+        const property = instance.properties.find((p: Json) => p.name == (propertyName))
         if(property) {
             property.value = _propertyValue
         } else {
@@ -335,13 +342,25 @@ export function updatePropertyInInstance({environmentName, templateName, propert
 }
 
 // I'm not sure if _sourceinfo makes sense for an environment instance, but might as well pass it through
-export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement, ...passthru}) {
+// the fields a new template is created from; anything else passes through
+interface TemplateArgs {
+    type: string | Json
+    name: string
+    title?: string
+    description?: string
+    dependencies?: Json[]
+    dependentName?: string
+    dependentRequirement?: string
+    [key: string]: unknown
+}
+
+export function createEnvironmentInstance({type, name, title, description, dependencies, environmentName, dependentName, dependentRequirement, ...passthru}: TemplateArgs & {environmentName: string}): PreparedMutation {
     return function(accumulator) {
         visitMutation('createEnvironmentInstance')
         const resourceType = typeof(type) == 'string'? Object.values(accumulator['ResourceType']).find(rt => rt.name == type): type
-        let properties
+        let properties: Json[]
         try {
-            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
+            properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: (inProp as Json).default ?? null}))
         } catch(e) { properties = [] }
 
         const template = {
@@ -363,7 +382,7 @@ export function createEnvironmentInstance({type, name, title, description, depen
 
         if(dependentName) {
             const dependent = patch.instances[dependentName]
-            const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+            const dependency = dependent?.dependencies?.find((dep: Json) => dep.name == dependentRequirement)
             if(dependency) {
                 dependency.match = template.name
             }
@@ -375,7 +394,12 @@ export function createEnvironmentInstance({type, name, title, description, depen
     }
 }
 
-export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}) {
+export function deleteEnvironmentInstance({templateName, environmentName, dependentName, dependentRequirement}: {
+    templateName: string
+    environmentName: string
+    dependentName?: string
+    dependentRequirement?: string
+}): PreparedMutation {
     return function(accumulator) {
         visitMutation('deleteEnvironmentInstance')
         const patch = accumulator['DeploymentEnvironment'][environmentName]
@@ -383,7 +407,7 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
             delete patch.instances[templateName]
             if(dependentName) {
                 const dependent = patch.instances[dependentName]
-                const dependency = dependent?.dependencies?.find(dep => dep.name == dependentRequirement)
+                const dependency = dependent?.dependencies?.find((dep: Json) => dep.name == dependentRequirement)
 
                 if(dependency) {
                     dependency.match = null
@@ -399,12 +423,20 @@ export function deleteEnvironmentInstance({templateName, environmentName, depend
 }
 
 // TODO refactor to share implementation with updatePropertyInInstance
-export function updatePropertyInResourceTemplate({templateName, propertyName, propertyValue, deploymentName, inputsSchema}) {
-    const args = arguments[0]
+interface UpdatePropertyArgs {
+    templateName: string
+    propertyName: string
+    propertyValue: unknown
+    deploymentName: string
+    inputsSchema: Schema
+}
+
+export function updatePropertyInResourceTemplate(args: UpdatePropertyArgs): PreparedMutation {
+    const {templateName, propertyName, propertyValue, deploymentName, inputsSchema} = args
     return function(accumulator) {
         visitMutation('updatePropertyInResourceTemplate')
         const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentName]
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
 
         let _propertyValue = propertyValue // cloned at caller
 
@@ -424,18 +456,18 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
             // It doesn't make sense to try to encrypt envvars here.
             // We shouldn't be hitting this code path outside of editing blueprints.
             const resourceTemplate = deploymentTemplate.ResourceTemplate[templateName]
-            const property = resourceTemplate.properties.find(p => p.name == propertyName)
+            const property = resourceTemplate.properties.find((p: Json) => p.name == propertyName)
             property.value = _propertyValue
         } else {
-            const schemaFor = inputsSchema.properties[propertyName]
+            const schemaFor = inputsSchema.properties![propertyName]
             const envvarPrefix = `${deploymentName}__${templateName}`
 
-            const props = {[propertyName]: _propertyValue}
+            const props: Json = {[propertyName]: _propertyValue}
             const env = normalizeUpdatedProperties(propertyName, schemaFor, props, envvarPrefix)
             _propertyValue = props[propertyName]
 
             const patch = accumulator['ResourceTemplate'][templateName]
-            const property = patch.properties.find(p => p.name == propertyName)
+            const property = patch.properties.find((p: Json) => p.name == propertyName)
             property.value = _propertyValue
 
             result.push({typename: 'ResourceTemplate', target: templateName, patch, env})
@@ -445,7 +477,7 @@ export function updatePropertyInResourceTemplate({templateName, propertyName, pr
     }
 }
 
-export function appendResourceTemplateInDT({templateName, deploymentTemplateName}) {
+export function appendResourceTemplateInDT({templateName, deploymentTemplateName}: {templateName: string, deploymentTemplateName: string}): PreparedMutation {
     return function(accumulator) {
         visitMutation('appendResourceTemplateInDT')
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateName] || {}
@@ -455,7 +487,7 @@ export function appendResourceTemplateInDT({templateName, deploymentTemplateName
     }
 }
 
-export function deleteResourceTemplateInDT({templateName, deploymentTemplateName}) {
+export function deleteResourceTemplateInDT({templateName, deploymentTemplateName}: {templateName: string, deploymentTemplateName: string}): PreparedMutation {
     return function(accumulator) {
         visitMutation('deleteResourceTemplateInDT')
         const patch = accumulator['DeploymentTemplate'][deploymentTemplateName] || {}
@@ -467,7 +499,7 @@ export function deleteResourceTemplateInDT({templateName, deploymentTemplateName
     }
 }
 
-export function appendDeploymentTemplateInBlueprint({templateName}) {
+export function appendDeploymentTemplateInBlueprint({templateName}: {templateName: string}): PreparedMutation {
     return function(accumulator) {
         // TODO should we take this as an arg?
         visitMutation('appendDeploymentTemplateInBlueprint')
@@ -483,24 +515,26 @@ export function appendDeploymentTemplateInBlueprint({templateName}) {
     }
 }
 
-export function deleteDeploymentTemplate({slug, name}) {
-    const target = slug || name
+// KNOWN BUG: see "Known bugs to revisit" in the TypeScript plan -- each
+// listed template is deleted with no deploymentTemplateName, which throws.
+export function deleteDeploymentTemplate({slug, name}: {slug?: string, name?: string}): PreparedMutation {
+    const target = (slug || name)!
     return function(accumulator) {
         visitMutation('deleteDeploymentTemplate')
         const deploymentTemplate = accumulator['DeploymentTemplate'][target]
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
         for(const resourceTemplate of deploymentTemplate.resourceTemplates) {
-            result.push(deleteResourceTemplate({templateName: resourceTemplate}))
+            result.push(deleteResourceTemplate({templateName: resourceTemplate} as DeleteTemplateArgs))
         }
 
-        result.push(deleteDeploymentTemplateInBlueprint({templateName: deploymentTemplate.name, blueprintName: deploymentTemplate.blueprint}))
+        result.push(deleteDeploymentTemplateInBlueprint({templateName: deploymentTemplate.name}))
         result.push({typename: 'DeploymentTemplate', target, patch: null})
 
         return result
     }
 }
 
-export function deleteDeploymentTemplateInBlueprint({templateName}) {
+export function deleteDeploymentTemplateInBlueprint({templateName}: {templateName: string}): PreparedMutation {
     return function(accumulator) {
         visitMutation('deleteDeploymentTemplateInBlueprint')
         // TODO should we take this as an arg?
@@ -512,10 +546,17 @@ export function deleteDeploymentTemplateInBlueprint({templateName}) {
     }
 }
 
-export function deleteResourceTemplate({templateName, deploymentTemplateName, dependentName, dependentRequirement}) {
+interface DeleteTemplateArgs {
+    templateName: string
+    deploymentTemplateName: string
+    dependentName?: string
+    dependentRequirement?: string
+}
+
+export function deleteResourceTemplate({templateName, deploymentTemplateName, dependentName, dependentRequirement}: DeleteTemplateArgs): PreparedMutation {
     return function(accumulator) {
         visitMutation('deleteResourceTemplate')
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
         const deploymentTemplate = accumulator.DeploymentTemplate[deploymentTemplateName]
 
         if(deploymentTemplate.ResourceTemplate && deploymentTemplate.ResourceTemplate[templateName]) {
@@ -542,12 +583,19 @@ export function deleteResourceTemplate({templateName, deploymentTemplateName, de
     }
 }
 
-export function appendResourceTemplateInDependent({templateName, dependentName, dependentRequirement, deploymentTemplateName}) {
-    const args = arguments[0]
+interface DependentArgs {
+    templateName: string
+    dependentName: string
+    dependentRequirement: string
+    deploymentTemplateName: string
+}
+
+export function appendResourceTemplateInDependent(args: DependentArgs): PreparedMutation {
+    const {templateName, dependentName, dependentRequirement, deploymentTemplateName} = args
     return function (accumulator) {
         visitMutation('appendResourceTemplateInDependent')
         let patch, typename
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
 
         try {
             const deploymentTemplate = accumulator['DeploymentTemplate'][deploymentTemplateName]
@@ -590,14 +638,14 @@ export function appendResourceTemplateInDependent({templateName, dependentName, 
     }
 }
 
-export function deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName}) {
+export function deleteResourceTemplateInDependent({dependentName, dependentRequirement, deploymentTemplateName}: Omit<DependentArgs, 'templateName'>): PreparedMutation {
     return function (accumulator) {
         visitMutation('deleteResourceTemplateInDependent')
-        let patch
-        let typename
+        let patch: Json | null | undefined
+        let typename: string
 
         function clearMatch() {
-            for(const dependency of patch.dependencies) {
+            for(const dependency of patch!.dependencies) {
                 // this is a weak check, we should see that dependency.match is correct
                 if(dependency.name == dependentRequirement && dependency.match) {
                     dependency.match = null
@@ -629,17 +677,17 @@ export function deleteResourceTemplateInDependent({dependentName, dependentRequi
         }
 
         if(patch) {
-            return [ {typename, target: patch.name, patch} ]
+            return [ {typename: typename!, target: patch.name, patch} ]
         }
 
         return []
     }
 }
 
-export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}) {
+export function createResourceTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}: TemplateArgs & {properties?: Json[], deploymentTemplateName?: string, imported?: string}): PreparedMutation {
     return function(accumulator) {
         visitMutation('createResourceTemplate')
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
 
         if(deploymentTemplateName) {
             result.push(
@@ -649,7 +697,7 @@ export function createResourceTemplate({type, name, title, description, properti
 
         if(dependentName && dependentRequirement) {
             result.push(
-                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName})//(accumulator)[0]
+                appendResourceTemplateInDependent({templateName: name, dependentName, dependentRequirement, deploymentTemplateName: deploymentTemplateName!})//(accumulator)[0]
             )
         }
 
@@ -657,14 +705,14 @@ export function createResourceTemplate({type, name, title, description, properti
         let _properties = properties
         if(!_properties) {
             try {
-                _properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: inProp.default ?? null}))
+                _properties = Object.entries(resourceType.inputsSchema.properties || {}).map(([key, inProp]) => ({name: key, value: (inProp as Json).default ?? null}))
             } catch(e) { _properties = [] }
         }
 
         let _dependencies = dependencies
         // duplicated logic, avoid using
         if(!_dependencies) {
-            _dependencies = resourceType?.requirements?.map(req => ({
+            _dependencies = resourceType?.requirements?.map((req: Json) => ({
                 constraint: req,
                 match: req.match ?? null,
                 target: null,
@@ -691,10 +739,10 @@ export function createResourceTemplate({type, name, title, description, properti
     }
 }
 
-export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}) {
+export function createResourceTemplateInDeploymentTemplate({type, name, title, description, properties, dependencies, deploymentTemplateName, dependentName, dependentRequirement, imported, ...passthru}: TemplateArgs & {properties?: Json[], deploymentTemplateName: string, imported?: string}): PreparedMutation {
     return function(accumulator) {
         visitMutation('createResourceTemplateInDeploymentTemplate')
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
 
         if(dependentName && dependentRequirement) {
             result.push(
@@ -728,24 +776,33 @@ export function createResourceTemplateInDeploymentTemplate({type, name, title, d
     }
 }
 
-function expectParam(paramName, functionName, paramValue) {
+function expectParam(paramName: string, functionName: string, paramValue: unknown) {
     if(!paramValue) {
         throw new Error(`Expected valid ${paramName} in ${functionName} (got ${paramValue})`)
     }
 }
 
-export function createDeploymentTemplate({blueprintName, primary, primaryName, primaryType, name, title, slug, description}) {
+export function createDeploymentTemplate({blueprintName, primary, primaryName, primaryType, name, title, slug, description}: {
+    blueprintName: string
+    primary: string
+    primaryName?: string
+    primaryType: string | Json
+    name?: string
+    title?: string
+    slug?: string
+    description?: string
+}): PreparedMutation {
     expectParam('blueprintName', 'createDeploymentTemplate', blueprintName)
     expectParam('name', 'createDeploymentTemplate', name || slug)
     console.warn('prepared createDeploymentTemplate is untested')
     return function(accumulator) {
         visitMutation('createDeploymentTemplate')
-        const result = []
+        const result: (PatchDefinition | PreparedMutation)[] = []
 
         const type = primaryType
 
         const _slug = slug || name
-        const _name = name || slug
+        const _name = (name || slug)!
 
         const _primaryName = primaryName? primaryName: slugify(`${_name} ${primary}`)
         const patch = {
@@ -776,8 +833,8 @@ export function createDeploymentTemplate({blueprintName, primary, primaryName, p
 }
 
 
-function readCommittedNames(accumulator) {
-    const committedNames = []
+function readCommittedNames(accumulator: Accumulator) {
+    const committedNames: string[] = []
     for(const typename in accumulator) {
         if(['ResourceTemplate', 'ApplicationBlueprint', 'DeploymentTemplate', 'DeploymentEnvironment'].includes(typename)) {
             for(const name in accumulator[typename]) {
@@ -788,7 +845,32 @@ function readCommittedNames(accumulator) {
     return committedNames
 }
 
-const state = () => ({
+interface State {
+    preparedMutations: PreparedMutation[]
+    // mutations before this index are disregarded when asking for unsaved changes
+    effectiveFirstMutation: number
+    accumulator: Accumulator
+    patches: Accumulator
+    deploymentParams: Json
+    path: string | null | undefined
+    projectPath?: string | null
+    environmentScope?: string
+    committedNames: string[]
+    commitMessage: string | null
+    commitBranch: string | null
+    commitBranchIsNew: boolean
+    blueprintBranch: string | null
+    updateType: string | null
+    env: Record<string, unknown>
+    isCommitting: boolean
+    useBaseState: boolean
+    // KNOWN BUG: written instead of preparedMutations; see the TypeScript plan
+    preparedMutation?: PreparedMutation[]
+}
+
+type Context = ActionContext<State, any>
+
+const state = (): State => ({
     preparedMutations: [],
     effectiveFirstMutation: 0,
     accumulator: {},
@@ -807,28 +889,29 @@ const state = () => ({
 })
 
 const getters = {
-    getPreparedMutations(state) { return state.preparedMutations },
-    getAccumulator(state) { return state.accumulator },
-    getPatches(state) { return state.patches },
-    hasPreparedMutations(state) { return state.preparedMutations.length > state.effectiveFirstMutation },
-    safeToNavigateAway(state, getters) { return !getters.hasPreparedMutations && !state.isCommitting},
-    isCommittedName(state) { return function(typename, name) {return state.committedNames.includes(`${typename}.${name}`)}},
+    getPreparedMutations(state: State) { return state.preparedMutations },
+    getAccumulator(state: State) { return state.accumulator },
+    getPatches(state: State) { return state.patches },
+    hasPreparedMutations(state: State) { return state.preparedMutations.length > state.effectiveFirstMutation },
+    safeToNavigateAway(state: State, getters: {hasPreparedMutations: boolean}) { return !getters.hasPreparedMutations && !state.isCommitting},
+    isCommittedName(state: State) { return function(typename: string, name: string) {return state.committedNames.includes(`${typename}.${name}`)}},
     // CRITICAL: ensure this is called
-    getCommitBranch(state) { return state.commitBranch}
+    getCommitBranch(state: State) { return state.commitBranch}
 }
 
 const mutations = {
-    setUpdateObjectPath(state, path) {
+    setUpdateObjectPath(state: State, path: string | null | undefined) {
         if(state.preparedMutations.length > 0) {
             if(state.isCommitting) {
                 throw new Error('Cannot update path while committing')
             }
             console.warn('Tried to update path with uncommitted mutations')
+            // KNOWN BUG: not preparedMutations, so nothing is cleared; see the TypeScript plan
             state.preparedMutation = []
         }
         state.path = path
     },
-    setUpdateObjectProjectPath(state, projectPath) {
+    setUpdateObjectProjectPath(state: State, projectPath: string | null | undefined) {
         if(state.preparedMutations.length > 0) {
             if(state.isCommitting) {
                 throw new Error('Cannot update projectPath while committing')
@@ -838,33 +921,33 @@ const mutations = {
         }
         state.projectPath = projectPath
     },
-    setDeploymentParams(state, deploymentParams) {
+    setDeploymentParams(state: State, deploymentParams: Json) {
         state.deploymentParams = deploymentParams
     },
-    setCommitMessage(state, commitMessage) {
+    setCommitMessage(state: State, commitMessage: string | null) {
         state.commitMessage = commitMessage
     },
-    setEnvironmentScope(state, environmentScope) {
+    setEnvironmentScope(state: State, environmentScope: string) {
         state.environmentScope = environmentScope
     },
-    setCommitBranch(state, commitBranch) {
+    setCommitBranch(state: State, commitBranch: string | null) {
         state.commitBranch = commitBranch
         state.commitBranchIsNew = false
     },
-    setCommitBranchIsNew(state, isNew) {
+    setCommitBranchIsNew(state: State, isNew: boolean) {
         state.commitBranchIsNew = isNew
     },
-    setBlueprintBranch(state, blueprintBranch) {
+    setBlueprintBranch(state: State, blueprintBranch: string | null) {
         state.blueprintBranch = blueprintBranch
     },
-    setUpdateType(state, updateType) {
+    setUpdateType(state: State, updateType: string | null) {
         state.updateType = updateType
     },
-    pushPreparedMutation(state, preparedMutation) {
+    pushPreparedMutation(state: State, preparedMutation: PreparedMutation) {
         state.preparedMutations = [...state.preparedMutations, preparedMutation]
     },
-    applyMutations(state, o) {
-        function applyPatchDefinition(patchDefinition) {
+    applyMutations(state: State, o?: {dryRun?: boolean}) {
+        function applyPatchDefinition(patchDefinition: PatchDefinition | PreparedMutation) {
             if(typeof patchDefinition == 'function') {
                 for(const _patchDefinition of patchDefinition(state.accumulator)) {
                     applyPatchDefinition(_patchDefinition)
@@ -889,7 +972,7 @@ const mutations = {
         }
         if(!o?.dryRun) state.preparedMutations = []
     },
-    resetStagedChanges(state, o) {
+    resetStagedChanges(state: State, o?: {dryRun?: boolean}) {
         state.accumulator = {}
         state.patches = {}
         state.env = {}
@@ -909,20 +992,20 @@ const mutations = {
         }
     },
     // TODO figure out whether this is necessary
-    setBaseState(state, baseState) {
+    setBaseState(state: State, baseState: Accumulator) {
         state.accumulator = baseState
         state.committedNames = readCommittedNames(baseState)
     },
     // this one doesn't try to fetch a blueprint for the accumulator
-    useBaseState(state, baseState) {
+    useBaseState(state: State, baseState: Accumulator) {
         state.accumulator = baseState
         state.committedNames = readCommittedNames(baseState)
         state.useBaseState = true
     },
-    clearPreparedMutations(state) {
+    clearPreparedMutations(state: State) {
         state.preparedMutations = []
     },
-    normalizePatches(state) {
+    normalizePatches(state: State) {
         delete state.patches.DefaultTemplate
         for(const typename of Object.keys(state.patches)){
             for(const record of Object.values(state.patches[typename])) {
@@ -947,35 +1030,35 @@ const mutations = {
             }
         }
     },
-    clientDisregardUncommitted(state) {
+    clientDisregardUncommitted(state: State) {
         state.effectiveFirstMutation = state.preparedMutations.length
     },
-    setIsCommitting(state, isCommitting) {
+    setIsCommitting(state: State, isCommitting: boolean) {
         state.isCommitting = isCommitting
     }
 }
 
 
 const actions = {
-    async fetchRoot({commit, rootGetters}) {
+    async fetchRoot({commit, rootGetters}: Context) {
         const state = rootGetters.getApplicationRoot
         commit('setBaseState', _.cloneDeep(state))
     },
 
-    async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}, o){
+    async sendUpdateSubrequests({state, getters, commit, rootState, rootGetters}: Context, o?: {dryRun?: boolean}){
         // send environment variables before trying to commit changes
         try {
             if(o?.dryRun) {
                 // eslint-disable-next-line no-console -- dryRun's output is the point
                 console.log(state.env, state.environmentScope, state.projectPath)
             } else {
-                await patchEnv(state.env, state.environmentScope, state.projectPath, 0)
+                await patchEnv(state.env as Parameters<typeof patchEnv>[0], state.environmentScope!, state.projectPath!, 0)
             }
         } catch(e) {
             commit(
                 'createError',
                 {
-                    message: `Failed to update secrets -- aborting commit (${e.message})`,
+                    message: `Failed to update secrets -- aborting commit (${(e as Error).message})`,
                     context: {
                         environmentScope: state.environmentScope,
                         projectPath: state.projectPath
@@ -987,10 +1070,10 @@ const actions = {
             return
         }
 
-        const patch = []
+        const patch: Json[] = []
         for(let key in getters.getPatches) {
             const patchesByTypename = getters.getPatches[key]
-            Object.entries(patchesByTypename).forEach(([name, record]) => {
+            Object.entries(patchesByTypename as Record<string, Json | null>).forEach(([name, record]) => {
                 if(record == null) {
                     if(state.committedNames.length == 0 || getters.isCommittedName(key, name)) {
                         patch.push({__deleted: true, name, __typename: key})
@@ -1009,12 +1092,12 @@ const actions = {
         const projectPath = state.projectPath || rootState.project?.globalVars?.projectPath
 
         const project = await(fetchProjectInfo(encodeURIComponent(projectPath)))
-        const projectId = project.id
+        const projectId = project!.id!
 
 
         const token = rootGetters.lookupVariableByEnvironment('UNFURL_PROJECT_TOKEN', '*')
 
-        const variables = {}
+        const variables: Json = {}
 
 
         if(token) {
@@ -1026,7 +1109,7 @@ const actions = {
             })
         }
 
-        let sync, method, path = state.path
+        let sync: Promise<unknown> | undefined, method: string | undefined, path = state.path
 
         if(state.updateType == UPDATE_TYPE.deployment) {
             variables.deployment_path = path || state.deploymentParams?.deployPath
@@ -1091,7 +1174,7 @@ const actions = {
                 if(environmentPatch.__typename != 'DeploymentEnvironment') continue
                 if(!environmentPatch.connections) continue
                 environmentPatch.connections = Object.fromEntries(
-                    Object.entries(environmentPatch.connections).map(([name, connection]) => {
+                    Object.entries(environmentPatch.connections as Record<string, Json>).map(([name, connection]) => {
                         if(connection && !connection.directives?.length) {
                             const {directives, ...withoutDirectives} = connection
                             return [name, withoutDirectives]
@@ -1109,8 +1192,8 @@ const actions = {
                         projectPath,
                         p.name,
                         //guarunteed ordering of primary_provider first
-                        [p.connections.primary_provider].concat(Object.values(p.connections).filter(conn => conn.name != 'primary_provider'))
-                            .map(provider => provider.type)
+                        [p.connections.primary_provider].concat((Object.values(p.connections) as Json[]).filter(conn => conn.name != 'primary_provider'))
+                            .map((provider: Json) => provider.type)
                     ))
             ).catch(e => {
                 // The write goes ahead regardless, so failing the save here
@@ -1133,18 +1216,18 @@ const actions = {
         const branch = state.commitBranch || await getOrFetchCurrentBranch(encodeURIComponent(projectPath))
 
         if (state.commitBranchIsNew && !window.gon.unfurl_gui) {
-            await createBranch(encodeURIComponent(projectPath), branch)
+            await createBranch(encodeURIComponent(projectPath), branch!)
             commit('setCommitBranchIsNew', false)
         }
 
         const post = unfurlServerUpdate({
-            method,
+            method: method!,
             projectPath,
             branch,
             patch,
-            commitMessage: state.commitMessage,
+            commitMessage: state.commitMessage ?? undefined,
             variables
-        }).catch(e => {
+        }).catch((e: Error & {response?: {data?: unknown}}) => {
             commit(
                 'createError',
                 {
@@ -1175,8 +1258,8 @@ const actions = {
         await Promise.all([post, sync])
     },
 
-    async commitPreparedMutations({state, dispatch, commit, getters}, o) {
-        if(!UPDATE_TYPE[state.updateType]) {
+    async commitPreparedMutations({state, dispatch, commit}: Context, o?: {dryRun?: boolean}) {
+        if(!UPDATE_TYPE[state.updateType as keyof typeof UPDATE_TYPE]) {
             throw new Error('Save changes: An update type must be specified before committing mutations')
         }
 
@@ -1204,4 +1287,4 @@ export default {
     mutations,
     actions,
     getters
-}
+} satisfies Module<State, any>
