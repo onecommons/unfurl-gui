@@ -262,7 +262,7 @@ describe('requests', () => {
                 expect(repo.importStatus).toBe(importStatus.PENDING)
 
                 await jest.runAllTimersAsync()
-                await repo.pollPromise
+                await expect(repo.pollPromise).resolves.toBe(true)
                 expect(repo.importStatus).toBe(importStatus.IMPORTED)
                 // first round of status + changes, a back-off, then the second round
                 expect(axios.get.mock.calls.map(([url]) => url)).toEqual([
@@ -285,15 +285,34 @@ describe('requests', () => {
                     url == '/import/github/realtime_changes.json' ? {data: [{id: 99, import_status: 'started'}]} : {})
 
                 repo.pollChanges(10)
-                const abandoned = expect(repo.pollPromise).rejects.toBeUndefined()
+                const first = repo.pollPromise
                 await jest.advanceTimersByTimeAsync(1)
-                repo.pollId = -1
+                repo.pollChanges(10)
 
                 await jest.advanceTimersByTimeAsync(100)
-                await abandoned
+                // settles without rejecting, so a caller's .then needs no .catch
+                await expect(first).resolves.toBe(false)
             } finally {
                 jest.useRealTimers()
             }
+        })
+
+        it('rejects when a poll request fails', async () => {
+            const repo = repoNamed('onecommons/gitlab-oc')
+            axios.get.mockRejectedValue(new Error('Network Error'))
+
+            repo.pollChanges(10)
+            await expect(repo.pollPromise).rejects.toThrow('Network Error')
+        })
+
+        it('rejects when the repo is missing from the changes', async () => {
+            const repo = repoNamed('onecommons/gitlab-oc')
+            repo.id = 99
+            axios.get.mockImplementation(async url =>
+                url == '/import/github/realtime_changes.json' ? {data: [{id: 1, import_status: 'started'}]} : {})
+
+            repo.pollChanges(10)
+            await expect(repo.pollPromise).rejects.toThrow('GitHub import 99 is missing')
         })
     })
 })

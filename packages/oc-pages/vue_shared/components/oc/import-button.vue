@@ -55,8 +55,10 @@ export default {
             }
         },
         emitFinishedImport() {
-          const emit = this.$emit.bind(this, 'importFinished')
-          this.repoImport.pollPromise.then(emit)
+          this.repoImport.pollPromise.then(
+            finished => { if(finished) this.$emit('importFinished') },
+            e => console.error(e),
+          )
         }
     }
 }

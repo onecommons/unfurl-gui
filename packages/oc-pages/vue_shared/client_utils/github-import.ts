@@ -57,7 +57,7 @@ class GithubImport {
     declare externalId?: number
     declare import_status?: string | number | null
     declare pollId?: number
-    declare pollPromise?: Promise<void>
+    declare pollPromise?: Promise<boolean>
 
     constructor(repo: RepoFields) {
         Object.assign(this, repo)
@@ -73,25 +73,23 @@ class GithubImport {
     }
 
     pollChanges(period=1000) {
-        let id
-        id = this.pollId = Date.now()
+        const id = this.pollId = Date.now()
+        this.pollPromise = this.poll(id, period)
+    }
 
-        // eslint-disable-next-line no-async-promise-executor
-        this.pollPromise = new Promise(async(resolve, reject) => {
-            let i = 1
-            while(id == this.pollId) { // don't poll for multiple repos
-                await axios.get('/import/github/status')
-                const changes: {id: number, import_status: string}[] = (await axios.get('/import/github/realtime_changes.json')).data
-                this.import_status = changes.find(change => this.id == change.id)!.import_status
+    // true once the import finishes, false if a newer pollChanges took over
+    private async poll(id: number, period: number): Promise<boolean> {
+        for(let i = 1; id == this.pollId; i++) {
+            await axios.get('/import/github/status')
+            const changes: {id: number, import_status: string}[] = (await axios.get('/import/github/realtime_changes.json')).data
+            const change = changes.find(change => this.id == change.id)
+            if(!change) throw new Error(`GitHub import ${this.id} is missing from realtime_changes`)
+            this.import_status = change.import_status
 
-                if(this.import_status == 'finished') {
-                    resolve()
-                    return
-                }
-                await sleep(period * i++)
-            }
-            reject()
-        })
+            if(this.import_status == 'finished') return true
+            await sleep(period * i)
+        }
+        return false
     }
 
     async importSelf(target_namespace: string) {
