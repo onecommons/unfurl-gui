@@ -24,6 +24,7 @@
     "generate:gitlab-ci": "./scripts/src/generate-ci-tests.js",
     "generate:readme": "./scripts/src/generate-readme.js",
     "lint": "eslint --ext .js,.vue src packages/oc-pages",
+    "typecheck": "vue-tsc --noEmit -p .",
     "apollo": "vue-cli-service apollo:dev --generate-schema",
     "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",
     "apollo:schema:publish": "vue-cli-service apollo:schema:publish",
@@ -105,7 +106,9 @@
     "pngjs": "^7.0.0",
     "prettier": "^1.19.1",
     "thread-loader": "3.0.4",
+    "typescript": "~5.9.3",
     "vue-cli-plugin-apollo": "^0.22.2",
+    "vue-tsc": "^3.3.14",
     "webpack": "^5.97.0",
     "webpack-merge": "5.8.0",
     "webpack-preprocessor-loader": "^1.1.4"

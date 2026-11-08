@@ -1,0 +1,40 @@
+{
+  // Type-checking only: Babel (standalone) and swc (the fork's rspack) strip
+  // types, so nothing here affects either build. See docs/typescript-migration-plan.md.
+  "compilerOptions": {
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "noEmit": true,
+    "strict": true,
+    "allowJs": true,
+    // opt in per file with // @ts-check until most of oc-pages is covered
+    "checkJs": false,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": [],
+    "baseUrl": ".",
+    // mirrors the aliases in vue.config.js and jest.config.js; in the fork these
+    // names point at GitLab's tree, which the declarations in
+    // packages/oc-pages/types describe
+    "paths": {
+      "oc_vue_shared/*": ["packages/oc-pages/vue_shared/*"],
+      "oc_dashboard/*": ["packages/oc-pages/dashboard/*"],
+      "oc_pages/*": ["packages/oc-pages/*"],
+      "oc/*": ["src/assets/javascripts/*"],
+      "~/*": ["src/assets/javascripts/*"]
+    }
+  },
+  // Cypress registers ts-node with this file to load its config, and ts-node then
+  // compiles Cypress's own .js too: with allowJs it rewrites the import() that loads
+  // cypress.config.mjs into a require. The other two options cannot emit CommonJS.
+  "ts-node": {
+    "compilerOptions": {"allowJs": false, "verbatimModuleSyntax": false, "allowImportingTsExtensions": false}
+  },
+  "include": ["packages/oc-pages/**/*.js", "packages/oc-pages/**/*.ts"],
+  "exclude": ["**/node_modules", "packages/oc-pages/**/*.test.js"]
+}

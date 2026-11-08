@@ -57,6 +57,8 @@ jobs:
         # TODO add back ufsv-patch -- --runInBand
       - name: Lint
         run: yarn lint
+      - name: Type check
+        run: yarn typecheck
       # oc-pages runs on @vue/compat in both builds, and the global Vue object
       # is the part of Vue 2 that has no Vue 3 equivalent -- Vue.set, .extend,
       # .component, .prototype, .nextTick and `new Vue` all reach it through
