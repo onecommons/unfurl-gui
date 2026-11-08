@@ -221,6 +221,11 @@ const transforms = {
     },
 }
 
+/**
+ * @param {unknown} object
+ * @param {string | null} [typename]
+ * @param {unknown} [root]
+ */
 export function localNormalize(object, typename=null, root) {
     if(!object) return
     // Caller may hand us a primitive when the export response has a numeric value

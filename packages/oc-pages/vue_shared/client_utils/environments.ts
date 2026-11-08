@@ -9,8 +9,61 @@ import { lookupCloudProviderAlias } from '../util.js'
 import {localNormalize} from '../lib/normalize'
 import { getOrFetchCurrentBranch, fetchLastCommit } from './projects'
 
-export async function fetchGitlabEnvironments(projectPath, environmentName) {
-    let result = []
+// A GitLab environment, as /-/environments.json and the environments API list it.
+interface GitlabEnvironment {
+    id: number
+    name: string
+    stop_path?: string
+    delete_path?: string
+}
+
+interface Template {
+    name?: string
+    type: string
+    _sourceinfo?: {file: string, url: string, repository?: string}
+}
+
+// An unfurl DeploymentEnvironment, as created here and exported by the server.
+export interface DeploymentEnvironment {
+    name: string
+    primary_provider?: Template
+    instances?: Record<string, any>
+    connections?: Record<string, any> | any[]
+    error?: string
+    _dashboard?: string
+    [key: string]: any
+}
+
+export interface LoadError {
+    message: string
+    context: unknown
+    severity: 'critical' | 'major' | 'minor'
+}
+
+interface DeploymentError {
+    deployment: string
+    detail: string
+    url?: string
+    error: unknown
+}
+
+interface EnvironmentVariable {
+    id?: number
+    key: string
+    value: string
+    environment_scope: string
+    [key: string]: unknown
+}
+
+// One project as the provider-dashboard queries return it.
+interface ProviderProject {
+    fullPath: string
+    projectMembers?: {nodes: {accessLevel: {integerValue: number}}[]}
+    environments: {nodes: {name: string, externalUrl: string | null}[]}
+}
+
+export async function fetchGitlabEnvironments(projectPath: string, environmentName?: string): Promise<GitlabEnvironment[]> {
+    let result: GitlabEnvironment[] = []
     // #!if !standalone
 
     const {data} = await axios.get(`/${projectPath}/-/environments.json`)
@@ -27,7 +80,7 @@ export async function fetchGitlabEnvironments(projectPath, environmentName) {
 // gitlabEnvironmentId below answers the same question off a module-level cache
 // and without the filter, so it is subject to both that staleness and the page
 // size. Deleting cannot use it; the two should probably converge on this one.
-export async function lookupEnvironmentId(projectPath, environmentName) {
+export async function lookupEnvironmentId(projectPath: string, environmentName: string): Promise<number> {
     let result = -1
     // #!if !standalone
 
@@ -35,23 +88,23 @@ export async function lookupEnvironmentId(projectPath, environmentName) {
         `/api/v4/projects/${encodeURIComponent(projectPath)}/environments`,
         {params: {name: environmentName}}
     )
-    result = data?.find(env => env.name == environmentName)?.id ?? -1
+    result = data?.find((env: GitlabEnvironment) => env.name == environmentName)?.id ?? -1
 
     // #!endif
     return result
 }
 
 // use prefix='' to use no prefix
-export async function shareEnvironmentVariables(projectPath, sourceEnvironment, targetEnvironment, variables, prefix=null, substitutions=[]) {
+export async function shareEnvironmentVariables(projectPath: string, sourceEnvironment: string, targetEnvironment: string, variables: string[], prefix: string | null = null, substitutions: [string | RegExp, string][] = []) {
     let _prefix = prefix
     if(_prefix === null) {
         _prefix = `_${Date.now().toString(36)}`
     }
 
 
-    const patch = {}
-    const transferredVariables = []
-    for(const environmentVariable of await tryFetchEnvironmentVariables(projectPath)) {
+    const patch: Record<string, EnvironmentVariable> = {}
+    const transferredVariables: string[] = []
+    for(const environmentVariable of await tryFetchEnvironmentVariables(projectPath) as EnvironmentVariable[]) {
         if(environmentVariable.environment_scope != sourceEnvironment) continue
         if(!variables.includes(environmentVariable.key)) continue
         delete environmentVariable.id
@@ -73,7 +126,7 @@ export async function shareEnvironmentVariables(projectPath, sourceEnvironment, 
     }
 }
 
-export async function deleteEnvironmentByName(projectPath, environmentName) {
+export async function deleteEnvironmentByName(projectPath: string, environmentName: string) {
     const environments = await fetchGitlabEnvironments(projectPath, environmentName)
     const env = environments.find(env => env.name == environmentName)
 
@@ -94,7 +147,7 @@ export async function deleteEnvironmentByName(projectPath, environmentName) {
 // environments without reloading. Landing on one and deleting another stopped
 // and deleted the environment still recorded in the dataset -- and landing
 // anywhere the dataset omits it (the index, the home page) sent `undefined`.
-export async function deleteEnvironment(projectPath, environmentName) {
+export async function deleteEnvironment(projectPath: string, environmentName: string) {
     // #!if !standalone
     // Resolved before anything is destroyed, so a name that matches nothing
     // leaves the environment's variables where they are.
@@ -114,12 +167,12 @@ export async function deleteEnvironment(projectPath, environmentName) {
 }
 
 // NOTE try to keep this in sync with commitPreparedMutations
-export async function initUnfurlEnvironment(projectPath, environment, variables={}) {
+export async function initUnfurlEnvironment(projectPath: string, environment: DeploymentEnvironment, variables: {deployment_path?: string, [key: string]: unknown} = {}) {
     const branch = await getOrFetchCurrentBranch(encodeURIComponent(projectPath))
 
-    const requiredTemplates = [...Object.values(environment.instances || {}), environment.primary_provider].filter(tmpl => !!tmpl)
+    const requiredTemplates: Template[] = [...Object.values(environment.instances || {}), environment.primary_provider].filter(tmpl => !!tmpl)
 
-    const sourceInfos = {
+    const sourceInfos: Record<string, NonNullable<Template['_sourceinfo']>> = {
         'ConnectsTo.DigitalOceanEnvironment': {
             "file": "digitalocean/compute.yaml",
             "url": "https://unfurl.cloud/onecommons/std.git"
@@ -165,7 +218,6 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
         method: method,
         patch,
         branch,
-        path: 'unfurl.yaml',
         variables
     })
 
@@ -174,18 +226,20 @@ export async function initUnfurlEnvironment(projectPath, environment, variables=
 
 export async function postGitlabEnvironmentForm() {
     const environmentFormEntries = JSON.parse(sessionStorage['environmentFormEntries'])
-    const environmentFormAction = sessionStorage['environmentFormAction']
+    const environmentFormAction: string = sessionStorage['environmentFormAction']
     try {
         const result = await postFormDataWithEntries(environmentFormAction, environmentFormEntries)
-        if(result.code >= 400) throw new Error()
+        if((result as {code?: number}).code! >= 400) throw new Error()
         return result
     } catch(e) {
-        throw new Error(`Failed to create dashboard environment: ${e.message}`)
+        throw new Error(`Failed to create dashboard environment: ${(e as Error).message}`)
     }
 }
 
-export function connectionsToArray(environment) {
-    if(Array.isArray(environment)) return environment
+export function connectionsToArray(_environment: DeploymentEnvironment | unknown[]) {
+    if(Array.isArray(_environment)) return _environment
+    // rewritten in place from keyed objects to arrays
+    const environment: Record<string, any> = _environment
     if(environment.connections) {
         for(const key in environment.connections) {
             if(isNaN(parseInt(key))) { //// not sure how much of this is still needed
@@ -206,7 +260,13 @@ export function connectionsToArray(environment) {
     return environment
 }
 
-export async function fetchEnvironments(options) {
+export async function fetchEnvironments(options: {
+    fullPath: string
+    includeDeployments?: boolean
+    branch?: string
+    setCurrentBranch?: boolean
+    only?: string
+}) {
     const {fullPath, includeDeployments, branch, setCurrentBranch, only} = {
         includeDeployments: true,
         ...options
@@ -214,12 +274,12 @@ export async function fetchEnvironments(options) {
 
     const projectPath = fullPath
     const format = 'environments'
-    const errors = []
+    const errors: LoadError[] = []
 
     // TODO get the branch passed into fetch environments
     // TODO use ?include_deployments=true
 
-    let data
+    let data: Record<string, any> | undefined
 
     try {
         data = await unfurlServerExport({
@@ -235,7 +295,8 @@ export async function fetchEnvironments(options) {
             // both bypass so the deployment status reflects the new state.
             lastCommitResult: fetchLastCommit(projectPath, branch),
         })
-    } catch(e) {
+    } catch(_e) {
+        const e = _e as Error & {response?: {data?: unknown}}
         const responseData = e.response?.data
         errors.push({
             message: `Load environments: An error occurred during an export request (${e.message})`,
@@ -254,7 +315,7 @@ export async function fetchEnvironments(options) {
 
     try {
 
-    const environments = Object.entries(data.DeploymentEnvironment)
+    const environments = Object.entries(data!.DeploymentEnvironment as Record<string, DeploymentEnvironment>)
         .filter(([name, env]) => {
             if(env.error) {
                 errors.push({
@@ -275,29 +336,37 @@ export async function fetchEnvironments(options) {
 
     for(const env of environments) {
         env._dashboard = fullPath
-        Object.entries(env.instances).forEach(([key, value]) => {
+        Object.entries(env.instances!).forEach(([key, value]) => {
             const title = value.title || value.metadata?.title || key
-            env.instances[key] = {...value, title, name: key}
+            env.instances![key] = {...value, title, name: key}
         })
     }
 
-    const deploymentPaths = Object.values(data.DeploymentPath)
+    const deploymentPaths = Object.values(data!.DeploymentPath) as {name: string, environment: string}[]
 
-    const defaults = data.DeploymentEnvironment.defaults
+    const defaults = data!.DeploymentEnvironment.defaults
 
-    Object.values(data.ResourceType).forEach(resourceType => {
+    Object.values(data!.ResourceType).forEach(resourceType => {
         localNormalize(resourceType, 'ResourceType', null)
     })
 
-    const result = {environments, deploymentPaths, fullPath, defaults, ResourceType: data.ResourceType, errors}
+    const result: {
+        environments: DeploymentEnvironment[]
+        deploymentPaths: typeof deploymentPaths
+        fullPath: string
+        defaults: DeploymentEnvironment
+        ResourceType: Record<string, any>
+        errors: LoadError[]
+        deployments?: any[]
+    } = {environments, deploymentPaths, fullPath, defaults, ResourceType: data!.ResourceType, errors}
 
     if(includeDeployments) {
-        const deploymentErrors = []
+        const deploymentErrors: DeploymentError[] = []
 
         // that filter is expected to be obsolete.
         // Guard against a partial/malformed response where `deployments` is missing —
         // a missing field shouldn't take out the whole environments load.
-        const rawDeployments = data.deployments || []
+        const rawDeployments: any[] = data!.deployments || []
         const deployments = rawDeployments.filter(dep => !dep.ApplicationBlueprint || !Object.keys(dep.ApplicationBlueprint).includes('generic-cloud-provider-implementations'))
         // temporary error before removal so this goes loud
         if(deployments.length != rawDeployments.length) {
@@ -324,7 +393,7 @@ export async function fetchEnvironments(options) {
             try {
                 const [deploymentName, deploymentObject] = Object.entries(deployment.Deployment)[0]
 
-                const environment = deploymentPaths.find(dp => (new RegExp(`(/|^)${deploymentName}$`).test(dp.name))).environment
+                const environment = deploymentPaths.find(dp => (new RegExp(`(/|^)${deploymentName}$`).test(dp.name)))!.environment
                 deployment._environment = environment || 'defautlts'
 
                 if(deployment.ResourceType) {
@@ -334,9 +403,9 @@ export async function fetchEnvironments(options) {
                 localNormalize(deploymentObject, 'Deployment', deployment)
             } catch(e) {
                 deploymentErrors.push({
-                    deployment: Object.values(deployment.Deployment)[0].title,
+                    deployment: (Object.values(deployment.Deployment)[0] as {title: string}).title,
                     detail: 'Unexpected shape for deployment',
-                    error: e.message,
+                    error: (e as Error).message,
                 })
             }
         })
@@ -360,7 +429,8 @@ export async function fetchEnvironments(options) {
 
     return result
 
-    } catch(e) {
+    } catch(_e) {
+        const e = _e as Error
         // A throw here means the export response was successful but had an unexpected
         // shape (missing/null field, etc.). Surface it as a structured error rather
         // than letting it escape as an uncaught TypeError that breaks downstream pages.
@@ -381,30 +451,30 @@ export async function fetchEnvironments(options) {
     }
 }
 
-let _gitlabProjectEnvironments = {}
-export async function gitlabProjectEnvironments(projectPath) {
+let _gitlabProjectEnvironments: Record<string, Promise<GitlabEnvironment[]> | undefined> = {}
+export async function gitlabProjectEnvironments(projectPath: string) {
     const env = _gitlabProjectEnvironments[projectPath]
     if(env) return env
     return _gitlabProjectEnvironments[projectPath] = (() => axios.get(`/api/v4/projects/${encodeURIComponent(projectPath)}/environments`).then(res => res.data))()
 }
 
-export async function gitlabEnvironmentId(projectPath, environmentName) {
+export async function gitlabEnvironmentId(projectPath: string, environmentName: string) {
     const environments = await gitlabProjectEnvironments(projectPath)
-    return environments.find(env => env.name == environmentName)?.id
+    return environments.find((env: GitlabEnvironment) => env.name == environmentName)?.id
 }
 
-function encodeProviderString(providers) {
+function encodeProviderString(providers: string[]) {
     return `http://localhost/${encodeURIComponent(providers.join(','))}`
 }
 
-function decodeProviderString(s) {
+function decodeProviderString(s: string | null) {
     return s && decodeURIComponent((new URL(s)).pathname.slice(1)).split(',')
 }
 
-export async function declareAvailableProviders(projectPath, environmentName, providerTypes) {
+export async function declareAvailableProviders(projectPath: string, environmentName: string, providerTypes: string[]) {
     if(window.gon.unfurl_gui) return
 
-    const providers = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
+    const providers: (string | undefined)[] = _.uniqWith(providerTypes.map(lookupCloudProviderAlias), _.isEqual)
 
     if(providers.some(p => !p)) {
         throw new Error(`Set up cloud providers: unknown provider types among ${JSON.stringify(providerTypes)}`)
@@ -418,13 +488,15 @@ export async function declareAvailableProviders(projectPath, environmentName, pr
     axios.put(
         `/api/v4/projects/${encodeURIComponent(projectPath)}/environments/${environmentId}`,
         {
-            external_url: encodeProviderString(providers)
+            external_url: encodeProviderString(providers as string[])
         }
     )
 }
 
 class DashboardProviders {
-    constructor(data) {
+    project: ProviderProject
+
+    constructor(data: {project: ProviderProject}) {
         this.project = data.project
     }
 
@@ -437,20 +509,20 @@ class DashboardProviders {
     }
 
     get accessLevel() {
-        return this.project.projectMembers.nodes[0].accessLevel.integerValue
+        return this.project.projectMembers!.nodes[0].accessLevel.integerValue
     }
 
     get providersByEnvironment() {
-        const result = {}
+        const result: Record<string, ReturnType<typeof decodeProviderString>> = {}
         this.environments.forEach(env => {
             result[env.name] = decodeProviderString(env.externalUrl)
         })
         return result
     }
 
-    primaryProviderFor(environmentName) {
+    primaryProviderFor(environmentName: string) {
         try {
-            return this.providersByEnvironment[environmentName][0]
+            return this.providersByEnvironment[environmentName]![0]
         } catch(e) {
             return null
         }
@@ -505,10 +577,10 @@ export async function fetchAvailableProviderDashboards(minAccessLevel=0) {
         throw new Error(`Load cloud providers: could not read list of providers`)
     }
 
-    return projects.map(p => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
+    return projects.map((p: {project: ProviderProject}) => new DashboardProviders(p)).filter(p => p.accessLevel >= minAccessLevel)
 }
 
-export const fetchDashboardProviders = _.memoize(async function (projectPath) {
+export const fetchDashboardProviders = _.memoize(async function (projectPath: string) {
     if(window.gon.unfurl_gui) {
         return null
     }
