@@ -28,6 +28,25 @@ function isStackedCard(rt, state, getters) {
         : parentDependencies.some(dep => dep.target == rt.name)
 }
 
+// The titles a requirement's match leads to: a shown dependency's own, and through
+// any other to what it matches. Matches can point back up the graph.
+function walkMatchChildren(state, requirement, seen) {
+    const match = typeof requirement == 'string'? requirement:
+        state.context == 'deployment' ? requirement.target : requirement.match
+    if(seen.has(match)) return []
+    seen.add(match)
+    const resourceTemplate = state.resourceTemplates[match]
+    let children = []
+    for (const dep of resourceTemplate?.dependencies || []) {
+        if (dep.constraint.visibility === 'visible' && dep?.completionStatus) {
+            children.push(state.resourceTemplates[dep.match]?.title)
+        } else if (dep.match) {
+            children = children.concat(walkMatchChildren(state, dep.match, seen))
+        }
+    }
+    return children
+}
+
 const baseState = () => ({
     deploymentTemplate: {},
     resourceTemplates: {},
@@ -129,6 +148,8 @@ const mutations = {
 
     removeCard(state, {templateName}) {
         delete state.resourceTemplates[templateName]
+        // deployTooltip reads every card's statuses
+        delete state.inputValidationStatus[templateName]
         state.resourceTemplates = {...state.resourceTemplates}
     },
 
@@ -1267,25 +1288,8 @@ const getters = {
         return state.context != 'environment' && rootGetters.lookupConnection(_state.lastFetchedFrom.environmentName, match)?.title;
     },
 
-    resolveRequirementMatchChildren: (_state, getters) => function (requirement) {
-        const match = typeof requirement == 'string'? requirement:
-            state.context == 'deployment' ? requirement.target : requirement.match
-        const resourceTemplate = _state.resourceTemplates[match]
-        let children = []
-        if (resourceTemplate?.dependencies) {
-            for (const dep of resourceTemplate?.dependencies) {
-                if (dep.constraint.visibility === 'visible' && dep?.completionStatus) {
-                    // dependency is visible && there is completionStatus field (i think the status doesn't matter here)
-                    children.push(_state.resourceTemplates[dep.match]?.title)
-                } else {
-                    // dependency is hidden or inherit || no completionStatus field
-                    if (dep.match) {
-                        children = children.concat(getters.resolveRequirementMatchChildren(dep.match))
-                    }
-                }
-            }
-        }
-        return children
+    resolveRequirementMatchChildren: (_state) => function (requirement) {
+        return walkMatchChildren(_state, requirement, new Set())
     },
     cardInputsAreValid(state) {
         return function(_card) {
@@ -1592,7 +1596,8 @@ const getters = {
     deployTooltip(state, getters) {
         if(getters.cardIsValid(getters.getPrimaryCard)) return null
 
-        const statuses = Object.values(getters.getValidationStatuses)
+        // getValidationStatuses maps each card to its statuses by input path
+        const statuses = Object.values(getters.getValidationStatuses).flatMap(byPath => Object.values(byPath))
 
         if(statuses.includes('error')) {
             return 'Some components have missing or invalid values'
@@ -1650,10 +1655,10 @@ const getters = {
 
             const allTemplates = _.union(
                 Object.keys(state.resourceTemplates),
-                rootGetters.topLevelTemplates,
+                rootGetters.topLevelTemplates.map(rt => rt.name),
                 rootGetters.localResourceTemplates(
                     getters.getDeploymentTemplate?.source || getters.getDeploymentTemplate?.name
-                ),
+                ).map(rt => rt.name),
             ).map(getters.dtResolveResourceTemplate)
 
             result.push(...allTemplates.filter(rt => {
