@@ -159,8 +159,18 @@ describe('postGitlabEnvironmentForm', () => {
     })
 
     it('wraps a failure', async () => {
-        forms.postFormDataWithEntries.mockRejectedValue(new Error('422'))
-        await expect(envs.postGitlabEnvironmentForm()).rejects.toThrow('Failed to create dashboard environment: 422')
+        forms.postFormDataWithEntries.mockRejectedValue(new Error('Network Error'))
+        await expect(envs.postGitlabEnvironmentForm()).rejects.toThrow('Failed to create dashboard environment: Network Error')
+    })
+
+    // EnvironmentsController#create answers 400 with errors.full_messages
+    it('reports GitLab\'s reasons rather than the status', async () => {
+        forms.postFormDataWithEntries.mockRejectedValue(Object.assign(new Error('Request failed with status code 400'), {
+            response: {status: 400, data: {message: ['Name has already been taken', 'Name is too long']}},
+        }))
+        await expect(envs.postGitlabEnvironmentForm()).rejects.toThrow(
+            'Failed to create dashboard environment: Name has already been taken, Name is too long'
+        )
     })
 })
 
@@ -286,6 +296,13 @@ describe('declareAvailableProviders', () => {
         const [url, body] = axios.put.mock.calls[0]
         expect(url).toBe('/api/v4/projects/org%2Fdash/environments/5')
         expect(decodeURIComponent(new URL(body.external_url).pathname.slice(1)).split(',')).toHaveLength(1)
+    })
+
+    it('fails when GitLab refuses the update', async () => {
+        axios.get.mockResolvedValue({data: [{name: 'prod', id: 5}]})
+        axios.put.mockRejectedValue(new Error('403'))
+        await expect(envs.declareAvailableProviders('org/dash', 'prod', ['unfurl.relationships.ConnectsTo.AWSAccount']))
+            .rejects.toThrow('403')
     })
 
     it('does nothing in standalone', async () => {

@@ -228,11 +228,14 @@ export async function postGitlabEnvironmentForm() {
     const environmentFormEntries = JSON.parse(sessionStorage['environmentFormEntries'])
     const environmentFormAction: string = sessionStorage['environmentFormAction']
     try {
-        const result = await postFormDataWithEntries(environmentFormAction, environmentFormEntries)
-        if((result as {code?: number}).code! >= 400) throw new Error()
-        return result
-    } catch(e) {
-        throw new Error(`Failed to create dashboard environment: ${(e as Error).message}`)
+        // axios rejects a 4xx/5xx itself
+        return await postFormDataWithEntries(environmentFormAction, environmentFormEntries)
+    } catch(_e) {
+        // a refused create carries GitLab's validation errors, which say why
+        const e = _e as Error & {response?: {data?: {message?: string | string[]}}}
+        const reasons = e.response?.data?.message
+        const message = Array.isArray(reasons) ? reasons.join(', ') : reasons || e.message
+        throw new Error(`Failed to create dashboard environment: ${message}`)
     }
 }
 
@@ -485,7 +488,7 @@ export async function declareAvailableProviders(projectPath: string, environment
         throw new Error(`Set up cloud providers: could not lookup environment ID for ${environmentName} in ${projectPath}`)
     }
 
-    axios.put(
+    await axios.put(
         `/api/v4/projects/${encodeURIComponent(projectPath)}/environments/${environmentId}`,
         {
             external_url: encodeProviderString(providers as string[])

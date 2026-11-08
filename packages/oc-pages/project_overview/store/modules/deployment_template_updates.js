@@ -1112,7 +1112,20 @@ const actions = {
                         [p.connections.primary_provider].concat(Object.values(p.connections).filter(conn => conn.name != 'primary_provider'))
                             .map(provider => provider.type)
                     ))
-            )
+            ).catch(e => {
+                // The write goes ahead regardless, so failing the save here
+                // would misreport it. Only the GitLab environment's provider
+                // record is missing.
+                commit(
+                    'createError',
+                    {
+                        message: `Saved, but the environment's cloud providers could not be recorded in GitLab (${e.message})`,
+                        context: e.response?.data || e,
+                        severity: 'major'
+                    },
+                    {root: true}
+                )
+            })
         }
 
         // current-then-default: updates must land on (and key sessionStorage by)
@@ -1168,16 +1181,21 @@ const actions = {
         }
 
         commit('setIsCommitting', true)
-        let dryRun = o?.dryRun
-        if(!state.useBaseState) {
-            await dispatch('fetchRoot')
+        // A failure keeps the staged changes for a retry, but must not leave us
+        // committing: that blocks navigation and every later path change.
+        try {
+            let dryRun = o?.dryRun
+            if(!state.useBaseState) {
+                await dispatch('fetchRoot')
+            }
+            commit('applyMutations', {dryRun})
+            commit('normalizePatches')
+            const result = await dispatch('sendUpdateSubrequests', {dryRun})
+            commit('resetStagedChanges', {dryRun})
+            return result
+        } finally {
+            commit('setIsCommitting', false)
         }
-        commit('applyMutations', {dryRun})
-        commit('normalizePatches')
-        const result = await dispatch('sendUpdateSubrequests', {dryRun})
-        commit('resetStagedChanges', {dryRun})
-        commit('setIsCommitting', false)
-        return result
     }
 }
 
