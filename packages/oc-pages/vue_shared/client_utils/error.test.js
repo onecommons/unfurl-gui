@@ -23,4 +23,18 @@ describe('notFoundError', () => {
         expect(document.getElementById('404-overlay')).toBeNull()
         expect(document.title).toBe('Dashboard')
     })
+
+    // PageNotFound unmounts on navigation, which can beat the 404 page's fetch
+    it('stays removed when removed before the 404 page has loaded', async () => {
+        let respond
+        global.fetch = jest.fn(() => new Promise(resolve => { respond = resolve }))
+
+        const shown = notFoundError('Gone')
+        removeNotFoundError()
+        respond({text: () => Promise.resolve('<h1>404</h1>')})
+        await shown
+
+        expect(document.getElementById('404-overlay')).toBeNull()
+        expect(document.title).toBe('Dashboard')
+    })
 })

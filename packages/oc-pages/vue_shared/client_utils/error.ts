@@ -6,7 +6,6 @@ export async function notFoundError(title='The page you were looking for cannot 
     document.title = title
     const overlay = document.createElement('div')
     overlay.setAttribute('id', '404-overlay')
-    const content = await fetch('/404.html').then(res => res.text())
     overlay.style.backgroundColor = 'white'
     overlay.style.width = '100vw'
     overlay.style.height = '100vh'
@@ -15,7 +14,11 @@ export async function notFoundError(title='The page you were looking for cannot 
     overlay.style.top = '0'
     overlay.style.zIndex = '100000'
 
+    // Mounted before the fetch, so a removal while the page loads finds it.
     document.body.appendChild(overlay)
+    const content = await fetch('/404.html').then(res => res.text())
+    if(!overlay.isConnected) return
+
     const shadow = overlay.attachShadow({mode: 'closed'})
     const body = document.createElement('body')
     shadow.append(body)
