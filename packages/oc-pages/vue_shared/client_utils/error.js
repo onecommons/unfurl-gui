@@ -25,7 +25,7 @@ export async function notFoundError(title='The page you were looking for cannot 
 }
 
 export function removeNotFoundError() {
-    const overlay = document.querySelector('#404-oeverlay')
+    const overlay = document.getElementById('404-overlay')
     if(overlay) {
         document.body.removeChild(overlay)
         document.title = previousTitle
