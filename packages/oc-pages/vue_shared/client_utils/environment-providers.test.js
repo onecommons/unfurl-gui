@@ -44,6 +44,21 @@ describe('environment providers client', () => {
             expect(await fetchProvider(PROJECT_PATH, ENVIRONMENT)).toBe(null)
         })
 
+        it('resolves null for the sign-in page an anonymous request gets', async () => {
+            axios.get.mockResolvedValue({data: '<html>Sign in</html>'})
+
+            expect(await fetchProvider(PROJECT_PATH, ENVIRONMENT)).toBe(null)
+        })
+
+        it('rethrows other failures, using a 422 message', async () => {
+            axios.get.mockRejectedValue(httpError(500, {}))
+            await expect(fetchProvider(PROJECT_PATH, ENVIRONMENT))
+                .rejects.toThrow('Request failed with status code 500')
+
+            axios.get.mockRejectedValue(httpError(422, {message: 'Google token expired'}))
+            await expect(fetchProvider(PROJECT_PATH, ENVIRONMENT)).rejects.toThrow('Google token expired')
+        })
+
         it('does not call the fork endpoint standalone', async () => {
             window.gon = {unfurl_gui: true}
 
@@ -77,6 +92,20 @@ describe('environment providers client', () => {
     })
 
     describe('deleteProvider', () => {
+        it('deletes and reports success', async () => {
+            axios.delete.mockResolvedValue({})
+
+            expect(await deleteProvider(PROJECT_PATH, ENVIRONMENT)).toBe(true)
+            expect(axios.delete).toHaveBeenCalledWith(BASE)
+        })
+
+        it('rethrows a failure other than 403/404', async () => {
+            axios.delete.mockRejectedValue(httpError(500, {}))
+
+            await expect(deleteProvider(PROJECT_PATH, ENVIRONMENT))
+                .rejects.toThrow('Request failed with status code 500')
+        })
+
         it('reports an environment that had none as not deleted', async () => {
             axios.delete.mockRejectedValue(httpError(404, {}))
 
