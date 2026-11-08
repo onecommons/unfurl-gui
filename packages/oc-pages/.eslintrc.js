@@ -49,9 +49,10 @@ module.exports = {
       files: ["*.ts"],
       // The vue rules need vue-eslint-parser on top; it hands the script to
       // the TS parser. v6 is the last line that supports eslint 7; it
-      // predates TS 5.9 but parses it.
+      // predates TS 5.9 but parses it. Resolved from the repo root: by name it
+      // finds oc-pages' own nested 2.x, which cannot parse TS 4+ syntax.
       parserOptions: {
-        parser: "@typescript-eslint/parser",
+        parser: require.resolve("@typescript-eslint/parser", {paths: [`${__dirname}/../..`]}),
         warnOnUnsupportedTypeScriptVersion: false,
       },
     },
