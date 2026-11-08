@@ -20,8 +20,46 @@ export const importStatus = {
 }
 
 
+// GitLab's /import/github/status.json, which this merges into GithubImport.
+interface ProviderRepo {
+    id: number
+    full_name: string
+    sanitized_name: string
+    provider_link: string
+}
+
+interface ImportedProject {
+    id: number
+    full_path?: string
+    import_source?: string
+    import_status: string
+    provider_link: string
+}
+
+interface ImportStatusResponse {
+    provider_repos: ProviderRepo[]
+    imported_projects: ImportedProject[]
+    incompatible_repos: unknown[]
+}
+
+type RepoFields = Partial<Omit<ProviderRepo & ImportedProject, 'import_status'>> & {
+    externalName?: string
+    externalId?: number
+    import_status?: string | number | null
+}
+
 class GithubImport {
-    constructor(repo) {
+    // `declare`: filled by Object.assign, so no field may be emitted to
+    // overwrite it.
+    declare id?: number
+    declare sanitized_name?: string
+    declare externalName?: string
+    declare externalId?: number
+    declare import_status?: string | number | null
+    declare pollId?: number
+    declare pollPromise?: Promise<void>
+
+    constructor(repo: RepoFields) {
         Object.assign(this, repo)
     }
 
@@ -38,12 +76,13 @@ class GithubImport {
         let id
         id = this.pollId = Date.now()
 
+        // eslint-disable-next-line no-async-promise-executor
         this.pollPromise = new Promise(async(resolve, reject) => {
             let i = 1
             while(id == this.pollId) { // don't poll for multiple repos
                 await axios.get('/import/github/status')
-                const changes = (await axios.get('/import/github/realtime_changes.json')).data
-                this.import_status = changes.find(change => this.id == change.id).import_status
+                const changes: {id: number, import_status: string}[] = (await axios.get('/import/github/realtime_changes.json')).data
+                this.import_status = changes.find(change => this.id == change.id)!.import_status
 
                 if(this.import_status == 'finished') {
                     resolve()
@@ -55,7 +94,7 @@ class GithubImport {
         })
     }
 
-    async importSelf(target_namespace) {
+    async importSelf(target_namespace: string) {
         const response = await axios.post('/import/github.json', {target_namespace, new_name: this.sanitized_name, ci_cd_only: false, repo_id: this.externalId})
 
         Object.assign(this, response.data)
@@ -66,12 +105,14 @@ class GithubImport {
 }
 
 export class GithubImportHandler {
-    constructor(data) {
-        this.status = 0
-        this.imported_projects = []
-        this.incompatible_repos = []
-        this.provider_repos = []
-        this.repos = []
+    status = 0
+    imported_projects: ImportedProject[] = []
+    incompatible_repos: unknown[] = []
+    provider_repos: ProviderRepo[] = []
+    repos: GithubImport[] = []
+    loadReposPromise: Promise<void> | undefined = undefined
+
+    constructor(data?: ImportStatusResponse) {
         if(data) {
             this.status = AUTHENTICATED
             Object.assign(this, data)
@@ -80,7 +121,7 @@ export class GithubImportHandler {
     }
 
     mapRepos() {
-        const byProviderLink = {}
+        const byProviderLink: Record<string, RepoFields> = {}
         for(const repo of this.provider_repos) {
             byProviderLink[repo.provider_link] = {
                 ...repo,
@@ -99,7 +140,7 @@ export class GithubImportHandler {
     }
 
     loadRepos() {
-        async function loadReposInner() {
+        const loadReposInner = async () => {
             try {
                 const result = await axios.get('/import/github/status.json')
                 if(result.status < 300) {
@@ -109,7 +150,7 @@ export class GithubImportHandler {
                 }
             } catch(e) {
                 console.error(e)
-                if(e.request.status === 0) {
+                if((e as {request: {status: number}}).request.status === 0) {
                     this.status = UNAUTHENTICATED
                     // CORS redirect
                 } else {
@@ -118,7 +159,7 @@ export class GithubImportHandler {
             }
         }
 
-        const promise = loadReposInner.apply(this)
+        const promise = loadReposInner()
         this.loadReposPromise = promise
 
         return promise
@@ -129,15 +170,11 @@ export class GithubImportHandler {
         return this.repos
     }
 
-    findRepo(externalName) {
+    findRepo(externalName: string) {
         return this.repos.find(repo => repo.externalName == externalName)
     }
 
-    getImportStatus(externalName) {
+    getImportStatus(externalName: string) {
         return this.findRepo(externalName)?.importStatus
-    }
-
-    async importRepo(externalName) {
-        return await this.findRepo(externalName).importSelf() 
     }
 }

@@ -1,6 +1,6 @@
 jest.mock("~/lib/utils/axios_utils", () => jest.fn())
 
-import {GithubImportHandler, oauthStatus, importStatus} from './github-import.js'
+import {GithubImportHandler, oauthStatus, importStatus} from './github-import'
 import _ from 'lodash'
 
 let importHandler
@@ -201,3 +201,99 @@ const mockData = {
     ],
     "incompatible_repos": []
 }
+
+describe('requests', () => {
+    let axios
+    beforeEach(() => {
+        axios = require('~/lib/utils/axios_utils')
+        axios.get = jest.fn()
+        axios.post = jest.fn()
+    })
+
+    describe('loadRepos', () => {
+        it('loads and maps the repos when authenticated', async () => {
+            axios.get.mockResolvedValue({status: 200, data: _.cloneDeep(mockData)})
+            const handler = new GithubImportHandler()
+
+            await handler.loadRepos()
+
+            expect(axios.get).toHaveBeenCalledWith('/import/github/status.json')
+            expect(handler.status).toBe(oauthStatus.AUTHENTICATED)
+            expect(await handler.listRepos()).toBe(handler.repos)
+            expect(handler.getImportStatus('onecommons/unfurl-gui')).toBe(importStatus.IMPORTED)
+        })
+
+        // the status endpoint redirects to GitHub's OAuth page when there is no
+        // token, which the browser refuses cross-origin
+        it('is unauthenticated when the request is blocked by CORS', async () => {
+            jest.spyOn(console, 'error').mockImplementation(() => {})
+            axios.get.mockRejectedValue(Object.assign(new Error('Network Error'), {request: {status: 0}}))
+            const handler = new GithubImportHandler()
+
+            await handler.loadRepos()
+
+            expect(handler.status).toBe(oauthStatus.UNAUTHENTICATED)
+            expect(handler.repos).toEqual([])
+        })
+    })
+
+    describe('importing a repo', () => {
+        const repoNamed = name => importHandler.findRepo(name)
+
+        it('posts the import and polls until it finishes', async () => {
+            jest.useFakeTimers()
+            try {
+                const repo = repoNamed('onecommons/gitlab-oc')
+                axios.post.mockResolvedValue({data: {id: 99, import_status: 'scheduled'}})
+                axios.get.mockImplementation(async url => {
+                    if(url != '/import/github/realtime_changes.json') return {}
+                    const status = axios.get.mock.calls.length < 4 ? 'started' : 'finished'
+                    return {data: [{id: 1, import_status: 'started'}, {id: 99, import_status: status}]}
+                })
+
+                await repo.importSelf('my-group')
+
+                expect(axios.post).toHaveBeenCalledWith('/import/github.json', {
+                    target_namespace: 'my-group',
+                    new_name: repo.sanitized_name,
+                    ci_cd_only: false,
+                    repo_id: repo.externalId,
+                })
+                expect(repo.importStatus).toBe(importStatus.PENDING)
+
+                await jest.runAllTimersAsync()
+                await repo.pollPromise
+                expect(repo.importStatus).toBe(importStatus.IMPORTED)
+                // first round of status + changes, a back-off, then the second round
+                expect(axios.get.mock.calls.map(([url]) => url)).toEqual([
+                    '/import/github/status',
+                    '/import/github/realtime_changes.json',
+                    '/import/github/status',
+                    '/import/github/realtime_changes.json',
+                ])
+            } finally {
+                jest.useRealTimers()
+            }
+        })
+
+        it('abandons a poll that a newer one replaced', async () => {
+            jest.useFakeTimers()
+            try {
+                const repo = repoNamed('onecommons/gitlab-oc')
+                repo.id = 99
+                axios.get.mockImplementation(async url =>
+                    url == '/import/github/realtime_changes.json' ? {data: [{id: 99, import_status: 'started'}]} : {})
+
+                repo.pollChanges(10)
+                const abandoned = expect(repo.pollPromise).rejects.toBeUndefined()
+                await jest.advanceTimersByTimeAsync(1)
+                repo.pollId = -1
+
+                await jest.advanceTimersByTimeAsync(100)
+                await abandoned
+            } finally {
+                jest.useRealTimers()
+            }
+        })
+    })
+})
