@@ -1,5 +1,12 @@
+// @ts-check
 import axios from '~/lib/utils/axios_utils'
 
+/**
+ * @typedef {{type: string | null}} Note
+ * @typedef {{notes: Note[]}} Discussion
+ */
+
+/** @param {Discussion[]} discussions */
 export function countComments(discussions) {
     let count = 0
 
@@ -12,8 +19,9 @@ export function countComments(discussions) {
     return count
 }
 
+/** @param {string} commentsIssueUrl */
 export async function lookupNumberOfComments(commentsIssueUrl) {
     const discussions = (await axios.get(`${commentsIssueUrl}/discussions.json`))?.data
 
-    return countComments(discussions)
+    return countComments(/** @type {Discussion[]} */ (discussions))
 }

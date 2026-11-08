@@ -1,5 +1,7 @@
+// @ts-check
 import {isReactive, isReadonly, markRaw} from 'vue'
 
+/** @param {number} period milliseconds */
 export function sleep(period) {
     return new Promise(resolve => setTimeout(resolve, period))
 }
@@ -16,15 +18,26 @@ export function sleep(period) {
  * So freeze only what is not already reactive, and mark it first so Vue never
  * wraps it later either.
  */
+/**
+ * @template T
+ * @param {T} obj
+ * @returns {T}
+ */
 export const freeze = obj => {
   if (!obj || typeof obj !== 'object' || isReactive(obj) || isReadonly(obj)) return obj;
   return Object.freeze(markRaw(obj));
 };
 
+/**
+ * @template T
+ * @param {T} obj
+ * @returns {T}
+ */
 export const deepFreeze = obj => {
   if (!obj || typeof obj !== 'object' || isReactive(obj) || isReadonly(obj)) return obj;
-  Object.keys(obj).forEach(prop => {
-    if (obj[prop] && typeof obj[prop] === 'object') deepFreeze(obj[prop]);
+  const record = /** @type {Record<string, unknown>} */ (obj);
+  Object.keys(record).forEach(prop => {
+    if (record[prop] && typeof record[prop] === 'object') deepFreeze(record[prop]);
   });
   return Object.freeze(markRaw(obj));
 };

@@ -1,3 +1,5 @@
+// @ts-check
+/** @type {string} */
 let previousTitle
 
 export async function notFoundError(title='The page you were looking for cannot be found (404)') {

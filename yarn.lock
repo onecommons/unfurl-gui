@@ -4028,6 +4028,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/marked@npm:4.3.2":
+  version: 4.3.2
+  resolution: "@types/marked@npm:4.3.2"
+  checksum: c1107079d6c368dd60a668a41aa2101d006cad404b6eb4af6723d419dc869b278928fb769825f11d0d311a8cf437428992729c8a47253b6a3894a6326b1ee4d9
+  languageName: node
+  linkType: hard
+
 "@types/mime@npm:^1":
   version: 1.3.5
   resolution: "@types/mime@npm:1.3.5"
@@ -21312,6 +21319,7 @@ __metadata:
     "@gitlab/vue-router-vue3": "npm:vue-router@4.5.1"
     "@gitlab/vuex-vue3": "npm:vuex@4.1.0"
     "@lifeomic/json-schema-to-graphql-types": ^1.4.2
+    "@types/marked": 4.3.2
     "@vue/cli-plugin-babel": ^5.0.8
     "@vue/cli-plugin-eslint": ^5.0.8
     "@vue/cli-service": ^5.0.8
