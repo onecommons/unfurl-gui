@@ -16,7 +16,7 @@ export function trackInputModality(doc = document) {
     if (installed) return
     installed = true
 
-    const set = modality => doc.documentElement.setAttribute('data-input-modality', modality)
+    const set = (modality: 'pointer' | 'keyboard') => doc.documentElement.setAttribute('data-input-modality', modality)
 
     // capture: a component's own handler may move focus before these bubble
     doc.addEventListener('pointerdown', () => set('pointer'), true)

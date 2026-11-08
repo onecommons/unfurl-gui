@@ -1,22 +1,26 @@
-function normalizeDirectives(directives) {
-    for(let i in directives || []) {
+// The unfurl export JSON; typed loosely until the payload types exist.
+type Json = Record<string, any>
+
+function normalizeDirectives(directives: string[] | undefined) {
+    if(!directives) return
+    for(let i in directives) {
         if(directives[i] == 'substitution') {
             directives[i] = 'substitute'
         }
     }
 }
 
-export function normpath(path) {
+export function normpath(path: unknown) {
     if(typeof path != 'string') return
     if(!path) return path
     if(path == ':') path = window.gon.home_project
-    return path.split('/').filter(c => !!c).join('/')
+    return (path as string).split('/').filter(c => !!c).join('/')
 }
 
 const PATH_PROPS = ['blueprintPath', 'projectPath']
 
-const transforms = {
-    ApplicationBlueprint(blueprint, root) {
+const transforms: Record<string, (object: Json, root: Json) => void> = {
+    ApplicationBlueprint(blueprint) {
         if(blueprint.projectPath) {
             blueprint.projectPath = normpath(blueprint.projectPath)
         }
@@ -29,14 +33,15 @@ const transforms = {
     Deployment(deployment, root) {
         deployment._environment = root._environment
 
-        let primary
+        let primary: Json | undefined
         try {
             if(primary = root.Resource[deployment.primary]) {
-                deployment.healthCheckUrl = primary.computedProperties?.find(({name}) => name == 'health_check_url')?.value
-                if(!deployment.healthCheckUrl.match(/^\w+:\/\//)) {
+                const computed = (name: string) => primary!.computedProperties?.find((p: Json) => p.name == name)?.value
+                deployment.healthCheckUrl = computed('health_check_url')
+                if(deployment.healthCheckUrl && !deployment.healthCheckUrl.match(/^\w+:\/\//)) {
                    deployment.healthCheckUrl = 'https://' + deployment.healthCheckUrl
                 }
-                deployment.readinessEstimate = primary.computedProperties?.find(({name}) => name == 'readiness_estimate')?.value
+                deployment.readinessEstimate = computed('readiness_estimate')
             }
         } catch(e) {}
 
@@ -59,12 +64,12 @@ const transforms = {
 
     DeploymentTemplate(dt, root) {
         if(dt.ResourceTemplate) {
-            Object.entries(dt.ResourceTemplate).forEach(([name, rt]) => {
+            Object.values(dt.ResourceTemplate as Record<string, Json>).forEach(rt => {
                 rt._local = true
                 localNormalize(rt, 'ResourceTemplate', root)
             })
         }
-        const appBlueprint = Object.values(root.ApplicationBlueprint)[0]
+        const appBlueprint = Object.values(root.ApplicationBlueprint as Record<string, Json>)[0]
         dt._sourceTemplate = dt.source == '__generated'? undefined : dt.source
 
         if(appBlueprint) {
@@ -132,15 +137,15 @@ const transforms = {
         // }
 
         // will prevent nested dependencies with visibility set from overriding parent constraint visibility
-        resourceType.requirements = resourceType.requirements.filter(req => req.visibility != 'hidden' || req.match)
+        resourceType.requirements = resourceType.requirements.filter((req: Json) => req.visibility != 'hidden' || req.match)
 
         resourceType._maxUtilization = 1
 
 
-        function normalizeSchemaProperty(property) {
+        function normalizeSchemaProperty(property: Json) {
             if(property.type == 'object' && property.properties && typeof property.properties == 'object') {
                 try {
-                    Object.values(property.properties).forEach(normalizeSchemaProperty)
+                    Object.values(property.properties as Record<string, Json>).forEach(normalizeSchemaProperty)
                 } catch(e) {}
             }
             if(property.hidden) {
@@ -158,7 +163,7 @@ const transforms = {
             }
 
             if(property.type == 'object' && property.additionalProperties) {
-                property.tab_title = property.tab_title || property.title?.split(' ').map(w => w[0]?.toUpperCase() + w.slice(1)).join(' ')
+                property.tab_title = property.tab_title || property.title?.split(' ').map((w: string) => w[0]?.toUpperCase() + w.slice(1)).join(' ')
                 property.metadata = property.metadata || {}
                 property.additionalPropertiesAddLabel = property.additionalPropertiesAddLabel || property.metadata.additionalPropertiesAddLabel
             }
@@ -166,7 +171,7 @@ const transforms = {
         ['inputsSchema', 'computedPropertiesSchema', 'outputsSchema'].forEach(schemaType => {
             let properties
             try {
-                properties = Object.values(resourceType[schemaType].properties)
+                properties = Object.values(resourceType[schemaType].properties as Record<string, Json>)
             } catch(e) {}
 
             if(properties) {
@@ -190,12 +195,12 @@ const transforms = {
             resourceTemplate.dependencies = []
         }
 
-        resourceTemplate.dependencies.forEach(dep => {
+        resourceTemplate.dependencies.forEach((dep: Json) => {
             const visibility = dep.visibility || dep.constraint.visibility || 'visible'
             dep.constraint.visibility = dep.visibility = visibility
         })
 
-        resourceTemplate.dependencies = resourceTemplate.dependencies.filter(dep => !(dep.constraint.visibility == 'hidden' && !dep.match))
+        resourceTemplate.dependencies = resourceTemplate.dependencies.filter((dep: Json) => !(dep.constraint.visibility == 'hidden' && !dep.match))
 
         normalizeDirectives(resourceTemplate.directives)
 
@@ -221,32 +226,29 @@ const transforms = {
     },
 }
 
-/**
- * @param {unknown} object
- * @param {string | null} [typename]
- * @param {unknown} [root]
- */
-export function localNormalize(object, typename=null, root) {
+export function localNormalize(object: unknown, typename: string | null = null, root?: Json | null) {
     if(!object) return
     // Caller may hand us a primitive when the export response has a numeric value
     // (e.g. `0.1`) where the schema expects an entity. Setting `__typename` on a
     // primitive throws `Cannot create property '__typename' on number 'X'`, which
     // breaks Apollo's cache normalization for the entire query.
     if(typeof object !== 'object') return
-    if(object._normalized) return
-    if(!(object.__typename || typename)) {
-        throw new Error(`Couldn't normalize ${object.name}: no typename`)
+    const obj = object as Json
+    if(obj._normalized) return
+    if(!(obj.__typename || typename)) {
+        throw new Error(`Couldn't normalize ${obj.name}: no typename`)
     }
-    const t = object.__typename = typename || object.__typename
+    const t = obj.__typename = typename || obj.__typename
 
     if(typeof transforms[t] == 'function') {
-        transforms[t](object, root)
-        object._normalized = true
+        // the transforms that read root (Deployment, DeploymentTemplate) are always given one
+        transforms[t](obj, root as Json)
+        obj._normalized = true
     }
 
     for(const pathProp of PATH_PROPS) {
-        if(object.hasOwnProperty(pathProp)) {
-            object[pathProp] = normpath(object[pathProp])
+        if(obj.hasOwnProperty(pathProp)) {
+            obj[pathProp] = normpath(obj[pathProp])
         }
     }
 }

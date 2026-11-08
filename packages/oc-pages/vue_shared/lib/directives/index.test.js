@@ -1,4 +1,4 @@
-import {tryResolveDirective} from './index.js'
+import {tryResolveDirective} from './index'
 
 test('non existent directive', () => {
     expect(tryResolveDirective({phoney: ''})).toBeNull()

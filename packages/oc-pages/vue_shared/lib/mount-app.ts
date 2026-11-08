@@ -8,9 +8,10 @@
  * Same approach as the fork's lib/utils/vue3compat/mount_wrapper.js; kept here
  * because these entries are compiled by both builds.
  */
+import type {App} from 'vue'
 import {trackInputModality} from './input-modality'
 
-export function mountReplacing(app, element) {
+export function mountReplacing(app: App, element: Element) {
     trackInputModality()
 
     const wrapper = document.createElement('div')

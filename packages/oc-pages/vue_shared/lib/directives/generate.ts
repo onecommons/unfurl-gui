@@ -1,4 +1,14 @@
-function asNumber(n) {
+// [first, last], inclusive, as code points or single characters
+type Range = [number | string, number | string]
+
+interface GenerateParams {
+    preset?: 'password' | 'number'
+    ranges?: Range[]
+    len?: number
+    length?: number
+}
+
+function asNumber(n: number | string) {
     if(typeof n == 'string') {
         return n.charCodeAt(0)
     }
@@ -6,11 +16,11 @@ function asNumber(n) {
     return n
 }
 
-function rangeLength(range) {
+function rangeLength(range: Range) {
     return asNumber(range[1]) - asNumber(range[0]) + 1
 
 }
-function totalRangesLength(ranges) {
+function totalRangesLength(ranges: Range[]) {
     let result = 0
     for(const range of ranges) {
         result += rangeLength(range)
@@ -18,7 +28,7 @@ function totalRangesLength(ranges) {
     return result
 }
 
-function getRandomCode(ranges) {
+function getRandomCode(ranges: Range[]) {
     const r = Math.floor(Math.random() * totalRangesLength(ranges))
     let lastAccumulated = 0
     for(let i = 0; i < ranges.length; i++) {
@@ -31,11 +41,11 @@ function getRandomCode(ranges) {
     }
 }
 
-export default function resolve(params) {
+export default function resolve(params: GenerateParams): string {
     let len = params.length || params.len
     if(params.preset == 'password') {
         len = len || 15
-        let password = resolve({ranges: [[48, 57], [65, 90], [97, 122]], len: len})
+        let password: string = resolve({ranges: [[48, 57], [65, 90], [97, 122]], len: len})
         if(!password.match(/\d/)) {
             const num = resolve({preset: 'number', len: 1})
             const index = Math.floor(Math.random() * len)
@@ -45,8 +55,8 @@ export default function resolve(params) {
     } else if (params.preset == 'number') {
         return resolve({ranges: [[48, 57]], len: len || 1})
     }
-    const {ranges} = params
-    const codes = Array.from(Array(len), getRandomCode.bind(null, ranges))
+    const ranges = params.ranges!
+    const codes = Array.from(Array(len), () => getRandomCode(ranges)!)
 
-    return String.fromCodePoint.apply(null, codes)
+    return String.fromCodePoint(...codes)
 }
