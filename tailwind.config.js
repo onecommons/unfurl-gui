@@ -14,7 +14,7 @@ module.exports = {
   content: [
     './src/**/*.{vue,js,html}',
     './public/*.html',
-    './packages/oc-pages/**/*.{vue,js}',
+    './packages/oc-pages/**/*.{vue,js,ts}',
     './node_modules/@gitlab/ui/src/**/*.{vue,js}',
     // oc-pages keeps its own node_modules despite being a workspace, and
     // src/gitlab-oc symlinks to it, so both globs above walk 2331 third-party
