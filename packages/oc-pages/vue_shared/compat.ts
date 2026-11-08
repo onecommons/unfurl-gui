@@ -9,17 +9,17 @@
 // #!if !standalone
 import csrf from '~/lib/utils/csrf'
 import initUnfurlBadgeUrlBuilder from 'oc/pages/projects/edit/uf_badge'
-let mountJobsConsole
+let mountJobsConsole: Promise<(...args: unknown[]) => unknown> | undefined
 // #!endif
 
 export let token = ''
-export let compatibilityMountJobConsole = function() {}
-export let compatibilityUnfurlBadgeUrlBuilder = function() {}
+export let compatibilityMountJobConsole = async function(..._args: unknown[]): Promise<unknown> { return undefined }
+export let compatibilityUnfurlBadgeUrlBuilder = function(): void {}
 
 // #!if !standalone
 token = csrf.token
 compatibilityUnfurlBadgeUrlBuilder = initUnfurlBadgeUrlBuilder
-compatibilityMountJobConsole = async function(...args) {
+compatibilityMountJobConsole = async function(...args: unknown[]) {
     if(!mountJobsConsole) {
         mountJobsConsole = import('~/ci/job_details').then(module => module.initJobDetails)
     }

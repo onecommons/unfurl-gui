@@ -7,7 +7,7 @@ import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {GlFormGroup, GlFormInput, GlDropdown, GlDropdownItem, GlDropdownDivider, GlFormCheckbox} from '@gitlab/ui'
 import {DetectIcon, ErrorSmall} from 'oc_vue_shared/components/oc'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
-import {token} from 'oc_vue_shared/compat.js'
+import {token} from 'oc_vue_shared/compat'
 import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
 

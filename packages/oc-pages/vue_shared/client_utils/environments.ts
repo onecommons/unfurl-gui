@@ -5,7 +5,7 @@ import { unfurlServerUpdate, unfurlServerExport, fetchTypeRepositories } from '.
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql_shim'
 import _ from 'lodash'
-import { lookupCloudProviderAlias } from '../util.js'
+import { lookupCloudProviderAlias } from '../util'
 import {localNormalize} from '../lib/normalize'
 import { getOrFetchCurrentBranch, fetchLastCommit } from './projects'
 

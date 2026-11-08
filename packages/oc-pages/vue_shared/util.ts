@@ -1,3 +1,7 @@
+import cloneDeep from 'lodash/cloneDeep'
+// vue-router is aliased to a compat wrapper around this package in both builds
+import type {RouteLocationNormalizedLoaded, Router} from '@gitlab/vue-router-vue3'
+
 export { default as slugify } from './slugify'
 
 export const USER_HOME_PROJECT = 'dashboard';
@@ -11,7 +15,7 @@ export function userDefaultPath() {
     return 'unfurl.json'
 }
 
-export function generateCardId(name) {
+export function generateCardId(name: string) {
     return encodeURIComponent(name)
 }
 
@@ -35,7 +39,7 @@ export function generateCardId(name) {
 // payloads we clone don't carry class instances, but if a future
 // caller clones something constructed from a user-defined class,
 // downstream `instanceof` checks and method calls will break.
-export function deepClone(value) {
+export function deepClone<T>(value: T): T {
     if (typeof structuredClone === 'function') {
         try {
             return structuredClone(value)
@@ -44,8 +48,7 @@ export function deepClone(value) {
             // structuredClone rejects.
         }
     }
-    // eslint-disable-next-line global-require
-    return require('lodash').cloneDeep(value)
+    return cloneDeep(value)
 }
 
 const GCP = 'unfurl.relationships.ConnectsTo.GoogleCloudProject'
@@ -59,7 +62,7 @@ const DigitalOcean = 'ConnectsTo.DigitalOceanEnvironment'
 // hardcoded, so gcp and aws could not be added at all.
 export const CLOUD_PROVIDER_TYPES = [K8s, DigitalOcean, Azure, GCP, AWS]
 
-const CLOUD_PROVIDER_ALIASES = {
+const CLOUD_PROVIDER_ALIASES: Record<string, string | undefined> = {
     AWSAccount: AWS,
     aws: AWS,
     [AWS]: AWS,
@@ -84,47 +87,49 @@ const CLOUD_PROVIDER_ALIASES = {
     'Google Cloud Platform': GCP,
     'Amazon Web Services': AWS,
     'Kubernetes': K8s,
-    'Azure': Azure,
     'Digital Ocean': DigitalOcean,
 }
 
-export function lookupCloudProviderAlias(key) {
-    const result = CLOUD_PROVIDER_ALIASES[key?.split('@')?.shift()]
+export function lookupCloudProviderAlias(key: string | null | undefined) {
+    const result = CLOUD_PROVIDER_ALIASES[key?.split('@')?.shift() as string]
     return result
 }
 
-export function lookupCloudProviderShortName(key) {
+export function lookupCloudProviderShortName(key: string | null | undefined) {
     const actual = lookupCloudProviderAlias(key)
-    const dict = {
+    const dict: Record<string, string> = {
         [GCP]: 'GCP',
         [AWS]: 'AWS',
         [K8s]: 'K8s',
         [Azure]: 'Azure',
         [DigitalOcean]: 'DO'
     }
-    return dict[actual] || 'Self-Hosted'
+    return dict[actual!] || 'Self-Hosted'
 }
 
-export function cloudProviderFriendlyName(key) {
+export function cloudProviderFriendlyName(key: string | null | undefined) {
     const actual = lookupCloudProviderAlias(key)
-    const dict = {
+    const dict: Record<string, string> = {
         [GCP]: 'Google Cloud Platform',
         [AWS]: 'Amazon Web Services',
         [K8s]: 'Kubernetes',
         [Azure]: 'Azure',
         [DigitalOcean]: 'Digital Ocean'
     }
-    return dict[actual] || 'Self-Hosted'
+    return dict[actual!] || 'Self-Hosted'
 }
 
-export function queryParamVar(v) {
+type Routed = {$route: RouteLocationNormalizedLoaded, $router: Router}
+
+// A computed property bound to the route's query parameter `v`.
+export function queryParamVar(v: string) {
     return {
         [v]: {
-            get() {
+            get(this: Routed) {
                 return this.$route.query[v]
             },
-            set(val) {
-                const query = {...this.$route.query} || {}
+            set(this: Routed, val: string | undefined) {
+                const query = {...this.$route.query}
 
                 if(val !== undefined) {
                     query[v] = val

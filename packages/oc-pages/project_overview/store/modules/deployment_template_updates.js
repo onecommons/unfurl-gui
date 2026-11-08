@@ -1,6 +1,6 @@
 import { __ } from "~/locale";
 import _ from 'lodash'
-import {slugify, lookupCloudProviderAlias} from 'oc_vue_shared/util.js'
+import {slugify, lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchUserAccessToken} from 'oc_vue_shared/client_utils/user'

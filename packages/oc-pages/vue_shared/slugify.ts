@@ -1,4 +1,6 @@
-export default function slugify(text) {
+export default function slugify(text: string): string
+export default function slugify<T extends null | undefined>(text: T): T
+export default function slugify(text: string | null | undefined) {
     return text && text
         .toString() 
         .toLowerCase()
