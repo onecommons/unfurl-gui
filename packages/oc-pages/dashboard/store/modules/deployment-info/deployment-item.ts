@@ -1,13 +1,65 @@
 import axios from '~/lib/utils/axios_utils'
 import * as routes from '../../../router/constants'
 import {fetchCommit, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+
+// The unfurl export JSON; typed loosely until the payload types exist.
+type Json = Record<string, any>
+
+// A pipeline as a DeploymentPath records it.
+interface Pipeline {
+    id: number | string
+    commit?: {id: string}
+    commit_id?: string
+    variables?: Record<string, string>
+    upstream_pipeline_id?: number
+    upstream_project_id?: number
+}
+
+// A CI job, as the jobs list query returns it.
+interface Job {
+    id: string | number
+    status?: string
+    cancelable?: boolean
+    scheduledAt?: string
+}
+
+export interface DeploymentItemContext {
+    environment: Json
+    deployment: Json
+    application: Json
+    deployPath: Json
+    // the dashboard's, set for every item
+    projectPath: string
+    namespace?: string
+    pipeline?: Pipeline
+    job?: Job
+    autostop?: Pipeline
+    autostopJob?: Job
+}
+
+function commitIdOf(pipeline: Pipeline | undefined) {
+    return pipeline?.commit?.id || pipeline?.commit_id
+}
+
 export default class DeploymentItem {
-    constructor(context) {
+    // filled by Object.assign from the context
+    declare environment: Json
+    declare deployment: Json
+    declare application: Json
+    declare deployPath: Json
+    declare projectPath: string
+    declare namespace?: string
+    declare pipeline?: Pipeline
+    declare job?: Job
+    declare autostop?: Pipeline
+    declare autostopJob?: Job
+    commitPromises: (Promise<Json> | undefined)[] = []
+
+    constructor(context: DeploymentItemContext) {
         Object.assign(this, context)
-        this.commitPromises = []
     }
 
-    get pipelines() {
+    get pipelines(): Pipeline[] | undefined {
         return this.deployPath?.pipelines
     }
 
@@ -16,16 +68,18 @@ export default class DeploymentItem {
     }
 
     get commitId() {
-        return this.pipeline?.commit?.id || this.pipeline?.commit_id
+        return commitIdOf(this.pipeline)
     }
 
+    // the commit pipeline n ran, the last pipeline's by default
     async getCommit(n=-1) {
-        const i = n == -1 ? this.pipelines?.lastIndex ?? -1: n
-        if(i == -1) return null
+        const i = n == -1 ? (this.pipelines?.length ?? 0) - 1: n
+        if(i < 0) return null
 
+        const commitId = commitIdOf(this.pipelines?.[i])
         let commitPromise
-        if(!(commitPromise = this.commitPromises[i]) && this.projectId && this.commitId) {
-            commitPromise = this.commitPromises[i] = fetchCommit(this.projectId, this.commitId)
+        if(!(commitPromise = this.commitPromises[i]) && this.projectId && commitId) {
+            commitPromise = this.commitPromises[i] = fetchCommit(this.projectId, commitId)
         }
         try {
             return await commitPromise
@@ -158,12 +212,12 @@ export default class DeploymentItem {
 
     async cancelJob() {
         if(!this.isJobCancelable) throw new Error(`Job ${this.job?.id || -1} is not cancelable`)
-        await axios.post(this.cancelLink)
+        await axios.post(this.cancelLink!)
     }
 
 
     get autostopScheduled() {
-        return this.autostopJob?.status == 'SCHEDULED' && new Date(this.autostopJob.scheduledAt)
+        return this.autostopJob?.status == 'SCHEDULED' && new Date(this.autostopJob.scheduledAt!)
     }
     get isAutostopCancelable() {
         return this.autostopJob?.status == 'SCHEDULED'
@@ -181,7 +235,7 @@ export default class DeploymentItem {
 
     async cancelAutostop() {
         if(!this.isAutostopCancelable) throw new Error(`Job ${this.autostopJob?.id || -1} is not cancelable`)
-        await axios.post(this.autostopCancelLink)
+        await axios.post(this.autostopCancelLink!)
     }
 
     get isRenamable() {

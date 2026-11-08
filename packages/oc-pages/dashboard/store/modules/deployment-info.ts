@@ -1,4 +1,7 @@
+import type {ActionContext, Module} from '@gitlab/vuex-vue3'
 import DeploymentItem from './deployment-info/deployment-item'
+import type {DeploymentItemContext} from './deployment-info/deployment-item'
+import type {DashboardItem} from './table_data'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql_shim'
 import _ from 'lodash'
@@ -28,63 +31,76 @@ const LOOKUP_JOBS = gql`
 `
 
 
-const state = () => ({
+// A CI job, as the jobs list query returns it.
+interface Job {
+    id: string
+    status: string
+    cancelable?: boolean
+    scheduledAt?: string
+}
+
+interface State {
+    // keyed `${environment}:${deployment}`
+    deploymentItems: Record<string, DeploymentItem>
+    jobsByPipelineId: Record<string, Job>
+}
+
+type Named = {name: string} | string | undefined
+
+const state = (): State => ({
     deploymentItems: {},
     jobsByPipelineId: {}
 })
 
 const getters = {
-    deploymentItemDirect(state) {
-        return function({environment, deployment}, method, ...args) {
-            const key = `${environment?.name || environment}:${deployment?.name || deployment}`
-            let result = state.deploymentItems[key]
-            if(result && method) {
-                if(args.length) {
-                    result = result[method](...args)
-                } else {
-                    result = result[method]
-                }
+    // the item, or with `method` one of its members: called with args, read without
+    deploymentItemDirect(state: State) {
+        return function({environment, deployment}: {environment: Named, deployment: Named}, method?: string, ...args: unknown[]): any {
+            const key = `${(environment as {name?: string})?.name || environment}:${(deployment as {name?: string})?.name || deployment}`
+            const item = state.deploymentItems[key] as unknown as Record<string, any> | undefined
+            if(item && method) {
+                return args.length ? item[method](...args) : item[method]
             }
-            return result
+            return item
         }
     },
-    jobByPipelineId(state) {
-        return function(pipelineId) {
+    jobByPipelineId(state: State) {
+        return function(pipelineId: string | number) {
             return state.jobsByPipelineId[pipelineId]
         }
     }
 }
 
 const mutations = {
-    setDeploymentItems(state, deploymentItems) {
+    setDeploymentItems(state: State, deploymentItems: State['deploymentItems']) {
         state.deploymentItems = deploymentItems
     },
-    setJobsByPipelineId(state, jobsByPipelineId) {
+    setJobsByPipelineId(state: State, jobsByPipelineId: State['jobsByPipelineId']) {
         state.jobsByPipelineId = jobsByPipelineId
     }
 }
 
 const actions = {
-    populateDeploymentItems({state, getters, rootGetters, commit}, items) {
-        const dict = {}
-        const errors = {}
+    populateDeploymentItems({getters, rootGetters, commit}: ActionContext<State, any>, items: DashboardItem[]) {
+        const dict: State['deploymentItems'] = {}
+        const errors: Record<string, boolean> = {}
         for(const item of items) {
             let itemKey
             try {
-                itemKey = `${item.context.environment.name}:${item.context.deployment.name}`
+                itemKey = `${item.context.environment!.name}:${item.context.deployment!.name}`
             } catch(e) {continue}
             if(!dict[itemKey] && !errors[itemKey]) {
-                function recordDeploymentItem() {
-                    const context = {}
-                    context.environment = item.context.environment
-                    context.deployment = item.context.deployment
-                    context.application = item.context.application
+                const recordDeploymentItem = () => {
+                    const context = {} as DeploymentItemContext
+                    context.environment = item.context.environment!
+                    context.deployment = item.context.deployment!
+                    context.application = item.context.application!
                     context.deployPath = rootGetters.lookupDeployPath(context.deployment.name, context.environment.name)
 
                     if(!context.deployPath) throw new Error(`Couldn't look up deploy path for ${context.deployment.name} in ${context.environment.name}`)
 
-                    let [pipeline, jobInfo] = context.deployPath?.pipelines
-                        .map(p => [p, getters.jobByPipelineId(p.id)])
+                    const [pipeline, jobInfo] = (context.deployPath?.pipelines as DeploymentItemContext['pipeline'][])
+                        .map(p => [p, getters.jobByPipelineId(p!.id)] as const)
                         .filter(([_, jobInfo]) => jobInfo && !['SCHEDULED', 'MANUAL'].includes(jobInfo.status))
                         .pop() || []
 
@@ -96,7 +112,7 @@ const actions = {
                     }
 
                     if(pipeline) {
-                        const lastPipeline = _.last(context.deployPath?.pipelines)
+                        const lastPipeline: DeploymentItemContext['pipeline'] = _.last(context.deployPath?.pipelines)
 
                         if(lastPipeline?.variables?.WORKFLOW == 'undeploy' && pipeline.id != lastPipeline.id) {
                             context.autostop = lastPipeline
@@ -114,7 +130,8 @@ const actions = {
 
                 try {
                     recordDeploymentItem()
-                } catch({message}) {
+                } catch(e) {
+                    const {message} = e as Error
                     commit(
                         'createError', {
                             message: `@populateDeploymentItems(${itemKey}): ${message}`,
@@ -127,7 +144,7 @@ const actions = {
         }
         commit('setDeploymentItems', dict)
     },
-    async populateJobsList({rootGetters, commit}) {
+    async populateJobsList({rootGetters, commit}: ActionContext<State, any>) {
         let result
 
         // #!if !standalone
@@ -138,7 +155,7 @@ const actions = {
         })
         // #!endif
 
-        const newJobsByPipelineId = {}
+        const newJobsByPipelineId: State['jobsByPipelineId'] = {}
         for(const pipeline of result?.data?.project?.pipelines?.nodes || []) {
             const pipelineId = pipeline.id.split('/').pop()
             for(const job of pipeline.jobs.nodes) {
@@ -152,4 +169,4 @@ const actions = {
 
 export default {
     state, getters, mutations, actions
-}
+} satisfies Module<State, any>
