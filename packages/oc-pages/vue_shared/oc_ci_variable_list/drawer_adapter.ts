@@ -13,7 +13,37 @@
 import { displayText, types } from './constants';
 import { variableTypes } from './constants_19_3';
 
-export function toStoreVariable(variable = {}) {
+type VariableId = string | number;
+
+export interface DrawerVariable {
+  id?: VariableId;
+  key: string;
+  value: string;
+  protected: boolean;
+  masked: boolean;
+  hidden: boolean;
+  raw: boolean;
+  description: string | null;
+  environmentScope: string;
+  // variableTypes: 'ENV_VAR' | 'FILE'
+  variableType: string;
+}
+
+export interface StoreVariable {
+  id?: VariableId;
+  key?: string;
+  value: string;
+  secret_value: string;
+  protected_variable: boolean;
+  masked: boolean;
+  // displayText: 'Variable' | 'File'
+  variable_type: string;
+  environment_scope: string;
+  description: string | null;
+  raw: boolean;
+}
+
+export function toStoreVariable(variable: Partial<DrawerVariable> = {}): StoreVariable {
   return {
     // carried through so an update patches the existing row rather than
     // creating a second one
@@ -40,7 +70,10 @@ export function toStoreVariable(variable = {}) {
   };
 }
 
-export function toDrawerVariable(variable = {}) {
+// also accepts a row as the variable list renders it, with value and protected
+export function toDrawerVariable(
+  variable: Partial<StoreVariable> & { protected?: boolean } = {},
+): DrawerVariable {
   return {
     id: variable.id,
     key: variable.key || '',

@@ -143,3 +143,11 @@ describe('round trip', () => {
         expect(toDrawerVariable(toStoreVariable(file)).variableType).toBe(variableTypes.fileType)
     })
 })
+
+// the drawer opens on a new variable with nothing to convert
+describe('defaults', () => {
+    it('builds an empty variable for all environments either way', () => {
+        expect(toStoreVariable()).toMatchObject({ value: '', secret_value: '', protected_variable: false, environment_scope: '*', raw: true })
+        expect(toDrawerVariable()).toMatchObject({ key: '', value: '', protected: false, environmentScope: '*', variableType: variableTypes.envType })
+    })
+})
