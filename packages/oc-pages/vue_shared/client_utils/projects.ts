@@ -376,9 +376,9 @@ export async function createBranch(projectId: string, branch: string, ref?: stri
         setLastCommit(decodeURIComponent(projectId), branch, {commit: commitId})
     }
 
-    try {
-        branchesData[branch] = branchesData[_ref!]
-    } catch(e) {}
+    // the cached list predates the new branch; without it fetchLastCommit falls
+    // back to the default branch's commit
+    delete branchesData[projectId]
 
     return response.data
 }

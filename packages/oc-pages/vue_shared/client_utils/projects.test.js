@@ -178,6 +178,28 @@ describe('createBranch', () => {
         console.warn.mockRestore()
     })
 
+    // the branch list cached before the branch existed would not have it, and
+    // fetchLastCommit would fall back to main's commit for the new branch
+    it('drops the project\'s cached branch list, so the new branch resolves to its own commit', async () => {
+        let created = false
+        axios.get.mockImplementation(async url => {
+            if(url == '/api/v4/projects/org%2Fapp/repository/branches') {
+                const main = {name: 'main', default: true, commit: {id: 'm1'}}
+                return {data: created ? [main, {name: 'feature', commit: {id: 'f1'}}] : [main]}
+            }
+            return {data: {commits: {}}}
+        })
+        axios.post.mockImplementation(async () => {
+            created = true
+            return {status: 201, data: {name: 'feature', commit: {id: 'f1'}}}
+        })
+
+        await projects.createBranch('org%2Fapp', 'feature')
+
+        await expect(projects.fetchLastCommit('org/app', 'feature')).resolves.toEqual(['f1', 'feature', 0, false])
+        expect(projects.getLastCommit('org/app', 'feature')).toMatchObject({commit: 'f1'})
+    })
+
     it('throws on any other failure', async () => {
         jest.spyOn(console, 'error').mockImplementation(() => {})
         axios.post.mockResolvedValue({status: 403, data: {message: 'Forbidden'}})
