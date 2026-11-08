@@ -12,9 +12,10 @@ export function parseMarkdown(input: string | null | undefined): string {
         // `config.FORBID_TAGS.includes('style')` unguarded, so sanitizing
         // without it throws inside their hook and every description renders
         // empty. Standalone has no such hooks, which is why this is fork-only.
+        // The whole HTML profile, so headings, lists and tables render. An
+        // ALLOWED_TAGS here would be ignored: USE_PROFILES replaces it.
         return DOMPurify.sanitize(result, {
             USE_PROFILES: { html: true },
-            ALLOWED_TAGS: ['b', 'i', 'code', 'pre', 'a', 'p'],
             ADD_ATTR: ['target'],
             FORBID_TAGS: [],
         })

@@ -34,13 +34,18 @@ describe('parseMarkdown', () => {
         expect(html).toContain('rel="noopener noreferrer"')
     })
 
-    // ALLOWED_TAGS in markdown.js has no effect: DOMPurify lets USE_PROFILES
-    // override it, so tags like <img> survive. Scripts and handlers do not.
     it('strips scripts and event handlers', () => {
         const html = parseMarkdown('<script>alert(1)</script><img src=x onerror=alert(1)>hi')
         expect(html).not.toContain('<script')
         expect(html).not.toContain('onerror')
         expect(html).toContain('hi')
+    })
+
+    it('keeps the markup markdown produces', () => {
+        const html = parseMarkdown('# Title\n\n- one\n- two\n\n`code`')
+        expect(html).toContain('<h1')
+        expect(html).toContain('<li>one</li>')
+        expect(html).toContain('<code>code</code>')
     })
 })
 
