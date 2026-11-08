@@ -140,7 +140,8 @@ module.exports = {
     module: {
       rules: [
         {
-          test: /\.js$/,
+          // .ts too: `#!if !standalone` blocks must be stripped there as well
+          test: /\.(js|ts)$/,
           exclude: /node_modules/,
           use: [
             'babel-loader',
