@@ -101,6 +101,11 @@ describe('applying an event', () => {
     it('ignores a branch it knows nothing about', () => {
         expect(applyEvent(PROJECT, {status: 'ok', branch: 'other', latest_commit: 'aaa', new_commit: 'bbb', queueid: 2})).toBe(false)
     })
+
+    // undefined latest_commit matched the undefined stored commit and threw
+    it('ignores a frame without a base commit for a branch it knows nothing about', () => {
+        expect(applyEvent(PROJECT, {status: 'ok', branch: 'other', new_commit: 'bbb', queueid: 2})).toBe(false)
+    })
 })
 
 describe('the connection', () => {
