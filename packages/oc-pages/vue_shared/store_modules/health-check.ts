@@ -1,18 +1,35 @@
+import type {ActionContext, Module} from '@gitlab/vuex-vue3'
 import {sleep} from '../client_utils/misc'
 import { XhrIFrame } from '../client_utils/crossorigin-xhr'
 
 const BASE_POLLING_INTERVAL = 1000
 const BACKOFF_EXPONENT = 1.25
-const DEFAULT_STARTUP_ESTIMATE = 5 * 60 * 10000// 5 minutes
+// seconds, like the readiness_estimate a deployment declares
+const DEFAULT_STARTUP_ESTIMATE = 5 * 60
 
+type PollStatus = 'PENDING' | 'LIKELY_UP' | 'COMPLETE'
 
-let xhrIframe = null
+interface State {
+    urlPolls: Record<string, () => Promise<unknown>>
+    statuses: Record<string, PollStatus>
+    // seconds until each deployment is expected to be ready
+    etas: Record<string, number>
+    pollingLoopStarted: boolean
+}
+
+interface HealthGetters {
+    deploymentEta: (name: string) => number
+}
+
+type Context = ActionContext<State, any>
+
+let xhrIframe: XhrIFrame | null = null
 
 // #!if !standalone
 xhrIframe = new XhrIFrame()
 // #!endif
 
-const stateFn = () => ({
+const stateFn = (): State => ({
     urlPolls: {},
     statuses: {},
     etas: {},
@@ -21,30 +38,30 @@ const stateFn = () => ({
 const state = stateFn()
 
 const mutations = {
-    _addUrlPoll(state, {url, name, initialStatus}) {
-        state.urlPolls[name] = () => xhrIframe.doXhr('GET', url).then(res => res.data)
+    _addUrlPoll(state: State, {url, name, initialStatus}: {url: string, name: string, initialStatus: PollStatus}) {
+        state.urlPolls[name] = () => xhrIframe!.doXhr('GET', url).then(res => res.data)
         state.statuses[name] = initialStatus
     },
-    clearPollingStateFor(state, name) {
+    clearPollingStateFor(state: State, name: string) {
         delete state.urlPolls[name]
         delete state.etas[name]
         delete state.statuses[name]
     },
-    markUrlPending(state, name) {
+    markUrlPending(state: State, name: string) {
         state.statuses[name] = 'PENDING'
     },
-    completeUrlPolling(state, name) {
+    completeUrlPolling(state: State, name: string) {
         delete state.urlPolls[name]
         state.statuses[name] = 'COMPLETE'
     },
-    setPollingLoopStarted(state) {
+    setPollingLoopStarted(state: State) {
         state.pollingLoopStarted = true
     },
-    insertEta(state, {name, deployTime, readinessEstimate}) {
-        const value = (deployTime - Date.now()) / 1000 + readinessEstimate
+    insertEta(state: State, {name, deployTime, readinessEstimate}: {name: string, deployTime: Date | number, readinessEstimate: number}) {
+        const value = (Number(deployTime) - Date.now()) / 1000 + readinessEstimate
         state.etas[name] = Math.max(value, 0)
     },
-    decrimentEtas(state, quantity=1000) {
+    decrimentEtas(state: State, quantity=1000) {
         Object.entries(state.etas).forEach(([key, value]) => {
             state.etas[key] = Math.max(value - quantity / 1000, 0)
         })
@@ -52,7 +69,7 @@ const mutations = {
 }
 
 const actions = {
-    async addUrlPoll({state, commit, dispatch, rootGetters}, {deployment, environment}) {
+    async addUrlPoll({state, commit, dispatch, rootGetters}: Context, {deployment, environment}: {deployment: Record<string, any> | null | undefined, environment: {name: string} | null | undefined}) {
         // a dashboard item can arrive before its deployment or environment does,
         // and there is nothing to poll without both. Guarded here rather than
         // below because lookupDeployPath dereferences a name off each -- and the
@@ -87,8 +104,9 @@ const actions = {
 
         if(['PENDING', 'LIKELY_UP'].includes(state.statuses[deployment.name])) return
 
-        const readinessEstimate = deployment.readinessEstimate || DEFAULT_STARTUP_ESTIMATE
-        const initialStatus = Date.now() - deployment.deployTime < readinessEstimate ? 'PENDING': 'LIKELY_UP'
+        const readinessEstimate: number = deployment.readinessEstimate || DEFAULT_STARTUP_ESTIMATE
+        const secondsSinceDeploy = (Date.now() - Number(deployment.deployTime)) / 1000
+        const initialStatus = secondsSinceDeploy < readinessEstimate ? 'PENDING': 'LIKELY_UP'
 
         commit('insertEta', {name: deployment.name, deployTime: deployment.deployTime, readinessEstimate})
         commit('_addUrlPoll', {initialStatus, name: deployment.name, url: deployment.healthCheckUrl})
@@ -97,11 +115,11 @@ const actions = {
             dispatch('startPollingLoop')
         }
     },
-    async startPollingLoop({state, commit}) {
+    async startPollingLoop({state, commit}: Context) {
         if(state.pollingLoopStarted) return
         commit('setPollingLoopStarted')
-        const waitingFor = {}
-        const backoffCounters = {}
+        const waitingFor: Record<string, boolean> = {}
+        const backoffCounters: Record<string, number> = {}
         while(true) {
             for(const [name, healthCheck] of Object.entries(state.urlPolls)) {
                 if(!waitingFor[name]) {
@@ -138,8 +156,8 @@ const actions = {
 }
 
 const getters = {
-    pollingStatus(state) {
-        return function(name) {
+    pollingStatus(state: State) {
+        return function(name: string) {
             if(!xhrIframe) return 'COMPLETE'
             try {
                 return state.statuses[name]
@@ -148,8 +166,8 @@ const getters = {
             }
         }
     },
-    deploymentEta(state) {
-        return function(name) {
+    deploymentEta(state: State) {
+        return function(name: string) {
             try {
                 return Math.floor(state.etas[name])
             } catch(e) {
@@ -157,8 +175,8 @@ const getters = {
             }
         }
     },
-    formattedDeploymentEta(_, getters) {
-        return function(name) {
+    formattedDeploymentEta(_: State, getters: HealthGetters) {
+        return function(name: string) {
             const deploymentEta = getters.deploymentEta(name)
             const result = []
             const minutes = deploymentEta / 60
@@ -180,4 +198,4 @@ const getters = {
     }
 }
 
-export default { state, mutations, actions, getters }
+export default { state, mutations, actions, getters } satisfies Module<State, any>
