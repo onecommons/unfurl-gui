@@ -23,7 +23,7 @@
     "integration-test": "./scripts/src/integration-test.js",
     "generate:gitlab-ci": "./scripts/src/generate-ci-tests.js",
     "generate:readme": "./scripts/src/generate-readme.js",
-    "lint": "eslint --ext .js,.vue src packages/oc-pages",
+    "lint": "eslint --ext .js,.ts,.vue src packages/oc-pages",
     "typecheck": "vue-tsc --noEmit -p .",
     "apollo": "vue-cli-service apollo:dev --generate-schema",
     "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",
@@ -36,7 +36,7 @@
     "membership-test": "./scripts/src/membership-test.js",
     "test:e2e": "jest --testPathIgnorePatterns=/node_modules/ --testPathIgnorePatterns=/.claude/ --testPathIgnorePatterns=/cypress/ --runInBand '\\.e2e\\.test\\.js$'",
     "test:packages": "jest packages --runInBand",
-    "lint:fix": "eslint --fix --ext .js,.vue src packages/oc-pages"
+    "lint:fix": "eslint --fix --ext .js,.ts,.vue src packages/oc-pages"
   },
   "dependencies": {
     "@babel/runtime": "^7.22.11",
@@ -80,8 +80,10 @@
     "@babel/core": "^7.24.5",
     "@babel/plugin-transform-runtime": "^7.22.10",
     "@babel/preset-env": "^7.24.5",
+    "@babel/preset-typescript": "~7.28.5",
     "@gitlab/eslint-plugin": "^19.5.0",
     "@types/marked": "4.3.2",
+    "@typescript-eslint/parser": "6.21.0",
     "@vue/cli-plugin-babel": "^5.0.8",
     "@vue/cli-plugin-eslint": "^5.0.8",
     "@vue/cli-service": "^5.0.8",

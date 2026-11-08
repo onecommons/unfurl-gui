@@ -42,5 +42,18 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "off"
   },
 
-  plugins: ["graphql"]
+  plugins: ["graphql"],
+
+  overrides: [
+    {
+      files: ["*.ts"],
+      // The vue rules need vue-eslint-parser on top; it hands the script to
+      // the TS parser. v6 is the last line that supports eslint 7; it
+      // predates TS 5.9 but parses it.
+      parserOptions: {
+        parser: "@typescript-eslint/parser",
+        warnOnUnsupportedTypeScriptVersion: false,
+      },
+    },
+  ],
 };

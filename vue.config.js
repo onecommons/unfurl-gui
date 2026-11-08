@@ -182,6 +182,10 @@ module.exports = {
       })
     }
 
+    // oc-pages is written in TypeScript; Babel strips the types.
+    config.resolve.extensions.add('.ts')
+    config.module.rule('js').test(/\.m?jsx?$|\.ts$/)
+
     config.module
       .rule('vue')
       .use('vue-loader')
