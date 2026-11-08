@@ -1,8 +1,18 @@
+import type {Store} from '@gitlab/vuex-vue3'
+
+declare global {
+    interface Window {
+        // the app's store, set by its entry for these developer tools
+        $store?: Store<Record<string, unknown>>
+        lsHiddenOptions: () => void
+    }
+}
+
 export const INTERNAL_STORAGE_KEYS = {
 
 }
 
-export const HIDDEN_OPTION_KEYS = {
+export const HIDDEN_OPTION_KEYS: Record<string, string> = {
     encodedPasswordExportUrls: 'encoded-password-export-urls',
     unfurlServerUrl: 'unfurl-server-url',
     unfurlServerUrlDev: 'unfurl-server-url-dev',
@@ -17,7 +27,7 @@ export const HIDDEN_OPTION_KEYS = {
     cloudmapRepo: 'cloudmapRepo',
 }
 
-export const CONFIGURABLE_HIDDEN_OPTIONS = [
+export const CONFIGURABLE_HIDDEN_OPTIONS: {key: string, label: string, placeholder?: string}[] = [
     { key: 'unfurlServerUrl', label: 'Unfurl Server URL' },
     { key: 'encodedPasswordExportUrls', label: 'Encode Passwords in URL', placeholder: 'false' },
     { key: 'connectWithoutCopy', label: 'Connect External Without Copy', placeholder: 'false' },
@@ -31,15 +41,15 @@ export const CONFIGURABLE_HIDDEN_OPTIONS = [
     { key: 'cloudmapRepo', label: 'Use another cloudmap repo', placeholder: 'onecommons/cloudmap' },
 ]
 
-function isTruthyStorageValue(value) {
+function isTruthyStorageValue(value: string | undefined) {
     try {
-        return !!JSON.parse(value)
+        return !!JSON.parse(value as string)
     } catch(e) {}
 
-    return ['yes', 't', 'y', ''].includes(value)
+    return ['yes', 't', 'y', ''].includes(value as string)
 }
 
-export function setLocalStorageKey(_key, value) {
+export function setLocalStorageKey(_key: string, value: unknown) {
     let key = HIDDEN_OPTION_KEYS[_key] || _key
 
     // sessionStorage will override localStorage here
@@ -57,7 +67,7 @@ export function setLocalStorageKey(_key, value) {
     }
 }
 
-export function lookupKey(_key) {
+export function lookupKey(_key: string): string | undefined {
     const key = HIDDEN_OPTION_KEYS[_key] || _key
     if(!key.startsWith('unfurl_gui:')) {
         const lookupResult = lookupKey(`unfurl_gui:${key}`)
@@ -80,14 +90,14 @@ export function shouldConnectWithoutCopy() {
     return isTruthyStorageValue(lookupKey( HIDDEN_OPTION_KEYS.connectWithoutCopy ))
 }
 
-export function unfurlServerUrlOverride(currentProject) {
+export function unfurlServerUrlOverride(currentProject?: string) {
     return lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrl ) || unfurlServerUrlDev(currentProject)
 }
 
-export function unfurlServerUrlDev(currentProject) {
+export function unfurlServerUrlDev(currentProject?: string) {
     const setting = lookupKey( HIDDEN_OPTION_KEYS.unfurlServerUrlDev )
     if(setting) {
-        let {project, url} = JSON.parse(setting)
+        let {project, url}: {project?: string, url: string} = JSON.parse(setting)
         if(!project || project != currentProject) return
         if(url.startsWith('localhost')) {
             url = `http://${url}`
@@ -112,23 +122,23 @@ export function cloudmapRepo() {
     return lookupKey( HIDDEN_OPTION_KEYS.cloudmapRepo ) || 'onecommons/cloudmap'
 }
 
-export function useImportedStateOnBreakpointOrElse(breakpointName, cb) {
+export function useImportedStateOnBreakpointOrElse<T>(breakpointName: string, cb: () => T): T | undefined {
     const newState = sessionStorage['unfurl-gui:state']
     if(newState && [lookupKey('uploadStateBreakpoint'), 'loadDashboard'].includes(breakpointName)) {
-        window.$store.replaceState({...window.$store.state, ...JSON.parse(newState)})
+        window.$store!.replaceState({...window.$store!.state, ...JSON.parse(newState)})
         if(!lookupKey('preserveImportedVuexState')) delete sessionStorage['unfurl-gui:state']
     } else {return cb()}
 
 }
-export function hasMatchingStorage(re) {
+export function hasMatchingStorage(re: RegExp) {
     return (
         Object.keys(localStorage).some(k => k.startsWith('unfurl_gui:') && re.test(k)) ||
         Object.keys(sessionStorage).some(k => k.startsWith('unfurl_gui:') && re.test(k))
     )
 }
 
-export function clearMatchingStorage(re, visit) {
-    function _visit(k) { if(typeof visit == 'function') visit(k) }
+export function clearMatchingStorage(re: RegExp, visit?: (key: string) => void) {
+    function _visit(k: string) { if(typeof visit == 'function') visit(k) }
     for(const storage of [localStorage, sessionStorage]) {
         Object.keys(storage).filter(k => k.startsWith('unfurl_gui:') && re.test(k)).forEach(k => {_visit(k); delete storage[k]})
     }

@@ -5,7 +5,7 @@ import * as routeNames from './constants.js'
 import { PageNotFound } from 'oc_vue_shared/components/oc'
 import { filterFromRoutes, createDenyList } from './sign-in-filter'
 import { FLASH_TYPES, hideLastFlash } from 'oc_vue_shared/client_utils/oc-flash'
-import { HIDDEN_OPTION_KEYS, lookupKey, setLocalStorageKey, clearMatchingStorage, unfurlServerUrlDev, unfurlServerUrlOverride } from 'oc_vue_shared/storage-keys.js'
+import { HIDDEN_OPTION_KEYS, lookupKey, setLocalStorageKey, clearMatchingStorage, unfurlServerUrlDev, unfurlServerUrlOverride } from 'oc_vue_shared/storage-keys'
 import { setTransientUnfurlServerOverride, getTransientUnfurlServerOverride, healthCheckIfNeeded } from 'oc_vue_shared/client_utils/unfurl-server'
 
 const PERSISTED_QUERY_PARAMS = ['blueprintPath']

@@ -1,7 +1,7 @@
 import _ from 'lodash'
 import type {ActionContext, Module} from '@gitlab/vuex-vue3'
 import { lookupCloudProviderAlias, slugify, generateCardId, deepClone as cloneDeep } from 'oc_vue_shared/util';
-import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys.js';
+import {shouldConnectWithoutCopy} from 'oc_vue_shared/storage-keys';
 import type {Accumulator} from './deployment_template_updates';
 import {appendDeploymentTemplateInBlueprint, appendResourceTemplateInDependent, createResourceTemplate, createEnvironmentInstance, deleteResourceTemplate, deleteResourceTemplateInDependent, deleteEnvironmentInstance, updatePropertyInInstance, updatePropertyInResourceTemplate, createResourceTemplateInDeploymentTemplate} from './deployment_template_updates';
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'

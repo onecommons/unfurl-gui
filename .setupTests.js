@@ -1,6 +1,6 @@
 // babel+jest is completely asinine
 import 'regenerator-runtime/runtime'
-// storage-keys.js reads window.gon.unfurl_server_url at module load to compute
+// storage-keys reads window.gon.unfurl_server_url at module load to compute
 // DEFAULT_UNFURL_SERVER_URL, defaulting to '/services/unfurl-server'. Only override
 // when the default is wrong:
 //   - UNFURL_SERVER_URL_PREFIX: explicit override (highest priority)

@@ -27,7 +27,7 @@
 
 // .setupTests.js sets window.gon.unfurl_server_url before this file's imports
 // run — necessary because DEFAULT_UNFURL_SERVER_URL is evaluated at module-load
-// time. Only overridden when the storage-keys.js default ('/services/unfurl-server')
+// time. Only overridden when the storage-keys default ('/services/unfurl-server')
 // is wrong: gui mode needs '/', or UNFURL_SERVER_URL_PREFIX forces a specific value.
 // The MODE-dependent gon fields (unfurl_gui, current_username) are set in beforeAll
 // below since they're read at call-time, not load-time.
