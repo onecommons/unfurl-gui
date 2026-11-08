@@ -21,7 +21,7 @@ const HEADER_SELECTORS = [
 
 const EMPTY_RECT = {x: 0, y: 0, width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0}
 
-export function headerBounds() {
+export function headerBounds(): Omit<DOMRect, 'toJSON'> {
     for(const selector of HEADER_SELECTORS) {
         const element = document.querySelector(selector)
         if(element) return element.getBoundingClientRect()

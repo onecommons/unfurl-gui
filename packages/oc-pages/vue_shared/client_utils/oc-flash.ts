@@ -1,9 +1,24 @@
 import { createAlert as glCreateFlash, VARIANT_DANGER, VARIANT_SUCCESS, VARIANT_WARNING, VARIANT_INFO} from '~/alert';
 import {generateGitLabIssueSync} from './gitlab-issues'
 
-export function hideFlash() {} // todo
+export function hideFlash(_flash?: HTMLElement) {} // todo
 
-let lastOCFlash
+interface FlashOptions {
+    message: string
+    type?: string
+    // offer to file an issue with this title
+    issue?: string
+    issueContext?: Record<string, unknown>
+    projectPath?: string
+    confidential?: boolean
+    serviceDesk?: string
+    linkTo?: string
+    linkText?: string
+    linkTarget?: string
+    [key: string]: unknown
+}
+
+let lastOCFlash: HTMLElement | undefined
 
 export const FLASH_TYPES = {
     ALERT: VARIANT_DANGER,
@@ -18,8 +33,8 @@ export function hideLastFlash() {
     }
 }
 
-export function createFlash(messageOrOptions, ...args) {
-    const options = typeof messageOrOptions == 'string'? Object.assign({message: messageOrOptions}, ...args): messageOrOptions
+export function createFlash(messageOrOptions: string | FlashOptions, ...args: Partial<FlashOptions>[]): HTMLElement | null {
+    const options: FlashOptions = typeof messageOrOptions == 'string'? Object.assign({message: messageOrOptions}, ...args): messageOrOptions
     /*
      * An alert with no text tells the user nothing -- it renders as an empty
      * coloured box. Keep the signal for whoever is debugging and render
@@ -35,29 +50,33 @@ export function createFlash(messageOrOptions, ...args) {
         if(!type) {type = FLASH_TYPES.ALERT}
         //message = `${message}<div>${options.issue}</div>`
     }
-    const result = glCreateFlash({...options, message, variant: type}).$el
-    result.parentNode.style.maxWidth = '100%'
-    if(options.linkTo && options.linkText) {
+    // standalone's createAlert answers null when the page has no flash container
+    const alert = glCreateFlash({...options, message, variant: type})
+    if(!alert) return null
+    const result = alert.$el as HTMLElement
+    ;(result.parentNode as HTMLElement).style.maxWidth = '100%'
+    const {linkTo, linkText} = options
+    if(linkTo && linkText) {
         window.requestAnimationFrame(() => {
             const flashText = result
-            const link = document.createElement('A')
+            const link = document.createElement('a')
             const linkContainer = document.createElement('DIV')
-            link.textContent = options.linkText
-            link.href = options.linkTo
+            link.textContent = linkText
+            link.href = linkTo
             link.target = options.linkTarget || '_blank'
             linkContainer.appendChild(link)
             flashText.appendChild(linkContainer)
         })
     } else if(options.issue || type == FLASH_TYPES.ALERT) {
         window.requestAnimationFrame(async () => {
-            const flashText = result.querySelector('.gl-alert-content')
+            const flashText = result.querySelector('.gl-alert-content')!
             const issueContext = document.createElement('SPAN')
             const issueContainer = document.createElement('DIV')
-            const createIssueLink = document.createElement('A')
+            const createIssueLink = document.createElement('a')
 
-            issueContext.textContent = options.issue
+            issueContext.textContent = options.issue ?? null
 
-            createIssueLink.href = await generateGitLabIssueSync(options.projectPath, {confidential: options.confidential, title: options.issue, description: message, context: options.issueContext, serviceDesk: options.serviceDesk})
+            createIssueLink.href = generateGitLabIssueSync(options.projectPath!, {confidential: options.confidential, title: options.issue, description: message, context: options.issueContext, serviceDesk: options.serviceDesk})
             createIssueLink.target = '_blank'
             createIssueLink.textContent = options.issue? 'Click to create an issue: ': 'Click to create an issue.'
             createIssueLink.appendChild(issueContext)

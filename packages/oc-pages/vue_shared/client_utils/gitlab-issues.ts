@@ -3,13 +3,19 @@ const BR = '\n'
 const PRE_O = '```'
 const PRE_C = '```'
 
-//const EMAIL_PARAM = 'tf_anonymous_requester_email'
 const DESCRIPTION_PARAM = 'issue[description]'
 const TITLE_PARAM = 'issue[title]'
 const CONFIDENTIAL_PARAM = 'issue[confidential]'
 
-export function generateGitLabIssueSync(projectPath, {title, description, context, confidential, email, serviceDesk}) {
-    const _context = {
+export function generateGitLabIssueSync(projectPath: string, {title, description, context, confidential, serviceDesk}: {
+    title?: string
+    description?: string
+    context?: Record<string, unknown>
+    confidential?: boolean
+    // file on this project's service desk instead
+    serviceDesk?: string
+}) {
+    const _context: Record<string, unknown> = {
         ...context,
         'Referring URL': window.location.href,
     }
@@ -34,13 +40,6 @@ export function generateGitLabIssueSync(projectPath, {title, description, contex
         result.push(encodeURIComponent(TITLE_PARAM))
         result.push('=')
         result.push(encodeURIComponent(title))
-    }
-
-    if(email) {
-        result.push('&')
-        result.push(encodeURIComponent(EMAIL_PARAM))
-        result.push('=')
-        result.push(encodeURIComponent(email))
     }
 
     if(confidential) {

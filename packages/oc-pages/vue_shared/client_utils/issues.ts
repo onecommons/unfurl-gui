@@ -1,4 +1,3 @@
-import gql from 'graphql-tag'
 import {fetchUserPublicEmail} from './user'
 const BASE_URL = 'https://onecommons.zendesk.com/hc/requests/new?'
 const BR = '<br>' // for gitlab use \n
@@ -9,7 +8,14 @@ const EMAIL_PARAM = 'tf_anonymous_requester_email'
 const DESCRIPTION_PARAM = 'tf_description'
 const TITLE_PARAM = 'tf_subject'
 
-export function generateIssueLinkSync(projectPath, {title, description, context, email}) {
+interface IssueOptions {
+    title?: string
+    description?: string
+    context?: Record<string, unknown>
+    email?: string | null
+}
+
+export function generateIssueLinkSync(projectPath: string | null | undefined, {title, description, context, email}: IssueOptions) {
     const _context = {
         ...context,
         'Dashboard Project': projectPath,
@@ -48,7 +54,7 @@ export function generateIssueLinkSync(projectPath, {title, description, context,
     return result.join('')
 }
 
-export async function generateIssueLink(projectPath, options) {
+export async function generateIssueLink(projectPath: string | null | undefined, options: IssueOptions) {
     const email = await fetchUserPublicEmail()
     return generateIssueLinkSync(projectPath, {...options, email})
 }
