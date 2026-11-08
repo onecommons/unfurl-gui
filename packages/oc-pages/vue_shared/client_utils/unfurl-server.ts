@@ -27,7 +27,7 @@ export interface ExportResponse {
 }
 
 // A repository entry from a blueprint's `repositories`.
-interface Repository {
+export interface Repository {
     url: string
     file?: string
     temp?: boolean
