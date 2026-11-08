@@ -7,12 +7,6 @@ const MAX_WATCHES = 32
 
 const SUFFIX = '.latest_commit'
 
-// What projects.js keeps per branch in sessionStorage.
-interface StoredCommit {
-    commit?: string
-    queueid?: number
-    stale?: boolean
-}
 
 interface Watch {
     branch: string
@@ -177,7 +171,7 @@ export function watchSetFor(projectPath: string): Watch[] {
         const branch = key.slice(prefix.length, -SUFFIX.length)
         if (!branch) continue
 
-        const stored: StoredCommit | undefined = getLastCommit(projectPath, branch)
+        const stored = getLastCommit(projectPath, branch)
         if (!stored?.commit || !((stored.queueid ?? 0) > 0)) continue
         // frozen by a supersession: we do not want the result, see applyEvent
         if (stored.stale) continue
@@ -223,7 +217,7 @@ function eventsUrl(projectPath: string, baseUrl: string | undefined, watches: Wa
 export function applyEvent(projectPath: string, ev: WatchEvent | null | undefined): boolean {
     if (!ev?.branch) return false
 
-    const stored: StoredCommit | undefined = getLastCommit(projectPath, ev.branch)
+    const stored = getLastCommit(projectPath, ev.branch)
     /*
      * Every status describes writes queued against this base commit, and the
      * queue key -- its counter included -- is per (project, branch,

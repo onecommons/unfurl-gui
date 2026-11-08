@@ -6,7 +6,47 @@ import * as semver from 'semver'
 
 const BRANCH_CACHE_DURATION = 1000 * 60 * 5 // 5 minutes
 
-function generateConfig(options) {
+// GitLab takes either a numeric id or the url-encoded path
+export type ProjectId = number | string
+
+// What setLastCommit keeps per branch in sessionStorage.
+export interface StoredCommit {
+    commit?: string
+    queueid?: number
+    when?: string
+    supersedes?: string
+    stale?: boolean
+}
+
+// [commit, branch, queueid, changed] -- see fetchLastCommit
+export type LastCommitResult = [string | undefined, string | undefined, number | undefined, boolean?]
+
+export interface Branch {
+    name: string
+    default?: boolean
+    commit?: {id: string, created_at?: string}
+}
+
+export interface ProjectInfo {
+    id?: number
+    name?: string
+    default_branch?: string
+    visibility?: string
+    [key: string]: unknown
+}
+
+interface MergeRequestOptions {
+    branch?: string
+    target?: string
+    title?: string
+    description?: string
+    labels?: string | string[]
+    state?: string
+}
+
+type AccessOptions = {accessToken?: string}
+
+function generateConfig(options?: AccessOptions) {
     if(options?.accessToken) {
         return {headers: {
             'PRIVATE-TOKEN': options.accessToken
@@ -15,16 +55,16 @@ function generateConfig(options) {
 }
 
 
-const projectInfos = {}
-const branchesData = {}
+const projectInfos: Record<ProjectId, Promise<ProjectInfo> | undefined> = {}
+const branchesData: Record<ProjectId, Promise<Branch[]> | undefined> = {}
 
 // default branches are persisted to sessionStorage (like get/setLastCommit)
 // so a page load can resolve the default branch without a /branches round-trip
-function defaultBranchSessionStorageKey(projectId) {
+function defaultBranchSessionStorageKey(projectId: ProjectId) {
     return `${projectId}.default_branch`
 }
 
-export function setProjectDefaultBranch(projectId, branch) {
+export function setProjectDefaultBranch(projectId: ProjectId, branch: string | undefined) {
     if (branch === undefined) {
         delete sessionStorage[defaultBranchSessionStorageKey(projectId)]
     } else {
@@ -32,7 +72,7 @@ export function setProjectDefaultBranch(projectId, branch) {
     }
 }
 
-export function getProjectDefaultBranch(projectId) {
+export function getProjectDefaultBranch(projectId: ProjectId): string | undefined {
     let result
     try {
         result = JSON.parse(sessionStorage[defaultBranchSessionStorageKey(projectId)])
@@ -44,11 +84,11 @@ export function getProjectDefaultBranch(projectId) {
 // request didn't pin one — reported by the server in the export response and
 // recorded by unfurlServerGet. Kept separate from default_branch: an explicit
 // ?branch= request must never overwrite it.
-function currentBranchSessionStorageKey(projectId) {
+function currentBranchSessionStorageKey(projectId: ProjectId) {
     return `${projectId}.current_branch`
 }
 
-export function setProjectCurrentBranch(projectId, branch) {
+export function setProjectCurrentBranch(projectId: ProjectId, branch: string | undefined) {
     if (branch === undefined) {
         delete sessionStorage[currentBranchSessionStorageKey(projectId)]
     } else {
@@ -56,7 +96,7 @@ export function setProjectCurrentBranch(projectId, branch) {
     }
 }
 
-export function getProjectCurrentBranch(projectId) {
+export function getProjectCurrentBranch(projectId: ProjectId): string | undefined {
     let result
     try {
         result = JSON.parse(sessionStorage[currentBranchSessionStorageKey(projectId)])
@@ -64,7 +104,7 @@ export function getProjectCurrentBranch(projectId) {
     return result
 }
 
-export async function fetchProjects(options={}) {
+export async function fetchProjects(options: AccessOptions & {minAccessLevel?: number} = {}) {
     // TODO this probably doesn't need access level 40
     const {minAccessLevel} = options
 
@@ -72,29 +112,29 @@ export async function fetchProjects(options={}) {
 
     let result = (await axios.get(`/api/v4/projects?min_access_level=${_minAccessLevel}`, generateConfig(options)))?.data
     const dashboards = (await axios.get('/api/v4/dashboards?min_access_level=10', generateConfig(options))).data
-        .map(dashboardProject => dashboardProject.path_with_namespace)
+        .map((dashboardProject: {path_with_namespace: string}) => dashboardProject.path_with_namespace)
 
-    result = result.filter(project => !dashboards.includes(project.path_with_namespace))
+    result = result.filter((project: {path_with_namespace: string}) => !dashboards.includes(project.path_with_namespace))
     return result
 }
 
-export async function fetchRegistryRepositories(projectId, options) {
+export async function fetchRegistryRepositories(projectId: ProjectId, options?: AccessOptions) {
     return (await axios.get(`/api/v4/projects/${projectId}/registry/repositories?per_page=99999`, generateConfig(options)))?.data
 }
 
-export async function fetchRepositoryBranches(projectId, options) {
-    const result = (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
+export async function fetchRepositoryBranches(projectId: ProjectId, options?: AccessOptions): Promise<Branch[]> {
+    const result: Branch[] = (await axios.get(`/api/v4/projects/${projectId}/repository/branches?per_page=99999`, generateConfig(options)))?.data
     const defaultBranch = result.find(branch => branch.default)
     if(defaultBranch) setProjectDefaultBranch(projectId, defaultBranch.name)
     return result
 }
 
-export async function fetchRepositoryTags(projectId, options) {
+export async function fetchRepositoryTags(projectId: ProjectId, options?: AccessOptions) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/tags?per_page=99999`, generateConfig(options)))?.data
 }
 
-export async function fetchCurrentTag(projectId) {
-    let tags = await fetchRepositoryTags(projectId)
+export async function fetchCurrentTag(projectId: ProjectId) {
+    let tags: {name: string}[] = await fetchRepositoryTags(projectId)
 
     tags = tags.filter(t => semver.valid(t.name))
 
@@ -103,18 +143,18 @@ export async function fetchCurrentTag(projectId) {
     return tags.pop()
 }
 
-export async function fetchProjectInfo(projectId, options) {
+export async function fetchProjectInfo(projectId: ProjectId, options?: AccessOptions): Promise<ProjectInfo | null> {
     if(!window.gon.unfurl_gui) {
         let result
         if(result = projectInfos[projectId]) {
             return result
         }
-        const promise =  async() => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
+        const promise = async(): Promise<ProjectInfo> => (await axios.get(`/api/v4/projects/${projectId}`, generateConfig(options)))?.data
 
         return projectInfos[projectId] = promise().then(projectInfo => {
             if(projectInfo.default_branch) {
                 setProjectDefaultBranch(projectId, projectInfo.default_branch)
-                setProjectDefaultBranch(projectInfo.id, projectInfo.default_branch)
+                setProjectDefaultBranch(projectInfo.id!, projectInfo.default_branch)
             }
             return projectInfo
         })
@@ -125,29 +165,29 @@ export async function fetchProjectInfo(projectId, options) {
     }
 }
 
-export async function fetchProjectPipelines(projectId, options) {
+export async function fetchProjectPipelines(projectId: ProjectId, options?: AccessOptions) {
     return (await axios.get(`/api/v4/projects/${projectId}/pipelines`, generateConfig(options)))?.data
 }
 
-export async function fetchProjectAccessTokens(projectId) {
+export async function fetchProjectAccessTokens(projectId: ProjectId) {
     return (await axios.get(`/api/v4/projects/${projectId}/access_tokens`))?.data
 }
 
-export async function fetchCommit(projectId, commitHash) {
+export async function fetchCommit(projectId: ProjectId, commitHash: string) {
     return (await axios.get(`/api/v4/projects/${projectId}/repository/commits/${commitHash}`))?.data
 }
 
 
-export async function fetchBranches(projectId) {
+export async function fetchBranches(projectId: ProjectId): Promise<Branch[]> {
     // saves the default branch to sessionStorage if it finds one, and caches the branchesData for BRANCH_CACHE_DURATION
     let result
     if(result = branchesData[projectId]) {
         return result
     }
-    const promise = async () => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
+    const promise = async (): Promise<Branch[]> => (await axios.get(`/api/v4/projects/${projectId}/repository/branches`))?.data
 
     setTimeout(() => delete branchesData[projectId], BRANCH_CACHE_DURATION)
-    return branchesData[projectId] = promise().catch(e => {
+    return branchesData[projectId] = promise().catch((e: {response?: {status?: number}}) => {
         // 404 means the project has no repository -- it was created moments
         // ago, or it isn't at the path we looked for. Every caller treats the
         // result as a list and copes with an empty one, whereas raising
@@ -168,11 +208,11 @@ export async function fetchBranches(projectId) {
 }
 
 
-function commitSessionStorageKey(projectId, branch) {
+function commitSessionStorageKey(projectId: ProjectId, branch: string | undefined) {
     return `${projectId}#${branch}.latest_commit`
 }
 
-export function setLastCommit(projectId, branch, commit_data) {
+export function setLastCommit(projectId: ProjectId, branch: string | undefined, commit_data: StoredCommit | undefined) {
     if (commit_data === undefined) {
         delete sessionStorage[commitSessionStorageKey(projectId, branch)]
     } else {
@@ -207,10 +247,10 @@ export function setLastCommit(projectId, branch, commit_data) {
  * with no proxy answers `{commits: {}}`, which is true rather than a stub:
  * with no queue, nothing is ever pending.
  */
-export async function fetchQueueState(projectPath, branch) {
+export async function fetchQueueState(projectPath: string, branch: string | undefined): Promise<Record<string, {new_commit?: string}> | null> {
     const base = unfurlServerUrlOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const url = `${base}/queue_state?auth_project=${encodeURIComponent(projectPath)}`
-        + `&branch=${encodeURIComponent(branch)}`
+        + `&branch=${encodeURIComponent(branch!)}`
 
     try {
         const {data} = await axios.get(url.replace(/^\/+/, '/'))
@@ -225,7 +265,7 @@ export async function fetchQueueState(projectPath, branch) {
 // can use this flag as a "has the upstream moved since we last looked?" signal
 // without needing to read sessionStorage themselves (which would race with our
 // own writeback below).
-export async function fetchLastCommit(projectPath, _branch) {
+export async function fetchLastCommit(projectPath: string, _branch?: string): Promise<LastCommitResult> {
     const projectId = encodeURIComponent(projectPath)
     const branch = _branch || await getOrFetchCurrentBranch(projectId)
     let lastInSessionStorage = getLastCommit(projectPath, branch)
@@ -243,8 +283,8 @@ export async function fetchLastCommit(projectPath, _branch) {
         branchesWereCached ? null : fetchQueueState(projectPath, branch),
     ])
 
-    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {}
-    const {id, created_at} = commit || {}  // note: same as committed_date
+    const {commit, name} = branches.find(b => branch? b.name == branch: b.default) || branches.find(b => b.name == 'main') || {} as Partial<Branch>
+    const {id, created_at} = commit || {} as Partial<NonNullable<Branch['commit']>>  // note: same as committed_date
 
     // A `-dirty` suffix from /branches means the on-disk working tree was
     // uncommitted at the time of the lookup, so the sha is not a commit we
@@ -274,7 +314,7 @@ export async function fetchLastCommit(projectPath, _branch) {
      * there is no queueid of ours for a larger one to invalidate and none for
      * a `discarded` entry to strip.
      */
-    const entry = !isDirty && queued?.[id]
+    const entry = !isDirty && id !== undefined ? queued?.[id] : undefined
     const current = (entry?.new_commit && entry.new_commit !== id) ? entry.new_commit : id
 
     const changed = current !== lastInSessionStorage?.commit
@@ -290,7 +330,7 @@ export async function fetchLastCommit(projectPath, _branch) {
  * Shared by the 409 WRITE_DISCARDED response and the `discarded` event, which
  * are the same situation reached two ways.
  */
-export function discardQueuedWrite(projectId, branch) {
+export function discardQueuedWrite(projectId: ProjectId, branch: string | undefined) {
     const stored = branch && getLastCommit(projectId, branch)
     if (!stored) return false
 
@@ -298,7 +338,7 @@ export function discardQueuedWrite(projectId, branch) {
     return true
 }
 
-export function getLastCommit(projectId, branch) {
+export function getLastCommit(projectId: ProjectId, branch: string | undefined): StoredCommit | undefined {
   let lastInSessionStorage
   try {
     lastInSessionStorage = JSON.parse(sessionStorage[commitSessionStorageKey(projectId, branch)])
@@ -306,15 +346,15 @@ export function getLastCommit(projectId, branch) {
   return lastInSessionStorage
 }
 
-export async function fetchBranch(projectId, branch) {
-    const result = (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
+export async function fetchBranch(projectId: ProjectId, branch: string) {
+    const result: Branch = (await axios.get(`/api/v4/projects/${projectId}/repository/branches/${branch}`))?.data
     if(result.default) {
         setProjectDefaultBranch(projectId, branch)
     }
     return result
 }
 
-export async function createBranch(projectId, branch, ref) {
+export async function createBranch(projectId: string, branch: string, ref?: string) {
     const _ref = ref || await getOrFetchDefaultBranch(projectId)
 
     const response = await axios.post(`/api/v4/projects/${projectId}/repository/branches`, {branch, ref: _ref}, {validateStatus() {return true}})
@@ -337,14 +377,14 @@ export async function createBranch(projectId, branch, ref) {
     }
 
     try {
-        branchesData[branch] = branchesData[_ref]
+        branchesData[branch] = branchesData[_ref!]
     } catch(e) {}
 
     return response.data
 }
 
-export async function generateProjectAccessToken(projectId, options) {
-    const _options = Object.assign({
+export async function generateProjectAccessToken(projectId: ProjectId, options?: {name?: string, scopes?: string[], expires_at?: string}) {
+    const _options: Record<string, unknown> = Object.assign({
         name: 'DashboardProjectAccessToken',
         scopes: ['read_repository', 'read_registry'],
         // 19.3 rejects a create without this: ResourceAccessTokens::CreateService
@@ -378,7 +418,7 @@ query getContainerRepositories($fullPath: ID!) {
 }
 `
 
-export async function fetchContainerRepositories(fullPath) {
+export async function fetchContainerRepositories(fullPath: string) {
     const response = await graphqlClient.query({
         query,
         variables: {fullPath}
@@ -399,7 +439,7 @@ const getUserPermissions = gql`
         }`
 
 
-export async function fetchUserHasWritePermissions(projectPath) {
+export async function fetchUserHasWritePermissions(projectPath: string): Promise<boolean> {
 
     // #!if !standalone
     const result = await graphqlClient.query({
@@ -414,8 +454,8 @@ export async function fetchUserHasWritePermissions(projectPath) {
     return true
 }
 
-export async function createMergeRequest(projectId, {branch, target, title, description, labels}) {
-    const body = {}
+export async function createMergeRequest(projectId: ProjectId, {branch, target, title, description, labels}: MergeRequestOptions) {
+    const body: Record<string, string | undefined> = {}
     body['source_branch'] = branch
     body['target_branch'] = target
     body['title'] = title
@@ -432,8 +472,8 @@ export async function createMergeRequest(projectId, {branch, target, title, desc
     return (await axios.post(`/api/v4/projects/${projectId}/merge_requests`, body))?.data
 }
 
-export async function listMergeRequests(projectId, {branch, target, labels, state}) {
-    const params = []
+export async function listMergeRequests(projectId: ProjectId, {branch, target, labels, state}: MergeRequestOptions) {
+    const params: string[] = []
     if(branch) {
         params.push(`source_branch=${branch}`)
     }
@@ -451,21 +491,21 @@ export async function listMergeRequests(projectId, {branch, target, labels, stat
     return (await axios.get(`/api/v4/projects/${projectId}/merge_requests?${params.join('&')}`))?.data
 }
 
-export async function setMergeRequestReadyStatus(projectId, {branch, target, labels, state, status}) {
+export async function setMergeRequestReadyStatus(projectId: ProjectId, {branch, target, labels, state, status}: MergeRequestOptions & {status?: boolean | string}) {
     const wip = status === false || status == 'wip'
-    const [mr] = await listMergeRequests(...arguments)
+    const [mr]: {iid: number, title: string}[] = await listMergeRequests(projectId, {branch, target, labels, state})
 
     let title = mr.title.replace(/^\[Draft\]\s+/, '')
     if(wip) title = `[Draft] ${title}`
     return await axios.put(`/api/v4/projects/${projectId}/merge_requests/${mr.iid}`, {title})
 }
 
-export async function listProjectFiles(projectPath, {branch}={}) {
+export async function listProjectFiles(projectPath: string, {branch}: {branch?: string} = {}) {
     const _branch = branch || await getOrFetchDefaultBranch(encodeURIComponent(projectPath))
     return (await axios.get(`/${projectPath}/-/files/${_branch}?format=json`)).data
 }
 
-export async function getOrFetchDefaultBranch(projectId) {
+export async function getOrFetchDefaultBranch(projectId: ProjectId) {
     let result = getProjectDefaultBranch(projectId)
     if(!result) {
         await fetchBranches(projectId) // force population if not already cached
@@ -477,6 +517,6 @@ export async function getOrFetchDefaultBranch(projectId) {
 // resolution for callers that want "the branch the server is serving this
 // project from": prefer the branch a previous export response reported using,
 // fall back to the default branch
-export async function getOrFetchCurrentBranch(projectId) {
+export async function getOrFetchCurrentBranch(projectId: ProjectId) {
     return getProjectCurrentBranch(projectId) || await getOrFetchDefaultBranch(projectId)
 }

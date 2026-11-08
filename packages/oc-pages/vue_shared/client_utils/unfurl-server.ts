@@ -6,6 +6,7 @@ import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
 import type {XhrResponse} from './crossorigin-xhr';
+import type {LastCommitResult} from './projects';
 
 // The proxy's error body, relayed by axios or the cross-origin iframe.
 type ServerError = Error & {
@@ -39,8 +40,6 @@ export interface ExportParams {
     sendCredentials?: boolean
 }
 
-// [latest_commit, branch, queueid], as fetchLastCommit resolves it
-type LastCommitResult = [string | undefined, string | undefined, number | undefined]
 
 type Credentials = {sendCredentials?: boolean, username?: string, password?: string | null}
 
@@ -156,7 +155,7 @@ async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCreden
         // 404s here, and letting that reject would abort the fetch it was only
         // trying to optimise -- fall back to sending credentials instead.
         ? fetchProjectInfo(encodeURIComponent(projectPath))
-            .then((pinfo: {visibility?: string} | undefined) => pinfo?.visibility)
+            .then(pinfo => pinfo?.visibility)
             .catch(() => undefined)
         : null
     const [password, visibility] = await Promise.all([

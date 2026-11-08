@@ -4341,6 +4341,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/semver@npm:~7.7.0":
+  version: 7.7.1
+  resolution: "@types/semver@npm:7.7.1"
+  checksum: 76d218e414482a398148d5c28f2bfa017108869f3fc18cda379c9d8d062348f8b9653ae2fa8642d3b5b52e211928fe8be34f22da4e1f08245c84e0e51e040673
+  languageName: node
+  linkType: hard
+
 "@types/send@npm:*":
   version: 1.2.1
   resolution: "@types/send@npm:1.2.1"
@@ -21610,6 +21617,7 @@ __metadata:
     "@lifeomic/json-schema-to-graphql-types": ^1.4.2
     "@types/lodash": ~4.17.0
     "@types/marked": 4.3.2
+    "@types/semver": ~7.7.0
     "@typescript-eslint/parser": 6.21.0
     "@vue/cli-plugin-babel": ^5.0.8
     "@vue/cli-plugin-eslint": ^5.0.8
