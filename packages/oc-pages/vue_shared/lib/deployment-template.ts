@@ -57,7 +57,7 @@ export function environmentVariableDependencies(deploymentObject: Json) {
     return _.uniq(result)
 }
 
-export function transformEnvironmentVariables(deploymentObject: Json, variableNames: string[] | null, prefix: string | null | undefined, substitutions: [string | RegExp, string][] = []) {
+export function transformEnvironmentVariables(deploymentObject: Json, variableNames: string[] | null, prefix: string | false | null | undefined, substitutions: [string | RegExp, string][] = []) {
     visitProperties(deploymentObject, prop => visitEnvReferences(prop, reference => {
         // only limit to variables in the variableNames list if it is provided
         if(Array.isArray(variableNames) && !variableNames.includes(reference.get_env)) return

@@ -95,7 +95,8 @@ export async function lookupEnvironmentId(projectPath: string, environmentName: 
 }
 
 // use prefix='' to use no prefix
-export async function shareEnvironmentVariables(projectPath: string, sourceEnvironment: string, targetEnvironment: string, variables: string[], prefix: string | null = null, substitutions: [string | RegExp, string][] = []) {
+// prefix: null generates one; '' or false uses none
+export async function shareEnvironmentVariables(projectPath: string, sourceEnvironment: string, targetEnvironment: string, variables: string[], prefix: string | false | null = null, substitutions: [string | RegExp, string][] = []) {
     let _prefix = prefix
     if(_prefix === null) {
         _prefix = `_${Date.now().toString(36)}`
