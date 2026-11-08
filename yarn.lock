@@ -4229,6 +4229,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/lodash@npm:~4.17.0":
+  version: 4.17.27
+  resolution: "@types/lodash@npm:4.17.27"
+  checksum: abdc4b1d03a42d8b1048e097e1c5d5b2093e787464f0e7684141736f92c84d4d26eaac283afa128a2e2bf87251bc6003b78f454bb86551c9a6d4d7778b03ed26
+  languageName: node
+  linkType: hard
+
 "@types/long@npm:^4.0.0":
   version: 4.0.2
   resolution: "@types/long@npm:4.0.2"
@@ -21601,6 +21608,7 @@ __metadata:
     "@gitlab/vue-router-vue3": "npm:vue-router@4.5.1"
     "@gitlab/vuex-vue3": "npm:vuex@4.1.0"
     "@lifeomic/json-schema-to-graphql-types": ^1.4.2
+    "@types/lodash": ~4.17.0
     "@types/marked": 4.3.2
     "@typescript-eslint/parser": 6.21.0
     "@vue/cli-plugin-babel": ^5.0.8

@@ -82,6 +82,7 @@
     "@babel/preset-env": "^7.24.5",
     "@babel/preset-typescript": "~7.28.5",
     "@gitlab/eslint-plugin": "^19.5.0",
+    "@types/lodash": "~4.17.0",
     "@types/marked": "4.3.2",
     "@typescript-eslint/parser": "6.21.0",
     "@vue/cli-plugin-babel": "^5.0.8",

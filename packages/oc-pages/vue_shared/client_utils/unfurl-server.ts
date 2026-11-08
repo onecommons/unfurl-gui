@@ -5,6 +5,44 @@ import { ensureWatching, beginWrite, endWrite } from './unfurl-server-events';
 import { XhrIFrame } from './crossorigin-xhr';
 import {DEFAULT_UNFURL_SERVER_URL, shouldEncodePasswordsInExportUrl, unfurlServerUrlOverride, alwaysSendLatestCommit, cloudmapRepo, lookupKey, setLocalStorageKey} from '../storage-keys';
 import _ from 'lodash'
+import type {XhrResponse} from './crossorigin-xhr';
+
+// The proxy's error body, relayed by axios or the cross-origin iframe.
+type ServerError = Error & {
+    response?: {
+        status?: number
+        data?: {code?: string, message?: string}
+        headers?: Record<string, string>
+    }
+}
+
+// What /export and /types return. Only the fields read here are named; the
+// rest is the unfurl export JSON, typed with the Phase 1 payload types.
+export interface ExportResponse {
+    branch?: string
+    default_branch?: string
+    latest_commit?: string
+    [key: string]: any
+}
+
+// A repository entry from a blueprint's `repositories`.
+interface Repository {
+    url: string
+    file?: string
+    temp?: boolean
+}
+
+export interface ExportParams {
+    projectPath: string
+    branch?: string
+    file?: string
+    sendCredentials?: boolean
+}
+
+// [latest_commit, branch, queueid], as fetchLastCommit resolves it
+type LastCommitResult = [string | undefined, string | undefined, number | undefined]
+
+type Credentials = {sendCredentials?: boolean, username?: string, password?: string | null}
 
 let pageAccessedByReload = false
 try {
@@ -12,14 +50,14 @@ try {
         (window.performance.navigation && window.performance.navigation.type === 1) ||
             window.performance
                 .getEntriesByType('navigation')
-                .map((nav) => nav.type)
+                .map((nav) => (nav as PerformanceNavigationTiming).type)
                 .includes('reload')
     )
 } catch(e) {}
 
-let transientOverride
+let transientOverride: string | undefined
 
-export function setTransientUnfurlServerOverride(override) {
+export function setTransientUnfurlServerOverride(override: string | undefined) {
     transientOverride = override
 }
 
@@ -27,12 +65,12 @@ export function getTransientUnfurlServerOverride() {
     return transientOverride
 }
 
-function getOverride(projectPath) {
+function getOverride(projectPath: string) {
     return transientOverride || unfurlServerUrlOverride(projectPath)
 }
 
-function createHeaders({sendCredentials, username, password}) {
-    const headers = {}
+function createHeaders({sendCredentials, username, password}: Credentials) {
+    const headers: Record<string, string> = {}
     const _sendCredentials = sendCredentials ?? true
 
     if(pageAccessedByReload) {
@@ -46,7 +84,9 @@ function createHeaders({sendCredentials, username, password}) {
     return headers
 }
 
-async function doXhr(projectPath, _method, url, body, headers) {
+let ufsvIFrame: XhrIFrame | undefined
+
+async function doXhr(projectPath: string, _method: string, url: string, body?: unknown, headers?: Record<string, string>): Promise<XhrResponse | undefined> {
     const method = _method.toUpperCase()
     if(!['GET', 'POST'].includes(method)) throw new Error(`@doXhr: unexpected method for unfurl server "${method}"`)
     if(!getOverride(projectPath)) {
@@ -55,35 +95,36 @@ async function doXhr(projectPath, _method, url, body, headers) {
         else if(method == 'POST') { response = await axios.post(url, body, {headers}) }
         return response
     } else {
-        let ufsvIFrame = doXhr.ufsvIFrame
-        if(!doXhr.ufsvIFrame) { doXhr.ufsvIFrame = ufsvIFrame = new XhrIFrame({rejectErrorCode: true}) }
+        if(!ufsvIFrame) { ufsvIFrame = new XhrIFrame({rejectErrorCode: true}) }
 
         // blocking forever in cypress
         await ufsvIFrame.ready
 
-        return await ufsvIFrame.doXhr(...Array.from(arguments).slice(1))
+        return await ufsvIFrame.doXhr(_method, url, body, headers)
     }
 
 }
 
-export function healthCheckIfNeeded(projectPath) {
+let healthCheckPromise: Promise<void> | undefined
+
+export function healthCheckIfNeeded(projectPath: string) {
     const url = unfurlServerUrlOverride(projectPath)
     if(!url) return
 
     const key = `ufsv_dev:${url}:${window.gon.current_username}:${projectPath}`
     if(lookupKey(key)) return
 
-    if(!healthCheckIfNeeded.promise) {
-        healthCheckIfNeeded.promise = (async () => {
+    if(!healthCheckPromise) {
+        healthCheckPromise = (async () => {
             await doXhr(projectPath, 'GET', `${url}/health?start_development_session=${key}`)
             setLocalStorageKey(key, 'unused')
         })()
     }
 
-    return healthCheckIfNeeded.promise
+    return healthCheckPromise
 }
 
-async function healthCheckErrorHelper(projectPath) {
+async function healthCheckErrorHelper(projectPath: string) {
     try {
         await healthCheckIfNeeded(projectPath)
     } catch(e) {
@@ -100,7 +141,11 @@ async function healthCheckErrorHelper(projectPath) {
 //                         public projects (unfurlServerGetTypes's rule).
 // In gui mode `fetchUserAccessToken` short-circuits to '' and the visibility
 // lookup is skipped — no GitLab round-trips either way.
-async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCredentials = true}) {
+async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCredentials = true}: {
+    projectPath: string
+    sendCredentials?: boolean
+    defaultSendCredentials?: true | 'public-aware'
+}): Promise<Credentials> {
     const shouldFetchProjectInfo =
         (sendCredentials ?? null) == null &&
         defaultSendCredentials === 'public-aware' &&
@@ -111,7 +156,7 @@ async function unfurlServerAuth({projectPath, sendCredentials, defaultSendCreden
         // 404s here, and letting that reject would abort the fetch it was only
         // trying to optimise -- fall back to sending credentials instead.
         ? fetchProjectInfo(encodeURIComponent(projectPath))
-            .then(pinfo => pinfo?.visibility)
+            .then((pinfo: {visibility?: string} | undefined) => pinfo?.visibility)
             .catch(() => undefined)
         : null
     const [password, visibility] = await Promise.all([
@@ -140,11 +185,17 @@ async function unfurlServerGet({
     // branch=<name> url parameter on the page route (?branch=, ?bprev=) —
     // those must not overwrite the project's current_branch
     setCurrentBranch = true,
-}) {
+}: {
+    projectPath: string
+    endpoint: string
+    branch?: string
+    query?: (string | undefined | null)[]
+    setCurrentBranch?: boolean
+} & Credentials): Promise<ExportResponse | undefined> {
     const baseUrl = getOverride(projectPath) || DEFAULT_UNFURL_SERVER_URL
     const includePasswordInQuery = shouldEncodePasswordsInExportUrl()
 
-    const params = []
+    const params: string[] = []
     if(sendCredentials && includePasswordInQuery && username && password) {
         params.push(`username=${username}`)
         params.push(`private_token=${password}`)
@@ -162,10 +213,11 @@ async function unfurlServerGet({
         username, password,
     })
 
-    let data
+    let data: ExportResponse | undefined
     try {
         data = (await doXhr(projectPath, 'GET', url, null, headers))?.data
-    } catch(e) {
+    } catch(_e) {
+        const e = _e as ServerError
         /*
          * The write this read was waiting on was discarded, so the queueid we
          * sent names a revision that will never exist and polling for it can
@@ -205,7 +257,17 @@ async function unfurlServerGet({
     return data
 }
 
-export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, lastCommitResult: providedLastCommit, setCurrentBranch = true}) {
+export async function unfurlServerExport({format, branch, projectPath, includeDeployments, sendCredentials, deploymentPath, environment, lastCommitResult: providedLastCommit, setCurrentBranch = true}: {
+    format: string
+    projectPath: string
+    branch?: string
+    includeDeployments?: boolean
+    sendCredentials?: boolean
+    deploymentPath?: string
+    environment?: string
+    lastCommitResult?: LastCommitResult | Promise<LastCommitResult | undefined>
+    setCurrentBranch?: boolean
+}) {
     const resolvedFromCache = !branch
     if (!branch) {
     // If the caller didn't pin a branch, use the branch a previous export
@@ -222,12 +284,12 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
         unfurlServerAuth({projectPath, sendCredentials}),
         providedLastCommit,
     ])
-    let lastCommitResult = resolvedFromCaller
+    let lastCommitResult: LastCommitResult | undefined = resolvedFromCaller
     if (!lastCommitResult && branch) {
         const cached = getLastCommit(projectPath, branch)
         if (cached) lastCommitResult = [cached.commit, branch, cached.queueid]
     }
-    const [latestCommit, inferredBranch, queueid] = lastCommitResult || []
+    const [latestCommit, inferredBranch, queueid] = lastCommitResult || [] as unknown as Partial<LastCommitResult>
 
     const query = [`format=${format}`]
     // if we specified a branch, pass latest commit unless we're in developer mode for this project
@@ -267,11 +329,11 @@ export async function unfurlServerExport({format, branch, projectPath, includeDe
     }
 }
 
-const unfurlTypesResponsesCache = {}
-const constraintCombinationsWithCloudmap = {}
-export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}, _params={}, index) {
+const unfurlTypesResponsesCache: Record<string, Promise<ExportResponse | undefined> | undefined> = {}
+const constraintCombinationsWithCloudmap: Record<string, boolean> = {}
+export async function unfurlServerGetTypes({file, branch, projectPath, sendCredentials}: ExportParams, _params: {implementation_requirements?: string | string[]} = {}, index?: number) {
     // TODO remove when unfurl server types supports params
-    const params = {implementation_requirements: _params.implementation_requirements}
+    const params: Record<string, string | string[] | undefined> = {implementation_requirements: _params.implementation_requirements}
 
     const cacheKey = JSON.stringify({branch, projectPath, ...params})
     if (unfurlTypesResponsesCache[cacheKey]) {
@@ -283,7 +345,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
         defaultSendCredentials: 'public-aware',
     })
 
-    const query = []
+    const query: string[] = []
 
     if(!params.hasOwnProperty('cloudmap')) {
         const combinationKey = JSON.stringify(params)
@@ -317,7 +379,7 @@ export async function unfurlServerGetTypes({file, branch, projectPath, sendCrede
     return await result
 }
 
-export function repoToExportParams(repo) {
+export function repoToExportParams(repo: Repository): ExportParams | null {
     let url
     try {
         url = new URL(repo.url)
@@ -331,7 +393,7 @@ export function repoToExportParams(repo) {
     const [branch, _file] = (url.hash?.slice(1) || '').split(':')
     const file = repo.file || _file
 
-    const result = {branch, projectPath}
+    const result: ExportParams = {branch, projectPath}
 
     if(file) {
         result.file = file
@@ -340,12 +402,12 @@ export function repoToExportParams(repo) {
     return result
 }
 
-export function importsAreEqual(a, b) {
+export function importsAreEqual(a: Repository, b: Repository) {
     return _.isEqual(repoToExportParams(a), repoToExportParams(b))
 }
 
-function groupTemplatesByPrimary(typesExportDict) {
-    const appBlueprint = Object.values(typesExportDict.ApplicationBlueprint || {})[0]
+function groupTemplatesByPrimary(typesExportDict: ExportResponse) {
+    const appBlueprint = Object.values(typesExportDict.ApplicationBlueprint || {})[0] as {primary: string} | undefined
     if(!appBlueprint) return {}
 
     try {
@@ -358,8 +420,8 @@ function groupTemplatesByPrimary(typesExportDict) {
                     local: _.mapValues( // dict with cloud provider types => local templates
                         _.mapKeys( // does not account for multiple deployment templates per cloud
                             typesExportDict.DeploymentTemplate,
-                            value => value.cloud
-                        ),  dt => (dt.ResourceTemplate || {}))
+                            (value: {cloud: string}) => value.cloud
+                        ),  (dt: {ResourceTemplate?: object}) => (dt.ResourceTemplate || {}))
                 }
             }
         }
@@ -370,10 +432,10 @@ function groupTemplatesByPrimary(typesExportDict) {
 }
 
 // just assume all repositories are public forn now
-export async function fetchTypeRepositories(repositories, params) {
+export async function fetchTypeRepositories(repositories: Repository[], params?: {tempOnly?: boolean, implementation_requirements?: string | string[]}) {
     const tempOnly = params?.tempOnly; delete params?.tempOnly
 
-    function filterRepositories(repo) {
+    function filterRepositories(repo: Repository) {
         if(tempOnly && !repo.temp) return false
         return true
     }
@@ -382,22 +444,22 @@ export async function fetchTypeRepositories(repositories, params) {
         repositories
             .filter(filterRepositories)
             .map(repo => repoToExportParams(repo))
-            .filter(exportParams => exportParams !== null)
+            .filter((exportParams): exportParams is ExportParams => exportParams !== null)
             .map((exportParams, i) => unfurlServerGetTypes(exportParams, params, i))
-    ))
+    )) as ExportResponse[]
 
     let nestedTemplatesByPrimary = {}
     // hopefully this won't hurt too badly if fetch results are small
 
-    const types = {}
-    const categories = {}
+    const types: Record<string, {_sourceinfo?: {incomplete?: boolean}}> = {}
+    const categories: Record<string, unknown> = {}
 
     if(typesDictionaries.length) {
         // track all templates that might be copied for node substitution later
         nestedTemplatesByPrimary = Object.assign({}, ...typesDictionaries.map(groupTemplatesByPrimary))
 
         typesDictionaries.forEach(td => {
-            Object.entries(td.ResourceType).forEach(([key, value]) => {
+            Object.entries(td.ResourceType as typeof types).forEach(([key, value]) => {
                 if(types[key] && value._sourceinfo?.incomplete) {
                     return
                 }
@@ -405,7 +467,7 @@ export async function fetchTypeRepositories(repositories, params) {
                 types[key] = value
             })
 
-            Object.entries(td.Overview?.categories || {}).forEach(([key, value]) => {
+            Object.entries(td.Overview?.categories as typeof categories || {}).forEach(([key, value]) => {
                 categories[key] = value
             })
         })
@@ -432,7 +494,7 @@ export async function fetchTypeRepositories(repositories, params) {
  * An export carrying the queueid is the same wait reads already do; on success
  * unfurlServerGet stores the new commit, which clears the queueid.
  */
-export async function awaitQueuedWrite(projectPath, branch, {timeoutMs = 90000, intervalMs = 500} = {}) {
+export async function awaitQueuedWrite(projectPath: string, branch?: string, {timeoutMs = 90000, intervalMs = 500} = {}): Promise<string | null> {
     const resolvedBranch = branch || getProjectCurrentBranch(encodeURIComponent(projectPath))
     if(!resolvedBranch) return null
 
@@ -472,17 +534,26 @@ export async function awaitQueuedWrite(projectPath, branch, {timeoutMs = 90000, 
                 )
             }
             return after
-        } catch(e) {
+        } catch(_e) {
+            const e = _e as ServerError
             // 503 is the proxy saying the batch has not drained yet. Everything
             // else -- 409 WRITE_DISCARDED included -- belongs to the caller.
             if(e.response?.status != 503 || Date.now() >= deadline) throw e
-            const retryAfter = Number(e.response.headers?.['retry-after']) * 1000
+            const retryAfter = Number(e.response!.headers?.['retry-after']) * 1000
             await new Promise(resolve => setTimeout(resolve, retryAfter > 0 ? retryAfter : intervalMs))
         }
     }
 }
 
-export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables, sync}) {
+export async function unfurlServerUpdate({method, projectPath, branch, patch, commitMessage, variables, sync}: {
+    method: string
+    projectPath: string
+    branch?: string
+    patch: unknown
+    commitMessage?: string
+    variables?: Record<string, unknown>
+    sync?: boolean
+}) {
     if (!branch) {
         throw new Error(`Update Unfurl Server: branch is required (method=${method}, projectPath=${projectPath})`)
     }
@@ -498,7 +569,7 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     let password = await fetchUserAccessToken()
     await healthCheckErrorHelper(projectPath)
 
-    const body = {
+    const body: Record<string, unknown> = {
         ...variables,
         branch,
         latest_commit: commit,
@@ -517,15 +588,16 @@ export async function unfurlServerUpdate({method, projectPath, branch, patch, co
     let url = `${baseUrl}/${method}`.replace(/^\/+/, '/')
     url += `?auth_project=${encodeURIComponent(projectPath)}`
 
-    let data
+    let data: {commit?: string, queueid?: number, [key: string]: unknown}
 
     // The counter moves when this request arrives; our queueid reaches storage
     // a round trip later. Until it does, a supersession describing this very
     // write is indistinguishable from someone else's.
     beginWrite(projectPath, branch)
     try {
-        data = (await doXhr(projectPath, 'POST', url, body, headers)).data
-    } catch(e) {
+        data = (await doXhr(projectPath, 'POST', url, body, headers))!.data
+    } catch(_e) {
+        const e = _e as ServerError
         if(e.response?.status == 409) {
             /*
              * Clear the stored commit *and* queueid. Resetting the queueid to 0
