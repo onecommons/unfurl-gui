@@ -1,4 +1,3 @@
-// @ts-check
 // Build the URL prefix for a "home project". Returns a path starting with
 // `/` (e.g. `/myorg/mydashboard`) for normal Unfurl Cloud projects, and an
 // empty string for standalone (`local:/...`) home paths.
@@ -15,11 +14,7 @@
 // IMPORTANT: callers should not prepend an additional `/` — interpolating
 // `/${projectPathToHomeRoute(p)}/-/...` with an empty return yields `//-/...`,
 // which the browser parses as a protocol-relative URL (host = `-`).
-/**
- * @param {string | null | undefined} projectPath
- * @returns {string}
- */
-export function projectPathToHomeRoute(projectPath) {
+export function projectPathToHomeRoute(projectPath: string | null | undefined): string {
     if (!projectPath || projectPath.startsWith('local:')) return ''
     return '/' + projectPath
 }

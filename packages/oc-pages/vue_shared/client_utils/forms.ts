@@ -1,12 +1,6 @@
-// @ts-check
 import axios from '~/lib/utils/axios_utils'
 
-/**
- * @param {string} url
- * @param {Iterable<[string, string | Blob]>} entries
- * @param {Record<string, string>} [headers]
- */
-export async function postFormDataWithEntries(url, entries, headers) {
+export async function postFormDataWithEntries(url: string, entries: Iterable<[string, string | Blob]>, headers?: Record<string, string>) {
     const formData = new FormData()
     for(const [key, value] of entries) {
         formData.append(key, value)

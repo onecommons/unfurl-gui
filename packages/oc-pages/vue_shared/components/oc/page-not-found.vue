@@ -1,5 +1,5 @@
 <script>
-import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error.js'
+import {notFoundError, removeNotFoundError} from 'oc_vue_shared/client_utils/error'
 
 export default {
   name: 'PageNotFound',

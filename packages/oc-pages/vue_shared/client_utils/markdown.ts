@@ -1,12 +1,7 @@
-// @ts-check
 import { parse as markedParse } from 'marked'
 import DOMPurify from 'dompurify'
 
-/**
- * @param {string | null | undefined} input
- * @returns {string}
- */
-export function parseMarkdown(input) {
+export function parseMarkdown(input: string | null | undefined): string {
     // the gitlab marked dependency is so old that I don't want to mess with renderer or tokens
     if(! input) { return '' }
     try {
