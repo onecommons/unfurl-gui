@@ -1,9 +1,8 @@
 import axios from '~/lib/utils/axios_utils'
-import { __ } from "~/locale";
 import _ from 'lodash'
+import type {ActionContext, Module} from '@gitlab/vuex-vue3'
 import {lookupCloudProviderAlias, slugify, deepClone as cloneDeep} from 'oc_vue_shared/util'
 import {isDiscoverable} from 'oc_vue_shared/client_utils/resource_types'
-import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {awaitQueuedWrite} from 'oc_vue_shared/client_utils/unfurl-server'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
@@ -13,14 +12,70 @@ import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
 import {constraintTypeFromRequirement} from 'oc_vue_shared/lib/resource-template'
 import {deleteFiles} from 'oc_vue_shared/client_utils/commits'
-import { fetchTypeRepositories, importsAreEqual } from  'oc_vue_shared/client_utils/unfurl-server'
+import { fetchTypeRepositories } from  'oc_vue_shared/client_utils/unfurl-server'
 import { localNormalize } from 'oc_vue_shared/lib/normalize'
 import {freeze} from 'oc_vue_shared/client_utils/misc'
 
 
 const DASHBOARD_PROVIDERS_LIMIT = 15 // this is conservative - in local testing up to 18 was OK
 
-const state = () => ({
+// The unfurl export JSON; typed loosely until the payload types exist.
+type Json = Record<string, any>
+
+type Named = {name: string} | string | null | undefined
+const nameOf = (x: Named) => (x as {name?: string})?.name || (x as string)
+
+// false from a hook cancels the save
+type SaveHook = () => boolean | void | Promise<boolean | void>
+
+interface DeployPath {
+    name: string
+    environment?: string
+    pipelines?: Json[]
+    [key: string]: unknown
+}
+
+interface State {
+    projectEnvironments: Json[]
+    resourceTypeCategories: Record<string, unknown>
+    // per environment name
+    resourceTypeDictionaries: Record<string, Record<string, Json>>
+    // per environment scope, '*' for all
+    variablesByEnvironment: Record<string, Record<string, string>>
+    saveEnvironmentHooks: SaveHook[]
+    additionalDashboardProviders: unknown[]
+    repositoryDeploymentDependencies: string[]
+    tempRepositories: Json[]
+    defaults: Json | null
+    projectPath: string | null
+    ready: boolean
+    upstreamCommit: string | {id: string} | null
+    upstreamProject: number | string | null
+    upstreamId: number | null
+    upstreamBranch?: string | null
+    // never set: see "Known bugs to revisit" in the TypeScript plan
+    upstreamProjectPath?: string
+    autostop?: number
+    deploymentPaths?: DeployPath[]
+    incrementalDeploymentEnabled: boolean
+}
+
+type Context = ActionContext<State, any>
+
+// what deploying needs to know; the rest goes to prepareVariables
+interface DeployParameters {
+    deploymentName: string
+    environmentName: string
+    deployPath: string
+    projectUrl?: string
+    workflow?: string
+    schedule?: string
+    skipCommit?: boolean
+    deployOptions?: Json
+    [key: string]: unknown
+}
+
+const state = (): State => ({
     projectEnvironments: [],
     resourceTypeCategories: {},
     resourceTypeDictionaries: {},
@@ -41,28 +96,28 @@ const state = () => ({
 
 
 const mutations = {
-    setProjectPath(state, projectPath) {
+    setProjectPath(state: State, projectPath: string | null) {
         state.projectPath = projectPath
     },
 
-    addRepositoryDependencies(state, dependencies) {
+    addRepositoryDependencies(state: State, dependencies: string[]) {
         state.repositoryDeploymentDependencies = state.repositoryDeploymentDependencies.concat(dependencies)
     },
 
-    clearRepositoryDependencies(state) {
+    clearRepositoryDependencies(state: State) {
         state.repositoryDeploymentDependencies = []
     },
 
-    onSaveEnvironment(state, cb) {
+    onSaveEnvironment(state: State, cb: SaveHook) {
         state.saveEnvironmentHooks.push(cb)
         state.saveEnvironmentHooks = state.saveEnvironmentHooks
     },
 
-    clearSaveEnvironmentHooks(state) {
+    clearSaveEnvironmentHooks(state: State) {
         state.saveEnvironmentHooks = []
     },
 
-    setDeploymentPaths(state, deploymentPaths) {
+    setDeploymentPaths(state: State, deploymentPaths: DeployPath[]) {
         deploymentPaths.forEach(
             dp => {
                 if(Array.isArray(dp.pipelines)) {
@@ -73,32 +128,32 @@ const mutations = {
         state.deploymentPaths = deploymentPaths
     },
 
-    setUpstreamCommit(state, upstreamCommit) {
+    setUpstreamCommit(state: State, upstreamCommit: State['upstreamCommit']) {
         state.upstreamCommit = upstreamCommit
     },
 
-    setUpstreamId(state, upstreamId) {
+    setUpstreamId(state: State, upstreamId: number | null) {
         state.upstreamId = upstreamId
     },
 
-    setUpstreamProject(state, upstreamProject) {
-        state.upstreamProject = upstreamProject?.id || upstreamProject
+    setUpstreamProject(state: State, upstreamProject: {id: number} | number | string | null) {
+        state.upstreamProject = (upstreamProject as {id?: number})?.id || upstreamProject as number | string | null
     },
 
-    setUpstreamBranch(state, upstreamBranch) {
+    setUpstreamBranch(state: State, upstreamBranch: string | null) {
         state.upstreamBranch = upstreamBranch
     },
 
 
-    setAutostop(state, autostop) {
+    setAutostop(state: State, autostop: number) {
         state.autostop = autostop
     },
 
-    setIncrementalDeployment(state, incrementalDeploymentEnabled) {
+    setIncrementalDeployment(_state: State, _incrementalDeploymentEnabled: boolean) {
         //state.incrementalDeploymentEnabled = incrementalDeploymentEnabled
     },
 
-    clearUpstream(state) {
+    clearUpstream(state: State) {
         state.upstreamCommit = null
         state.upstreamProject = null
         state.upstreamBranch = null
@@ -106,22 +161,22 @@ const mutations = {
         //state.incrementalDeploymentEnabled = false
     },
 
-    setReady(state, readyStatus) {
+    setReady(state: State, readyStatus: boolean) {
         state.ready = readyStatus
     },
 
-    setProjectEnvironments(state, environments) {
+    setProjectEnvironments(state: State, environments: Json[]) {
         state.projectEnvironments = environments
     },
 
-    setResourceTypeDictionary(state, { environment, dict }) {
-        state.resourceTypeDictionaries[environment?.name || environment] = dict
+    setResourceTypeDictionary(state: State, { environment, dict }: {environment: Named, dict: Record<string, Json>}) {
+        state.resourceTypeDictionaries[nameOf(environment)] = dict
     },
 
     // Creation writes to the unfurl server and nothing re-reads before the UI
     // shows the new environment, so seed it here. This is a write-shaped record;
     // the next authoritative export replaces the whole list wholesale.
-    addProjectEnvironment(state, environment) {
+    addProjectEnvironment(state: State, environment: Json) {
         state.projectEnvironments = [
             ...state.projectEnvironments.filter(env => env.name != environment.name),
             environment
@@ -129,25 +184,25 @@ const mutations = {
     },
 
     // TODO maybe add something that will delete the environment, that can also keep the state of the application consistent
-    discardEnvironment(state, environmentName) {
+    discardEnvironment(state: State, environmentName: string) {
         state.projectEnvironments = state.projectEnvironments.filter(env => env.name != environmentName)
     },
 
-    setVariablesByEnvironment(state, variablesByEnvironment) {
+    setVariablesByEnvironment(state: State, variablesByEnvironment: State['variablesByEnvironment']) {
         state.variablesByEnvironment = variablesByEnvironment
     },
 
-    setVariableByEnvironment(state, {environmentName, variableName, variableValue}) {
+    setVariableByEnvironment(state: State, {environmentName, variableName, variableValue}: {environmentName: string, variableName: string, variableValue: string}) {
         const variables = state.variablesByEnvironment[environmentName] || {}
         variables[variableName] = variableValue
         state.variablesByEnvironment[environmentName] = variables
     },
 
-    setAdditionalProviders(state, additionalDashboardProviders) {
+    setAdditionalProviders(state: State, additionalDashboardProviders: unknown[]) {
         state.additionalDashboardProviders = additionalDashboardProviders
     },
 
-    setDefaults(state, defaults) {
+    setDefaults(state: State, defaults: Json | null) {
         state.defaults = defaults
     },
 
@@ -159,17 +214,17 @@ const mutations = {
     },
     */
 
-    setResourceTypeCategories(state, categories) {
+    setResourceTypeCategories(state: State, categories: Record<string, unknown>) {
         state.resourceTypeCategories = categories
     }
 };
 
 const actions = {
 
-    async runEnvironmentSaveHooks({state}) {
+    async runEnvironmentSaveHooks({state}: Context) {
         for(const hook of state.saveEnvironmentHooks) {
             let result = hook()
-            if(typeof result?.then == 'function') {
+            if(typeof (result as Promise<unknown>)?.then == 'function') {
                 result = await result
             }
             if(result === false) { return false }
@@ -177,7 +232,7 @@ const actions = {
         return true
     },
 
-    async environmentTriggerPipeline({rootGetters, state, getters, commit, dispatch}, parameters) {
+    async environmentTriggerPipeline({rootGetters, state, getters, commit, dispatch}: Context, parameters: DeployParameters): Promise<false | {pipelineData: Json, deployVariables: Json[]} | undefined> {
         if(! await dispatch('runDeploymentHooks', null, {root: true})) {return false}
         const dp = getters.lookupDeployPath(parameters.deploymentName, parameters.environmentName)
 
@@ -187,8 +242,8 @@ const actions = {
 
         // if upstreamProject is set as an ID, look up the upstream path
         const upstreamProjectPath = (
-            !isNaN(parseInt(state.upstreamProject))?
-                await fetchProjectInfo(state.upstreamProject):
+            !isNaN(parseInt(state.upstreamProject as string))?
+                await fetchProjectInfo(state.upstreamProject!):
                 null
         )?.path_with_namespace
 
@@ -197,8 +252,8 @@ const actions = {
         }
 
 
-        let deploymentDependencies = []
-        let projectPath
+        let deploymentDependencies: (string | undefined)[] = []
+        let projectPath: string
 
         if(projectPath = rootGetters.getCurrentProjectPath) {
             deploymentDependencies = state.repositoryDeploymentDependencies
@@ -210,10 +265,10 @@ const actions = {
 
             try {
                 // result can contain null values; will filter out later
-                projectPath = Object.values(deploymentDict.DeploymentTemplate)[0].projectPath
+                projectPath = (Object.values(deploymentDict.DeploymentTemplate)[0] as Json).projectPath
                 deploymentDependencies = [
                     projectPath,
-                    ...Object.values(deploymentDict.repositories).map(repo => {
+                    ...(Object.values(deploymentDict.repositories) as Json[]).map(repo => {
                         try {
                             return (new URL(repo.url)).pathname.slice(1).replace(/\.git$/, '')
                         } catch(e) {}
@@ -232,7 +287,7 @@ const actions = {
 
         const projects = await Promise.all(
             deploymentDependencies.map(
-                dep => fetchProjectInfo(encodeURIComponent(dep))
+                dep => fetchProjectInfo(encodeURIComponent(dep!))
                     .catch(e => {
                         commit(
                             'createError',
@@ -245,24 +300,24 @@ const actions = {
 
         if(rootGetters.hasCriticalErrors) return
 
-        const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath))).id
+        const dashboardProjectId = (await fetchProjectInfo(encodeURIComponent(rootGetters.getHomeProjectPath)))!.id
 
-        let writableBlueprintProjectUrl, blueprintToken
+        let writableBlueprintProjectUrl: string | undefined, blueprintToken: string | undefined
         const dependencies = deploymentDependencies
-            .reduce((acc, v, i) => {
+            .reduce((acc: Record<string, string>, v, i) => {
                 // v left null instead of filtered out so we can zip here
                 if(!v) return acc
-                const project = projects[i]
+                const project = projects[i]!
                 if(project.visibility == 'public') return acc
-                const variableName = toDepTokenEnvKey(project.id)
+                const variableName = toDepTokenEnvKey(project.id!)
 
 
                 // TODO move this side effect out of a reduce
                 if(v == projectPath && parameters.projectUrl) {
-                    writableBlueprintProjectUrl = new URL(parameters.projectUrl)
-                    writableBlueprintProjectUrl.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
-                    writableBlueprintProjectUrl.password = '$' + variableName
-                    writableBlueprintProjectUrl = writableBlueprintProjectUrl.toString()
+                    const url = new URL(parameters.projectUrl)
+                    url.username = `UNFURL_DEPLOY_TOKEN_${dashboardProjectId}`
+                    url.password = '$' + variableName
+                    writableBlueprintProjectUrl = url.toString()
                     blueprintToken = variableName
                 }
 
@@ -277,10 +332,10 @@ const actions = {
             ...parameters,
             writableBlueprintProjectUrl,
             blueprintToken,
-            upstreamCommit: state.upstreamCommit?.id || state.upstreamCommit,
-            upstreamBranch: state.upstreamBranch,
-            upstreamProject: state.upstreamProject,
-            upstreamProjectPath,
+            upstreamCommit: (state.upstreamCommit as {id?: string})?.id || state.upstreamCommit as string,
+            upstreamBranch: state.upstreamBranch ?? undefined,
+            upstreamProject: state.upstreamProject ?? undefined,
+            upstreamProjectPath: upstreamProjectPath as string | undefined,
             mockDeploy: rootGetters.UNFURL_MOCK_DEPLOY,
         })
 
@@ -291,7 +346,7 @@ const actions = {
         // soon as the write is queued.
         await awaitQueuedWrite(rootGetters.getHomeProjectPath)
 
-        let data
+        let data: Json
 
         try {
             data = await triggerAtomicDeployment(
@@ -307,7 +362,7 @@ const actions = {
             commit(
                 'createError',
                 {
-                    message: `Failed to trigger deployment (${e.message})`,
+                    message: `Failed to trigger deployment (${(e as Error).message})`,
                     context: {
                         projectPath: rootGetters.getHomeProjectPath,
                         variables: deployVariables,
@@ -323,16 +378,16 @@ const actions = {
 
         const pipelines = [...(dp?.pipelines || [])]
 
-        function dataToPipelineObj(data, deployVariables) {
+        function dataToPipelineObj(data: Json | undefined, deployVariables: Json[]) {
             return data?
             {
                 id: data.id,
                 flags: data.flags,
                 'commit_id': data.commit?.id || data.commit,
-                variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc, variable) => {acc[variable.key] = variable.secret_value; return acc}, {}),
-                'upstream_commit_id': state.upstreamCommit?.id || state.upstreamCommit,
+                variables: Object.values(deployVariables).filter(variable => !variable.masked).reduce((acc: Record<string, string>, variable) => {acc[variable.key] = variable.secret_value; return acc}, {}),
+                'upstream_commit_id': (state.upstreamCommit as {id?: string})?.id || state.upstreamCommit,
                 'upstream_pipeline_id': state.upstreamId,
-                'upstream_project_id': state.upstreamProject?.id || state.upstreamProject,
+                'upstream_project_id': (state.upstreamProject as unknown as {id?: number})?.id || state.upstreamProject,
                 'upstream_project_path': state.upstreamProjectPath,
                 'upstream_branch': state.upstreamBranch
             } :
@@ -343,7 +398,7 @@ const actions = {
         if(pipeline) {pipelines.push(pipeline)}
 
         if(state.autostop && parameters.workflow == 'deploy') {
-            const {pipelineData, deployVariables} = (await dispatch(
+            const {pipelineData, deployVariables}: {pipelineData: Json, deployVariables: Json[]} = (await dispatch(
                 'undeployFrom',
                 {
                     ...parameters,
@@ -388,19 +443,19 @@ const actions = {
 
         return {pipelineData: data, deployVariables}
     },
-    deployInto({dispatch}, parameters) {
+    deployInto({dispatch}: Context, parameters: DeployParameters) {
         return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'deploy'})
     },
-    undeployFrom({dispatch}, parameters) {
+    undeployFrom({dispatch}: Context, parameters: DeployParameters) {
         return dispatch('environmentTriggerPipeline', {...parameters, workflow: 'undeploy'})
     },
-    async deleteDeployment({state, rootGetters, getters, commit, dispatch}, {deploymentName, environmentName}) {
+    async deleteDeployment({state, rootGetters, getters, commit, dispatch}: Context, {deploymentName, environmentName}: {deploymentName: string, environmentName: string}) {
         const deployPath = rootGetters.lookupDeployPath(deploymentName, environmentName)
         commit('useBaseState', {}, {root: true})
         commit('setUpdateType', 'delete-deployment', {root: true})
         commit('setUpdateObjectProjectPath', rootGetters.getHomeProjectPath, {root: true})
 
-        const envvarsUpdate = {}
+        const envvarsUpdate: Record<string, {_destroy: boolean}> = {}
         Object.keys(state.variablesByEnvironment[environmentName]).forEach(envvar => {
             if(envvar.startsWith(`${deploymentName.replace(/-/g, '_')}__`)) {
                 envvarsUpdate[envvar] = {_destroy: true}
@@ -429,13 +484,9 @@ const actions = {
         )
     },
 
-    setEnvironmentName({ commit }, envName) {
-        commit("SET_ENVIRONMENT_NAME", { envName });
-    },
-
-    async fetchProjectEnvironments({commit, dispatch, rootGetters}, options) {
+    async fetchProjectEnvironments({commit, rootGetters}: Context, options: {fullPath: string, branch?: string, setCurrentBranch?: boolean, includeDeployments?: boolean, only?: string}) {
         const {fullPath, branch, setCurrentBranch, includeDeployments, only} = {includeDeployments: true, ...options}
-        let environments = []
+        let environments: Json[] = []
         try {
             const result = await fetchEnvironments({
                 fullPath,
@@ -448,6 +499,8 @@ const actions = {
             result.errors.forEach(e => commit('createError', e, {root: true}))
 
             if(rootGetters.hasCriticalErrors) return
+            // a failed export comes back bare, and has reported itself critical above
+            if(!('ResourceType' in result)) return
 
             environments = result.environments
 
@@ -486,19 +539,19 @@ const actions = {
         }
         commit('setProjectEnvironments', environments)
     },
-    async fetchEnvironmentVariables({commit, rootGetters}, {fullPath}) {
-        let envvars = []
+    async fetchEnvironmentVariables({commit, rootGetters}: Context, {fullPath}: {fullPath: string}) {
+        let envvars: Awaited<ReturnType<typeof fetchEnvironmentVariables>> = []
         try {
             envvars = await fetchEnvironmentVariables(fullPath)
         } catch(e) {
-            throw new Error(`Failed to fetch environment variables for ${fullPath}`, e.message)
+            throw new Error(`Failed to fetch environment variables for ${fullPath}`, {cause: e})
         }
 
-        const variablesByEnvironment = {'*': {}}
+        const variablesByEnvironment: State['variablesByEnvironment'] = {'*': {}}
         for(const variable of envvars) {
             if(!variable.environment_scope) continue
             const varsForEnv = variablesByEnvironment[variable.environment_scope] || {}
-            varsForEnv[variable.key] = variable.value
+            varsForEnv[variable.key] = variable.value!
             variablesByEnvironment[variable.environment_scope] = varsForEnv
         }
 
@@ -507,17 +560,17 @@ const actions = {
             variablesByEnvironment['*']['PROJECT_DNS_ZONE'] = namespaceDNS + '.u.opencloudservices.net'
             commit('setVariablesByEnvironment', variablesByEnvironment)
         } catch(e) {
-            throw new Error('Unable to set PROJECT_DNS_ZONE', e)
+            throw new Error('Unable to set PROJECT_DNS_ZONE', {cause: e})
         }
     },
-    async generateVaultPasswordIfNeeded({getters, commit, dispatch}, {fullPath}) {
+    async generateVaultPasswordIfNeeded({getters, commit, dispatch}: Context, _: {fullPath: string}) {
         if(window.gon.unfurl_gui) return
-        const promises = []
+        const promises: Promise<unknown>[] = []
         if(!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')) {
             const UNFURL_VAULT_DEFAULT_PASSWORD = tryResolveDirective({_generate: {preset: 'password'}})
             promises.push(
                 dispatch('setEnvironmentVariable', {environmentName: '*', variableName: 'UNFURL_VAULT_DEFAULT_PASSWORD', variableValue: UNFURL_VAULT_DEFAULT_PASSWORD, masked: true})
-                .catch(e => commit(
+                .catch((e: Error) => commit(
                         'createError',
                         {
                             message: `Could not set vault password: ${e.message}`,
@@ -535,7 +588,7 @@ const actions = {
 
         await Promise.all(promises)
     },
-    async createAccessTokenIfNeeded({getters, dispatch}, {fullPath}) {
+    async createAccessTokenIfNeeded({getters, dispatch}: Context, {fullPath}: {fullPath: string}) {
         // #!if !standalone
         const projectInfo = await fetchProjectInfo(encodeURIComponent(fullPath))
         const namespace = projectInfo?.namespace
@@ -556,7 +609,7 @@ const actions = {
         // #!endif
     },
 
-    async ocFetchEnvironments({ commit, dispatch, rootGetters }, options) {
+    async ocFetchEnvironments({ commit, dispatch, rootGetters }: Context, options: {fullPath?: string, projectPath?: string, branch?: string, setCurrentBranch?: boolean, includeDeployments?: boolean, only?: string}) {
         const {fullPath, projectPath, branch, setCurrentBranch, includeDeployments, only} = {
             includeDeployments: true,
             ...options
@@ -583,7 +636,7 @@ const actions = {
         commit('setReady', true)
     },
 
-    async environmentFromProvider({state, commit, dispatch}, {provider, newEnvironmentName}) {
+    async environmentFromProvider({state, commit, dispatch}: Context, {provider, newEnvironmentName}: {provider: {source: string, template: Json, environment: Json}, newEnvironmentName: string}) {
         /* If the provider is a connection, we'll copy all of the instances and the environment variables associated with:
          *   (1) the connection (2) each instance.
          *
@@ -591,17 +644,18 @@ const actions = {
          * In this case we'll copy only environment variables associated with the instance itself.
         */
         const cloneTarget = slugify(newEnvironmentName)
-        const variables = []
-        let instances = []
+        const variables: string[] = []
+        let instances: Json[] | Record<string, Json> = []
         const primary_provider = cloneDeep(provider.template)
         environmentVariableDependencies(primary_provider).forEach(v => variables.push(v))
         if(provider.source == 'connection') {
-            instances = cloneDeep(provider.environment.instances)
-            for(const instance of instances) {
+            instances = cloneDeep(provider.environment.instances) as Record<string, Json>
+            // keyed by name, not a list
+            for(const instance of Object.values(instances)) {
                 environmentVariableDependencies(instance).forEach(v => variables.push(v))
             }
         }
-        await shareEnvironmentVariables(state.projectPath, provider.environment.name, cloneTarget, variables, '')
+        await shareEnvironmentVariables(state.projectPath!, provider.environment.name, cloneTarget, variables, '')
 
         commit('setUpdateType', 'environment', {root: true})
         commit('setUpdateObjectProjectPath', state.projectPath, {root: true})
@@ -621,15 +675,15 @@ const actions = {
         await dispatch('commitPreparedMutations', {}, {root: true})
     },
 
-    async setEnvironmentVariable({commit, rootGetters}, {environmentName, variableName, variableValue, masked}) {
+    async setEnvironmentVariable({commit, rootGetters}: Context, {environmentName, variableName, variableValue, masked}: {environmentName: string, variableName: string, variableValue: string, masked?: boolean}) {
         commit('setVariableByEnvironment', {environmentName, variableName, variableValue})
         await patchEnv({[variableName]: {value: variableValue, masked: !!masked}}, environmentName, rootGetters.getHomeProjectPath)
     },
 
-    async loadAdditionalProviders({rootGetters, commit}, {accessLevel=30}) {
+    async loadAdditionalProviders({rootGetters, commit}: Context, {accessLevel=30}: {accessLevel?: number}) {
         // include developer access for deploy requests, etc.
-        const dashboardsOfLevel = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
-            ?.filter(dashboard => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
+        const dashboardsOfLevel: {path_with_namespace: string}[] | undefined = (await axios.get(`/api/v4/dashboards?min_access_level=${accessLevel}`))?.data
+            ?.filter((dashboard: {path_with_namespace: string}) => dashboard.path_with_namespace != rootGetters.getHomeProjectPath)
 
 
         if(dashboardsOfLevel && dashboardsOfLevel.length > DASHBOARD_PROVIDERS_LIMIT) {
@@ -645,7 +699,7 @@ const actions = {
         // limited to DASHBOARD_PROVIDERS_LIMIT for query complexity
         const dashboards = dashboardsOfLevel?.slice(0, DASHBOARD_PROVIDERS_LIMIT)?.map(dashboard => fetchDashboardProviders(dashboard.path_with_namespace)) || []
 
-        let dashboardProviders = (await Promise.all(dashboards).catch(e => {
+        let dashboardProviders = (await Promise.all(dashboards).catch((e: Error) => {
             commit('createError', {
                 message: `Load cloud providers: ${e.message}`,
                 context: {
@@ -661,13 +715,18 @@ const actions = {
     },
 
     // optional deployment name
-    async environmentFetchTypesWithParams({getters, commit, state}, {environmentName, deploymentName, params, options}) {
+    async environmentFetchTypesWithParams({getters, commit, state}: Context, {environmentName, deploymentName, params, options}: {
+        environmentName: string
+        deploymentName?: string
+        params: Parameters<typeof fetchTypeRepositories>[1]
+        options?: {fallbackTypeRepository?: Json}
+    }) {
         let currentEnvironmentRepositories = getters.currentEnvironmentRepositories(
             environmentName,
             deploymentName
         )
 
-        let types = {}
+        let types: Record<string, Json> = {}
 
         try {
             if(options?.fallbackTypeRepository && currentEnvironmentRepositories.length == 0) {
@@ -677,7 +736,7 @@ const actions = {
                 currentEnvironmentRepositories,
                 params
             )
-            types = result.types
+            types = result.types as Record<string, Json>
 
             commit('setResourceTypeCategories', {...state.resourceTypeCategories, ...result.categories})
 
@@ -692,7 +751,7 @@ const actions = {
             catch(e) {console.error(e)}
 
             commit('createError', {
-                message: `Load environment types: failed to fetch types (${e.message})`,
+                message: `Load environment types: failed to fetch types (${(e as Error).message})`,
                 context,
                 severity: 'major'
             }, {root: true})
@@ -734,35 +793,40 @@ const actions = {
     }
 
 };
-function envFilter(name){
-    return env => env?.name == name
+function envFilter(name: string){
+    return (env: Json | null | undefined) => env?.name == name
 }
 
+// what the getters below read from each other
+type EnvironmentGetters = Record<string, any>
+
+type Resolver = (typeName: string) => Json | null
+
 const getters = {
-    getEnvironments: state => state.projectEnvironments,
-    lookupEnvironment: (state, getters) => function(name) {return [...getters.getEnvironments, state.defaults].find(envFilter(name))},
-    getValidEnvironmentConnections: (state, getters, _, rootGetters) => function(environmentName, requirement, _resolver) {
-        const resolver = _resolver? _resolver: getters.environmentResolveResourceType.bind(getters, environmentName)
+    getEnvironments: (state: State) => state.projectEnvironments,
+    lookupEnvironment: (state: State, getters: EnvironmentGetters) => function(name: string): Json | undefined {return [...getters.getEnvironments, state.defaults].find(envFilter(name))},
+    getValidEnvironmentConnections: (state: State, getters: EnvironmentGetters, _: unknown, rootGetters: any) => function(environmentName: string, requirement: Parameters<typeof constraintTypeFromRequirement>[0], _resolver?: Resolver) {
+        const resolver: Resolver = _resolver? _resolver: getters.environmentResolveResourceType.bind(getters, environmentName)
         const filter = envFilter(environmentName)
         const environment = state.projectEnvironments.find(filter)
         const constraintType = constraintTypeFromRequirement(requirement)
         const availableTypes = rootGetters.availableResourceTypesForRequirement(requirement, true) // types that would be available to create
         if(!environment) return []
-        let result = []
-        if(environment.instances) result = Object.values(environment.instances).filter(conn => {
+        let result: Json[] = []
+        if(environment.instances) result = (Object.values(environment.instances) as Json[]).filter(conn => {
             const connExtends = [
                 ...(resolver(conn.type)?.extends || []),
                 ...(conn.metadata?.extends || []),
                 // allow types declaring deprecates to substitute for any type they deprecate
                 ...(resolver(conn.type)?.metadata?.deprecates || [])
-                    .map(deprecated => resolver(deprecated)?.extends || [])
+                    .map((deprecated: string) => resolver(deprecated)?.extends || [])
                     .flat()
             ]
 
             return (
                 // is our create type in extends or would a deprecating type be valid to connect
                 connExtends?.includes(constraintType) ||
-                availableTypes.some(type => type.metadata.deprecates?.includes(conn.type))
+                availableTypes.some((type: Json) => type.metadata.deprecates?.includes(conn.type))
             )
         })
 
@@ -780,11 +844,11 @@ const getters = {
     },
 
     // TODO merge these implementations
-    getMatchingEnvironments: (_, getters) => function(type) {
+    getMatchingEnvironments: (_: State, getters: EnvironmentGetters) => function(type?: string | null): Json[] {
         // uncomment to make local dev agnostic
         //if(!type) { return getters.getEnvironments }
-        const result = getters.getEnvironments.filter(env => {
-            const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
+        const result = getters.getEnvironments.filter((env: Json) => {
+            const connections: Json[] = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
 
             if(connections.length == 0 && !type) {
                 return true
@@ -799,34 +863,34 @@ const getters = {
         return result
     },
 
-    getDefaultEnvironmentName: (_, getters) => function(type) {
+    getDefaultEnvironmentName: (_: State, getters: EnvironmentGetters) => function(type?: string | null) {
         if(!type) return null
-        return getters.getMatchingEnvironments(type).find(env => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
+        return getters.getMatchingEnvironments(type).find((env: Json) => env.primary_provider && lookupCloudProviderAlias(env.primary_provider.type) == lookupCloudProviderAlias(type))?.name
     },
 
-    lookupConnection: (_, getters) => function(environmentName, connectedResource) {
+    lookupConnection: (_: State, getters: EnvironmentGetters) => function(environmentName: string, connectedResource: string) {
         const environment = getters.lookupEnvironment(environmentName)
         try {
-            return cloneDeep(environment.instances[connectedResource])
+            return cloneDeep(environment!.instances[connectedResource])
         } catch(e) {
             return null
         }
     },
-    environmentResourceTypeDict(state) {
-        return function(environment) {
+    environmentResourceTypeDict(state: State) {
+        return function(environment: Named) {
             const environmentName = typeof environment == 'string'? environment: environment?.name
-            return state.resourceTypeDictionaries[environmentName]
+            return state.resourceTypeDictionaries[environmentName!]
         }
     },
-    environmentResolveResourceType(state) {
-        return function(environment, typename) {
+    environmentResolveResourceType(state: State) {
+        return function(environment: Named, typename: Named): Json | null {
             const environmentName = typeof environment == 'string'? environment: environment?.name
-            const dict = state.resourceTypeDictionaries[environmentName]
+            const dict = state.resourceTypeDictionaries[environmentName!]
             let result
-            if (dict) result = freeze(dict[typename?.name || typename])
+            if (dict) result = freeze(dict[nameOf(typename)])
 
             if(dict && !result) {
-                const qualifiedPrefix = `${typename?.name || typename}@`
+                const qualifiedPrefix = `${nameOf(typename)}@`
                 for(const key in dict) {
                     if(key.startsWith(qualifiedPrefix)) {
                         result = dict[key]
@@ -837,80 +901,80 @@ const getters = {
             return result || null
         }
     },
-    environmentLookupDiscoverable(state, getters) {
-        return function(_environment) {
+    environmentLookupDiscoverable(state: State, getters: EnvironmentGetters) {
+        return function(_environment: Named) {
             const environmentName = typeof _environment == 'string'? _environment: _environment?.name
-            const dict = state.resourceTypeDictionaries[environmentName]
+            const dict = state.resourceTypeDictionaries[environmentName!]
             if(typeof dict == 'object') {
                 const environment = getters.lookupEnvironment(environmentName)
                 const resolver = getters.environmentResolveResourceType.bind(null, environment)
-                return Object.values(dict).filter(resourceType => isDiscoverable(resourceType, environment, resolver))
+                return Object.values(dict).filter(resourceType => isDiscoverable(resourceType as Parameters<typeof isDiscoverable>[0], environment, resolver))
             }
             return null
         }
     },
-    environmentHasActiveDeployments(state, getters, _, rootGetters) {
-        return function(_environment) {
+    environmentHasActiveDeployments(state: State, getters: EnvironmentGetters, _: unknown, rootGetters: any) {
+        return function(_environment: Named) {
             const environmentName = typeof _environment == 'string'? _environment: _environment?.name
             const deployments = rootGetters.getDeploymentsByEnvironment(environmentName)
             return deployments.length > 0
         }
     },
     // TODO rename to lookupDeployPathByEnvironment?
-    lookupDeployPath(state) {
-        return function(deploymentName, environmentName) {
+    lookupDeployPath(state: State) {
+        return function(deploymentName: string, environmentName: string): DeployPath | undefined {
             const re = (new RegExp(`(/|^)${deploymentName}$`))
 
-            const matchingSuffix = state.deploymentPaths.filter(dp => re.test(dp.name))
+            const matchingSuffix = state.deploymentPaths!.filter(dp => re.test(dp.name))
             const prefix = `environments/${environmentName}`
 
             return matchingSuffix.find(dp => dp.name?.startsWith(prefix)) || matchingSuffix[0]
         }
     },
     // do not use if the pipeline may have not been started yet
-    lookupLastRecordedPipeline(state, getters) {
-        return function(deploymentName, environmentName) {
+    lookupLastRecordedPipeline(state: State, getters: EnvironmentGetters) {
+        return function(deploymentName: string, environmentName: string) {
             const deployPath = getters.lookupDeployPath(deploymentName, environmentName)
             return _.last(deployPath?.pipelines)
         }
     },
-    hasDeployPathKey(state) {
-        return function(key) {
-            return state.deploymentPaths.some(dp => dp.name == key)
+    hasDeployPathKey(state: State) {
+        return function(key: string) {
+            return state.deploymentPaths!.some(dp => dp.name == key)
         }
     },
-    lookupVariableByEnvironment(state) {
-        return function(variable, environmentName) {
-            const name = environmentName?.name || environmentName
+    lookupVariableByEnvironment(state: State) {
+        return function(variable: string, environmentName: Named): string | null {
+            const name = nameOf(environmentName)
             try {
                 return state.variablesByEnvironment[name][variable]
             } catch(e) {}
             return null
         }
     },
-    lookupProjectToken(state, getters) {
-        return function(projectId) {
+    lookupProjectToken(state: State, getters: EnvironmentGetters) {
+        return function(projectId: string | number) {
             const key = toDepTokenEnvKey(projectId)
             return getters.lookupVariableByEnvironment(key, '*')
         }
     },
-    environmentsAreReady(state) {
+    environmentsAreReady(state: State) {
         return state.ready
     },
-    availableProviders(_, getters) {
-        const result = []
-        function isValidProvider(environment, template) {
+    availableProviders(_: State, getters: EnvironmentGetters) {
+        const result: {environment: Json, template: Json, source: 'connection' | 'instance'}[] = []
+        function isValidProvider(environment: Json, template: Json) {
             const type = getters.environmentResolveResourceType(environment, template.type)
             if(!Array.isArray(type?.extends)) return false
             return type.extends.includes('unfurl.relationships.ConnectsTo.CloudAccount') || type.extends.includes('unfurl.relationships.ConnectsTo.K8sCluster')
         }
         for(const environment of getters.getEnvironments) {
-            for(const connection of Object.values(environment.connections)) {
+            for(const connection of Object.values(environment.connections) as Json[]) {
                 if(isValidProvider(environment, connection)) {
                     result.push({environment, template: connection, source: 'connection'})
                 }
             }
-            for(const instance of Object.values(environment.instances)) {
+            for(const instance of Object.values(environment.instances) as Json[]) {
                 if(isValidProvider(environment, instance)) {
                     result.push({environment, template: instance, source: 'instance'})
                 }
@@ -918,25 +982,25 @@ const getters = {
         }
         return result
     },
-    userCanEdit(_, getters) {
+    userCanEdit(_: State, getters: EnvironmentGetters) {
         // we can't read or set UNFURL_VAULT_DEFAULT_PASSWORD if we're not a maintainer
         // NOTE this criteria is meaningless when we're editing a blueprint
         return window.gon.unfurl_gui || !!getters.lookupVariableByEnvironment('UNFURL_VAULT_DEFAULT_PASSWORD', '*')
     },
 
-    getEnvironmentDefaults(state) { return state.defaults || null },
+    getEnvironmentDefaults(state: State) { return state.defaults || null },
 
-    getVariables(state) {
-        return function(environment) {
-            const environmentName = environment?.name || environment
+    getVariables(state: State) {
+        return function(environment: Named) {
+            const environmentName = nameOf(environment)
 
             return {...state.variablesByEnvironment['*'], ...state.variablesByEnvironment[environmentName]}
         }
     },
 
-    environmentTypeRepositories(state, getters) {
-        return function(environment) {
-            const environmentName = environment?.name || environment
+    environmentTypeRepositories(state: State, getters: EnvironmentGetters) {
+        return function(environment: Named): Json[] {
+            const environmentName = nameOf(environment)
             {
                 const environment = getters.lookupEnvironment(environmentName)
 
@@ -960,20 +1024,20 @@ const getters = {
         }
     },
 
-    providerTypesForEnvironment(state, getters) {
-        return function(environment) {
-            const environmentName = environment?.name || environment
+    providerTypesForEnvironment(state: State, getters: EnvironmentGetters) {
+        return function(environment: Named) {
+            const environmentName = nameOf(environment)
             {
                 const environment = getters.lookupEnvironment(environmentName)
-                return _.uniq(Object.values(environment.connections).map(conn => conn.type))
+                return _.uniq((Object.values(environment.connections) as Json[]).map(conn => conn.type))
             }
         }
     },
 
-    additionalDashboardProviders(state) { return state.additionalDashboardProviders },
+    additionalDashboardProviders(state: State) { return state.additionalDashboardProviders },
 
-    currentEnvironmentRepositories(state, getters, _, rootGetters) {
-        return function(environmentName, deploymentName) {
+    currentEnvironmentRepositories(state: State, getters: EnvironmentGetters, _: unknown, rootGetters: any) {
+        return function(environmentName: string, deploymentName?: string): Json[] {
             let repos = getters.environmentTypeRepositories(environmentName)
             if(deploymentName) {
                 const deployPath = getters.lookupDeployPath(deploymentName, environmentName)
@@ -990,12 +1054,12 @@ const getters = {
         }
     },
 
-    allDeploymentPaths(state) {
+    allDeploymentPaths(state: State) {
         return freeze(state.deploymentPaths)
     },
 
-    getTypeCategory(state) {
-        return function(category) {
+    getTypeCategory(state: State) {
+        return function(category: string) {
             return state.resourceTypeCategories[category]
         }
     }
@@ -1006,4 +1070,4 @@ export default {
     mutations,
     actions,
     getters
-};
+} satisfies Module<State, any>;
