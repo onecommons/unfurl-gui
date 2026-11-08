@@ -7,14 +7,40 @@ import { repoToExportParams, fetchTypeRepositories, unfurlServerGetTypes } from 
 import { deepClone as cloneDeep } from 'oc_vue_shared/util'
 import _ from 'lodash'
 import {freeze} from 'oc_vue_shared/client_utils/misc'
+import type {ActionContext, Module} from '@gitlab/vuex-vue3'
+import type {LastCommitResult} from 'oc_vue_shared/client_utils/projects'
 
-function computeDependencyMap(root) {
+// The unfurl export JSON; typed loosely until the payload types exist.
+type Json = Record<string, any>
+
+// [the template that depends on this one, the requirement it fills]
+type Ancestor = [Json, string]
+
+// The blueprint export, held under its own keys (ResourceType,
+// ResourceTemplate, DeploymentTemplate, ...) beside the fixed fields.
+interface State {
+    loaded: boolean
+    callbacks: (() => void)[]
+    clean: boolean
+    [exportKey: string]: any
+}
+
+type Context = ActionContext<State, any>
+
+interface NormalizationCache {
+    resourceTypes: Map<string, Json | null>
+    missingDependencies: Map<string, Json[]>
+    missingProperties: Map<string, Json[]>
+    groupProperties: Map<string, {properties: Json[], computedProperties: Json[]}>
+}
+
+function computeDependencyMap(root: Json): Record<string, Ancestor> | undefined {
     try {
-        const res = Object.values(root.ResourceTemplate || {})
+        const res = (Object.values(root.ResourceTemplate || {}) as Json[])
             .map(
                 rt => rt.dependencies
-                .filter(req => req.match)
-                .map(req => ({[req.match]: [rt, req.name]}))
+                .filter((req: Json) => req.match)
+                .map((req: Json) => ({[req.match]: [rt, req.name]}))
             ).flat()
 
         return Object.assign({}, ...res)
@@ -26,9 +52,9 @@ function computeDependencyMap(root) {
 // vuex's strict-mode watcher never saw the write, while Vue 3's proxy traps
 // it and strict mode throws -- aborting createNodeResource mid-way and
 // leaving the resource uncreated. Keyed weakly so the lifetime is unchanged.
-const dependencyMapCache = new WeakMap()
+const dependencyMapCache = new WeakMap<object, Record<string, Ancestor>>()
 
-function lookupAncestors(rt, root, mutable=false) {
+function lookupAncestors(rt: Json, root: Json, mutable=false): Ancestor[] {
     let computedDependencyMap = (mutable && root)? dependencyMapCache.get(root): null
     if(!computedDependencyMap) {
         computedDependencyMap = computeDependencyMap(root)
@@ -42,8 +68,8 @@ function lookupAncestors(rt, root, mutable=false) {
         return []
     }
 
-    let current = rt, matchEntry
-    const reverseAncestors = []
+    let current = rt, matchEntry: Ancestor | undefined
+    const reverseAncestors: Ancestor[] = []
     const visited = new Set([current.name])
     while(matchEntry = computedDependencyMap[current.name]) {
         const [next] = matchEntry
@@ -64,31 +90,31 @@ function lookupAncestors(rt, root, mutable=false) {
     return reverseAncestors.reverse()
 }
 
-const state = () => ({loaded: false, callbacks: [], clean: true})
+const state = (): State => ({loaded: false, callbacks: [], clean: true})
 const mutations = {
-    setProjectState(state, {key, value}) {
+    setProjectState(state: State, {key, value}: {key: string, value: unknown}) {
         if (!state[key] || typeof value !== 'object') {
             state[key] = value
         } else {
-            state[key] = {...state[key], ...value}
+            state[key] = {...state[key], ...(value as object)}
         }
         state.clean = false
     },
 
-    setProjectStateBatch(state, updates) {
+    setProjectStateBatch(state: State, updates: {key: string, value: unknown}[]) {
         updates.forEach(({key, value}) => {
             if (!state[key] || typeof value !== 'object') {
                 state[key] = value
             } else {
-                state[key] = {...state[key], ...value}
+                state[key] = {...state[key], ...(value as object)}
             }
         })
         state.clean = false
     },
 
-    resetProjectState(state) {
+    resetProjectState(state: State) {
         for(const key in state) {
-            let value = null
+            let value: unknown = null
             switch(key) {
                 case 'loaded':
                     value = false; break
@@ -101,21 +127,29 @@ const mutations = {
         }
     },
 
-    loaded(state, status) {
+    loaded(state: State, status: boolean) {
         state.loaded = status
         state.callbacks.forEach(cb => {if(typeof cb == 'function') {cb()} else throw new Error('application blueprint callback is not a function')})
 
         state.callbacks = []
     },
-    onApplicationBlueprintLoaded(state, cb) { if(state.loaded) {cb()} else state.callbacks.push(cb) },
+    onApplicationBlueprintLoaded(state: State, cb: () => void) { if(state.loaded) {cb()} else state.callbacks.push(cb) },
 
-    addTempRepository(state, repo) {
+    // template_resources' createNodeResource, for a type from an incomplete repository
+    addTempRepository(state: State, repo: {url: string, [key: string]: unknown}) {
         state.repositories[repo.url] = {...repo, temp: true}
     }
 
 }
 const actions = {
-    async fetchProject({state, commit, dispatch, rootGetters}, params) {
+    async fetchProject({state, commit, dispatch, rootGetters}: Context, params: {
+        projectPath: string
+        blueprintPath?: string
+        projectGlobal?: unknown
+        shouldMerge?: boolean
+        branch?: string
+        forEditing?: boolean
+    }) {
         let {projectPath, blueprintPath, projectGlobal, shouldMerge, branch, forEditing} = {shouldMerge: false, ...params}
         const format = 'blueprint'
 
@@ -124,7 +158,7 @@ const actions = {
         // still let the export response record current_branch
         const setCurrentBranch = !branch
 
-        const deployment = Object.values(state.Deployment || {})[0]
+        const deployment = Object.values(state.Deployment || {})[0] as Json | undefined
 
         if(deployment && !branch) {
             try {
@@ -137,11 +171,11 @@ const actions = {
         // entirely if the HEAD hasn't moved and there's no in-flight queue work —
         // the store is still current. First load has to populate the store
         // regardless, so we only forward the resolved tuple in that case.
-        let lastCommitResult
+        let lastCommitResult: LastCommitResult | undefined
         if (forEditing) {
             try {
                 // if branch == "(MISSING)" (set by deployment.packages above, intended for unfurlServerExport() below)) use default branch instead
-                const editBranch = branch == "(MISSING)" ? "" : branch;
+                const editBranch = branch == "(MISSING)" ? "" : branch!;
                 lastCommitResult = await fetchLastCommit(projectPath, editBranch)
                 if (state.loaded) {
                     const [, , queueid, changed] = lastCommitResult
@@ -157,9 +191,9 @@ const actions = {
 
         commit('loaded', false)
 
-        let root
+        let root: Json
         try {
-            root = await unfurlServerExport({
+            root = (await unfurlServerExport({
                 format,
                 projectPath,
                 deploymentPath: blueprintPath,
@@ -167,9 +201,10 @@ const actions = {
                 branch,
                 setCurrentBranch,
                 lastCommitResult,
-            })
-        } catch(e) {
+            }))!
+        } catch(_e) {
             // TODO handle this from the caller
+            const e = _e as Error & {response?: {data?: unknown}}
             const responseData = e.response?.data
             commit(
                 'createError',
@@ -203,8 +238,14 @@ const actions = {
 
     },
 
-    normalizeUnfurlData({getters, commit}, {key, entry, root, projectPath, cache}) {
-        let transforms
+    normalizeUnfurlData({getters, commit}: Context, {key, entry, root, projectPath, cache}: {
+        key: string
+        entry: Json
+        root: Json
+        projectPath?: string
+        cache?: NormalizationCache
+    }) {
+        let transforms: Record<string, (entry: Json, root: Json) => void>
 
         // Initialize cache if not provided
         if (!cache) {
@@ -216,7 +257,7 @@ const actions = {
             }
         }
 
-        function normalizeProperties(properties) {
+        function normalizeProperties(properties: unknown): Json[] {
             if(!properties || typeof properties != 'object') {
                 return []
             } else if (Array.isArray(properties)) {
@@ -224,11 +265,11 @@ const actions = {
             } else {
                 console.warn('@normalizeProperties: Converting properties into an array', properties)
                 return Object.entries(properties)
-                    .reduce((acc, [name, value])  => {acc.push({name, value}); return acc}, [])
+                    .reduce((acc: Json[], [name, value])  => {acc.push({name, value}); return acc}, [])
             }
         }
 
-        function normalizeDependencies(dependencies) {
+        function normalizeDependencies(dependencies: unknown): Json[] {
             if(!dependencies || typeof dependencies != 'object') {
                 return []
             } else if (Array.isArray(dependencies)) {
@@ -236,40 +277,42 @@ const actions = {
             } else {
                 console.warn('@normalizeDependencies: Converting dependencies into an array', dependencies)
                 return Object.entries(dependencies)
-                    .reduce((acc, [name, value])  => {acc.push({name, value}); return acc}, [])
+                    .reduce((acc: Json[], [name, value])  => {acc.push({name, value}); return acc}, [])
             }
         }
+
+        const _cache = cache
 
         // Cached getter wrapper
-        function getCachedResourceType(typeName) {
-            if (!cache.resourceTypes.has(typeName)) {
-                cache.resourceTypes.set(typeName, getters.resolveResourceType(typeName))
+        function getCachedResourceType(typeName: string) {
+            if (!_cache.resourceTypes.has(typeName)) {
+                _cache.resourceTypes.set(typeName, getters.resolveResourceType(typeName))
             }
-            return cache.resourceTypes.get(typeName)
+            return _cache.resourceTypes.get(typeName)
         }
 
-        function getCachedMissingDependencies(resourceTemplate) {
+        function getCachedMissingDependencies(resourceTemplate: Json): Json[] {
             const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
-            if (!cache.missingDependencies.has(key)) {
-                cache.missingDependencies.set(key, getters.getMissingDependencies(resourceTemplate))
+            if (!_cache.missingDependencies.has(key)) {
+                _cache.missingDependencies.set(key, getters.getMissingDependencies(resourceTemplate))
             }
-            return cache.missingDependencies.get(key)
+            return _cache.missingDependencies.get(key)!
         }
 
-        function getCachedMissingProperties(resourceTemplate) {
+        function getCachedMissingProperties(resourceTemplate: Json): Json[] {
             const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
-            if (!cache.missingProperties.has(key)) {
-                cache.missingProperties.set(key, getters.getMissingProperties(resourceTemplate))
+            if (!_cache.missingProperties.has(key)) {
+                _cache.missingProperties.set(key, getters.getMissingProperties(resourceTemplate))
             }
-            return cache.missingProperties.get(key)
+            return _cache.missingProperties.get(key)!
         }
 
-        function getCachedGroupProperties(resourceTemplate) {
+        function getCachedGroupProperties(resourceTemplate: Json) {
             const key = resourceTemplate.name || JSON.stringify(resourceTemplate)
-            if (!cache.groupProperties.has(key)) {
-                cache.groupProperties.set(key, getters.groupProperties(resourceTemplate))
+            if (!_cache.groupProperties.has(key)) {
+                _cache.groupProperties.set(key, getters.groupProperties(resourceTemplate))
             }
-            return cache.groupProperties.get(key)
+            return _cache.groupProperties.get(key)!
         }
 
         // TODO refactor independent transformations into vue_shared/lib/normalize
@@ -282,7 +325,7 @@ const actions = {
                 resourceTemplate.properties = _.uniqBy(normalizeProperties(resourceTemplate.properties), 'name')
                 resourceTemplate._ancestors = lookupAncestors(resourceTemplate, root, true)
 
-                resourceTemplate.properties.forEach(prop => {
+                resourceTemplate.properties.forEach((prop: Json) => {
                     if(Array.isArray(prop.value?.get_env)) {
                         prop.value.get_env = prop.value.get_env[0]
                     }
@@ -322,7 +365,7 @@ const actions = {
                     deploymentTemplate.resourceTemplates = []
                 }
                 if(deploymentTemplate.ResourceTemplate) {
-                    Object.values(deploymentTemplate.ResourceTemplate).forEach(transforms.ResourceTemplate)
+                    Object.values(deploymentTemplate.ResourceTemplate as Record<string, Json>).forEach(rt => transforms.ResourceTemplate(rt, root))
                 }
                 if(projectPath && !deploymentTemplate.projectPath) {
                     deploymentTemplate.projectPath = projectPath
@@ -332,7 +375,7 @@ const actions = {
                         deploymentTemplate.ResourceTemplate = {}
                     }
 
-                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate._sourceTemplate)?.ResourceTemplate || {}).forEach(([name, rt]) => {
+                    Object.entries(getters.resolveDeploymentTemplate(deploymentTemplate._sourceTemplate)?.ResourceTemplate || {} as Json).forEach(([name, rt]) => {
                         if(
                             (root.ResourceTemplate[name] && root.ResourceTemplate[name].directives.includes('default')) &&
                             (!deploymentTemplate.ResourceTemplate[name])
@@ -360,7 +403,7 @@ const actions = {
 
                 resource._ancestors = lookupAncestors(resource, root, true)
 
-                resource.dependencies.forEach(dep => {
+                resource.dependencies.forEach((dep: Json) => {
                     const visibility = dep.visibility || dep.constraint.visibility || 'visible'
                     dep.constraint.visibility = dep.visibility = visibility
                 })
@@ -385,7 +428,7 @@ const actions = {
                 deployment.projectPath = dt?.projectPath
             },
             DeploymentEnvironment(de, root) {
-                for(const connection of Object.values(de.connections || {})) {
+                for(const connection of Object.values(de.connections || {}) as Json[]) {
                     if(!root.ResourceTemplate) { root.ResourceTemplate = {} }
 
                     // intentionally not cloning
@@ -408,7 +451,7 @@ const actions = {
         transforms[key] && transforms[key](entry, root)
     },
 
-    async useProjectState({state, commit, dispatch}, {projectPath, root, shouldMerge}) {
+    async useProjectState({state, commit, dispatch}: Context, {projectPath, root, shouldMerge}: {projectPath?: string, root: Json, shouldMerge?: boolean}) {
         console?.assert(root && typeof root == 'object', 'Cannot use project state', root)
         if(!(state.clean || shouldMerge)) {
             commit('resetProjectState')
@@ -419,9 +462,9 @@ const actions = {
             commit('addRepositoryDependencies', [projectPath], {root: true})
         }
 
-        const requiredSubstituteTypes = Object.values(root.ResourceTemplate || {}).filter(rt => rt.directives?.includes('substitute')).map(rt => root.ResourceType[rt.type])
+        const requiredSubstituteTypes: Json[] = (Object.values(root.ResourceTemplate || {}) as Json[]).filter(rt => rt.directives?.includes('substitute')).map(rt => root.ResourceType[rt.type])
 
-        const cloud = Object.values(root.DeploymentTemplate || {}).length == 1 && Object.values(root.DeploymentTemplate)[0].cloud
+        const cloud = Object.values(root.DeploymentTemplate || {}).length == 1 && (Object.values(root.DeploymentTemplate)[0] as Json).cloud
 
         if(cloud) {
             await Promise.all(requiredSubstituteTypes.map(async (st) => {
@@ -431,9 +474,11 @@ const actions = {
                 const _extends = [st.name]
                 const implementations = ['create']
 
-                const fetchedTypes = (await unfurlServerGetTypes(exportParams, {implementations, implementation_requirements, 'extends': _extends})).ResourceType
+                // the server takes more params than this module's signature names
+                const params = {implementations, implementation_requirements, 'extends': _extends} as Parameters<typeof unfurlServerGetTypes>[1]
+                const fetchedTypes = (await unfurlServerGetTypes(exportParams as Parameters<typeof unfurlServerGetTypes>[0], params))!.ResourceType
 
-                Object.values(fetchedTypes).filter(t => t.directives?.includes('substitute')).forEach(t => {root.ResourceType[t.name] = t})
+                ;(Object.values(fetchedTypes) as Json[]).filter(t => t.directives?.includes('substitute')).forEach(t => {root.ResourceType[t.name] = t})
             }))
         }
 
@@ -469,10 +514,10 @@ const actions = {
                         // Sanitize error logging to prevent memory retention of large objects
                         console.error('@useProjectState normalization error', {
                             key,
-                            entryName: entry?.name || entry?.title || 'unknown',
+                            entryName: (entry as Json)?.name || (entry as Json)?.title || 'unknown',
                             projectPath,
-                            errorMessage: e.message,
-                            errorStack: e.stack
+                            errorMessage: (e as Error).message,
+                            errorStack: (e as Error).stack
                         })
                         console.error(e)
                     }
@@ -494,7 +539,7 @@ const actions = {
         }
 
         // Batch commit remaining state updates to reduce mutation overhead
-        const batchUpdates = []
+        const batchUpdates: {key: string, value: unknown}[] = []
         for(const key of ordering) {
             if(key == 'ResourceType') continue
             const value = root[key]
@@ -507,12 +552,12 @@ const actions = {
         }
     },
 
-    async blueprintFetchTypesWithParams({state, getters, commit, dispatch}, {params}) {
-        let types
+    async blueprintFetchTypesWithParams({state, getters, commit, dispatch}: Context, {params}: {params: Parameters<typeof fetchTypeRepositories>[1]}) {
+        let types: Record<string, Json>
         let nestedTemplatesByPrimary = {}
         try {
             const typesRepositoryResults = (await fetchTypeRepositories(getters.blueprintRepositories, params))
-            types = typesRepositoryResults.types
+            types = typesRepositoryResults.types as Record<string, Json>
             nestedTemplatesByPrimary = typesRepositoryResults.nestedTemplatesByPrimary
         } catch(e) {
             const context = {
@@ -524,7 +569,7 @@ const actions = {
             catch(e) {console.error(e)}
 
             commit('createError', {
-                message: `Load blueprint types: failed to fetch types (${e.message})`,
+                message: `Load blueprint types: failed to fetch types (${(e as Error).message})`,
                 context,
                 severity: 'major'
             }, {root: true})
@@ -533,7 +578,7 @@ const actions = {
         }
 
         // prioritize types that are already defined when new type is incomplete
-        Object.entries(state.ResourceType).forEach(([name, currentType]) => {
+        Object.entries(state.ResourceType as Record<string, Json>).forEach(([name, currentType]) => {
             const newType = types[name]
 
             if(newType && !newType._sourceinfo?.incomplete) {
@@ -557,11 +602,13 @@ const actions = {
     }
 }
 
-function storeResolver(typename) {
-    return function(state) {
+// A getter resolving one export key by name; given a function instead, that
+// function does the lookup.
+function storeResolver(typename: string | ((state: State, ...args: any[]) => Json | null | undefined)) {
+    return function(state: State) {
         const dictionary = typeof typename == 'string'? state[typename]: state
         if(!dictionary) return () => null
-        return function(...args) {
+        return function(...args: any[]): Json | null {
             let name = args[0]
             let entry
             if(typeof typename == 'function') {
@@ -570,7 +617,7 @@ function storeResolver(typename) {
                 entry = dictionary[name]
             }
             if(entry) {
-                let result
+                let result: Json | undefined
                 if (typename === 'DeploymentTemplate') {
                     // TODO maybe there is another way to do this
                     // NOTE entry might be frozen, so here I assign the new field first
@@ -582,6 +629,9 @@ function storeResolver(typename) {
                 } else if (typename === 'ResourceTemplate') {
                     // TODO maybe there is another way to do this
                     // NOTE entry might be frozen, so here I assign the new field first
+                    // NOTE looks the type name up among templates, so _type is
+                    // almost always undefined; deployment_template_updates.js
+                    // reads it defensively. Left as is: correcting it changes what that sees.
                     result = {
                         ...result,
                         _type: state['ResourceTemplate'][entry.type]
@@ -589,7 +639,7 @@ function storeResolver(typename) {
                     result = Object.assign(result, entry)
                 }
                 else result = entry
-                return freeze(result)
+                return freeze(result!)
             } else {
                 if(typename == 'ResourceType') {
                     const qualifiedPrefix = `${name}@`
@@ -605,16 +655,19 @@ function storeResolver(typename) {
     }
 }
 
+// what the getters below read from each other
+type BlueprintGetters = Record<string, any>
+
 const getters = {
-    getApplicationRoot(state) {return state},
+    getApplicationRoot(state: State) {return state},
     resolveResourceType: storeResolver('ResourceType'),
-    resolveResourceTypeWithAncestors(state, getters) {
+    resolveResourceTypeWithAncestors(state: State, getters: BlueprintGetters) {
         // Cache for already-resolved type + ancestor combinations
-        const resolvedCache = new Map()
+        const resolvedCache = new Map<string, Json>()
 
         // where ancestors looks like [(ResourceType, RequirementConstraint?)]
-        return function(resourceType, ancestors) {
-            console.assert(resourceType, 'expected resource type')
+        return function(resourceType: string, ancestors: Ancestor[]) {
+            console.assert(!!resourceType, 'expected resource type')
             if(ancestors.length == 0)  {
                 return getters.resolveResourceType(resourceType)
             }
@@ -629,8 +682,8 @@ const getters = {
             const childType = cloneDeep(getters.resolveResourceType(resourceType))
 
             // Build path without cloning intermediate types (they won't be mutated)
-            const nodeFilterPath = [
-                ...(ancestors.map(([rt, req]) => [getters.resolveResourceType(rt.type), req])),
+            const nodeFilterPath: [Json, string | null][] = [
+                ...(ancestors.map(([rt, req]): [Json, string] => [getters.resolveResourceType(rt.type), req])),
                 [childType, null]
             ]
 
@@ -639,7 +692,7 @@ const getters = {
                     const [current, req] = nodeFilterPath[i]
                     const [child, _] = nodeFilterPath[i+1]
 
-                    const requirement = current.requirements.find(r => r.name == req)
+                    const requirement = current.requirements.find((r: Json) => r.name == req)
 
                     if(requirement?.requirementsFilter) {
                         applyRequirementsFilter(child, requirement.requirementsFilter)
@@ -654,20 +707,20 @@ const getters = {
                         index: i,
                         ancestorCount: ancestors.length,
                         resourceTypeName: resourceType,
-                        errorMessage: e.message,
-                        errorStack: e.stack
+                        errorMessage: (e as Error).message,
+                        errorStack: (e as Error).stack
                     })
                     console.error(e)
                 }
             }
 
-            const result = _.last(nodeFilterPath)[0]
+            const result = _.last(nodeFilterPath)![0]
             resolvedCache.set(cacheKey, result)
             return result
         }
     },
-    resolveResourceTemplateType(state, getters) {
-        return function(resourceTemplate) {
+    resolveResourceTemplateType(state: State, getters: BlueprintGetters) {
+        return function(resourceTemplate: string | Json) {
             const rt = typeof resourceTemplate == 'string'? getters.resolveResourceTemplate(resourceTemplate): resourceTemplate
             return getters.resolveResourceType(rt.type)
 
@@ -681,14 +734,14 @@ const getters = {
     resolveResourceTemplate: storeResolver('ResourceTemplate'),
     resolveDeploymentTemplate: storeResolver('DeploymentTemplate'),
     resolveLocalResourceTemplate: storeResolver(
-        function(state, deploymentTemplate, name) {
+        function(state: State, deploymentTemplate: string, name: string) {
             try {
                 return state.DeploymentTemplate[deploymentTemplate].ResourceTemplate[name]
             } catch(e) {return null}
         }
     ),
-    localResourceTemplates(state) {
-        return deploymentTemplate => {
+    localResourceTemplates(state: State) {
+        return (deploymentTemplate: string): Json[] => {
             try {
                 return Object.values(state.DeploymentTemplate[deploymentTemplate].ResourceTemplate)
             } catch(e) {
@@ -696,11 +749,11 @@ const getters = {
             }
         }
     },
-    topLevelTemplates(state) {
+    topLevelTemplates(state: State): Json[] {
         return Object.values(state.ResourceTemplate)
     },
-    resolveResource(state) {
-        return name => {
+    resolveResource(state: State) {
+        return (name: string | null | undefined): Json | null | undefined => {
             if(!name) return null
             try {
                 let rt = state['Resource'][name]
@@ -713,16 +766,16 @@ const getters = {
             }
         }
     },
-    resolveDeployment(state) { return name =>  state['Deployment']?.[name] },
-    dependenciesFromResourceType(_, getters) {
-        return function(resourceTypeName) {
+    resolveDeployment(state: State) { return (name: string) =>  state['Deployment']?.[name] },
+    dependenciesFromResourceType(_: State, getters: BlueprintGetters) {
+        return function(resourceTypeName: string | Json | null | undefined) {
             let resourceType
             if(typeof resourceTypeName == 'string') {
                 resourceType = getters.resolveResourceType(resourceTypeName)
             } else { resourceType = resourceTypeName }
 
             if(!resourceType?.requirements) return []
-            return resourceType.requirements.map(req => ({
+            return resourceType.requirements.map((req: Json) => ({
                 name: req.name,
                 constraint: req,
                 match: null,
@@ -732,23 +785,23 @@ const getters = {
         }
     },
     // TODO use names instead of titles
-    propertiesFromResourceType(_, getters) {
-        return function(resourceTypeName) {
+    propertiesFromResourceType(_: State, getters: BlueprintGetters) {
+        return function(resourceTypeName: string | Json | null | undefined) {
             let resourceType
             if(typeof resourceTypeName == 'string') {
                 resourceType = getters.resolveResourceType(resourceTypeName)
             } else { resourceType = resourceTypeName }
 
             if(!resourceType?.inputsSchema?.properties) return []
-            const result = Object.entries(resourceType.inputsSchema.properties).map(([key, schemaEntry]) => ({
+            const result = Object.keys(resourceType.inputsSchema.properties).map(key => ({
                 name: key,
                 value: null
             }))
             return result
         }
     },
-    getMissingDependencies(_, getters) {
-        return function(resourceTemplate) {
+    getMissingDependencies(_: State, getters: BlueprintGetters) {
+        return function(resourceTemplate: Json): Json[] {
             const generatedDependencies = getters.dependenciesFromResourceType(getters.resolveResourceTemplateType(resourceTemplate))
             if(generatedDependencies.length == resourceTemplate.dependencies?.length) {
                 return [] // assuming they're correct
@@ -756,17 +809,17 @@ const getters = {
             if(!resourceTemplate.dependencies?.length) {
                 return generatedDependencies
             }
-            const result = []
+            const result: Json[] = []
             for(const generated of generatedDependencies) {
-                if(!resourceTemplate.dependencies.some(dep => dep.name == generated.name)) {
+                if(!resourceTemplate.dependencies.some((dep: Json) => dep.name == generated.name)) {
                     result.push(generated)
                 }
             }
             return result
         }
     },
-    getMissingProperties(_, getters) {
-        return function(resourceTemplate) {
+    getMissingProperties(_: State, getters: BlueprintGetters) {
+        return function(resourceTemplate: Json): Json[] {
             const generatedProperties = getters.propertiesFromResourceType(getters.resolveResourceTemplateType(resourceTemplate))
             if(generatedProperties.length == resourceTemplate.properties?.length) {
                 return [] // assuming they're correct
@@ -774,19 +827,19 @@ const getters = {
             if(!resourceTemplate.properties?.length) {
                 return generatedProperties
             }
-            const result = []
+            const result: Json[] = []
             for(const generated of generatedProperties) {
-                if(!resourceTemplate.properties.some(prop => prop.name == generated.name)) {
+                if(!resourceTemplate.properties.some((prop: Json) => prop.name == generated.name)) {
                     result.push(generated)
                 }
             }
             return result
         }
     },
-    groupProperties(_, getters) {
-        return function(resourceTemplate) {
+    groupProperties(_: State, getters: BlueprintGetters) {
+        return function(resourceTemplate: Json) {
             const type = getters.resolveResourceTemplateType(resourceTemplate)
-            const groups = {properties: [], computedProperties: []}
+            const groups: {properties: Json[], computedProperties: Json[]} = {properties: [], computedProperties: []}
 
             for(const property of resourceTemplate.properties || []) {
                 if(type?.computedPropertiesSchema?.properties?.hasOwnProperty(property.name)) {
@@ -799,55 +852,55 @@ const getters = {
             return groups
         }
     },
-    getApplicationBlueprint(state) { return state.applicationBlueprint },
+    getApplicationBlueprint(state: State) { return state.applicationBlueprint },
 
-    getPrimaryDeploymentBlueprint(state, getters) {
-        return getters.getApplicationBlueprint?.primaryDeploymentBlueprint || (Object.values(state.DeploymentTemplate || {})[0])?.name
+    getPrimaryDeploymentBlueprint(state: State, getters: BlueprintGetters) {
+        return getters.getApplicationBlueprint?.primaryDeploymentBlueprint || (Object.values(state.DeploymentTemplate || {})[0] as Json | undefined)?.name
     },
 
-    getResources(state) {return Object.values(state.Resource || {})},
-    getDeployment(state) {return Object.values(state.Deployment || {})[0]},
+    getResources(state: State): Json[] {return Object.values(state.Resource || {})},
+    getDeployment(state: State): Json | undefined {return Object.values(state.Deployment || {})[0] as Json | undefined},
 
-    applicationBlueprintIsLoaded(state) {return state.loaded},
+    applicationBlueprintIsLoaded(state: State) {return state.loaded},
 
-    getTemplatesList(state) {
-        return Object.values(state.DeploymentTemplate)
+    getTemplatesList(state: State): Json[] {
+        return (Object.values(state.DeploymentTemplate) as Json[])
             ?.filter(dt => dt && dt.visibility != 'hidden')
     },
 
-    requirementsForType(_, getters) {
-        return function(_rt) {
-            const rt = getters.resolveResourceType(_rt?.name || _rt)
+    requirementsForType(_: State, getters: BlueprintGetters) {
+        return function(_rt: string | Json) {
+            const rt = getters.resolveResourceType((_rt as Json)?.name || _rt)
             return rt.requirements
         }
     },
 
-    inputsSchemaForType(_, getters) {
-        return function(_rt) {
-            const rt = getters.resolveResourceType(_rt?.name || _rt)
+    inputsSchemaForType(_: State, getters: BlueprintGetters) {
+        return function(_rt: string | Json) {
+            const rt = getters.resolveResourceType((_rt as Json)?.name || _rt)
             return rt.inputsSchema
         }
     },
 
-    outputsSchemaForType(_, getters) {
-        return function(_rt) {
-            const rt = getters.resolveResourceType(_rt?.name || _rt)
+    outputsSchemaForType(_: State, getters: BlueprintGetters) {
+        return function(_rt: string | Json) {
+            const rt = getters.resolveResourceType((_rt as Json)?.name || _rt)
             return rt.outputsSchema
         }
     },
 
-    blueprintResourceTypeDict(state) {
+    blueprintResourceTypeDict(state: State) {
         return state.ResourceType
     },
 
-    blueprintRepositories(state) {
+    blueprintRepositories(state: State): Json[] {
         return Object.values(state.repositories || {})
     },
 
-    nestedTemplatesByPrimary(state) {
+    nestedTemplatesByPrimary(state: State) {
         return state.nestedTemplatesByPrimary || {}
     }
 }
 
 
-export default {state, mutations, actions, getters}
+export default {state, mutations, actions, getters} satisfies Module<State, any>
