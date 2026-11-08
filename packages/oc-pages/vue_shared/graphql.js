@@ -71,6 +71,13 @@ export const link = new ApolloLink((operation, forward) => {
     return forward(operation);
 });
 
+/*
+ * UNUSED: everything from here down. The fork's graphql_shim still registers
+ * `resolvers` (and `typeDefs`) on its Apollo client, but nothing in oc-pages
+ * queries an `@client` field, so none of these resolvers ever runs. `link`
+ * above is live -- it rewrites every query through that client.
+ */
+
 // annoyingly we need to add __typename manually when writing client-only resolvers
 function patchTypenameInArr(typename, overview, args, ctx, info) {
     const arr = overview[info.field.name.value];
