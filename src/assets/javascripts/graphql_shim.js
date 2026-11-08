@@ -15,4 +15,6 @@ import 'regenerator-runtime/runtime';
  * be unwrapped again at every call site, and it would have needed a Vue 3 port
  * of vue-apollo in the fork to buy that.
  */
-export default null
+// Typed as the fork's client so oc-pages type-checks against the contract;
+// still null here, since standalone never reaches a query.
+export default /** @type {import('@apollo/client').ApolloClient<unknown>} */ (/** @type {unknown} */ (null))

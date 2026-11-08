@@ -2,7 +2,6 @@ import axios from '~/lib/utils/axios_utils'
 import csrf from '~/lib/utils/csrf'
 import gql from 'graphql-tag'
 import graphqlClient from 'oc/graphql_shim'
-import {postFormDataWithEntries} from './forms.js'
 
 const getUserProjectsQuery = gql`
 query getUserProjects {
@@ -23,7 +22,18 @@ query getUserProjects {
 }
 `
 
-export async function fetchUserProjects(_options) {
+export interface UserProject {
+    id: number
+    fullPath: string
+    name: string
+}
+
+interface ProjectMembership {
+    accessLevel: {integerValue: number}
+    project: {id: string, fullPath: string, name: string}
+}
+
+export async function fetchUserProjects(_options?: {minimumAccessLevel?: number}): Promise<UserProject[]> {
     const options = Object.assign({
         minimumAccessLevel: 30
     }, _options)
@@ -32,12 +42,12 @@ export async function fetchUserProjects(_options) {
         query: getUserProjectsQuery
     })
 
-    const nodes = response.data?.currentUser?.projectMemberships?.nodes || []
+    const nodes: ProjectMembership[] = response.data?.currentUser?.projectMemberships?.nodes || []
 
-    let dashboards
+    let dashboards: string[]
     try {
         dashboards = (await axios.get('/api/v4/dashboards?min_access_level=40')).data
-            .map(dashboardProject => dashboardProject.name)
+            .map((dashboardProject: {name: string}) => dashboardProject.name)
     } catch(e) {
         dashboards = []
     }
@@ -46,8 +56,7 @@ export async function fetchUserProjects(_options) {
         .filter(node => node.accessLevel.integerValue >= options.minimumAccessLevel && !dashboards.includes(node.project.name))
         .map(node => {
             const project = node.project
-            project.id = parseInt(project.id.split('/').pop())
-            return project
+            return Object.assign(project, {id: parseInt(project.id.split('/').pop()!)}) as unknown as UserProject
         })
 }
 
@@ -59,7 +68,7 @@ query getUserPublicEmail {
 }
 `
 
-export async function fetchUserPublicEmail() {
+export async function fetchUserPublicEmail(): Promise<string | null> {
     const response = await graphqlClient.query({
         query: getUserPublicEmailQuery
     })
@@ -68,7 +77,7 @@ export async function fetchUserPublicEmail() {
 }
 
 
-export async function generateAccessToken(tokenName, options) {
+export async function generateAccessToken(tokenName: string, options?: {scopes?: string[], expiresAt?: string}): Promise<string | undefined> {
     const {scopes, expiresAt} = Object.assign({
         scopes: ['read_repository', 'read_registry'],
         expiresAt: ''
@@ -100,7 +109,7 @@ export async function generateAccessToken(tokenName, options) {
 
     const domParser = new DOMParser()
     const dom = domParser.parseFromString(response.data, 'text/html')
-    return dom.querySelector('#created-personal-access-token')?.value
+    return dom.querySelector<HTMLInputElement>('#created-personal-access-token')?.value
 }
 
 export async function fetchUser() {
@@ -111,8 +120,8 @@ export async function fetchUser() {
     return {}
 }
 
-let userAccessToken
-export async function fetchUserAccessToken() {
+let userAccessToken: Promise<string | null> | undefined
+export async function fetchUserAccessToken(): Promise<string | null> {
     if(window.gon.unfurl_gui) return ''
     if(!userAccessToken) {
         userAccessToken = (async () => {
