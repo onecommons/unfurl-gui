@@ -1,20 +1,37 @@
 import axios from '~/lib/utils/axios_utils'
 import _ from 'lodash'
 
-export function toDepTokenEnvKey(projectId) {
+// A CI/CD variable as GitLab's -/variables endpoint lists it.
+export interface EnvironmentVariable {
+    id?: number
+    key: string
+    value?: string
+    secret_value?: string
+    environment_scope: string
+    variable_type?: string
+    masked?: boolean
+    protected?: boolean
+    _destroy?: boolean
+    [key: string]: unknown
+}
+
+// a value, or the variable's attributes with the value under `value`/`secret_value`
+type EnvPatch = Record<string, string | number | Partial<EnvironmentVariable>>
+
+export function toDepTokenEnvKey(projectId: string | number) {
     return `_dep_${projectId}`
 }
 
-const variablesByPath = {}
-const batches = {}
-const batchPromises = {}
-const batchResolves = {}
-const batchRejects = {}
-const pendingPatches = {}
+const variablesByPath: Record<string, EnvironmentVariable[] | undefined> = {}
+const batches: Record<string, (() => void) | undefined> = {}
+const batchPromises: Record<string, Promise<unknown>> = {}
+const batchResolves: Record<string, (result: unknown) => void> = {}
+const batchRejects: Record<string, (e: unknown) => void> = {}
+const pendingPatches: Record<string, EnvPatch> = {}
 
 const BATCH_PERIOD = 100 // period to wait before merging calls to PATCH -/variables
 // pass batchPeriod=0 to not add this request to a batch
-export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATCH_PERIOD) {
+export async function patchEnv(env: EnvPatch, environmentScope: string, fullPath: string, batchPeriod=BATCH_PERIOD) {
     const key = `${fullPath}#${environmentScope}`
     if(!fullPath) {
         throw new Error('Need a path to update environment variables')
@@ -29,18 +46,18 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                 const env = pendingPatches[key]
 
                 const endpoint = `/${fullPath}/-/variables`
-                const envPatch = []
+                const envPatch: EnvironmentVariable[] = []
                 for(const _key in env) {
                     let key = _key.startsWith('$')? _key.slice(1) : _key
                     if(! /^[a-zA-Z_]+[a-zA-Z0-9_]*$/.test(key)) {
                         throw new Error(`Environment variable name does not match "^[a-zA-Z_]+[a-zA-Z0-9_]*$".  Received ${_key}`)
                     }
 
-                    let secret_value = env[_key]
-                    let data = {}
+                    let secret_value: unknown = env[_key]
+                    let data: Partial<EnvironmentVariable> = {}
 
                     if(typeof secret_value == 'object') {
-                        data = secret_value
+                        data = secret_value as Partial<EnvironmentVariable>
                         secret_value = data.value || data.secret_value
                     }
 
@@ -52,8 +69,8 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
                             // record with a nil value, which fails masked validation as
                             // "Variables value is invalid" and aborts the whole commit.
                             // Same fix as pipelines.js.
-                            secret_value,
-                            value: secret_value,
+                            secret_value: secret_value as string,
+                            value: secret_value as string,
                             environment_scope: environmentScope,
                             variable_type: 'env_var',
                             masked:  typeof secret_value == 'string' && (secret_value.length >= 8 && !secret_value.includes('\n')),
@@ -66,7 +83,9 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
 
                 let result = null
                 if(envPatch.length) {
+                    // without the ids, existing variables would be posted as new ones
                     const currentVars = await tryFetchEnvironmentVariables(fullPath)
+                    if(!currentVars) throw new Error(`Could not read the variables of ${fullPath} to update them`)
                     for(const currentVar of currentVars) {
                         const mutatingVarIndex = envPatch.findIndex(newVar => newVar.key == currentVar.key && currentVar.environment_scope == environmentScope)
                         const mutatingVar = envPatch[mutatingVarIndex]
@@ -104,16 +123,18 @@ export async function patchEnv(env, environmentScope, fullPath, batchPeriod=BATC
         })
     }
 
-    batches[key]()
+    batches[key]!()
 
     return await batchPromises[key]
 }
 
-export async function deleteEnvironmentVariables(environmentScope, fullPath) {
-    if(!fullPath) { console.warn('TODO use fullPath for patchEnv') }
-    const endpoint = fullPath? `/${fullPath}/-/variables`: variablesEndpoint
+export async function deleteEnvironmentVariables(environmentScope: string, fullPath: string) {
+    if(!fullPath) {
+        throw new Error('Need a path to update environment variables')
+    }
+    const endpoint = `/${fullPath}/-/variables`
     const currentVars = await fetchEnvironmentVariables(fullPath)
-    const envPatch = []
+    const envPatch: EnvironmentVariable[] = []
 
     for(const currentVar of currentVars) {
         if(currentVar.environment_scope == environmentScope) {
@@ -130,7 +151,7 @@ export async function deleteEnvironmentVariables(environmentScope, fullPath) {
     }
 }
 
-export async function fetchEnvironmentVariables(fullPath) {
+export async function fetchEnvironmentVariables(fullPath: string): Promise<EnvironmentVariable[]> {
     if(!fullPath) {
         throw new Error('Need a path to update environment variables')
     }
@@ -143,10 +164,12 @@ export async function fetchEnvironmentVariables(fullPath) {
     const endpoint = `/${fullPath}/-/variables`
     const data = (await axios.get(endpoint)).data
 
-    return variablesByPath[fullPath] = data.variables || []
+    variablesByPath[fullPath] = data.variables || []
+    // a copy, as from the cache: callers rewrite what they get
+    return _.cloneDeep(variablesByPath[fullPath]!)
 }
 
-export async function tryFetchEnvironmentVariables(fullPath) {
+export async function tryFetchEnvironmentVariables(fullPath: string): Promise<EnvironmentVariable[] | undefined> {
     try {
         return await fetchEnvironmentVariables(fullPath)
     } catch(e) {
