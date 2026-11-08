@@ -37,6 +37,7 @@ at all.
 | `00_visitor/form_fixture.cy.js`                             |  | CI | n/a | unknown |
 | `00_visitor/gallery.cy.js`                                  |  | CI | n/a | unknown |
 | `00_visitor/light_mode.cy.js`                               |  | CI | pass 2026-09-15 | unknown |
+| `00_visitor/mobile_layout.cy.js`                            |  | CI | unknown | unknown |
 | `00_visitor/route_smoke.cy.js`                              |  | CI | pass 2026-09-15 | unknown |
 | `00_visitor/visit_cloudchart.cy.js`                         |  | CI | pass 2026-09-15 | unknown |
 | `01_environments/a10.cy.js`                                 |  | n/a | failed 2026-09-15 | unknown |
