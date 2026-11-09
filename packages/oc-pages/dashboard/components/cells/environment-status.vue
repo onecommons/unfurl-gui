@@ -25,10 +25,10 @@ export default defineComponent({
         environment: {
             immediate: true,
             async handler() {
-                if(!this.environment.primary_provider) {
+                if(!this.environment!.primary_provider) {
                     try {
-                        const providers = (await fetchDashboardProviders(this.getHomeProjectPath))
-                            .providersByEnvironment[this.environment.name]
+                        const providers = (await fetchDashboardProviders(this.getHomeProjectPath))!
+                            .providersByEnvironment[this.environment!.name]
 
                         this.incompleteEnv = !!providers?.length
                     } catch(e) {} // error reported in environment-cell

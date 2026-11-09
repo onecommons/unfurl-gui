@@ -43,7 +43,7 @@ const ACCESS_KEY = 'access-key'
 const ARN_STACK = 'arn-stack'
 const ARN_MANUAL = 'arn-manual'
 
-const AUTHENTICATION_OPTIONS = {
+const AUTHENTICATION_OPTIONS: Record<string, string> = {
     '': __('Select'),
     [ACCESS_KEY]: 'Enter your AWS Access Key',
     [ARN_STACK]: 'Create a Role ARN using AWS stack',
@@ -183,10 +183,10 @@ export default defineComponent({
                 this.externalId = external_id
                 if(role_arn && !this.roleArn) this.roleArn = role_arn
             } catch(e) {
-                this.errorMessage = e.message
+                this.errorMessage = (e as Error).message
             }
         },
-        async copy(value) {
+        async copy(value: string) {
             try {
                 await navigator.clipboard.writeText(value)
             } catch(e) {
@@ -220,7 +220,7 @@ export default defineComponent({
             } catch(e) {
                 // The environment already exists; a refused role is something the
                 // user fixes in AWS and retries, so nothing is torn down here.
-                this.errorMessage = e.message
+                this.errorMessage = (e as Error).message
             } finally {
                 this.saving = false
             }

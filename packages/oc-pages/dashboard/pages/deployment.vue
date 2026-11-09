@@ -1,6 +1,7 @@
 <script lang="ts">
 import {mapGetters, mapActions} from 'vuex'
 import {nextTick, defineComponent} from 'vue'
+import type {LocationQuery} from '@gitlab/vue-router-vue3'
 import {OcTab, DeploymentResources} from 'oc_vue_shared/components/oc'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
@@ -84,7 +85,7 @@ export default defineComponent({
             return freeze(this.getDeploymentDictionary(this.deploymentName, this.environmentName))
         },
         tableItems() {
-            return this.getDashboardItems.filter(item => {
+            return this.getDashboardItems.filter((item: Record<string, any>) => {
                 return (
                     item.context.environment.name == this.environmentName &&
                     item.context.deployment.name == this.deploymentName
@@ -131,13 +132,13 @@ export default defineComponent({
                 this.autostopRemainingHours,
                 this.autostopRemainingMinutes,
                 this.autostopRemainingSeconds
-            ].filter(t => !isNaN(parseInt(t)))
+            ].filter(t => !isNaN(parseInt(t as string)))
 
             if(timeComponents.length > 1) {
                 return timeComponents.join(':')
-            } else if (this.autostopRemainingSeconds > 1) {
+            } else if ((this.autostopRemainingSeconds as unknown as number) > 1) {
                 return `${this.autostopRemainingSeconds} seconds`
-            } else if (this.autostopRemainingSeconds == 1) {
+            } else if ((this.autostopRemainingSeconds as unknown as number) == 1) {
                 return '01 second'
             } else {
                 return ''
@@ -158,15 +159,15 @@ export default defineComponent({
                 if(this.currentTab > 0) {
                     this.currentTab = 0
                 }
-                this.$refs.deploymentResources.scrollDown(this.$route.hash, 500)
+                (this.$refs.deploymentResources as {scrollDown: (elId: string, timeOut?: number) => void}).scrollDown(this.$route.hash, 500)
             } else if(lineNo && this.currentTab == 2) {
                 this.setTabToConsoleIfNeeded()
             }
         },
 
         currentTabDebounced(tab, prev) {
-            let hash = this.$route.hash
-            let query = this.$route.query
+            let hash: string | undefined = this.$route.hash
+            let query: LocationQuery | undefined = this.$route.query
             const lineNo = hash.match(/L\d+/)
 
             if(hash && !lineNo && tab == 1){
@@ -185,7 +186,7 @@ export default defineComponent({
             this.$router.push({...this.$route, hash, query})
         },
 
-        currentTab: debounce(function (val) {
+        currentTab: debounce(function (this: {currentTabDebounced: number}, val: number) {
             if(val != this.currentTabDebounced) {
                 this.currentTabDebounced = val
             }
@@ -255,7 +256,7 @@ export default defineComponent({
                     this.currentTab = 1
 
 
-                    const el = document.querySelector(lineNo?.input)
+                    const el = document.querySelector(lineNo?.input as string)
                     if(el) {
                         window.scrollTo(0, document.body.scrollHeight)
                         window.requestAnimationFrame(() => {

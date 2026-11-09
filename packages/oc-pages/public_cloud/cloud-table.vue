@@ -18,8 +18,8 @@ export default defineComponent({
   fields: [
     {key: 'provider', label: 'Provider'},
     {key: 'region', label: 'Regions', s: 'Region'},
-    {key: 'testbed', label: 'Testbed Dashboards', s: 'Testbed', groupBy: i => i.testbed.url},
-    {key: 'deployment', label: 'Deployments', s: 'Deployment', groupBy: i => i.deployment.url},
+    {key: 'testbed', label: 'Testbed Dashboards', s: 'Testbed', groupBy: (i: Record<string, any>) => i.testbed.url},
+    {key: 'deployment', label: 'Deployments', s: 'Deployment', groupBy: (i: Record<string, any>) => i.deployment.url},
   ],
   methods: {
     lookupCloudProviderAlias,
@@ -30,7 +30,7 @@ export default defineComponent({
   },
   computed: {
     items() {
-      const items = []
+      const items: Record<string, any>[] = []
       if(!this.data?.children) return items
 
       for(const provider of this.data.children) {

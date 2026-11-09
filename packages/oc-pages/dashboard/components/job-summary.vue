@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { mapGetters } from 'vuex'
 import { GlBadge } from '@gitlab/ui'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
@@ -8,15 +9,15 @@ export default defineComponent({
     name: 'JobSummary',
     components: { GlBadge, TableComponent },
     props: {
-        jobsData: Array
+        jobsData: Array as PropType<Record<string, any>[]>
     },
     fields: [
-        { key: 'template', label: 'Template', textValue: item => `${item.template}: ${item.type}`},
+        { key: 'template', label: 'Template', textValue: (item: Record<string, any>) => `${item.template}: ${item.type}`},
         { key: 'status', label: 'Statuses', s: 'Status'},
         { key: 'target', label: 'Targets', s: 'Target'},
-        { key: 'operation', label: 'Operations', s: 'Operation', textValue: (item) => item, groupBy: (item) => item.operation},
+        { key: 'operation', label: 'Operations', s: 'Operation', textValue: (item: Record<string, any>) => item, groupBy: (item: Record<string, any>) => item.operation},
         { key: 'targetStatus', label: 'Target Statuses', s: 'Target Status'},
-        { key: 'artifact', label: 'Artifacts', s: 'Artifact', groupBy: (item) => item.artifact?.url},
+        { key: 'artifact', label: 'Artifacts', s: 'Artifact', groupBy: (item: Record<string, any>) => item.artifact?.url},
     ],
     computed: {
         ...mapGetters(['getJobSummary', 'taskLineNo', 'getHomeProjectPath']),
@@ -35,10 +36,10 @@ export default defineComponent({
                                 ''
                             )
 
-                            const jobId = this.jobsData[0].id
+                            const jobId = this.jobsData![0].id
 
                             const url = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/jobs/${jobId}/artifacts/browse/${basePath}`
-                            const text = basePath.split('/').filter(s => !!s).slice(-3).join('/')
+                            const text = basePath.split('/').filter((s: string) => !!s).slice(-3).join('/')
 
                             const artifact = {
                                 url,
@@ -59,16 +60,16 @@ export default defineComponent({
         }
     },
     methods: {
-        badgeVariantFor(jobCountKey) {
-            return {
+        badgeVariantFor(jobCountKey: string) {
+            return ({
                 ok: 'success',
                 error: 'danger',
                 skipped: 'warning',
                 changed: 'info',
                 unknown: 'tier'
-            }[jobCountKey] || 'neutral'
+            } as Record<string, string>)[jobCountKey] || 'neutral'
         },
-        taskUrl(item) {
+        taskUrl(item: Record<string, any>) {
             const lineNo = this.taskLineNo(item)
             if(lineNo) return `#L${this.taskLineNo(item)}`
         }

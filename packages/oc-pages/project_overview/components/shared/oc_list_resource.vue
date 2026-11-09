@@ -8,10 +8,10 @@ import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {mapGetters, mapActions} from 'vuex';
 
 const CLOUD_PROVIDER_NAMES = {
-    [lookupCloudProviderAlias('gcp')]: __('Google Cloud Platform'),
-    [lookupCloudProviderAlias('aws')]: __('Amazon Web Services'),
-    [lookupCloudProviderAlias('azure')]: __('Azure'),
-    [lookupCloudProviderAlias('k8s')]: __('Kubernetes')
+    [lookupCloudProviderAlias('gcp') as string]: __('Google Cloud Platform'),
+    [lookupCloudProviderAlias('aws') as string]: __('Amazon Web Services'),
+    [lookupCloudProviderAlias('azure') as string]: __('Azure'),
+    [lookupCloudProviderAlias('k8s') as string]: __('Kubernetes')
 }
 
 export default defineComponent({
@@ -54,7 +54,7 @@ export default defineComponent({
             get() {
                 return this.value;
             },
-            set(val) {
+            set(val: string | Record<string, any>) {
                 this.$emit("input", val);
             }
         },
@@ -69,7 +69,7 @@ export default defineComponent({
                 let cloud = ''
                 if(type.implementation_requirements) {
                     for(const implRequirement of type.implementation_requirements) {
-                        cloud = CLOUD_PROVIDER_NAMES[lookupCloudProviderAlias(implRequirement)] || ''
+                        cloud = CLOUD_PROVIDER_NAMES[lookupCloudProviderAlias(implRequirement) as string] || ''
                         if(cloud) break
                     }
                 }
@@ -79,10 +79,10 @@ export default defineComponent({
         }
     },
     methods: {
-        description(resource) {
+        description(resource: Record<string, any>) {
             return resource.description || this.resolveResourceTypeFromAny(resource?.type)?.description
         },
-        iconProps(resource) {
+        iconProps(resource: Record<string, any>) {
             const type = resource?.type ? this.resolveResourceTypeFromAny(resource?.type) : resource
             return {
                 type,
@@ -100,7 +100,7 @@ export default defineComponent({
             async handler(val) {
                 this.ready = false
                 if(!val) return
-                const promises = val.map(typeOrTemplate => {
+                const promises = val.map((typeOrTemplate: Record<string, any>) => {
                     if(typeOrTemplate?.imported) {
                         return this.fetchDeploymentIfNeeded(typeOrTemplate)
                     }

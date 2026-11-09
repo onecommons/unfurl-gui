@@ -7,6 +7,7 @@ import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
 import type {DeploymentEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {fetchGcpProjects, gcpAuthorizeUrl, saveProvider} from 'oc_vue_shared/client_utils/environment-providers'
+import type {GcpProject} from 'oc_vue_shared/client_utils/environment-providers'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import GoogleAuthButton from './google-auth-button.vue'
@@ -61,10 +62,10 @@ export default defineComponent({
     data() {
         return {
             fileName: '',
-            fileContents: null,
+            fileContents: null as Record<string, any> | null,
             zone: this.initialValues?.CLOUDSDK_COMPUTE_ZONE || '',
             gcpProjectId: this.initialValues?.CLOUDSDK_CORE_PROJECT || '',
-            gcpProjects: [],
+            gcpProjects: [] as GcpProject[],
             projectSearchTerm: '',
             loadingProjects: false,
             saving: false,
@@ -160,12 +161,12 @@ export default defineComponent({
             } catch(e) {
                 // No usable token: the only way forward is to sign in again.
                 this.signInExpired = true
-                this.errorMessage = e.message
+                this.errorMessage = (e as Error).message
             } finally {
                 this.loadingProjects = false
             }
         },
-        async readKeyFile(file) {
+        async readKeyFile(file: File | undefined) {
             if(!file) return // the picker was dismissed, or a drop carried no file
             this.fileName = file.name
             try {
@@ -179,10 +180,10 @@ export default defineComponent({
                 this.errorMessage = INVALID_KEY_MESSAGE
             }
         },
-        onFileChanged(event) {
-            return this.readKeyFile(event?.target?.files?.[0])
+        onFileChanged(event: Event) {
+            return this.readKeyFile((event?.target as HTMLInputElement | null)?.files?.[0])
         },
-        onFileDropped(event) {
+        onFileDropped(event: DragEvent) {
             this.dragging = false
             return this.readKeyFile(event?.dataTransfer?.files?.[0])
         },
@@ -271,7 +272,7 @@ export default defineComponent({
                 }
                 this.$emit('saved', 'gcp')
             } catch(e) {
-                this.errorMessage = e.message
+                this.errorMessage = (e as Error).message
             } finally {
                 this.saving = false
             }

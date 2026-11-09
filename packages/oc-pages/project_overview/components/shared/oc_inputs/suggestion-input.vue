@@ -49,7 +49,7 @@ export default defineComponent({
         placeholder: {type: String, default: 'Type to search'}
     },
     data() {
-        return {suggestions: []}
+        return {suggestions: [] as string[]}
     },
     computed: {
         // whichever contract the caller's v-model compiled to
@@ -58,14 +58,14 @@ export default defineComponent({
         },
     },
     methods: {
-        load(query) {
-            this.fetchSuggestions(query || '', items => {
+        load(query: string | null) {
+            this.fetchSuggestions(query || '', (items: Array<string | {value: string}> | null) => {
                 this.suggestions = (items || [])
                     .map(item => (item && typeof item == 'object' ? item.value : item))
                     .filter(value => typeof value == 'string')
             })
         },
-        onInput(value) {
+        onInput(value: string) {
             this.$emit('update:modelValue', value)
             // the Vue 2 contract the compat remap listens for
             this.$emit('input', value)

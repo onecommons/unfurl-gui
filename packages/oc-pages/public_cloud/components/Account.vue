@@ -1,9 +1,10 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 export default defineComponent({
   name: 'Account',
   props: {
-    item: Object
+    item: Object as PropType<any>
   },
   computed: {
     firstChild() {

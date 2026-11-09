@@ -10,15 +10,15 @@ import SmallAzure from '../../assets/azure-small.svg?inline'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 
 const MAPPINGS = {
-    [lookupCloudProviderAlias('gcp')]: GCP,
-    [lookupCloudProviderAlias('aws')]: AWS,
-    [lookupCloudProviderAlias('azure')]: Azure
+    [lookupCloudProviderAlias('gcp') as string]: GCP,
+    [lookupCloudProviderAlias('aws') as string]: AWS,
+    [lookupCloudProviderAlias('azure') as string]: Azure
 }
 
 const SMALL_MAPPINGS = {
-    [lookupCloudProviderAlias('gcp')]: SmallGCP,
-    [lookupCloudProviderAlias('aws')]: SmallAWS,
-    [lookupCloudProviderAlias('azure')]: SmallAzure
+    [lookupCloudProviderAlias('gcp') as string]: SmallGCP,
+    [lookupCloudProviderAlias('aws') as string]: SmallAWS,
+    [lookupCloudProviderAlias('azure') as string]: SmallAzure
 }
 export default defineComponent({
     name: "LogosCloud",
@@ -36,8 +36,8 @@ export default defineComponent({
         icon() {
 
             const icon = this.small? 
-                SMALL_MAPPINGS[lookupCloudProviderAlias(this.cloud)]:
-                MAPPINGS[lookupCloudProviderAlias(this.cloud)]
+                SMALL_MAPPINGS[lookupCloudProviderAlias(this.cloud) as string]:
+                MAPPINGS[lookupCloudProviderAlias(this.cloud) as string]
             if(!icon) return ''
             if(icon.startsWith('<svg')) {
                 return `data:image/svg+xml;charset=utf8,${encodeURIComponent(icon)}`

@@ -8,7 +8,7 @@ import EnvironmentStatus from '../cells/environment-status.vue'
 import * as routes from '../../router/constants'
 import {textValueFromKeys} from '../../dashboard-utils'
 
-function deploymentGroupBy(item) {
+function deploymentGroupBy(item: Record<string, any>) {
     const result = `${item.deployment?.name}:${item.application?.name}`
     return result
 }
@@ -28,7 +28,7 @@ export default defineComponent({
             {
                 key: 'environment',
                 label: 'Environment',
-                groupBy: (item) => item.environment.name
+                groupBy: (item: Record<string, any>) => item.environment.name
             },
             {
                 key: 'application',
@@ -56,7 +56,7 @@ export default defineComponent({
                 key: 'status',
                 label: 'State',
                 tableBodyStyles: {'justify-content': 'flex-end'},
-                groupBy: (item) => item.context.environment?.name,
+                groupBy: (item: Record<string, any>) => item.context.environment?.name,
                 textValue: () => '',
             },
 

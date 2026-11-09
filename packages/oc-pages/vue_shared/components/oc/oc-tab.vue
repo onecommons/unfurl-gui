@@ -32,7 +32,7 @@ export default defineComponent({
     },
     computed: {
         showCount() {
-            const parsed = parseInt(this.titleCount)
+            const parsed = parseInt(this.titleCount as string)
             if(this.noCountZero && parsed === 0) {
                 return false
             }

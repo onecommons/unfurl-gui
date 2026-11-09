@@ -10,12 +10,12 @@ const fields = [
     {
         key: 'draft',
         label: 'Merge Request',
-        groupBy: (item) => item.draft.title + ':' +  item.author.name
+        groupBy: (item: Record<string, any>) => item.draft.title + ':' +  item.author.name
     },
     {
         key: 'environment',
         label: 'Environment',
-        groupBy: (item) => item.environment?.name
+        groupBy: (item: Record<string, any>) => item.environment?.name
     },
     {
         key: 'author',
@@ -44,19 +44,19 @@ export default defineComponent({
     computed: {
         ...mapGetters(['mergeRequests', 'getHomeProjectPath', 'lookupEnvironment']),
         items() {
-            return this.mergeRequests?.map(mr => {
+            return this.mergeRequests?.map((mr: Record<string, any>) => {
                 let environment = null 
                 try {
-                    const name = mr.labels.find(l => l.startsWith('environment:'))?.split(':')?.pop()
+                    const name = mr.labels.find((l: string) => l.startsWith('environment:'))?.split(':')?.pop()
                     environment = this.lookupEnvironment(name)
                 } catch(e) {console.error(e)}
 
-                let applicationBlueprintUrl = mr.labels.find(l => l.startsWith('application-blueprint-project-path'))?.split(':')?.pop()
+                let applicationBlueprintUrl = mr.labels.find((l: string) => l.startsWith('application-blueprint-project-path'))?.split(':')?.pop()
                 if(applicationBlueprintUrl) {
                     applicationBlueprintUrl = window.location.origin + '/' + applicationBlueprintUrl
                 }
 
-                const applicationBlueprintTitle = mr.labels.find(l => l.startsWith('application-blueprint-title'))?.split(':')?.pop()
+                const applicationBlueprintTitle = mr.labels.find((l: string) => l.startsWith('application-blueprint-title'))?.split(':')?.pop()
 
                 return {...mr, draft: {title: mr.title, description: mr.description, ready: !mr.draft, web_url: mr.web_url, applicationBlueprintUrl, applicationBlueprintTitle}, environment}
             }) || []

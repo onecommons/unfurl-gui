@@ -1,21 +1,24 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {mapMutations, mapActions, mapGetters} from 'vuex'
 import {compatibilityMountJobConsole, compatibilityUnmountJobConsole} from 'oc_vue_shared/compat'
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
 const BOTTOM_MARGIN = -100
+
+type JobConsoleApp = {$store?: {state?: any}} | null | undefined
 export default defineComponent({
     props: {
         jobsData: {
-            type: Array,
+            type: Array as PropType<Record<string, any>[]>,
             required: true
         }
     },
     data() {
         return {
-            consoleApp: null,
-            timeout: null,
-            initialCompletionState: null,
+            consoleApp: null as JobConsoleApp,
+            timeout: null as number | null,
+            initialCompletionState: null as 'complete' | 'incomplete' | null,
             linesRead: 0,
             autoscroll: true
         }
@@ -35,7 +38,7 @@ export default defineComponent({
         ...mapActions(['fetchProjectEnvironments', 'loadDashboard', 'populateDeploymentItems', 'populateJobsList']),
         ...mapMutations(['clearPreparedMutations', 'pushMessage']),
         async mountJobsConsole() {
-            this.consoleApp = await compatibilityMountJobConsole()
+            this.consoleApp = await compatibilityMountJobConsole() as JobConsoleApp
         },
         async onComplete() {
             await Promise.all([
@@ -49,7 +52,7 @@ export default defineComponent({
             // https://github.com/onecommons/gitlab-oc/issues/1231
             this.clearPreparedMutations()
         },
-        visitJobLogSection(jobLogSection, highestLineNumber=0) {
+        visitJobLogSection(jobLogSection: Record<string, any>, highestLineNumber=0): number {
             if(jobLogSection.content && jobLogSection.lineNumber > highestLineNumber) {
                 highestLineNumber = jobLogSection.lineNumber
                 for(const contentSection of jobLogSection.content) {
@@ -73,7 +76,7 @@ export default defineComponent({
             return highestLineNumber
         },
         pollLogState(time=30) {
-            clearTimeout(this.timeout)
+            clearTimeout(this.timeout as number | undefined)
             this.timeout = setTimeout(async () => {
                 const state = this.consoleApp?.$store?.state
                 let complete
@@ -108,7 +111,7 @@ export default defineComponent({
         },
         setConsoleHeight() {
             const consoleContainer = document.querySelector('#console-container') as HTMLElement
-            delete consoleContainer.style.maxHeight
+            delete (consoleContainer.style as Partial<CSSStyleDeclaration>).maxHeight
             consoleContainer.style.height = (this.windowHeight - consoleContainer.getBoundingClientRect().y - BOTTOM_MARGIN) + 'px'
         }
     },
@@ -119,7 +122,7 @@ export default defineComponent({
         const url = this.jobsData[0]?.web_url
 
         const documentContents = await fetch(url).then(res => res.text())
-        const elementMarkup = documentContents.match(/.*js-job-page.*/)[0]
+        const elementMarkup = documentContents.match(/.*js-job-page.*/)![0]
         const tempDocument = (new DOMParser()).parseFromString(elementMarkup, TEXT_HTML)
         const element = tempDocument.querySelector('#js-job-page') as HTMLElement
         const dataset = element.dataset
@@ -138,7 +141,7 @@ export default defineComponent({
 
     },
     beforeUnmount() {
-        clearTimeout(this.timeout)
+        clearTimeout(this.timeout as number | undefined)
         compatibilityUnmountJobConsole(this.consoleApp)
     }
 })

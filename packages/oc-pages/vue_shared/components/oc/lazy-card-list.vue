@@ -58,14 +58,14 @@ export default defineComponent({
             if(opening && !this.everOpened) {
                 this.everOpened = true;
                 this.$nextTick(() => {
-                    if(this.$refs.content) this.$refs.content.style.display = '';
+                    if(this.$refs.content) (this.$refs.content as HTMLElement).style.display = '';
                 });
                 return;
             }
             // Subsequent toggles: pure DOM style change, no Vue re-patch
             // of the (potentially huge) nested subtree.
             if(this.$refs.content) {
-                this.$refs.content.style.display = opening ? '' : 'none';
+                (this.$refs.content as HTMLElement).style.display = opening ? '' : 'none';
             }
         },
 
@@ -77,11 +77,11 @@ export default defineComponent({
                 this.expandedVisual = true;
             }
             this.$nextTick(() => {
-                if(this.$refs.content) this.$refs.content.style.display = '';
+                if(this.$refs.content) (this.$refs.content as HTMLElement).style.display = '';
             });
         },
 
-        onChildDelete(payload) {
+        onChildDelete(payload: unknown) {
             this.$emit('deleteNode', payload);
         }
     }

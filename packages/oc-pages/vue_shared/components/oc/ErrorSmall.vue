@@ -2,8 +2,15 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import _ from 'lodash'
+import type {DebouncedFunc} from 'lodash'
 const CONDITION_DEBOUNCE_TIME = 500
 const MESSAGE_DEBOUNCE_TIME = 500
+
+// set in created, outside the reactive state
+interface DebouncedUpdates {
+    conditionChanged: DebouncedFunc<() => void>
+    messageChanged: DebouncedFunc<() => void>
+}
 
 export default defineComponent({
     props: {
@@ -27,17 +34,17 @@ export default defineComponent({
     created() {
         // per instance: debounced once at module level, one timer served every
         // ErrorSmall on the page, and only the last to change was updated
-        const update = () => { this.shouldDisplay = this.calculateShouldDisplay() }
-        this.conditionChanged = _.debounce(update, CONDITION_DEBOUNCE_TIME)
-        this.messageChanged = _.debounce(update, MESSAGE_DEBOUNCE_TIME)
+        const update = () => { this.shouldDisplay = this.calculateShouldDisplay() };
+        (this as unknown as DebouncedUpdates).conditionChanged = _.debounce(update, CONDITION_DEBOUNCE_TIME);
+        (this as unknown as DebouncedUpdates).messageChanged = _.debounce(update, MESSAGE_DEBOUNCE_TIME)
     },
     beforeUnmount() {
-        this.conditionChanged.cancel()
-        this.messageChanged.cancel()
+        (this as unknown as DebouncedUpdates).conditionChanged.cancel();
+        (this as unknown as DebouncedUpdates).messageChanged.cancel()
     },
     watch: {
-        condition() { this.conditionChanged() },
-        message() { this.messageChanged() }
+        condition() { (this as unknown as DebouncedUpdates).conditionChanged() },
+        message() { (this as unknown as DebouncedUpdates).messageChanged() }
     }
 })
 </script>

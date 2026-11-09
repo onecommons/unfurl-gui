@@ -1,20 +1,21 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {GlIcon, GlButton} from '@gitlab/ui'
 import DropdownActionItem from './dropdown-action-item.vue'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import OpenLiveApp from './open-live-app.vue'
 export default defineComponent({
     props: {
-        deploymentItem: Object,
+        deploymentItem: Object as PropType<any>,
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
         viewJobsLink: String,
         viewArtifactsLink: String,
         issuesLinkArgs: Array,
         viewInRepositoryLink: String,
-        controlButtons: Array,
-        disabledButtons: Array,
+        controlButtons: Array as PropType<(string | undefined)[]>,
+        disabledButtons: Array as PropType<string[]>,
         component: {
             type: [String, Object],
             default: () => 'gl-button'
@@ -23,8 +24,8 @@ export default defineComponent({
     emits: ['cancelAutostop', 'cancelJob', 'cloneDeployment', 'deleteDeployment', 'edit', 'incRedeploy', 'localDeploy', 'renameDeployment', 'scheduleAutostop', 'showPreviousJobs', 'startDeployment', 'stopDeployment'],
     components: {GlIcon, GlButton, DropdownActionItem, OpenLiveApp},
     methods: {
-        hasButton(id) { return this.controlButtons.includes(id) },
-        hasDisabledButton(id) { return this.disabledButtons.includes(id) },
+        hasButton(id: string) { return this.controlButtons!.includes(id) },
+        hasDisabledButton(id: string) { return this.disabledButtons!.includes(id) },
         renameDeployment() {
             this.$emit('renameDeployment')
         },
@@ -59,7 +60,7 @@ export default defineComponent({
             const link = generateGitLabIssueSync(...(this.issuesLinkArgs as Parameters<typeof generateGitLabIssueSync>))
             window.open(link, '_blank')
         },
-        beforeResumeEdit(e) {
+        beforeResumeEdit(e: Event) {
             // TODO move this into user_settings store
             // used for cancel deployment
             sessionStorage['editing-draft-from'] = window.location.href
@@ -67,7 +68,7 @@ export default defineComponent({
             e.preventDefault()
             this.$emit('edit')
         },
-        componentFor(button) {
+        componentFor(button: string) {
             return {
                 disabled: this.hasDisabledButton(button),
             }

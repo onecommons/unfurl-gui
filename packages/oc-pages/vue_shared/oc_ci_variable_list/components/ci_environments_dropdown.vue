@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlDropdown, GlDropdownItem, GlDropdownDivider, GlSearchBoxByType } from '@gitlab/ui';
 import { mapGetters, mapState } from 'vuex';
 import { __, sprintf } from '~/locale';
@@ -27,7 +28,7 @@ export default defineComponent({
       default: '',
     },
     environments: {
-      type: Array,
+      type: Array as PropType<string[]>,
       required: false,
       default: null,
     },
@@ -63,7 +64,7 @@ export default defineComponent({
     },
     filteredResults() {
       const lowerCasedSearchTerm = this.searchTerm.toLowerCase();
-      return this.availableEnvironments.filter((resultString) =>
+      return this.availableEnvironments.filter((resultString: string) =>
         resultString.toLowerCase().includes(lowerCasedSearchTerm),
       );
     },
@@ -72,7 +73,7 @@ export default defineComponent({
     this.selectEnvironment(this.environmentName);
   },
   methods: {
-    selectEnvironment(selected) {
+    selectEnvironment(selected: string) {
       // Vue 3 does not map a camelCase emit onto a kebab-case listener, and the
       // drawer listens for the kebab one -- emit both rather than break either
       // caller.
@@ -84,7 +85,7 @@ export default defineComponent({
       this.$emit('createClicked', this.searchTerm);
       this.searchTerm = '';
     },
-    isSelected(env) {
+    isSelected(env: string) {
       return this.currentValue === env;
     },
     clearSearch() {

@@ -26,17 +26,17 @@ export default defineComponent({
             target_subdomain:  Math.floor(Math.random() * Number.MAX_SAFE_INTEGER).toString(36),
             name: '',
             verifiedStatus: UNVERIFIED,
-            saved: {},
+            saved: {} as Record<string, unknown>,
             COMPLETE,
             UNVERIFIED,
             VERIFYING,
             ERROR,
-            nameserversResolved: []
+            nameserversResolved: [] as string[]
         }
 
-        for(const {name, value} of this.card.properties) {
+        for(const {name, value} of this.card!.properties) {
             if(data.hasOwnProperty(name) && value) {
-                data[name] = value
+                (data as Record<string, unknown>)[name] = value
             } else {
                 data.saved[name] = value
             }
@@ -111,12 +111,12 @@ export default defineComponent({
     computed: {
         ...mapGetters(['lookupEnvironmentVariable', 'getDependent', 'getHomeProjectPath']),
         subdomain() {
-            let parentDependency = this.card
+            let parentDependency = this.card as Record<string, any>
             do {
-                if(parentDependency.properties.find(prop => prop.name == 'subdomain')) break
+                if(parentDependency.properties.find((prop: Record<string, any>) => prop.name == 'subdomain')) break
             } while (parentDependency = this.getDependent(parentDependency?.name))
             
-            return parentDependency.properties.find(prop => prop.name == 'subdomain')?.value
+            return parentDependency.properties.find((prop: Record<string, any>) => prop.name == 'subdomain')?.value
         },
         target() {
             return `${this.target_subdomain}.${this.lookupEnvironmentVariable('PROJECT_DNS_ZONE')}`

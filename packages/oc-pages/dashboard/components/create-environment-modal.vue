@@ -29,11 +29,11 @@ export default defineComponent({
         }
     },
     methods: {
-        async redirectToNewEnvironment(e) {
+        async redirectToNewEnvironment(e: Event) {
             e.preventDefault()
-            await this.$refs.environmentDialog.beginEnvironmentCreation()
+            await (this.$refs.environmentDialog as {beginEnvironmentCreation(): Promise<unknown>}).beginEnvironmentCreation()
             if(this.hasCriticalErrors) {
-                this.$refs.modal.close()
+                (this.$refs.modal as {close(): void}).close()
             }
         },
     }

@@ -4,10 +4,10 @@ import {mapGetters} from 'vuex'
 import {GlCard, GlIcon} from '@gitlab/ui'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 const DISPLAY_MAP = {
-    [lookupCloudProviderAlias('gcp')]: 'Google Cloud',
-    [lookupCloudProviderAlias('aws')]: 'AWS',
-    [lookupCloudProviderAlias('azure')]: 'Azure',
-    [lookupCloudProviderAlias('k8s')]: 'Kubernetes'
+    [lookupCloudProviderAlias('gcp') as string]: 'Google Cloud',
+    [lookupCloudProviderAlias('aws') as string]: 'AWS',
+    [lookupCloudProviderAlias('azure') as string]: 'Azure',
+    [lookupCloudProviderAlias('k8s') as string]: 'Kubernetes'
 }
 
 export default defineComponent({
@@ -21,8 +21,8 @@ export default defineComponent({
         ])
     },
     methods: {
-        displayCloudProvider(cp) {
-            return DISPLAY_MAP[lookupCloudProviderAlias(cp)]
+        displayCloudProvider(cp: string) {
+            return DISPLAY_MAP[lookupCloudProviderAlias(cp) as string]
         }
     }
 })

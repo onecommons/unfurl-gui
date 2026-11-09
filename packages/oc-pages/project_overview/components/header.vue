@@ -29,7 +29,7 @@ export default defineComponent({
             star: {
                 count: this.$projectGlobal.buttonStar.count,
                 text: this.$projectGlobal.buttonStar.text,
-                icon: null,
+                icon: null as string | null,
             },
             enabled,
         }
@@ -43,12 +43,12 @@ export default defineComponent({
             }
 
             try {
-                const {data} = (await axios.post(this.$projectGlobal.buttonStar.endpoint))
+                const {data} = (await axios.post(this.$projectGlobal.buttonStar.endpoint!))
                 const { star_count } = data;
                 // // eslint-disable-next-line babel/camelcase
                 this.star.count = star_count;
                 // // eslint-disable-next-line babel/camelcase
-                if (star_count > this.$projectGlobal.buttonStar.count) {
+                if (star_count > this.$projectGlobal.buttonStar.count!) {
                     this.star.text = __("Unstar");
                     this.star.icon = 'star';
                 } else {
@@ -62,9 +62,9 @@ export default defineComponent({
         },
 
         openShareModal() {
-            this.$refs.shareModal.visible = true
+            (this.$refs.shareModal as {visible: boolean}).visible = true
         },
-        redirectTo(link) {
+        redirectTo(link: string) {
             window.location.href = link;
         },
     },
@@ -80,7 +80,7 @@ export default defineComponent({
             return this.$projectGlobal.treePath
         },
         livePreview() {
-            return this.$projectGlobal?.livePreview || this.getApplicationBlueprint?.livePreview
+            return (this.$projectGlobal as Record<string, any>)?.livePreview || this.getApplicationBlueprint?.livePreview
         }
     },
 

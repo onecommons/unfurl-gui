@@ -50,7 +50,7 @@ export default defineComponent({
         },
 
         presetText() {
-            return this.$options.PRESETS.find(p => p.value == this.preset).text
+            return this.$options.PRESETS.find((p: {value: string, text: string}) => p.value == this.preset).text
         },
 
         tomorrow(): Date {
@@ -76,7 +76,7 @@ export default defineComponent({
             return (parseInt(hours) * 60 + parseInt(min)) * 60 * 1000
         },
         autostop() {
-            const result = Math.floor((Date.parse(this.scheduledAutostop) + this.autostopTime - Date.now()) / 1000)
+            const result = Math.floor((Date.parse(this.scheduledAutostop as unknown as string) + this.autostopTime - Date.now()) / 1000)
             if(result > 0) {
                 return result
             }
@@ -85,7 +85,7 @@ export default defineComponent({
     },
 
     watch: {
-        preset(value) {
+        preset(value: 'tomorrow' | 'inOneWeek' | 'inTwoWeeks' | 'inOneMonth' | 'custom') {
             if(value != 'custom') this.scheduledAutostop = this[value]
         },
 

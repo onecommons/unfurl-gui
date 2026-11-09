@@ -107,9 +107,9 @@ export default defineComponent({
   },
   computed: {
     hackyBadgeClass() {
-      const result = {}
+      const result: Record<string, boolean> = {}
       try {
-        result[`badge-${StatusIndicators[this.status][0]}`] = true
+        result[`badge-${StatusIndicators[this.status!][0]}`] = true
       } catch(e) {}
 
       return result

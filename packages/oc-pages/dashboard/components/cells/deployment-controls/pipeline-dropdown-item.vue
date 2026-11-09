@@ -1,22 +1,23 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {mapGetters} from 'vuex'
 
 export default defineComponent({
     name: 'PipelineDropdownItem',
     props: {
-        deploymentItem: Object,
+        deploymentItem: Object as PropType<any>,
         pipelineIndex: Number,
     },
     data() {
         return {
-            committedDate: null,
+            committedDate: null as Date | null,
         }
     },
     computed: {
         ...mapGetters(['jobByPipelineId']),
         pipeline() {
-            return this.deploymentItem.pipelines[this.pipelineIndex]
+            return this.deploymentItem.pipelines[this.pipelineIndex!]
         },
         jobStatus() {
             return this.jobByPipelineId(this.pipeline.id)?.status?.toLowerCase()

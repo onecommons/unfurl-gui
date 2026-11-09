@@ -30,26 +30,26 @@ export default defineComponent({
         return {expanded}
     },
     methods: {
-        isExpandable(node) {
-            return node.expandable && node.nodes?.length > 0
+        isExpandable(node: FileTreeNode) {
+            return node.expandable && (node.nodes?.length as number) > 0
         },
 
         // the root row is neither selectable nor expandable and shows no icon
-        iconName(node) {
+        iconName(node: FileTreeNode) {
             if(node.selectable) return 'doc-text'
             if(!node.expandable) return null
             return this.expanded[node.id]? 'folder-open': 'folder-o'
         },
 
-        toggleExpanded(node) {
+        toggleExpanded(node: FileTreeNode) {
             this.expanded = {...this.expanded, [node.id]: !this.expanded[node.id]}
         },
 
-        toggleSelected(node) {
+        toggleSelected(node: FileTreeNode) {
             this.$emit('select', node.id == this.selected? null: node.id)
         },
 
-        clickRow(node) {
+        clickRow(node: FileTreeNode) {
             if(this.isExpandable(node)) {
                 this.toggleExpanded(node)
             } else if(node.selectable) {

@@ -6,6 +6,12 @@ import { DetectIcon } from 'oc_vue_shared/components/oc'
 
 const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
 
+interface Subscription {
+    deploymentName: string
+    resourceName?: string
+    environmentName: string
+}
+
 export default defineComponent({
     name: 'DeploymentScheduler',
     components: {
@@ -23,7 +29,7 @@ export default defineComponent({
     computed: {
         ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment', 'getCurrentContext']),
         _upstreamProject() {
-            return this.upstreamProject.toLowerCase()
+            return this.upstreamProject!.toLowerCase()
 
         },
         subscriptionsDict() {
@@ -51,14 +57,14 @@ export default defineComponent({
                 if(!(queued && queued[this._upstreamProject])) return false
 
                 return queued[this._upstreamProject]
-                    .some(({deploymentName, resourceName, environmentName}) => (
+                    .some(({deploymentName, resourceName, environmentName}: Subscription) => (
                         deploymentName == this.deploymentName &&
                         resourceName == this.resourceName &&
                         environmentName == this.environmentName
                     ))
             },
 
-            set(enabled) {
+            set(enabled: boolean) {
                 const dict = this.subscriptionsDict
                 const queued = dict?.queued || {}
                 if (!queued[this._upstreamProject]) queued[this._upstreamProject] = []
@@ -68,7 +74,7 @@ export default defineComponent({
                     queued[this._upstreamProject].push({deploymentName, resourceName, environmentName})
                 } else {
                     queued[this._upstreamProject] = queued[this._upstreamProject]
-                        .filter(({deploymentName, resourceName, environmentName}) => !(
+                        .filter(({deploymentName, resourceName, environmentName}: Subscription) => !(
                             deploymentName == this.deploymentName &&
                             resourceName == this.resourceName &&
                             environmentName == this.environmentName

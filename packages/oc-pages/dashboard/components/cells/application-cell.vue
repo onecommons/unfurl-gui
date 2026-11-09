@@ -26,6 +26,7 @@ export default defineComponent({
     <!-- TODO use router link when possible -->
     <a :href="applicationLinkTarget">
         <div v-if="application" class="status-item font-weight-bold">
+            <!-- @vue-ignore null is accepted for an optional prop; expect-error would be unused under the non-strict check -->
             <project-icon :projectIcon="projectIconSrc" />
             {{application.title}}
         </div>

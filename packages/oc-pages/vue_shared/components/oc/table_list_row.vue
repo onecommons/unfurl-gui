@@ -32,17 +32,17 @@ export default defineComponent({
         return {}
     },
     methods: {
-        deployTemplate(template) {
+        deployTemplate(template: unknown) {
             bus.$emit('deployTemplate', template);
             this.$emit('deployTemplate', template)
         },
 
-        editTemplate(template) {
+        editTemplate(template: unknown) {
             bus.$emit('editTemplate', template);
             this.$emit('editTemplate', template)
         },
         redirectToDeployment() {
-            window.location.href = this.$projectGlobal.linkDeployment;
+            window.location.href = this.$projectGlobal.linkDeployment!;
         }
     },
     computed: {

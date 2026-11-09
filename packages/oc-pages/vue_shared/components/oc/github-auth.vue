@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import GithubReposAuthenticate from './github-repos/github-repos-authenticate.vue'
 import {oauthStatus} from '../../client_utils/github-import'
 import { GlCard, GlLoadingIcon } from '@gitlab/ui'
@@ -14,7 +15,7 @@ export default defineComponent({
         GlLoadingIcon
     },
     props: {
-        importHandler: Object
+        importHandler: Object as PropType<any>
     },
     emits: ['authenticated'],
     oauthStatus

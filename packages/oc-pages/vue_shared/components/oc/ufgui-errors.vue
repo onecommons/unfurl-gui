@@ -47,7 +47,7 @@ export default defineComponent({
             immediate: true,
             handler(val) {
                 try {
-                    this.$refs.container.style.top = Math.min(val, this.headerElementPos) + 'px'
+                    (this.$refs.container as HTMLElement).style.top = Math.min(val, this.headerElementPos) + 'px'
                 } catch(e) {}
             }
         },

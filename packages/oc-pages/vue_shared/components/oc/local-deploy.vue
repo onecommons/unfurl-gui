@@ -6,6 +6,7 @@ import {mapGetters, mapActions} from 'vuex'
 import {cloneProject, cloneBlueprint} from 'oc_vue_shared/client_utils/unfurl-invocations'
 import {toDepTokenEnvKey} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import type {ProjectInfo} from 'oc_vue_shared/client_utils/projects'
 
 const protocol = window.location.protocol
 let server  = window.location.hostname
@@ -38,9 +39,9 @@ export default defineComponent({
     },
     data() {
         return {
-            blueprintProjectInfo: null,
+            blueprintProjectInfo: null as ProjectInfo | null,
             gettingBlueprintCreds: false,
-            gettingBlueprintInfo: (this.deployment && this.environment),
+            gettingBlueprintInfo: (this.deployment && this.environment) as Record<string, any> | boolean | undefined,
             standalone,
         }
     },
@@ -70,7 +71,7 @@ export default defineComponent({
 
             const username = `UNFURL_DEPLOY_TOKEN_${this.projectId}`
             const password = this.lookupVariableByEnvironment(
-                toDepTokenEnvKey(this.blueprintProjectInfo.id),
+                toDepTokenEnvKey(this.blueprintProjectInfo.id!),
                 '*'
             )
 
@@ -112,7 +113,7 @@ export default defineComponent({
         localDeployInvocation() {
             const deployment = this.deployment
             const environment = this.environment
-            const deploymentName = deployment.name
+            const deploymentName = deployment!.name
 
             // attempting to make this consistent for autostop
             // this may or not make sense for local deploy?
@@ -123,7 +124,7 @@ export default defineComponent({
             const pushFlag = (standalone && !window.gon.gitlab_url)? '': '--push '
             return `unfurl ${subcommand}${extraArgs && ' ' + extraArgs} --commit ${pushFlag}${deploymentName}`
         },
-        deploymentExists() { return this.deployment.__typename != 'DeploymentTemplate' },
+        deploymentExists() { return this.deployment!.__typename != 'DeploymentTemplate' },
         noDeploy() {
             return !(this.deployment && this.environment)
         },
@@ -147,15 +148,15 @@ export default defineComponent({
 
                     this.gettingBlueprintCreds = true
 
-                    const environmentName = this.environment.name
-                    const deploymentName = this.deployment.name
+                    const environmentName = this.environment!.name
+                    const deploymentName = this.deployment!.name
 
                     const params = {
                         environmentName,
                         projectUrl: `${window.gon.gitlab_url}/${this.deployment?.projectPath}.git`,
                         deployPath: `environments/${environmentName}/${this.deployment?.projectPath}/${deploymentName}`,
                         deploymentName,
-                        deploymentBlueprint: this.deployment.source,
+                        deploymentBlueprint: this.deployment!.source,
                         deployOptions: {
                             schedule: 'defer'
                         }

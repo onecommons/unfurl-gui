@@ -26,7 +26,7 @@ export default defineComponent({
             'getDashboardItems',
         ]),
         deployments() {
-            return this.getDashboardItems.filter(item => item.deployment)
+            return this.getDashboardItems.filter((item: Record<string, any>) => item.deployment)
         }
     }
 })

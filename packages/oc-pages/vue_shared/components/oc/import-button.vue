@@ -33,7 +33,7 @@ export default defineComponent({
     watch: {
         repoImport() {
             if(this.state == PENDING) {
-                this.repoImport.pollChanges()
+                this.repoImport!.pollChanges()
                 this.emitFinishedImport()
             }
         }
@@ -44,7 +44,7 @@ export default defineComponent({
             switch(this.state) {
                 case AVAILABLE: 
                     event = 'startImport'
-                    await this.repoImport.importSelf(this.getCurrentNamespace)
+                    await this.repoImport!.importSelf(this.getCurrentNamespace)
                     this.emitFinishedImport()
                     break
                 default:
@@ -56,9 +56,9 @@ export default defineComponent({
             }
         },
         emitFinishedImport() {
-          this.repoImport.pollPromise.then(
-            finished => { if(finished) this.$emit('importFinished') },
-            e => console.error(e),
+          this.repoImport!.pollPromise.then(
+            (finished: boolean) => { if(finished) this.$emit('importFinished') },
+            (e: unknown) => console.error(e),
           )
         }
     }

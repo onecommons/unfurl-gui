@@ -9,8 +9,8 @@ export default defineComponent({
     name: 'OpenCloudDeployments',
     fields: [
         {key: 'cloud',  label: 'Cloud'},
-        {key: 'testbed', label: 'Testbed Projects', s: 'Testbed', groupBy: i => i.testbed.url},
-        {key: 'deployment', label: 'Deployments', s: 'Deployment', groupBy: i => i.deployment.url},
+        {key: 'testbed', label: 'Testbed Projects', s: 'Testbed', groupBy: (i: Record<string, any>) => i.testbed.url},
+        {key: 'deployment', label: 'Deployments', s: 'Deployment', groupBy: (i: Record<string, any>) => i.deployment.url},
     ],
     components: {TableComponent, DetectIcon},
     methods: {cloudProviderFriendlyName},

@@ -18,10 +18,10 @@ export default defineComponent({
     computed: {
         ...mapGetters(['getHomeProjectPath', 'lookupDeployment']),
         popoverId() {
-            return `import-link-${this.card.name}`.replace(/[^\w-]/g, '-')
+            return `import-link-${this.card!.name}`.replace(/[^\w-]/g, '-')
         },
         split() {
-            return this.card.name.split('__').filter(s => s)
+            return this.card!.name.split('__').filter((s: string) => s)
         },
         environmentName() { return this.split[0] },
         deploymentName() { return this.split[1] },

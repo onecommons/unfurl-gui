@@ -8,7 +8,7 @@ import {getProjectDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 export default defineComponent({
     name: 'MainComponent',
     // TODO move this into page level components
-    async beforeCreate() {
+    async beforeCreate(): Promise<void> {
 
         let completePromise
         this.$store.commit('initUserSettings', {username: this.$store.getters.getUsername})
@@ -17,11 +17,12 @@ export default defineComponent({
 
         let dashboard
         if(dashboard = this.$route.params.dashboard) {
-            dashboard = decodeURIComponent(dashboard)
+            dashboard = decodeURIComponent(dashboard as string)
 
             const pathComponents = dashboard.split('/')
             const namespace = pathComponents.slice(0, -1).join('/')
-            const dashboardName = pathComponents[pathComponents.lastIndex]
+            // arrays have no lastIndex, so this is always undefined
+            const dashboardName = pathComponents[(pathComponents as unknown as {lastIndex: number}).lastIndex]
 
             if(!window.gon.home_project) {
                 this.$store.commit('setCurrentNamespace', namespace)
@@ -39,7 +40,7 @@ export default defineComponent({
 
             const includeDeployments = ![
                 routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT, routes.OC_PROJECT_VIEW_EDIT_DEPLOYMENT
-            ].includes(this.$route.name)
+            ].includes(this.$route.name as string)
 
             const projectPath = this.$store.getters.getHomeProjectPath
             // an explicit ?branch= override; otherwise the store actions
@@ -108,7 +109,7 @@ export default defineComponent({
             return this.$store.commit(
               'createError',
               {
-                message: err.message,
+                message: (err as Error).message,
                 severity: 'major'
               }
             );
@@ -122,7 +123,7 @@ export default defineComponent({
                 this.$store.commit('setReady', true)
             }
 
-            this.fetchingComplete = true
+            (this as unknown as {fetchingComplete: boolean}).fetchingComplete = true
         }
     },
 

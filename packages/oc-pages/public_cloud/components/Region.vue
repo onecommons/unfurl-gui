@@ -1,11 +1,12 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import CloudProvider from './CloudProvider.vue'
 
 export default defineComponent({
   name: 'Region',
   props: {
-    item: Object
+    item: Object as PropType<any>
   },
   components: {
     CloudProvider

@@ -45,7 +45,7 @@ export default defineComponent({
             input.click() 
             input.addEventListener('change', () => {
                 try {
-                    input.files[0].text().then(text => {
+                    input.files![0].text().then(text => {
                             const {location, state} = JSON.parse(text)
                             //location = '/' + decodeURIComponent(location)
                             const dest = new URL(window.location.href)
@@ -69,7 +69,7 @@ export default defineComponent({
             get() {
                 return this.$route.query.hasOwnProperty('dev-settings')
             },
-            set(val) {
+            set(val: boolean) {
                 if(!val && this.modal) {
                     const newQuery = {...this.$route.query}
                     delete newQuery['dev-settings']

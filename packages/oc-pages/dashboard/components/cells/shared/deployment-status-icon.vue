@@ -21,12 +21,12 @@ export default defineComponent({
         ...mapGetters(['deploymentItemDirect']),
         deploymentItem() {
             return this.deploymentItemDirect({
-                environment: this.scope.item.context.environment,
+                environment: this.scope!.item.context.environment,
                 deployment: this.deployment,
             })
         },
         deployment() {
-            return this.scope.item.context.deployment
+            return this.scope!.item.context.deployment
         },
         hasDeployPath() {
             return !!this.deploymentItem?.deployPath

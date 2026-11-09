@@ -1,12 +1,13 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
 import DetectIcon from 'oc_vue_shared/components/oc/detect-icon.vue'
 
 export default defineComponent({
   name: 'ResourceType',
   props: {
-    item: Object
+    item: Object as PropType<any>
   },
   computed: {
     sourceUrl() {

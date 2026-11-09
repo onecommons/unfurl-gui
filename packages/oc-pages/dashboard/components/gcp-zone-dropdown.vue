@@ -43,7 +43,7 @@ export default defineComponent({
         filteredItems() {
             const term = this.searchTerm.trim().toLowerCase()
             if(!term) return this.$options.ZONE_ITEMS
-            return this.$options.ZONE_ITEMS.filter(item => item.value.includes(term))
+            return this.$options.ZONE_ITEMS.filter((item: {value: string, text: string}) => item.value.includes(term))
         },
     },
 })

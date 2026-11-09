@@ -1,12 +1,13 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {lookupKey, setLocalStorageKey} from '../../../storage-keys'
 import {GlFormInput, GlFormInputGroup} from '@gitlab/ui'
 export default defineComponent({
     name: 'ExperimentalSettingInput',
     components: {GlFormInput, GlFormInputGroup},
     props: {
-        option: Object
+        option: Object as PropType<any>
     },
     emits: ['changed'],
     data() {
@@ -19,7 +20,7 @@ export default defineComponent({
             get() {
                 return this.inner
             },
-            set(v) {
+            set(v: string | undefined) {
                 this.inner = v
                 setLocalStorageKey(this.option.key, v)
                 this.$emit('changed')

@@ -8,11 +8,17 @@ import ControlButtons from './deployment-controls/control-buttons.vue'
 import * as routes from '../../router/constants'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
-function emitDeploymentItemFor(eventNames) {
-    const result = {}
+interface DeploymentItemEmitter {
+    $emit: (event: string, ...args: any[]) => void
+    deployment: unknown
+    environment: unknown
+}
+
+function emitDeploymentItemFor(eventNames: string[]) {
+    const result: Record<string, (this: DeploymentItemEmitter) => void> = {}
 
     for(const eventName of eventNames) {
-        result[eventName] = function() {
+        result[eventName] = function(this: DeploymentItemEmitter) {
             this.$emit(eventName, this.deployment, this.environment)
         }
     }
@@ -47,9 +53,9 @@ export default defineComponent({
             'serviceDesk',
             'getDashboardItems'
         ]),
-        deployment() {return this.scope.item.context?.deployment},
-        application() {return this.scope.item.context?.application},
-        environment() {return this.scope.item.context?.environment},
+        deployment() {return this.scope!.item.context?.deployment},
+        application() {return this.scope!.item.context?.application},
+        environment() {return this.scope!.item.context?.environment},
         deploymentItem() {
             return this.deploymentItemDirect({environment: this.environment, deployment: this.deployment})
         },
@@ -150,7 +156,7 @@ export default defineComponent({
             return [this.controlButtons.find(cb => !this.disabledButtons.includes(cb))]
         },
         contextMenuControlButtons() {
-            return this.controlButtons.filter(cb => cb != this.primaryControlButtons)
+            return this.controlButtons.filter(cb => (cb as unknown) != this.primaryControlButtons)
         },
         resumeEditingTarget() {
             return this.deploymentItem?.editableLink
@@ -244,7 +250,7 @@ export default defineComponent({
             await this.populateJobsList()
             await this.populateDeploymentItems(this.getDashboardItems)
         },
-        pipelineToJobsLink(pipeline) {
+        pipelineToJobsLink(pipeline: {id: string | number} | null | undefined) {
             if(!pipeline) return
             const jobId = this.jobByPipelineId(pipeline.id)?.id
             if(!jobId) return

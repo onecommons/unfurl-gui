@@ -1,11 +1,12 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 export default defineComponent({
   name: 'CloudProvider',
   props: {
-    item: Object
+    item: Object as PropType<any>
   },
   components: {
     DetectIcon
@@ -14,10 +15,10 @@ export default defineComponent({
     providerName() {
       const cloud = this.item.data.name
       const ProviderNameMap = {
-        [lookupCloudProviderAlias('gcp')]: 'Google Cloud',
-        [lookupCloudProviderAlias('aws')]: 'Amazon Web Services',
-        [lookupCloudProviderAlias('do')]: 'Digital Ocean',
-        [lookupCloudProviderAlias('k8s')]: 'Kubernetes'
+        [lookupCloudProviderAlias('gcp') as string]: 'Google Cloud',
+        [lookupCloudProviderAlias('aws') as string]: 'Amazon Web Services',
+        [lookupCloudProviderAlias('do') as string]: 'Digital Ocean',
+        [lookupCloudProviderAlias('k8s') as string]: 'Kubernetes'
       }
       return ProviderNameMap[cloud] || cloud
     },

@@ -19,14 +19,14 @@ export default defineComponent({
     },
     data() {
         return {
-            imageEl: null, encodedButtonParams: '',
-            baseTitle: enabled && document.querySelector('title').textContent,
+            imageEl: null as HTMLImageElement | null, encodedButtonParams: '',
+            baseTitle: (enabled && document.querySelector('title')!.textContent) as string | null,
             enabled
         }
     },
     methods: {
         setButtonParams() {
-            this.encodedButtonParams = new URL(this.imageEl.src).search
+            this.encodedButtonParams = new URL(this.imageEl!.src).search
         },
         onImageChanged() {
             this.setButtonParams()
@@ -37,21 +37,21 @@ export default defineComponent({
             if(this.visible) {
                 newTitle += ' Share'
                 if(val && val != '?type=default') {
-                    const params = Array.from(val.match(/(\w+=\w+)/g))
+                    const params = Array.from(val.match(/(\w+=\w+)/g)!)
                     .filter(p => p != 'type=default')
                     newTitle += ' (' + params.join(', ') + ')'
                 }
             }
 
-            document.querySelector('title').textContent = newTitle
+            document.querySelector('title')!.textContent = newTitle
         }
     },
     watch: {
         visible: {
             async handler(val) {
                 if(val) {
-                    let imageEl
-                    while(!(imageEl = document.querySelector('#js-uf-badge-img > img'))) {
+                    let imageEl: HTMLImageElement | null
+                    while(!(imageEl = document.querySelector<HTMLImageElement>('#js-uf-badge-img > img'))) {
                         await nextTick()
                     }
 
@@ -89,7 +89,7 @@ export default defineComponent({
             get() {
                 return this.$route.query.hasOwnProperty(QUERY_PARAM)
             },
-            set(val) {
+            set(val: boolean) {
                 const query = {...this.$route.query}
 
                 for(const param of [QUERY_PARAM, DEPLOY_BUTTON_PARAM]) {

@@ -42,7 +42,7 @@ export default defineComponent({
             get() {
                 return this.$route.query.hasOwnProperty('create')
             },
-            set(value) {
+            set(value: boolean) {
                 const query = {...this.$route.query}
                 if(value && !this.hasCriticalErrors) {
                     query.create = null
@@ -81,6 +81,7 @@ export default defineComponent({
                     Click <a href="https://unfurl.cloud/help/glossary" target="_blank">here</a> to learn more about how environments work on unfurl.cloud.
                 </div>
             </div>
+            <!-- @vue-ignore a template arrow parameter cannot be annotated; expect-error would be unused under the non-strict check -->
             <gl-button v-if="userCanEdit && !standalone" variant="confirm" @click="_ => displayModal = true"><gl-icon name="plus" /> Create New Environment</gl-button>
         </div>
         <environments-index-table v-if="getDashboardItems.length > 0" :items="getDashboardItems"/>

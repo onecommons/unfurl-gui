@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import * as routes from '../../router/constants'
 import {mapGetters, mapMutations} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
@@ -8,16 +9,16 @@ import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 export default defineComponent({
     components: { DetectIcon },
     props: {
-        environment: Object,
+        environment: Object as PropType<any>,
         noRouter: {type: Boolean, default: false}
     },
     data() {
-        return {routes, recordedPrimaryProvider: null}
+        return {routes, recordedPrimaryProvider: null as string | null}
     },
     computed: {
         ...mapGetters(['getHomeProjectPath']),
         destination() {
-            if((this.$props?.environment?.name ?? 'defaults') == 'defaults') return {href: null}
+            if((this.$props?.environment?.name ?? 'defaults') == 'defaults') return {href: null as unknown as undefined}
             return this.noRouter ?
                 {href: `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.$props?.environment?.name}`} :
                 this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
@@ -36,12 +37,12 @@ export default defineComponent({
                 if(!this.environment.primary_provider) {
                     let providers
                     try {
-                        providers = (await fetchDashboardProviders(this.getHomeProjectPath))
+                        providers = (await fetchDashboardProviders(this.getHomeProjectPath))!
                             .providersByEnvironment[this.environment.name]
                     } catch(e) {
                         if(!window.gon.unfurl_gui)
                             this.createError({
-                                message: `Your environment is missing information: ${e.message}`,
+                                message: `Your environment is missing information: ${(e as Error).message}`,
                                 context: {
                                     environment: this.environment.name,
                                 },
@@ -50,7 +51,7 @@ export default defineComponent({
                     }
 
                     try {
-                        this.recordedPrimaryProvider = providers[0]
+                        this.recordedPrimaryProvider = providers![0]
                     } catch(e) {}
                 }
             }

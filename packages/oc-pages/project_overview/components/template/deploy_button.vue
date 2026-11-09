@@ -48,13 +48,13 @@ export default defineComponent({
         triggerLocalDeploy() {
             this.$emit('triggerLocalDeploy', {forceCheck: this.forceCheck, dryRun: this.dryRun})
         },
-        onInputForceCheck(val) { // val instead of an event
+        onInputForceCheck(val: boolean) { // val instead of an event
             this.forceCheck = val
         },
-        onInputDryRun(val) {
+        onInputDryRun(val: boolean) {
             this.dryRun = val
         },
-        onInputLocalDeploy(val) {
+        onInputLocalDeploy(val: boolean) {
             this.localDeploy = val
         },
     },

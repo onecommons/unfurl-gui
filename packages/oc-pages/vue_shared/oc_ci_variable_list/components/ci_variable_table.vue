@@ -61,7 +61,7 @@ export default defineComponent({
     },
     fields() {
       if (this.isGroup) {
-        return this.$options.fields.filter((field) => field.key !== 'environment_scope');
+        return this.$options.fields.filter((field: {key: string}) => field.key !== 'environment_scope');
       }
       return this.$options.fields;
     },

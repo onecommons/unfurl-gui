@@ -30,7 +30,7 @@ export default defineComponent({
   methods: {
     calcLeft() {
       try {
-        const {width} = this.$refs.container.getBoundingClientRect()
+        const {width} = (this.$refs.container as HTMLElement).getBoundingClientRect()
         if(window.innerWidth < (this.left + width)) {
           return this.left - width
         }
@@ -39,7 +39,7 @@ export default defineComponent({
     },
     calcTop() {
       try {
-        const {height} = this.$refs.container.getBoundingClientRect()
+        const {height} = (this.$refs.container as HTMLElement).getBoundingClientRect()
         if(window.innerHeight < (this.top + height)) {
           return this.top - height
         }

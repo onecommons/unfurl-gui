@@ -27,10 +27,10 @@ export default defineComponent({
     }
   },
   methods: {
-    onClick(i) {
+    onClick(i: number) {
       if(!this.path) return
       if(!(this.path.length - i > 1)) return // if we click on the last element do nothing
-      let newFocus = this.focus
+      let newFocus = this.focus!
       for(let j = this.path.length - 1;  j > i; j--) {
         newFocus = newFocus.parent
       }

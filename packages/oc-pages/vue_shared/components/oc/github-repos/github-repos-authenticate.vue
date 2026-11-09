@@ -12,7 +12,7 @@ export default defineComponent({
     },
     emits: ['authenticated'],
     methods: {
-        async openStatus(e) {
+        async openStatus(e: Event) {
             e.preventDefault()
             const height = Math.floor(Math.max(window.outerHeight / 2, 600))
             const width = Math.floor(Math.max(window.outerWidth / 2, 400))
@@ -30,12 +30,12 @@ export default defineComponent({
             }
 
             if(handle) {
-                while(!handle.closed && this.importHandler.status == oauthStatus.UNAUTHENTICATED) {
-                    await this.importHandler.loadRepos()
+                while(!handle.closed && this.importHandler!.status == oauthStatus.UNAUTHENTICATED) {
+                    await this.importHandler!.loadRepos()
                     await sleep(30)
                 }
                 handle.close()
-                if(this.importHandler.status == oauthStatus.AUTHENTICATED) {
+                if(this.importHandler!.status == oauthStatus.AUTHENTICATED) {
                     this.$emit('authenticated')
                 }
             } else {
