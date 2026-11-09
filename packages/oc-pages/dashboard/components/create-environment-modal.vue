@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import EnvironmentCreationDialog from '../../project_overview/components/environment-creation-dialog.vue'
@@ -42,6 +41,7 @@ export default defineComponent({
 </script>
 <template>
     <gl-modal ref="modal" modalId="create-env-modal" :visible="visible" @hidden="$emit('change', false)" :title="s__('OcDeployments|Create New Environment')" :action-cancel="{text: __('Cancel')}" :action-primary="{text: __('Next'), attributes: {disabled: disablePrimary, variant: 'confirm'}}" @primary="redirectToNewEnvironment">
+        <!-- @vue-expect-error `this` in a template arrow is the component proxy -->
         <environment-creation-dialog :allow-any="allowAny" ref="environmentDialog" @cloudProviderChange="cp => this.cp = cp" @environmentNameChange="env => this.env = env"/>
     </gl-modal>
 </template>

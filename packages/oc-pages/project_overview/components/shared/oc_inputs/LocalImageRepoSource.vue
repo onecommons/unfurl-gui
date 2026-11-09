@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {GlCard, GlFormGroup, GlFormInput} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
@@ -23,11 +22,12 @@ export default defineComponent({
     },
     mixins: [connectedRepo],
     data() {
-        const data = {
+        const data: Record<string, any> = {
             containerRepositories: null,
             userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
             projectInfo: null,
             containerRepositoriesPromise: null,
+            // @ts-expect-error duplicate key; the later value is the one that takes effect
             containerRepositories: [],
         }
         for(const prop of this.card.properties) {

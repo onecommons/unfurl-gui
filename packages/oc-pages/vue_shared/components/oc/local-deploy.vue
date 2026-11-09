@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import CodeClipboard from './code-clipboard.vue'
 import {GlLoadingIcon} from '@gitlab/ui'
@@ -78,7 +77,7 @@ export default defineComponent({
             return {username, password}
         },
         blueprintUrl() {
-            let result = `${protocol}//${server}/${this.deployment?.projectPath}`
+            let result: string | URL = `${protocol}//${server}/${this.deployment?.projectPath}`
 
             const {username, password} = this.blueprintCredentials
             if(!(username && password)) {
@@ -187,6 +186,7 @@ export default defineComponent({
 </script>
 <template>
     <div>
+        <!-- @vue-expect-error `this` in a template is the instance at runtime; vue-tsc types it possibly undefined -->
         <gl-loading-icon v-if="this.gettingBlueprintInfo" label="Loading" size="lg" style="margin-top: 5em;" />
         <div v-else>
             <p v-if="instruction">{{instruction}}</p>

@@ -1,6 +1,6 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
+import type {WritableComputedOptions} from 'vue'
 import { __ } from '~/locale'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import { GlModal, GlDropdown, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui';
@@ -9,6 +9,9 @@ import { unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
 import OcListResource from '../../project_overview/components/shared/oc_list_resource.vue'
 import { BaseDeployDialog } from 'oc_vue_shared/components/oc'
 const NEW_DEPLOYMENT_HASH = '#new-deployment'
+
+// queryParamVar's computed key is typed as an index signature, which the template cannot see
+type QueryParamVars<K extends string> = Record<K, WritableComputedOptions<any>>
 
 export default defineComponent({
     name: 'DashboardDeployDialog',
@@ -42,7 +45,7 @@ export default defineComponent({
                     }
                 }
             })
-            const types = this.environmentResourceTypeDict(this.exportEnvironmentName) || {}
+            const types: Record<string, any> = this.environmentResourceTypeDict(this.exportEnvironmentName) || {}
             this.blueprints = Object.values(types).filter(t => t.directives?.includes('substitute'))
             if(this.blueprints.length == 0) {
                 this.createError({
@@ -137,8 +140,8 @@ export default defineComponent({
                 }
             }
         },
-        ...queryParamVar('blueprintProject'),
-        ...queryParamVar('ts'),
+        ...(queryParamVar('blueprintProject') as QueryParamVars<'blueprintProject'>),
+        ...(queryParamVar('ts') as QueryParamVars<'ts'>),
         ...queryParamVar('fn'),
         ...queryParamVar('bprev'),
         ...queryParamVar('env'),
@@ -155,7 +158,7 @@ export default defineComponent({
                 this.$route.params.name :
                 'defaults'
         },
-        deploymentTemplates() {
+        deploymentTemplates(): any[] {
             if(! this.blueprintExport?.DeploymentTemplate) {
                 return []
             }

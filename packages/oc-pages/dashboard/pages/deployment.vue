@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {mapGetters, mapActions} from 'vuex'
 import {nextTick, defineComponent} from 'vue'
 import {OcTab, DeploymentResources} from 'oc_vue_shared/components/oc'
@@ -230,7 +229,7 @@ export default defineComponent({
             this.viewReady = false
 
             if(!this.state) {
-                const e = new Error(`Could not lookup deployment '${this.deployment.name}'.  It may contain errors or creation may have failed.`)
+                const e: Error & {flash?: boolean} = new Error(`Could not lookup deployment '${this.deployment.name}'.  It may contain errors or creation may have failed.`)
                 e.flash = true
                 throw e
             }

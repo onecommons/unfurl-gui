@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlTabs } from '@gitlab/ui';
 
@@ -238,7 +237,7 @@ export default defineComponent({
         inputTabs() {
             if(!this.renderInputTabs || this._readonly) return []
             const result = []
-            for(const [name, value] of Object.entries(this.inputsSchema.properties)) {
+            for(const [name, value] of Object.entries(this.inputsSchema.properties) as [string, any][]) {
                 if(value.tab_title) {
                     const count = Object.keys(value.properties || {}).filter(key => key != '$toscatype').length
                     result.push({name, tab_title: value.tab_title, value, count})

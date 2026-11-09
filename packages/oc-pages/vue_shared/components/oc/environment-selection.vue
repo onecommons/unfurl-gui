@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 import {ErrorSmall, DetectIcon} from 'oc_vue_shared/components/oc'
@@ -15,7 +14,7 @@ export default defineComponent({
     // back to value for any component still in MODE 2, so a component cannot
     // move to the Vue 3 v-model contract on its own. Callers keep v-model.
     compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
-    emits: ['update:modelValue'],
+    emits: ['update:modelValue', 'createNewEnvironment'],
     props: {
         provider: String,
         error: String,
@@ -49,7 +48,7 @@ export default defineComponent({
         externalEnvironments() {
             return (this.additionalDashboardProviders || [])
                 .map(
-                    dash => Object.entries(dash.providersByEnvironment)
+                    dash => Object.entries(dash.providersByEnvironment as Record<string, any>)
                         .filter(([env, providers]) => providers && providers.includes(this.provider))
                         .map(([env, _]) => ({name: env, _dashboard: dash.fullPath, type: dash.primaryProviderFor(env)}))
                 ).flat()

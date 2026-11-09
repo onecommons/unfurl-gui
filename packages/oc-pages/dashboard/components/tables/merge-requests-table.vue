@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
@@ -90,6 +89,7 @@ export default defineComponent({
             </div>
         </template>
         <template #environment="{item}">
+            <!-- @vue-expect-error noRouter is not declared on this component -->
             <environment-cell :noRouter="noRouter" :environment="item.environment"/>
         </template>
         <template #author="{item}">

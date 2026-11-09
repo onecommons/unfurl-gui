@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {mapMutations, mapActions, mapGetters} from 'vuex'
 import {compatibilityMountJobConsole, compatibilityUnmountJobConsole} from 'oc_vue_shared/compat'
@@ -94,7 +93,7 @@ export default defineComponent({
                         break
 
                 }
-                const consoleContainer = document.querySelector('#console-container')
+                const consoleContainer = document.querySelector('#console-container') as HTMLElement
                 for(const jobLogSection of state.jobLog) {
                     const newConsoleLength = this.visitJobLogSection(jobLogSection, this.linesRead)
 
@@ -108,7 +107,7 @@ export default defineComponent({
             }, time)
         },
         setConsoleHeight() {
-            const consoleContainer = document.querySelector('#console-container')
+            const consoleContainer = document.querySelector('#console-container') as HTMLElement
             delete consoleContainer.style.maxHeight
             consoleContainer.style.height = (this.windowHeight - consoleContainer.getBoundingClientRect().y - BOTTOM_MARGIN) + 'px'
         }
@@ -122,9 +121,9 @@ export default defineComponent({
         const documentContents = await fetch(url).then(res => res.text())
         const elementMarkup = documentContents.match(/.*js-job-page.*/)[0]
         const tempDocument = (new DOMParser()).parseFromString(elementMarkup, TEXT_HTML)
-        const element = tempDocument.querySelector('#js-job-page')
+        const element = tempDocument.querySelector('#js-job-page') as HTMLElement
         const dataset = element.dataset
-        const consoleContainer = document.querySelector('#console-container')
+        const consoleContainer = document.querySelector('#console-container') as HTMLElement
         this.setConsoleHeight()
 
         consoleContainer.appendChild(element)

@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import commonMethods from '../../mixins/commonMethods.js'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
@@ -14,7 +13,8 @@ export default defineComponent({
     },
 
     computed: {
-        remoteSvgIcon() {
+        // a URL, bound to :src, which stringifies it
+        remoteSvgIcon(): any {
             if(!this.badge) return
             try {
                 const url = new URL(this.badge)

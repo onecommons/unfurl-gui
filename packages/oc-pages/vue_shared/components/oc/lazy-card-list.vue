@@ -1,6 +1,6 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlCard, GlIcon } from '@gitlab/ui';
 import OcCard from '../../../project_overview/components/shared/oc_card.vue';
 
@@ -30,7 +30,7 @@ export default defineComponent({
     name: 'LazyCardList',
     components: { GlCard, GlIcon, OcCard },
     props: {
-        cards: { type: Array, required: true },
+        cards: { type: Array as PropType<Record<string, any>[]>, required: true },
         // When provided, renders the cards inside a collapsible gl-card
         // with this title. When null, cards render bare.
         title: { type: String, default: null },

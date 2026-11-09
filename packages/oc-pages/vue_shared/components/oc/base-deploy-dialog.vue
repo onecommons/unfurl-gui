@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlModalDirective, GlFormGroup, GlFormInput, GlFormRadio } from '@gitlab/ui';
 import { mapGetters, mapActions } from 'vuex';
@@ -28,7 +27,7 @@ export default defineComponent({
     },
     props: {
         templateSelected: {
-            default: () => ({})
+            default: (): Record<string, any> => ({})
         },
         instantiateAs: {
             default: () => 'deployment-draft'

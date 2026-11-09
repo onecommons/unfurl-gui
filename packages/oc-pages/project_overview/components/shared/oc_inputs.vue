@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import _ from 'lodash';
 import {__} from '~/locale';
 import {nextTick, defineComponent} from 'vue'
@@ -113,14 +112,14 @@ export default defineComponent({
 
     innerTabs() {
       if(!this.isNested) return []
-      const tabs = Object.entries(this.schemaFields).filter(([_, value]) => value.tab_title
+      const tabs = Object.entries(this.schemaFields).filter(([_, value]: [string, any]) => value.tab_title
       ).map(([name, value]) => ({[name]: value}))
 
       return Object.assign({}, ...tabs)
     },
 
     tabTitles() {
-      return Object.assign({}, ...Object.entries(this.innerTabs).map(([name, value]) => ({[value.tab_title]: name})))
+      return Object.assign({}, ...Object.entries(this.innerTabs).map(([name, value]: [string, any]) => ({[value.tab_title]: name})))
     },
 
     displayForm() {
@@ -457,7 +456,7 @@ export default defineComponent({
 
       const properties = this.card.properties || []
 
-      for (const [name, definition] of Object.entries(this.schemaFields)) {
+      for (const [name, definition] of Object.entries(this.schemaFields) as [string, any][]) {
         try {
           if(definition.sensitive && !this.userCanEdit) continue
           if(definition.tab_title && !this.isNested) continue

@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
@@ -11,7 +10,7 @@ import Redacted from './redacted.vue'
 export default defineComponent({
     name: 'OcPropertiesList',
     components: {GlIcon, Status, 'json-view': JSONView, Redacted, DetectIcon},
-    data() {
+    data(this: any): {expanded: boolean} {
         return {expanded: !this.startCollapsed}
     },
     props: {
@@ -24,7 +23,7 @@ export default defineComponent({
         properties: {
             type: Array,
             required: false,
-            default() {return []}
+            default(): any[] {return []}
         },
         schema: {
             type: Object

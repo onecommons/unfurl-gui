@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 const NAV_STRUCTURE = ['Cloud Provider', 'Region', 'Test Bed Project']
 export default defineComponent({
@@ -10,7 +9,7 @@ export default defineComponent({
   },
   emits: ['focusChange'],
   computed: {
-    path() {
+    path(): string[] {
       if(!this.focus || this.focus.depth == 0) return []
       const result = []
       let n = this.focus
@@ -20,7 +19,7 @@ export default defineComponent({
       }
       return result
     },
-    navItems() {
+    navItems(): string[] {
       if(this.path.length < NAV_STRUCTURE.length) {
         return this.path.concat(NAV_STRUCTURE.slice(Math.max(this.path.length, -1, 0)))
       }

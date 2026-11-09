@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
 import {settingsIndicatorAnchor} from 'oc_vue_shared/client_utils/gitlab-chrome'
@@ -29,7 +28,7 @@ export default defineComponent({
             this.xPos = x + 'px'
         },
         downloadState() {
-            const link = document.createElement('A')
+            const link = document.createElement('A') as HTMLAnchorElement
             const location = window.location.pathname + window.location.search
             const state = this.$store.state
             const contents = JSON.stringify({location, state})
@@ -40,7 +39,7 @@ export default defineComponent({
             URL.revokeObjectURL(link.href)
         },
         uploadState() {
-            const input = document.createElement('INPUT')
+            const input = document.createElement('INPUT') as HTMLInputElement
             input.setAttribute('type', 'file')
             input.setAttribute('accept', 'application/json')
             input.click() 

@@ -1,6 +1,6 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
 import { bus } from 'oc_vue_shared/bus';
 import { mapGetters } from 'vuex';
@@ -19,7 +19,7 @@ export default defineComponent({
     },
     props: {
         items: {
-            type: Array,
+            type: Array as PropType<any[]>,
             required: true
         },
         editable: {

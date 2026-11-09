@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormRadio, GlLink } from '@gitlab/ui';
 import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
@@ -213,8 +212,8 @@ export default defineComponent({
             if(_.isEqual(query, oldQuery)) return
 
             const path = this.$route.path
-            if(document.activeElement.tagName == 'INPUT' && document.activeElement.type == 'text') {
-                const el = document.activeElement
+            if(document.activeElement.tagName == 'INPUT' && (document.activeElement as HTMLInputElement).type == 'text') {
+                const el = document.activeElement as HTMLElement
                 el.onblur = _ => {
                     this.$router.replace({ path, query })
                     el.onblur = null
@@ -259,13 +258,13 @@ export default defineComponent({
         }
     },
     created() {
-        bus.$on('deployTemplate', (template) => {
+        bus.$on('deployTemplate', (template: any) => {
             this.instantiateAs = 'deployment-draft'
             this.templateSelected = { ...template };
             this.projectSlugName = template.name;
         });
 
-        bus.$on('editTemplate', (template) => {
+        bus.$on('editTemplate', (template: any) => {
             this.templateSelected = { ...template };
             this.redirectToTemplateEditor();
         });

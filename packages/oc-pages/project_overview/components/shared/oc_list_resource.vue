@@ -1,6 +1,6 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {  GlFormRadio, GlIcon } from '@gitlab/ui';
 import OcListResourceIcon from './oc_list_resource/icon.vue';
 import { __ } from '~/locale';
@@ -35,7 +35,7 @@ export default defineComponent({
     emits: ['input'],
     props: {
         validResourceTypes: {
-          type: Array,
+          type: Array as PropType<any[]>,
           required: true
         },
         value: {

@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlButton, GlCard, GlIcon, GlBadge, GlTooltipDirective} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
@@ -188,7 +187,7 @@ export default defineComponent({
         },
 
         childAttrs() {
-            const attrs = {}
+            const attrs: Record<string, any> = {}
 
             for(const key of ['displayValidation', 'displayStatus', 'readonly', 'childClass']) {
                 attrs[key] = this[key]

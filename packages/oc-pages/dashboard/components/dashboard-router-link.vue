@@ -1,6 +1,6 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 export default defineComponent({
   name: 'DashboardRouterLink',
   props: {
@@ -9,7 +9,7 @@ export default defineComponent({
       default: false
     },
     href: {
-      type: [String, Object],
+      type: [String, Object] as PropType<any>,
       // required: true
       // this is required, but it might not be available immediately as a prop, which can cause confusing error messages
     },

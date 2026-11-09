@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlTabs} from '@gitlab/ui';
 import _ from 'lodash';
@@ -20,7 +19,7 @@ import { deleteDeploymentTemplate } from '../../../project_overview/store/module
 import {bus} from 'oc_vue_shared/bus'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
-console.assert(OcTab)
+console.assert(OcTab as any)
 
 const statusPropDefinition = {
     type: String,
@@ -327,7 +326,7 @@ export default defineComponent({
     },
     created() {
 
-        bus.$on('moveToElement', (obj) => {
+        bus.$on('moveToElement', (obj: any) => {
             const { elId } = obj;
             this.scrollDown(elId, 500);
         });
@@ -453,7 +452,7 @@ export default defineComponent({
             });
         },
 
-        async triggerSave(reason) {
+        async triggerSave(reason?: string) {
             try {
                 if(reason != 'deploy') { await this.runEnvironmentSaveHooks() }
                 await this.commitPreparedMutations();
@@ -617,9 +616,11 @@ export default defineComponent({
                 :children="presentableCards"
                 :child-class="{'gl-mb-6': true}"
                 >
+                <!-- @vue-expect-error `this` in a template is typed as possibly undefined -->
                 <template v-if="this.$slots.header" #header>
                     <slot name="header"></slot>
                 </template>
+                <!-- @vue-expect-error `this` in a template is typed as possibly undefined -->
                 <template v-if="this.$slots.status" #status>
                     <slot name="status"></slot>
                 </template>
@@ -786,6 +787,7 @@ export default defineComponent({
         </gl-modal>
 
             <!-- Modal to delete -->
+        <!-- @vue-expect-error _uid comes from @vue/compat and is not typed -->
         <gl-modal
             ref="oc-delete-node"
             :modal-id="`delete-modal-${_uid}`"

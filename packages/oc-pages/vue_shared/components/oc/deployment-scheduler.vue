@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { mapGetters, mapActions } from 'vuex'
 import { GlFormCheckbox } from '@gitlab/ui'
@@ -88,6 +87,7 @@ export default defineComponent({
 })
 </script>
 <template>
+        <!-- @vue-expect-error `this` in a template is the instance at runtime; vue-tsc types it possibly undefined -->
         <div v-if="this.getCurrentContext != 'environment'" class="gl-flex gl-mt-7 p gl-items-center">
             <detect-icon size="24" name="expire" />
             <div class="gl-ml-7">

@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import * as routes from '../router/constants'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
@@ -45,7 +44,7 @@ export default defineComponent({
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {}, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, providerRecord: null, variablesLoaded: false, savingProvider: false}
+        return {environment: {} as Record<string, any>, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, providerRecord: null, variablesLoaded: false, savingProvider: false}
     },
     computed: {
         ...mapGetters([
@@ -777,6 +776,7 @@ export default defineComponent({
                 </oc-tab>
             </gl-tabs>
             <div v-if="(!showDeploymentResources) && userCanEdit" class="form-actions gl-flex gl-justify-end">
+                <!-- @vue-expect-error $refs entries are typed unknown -->
                 <gl-button @click="$refs.deploymentResources.openModalDeleteTemplate()">
                     <gl-icon name="remove"/>
                     Delete Environment

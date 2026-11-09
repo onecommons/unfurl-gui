@@ -1,11 +1,11 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {GlAlert, GlButton, GlCollapsibleListbox, GlIcon, GlLink} from '@gitlab/ui'
 import {mapActions, mapGetters} from 'vuex'
 import {__} from '~/locale'
 import {patchEnv} from 'oc_vue_shared/client_utils/envvars'
 import {initUnfurlEnvironment} from 'oc_vue_shared/client_utils/environments'
+import type {DeploymentEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {fetchGcpProjects, gcpAuthorizeUrl, saveProvider} from 'oc_vue_shared/client_utils/environment-providers'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
@@ -187,7 +187,7 @@ export default defineComponent({
             return this.readKeyFile(event?.dataTransfer?.files?.[0])
         },
         async saveServiceAccountKey() {
-            const patch = {
+            const patch: Record<string, any> = {
                 CLOUDSDK_COMPUTE_ZONE: {value: this.zone, masked: false, protected: true},
             }
 
@@ -239,7 +239,7 @@ export default defineComponent({
                         name: 'primary_provider',
                         type: lookupCloudProviderAlias('gcp'),
                         __typename: 'ResourceTemplate',
-                    },
+                    } as DeploymentEnvironment['primary_provider'],
                 },
                 {environment: environmentName, deployment_blueprint: null, deployment_path: deployPath},
             )
@@ -349,6 +349,7 @@ export default defineComponent({
                         :class="{'is-dragging': dragging}"
                         data-testid="gcp-key-dropzone"
                     >
+                        <!-- @vue-expect-error $refs entries are typed unknown -->
                         <gl-button data-testid="gcp-upload-key" icon="upload" @click="$refs.fileInput.click()">Upload Service Account Key</gl-button>
                         <div class="gl-mt-2">
                             Drop the credentials for <code>GOOGLE_APPLICATION_CREDENTIALS</code> here, or upload them.

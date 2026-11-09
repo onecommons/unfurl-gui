@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {GlIcon, GlButton, GlTooltipDirective} from '@gitlab/ui'
@@ -54,7 +53,7 @@ export default defineComponent({
             return null
         },
         tooltipProps() {
-            const result = { }
+            const result: Record<string, any> = { }
             if(this.title) result.title = this.title
             return result
 

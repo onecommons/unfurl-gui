@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput } from '@gitlab/ui';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
@@ -372,17 +371,17 @@ export default defineComponent({
   },
 
   beforeCreate() {
-    const banner = document.querySelector('.js-uf-welcome-banner')
+    const banner = document.querySelector('.js-uf-welcome-banner') as HTMLElement
     if(banner) {banner.style.display = 'none'}
   },
 
   created() {
-    bus.$on('moveToElement', (obj) => {
+    bus.$on('moveToElement', (obj: any) => {
       const { elId } = obj;
       this.scrollDown(elId, 500);
     });
 
-    bus.$on('placeTempRequirement', async (obj) => {
+    bus.$on('placeTempRequirement', async (obj: any) => {
       const environmentName = this.$route.params.environment
       const environment = this.lookupEnvironment(environmentName)
 
@@ -402,7 +401,7 @@ export default defineComponent({
       this.launchModal('oc-connect-resource', 250);
     });
 
-    bus.$on('deleteNode', (obj) => {
+    bus.$on('deleteNode', (obj: any) => {
       this.deleteNodeData = obj;
       this.nodeAction = obj.action? obj.action : __('Delete');
 
@@ -420,7 +419,7 @@ export default defineComponent({
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
       }
-      const banner = document.querySelector('.js-uf-welcome-banner')
+      const banner = document.querySelector('.js-uf-welcome-banner') as HTMLElement
       if(banner) {banner.style.display = ''}
       this.clearPreparedMutations();
       next();
@@ -1069,6 +1068,7 @@ export default defineComponent({
       >
         <p v-html="getLegendOfModal()"></p>
         <ul>
+          <!-- @vue-expect-error `this` in a template is the instance at runtime; vue-tsc types it possibly undefined -->
           <li v-for="child in this.nodeChildren" :key="child">
             {{ infallibleGetCardTitle(child) }}
           </li>

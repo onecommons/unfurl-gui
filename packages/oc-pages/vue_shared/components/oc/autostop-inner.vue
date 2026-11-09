@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {GlCollapsibleListbox, GlDatepicker, GlFormInput} from '@gitlab/ui'
 import {mapMutations} from 'vuex'
@@ -26,6 +25,7 @@ export default defineComponent({
         const d = new Date(Date.now() + 2 * 60 * 60 * 1000)
         const scheduledAutostopTime = `${('0' + d.getHours()).slice(-2)}:${('0' + d.getMinutes()).slice(-2)}`
         return {
+            // @ts-expect-error Date.prototype.getYear is deprecated, absent from lib.dom
             scheduledAutostop: new Date(d.getYear() + 1900, d.getMonth(), d.getDate()),
             scheduledAutostopTime, // TODO remember the user's last choice
             // the default is today at now+2h, which no preset expresses
@@ -38,33 +38,34 @@ export default defineComponent({
     },
 
     computed: {
-        todayArgs() {
+        todayArgs(): [number, number, number] {
             const d = new Date()
+            // @ts-expect-error Date.prototype.getYear is deprecated, absent from lib.dom
             return [d.getYear() + 1900, d.getMonth(), d.getDate()]
         },
 
         // replaces the picker's disabledDate: no point stopping in the past
-        today() {
-            return new Date(...this.todayArgs)
+        today(): Date {
+            return new Date(...(this.todayArgs as [number, number, number]))
         },
 
         presetText() {
             return this.$options.PRESETS.find(p => p.value == this.preset).text
         },
 
-        tomorrow() {
-            return new Date(+new Date(...this.todayArgs) + 24 * 60 * 60 * 1000)
+        tomorrow(): Date {
+            return new Date(+new Date(...(this.todayArgs as [number, number, number])) + 24 * 60 * 60 * 1000)
         },
 
-        inOneWeek() {
-            return new Date(+new Date(...this.todayArgs) + 7 * (24 * 60 * 60 * 1000))
+        inOneWeek(): Date {
+            return new Date(+new Date(...(this.todayArgs as [number, number, number])) + 7 * (24 * 60 * 60 * 1000))
         },
 
-        inTwoWeeks() {
-            return new Date(+new Date(...this.todayArgs) + 14 * (24 * 60 * 60 * 1000))
+        inTwoWeeks(): Date {
+            return new Date(+new Date(...(this.todayArgs as [number, number, number])) + 14 * (24 * 60 * 60 * 1000))
         },
 
-        inOneMonth() {
+        inOneMonth(): Date {
             return new Date(this.todayArgs[0], this.todayArgs[1] + 1, this.todayArgs[2])
         },
 

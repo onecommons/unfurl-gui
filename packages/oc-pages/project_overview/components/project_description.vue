@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
@@ -45,7 +44,7 @@ export default defineComponent({
         ]),
         ...mapState(['project']),
 
-        inputs() {
+        inputs(): any {
             try {
                 return Object.values(this.inputsSchemaForType(this.projectInfo.primary).properties) || {}
             } catch(e) {
@@ -53,7 +52,7 @@ export default defineComponent({
             }
         },
 
-        outputs() {
+        outputs(): any {
             try {
                 return Object.values(this.outputsSchemaForType(this.projectInfo.primary).properties) || {}
             } catch(e) {

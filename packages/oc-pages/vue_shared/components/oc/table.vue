@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
@@ -15,7 +14,7 @@ function searchMatchingFunction(_cellContent, searchKey) {
   }
 }
 
-function* expandRows(fields, children, _depth = 0, parent=null) {
+function* expandRows(fields: any[], children: any[], _depth = 0, parent=null) {
   if(fields.length == 0) return;
   const field = fields[0]
   const columnName = field.key, remainingColumns = _.tail(fields);
@@ -27,7 +26,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
     field.textValue(group[0]) :
       group[0][columnName]
 
-      let parentRow = {
+      let parentRow: Record<string, any> = {
         [columnName]: columnTarget,
         tooltips: group[0].tooltips,
         context: group[0].context,
@@ -191,7 +190,7 @@ export default defineComponent({
         row.index = i++;
         result.push(row);
       }
-      window.items = result
+      (window as any).items = result
       return result;
     },
     _fields() {

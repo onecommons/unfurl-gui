@@ -1,7 +1,17 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlIcon } from '@gitlab/ui'
+
+interface FileTreeNode {
+    id: string
+    text?: string
+    selectable?: boolean
+    checkable?: boolean
+    expandable?: boolean
+    nodes?: FileTreeNode[]
+    state?: {expanded?: boolean}
+}
 
 export default defineComponent({
     name: 'FileTree',
@@ -10,12 +20,12 @@ export default defineComponent({
     components: {GlIcon},
     props: {
         // {id, text, selectable, checkable, expandable, nodes, state: {expanded}}
-        nodes: {type: Array, required: true},
+        nodes: {type: Array as PropType<FileTreeNode[]>, required: true},
         // selection is single and owned by the parent - null when nothing is selected
         selected: {type: String, default: null},
     },
     data() {
-        const expanded = {}
+        const expanded: Record<string, boolean> = {}
         this.nodes.forEach(node => {expanded[node.id] = !!node.state?.expanded})
         return {expanded}
     },

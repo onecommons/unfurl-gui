@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {OcTab, EnvironmentSelection, LocalDeploy, AutostopInner} from 'oc_vue_shared/components/oc'
 import CombinedCell from '../cells/combined-cell.vue'
@@ -156,7 +155,7 @@ export default defineComponent({
         ]
 
         const query = this.$route.query
-        const show = query?.show
+        const show = query?.show as string
         let currentTab = tabFilters.findIndex(tab => tab.title.toLowerCase() == show?.toLowerCase())
         if(currentTab == -1) currentTab = 0
 
@@ -227,7 +226,7 @@ export default defineComponent({
 
             await this.populateDeploymentItems(this.getDashboardItems)
         },
-        statuses(scope) { return _.uniqBy(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
+        statuses(scope) { return _.uniqBy<any>(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
         resumeEditingLink(scope) {
             const
                 application = scope.item.context.application,
@@ -389,7 +388,7 @@ export default defineComponent({
             if(`#${item?.context?.deployment?.name}` == this.$route.hash) return 'highlight'
         },
         // TODO merge these
-        deploymentItem(scope, method, ...args) {
+        deploymentItem(scope, method?, ...args) {
             const environment = scope.item.context.environment
             const deployment = scope.item.context.deployment
             return this.deploymentItemDirect({deployment, environment}, method, ...args)
@@ -811,7 +810,9 @@ export default defineComponent({
 
         </table-component>
         <p class="gl-mt-7"/>
+        <!-- @vue-expect-error `this` in a template is typed as possibly undefined -->
         <h3 v-if="tabs && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
+        <!-- @vue-expect-error `this` in a template is typed as possibly undefined -->
         <merge-requests-table v-show="(tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
     </div>
 
