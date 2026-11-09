@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import { GlIcon, GlButton } from '@gitlab/ui';
 import OverviewShareModal from './header/overview-share-modal.vue'
@@ -112,7 +111,7 @@ export default defineComponent({
                     name="upload"
                     :size="16"
                 />
-                {{ this.$projectGlobal.deploymentCount }}
+                {{ $projectGlobal.deploymentCount }}
                 <span>{{ __("Deploys") }}</span>
                 </div>
                 <div class="count-badge gl-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
@@ -120,12 +119,12 @@ export default defineComponent({
                         class="btn-sm star-btn toggle-star"
                         @click="toggleStar">
                         <gl-icon
-                            :name="star.icon? star.icon: this.$projectGlobal.buttonStar.icon"
+                            :name="star.icon? star.icon: $projectGlobal.buttonStar.icon"
                             :size="16"
                         />
                         <span>{{ star.text }}</span>
                     </gl-button>
-                    <a :href="this.$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
+                    <a :href="$projectGlobal.buttonStar.link" class="gl-button btn btn-default btn-sm star-count count">{{ star.count }}</a>
                 </div>
                 <div class="count-badge gl-inline-flex align-item-stretch gl-mr-3 btn-group uf-header-project">
                     <gl-button
