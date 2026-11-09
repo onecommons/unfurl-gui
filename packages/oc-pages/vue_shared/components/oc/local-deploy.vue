@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import CodeClipboard from './code-clipboard.vue'
 import {GlLoadingIcon} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
@@ -15,7 +17,7 @@ if(window.location.port) {
 const EMPTY = Object.freeze({username: null, password: null})
 const standalone = window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'LocalDeploy',
     components: {
         CodeClipboard,
@@ -180,7 +182,7 @@ export default {
         }
     }
 
-}
+})
 
 </script>
 <template>

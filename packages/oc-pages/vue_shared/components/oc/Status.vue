@@ -35,7 +35,8 @@
     <import-link v-if="card" :card="card" />
   </div>
 </template>
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlBadge } from '@gitlab/ui';
 import DetectIcon from './detect-icon.vue'
 import ImportLink from './import-link.vue'
@@ -73,7 +74,7 @@ const StateNames = [
   'Error'
 ]
 
-export default {
+export default defineComponent({
   name: "Status",
   props: {
     status: Number,
@@ -137,7 +138,7 @@ export default {
     ImportLink,
     GlBadge
   }
-};
+});
 </script>
 <style scoped>
 .status-container > :not(.badge) {

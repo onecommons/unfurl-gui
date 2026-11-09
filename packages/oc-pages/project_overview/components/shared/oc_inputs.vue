@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import _ from 'lodash';
 import {__} from '~/locale';
-import {nextTick} from 'vue'
+import {nextTick, defineComponent} from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {GlCard} from '@gitlab/ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
@@ -23,7 +24,7 @@ const ComponentMap = {
   password: 'FakePassword',
 };
 
-export default {
+export default defineComponent({
   name: 'OcInputs',
   components: {
     FormProvider,
@@ -47,6 +48,8 @@ export default {
       default: () => 'gl-card'
     }
   },
+
+  emits: ['setInputLength'],
 
   data() {
     return {
@@ -550,7 +553,7 @@ export default {
       this.validate()
     }
   }
-}
+})
 </script>
 <template>
 <!-- Gate on the schema, not on the card's properties. The fields come from

@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlFormInput, GlIcon} from '@gitlab/ui'
 
-export default {
+export default defineComponent({
     name: 'FakePassword',
     // formily's props used to fall through to el-input, which was a component
     // and honoured them; the wrapper below is a plain div, so they are bound
@@ -35,7 +36,7 @@ export default {
             this.$emit('input', ...arguments)
         }
     }
-}
+})
 </script>
 <template>
     <!-- gl-form-input has no suffix slot, so the toggle is laid over the field

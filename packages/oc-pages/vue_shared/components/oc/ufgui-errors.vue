@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters, mapMutations} from 'vuex'
 import {headerBounds} from 'oc_vue_shared/client_utils/gitlab-chrome'
 import {defaultSeverityLevel} from '../../storage-keys'
@@ -8,7 +9,7 @@ import CodeClipboard from 'oc_vue_shared/components/oc/code-clipboard.vue'
 const ERROR_LEVELS = ['minor', 'major', 'critical']
 
 const PER_PAGE = 5
-export default {
+export default defineComponent({
     name: 'UnfurlGuiErrors',
     components: {
         GlAlert, GlTabs, GlPagination,
@@ -54,7 +55,7 @@ export default {
     methods: {
         ...mapMutations(['clearErrors']),
     },
-}
+})
 </script>
 <template>
     <!-- 599 is one z-index below the sidebar -->

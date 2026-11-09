@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlButton, GlTooltipDirective} from '@gitlab/ui'
 import {DetectIcon, StatusIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters, mapActions} from 'vuex'
@@ -7,7 +8,7 @@ import { __ } from '~/locale';
 
 // TODO clean up dependency vs requirement in here!
 
-export default {
+export default defineComponent({
     name: 'Dependency',
     props: {
         card: Object,
@@ -17,6 +18,7 @@ export default {
         readonly: { type: Boolean, default: false }
 
     },
+    emits: ['deleteNode', 'launchModalToConnect', 'moveToElement', 'placeTempRequirement'],
     directives: {
         GlTooltip: GlTooltipDirective,
     },
@@ -144,7 +146,7 @@ export default {
 
 
     }
-}
+})
 </script>
 <template>
     <div class="oc_table_row">

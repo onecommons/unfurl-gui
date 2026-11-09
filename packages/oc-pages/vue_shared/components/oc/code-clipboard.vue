@@ -1,11 +1,12 @@
 
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlIcon} from '@gitlab/ui'
 
 const CLIPBOARD_TITLE_COPY = 'Copy to clipboard'
 const CLIPBOARD_TITLE_COPIED = 'Copied to clipboard!'
 
-export default{
+export default defineComponent({
     name: 'CodeClipboard',
     data() {
         return {clipboardTitle: CLIPBOARD_TITLE_COPY, CLIPBOARD_TITLE_COPY}
@@ -20,7 +21,7 @@ export default{
             this.clipboardTitle = CLIPBOARD_TITLE_COPIED
         }
     },
-}
+})
 </script>
 <template>
     <div class="gl-relative ufgui-code-clipboard">

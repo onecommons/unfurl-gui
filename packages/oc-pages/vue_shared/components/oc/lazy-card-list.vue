@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlCard, GlIcon } from '@gitlab/ui';
 import OcCard from '../../../project_overview/components/shared/oc_card.vue';
 
@@ -24,7 +26,7 @@ import OcCard from '../../../project_overview/components/shared/oc_card.vue';
 //   <lazy-card-list :cards="cards">
 //     ...
 //   </lazy-card-list>
-export default {
+export default defineComponent({
     name: 'LazyCardList',
     components: { GlCard, GlIcon, OcCard },
     props: {
@@ -40,6 +42,7 @@ export default {
         displayStatus: { type: Boolean, default: false },
         readonly: { type: Boolean, default: false }
     },
+    emits: ['deleteNode'],
     data() {
         const expandedInitially = this.title == null || this.defaultExpanded;
         return {
@@ -82,7 +85,7 @@ export default {
             this.$emit('deleteNode', payload);
         }
     }
-};
+});
 </script>
 <template>
     <!-- Wrapped (collapsible) mode -->

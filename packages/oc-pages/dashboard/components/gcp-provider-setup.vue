@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {GlAlert, GlButton, GlCollapsibleListbox, GlIcon, GlLink} from '@gitlab/ui'
 import {mapActions, mapGetters} from 'vuex'
 import {__} from '~/locale'
@@ -16,7 +18,7 @@ const INVALID_KEY_MESSAGE = 'Your service credentials key is invalid JSON.'
 // that is not a service account key left the button dead with nothing said.
 const NOT_A_KEY_MESSAGE = 'That file is valid JSON but not a service account key: it has no "project_id".'
 
-export default {
+export default defineComponent({
     name: 'GcpProviderSetup',
     compatConfig: {MODE: 3},
     components: {
@@ -278,7 +280,7 @@ export default {
     created() {
         if(this.signedIn) this.loadProjects()
     },
-}
+})
 </script>
 <template>
     <div

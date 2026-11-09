@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {  GlFormRadio, GlIcon } from '@gitlab/ui';
 import OcListResourceIcon from './oc_list_resource/icon.vue';
 import { __ } from '~/locale';
@@ -12,7 +14,7 @@ const CLOUD_PROVIDER_NAMES = {
     [lookupCloudProviderAlias('k8s')]: __('Kubernetes')
 }
 
-export default {
+export default defineComponent({
     name: 'OcListResource',
     components: {
         GlFormRadio,
@@ -110,7 +112,7 @@ export default {
             }
         }
     }
-};
+});
 </script>
 <template>
     <div v-if="ready" class="ci-table" role="grid">

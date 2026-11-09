@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import {DetectIcon, Status} from 'oc_vue_shared/components/oc'
@@ -6,7 +8,7 @@ import JSONView from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import Redacted from './redacted.vue'
 
-export default {
+export default defineComponent({
     name: 'OcPropertiesList',
     components: {GlIcon, Status, 'json-view': JSONView, Redacted, DetectIcon},
     data() {
@@ -109,7 +111,7 @@ export default {
     mounted() {
         this.tableSizingHack()
     }
-}
+})
 
 </script>
 <template>

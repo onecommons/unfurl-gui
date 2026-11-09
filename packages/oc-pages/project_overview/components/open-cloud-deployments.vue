@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {lookupCloudProviderAlias, cloudProviderFriendlyName} from 'oc_vue_shared/util'
 
-export default {
+export default defineComponent({
     name: 'OpenCloudDeployments',
     fields: [
         {key: 'cloud',  label: 'Cloud'},
@@ -48,7 +49,7 @@ export default {
             return items
         },
     }
-}
+})
 </script>
 <template>
     <table-component no-margin hide-filter :use-collapse-all="false" :fields="$options.fields" :items="items">

@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
 import { __, n__ } from '~/locale';
@@ -144,7 +146,7 @@ function* expandRows(fields, children, _depth = 0, parent=null) {
   }
 }
 
-export default {
+export default defineComponent({
   name: 'TableComponent',
   props: {
     items: Array,
@@ -312,7 +314,7 @@ export default {
       this.toggleAll()
     }
   }
-};
+});
 </script>
 <template>
   <div class="gl-p-0" :class="{'container-fluid': !noMargin,  'gl-mt-6': !noMargin, 'no-margin': noMargin}">

@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import FileTree from './file-tree.vue'
 import { mapGetters, mapActions } from 'vuex'
 import { listProjectFiles } from 'oc_vue_shared/client_utils/projects'
@@ -28,7 +29,7 @@ function getMime(fileName) {
     return result
 }
 
-export default {
+export default defineComponent({
     name: 'FileSelector',
     mixins: [blueprintDefaultBranch, homeProjectDefaultBranch],
     components: {
@@ -287,7 +288,7 @@ export default {
             }
         }
     },
-}
+})
 </script>
 <template>
     <div class="file-selector">

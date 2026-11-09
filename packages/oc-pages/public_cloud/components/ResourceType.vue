@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
 import DetectIcon from 'oc_vue_shared/components/oc/detect-icon.vue'
 
-export default {
+export default defineComponent({
   name: 'ResourceType',
   props: {
     item: Object
@@ -36,7 +37,7 @@ export default {
     MarkdownView,
     DetectIcon
   },
-}
+})
 </script>
 <template>
   <div class="gl-flex gl-flex-col">

@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
 import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
 
@@ -36,7 +38,7 @@ const fields = [
     {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource', pluralize: pluralizeResources},
 ];
 
-export default {
+export default defineComponent({
     name: 'TableComponentContainer',
     components: {
         TableComponent,
@@ -122,7 +124,7 @@ export default {
     beforeUnmount() {
         this.cloneInstructions?.removeEventListener('click', this.showCloneInstructions)
     }
-};
+});
 
 </script>
 <template>

@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {CodeClipboard} from 'oc_vue_shared/components/oc'
 import { mapGetters } from 'vuex';
-export default {
+export default defineComponent({
     name: 'LocalDevelop',
     components: {
         CodeClipboard
@@ -22,7 +23,7 @@ export default {
             ].join(' ')
         }
     }
-}
+})
 </script>
 <template>
     <div>

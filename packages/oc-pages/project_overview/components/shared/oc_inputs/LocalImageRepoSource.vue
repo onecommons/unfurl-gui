@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {GlCard, GlFormGroup, GlFormInput} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
 import {fetchProjects, fetchRegistryRepositories, fetchContainerRepositories, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
@@ -13,7 +15,7 @@ function callbackFilter(query, items) {
     return items.filter(item => item.value.includes(query))
 }
 
-export default {
+export default defineComponent({
     name: 'LocalImageRepoSource',
     components: {GlCard, GlFormGroup, GlFormInput, SuggestionInput, DeploymentScheduler},
     props: {
@@ -130,7 +132,7 @@ export default {
             this.projectInfo = await fetchProjectInfo(encodeURIComponent(this.project_id))
         }
     }
-}
+})
 </script>
 <template>
     <gl-card body-class="gl-flex gl-flex-col">

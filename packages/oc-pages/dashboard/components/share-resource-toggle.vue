@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {mapGetters, mapActions} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
@@ -20,7 +22,7 @@ async function acquireLock() {
     return release
 }
 
-export default {
+export default defineComponent({
     props: {
         card: Object
     },
@@ -139,7 +141,7 @@ export default {
 
         }
     }
-}
+})
 
 </script>
 <template>

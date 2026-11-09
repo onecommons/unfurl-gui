@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { __ } from '~/locale';
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters} from 'vuex'
 import {ProjectIcon} from 'oc_vue_shared/components/oc'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
-export default {
+export default defineComponent({
     name: 'OcTemplateHeader',
     components: {
         DetectIcon,
@@ -38,7 +39,7 @@ export default {
         window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug}).href
       }
     }
-}
+})
 </script>
 <template>
     <div class="gl-m-3 gl-flex gl-flex-wrap gl-justify-between gl-items-center">

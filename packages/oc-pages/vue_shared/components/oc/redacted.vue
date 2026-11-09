@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlIcon} from '@gitlab/ui'
 
-export default {
+export default defineComponent({
     name: 'Redacted',
     components: {
         GlIcon
@@ -22,7 +23,7 @@ export default {
             this.isHidden = !this.isHidden
         }
     }
-}
+})
 </script>
 
 <template>

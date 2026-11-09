@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
 import {GlCard, GlIcon, GlTooltipDirective} from '@gitlab/ui'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
@@ -6,13 +7,14 @@ import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import graphJson from './cloud-graph-inspector-mock.data.json'
 
 
-export default {
+export default defineComponent({
   name: 'CloudTable',
   directives: {GlTooltip: GlTooltipDirective},
   components: {TableComponent, DetectIcon, GlCard, GlIcon},
   props: {
     data: Object
   },
+  emits: ['focus'],
   fields: [
     {key: 'provider', label: 'Provider'},
     {key: 'region', label: 'Regions', s: 'Region'},
@@ -56,7 +58,7 @@ export default {
       return items
     }
   }
-}
+})
 </script>
 <template>
   <gl-card id="public-cloud-deployments" class="gl-ml-7 gl-mr-7">

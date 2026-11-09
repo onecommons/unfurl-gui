@@ -1,9 +1,11 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {GlIcon, GlButton} from '@gitlab/ui'
 import DropdownActionItem from './dropdown-action-item.vue'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import OpenLiveApp from './open-live-app.vue'
-export default {
+export default defineComponent({
     props: {
         deploymentItem: Object,
         resumeEditingTarget: String,
@@ -19,6 +21,7 @@ export default {
             default: () => 'gl-button'
         }
     },
+    emits: ['cancelAutostop', 'cancelJob', 'cloneDeployment', 'deleteDeployment', 'edit', 'incRedeploy', 'localDeploy', 'renameDeployment', 'scheduleAutostop', 'showPreviousJobs', 'startDeployment', 'stopDeployment'],
     components: {GlIcon, GlButton, DropdownActionItem, OpenLiveApp},
     methods: {
         hasButton(id) { return this.controlButtons.includes(id) },
@@ -71,7 +74,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
 <div class="control-button-container">

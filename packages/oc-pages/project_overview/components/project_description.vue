@@ -1,11 +1,13 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlTabs, GlTab, GlBadge  } from "@gitlab/ui";
 import { __ } from '~/locale';
 import commonMethods from './mixins/commonMethods';
 import {mapGetters, mapState} from 'vuex'
 import {OcTab, DetectIcon} from 'oc_vue_shared/components/oc'
 
-export default {
+export default defineComponent({
     name: 'ProjectDescriptionBox',
     components: {
         GlTabs,
@@ -102,7 +104,7 @@ export default {
         shouldRenderRequirements() { return this.requirements?.length },
         shouldRenderExtras() {return this.extras?.length},
     }
-}
+})
 </script>
 <template>
     <div class="row oc-project-description-box gl-pt-5 gl-pb-5 gl-pl-5 gl-pr-5 gl-mb-6">

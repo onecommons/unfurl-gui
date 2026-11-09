@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlTabs } from '@gitlab/ui';
 
 import OcInputs from './oc_inputs.vue'
@@ -9,7 +11,7 @@ import Dependency from './dependency.vue'
 import {getCustomInputComponent} from './oc_inputs/index.js'
 import templateMixin from './template-mixin'
 
-export default {
+export default defineComponent({
     name: 'OcList',
     components: {
         GlTabs,
@@ -273,7 +275,7 @@ export default {
             this.currentTab = 0
         },
     },
-}
+})
 </script>
 <template>
     <div>

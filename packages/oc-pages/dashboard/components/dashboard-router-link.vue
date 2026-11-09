@@ -1,5 +1,7 @@
-<script>
-export default {
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
+export default defineComponent({
   name: 'DashboardRouterLink',
   props: {
     noRouter: {
@@ -19,7 +21,7 @@ export default {
         this.href.replace('/dashboard', '') // NOTE this works fine for now because this component is used in the dashboard only
     },
   }
-}
+})
 </script>
 
 <template>

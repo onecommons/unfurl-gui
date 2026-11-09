@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlButton} from '@gitlab/ui'
 import {importStatus} from '../../client_utils/github-import'
 import {mapGetters} from 'vuex'
 
 const {DISABLED, PENDING, AVAILABLE, IMPORTED} = importStatus
 
-export default {
+export default defineComponent({
     name: 'ImportButton',
     components: {
         GlButton
@@ -61,7 +62,7 @@ export default {
           )
         }
     }
-}
+})
 </script>
 <template>
     <gl-button data-testid="import-button" v-if="repoImport" :loading="loading" :disabled="disabled" :variant="variant" @click="dispatchClick">{{text}}</gl-button>

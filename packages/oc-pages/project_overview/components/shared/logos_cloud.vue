@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import AWS from '../../assets/aws.svg?inline'
 import GCP from '../../assets/gcp.svg?inline'
 import Azure from '../../assets/azure.svg?inline'
@@ -19,7 +21,7 @@ const SMALL_MAPPINGS = {
     [lookupCloudProviderAlias('aws')]: SmallAWS,
     [lookupCloudProviderAlias('azure')]: SmallAzure
 }
-export default {
+export default defineComponent({
     name: "LogosCloud",
     props: {
         cloud: {
@@ -53,7 +55,7 @@ export default {
         }
         
     }
-}
+})
 </script>
 <template>
     <div :class="{small: small}" > <img v-if="icon" :src="icon" /> </div>

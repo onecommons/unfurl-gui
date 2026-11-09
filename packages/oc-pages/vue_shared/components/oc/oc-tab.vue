@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlTab, GlBadge} from '@gitlab/ui'
-export default {
+export default defineComponent({
     name: 'OcTab',
     components: {GlTab, GlBadge},
     props: {
@@ -38,7 +39,7 @@ export default {
             return !isNaN(parsed)
         }
     }
-}
+})
 </script>
 <template>
     <gl-tab ref="tab" class="gl-mt-3" :lazy="lazy" @update:active="active = $event">

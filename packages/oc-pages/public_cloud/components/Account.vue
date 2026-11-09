@@ -1,5 +1,6 @@
-<script>
-export default {
+<script lang="ts">
+import {defineComponent} from 'vue'
+export default defineComponent({
   name: 'Account',
   props: {
     item: Object
@@ -15,7 +16,7 @@ export default {
       return pathname && pathname.slice(1).split('.git')[0]
     }
   }
-}
+})
 </script>
 <template>
   <div class="gl-flex gl-flex-col">

@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlAlert, GlButton, GlDropdown, GlDropdownItem, GlFormInput, GlIcon, GlLink} from '@gitlab/ui'
 import FakePassword from '../../project_overview/components/shared/oc_inputs/fake-password.vue'
 import {mapGetters} from 'vuex'
@@ -51,7 +52,7 @@ const AUTHENTICATION_OPTIONS = {
 
 const CLOUDFORMATION_TEMPLATE_URL = 'https://s3.amazonaws.com/unfurl.run-root/assets/provision-role.cloudformation.template'
 
-export default {
+export default defineComponent({
     name: 'AwsProviderSetup',
     compatConfig: {MODE: 3},
     components: {
@@ -225,7 +226,7 @@ export default {
             }
         },
     },
-}
+})
 </script>
 <template>
     <div class="aws-provider-setup" data-testid="aws-provider-setup">

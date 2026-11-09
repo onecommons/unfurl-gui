@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import * as routes from '../../router/constants'
 import {withApplicationLinkTarget} from './mixins'
 import ProjectIcon from 'oc_vue_shared/components/oc/project-icon.vue'
-export default {
+export default defineComponent({
     components: { ProjectIcon },
     mixins: [withApplicationLinkTarget],
     props: {
@@ -19,7 +20,7 @@ export default {
     async created() {
         this.projectIconSrc = await this.application.projectIcon
     }
-}
+})
 </script>
 <template>
     <!-- TODO use router link when possible -->

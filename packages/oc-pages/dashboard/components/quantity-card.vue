@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
-export default {
+export default defineComponent({
     props: {
         count: Number,
         s: String,
@@ -41,7 +42,7 @@ export default {
             return !!this.secondaryLink
         }
     }
-}
+})
 
 </script>
 <template>

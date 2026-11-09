@@ -1,11 +1,13 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { mapGetters, mapActions } from 'vuex'
 import { GlFormCheckbox } from '@gitlab/ui'
 import { DetectIcon } from 'oc_vue_shared/components/oc'
 
 const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
 
-export default {
+export default defineComponent({
     name: 'DeploymentScheduler',
     components: {
         DetectIcon,
@@ -83,7 +85,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
         <div v-if="this.getCurrentContext != 'environment'" class="gl-flex gl-mt-7 p gl-items-center">

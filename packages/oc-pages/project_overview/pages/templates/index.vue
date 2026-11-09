@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlModal, GlModalDirective, GlSkeletonLoader, GlFormGroup, GlFormInput } from '@gitlab/ui';
 import { mapState, mapGetters, mapActions, mapMutations } from 'vuex';
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
@@ -20,7 +22,7 @@ import {blueprintDefaultBranch, homeProjectDefaultBranch} from 'oc_vue_shared/mi
 import * as routes from '../../router/constants'
 
 
-export default {
+export default defineComponent({
   name: 'TemplatesPage',
   mixins: [blueprintDefaultBranch, homeProjectDefaultBranch],
   components: {
@@ -933,7 +935,7 @@ export default {
     }
 
   },
-};
+});
 </script>
 <template>
   <div data-testid="project-templates-page">

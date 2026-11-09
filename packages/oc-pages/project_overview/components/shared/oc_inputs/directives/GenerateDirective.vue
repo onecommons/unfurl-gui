@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {GlButton, GlModal} from '@gitlab/ui'
 
-export default {
+export default defineComponent({
     name: 'GenerateDirective',
     f: null,
     data() {
@@ -48,7 +49,7 @@ export default {
     created() {
         Object.assign(this, this.$options.f())
     }
-}
+})
 </script>
 <template>
     <div class="gl-absolute gl-ml-2">

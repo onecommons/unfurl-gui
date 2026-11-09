@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {mapGetters} from 'vuex'
 import {fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 
-export default {
+export default defineComponent({
     name: 'EnvironmentStatus',
     data() {
         return {incompleteEnv: false}
@@ -36,7 +37,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
 <div class="gl-w-full gl-flex gl-justify-center">

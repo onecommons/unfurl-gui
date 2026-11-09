@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import * as routes from '../router/constants'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {mapActions, mapGetters, mapMutations} from 'vuex'
@@ -11,7 +12,7 @@ import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify, STD_REPOSI
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {fetchProvider, deleteProvider} from 'oc_vue_shared/client_utils/environment-providers'
-import {defineAsyncComponent} from 'vue'
+import {defineAsyncComponent, defineComponent} from 'vue'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {mapProviderProps} from './provider-props'
 import { visitUrl } from '~/lib/utils/url_utility';
@@ -28,7 +29,7 @@ const ADD_PROVIDER_ENABLED = false
 
 const standalone = window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'Environment',
     components: {
         OcTab,
@@ -656,7 +657,7 @@ export default {
     async created() {
         await this.freshState()
     }
-}
+})
 </script>
 <template>
     <div class="environment" data-testid="dashboard-environment-page">

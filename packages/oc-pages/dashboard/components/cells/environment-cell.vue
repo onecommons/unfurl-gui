@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import * as routes from '../../router/constants'
 import {mapGetters, mapMutations} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
-export default {
+export default defineComponent({
     components: { DetectIcon },
     props: {
         environment: Object,
@@ -55,7 +56,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
     <a v-if="environment" :href="destination.href">

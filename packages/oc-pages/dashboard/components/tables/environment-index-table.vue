@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ApplicationCell from '../cells/application-cell.vue'
@@ -12,7 +13,7 @@ function deploymentGroupBy(item) {
     return result
 }
 
-export default {
+export default defineComponent({
     components: {
         TableComponent, EnvironmentCell, ApplicationCell, DeploymentCell, EnvironmentStatus
     },
@@ -74,7 +75,7 @@ export default {
     }
 
 
-}
+})
 </script>
 <template>
     <table-component :items="items" :fields="fields">

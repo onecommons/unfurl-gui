@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import GithubReposAuthenticate from './github-repos/github-repos-authenticate.vue'
 import {oauthStatus} from '../../client_utils/github-import'
 import { GlCard, GlLoadingIcon } from '@gitlab/ui'
-export default {
+export default defineComponent({
     name: 'GithubAuth',
     data() {
         return {oauthStatus}
@@ -15,8 +16,9 @@ export default {
     props: {
         importHandler: Object
     },
+    emits: ['authenticated'],
     oauthStatus
-}
+})
 </script>
 <template>
     <gl-card data-testid="github-auth-card" class="auth-container">

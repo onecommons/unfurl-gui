@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import axios from '~/lib/utils/axios_utils'
 import {GlTabs, GlLoadingIcon, GlPagination, GlSearchBoxByType} from '@gitlab/ui'
 import OcTab from './oc-tab.vue'
@@ -6,7 +7,7 @@ import GitHubReposAuthenticate from './github-repos/github-repos-authenticate.vu
 
 const AUTHENTICATED = 1
 const UNAUTHENTICATED = 2
-export default {
+export default defineComponent({
     name: 'GitHubRepos',
     components: {
         GitHubReposAuthenticate,
@@ -95,7 +96,7 @@ export default {
     },
 
 
-}
+})
 </script>
 <template>
     <div>

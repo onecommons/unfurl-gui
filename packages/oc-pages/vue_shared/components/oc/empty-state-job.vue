@@ -1,5 +1,6 @@
-<script>
-export default {
+<script lang="ts">
+import {defineComponent} from 'vue'
+export default defineComponent({
     name: 'EmptyStateJob',
     props: {
         scale: {
@@ -7,7 +8,7 @@ export default {
             default: 1
         }
     }
-}
+})
 </script>
 <template>
     <div :style="{width: scale * 185 + 'px', height: scale * 76 + 'px'}">

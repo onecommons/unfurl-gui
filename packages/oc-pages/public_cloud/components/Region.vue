@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import CloudProvider from './CloudProvider.vue'
 
-export default {
+export default defineComponent({
   name: 'Region',
   props: {
     item: Object
@@ -9,7 +10,7 @@ export default {
   components: {
     CloudProvider
   }
-}
+})
 </script>
 <template>
   <div class="gl-flex gl-flex-col">

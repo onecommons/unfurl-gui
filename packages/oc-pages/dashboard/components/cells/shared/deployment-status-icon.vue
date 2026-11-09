@@ -1,9 +1,11 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue'
 import {GlIcon, GlButton, GlTooltipDirective} from '@gitlab/ui'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
-export default {
+export default defineComponent({
     components: {
         StatusIcon,
         GlIcon,
@@ -58,7 +60,7 @@ export default {
 
         }
     },
-}
+})
 </script>
 <template>
 <div class="gl-flex gl-justify-center gl-items-center" :style="{width: width}" v-gl-tooltip.hover="title"  >

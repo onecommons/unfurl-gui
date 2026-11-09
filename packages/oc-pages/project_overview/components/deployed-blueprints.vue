@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlCard, GlIcon} from '@gitlab/ui'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
@@ -9,7 +10,7 @@ const DISPLAY_MAP = {
     [lookupCloudProviderAlias('k8s')]: 'Kubernetes'
 }
 
-export default {
+export default defineComponent({
     name: 'DeployedBlueprints',
     components: {
         GlCard, GlIcon
@@ -24,7 +25,7 @@ export default {
             return DISPLAY_MAP[lookupCloudProviderAlias(cp)]
         }
     }
-}
+})
 </script>
 <template>
   <div class="gl-flex">

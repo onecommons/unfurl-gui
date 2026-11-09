@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlCard, GlIcon } from '@gitlab/ui'
 import {mapState, mapGetters} from 'vuex'
 import {DeploymentIndexTable} from 'oc_dashboard/components'
@@ -33,14 +34,14 @@ import {DeploymentIndexTable} from 'oc_dashboard/components'
             },
         ]
 */
-export default {
+export default defineComponent({
     name: "YourDeployments",
     components: {GlCard, GlIcon, DeploymentIndexTable},
     computed: {
         ...mapState(['project']),
         ...mapGetters(['yourDeployments']),
     }
-}
+})
 </script>
 <template>
     <div v-if="yourDeployments.length">

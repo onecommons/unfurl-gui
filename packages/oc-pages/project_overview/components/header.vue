@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 /* eslint-disable vue/no-v-html */
 import { GlIcon, GlButton } from '@gitlab/ui';
 import OverviewShareModal from './header/overview-share-modal.vue'
@@ -9,7 +11,7 @@ import { __ } from '~/locale';
 
 const enabled = !window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'HeaderProjectView',
     components: {
         GlIcon,
@@ -84,7 +86,7 @@ export default {
         }
     },
 
-}
+})
 </script>
 <template>
     <div v-if="enabled" class="project-home-panel js-show-on-project-root gl-my-5">

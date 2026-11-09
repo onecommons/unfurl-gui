@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import AutostopInner from './autostop-inner.vue'
 import { GlButton, GlIcon, GlPopover, GlTooltipDirective } from '@gitlab/ui'
 import {mapMutations} from 'vuex'
 
-export default {
+export default defineComponent({
     name: 'Autostop',
     directives: {
         GlTooltip: GlTooltipDirective,
@@ -48,7 +49,7 @@ export default {
             this.updateAutostop()
         }
     },
-}
+})
 </script>
 <template>
     <div class="gl-inline-block">

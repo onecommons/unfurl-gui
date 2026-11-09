@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
@@ -13,7 +14,7 @@ function callbackFilter(query, items) {
     return items.filter(item => item.value.includes(query))
 }
 
-export default {
+export default defineComponent({
     name: 'UnfurlCloudMirroredRepoImageSource',
     props: {
         card: Object,
@@ -139,7 +140,7 @@ export default {
         })
 
     }
-}
+})
 </script>
 <template>
     <gl-card body-class="gl-flex gl-flex-col">

@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlIcon , GlButton, GlModalDirective } from "@gitlab/ui";
 import { bus } from 'oc_vue_shared/bus';
 import { mapGetters } from 'vuex';
@@ -6,7 +8,7 @@ import { mapGetters } from 'vuex';
 import { __ } from '~/locale';
 
 
-export default {
+export default defineComponent({
     name: "TableListRow",
     components: {
         GlIcon,
@@ -25,6 +27,7 @@ export default {
             required: false
         },
     },
+    emits: ['deployTemplate', 'editTemplate'],
     data() {
         return {}
     },
@@ -51,7 +54,7 @@ export default {
             return (window.gon.unfurl_gui || this.getUsername) && !this.environmentsAreReady
         }
     },
-}
+})
 </script>
 <template>
     <div>

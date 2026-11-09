@@ -1,7 +1,9 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import commonMethods from '../../mixins/commonMethods.js'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
-export default {
+export default defineComponent({
     name: 'OcListResourceIcon',
     mixins: [commonMethods],
     components: { DetectIcon },
@@ -33,7 +35,7 @@ export default {
             return ''
         },
     }
-}
+})
 </script>
 <template>
     <div class="oc_resource_icon gl-mr-3">

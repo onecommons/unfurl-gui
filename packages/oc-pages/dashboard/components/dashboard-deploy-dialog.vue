@@ -1,5 +1,6 @@
-<script>
-
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { __ } from '~/locale'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import { GlModal, GlDropdown, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui';
@@ -9,7 +10,7 @@ import OcListResource from '../../project_overview/components/shared/oc_list_res
 import { BaseDeployDialog } from 'oc_vue_shared/components/oc'
 const NEW_DEPLOYMENT_HASH = '#new-deployment'
 
-export default {
+export default defineComponent({
     name: 'DashboardDeployDialog',
     components: {
         GlModal,
@@ -203,7 +204,7 @@ export default {
             }
         },
     }
-}
+})
 </script>
 <template>
     <gl-modal

@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { mapGetters } from 'vuex'
 
 import { GlButton, GlButtonGroup, GlDisclosureDropdown, GlFormCheckbox, GlIcon, GlTooltipDirective} from '@gitlab/ui';
@@ -8,7 +10,7 @@ import { getTransientUnfurlServerOverride } from 'oc_vue_shared/client_utils/unf
 
 const standalone = window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'DeployButton',
     directives: {
         GlTooltip: GlTooltipDirective,
@@ -31,6 +33,7 @@ export default {
         deployStatus: String,
         mergeRequest: Object
     },
+    emits: ['mergeRequestReady', 'triggerDeploy', 'triggerLocalDeploy'],
     methods: {
         triggerDeploy() {
             if(this.userCanEdit) {
@@ -104,7 +107,7 @@ export default {
             return standalone || !!getTransientUnfurlServerOverride()
         }
     }
-}
+})
 
 </script>
 <template>

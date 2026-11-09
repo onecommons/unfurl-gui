@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
-export default {
+export default defineComponent({
   name: 'CloudProvider',
   components: {DetectIcon},
   props: {
@@ -21,7 +22,7 @@ export default {
       }
     }
   }
-}
+})
 </script>
 <template>
   <div class="gl-flex gl-flex-col">

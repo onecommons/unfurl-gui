@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import ComputeIcon from './icons/Compute.svg'
@@ -80,7 +81,7 @@ function detectIconCustomSVG(type) {
     return applyTypeToMapping(type, CUSTOM_ICON_MAPPINGS)
 }
 
-export default {
+export default defineComponent({
     name: 'DetectIcon',
     components: { GlIcon },
     // two possible roots, so nothing falls through on its own; the gl-icon
@@ -161,7 +162,7 @@ export default {
             return this.noInvert ?? this.type?.extends?.find(t => t.startsWith('unfurl.nodes.App@') || t.startsWith('App@'))
         }
     }
-}
+})
 </script>
 <template>
     <span class="custom-icon" :style="customStyle" v-if="customIcon">

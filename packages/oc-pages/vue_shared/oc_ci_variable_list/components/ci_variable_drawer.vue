@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { isEqual, omit, isEmpty } from 'lodash-es';
 import {
   GlAlert,
@@ -120,7 +122,7 @@ export const i18n = {
 
 const VARIABLE_REFERENCE_REGEX = /\$/;
 
-export default {
+export default defineComponent({
   name: 'CiVariableDrawer',
   DRAWER_Z_INDEX,
   components: {
@@ -494,7 +496,7 @@ export default {
   VISIBILITY_HIDDEN,
   VISIBILITY_MASKED,
   VISIBILITY_VISIBLE,
-};
+});
 </script>
 <template>
   <div>

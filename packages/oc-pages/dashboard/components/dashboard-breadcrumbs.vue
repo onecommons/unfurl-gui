@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlBreadcrumb} from '@gitlab/ui'
 import * as routes from '../router/constants'
 import {sectionLinkProps} from '../router/section-link'
 
-export default {
+export default defineComponent({
     name: 'DashboardBreadcrumbs',
     components: {GlBreadcrumb},
     props: {
@@ -22,7 +23,7 @@ export default {
             ]
         }
     }
-}
+})
 </script>
 <template>
     <gl-breadcrumb class="oc-breadcrumbs" :items="_items" />

@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlTabs} from '@gitlab/ui';
 import _ from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
@@ -25,7 +27,7 @@ const statusPropDefinition = {
     default: () => 'hidden'
 }
 
-export default {
+export default defineComponent({
     name: 'DeploymentResources',
     components: {
         GlModal,
@@ -73,6 +75,8 @@ export default {
         },
         filter: Function
     },
+
+    emits: ['addProvider', 'addTopLevelResource', 'deleteResource', 'saveTemplate'],
 
     directives: {
         GlModal: GlModalDirective
@@ -591,7 +595,7 @@ export default {
             return this.getTypeCategory(category)?.title || 'Other'
         }
     },
-};
+});
 </script>
 <template>
     <div>

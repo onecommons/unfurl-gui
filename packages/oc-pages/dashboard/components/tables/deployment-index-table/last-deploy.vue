@@ -1,5 +1,6 @@
-<script>
-export default {
+<script lang="ts">
+import {defineComponent} from 'vue'
+export default defineComponent({
     name: 'LastDeploy',
     props: {
         deploymentItem: Object
@@ -23,7 +24,7 @@ export default {
             }
         }
     }
-}
+})
 
 </script>
 <template>

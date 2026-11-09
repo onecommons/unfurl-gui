@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import * as routes from '../../router/constants'
 import DeploymentStatusIcon from './shared/deployment-status-icon.vue'
 import {mapGetters} from 'vuex'
@@ -6,7 +7,7 @@ import _ from 'lodash'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 import {withApplicationLinkTarget} from './mixins'
 
-export default {
+export default defineComponent({
     components: { DeploymentStatusIcon, DashboardRouterLink },
     mixins: [withApplicationLinkTarget],
     props: {
@@ -49,7 +50,7 @@ export default {
             return _.uniqBy(this.deployment.statuses || [], 'type')
         }
     }
-}
+})
 </script>
 <template>
 <div class="gl-flex">

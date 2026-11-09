@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
-export default {
+export default defineComponent({
     name: 'EnvironmentTooltip',
     f: null,
     data() {
@@ -30,7 +31,7 @@ export default {
     created() {
         Object.assign(this, this.$options.f())
     }
-}
+})
 </script>
 <template>
     <div v-if="environmentVariableNames.length > 0" :style="`max-width: ${maxWidth};`">

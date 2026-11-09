@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import * as routes from '../../router/constants'
 import StatusIcon from 'oc_vue_shared/components/oc/Status.vue';
 import {generateCardId} from 'oc_vue_shared/util'
 import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 
-export default {
+export default defineComponent({
     components: { StatusIcon, DashboardRouterLink },
     props: {
         resource: Object, deployment: Object, environment: Object,
@@ -40,7 +41,7 @@ export default {
             return this.noRouter ? href : {to: href}
         },
     }
-}
+})
 </script>
 <template>
     <dashboard-router-link :noRouter="noRouter" :href="to">

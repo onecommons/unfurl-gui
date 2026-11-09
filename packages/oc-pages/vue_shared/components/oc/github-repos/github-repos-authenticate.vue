@@ -1,14 +1,16 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 const STATUS_URL = '/import/github/status?close=true'
 import {sleep} from '../../../client_utils/misc'
 import {oauthStatus} from '../../../client_utils/github-import'
 import {GlIcon, GlButton} from '@gitlab/ui'
-export default {
+export default defineComponent({
     name: 'GitHubReposAuthenticate',
     components: {GlIcon, GlButton},
     props: {
         importHandler: Object
     },
+    emits: ['authenticated'],
     methods: {
         async openStatus(e) {
             e.preventDefault()
@@ -43,7 +45,7 @@ export default {
         }
     }
 
-}
+})
 </script>
 <template>
     <div>

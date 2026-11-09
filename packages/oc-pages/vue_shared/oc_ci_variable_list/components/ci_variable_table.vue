@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlTable, GlButton, GlIcon } from '@gitlab/ui';
 import { mapState, mapActions } from 'vuex';
 import { s__, __ } from '~/locale';
 import CiVariablePopover from './ci_variable_popover.vue';
 
-export default {
+export default defineComponent({
   trueIcon: 'mobile-issue-close',
   falseIcon: 'close',
   iconSize: 16,
@@ -71,7 +72,7 @@ export default {
   methods: {
     ...mapActions('ci_variables', ['fetchVariables', 'toggleValues', 'editVariable']),
   },
-};
+});
 </script>
 
 <template>

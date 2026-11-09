@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {lookupCloudProviderAlias} from 'oc_vue_shared/util'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
-export default {
+export default defineComponent({
   name: 'CloudProvider',
   props: {
     item: Object
@@ -24,7 +25,7 @@ export default {
       return lookupCloudProviderAlias(this.item.data?.cloud)
     }
   }
-}
+})
 </script>
 <template>
   <div class="gl-flex gl-items-center">

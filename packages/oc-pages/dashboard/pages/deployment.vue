@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {mapGetters, mapActions} from 'vuex'
-import {nextTick} from 'vue'
+import {nextTick, defineComponent} from 'vue'
 import {OcTab, DeploymentResources} from 'oc_vue_shared/components/oc'
 import ConsoleWrapper from 'oc_vue_shared/components/console-wrapper.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
@@ -22,7 +23,7 @@ const ONE_DAY = 24 * 60 * 60
 const ONE_HOUR = 60 * 60
 const ONE_MINUTE = 60
 
-export default {
+export default defineComponent({
     name: 'Deployment',
     components: {
         DeploymentResources,
@@ -284,7 +285,7 @@ export default {
         setInterval(() => ++this.counter, 1000)
 
     },
-}
+})
 </script>
 <template>
     <div id="deployment-view-container" data-testid="dashboard-deployment-page">

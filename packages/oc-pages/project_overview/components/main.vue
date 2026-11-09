@@ -1,11 +1,12 @@
-<script>
-
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import { __ } from '~/locale';
 import * as routes from '../router/constants'
 import {getProjectDefaultBranch} from 'oc_vue_shared/client_utils/projects'
 
-export default {
+export default defineComponent({
     name: 'MainComponent',
     // TODO move this into page level components
     async beforeCreate() {
@@ -138,7 +139,7 @@ export default {
             delete sessionStorage['oc_flash']
         }
     }
-}
+})
 </script>
 <template>
     <!-- <gl-loading-icon v-if="!fetchingComplete" label="Loading" size="lg" style="margin-top: 5em;" /> -->

@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import LightNormal from '../assets/gcp-sign-in/btn_google_signin_light_normal_web@2x.png'
 import LightFocus from '../assets/gcp-sign-in/btn_google_signin_light_focus_web@2x.png'
 import LightPressed from '../assets/gcp-sign-in/btn_google_signin_light_pressed_web@2x.png'
@@ -8,7 +9,7 @@ import DarkPressed from '../assets/gcp-sign-in/btn_google_signin_dark_pressed_we
 
 // Google's sign-in button is an image set with prescribed states, so the theme
 // and interaction states are a background-image swap rather than a style.
-export default {
+export default defineComponent({
     name: 'GoogleAuthButton',
     compatConfig: {MODE: 3},
     emits: ['click'],
@@ -33,7 +34,7 @@ export default {
             this.$emit('click')
         },
     },
-}
+})
 </script>
 <template>
     <button

@@ -1,5 +1,5 @@
-<script>
-import {nextTick} from 'vue'
+<script lang="ts">
+import {nextTick, defineComponent} from 'vue'
 import axios from '~/lib/utils/axios_utils'
 import {GlFormCheckbox} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
@@ -23,7 +23,7 @@ function callbackFilter(query, items) {
     return items.filter(item => item.value?.includes(query))
 }
 
-export default {
+export default defineComponent({
     name: 'GithubMirroredRepoImageSource',
     components: {SuggestionInput, GithubAuth, ImportButton, GlFormCheckbox},
     mixins: [connectedRepo],
@@ -258,7 +258,7 @@ export default {
             }
         })
     }
-}
+})
 </script>
 <template>
     <github-auth :importHandler="importHandler">

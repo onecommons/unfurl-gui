@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import EnvironmentCell from '../cells/environment-cell.vue'
@@ -30,7 +32,7 @@ const fields = [
     }
 ]
 
-export default {
+export default defineComponent({
     name: 'MergeRequestsTable',
     components: {
         TableComponent,
@@ -64,7 +66,7 @@ export default {
     },
     fields
 
-}
+})
 </script>
 <template>
     <table-component :fields="$options.fields" :items="items" hide-filter>

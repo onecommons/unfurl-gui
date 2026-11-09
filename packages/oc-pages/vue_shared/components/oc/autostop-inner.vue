@@ -1,8 +1,10 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {GlCollapsibleListbox, GlDatepicker, GlFormInput} from '@gitlab/ui'
 import {mapMutations} from 'vuex'
 
-export default {
+export default defineComponent({
     name: 'AutostopInner',
     compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
     emits: ['update:modelValue'],
@@ -94,7 +96,7 @@ export default {
         }
     },
 
-}
+})
 </script>
 <template>
     <div>

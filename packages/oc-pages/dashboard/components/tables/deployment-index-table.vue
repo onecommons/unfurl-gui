@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {OcTab, EnvironmentSelection, LocalDeploy, AutostopInner} from 'oc_vue_shared/components/oc'
 import CombinedCell from '../cells/combined-cell.vue'
@@ -11,7 +12,7 @@ import {mapGetters, mapActions, mapMutations} from 'vuex'
 import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import {nextTick} from 'vue'
+import {nextTick, defineComponent} from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import MergeRequestsTable from './merge-requests-table.vue'
@@ -81,7 +82,7 @@ const tabFilters = [
     },
 ]
 
-export default {
+export default defineComponent({
     components: {
         TableComponent,
         CombinedCell,
@@ -684,7 +685,7 @@ export default {
         }
     },
     tabFilters
-}
+})
 </script>
 <template>
     <div ref="container" class="deployment-index-table" :class="{transition, 'gl-dark': glDark}">

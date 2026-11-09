@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon, GlButton, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui'
-export default {
+export default defineComponent({
     name: 'OpenLiveApp',
     components: {GlIcon, GlButton, GlDropdownItem, GlLoadingIcon},
     props: {
@@ -25,7 +26,7 @@ export default {
             return null
         }
     }
-}
+})
 </script>
 <template>
     <component :is="component" v-gl-tooltip.hover :title="title" :disabled="disabled" target="_blank" rel="noopener noreferrer" :href ="deployment.url" variant="confirm">

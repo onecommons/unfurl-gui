@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlIcon, GlCard, GlTabs, GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlMarkdown, GlFormRadio, GlLink } from '@gitlab/ui';
 import TableWithoutHeader from 'oc_vue_shared/components/oc/table_without_header.vue';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
@@ -21,7 +23,8 @@ import * as routes from '../../router/constants'
 
 const standalone = window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
+    emits: ['deployTemplate'],
     name: 'ProjectPageHome',
     i18n: {
         buttonLabel: __('Create new template'),
@@ -446,7 +449,7 @@ export default {
             'pushPreparedMutation',
         ])
     }
-}
+})
 </script>
 <template>
     <div data-testid="project-home-page">

@@ -1,6 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlButton, GlFormSelect} from '@gitlab/ui'
-export default {
+export default defineComponent({
+    emits: ['center', 'zoomin', 'zoomout'],
   name: 'MapControls',
   components: {
     GlButton,
@@ -24,7 +26,7 @@ export default {
       }
     }
   }
-}
+})
 </script>
 <template>
   <div id="map-controls" class="map-controls-shell">

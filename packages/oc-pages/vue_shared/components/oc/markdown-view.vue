@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {parseMarkdown} from '../../client_utils/markdown'
-export default {
+export default defineComponent({
     name: 'MarkdownView',
     props: {
         content: String
@@ -15,7 +16,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
     <div v-html="parsed">

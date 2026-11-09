@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 import {ErrorSmall, DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters, mapActions} from 'vuex'
@@ -7,7 +9,7 @@ const DEPLOY_INTO_ENV_MIN_ACCESS = 30
 
 let GLOBAL_providersLoaded = false
 
-export default {
+export default defineComponent({
     name: 'EnvironmentSelection',
     // MODE 3 and modelValue are one change: @vue/compat rewrites modelValue
     // back to value for any component still in MODE 2, so a component cannot
@@ -74,7 +76,7 @@ export default {
         }
         GLOBAL_providersLoaded = true
     }
-}
+})
 
 </script>
 <template>

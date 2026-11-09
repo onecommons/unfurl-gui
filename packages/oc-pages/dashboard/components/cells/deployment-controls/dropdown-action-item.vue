@@ -1,11 +1,12 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlDisclosureDropdownItem} from '@gitlab/ui'
 
 // control-buttons renders every action the same way -- `@click` and an optional
 // `:href` -- because that was gl-dropdown-item's contract. GlDisclosureDropdownItem
 // instead takes an `item` object and emits `action`, so this translates between
 // them and leaves the seventeen call sites alone.
-export default {
+export default defineComponent({
     name: 'DropdownActionItem',
     components: {GlDisclosureDropdownItem},
     props: {
@@ -23,7 +24,7 @@ export default {
             }
         },
     },
-}
+})
 </script>
 <template>
     <gl-disclosure-dropdown-item :item="item" @action="$emit('click', $event)">

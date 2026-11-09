@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlCollapsibleListbox} from '@gitlab/ui'
 import {ZONES} from './gcp-zones'
 
@@ -10,7 +11,7 @@ import {ZONES} from './gcp-zones'
 // modelValue prop as something this never receives, so the update is dropped
 // silently. jest does not reproduce it -- @vue/vue3-jest compiles v-model
 // differently from the build's compiler -- so only a real page catches it.
-export default {
+export default defineComponent({
     name: 'GcpZoneDropdown',
     compatConfig: {MODE: 3, COMPONENT_V_MODEL: false},
     components: {GlCollapsibleListbox},
@@ -45,7 +46,7 @@ export default {
             return this.$options.ZONE_ITEMS.filter(item => item.value.includes(term))
         },
     },
-}
+})
 </script>
 <template>
     <gl-collapsible-listbox

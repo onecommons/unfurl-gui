@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlDropdown, GlDropdownItem, GlDropdownDivider, GlSearchBoxByType } from '@gitlab/ui';
 import { mapGetters, mapState } from 'vuex';
 import { __, sprintf } from '~/locale';
 
-export default {
+export default defineComponent({
   name: 'CiEnvironmentsDropdown',
   components: {
     GlDropdown,
@@ -90,7 +91,7 @@ export default {
       this.searchTerm = '';
     },
   }
-};
+});
 </script>
 <template>
   <gl-dropdown :text="currentValue" :loading="areEnvironmentsLoading" @show="clearSearch">

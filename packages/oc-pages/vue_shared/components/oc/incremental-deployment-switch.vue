@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { mapGetters, mapActions } from 'vuex'
 import { GlToggle } from '@gitlab/ui'
 
 const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
 
-export default {
+export default defineComponent({
     name: 'IncrementalDeploymentSwitch',
     components: {
         GlToggle
@@ -98,7 +99,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
     <gl-toggle labelPosition="hidden" help="Automatically sync this resource with upstream" label="Automatically update this resource with upstream" v-model="incrementalDeploymentEnabled" />

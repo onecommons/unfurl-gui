@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlBadge, GlCard } from '@gitlab/ui'
 
 const SECTION_FOR_KIND = {
@@ -28,7 +29,7 @@ function relationEntriesToItems(entries) {
   })
 }
 
-export default {
+export default defineComponent({
   name: 'CloudGraphInspector',
   components: {
     GlBadge,
@@ -193,7 +194,7 @@ export default {
       return this.expanded[label] !== false
     },
   },
-}
+})
 </script>
 
 <template>

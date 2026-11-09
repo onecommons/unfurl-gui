@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 
-export default {
+export default defineComponent({
     name: 'PipelineDropdownItem',
     props: {
         deploymentItem: Object,
@@ -34,7 +35,7 @@ export default {
         },
         pipelineIndex() { this.updateCommittedDate() }
     }
-}
+})
 </script>
 <template>
     <div v-if="committedDate" class="d-contents">

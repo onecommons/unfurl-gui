@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlButton, GlIcon} from '@gitlab/ui'
 import EnvironmentsIndexTable from '../components/tables/environment-index-table.vue'
 import CreateEnvironmentModal from '../components/create-environment-modal.vue'
@@ -9,7 +10,7 @@ import {__} from '~/locale'
 
 const standalone = window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     components: {GlButton, GlIcon, DashboardBreadcrumbs, EnvironmentsIndexTable, CreateEnvironmentModal},
     data() {
         const query = this.$route.query
@@ -67,7 +68,7 @@ export default {
             
         }
     }
-}
+})
 
 </script>
 <template>

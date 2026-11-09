@@ -1,10 +1,11 @@
 <!-- taken from project_overview/templates for global use -->
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import _ from 'lodash'
 const CONDITION_DEBOUNCE_TIME = 500
 const MESSAGE_DEBOUNCE_TIME = 500
 
-export default {
+export default defineComponent({
     props: {
         condition: {
             default() {return true}
@@ -26,7 +27,7 @@ export default {
         condition: _.debounce(function() {this.shouldDisplay = this.calculateShouldDisplay()}, CONDITION_DEBOUNCE_TIME),
         message: _.debounce(function() {this.shouldDisplay = this.calculateShouldDisplay()}, MESSAGE_DEBOUNCE_TIME)
     }
-}
+})
 </script>
 <template>
     <small v-if="shouldDisplay" class="alert-input">

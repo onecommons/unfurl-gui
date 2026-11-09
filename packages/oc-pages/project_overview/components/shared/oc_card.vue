@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlButton, GlCard, GlIcon, GlBadge, GlTooltipDirective} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
@@ -10,7 +12,7 @@ import templateMixin from './template-mixin'
 
 import { __ } from '~/locale';
 
-export default {
+export default defineComponent({
     name: "OcCard",
     directives: {
         GlTooltip: GlTooltipDirective,
@@ -91,6 +93,7 @@ export default {
             default: false
         }
     },
+    emits: ['deleteNode'],
     data() {
         return {
             title: null,
@@ -277,7 +280,7 @@ export default {
             this.adaptWidth()
         }
     }
-};
+});
 
 </script>
 <template>

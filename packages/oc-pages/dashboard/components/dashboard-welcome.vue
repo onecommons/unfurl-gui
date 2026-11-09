@@ -1,6 +1,7 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
-export default {
+export default defineComponent({
     name: 'DashboardWelcome',
     data() {
         return {
@@ -17,7 +18,7 @@ export default {
 
         }
     }
-}
+})
 </script>
 <template>
     <div v-if="userCanEdit" class="greeting">

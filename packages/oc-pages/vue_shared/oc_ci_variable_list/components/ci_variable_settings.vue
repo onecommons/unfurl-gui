@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { mapState, mapActions, mapGetters } from 'vuex';
 import { projectPathToHomeRoute } from 'oc_vue_shared/client_utils/dashboard';
 import CiVariableDrawer from './ci_variable_drawer.vue';
@@ -17,7 +18,7 @@ import { ADD_VARIABLE_ACTION, EDIT_VARIABLE_ACTION } from '../constants_19_3';
 const MASKABLE_REGEX = '^[a-zA-Z0-9_+=/@:.~-]{8,}$'
 const MASKABLE_RAW_REGEX = '^\\S{8,}$'
 
-export default {
+export default defineComponent({
   components: {
     CiVariableDrawer,
     CiVariableTable,
@@ -129,7 +130,7 @@ export default {
       this.close();
     },
   },
-};
+});
 </script>
 
 <template>

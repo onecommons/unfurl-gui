@@ -1,7 +1,9 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlIcon } from '@gitlab/ui'
 
-export default {
+export default defineComponent({
     name: 'FileTree',
     // ignored by vue 2, but keeps select off the root element's native listeners under vue 3
     emits: ['select'],
@@ -45,7 +47,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
     <ul class="file-tree">

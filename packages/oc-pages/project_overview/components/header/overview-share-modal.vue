@@ -1,9 +1,9 @@
-<script>
+<script lang="ts">
 
 const QUERY_PARAM = 'share'
 const DEPLOY_BUTTON_PARAM = 'deploy-btn'
 
-import {nextTick} from 'vue'
+import {nextTick, defineComponent} from 'vue'
 import _ from 'lodash'
 import { mapState } from 'vuex'
 import {compatibilityUnfurlBadgeUrlBuilder as initUnfurlBadgeUrlBuilder} from 'oc_vue_shared/compat'
@@ -12,7 +12,7 @@ import { GlModal } from '@gitlab/ui'
 
 const enabled = !window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'OverviewShareModal',
     components: {
         GlModal
@@ -104,7 +104,7 @@ export default {
         },
     },
     //data() {}
-}
+})
 </script>
 <template>
 <gl-modal v-if="enabled" modalId="overview-share-modal" title="Create an embeddable 'Deploy With Unfurl' button for this blueprint." :visible="visible" @hidden="visible = false">

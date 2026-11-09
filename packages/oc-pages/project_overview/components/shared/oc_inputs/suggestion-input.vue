@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 /*
  * The el-autocomplete replacement for the four fork-only inputs.
  *
@@ -19,7 +20,7 @@
  */
 import {GlFormCombobox, GlFormGroup, GlFormInput} from '@gitlab/ui'
 
-export default {
+export default defineComponent({
     name: 'SuggestionInput',
     components: {GlFormCombobox, GlFormGroup, GlFormInput},
     // Callers keep v-model, which compat compiles to an `onModelCompat:input`
@@ -77,7 +78,7 @@ export default {
             this.load(value)
         }
     }
-}
+})
 </script>
 <template>
     <gl-form-group v-if="disabled" :label="label">

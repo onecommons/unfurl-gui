@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import DeploymentsIndexTable from '../components/tables/deployment-index-table.vue'
 import DashboardBreadcrumbs from '../components/dashboard-breadcrumbs.vue'
 import {mapGetters} from 'vuex'
@@ -6,7 +7,7 @@ import * as routes from '../router/constants'
 import {__} from '~/locale'
 
 
-export default {
+export default defineComponent({
     components: {DashboardBreadcrumbs, DeploymentsIndexTable},
     data() {
         const query = this.$route.query
@@ -28,7 +29,7 @@ export default {
             return this.getDashboardItems.filter(item => item.deployment)
         }
     }
-}
+})
 
 </script>
 <template>

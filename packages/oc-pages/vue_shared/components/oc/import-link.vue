@@ -1,10 +1,11 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {GlBadge, GlPopover} from '@gitlab/ui'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
-export default {
+export default defineComponent({
     name: 'ImportLink',
     props: {
         card: Object
@@ -41,7 +42,7 @@ export default {
             return this.card?.imported && this.deploymentLink && this.deploymentTitle
         }
     }
-}
+})
 
 </script>
 <template>

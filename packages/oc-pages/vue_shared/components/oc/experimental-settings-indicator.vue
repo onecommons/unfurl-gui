@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {CONFIGURABLE_HIDDEN_OPTIONS, lookupKey, setLocalStorageKey, clearSettings} from '../../storage-keys'
 import {settingsIndicatorAnchor} from 'oc_vue_shared/client_utils/gitlab-chrome'
 import {GlButton, GlCard, GlIcon, GlModal} from '@gitlab/ui'
@@ -8,7 +10,7 @@ import ExperimentalSettingInput from './experimental-settings-indicator/experime
 
 const enabled = !window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'ExperimentalSettingIndicator',
     components: {GlButton, GlCard, GlIcon, GlModal, ErrorSmall, ExperimentalSettingInput},
     data() {
@@ -103,7 +105,7 @@ export default {
             ) this.modal = true
         })
     }
-}
+})
 </script>
 <template>
     <div v-if="enabled">

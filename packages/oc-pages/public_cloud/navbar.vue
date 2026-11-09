@@ -1,11 +1,14 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 const NAV_STRUCTURE = ['Cloud Provider', 'Region', 'Test Bed Project']
-export default {
+export default defineComponent({
   name: 'Navbar',
   props: {
     top: Number,
     focus: Object,
   },
+  emits: ['focusChange'],
   computed: {
     path() {
       if(!this.focus || this.focus.depth == 0) return []
@@ -36,7 +39,7 @@ export default {
       this.$emit('focusChange', newFocus)
     }
   }
-}
+})
 </script>
 <template>
   <div class="self" :style="`top: ${top}px`">

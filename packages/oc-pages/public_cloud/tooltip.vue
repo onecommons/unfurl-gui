@@ -1,12 +1,12 @@
-<script>
+<script lang="ts">
 import CloudProvider from './components/CloudProvider.vue'
 import Deployment from './components/Deployment.vue'
 import Region from './components/Region.vue'
 import Account from './components/Account.vue'
 import ResourceType from './components/ResourceType.vue'
-import {nextTick} from 'vue'
+import {nextTick, defineComponent} from 'vue'
 
-export default {
+export default defineComponent({
   name: 'Tooltip',
   props: {
     item: Object,
@@ -83,7 +83,7 @@ export default {
     }
   },
 
-}
+})
 </script>
 <template>
   <div

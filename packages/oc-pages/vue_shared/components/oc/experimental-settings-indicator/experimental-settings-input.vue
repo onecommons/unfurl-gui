@@ -1,12 +1,14 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {lookupKey, setLocalStorageKey} from '../../../storage-keys'
 import {GlFormInput, GlFormInputGroup} from '@gitlab/ui'
-export default {
+export default defineComponent({
     name: 'ExperimentalSettingInput',
     components: {GlFormInput, GlFormInputGroup},
     props: {
         option: Object
     },
+    emits: ['changed'],
     data() {
         return {
             inner: lookupKey(this.option.key)
@@ -24,7 +26,7 @@ export default {
             }
         }
     }
-}
+})
 </script>
 <template>
     <!-- gl-form-input has no prepend slot; the group provides it -->

@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {GlLoadingIcon, GlModal} from '@gitlab/ui'
@@ -9,7 +11,7 @@ export function pollableDashboardItem(item) {
     return Boolean(item?.deployment && item?.environment)
 }
 
-export default {
+export default defineComponent({
     name: 'Dashboard',
     data() {return {isLoaded: false, doNotRender: false, standalone: !!window.gon.unfurl_gui}},
     components: {GlLoadingIcon, GlModal, LocalDeploy, DashboardDeployDialog},
@@ -121,7 +123,7 @@ export default {
 
         this.isLoaded = true
     }
-}
+})
 </script>
 <template>
     <div>

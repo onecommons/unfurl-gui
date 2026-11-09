@@ -1,4 +1,5 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import {GlDisclosureDropdown, GlButtonGroup} from '@gitlab/ui'
 import {mapGetters, mapActions} from 'vuex'
 import {lookupKey} from 'oc_vue_shared/storage-keys'
@@ -19,7 +20,7 @@ function emitDeploymentItemFor(eventNames) {
     return result
 }
 
-export default {
+export default defineComponent({
     props: {
         resumeEditingLink: [Object, String],
         viewDeploymentLink: [Object, String],
@@ -252,7 +253,7 @@ export default {
         },
 
     },
-}
+})
 </script>
 <template>
 <div class="deployment-controls-outer">

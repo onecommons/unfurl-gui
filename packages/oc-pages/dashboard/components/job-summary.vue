@@ -1,9 +1,10 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { mapGetters } from 'vuex'
 import { GlBadge } from '@gitlab/ui'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
-export default {
+export default defineComponent({
     name: 'JobSummary',
     components: { GlBadge, TableComponent },
     props: {
@@ -72,7 +73,7 @@ export default {
             if(lineNo) return `#L${this.taskLineNo(item)}`
         }
     }
-}
+})
 </script>
 <template>
     <div class="job-summary">

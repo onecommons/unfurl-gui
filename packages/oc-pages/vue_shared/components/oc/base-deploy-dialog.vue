@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { GlModalDirective, GlFormGroup, GlFormInput, GlFormRadio } from '@gitlab/ui';
 import { mapGetters, mapActions } from 'vuex';
 import _ from 'lodash'
@@ -14,7 +16,7 @@ import * as overview_routes from '../../../project_overview/router/constants'
 
 const standalone = window.gon.unfurl_gui
 
-export default {
+export default defineComponent({
     name: 'BaseDeployDialog',
     mixins: [homeProjectDefaultBranch],
     components: {
@@ -35,6 +37,7 @@ export default {
         projectPath: String,
         applicationBlueprint: Object
     },
+    emits: ['completionStatusSet'],
     directives: {
         GlModal: GlModalDirective,
     },
@@ -227,7 +230,7 @@ export default {
             delete sessionStorage['instantiate_env']
         }
     }
-}
+})
 </script>
 <template>
     <environment-creation-dialog v-if="applicationBlueprint && creatingEnvironment" ref="environmentDialog"

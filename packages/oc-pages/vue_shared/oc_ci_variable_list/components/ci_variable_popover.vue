@@ -1,7 +1,8 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlPopover, GlButton, GlTooltipDirective } from '@gitlab/ui';
 
-export default {
+export default defineComponent({
   maxTextLength: 95,
   components: {
     GlPopover,
@@ -32,7 +33,7 @@ export default {
       return this.value;
     },
   },
-};
+});
 </script>
 
 <template>

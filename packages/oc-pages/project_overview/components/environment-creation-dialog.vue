@@ -1,4 +1,6 @@
-<script>
+<script lang="ts">
+// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
+import {defineComponent} from 'vue'
 import { __ } from '~/locale';
 import _ from 'lodash'
 import { slugify, USER_HOME_PROJECT } from 'oc_vue_shared/util'
@@ -45,7 +47,7 @@ const DEDICATED_PROVIDER_PANELS = ['gcp', 'aws']
 // keep the user waiting on a re-read that may never settle.
 const ENVIRONMENT_REREAD_TIMEOUT_MS = 8000
 
-export default {
+export default defineComponent({
     components: {
         GlFormGroup,
         GlFormInput,
@@ -66,6 +68,7 @@ export default {
             default: false
         }
     },
+    emits: ['cloudProviderChange', 'environmentNameChange'],
     data() {
         return {
             environmentName: '',
@@ -314,7 +317,7 @@ export default {
             this.selectedCloudProvider = this.environmentsList[0]
         }
     }
-}
+})
 </script>
 <template>
 

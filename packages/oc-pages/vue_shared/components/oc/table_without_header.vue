@@ -1,8 +1,9 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import TableListRow from './table_list_row.vue';
 import { __ } from '~/locale';
 
-export default {
+export default defineComponent({
     name: "TableWithoutHeader",
     components: {
         TableListRow
@@ -23,7 +24,7 @@ export default {
         };
     },
     methods: {}
-};
+});
 </script>
 <template>
   <div class="row-fluid">
