@@ -9,3 +9,7 @@ declare module 'oc/pages/projects/edit/uf_badge' {
 declare module '~/ci/job_details' {
     export const initJobDetails: () => unknown
 }
+
+// @gitlab/ui ships no declarations; components use it untyped. Declared here
+// because this file is a script: in a module, this would be an augmentation.
+declare module '@gitlab/ui'

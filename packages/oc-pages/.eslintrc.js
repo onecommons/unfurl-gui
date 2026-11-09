@@ -56,5 +56,15 @@ module.exports = {
         warnOnUnsupportedTypeScriptVersion: false,
       },
     },
+    {
+      // <script lang="ts"> to the same parser; plain <script> keeps the default
+      files: ["*.vue"],
+      parserOptions: {
+        parser: {
+          ts: require.resolve("@typescript-eslint/parser", {paths: [`${__dirname}/../..`]}),
+        },
+        warnOnUnsupportedTypeScriptVersion: false,
+      },
+    },
   ],
 };
