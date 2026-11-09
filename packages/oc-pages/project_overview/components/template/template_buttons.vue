@@ -1,11 +1,15 @@
-<script>
+<script lang="ts">
+import {defineComponent} from 'vue'
 import { GlButton, GlTooltipDirective } from '@gitlab/ui';
 import {__} from '~/locale'
 import _ from 'lodash'
 import {mapGetters} from 'vuex'
 import DeployButton from './deploy_button.vue'
 
-export default {
+// what the throttled handlers below need from the instance
+type Emitter = {$emit: (event: string, ...args: unknown[]) => void}
+
+export default defineComponent({
     name: 'TemplateButtons',
     directives: {
         GlTooltip: GlTooltipDirective,
@@ -25,6 +29,10 @@ export default {
         mergeRequest: Object,
         saveTooltip: String
     },
+    emits: [
+        'saveTemplate', 'saveDraft', 'triggerDeploy', 'mergeRequestReady',
+        'triggerLocalDeploy', 'launchModalDeleteTemplate', 'cancelDeployment',
+    ],
 
     methods: {
         // TODO these should just all be disabled after an interaction
@@ -37,16 +45,16 @@ export default {
             this.$emit('saveDraft');
         },
 
-        triggerDeploy: _.throttle(function (...args) {
+        triggerDeploy: _.throttle(function (this: Emitter, ...args: unknown[]) {
             this.$emit('triggerDeploy', ...args);
         }, 3000),
 
-        mergeRequestReady: _.throttle(function (...args) {
+        mergeRequestReady: _.throttle(function (this: Emitter, ...args: unknown[]) {
             this.$emit('mergeRequestReady', ...args);
         }, 3000),
 
 
-        triggerLocalDeploy: _.throttle(function (...args) {
+        triggerLocalDeploy: _.throttle(function (this: Emitter, ...args: unknown[]) {
             this.$emit('triggerLocalDeploy', ...args);
         }, 3000),
 
@@ -79,7 +87,7 @@ export default {
             return __(`Delete ${this.target}`)
         },
     }
-}
+})
 </script>
 <template>
     <div class="gl-mt-6 gl-mb-6 gl-flex gl-justify-between template-buttons gl-flex-wrap">
