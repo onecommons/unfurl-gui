@@ -13,6 +13,7 @@ import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {nextTick, defineComponent} from 'vue'
 import type {PropType} from 'vue'
+import type {TableField} from 'oc_vue_shared/components/oc/table.vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import MergeRequestsTable from './merge-requests-table.vue'
@@ -130,7 +131,7 @@ export default defineComponent({
     data() {
         const glDark = !!document.querySelector('body.gl-dark')
         const self = this
-        const fields = [
+        const fields: TableField[] = [
             {key: 'deployment', groupBy: deploymentGroupBy, label: 'Deployment'},
             {
                 key: 'environment',

@@ -22,6 +22,8 @@ declare module 'vue' {
     __: (text: string) => string
     n__: (singular: string, plural: string, count: number) => string
     s__: (keyOrContext: string, key?: string) => string
+    // GlToast; only the dashboard app installs it
+    $toast?: {show(message: string, options?: {onComplete?(): void}): unknown}
   }
 }
 

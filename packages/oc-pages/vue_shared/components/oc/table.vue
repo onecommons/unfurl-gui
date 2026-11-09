@@ -3,8 +3,23 @@ import {defineComponent} from 'vue'
 import { GlIcon, GlTable, GlFormInput, GlTooltipDirective } from "@gitlab/ui";
 import _ from 'lodash';
 import { __, n__ } from '~/locale';
+import type {PropType} from 'vue'
 
-function searchMatchingFunction(_cellContent, searchKey) {
+// a row is built up column by column, so its keys are the columns' keys
+type Row = Record<string, any>
+export interface TableField {
+  key: string
+  label: string
+  groupBy?: string | ((item: Row) => unknown)
+  textValue?: (item: Row) => unknown
+  pluralize?: (count: number, item: Row) => string | undefined
+  s?: string
+  shallow?: boolean
+  [option: string]: unknown
+}
+type Column = Partial<TableField> & {key: string, label: string, index?: number, thStyle?: {width: string}}
+
+function searchMatchingFunction(_cellContent: unknown, searchKey: string) {
   const cellContent = typeof _cellContent == 'object'? JSON.stringify(_cellContent): _cellContent?.toString()
   if(!(cellContent && cellContent.toLowerCase)) return false;
   if(searchKey.length <= 2) {
@@ -14,7 +29,7 @@ function searchMatchingFunction(_cellContent, searchKey) {
   }
 }
 
-function* expandRows(fields: any[], children: any[], _depth = 0, parent=null) {
+function* expandRows(fields: TableField[], children: Row[], _depth = 0, parent: Row | null = null): Generator<Row> {
   if(fields.length == 0) return;
   const field = fields[0]
   const columnName = field.key, remainingColumns = _.tail(fields);
@@ -59,7 +74,7 @@ function* expandRows(fields: any[], children: any[], _depth = 0, parent=null) {
         }
       }
 
-      const childGroups = _.groupBy(parentRow._children, (child) => child._key);
+      const childGroups = _.groupBy(parentRow._children, (child: Row) => child._key);
       for(const key in childGroups){
         const childGroup = childGroups[key];
         if(childGroup.length == 1) {
@@ -81,17 +96,17 @@ function* expandRows(fields: any[], children: any[], _depth = 0, parent=null) {
         }
       }
 
-      parentRow.childrenOfGroup = function(group) {
+      parentRow.childrenOfGroup = function(this: Row, group: string): number {
         let result = 0;
         result = this._children
-          .map(child => child.childrenOfGroup(group))
-          .reduce((a,b) => a + b, 0);
+          .map((child: Row) => child.childrenOfGroup(group))
+          .reduce((a: number, b: number) => a + b, 0);
           if (this[group]) result ++;
 
           return result;
       };
 
-      parentRow.childrenToDepth = function*(n) {
+      parentRow.childrenToDepth = function*(this: Row, n: number): Generator<Row> {
         for(const child of this._children) {
           if(!child) break;
           if(n == -1 || child._depth <= n) {
@@ -106,23 +121,23 @@ function* expandRows(fields: any[], children: any[], _depth = 0, parent=null) {
         }
       };
 
-      parentRow.expose = function() {
+      parentRow.expose = function(this: Row) {
         this._expanded = true;
         if(this._parent) this._parent.expose();
       };
 
-      parentRow.setChildrenToDepth = function(n, state) {
+      parentRow.setChildrenToDepth = function(this: Row, n: number, state: boolean) {
         for(const child of this.childrenToDepth(n)) {
           child._expanded = state;
         }
       };
 
-      parentRow.shouldDisplay = function() {
+      parentRow.shouldDisplay = function(this: Row): boolean {
         if(this._depth == 0) return true;
         return parentRow._expanded && ((!parentRow._parent) || parentRow._parent.shouldDisplay());
       };
 
-      parentRow.isChild = function() {
+      parentRow.isChild = function(this: Row) {
         return this._depth != 0;
       };
 
@@ -148,15 +163,15 @@ function* expandRows(fields: any[], children: any[], _depth = 0, parent=null) {
 export default defineComponent({
   name: 'TableComponent',
   props: {
-    items: Array,
-    fields: Array,
+    items: {type: Array as PropType<Row[]>, required: true},
+    fields: {type: Array as PropType<TableField[]>, required: true},
     useCollapseAll: {
       type: Boolean,
       default: true
     },
     hideFilter: { type: Boolean, default: false },
     noMargin: { type: Boolean, default: false },
-    rowClass: [Object, Function],
+    rowClass: [Object, Function] as PropType<Row | ((item: Row | null, type: string) => unknown)>,
     startExpanded: Boolean
   },
   directives: {
@@ -177,14 +192,14 @@ export default defineComponent({
     // state must not satisfy a "content rendered" assertion.
     markedRowClass() {
       const given = this.rowClass
-      return (item, type) => [
+      return (item: Row | null, type: string) => [
         item ? 'oc-table-row' : null,
         typeof given === 'function' ? given(item, type) : given || null
       ]
     },
 
-    _items() {
-      const result = [];
+    _items(): Row[] {
+      const result: Row[] = [];
       let i = 0;
       for(const row of expandRows(this.fields, this.items)) {
         row.index = i++;
@@ -193,8 +208,8 @@ export default defineComponent({
       (window as any).items = result
       return result;
     },
-    _fields() {
-      const result = this.useCollapseAll? [{key: "selected", label: "", thStyle: {width: '0px'}}] : [];
+    _fields(): Column[] {
+      const result: Column[] = this.useCollapseAll? [{key: "selected", label: "", thStyle: {width: '0px'}}] : [];
       let i = 0;
       for(const field of this.fields) {
         const label = field.label.trim()
@@ -205,7 +220,7 @@ export default defineComponent({
       return result;
     },
     keys() {
-      const result = {};
+      const result: Record<string, number> = {};
       for(const field of this._fields) {
         if(field.index !== undefined) {
           result[field.key] = field.index;
@@ -229,7 +244,7 @@ export default defineComponent({
     }
   },
   methods: {
-    pluralize(scope) {
+    pluralize(scope: {item: Row, field: TableField}) {
       const count = scope.item.childrenOfGroup(scope.field.key) || 0
       if(scope.field.pluralize) {
         const result = scope.field.pluralize(count, scope.item)
@@ -241,11 +256,11 @@ export default defineComponent({
       const result = `${count} ${n__(scope.field.s, scope.field.label, count)}`;
       return result;
     },
-    filterFn(row, filterState) {
+    filterFn(row: Row, filterState: unknown) {
       const result = row.shouldDisplay();
       return result;
     },
-    toggleExpanded(row, depth) {
+    toggleExpanded(row: number, depth: number) {
       const item = this._items[row];
       item.setChildrenToDepth(depth, !this.expandedAt(row, depth));
       if(this.filter) {
@@ -260,7 +275,7 @@ export default defineComponent({
         }
       }
     },
-    expandedAt(row, depth) {
+    expandedAt(row: number, depth: number) {
       const item = this._items[row];
       for(const child of item.childrenToDepth(depth)) {
         if(!child._expanded) {
@@ -277,12 +292,12 @@ export default defineComponent({
       return true;
 
     },
-    tooltip(scope) {
+    tooltip(scope: {item: Row, field: TableField}) {
       const {item, field} = scope;
       const result= item.tooltips && item.tooltips[field.key];
       return result;
     },
-    onFilterChange(e){
+    onFilterChange(e: string){
       let result = false;
       for(const item of this._items) {
         let matched = false;
@@ -297,15 +312,20 @@ export default defineComponent({
       }
       return result;
     },
-    debouncedSearch: _.debounce(function() {
+    // KNOWN BUG: debounced once for the module, so every table on a page
+    // shares the timer and a filter typed into one can skip another's toast
+    debouncedSearch: _.debounce(function(this: {showNoResults(): void}) { this.showNoResults() }, 1000),
+    showNoResults() {
       if(this.filter.length >= 3 && !this.matchedResults && !this.showingToast) {
+        // every table that shows its filter is on the dashboard, which installs GlToast
+        if(!this.$toast) return
         this.showingToast = true;
         const instance = this;
         this.$toast.show('No results found', {
           onComplete(){ instance.showingToast = false; }
         });
       }
-    }, 1000)
+    }
   },
 
   created() {

@@ -1,5 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
+import type {TableField} from 'oc_vue_shared/components/oc/table.vue'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue'
 import EnvironmentCell from '../cells/environment-cell.vue'
 import ApplicationCell from '../cells/application-cell.vue'
@@ -19,12 +21,12 @@ export default defineComponent({
     },
     props: {
         items: {
-            type: Array,
+            type: Array as PropType<Record<string, any>[]>,
             required: true
         }
     },
     data() {
-        const fields = [
+        const fields: TableField[] = [
             {
                 key: 'environment',
                 label: 'Environment',

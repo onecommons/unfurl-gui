@@ -75,6 +75,7 @@
   "vue_shared/components/oc/page-not-found.vue",
   "vue_shared/components/oc/project-icon.vue",
   "vue_shared/components/oc/redacted.vue",
+  "vue_shared/components/oc/table.vue",
   "vue_shared/components/oc/table_list_row.vue",
   "vue_shared/components/oc/table_without_header.vue",
   "vue_shared/components/oc/ufgui-errors.vue",
