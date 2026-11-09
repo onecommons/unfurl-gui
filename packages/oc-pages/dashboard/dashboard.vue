@@ -109,8 +109,10 @@ export default defineComponent({
         if(sessionStorage['trigger-deployment']) {
             // we need to await this because our updates all have a shared global state
             // the user can potentially initiate other update operations while one or more of this trigger's subrequests are in flight
+            // outside the try: the catch reports it
+            let context
             try {
-                const context = JSON.parse(sessionStorage['trigger-deployment'])
+                context = JSON.parse(sessionStorage['trigger-deployment'])
                 await this.deployInto(context)
                 delete sessionStorage['trigger-deployment']
             } catch(e) {
