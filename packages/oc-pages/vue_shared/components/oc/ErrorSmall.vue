@@ -23,9 +23,20 @@ export default defineComponent({
             return this.condition && (this.message || this.message === null)
         }
     },
+    created() {
+        // per instance: debounced once at module level, one timer served every
+        // ErrorSmall on the page, and only the last to change was updated
+        const update = () => { this.shouldDisplay = this.calculateShouldDisplay() }
+        this.conditionChanged = _.debounce(update, CONDITION_DEBOUNCE_TIME)
+        this.messageChanged = _.debounce(update, MESSAGE_DEBOUNCE_TIME)
+    },
+    beforeUnmount() {
+        this.conditionChanged.cancel()
+        this.messageChanged.cancel()
+    },
     watch: {
-        condition: _.debounce(function() {this.shouldDisplay = this.calculateShouldDisplay()}, CONDITION_DEBOUNCE_TIME),
-        message: _.debounce(function() {this.shouldDisplay = this.calculateShouldDisplay()}, MESSAGE_DEBOUNCE_TIME)
+        condition() { this.conditionChanged() },
+        message() { this.messageChanged() }
     }
 })
 </script>
