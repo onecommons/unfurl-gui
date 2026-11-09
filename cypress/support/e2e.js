@@ -73,12 +73,55 @@ Cypress.log = function (opts, ...other) {
 // "cy.find() ... subject received was null") even though the element is there.
 const LOG_BUF = []
 const emit = line => { if (LOG_BUF.length < 800) LOG_BUF.push(line) }
+// for the rare lines that explain a failure; never dropped by the cap above
+const emitAlways = line => LOG_BUF.push(line)
 function flushLogs() {
   if (!LOG_BUF.length) return
   const lines = LOG_BUF.splice(0, LOG_BUF.length)
   cy.task('log', lines.join('\n'), {log: false})
 }
 afterEach(flushLogs)
+
+// Names what reloads a page mid-spec: a script's location.reload() or
+// assignment shows up with the stack that made it, and the dev server's live
+// reload with the message that triggered it. Location's methods cannot be
+// wrapped, so this listens to the Navigation API instead.
+const DEV_SERVER_QUIET = new Set(['hash', 'ok', 'still-ok', 'overlay', 'hot', 'liveReload', 'logging', 'reconnect', 'progress'])
+function probeReloads(win, serialize) {
+  const now = () => new Date().toISOString().slice(11, 23)
+  try {
+    win.navigation?.addEventListener('navigate', e => {
+      if (e.destination?.sameDocument) return
+      const raw = new Error().stack || ''
+      const stack = raw.includes('/__cypress/runner/') ? 'cy.visit' :
+        raw.split('\n').slice(2, 16).map(l => l.trim()).join(' \\n ')
+      emitAlways(`[reload-probe ${now()}] ${e.navigationType} -> ${e.destination?.url} userInitiated=${e.userInitiated} | ${stack}`)
+    })
+  } catch (_) {}
+  try {
+    const Native = win.WebSocket
+    win.WebSocket = function(...args) {
+      const ws = new Native(...args)
+      ws.addEventListener('message', m => {
+        try {
+          const {type, data} = JSON.parse(m.data)
+          if (!DEV_SERVER_QUIET.has(type)) emitAlways(`[reload-probe ${now()}] ws ${args[0]} ${type} ${serialize(data).slice(0, 300)}`)
+        } catch (_) {}
+      })
+      return ws
+    }
+    for (const k of ['CONNECTING', 'OPEN', 'CLOSING', 'CLOSED']) win.WebSocket[k] = Native[k]
+    win.WebSocket.prototype = Native.prototype
+  } catch (_) {}
+  const info = win.console.info.bind(win.console)
+  win.console.info = (...args) => {
+    try {
+      const msg = args.map(serialize).join(' ')
+      if (/webpack-dev-server|rspack|\[HMR\]|Reloading/i.test(msg)) emitAlways(`[reload-probe ${now()}] info ${msg.slice(0, 300)}`)
+    } catch (_) {}
+    info(...args)
+  }
+}
 
 before(() => {
   Cypress.on('window:before:load', win => {
@@ -99,6 +142,7 @@ before(() => {
       }
       return String(a)
     }
+    probeReloads(win, serialize)
     for (const level of ['log', 'warn', 'error']) {
       const orig = win.console[level].bind(win.console)
       win.console[level] = (...args) => {
