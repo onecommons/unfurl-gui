@@ -11,6 +11,7 @@ import {lookupCloudProviderAlias, cloudProviderFriendlyName, slugify, STD_REPOSI
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import {fetchDashboardProviders, deleteEnvironment} from 'oc_vue_shared/client_utils/environments'
 import {fetchProvider, deleteProvider} from 'oc_vue_shared/client_utils/environment-providers'
+import type {Provider} from 'oc_vue_shared/client_utils/environment-providers'
 import {defineAsyncComponent, defineComponent} from 'vue'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'
 import {mapProviderProps} from './provider-props'
@@ -28,6 +29,14 @@ const ADD_PROVIDER_ENABLED = false
 
 const standalone = window.gon.unfurl_gui
 
+type Json = Record<string, any>
+interface DeploymentResourcesRef {
+    cleanModalResource(): void
+    scrollDown(name: string): void
+    promptAddProvider(): void
+    promptAddExternalResource(): void
+}
+
 export default defineComponent({
     name: 'Environment',
     components: {
@@ -44,7 +53,7 @@ export default defineComponent({
     },
     data() {
         const width = {width: 'max(500px, 50%)'}
-        return {environment: {} as Record<string, any>, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, providerRecord: null, variablesLoaded: false, savingProvider: false}
+        return {environment: {} as Record<string, any>, width, currentTab: 0, fetchedConnectable: false, fetchedProviders: false, isNewProvider: false, standalone, providerRecorded: false, providerRecord: null as Provider | null, variablesLoaded: false, savingProvider: false}
     },
     computed: {
         ...mapGetters([
@@ -134,7 +143,7 @@ export default defineComponent({
         },
         showingProviderModal: {
             get() { return this.$route.query.hasOwnProperty('provider') && !this.$route.query.provider },
-            set(val) {
+            set(val: boolean) {
                 const query = {...this.$route.query}
                 if(val) { query.provider = null }
                 else { delete query.provider }
@@ -151,15 +160,19 @@ export default defineComponent({
         },
         // gcp and aws collect their credentials in a panel of their own; the query
         // names which one, and the page is theirs until it is saved or cancelled.
-        providerSetup() {
+        // the setup panel ?provider= asks for, if it names one
+        requestedPanel(): string | null {
             const provider = this.$route.query.provider
+            return typeof provider == 'string' && PROVIDER_SETUP_PANELS.includes(provider)? provider: null
+        },
+        providerSetup() {
             // providerRecorded suppresses the panel for a provider that already
             // exists, so that saving one does not drop the user straight back
             // into setup. `editProvider` is the user asking for it on purpose --
             // otherwise gcp and aws have no edit path at all, since
             // editableProviders leaves their primary out.
             if(this.providerRecorded && !this.$route.query.hasOwnProperty('editProvider')) return null
-            return PROVIDER_SETUP_PANELS.includes(provider)? provider: null
+            return this.requestedPanel
         },
         addProviderEnabled() {
             return ADD_PROVIDER_ENABLED
@@ -200,23 +213,24 @@ export default defineComponent({
         },
         publicCloudResources() {
             // NOTE: hardcoded names
-            return this.getCardsStacked.filter(card => card._localTypeName == 'UnfurlUserDNSZone')
+            return this.getCardsStacked.filter((card: Json) => card._localTypeName == 'UnfurlUserDNSZone')
         },
         showingPublicCloudTab() {
             return this.currentTab == this.publicCloudTabIndex
         },
         resourceFilter() {
             if(this.showingPublicCloudTab){
-                return (resource) => !this.isProvider(resource) && this.publicCloudResources.includes(resource)
+                return (resource: Json) => !this.isProvider(resource) && this.publicCloudResources.includes(resource)
             } else {
-                return (resource) => !this.isProvider(resource) && !this.publicCloudResources.includes(resource)
+                return (resource: Json) => !this.isProvider(resource) && !this.publicCloudResources.includes(resource)
             }
         },
-        environmentName() {
-            return this.$route.params.name
+        // the route is /-/environments/:name, a single segment
+        environmentName(): string {
+            return this.$route.params.name as string
         },
         additionalProviders() {
-            return this.getCardsStacked.filter(card => card.name != 'primary_provider' && lookupCloudProviderAlias(card._localTypeName))
+            return this.getCardsStacked.filter((card: Json) => card.name != 'primary_provider' && lookupCloudProviderAlias(card._localTypeName))
         },
         editableProviders() {
             // getPrimaryCard falls back to {}, which is truthy, so an environment with
@@ -252,10 +266,13 @@ export default defineComponent({
             'setUpdateObjectProjectPath',
             'clientDisregardUncommitted'
         ]),
-        onExternalAdded({selection, title}) {
+        deploymentResources(): DeploymentResourcesRef {
+            return this.$refs.deploymentResources as DeploymentResourcesRef
+        },
+        onExternalAdded({selection, title}: {selection: Json, title: string}) {
             this.createNodeResource({selection, name: slugify(title), title, isEnvironmentInstance: true})
-            this.$refs.deploymentResources.cleanModalResource()
-            this.$refs.deploymentResources.scrollDown(slugify(title))
+            this.deploymentResources().cleanModalResource()
+            this.deploymentResources().scrollDown(slugify(title))
         },
         async loadProviderVariables() {
             if(this.variablesLoaded) return
@@ -278,18 +295,18 @@ export default defineComponent({
             })
         },
 
-        scrollToProvider(name) {
+        scrollToProvider(name: string) {
             // hoping this works in the vast majority of cases
             // the alternative seems to be to poll the DOM until this tab shows up
             this.showingProviderModal = true
             setTimeout(
                 () => {
-                    this.$refs.deploymentResources.scrollDown(name)
+                    this.deploymentResources().scrollDown(name)
                 }, 100
             )
 
         },
-        async onProviderAdded({selection, name, title}, fresh=false, clientDisregardUncommitted=false) {
+        async onProviderAdded({selection, name, title}: {selection: Json, name?: string, title: string}, fresh=false, clientDisregardUncommitted=false) {
             if(!fresh) await this.freshState()
             await this.createNodeResource({selection, name: name || slugify(title), title, isEnvironmentInstance: true})
             if(selection._localName == lookupCloudProviderAlias('k8s')) {
@@ -302,11 +319,11 @@ export default defineComponent({
 
             if(clientDisregardUncommitted) this.clientDisregardUncommitted()
 
-            this.$refs.deploymentResources.cleanModalResource()
+            this.deploymentResources().cleanModalResource()
 
             this.scrollToProvider(slugify(title))
         },
-        async onSaveProviderTemplate(...args) {
+        async onSaveProviderTemplate() {
             // Close before the round-trip, not after: leaving the modal up while
             // the save and re-read complete reads as a hang, and it covers the
             // tabs underneath. The flag suppresses the watcher's refresh while
@@ -376,7 +393,7 @@ export default defineComponent({
             await this.ocFetchEnvironments({fullPath: this.getHomeProjectPath})
             await this.freshState()
         },
-        async onProviderSetupSaved(provider) {
+        async onProviderSetupSaved(provider: string) {
             // the blueprint overview page a redirect returns to preselects the
             // environment it was sent away to create
             sessionStorage['instantiate_env'] = this.environmentName
@@ -423,7 +440,7 @@ export default defineComponent({
             this.setUpdateObjectProjectPath(this.getHomeProjectPath)
             this.setUpdateType('delete-environment')
 
-            this.pushPreparedMutation(function(accumulator) {
+            this.pushPreparedMutation(function(accumulator: unknown) {
                 return [ {typename: 'DeploymentEnvironment', target: environment.name, patch: null} ]
             })
 
@@ -435,17 +452,17 @@ export default defineComponent({
             return visitUrl(this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX}).href)
         },
 
-        headerTitle(provider) {
+        headerTitle(provider: Json | null) {
             if(!provider) return null
             return provider.name == 'primary_provider'? this.cloudProviderDisplayName : provider.title
         },
 
-        schema(provider) {
+        schema(provider: Json | null) {
             if(!provider) return null
             return this.resolveResourceTypeFromAny(provider.type)?.inputsSchema
         },
 
-        isProvider(resource) {
+        isProvider(resource: Json) {
             // NOTE: hardcoded names
             return resource.name == 'primary_provider' || lookupCloudProviderAlias(resource._localTypeName)
         },
@@ -482,8 +499,7 @@ export default defineComponent({
 
             // An environment that already carries a provider row is set up; the
             // panel exists only for one that does not.
-            this.providerRecorded = PROVIDER_SETUP_PANELS.includes(this.$route.query.provider) &&
-                !!this.providerRecord
+            this.providerRecorded = !!this.requestedPanel && !!this.providerRecord
 
             // An edit renders the stored credentials, which live in the
             // environment's CI variables rather than in the export. Covers
@@ -553,7 +569,7 @@ export default defineComponent({
             this.setAvailableResourceTypes(this.environmentLookupDiscoverable(environment))
         },
 
-        onHide(e) {
+        onHide(e: Event) {
             if(this.showingProviderModal) {
                 e.preventDefault()
                 if(this.isNewProvider) {
@@ -577,7 +593,7 @@ export default defineComponent({
         async addProvider() {
             await this.fetchProviders()
 
-            this.$refs.deploymentResources.promptAddProvider()
+            this.deploymentResources().promptAddProvider()
         },
 
         async addExternalResources() {
@@ -591,9 +607,9 @@ export default defineComponent({
                 }
             }
 
-            this.$refs.deploymentResources.promptAddExternalResource()
+            this.deploymentResources().promptAddExternalResource()
         },
-        mapCloudProviderProps(source) {
+        mapCloudProviderProps(source: Json) {
             const result = mapProviderProps(source)
 
             const deploymentItem = this.deploymentItemDirect({
@@ -642,7 +658,7 @@ export default defineComponent({
                 // yet), and with the close after it the modal simply stayed open
                 // while the error surfaced only as "Unhandled error during
                 // execution of watcher callback".
-                this.$refs.providerModal?.close()
+                (this.$refs.providerModal as {close(): void} | undefined)?.close()
                 if(this.savingProvider) return
                 try {
                     await this.freshState()

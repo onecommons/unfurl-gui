@@ -27,6 +27,7 @@
   "dashboard/dashboard.vue",
   "dashboard/pages/deployment.vue",
   "dashboard/pages/deployments-index.vue",
+  "dashboard/pages/environment.vue",
   "dashboard/pages/environments-index.vue",
   "project_overview/components/deployed-blueprints.vue",
   "project_overview/components/header.vue",
