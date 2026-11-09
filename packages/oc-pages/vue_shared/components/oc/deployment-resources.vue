@@ -1,11 +1,10 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {NavigationGuardNext, RouteLocationNormalized} from '@gitlab/vue-router-vue3'
 import { GlModal, GlModalDirective, GlFormGroup, GlFormInput, GlTabs} from '@gitlab/ui';
 import _ from 'lodash';
 import { mapGetters, mapActions, mapMutations } from 'vuex';
 import createFlash, { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
-import axios from '~/lib/utils/axios_utils';
-import { visitUrl } from '~/lib/utils/url_utility';
 import { __ } from '~/locale';
 import OcCard from '../../../project_overview/components/shared/oc_card.vue';
 import OcList from '../../../project_overview/components/shared/oc_list.vue';
@@ -20,6 +19,9 @@ import {bus} from 'oc_vue_shared/bus'
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 
 console.assert(OcTab as any)
+
+type Json = Record<string, any>
+interface Modal {show(): void}
 
 const statusPropDefinition = {
     type: String,
@@ -83,25 +85,28 @@ export default defineComponent({
 
     data() {
         return {
-            uiTimeout: null,
-            createNodeResourceData: {},
-            deleteNodeData: {},
+            uiTimeout: null as ReturnType<typeof setTimeout> | null,
+            createNodeResourceData: {} as Json,
+            // what the connect modal is connecting, from launchModalToConnect
+            connectNodeResourceData: {} as Json,
+            deleteNodeData: {} as Json,
             loadingDeployment: false,
             deployButton: false,
             resourceName: '',
             userEditedResourceName: false,
-            alertNameExists: null,
-            selectedTemplate: {},
+            alertNameExists: null as boolean | null,
+            selectedTemplate: {} as Json,
             completedRequirements: false,
             completedMainInputs: false,
-            selected: {},
+            selected: {} as Json,
             nodeTitle: '',
             nodeAction: '',
             durationOfAlerts: 5000,
-            selectedServiceToConnect: '',
+            // '' until something is picked; the connect button is disabled until then
+            selectedServiceToConnect: '' as '' | Json,
             selectingTopLevel: false,
-            topLevelSelection: {},
-            providerSelection: {},
+            topLevelSelection: {} as Json,
+            providerSelection: {} as Json,
             // Page-level modals are only needed on user action (create /
             // delete / connect). Defer mounting them until after the main
             // render so they don't slow first paint.
@@ -169,7 +174,7 @@ export default defineComponent({
             if(!env) return false
             const connections = Array.isArray(env.connections)? env.connections: Object.values(env.connections)
 
-            return connections.some(conn => conn.type == this.providerSelection.name)
+            return connections.some((conn: Json) => conn.type == this.providerSelection.name)
         },
 
         ocProviderPrimary() {
@@ -210,17 +215,17 @@ export default defineComponent({
             if(this.displayStatus && this.getDeploymentTemplate.status == 1) {
                 return 1
             }
-            return null
+            return undefined
 
         },
 
         mappedAvailableTypes() {
-            const mapping = {}
+            const mapping: Record<string, Json[]> = {}
             for(const type of this.instantiableResourceTypes) {
                 // hack to eliminate huge number of apps when cloudmap isn't aligned with dashboard
-                if(type.extends.some(ext => ext.startsWith('App@') || ext.startsWith('unfurl.nodes.App@'))) continue
+                if(type.extends.some((ext: string) => ext.startsWith('App@') || ext.startsWith('unfurl.nodes.App@'))) continue
 
-                const badge = type.metadata?.category || type.extends.map(this.resolveResourceTypeFromAny).find(ext => ext?.metadata?.category)?.metadata?.category || 'Other'
+                const badge = type.metadata?.category || type.extends.map(this.resolveResourceTypeFromAny).find((ext: Json | undefined) => ext?.metadata?.category)?.metadata?.category || 'Other'
 
                 if(badge == 'app') continue
                 const children = mapping[badge] || []
@@ -280,7 +285,7 @@ export default defineComponent({
 
         selectingProvider: {
             get() { return this.$route.query.hasOwnProperty('newProvider') },
-            set(val) {
+            set(val: boolean) {
 
                 const query = {...this.$route.query}
                 if(val) { query.newProvider = null }
@@ -335,16 +340,16 @@ export default defineComponent({
             // See launchModal — force-mount deferred modals first.
             this.modalsReady = true;
             this.$nextTick(() => {
-                const ref = this.$refs['oc-template-resource'];
+                const ref = this.$refs['oc-template-resource'] as Modal | undefined;
                 setTimeout(() => {
-                    this.createNodeResourceData = obj;
+                    this.createNodeResourceData = obj as Json;
                     ref && ref.show();
                 }, 100);
             });
         });
 
         bus.$on('launchModalToConnect', (obj) => {
-            this.connectNodeResourceData = obj;
+            this.connectNodeResourceData = obj as Json;
             this.launchModal('oc-connect-resource', 250);
         });
 
@@ -353,7 +358,7 @@ export default defineComponent({
     beforeMount() {
         // NOTE this doesn't work without https
         window.addEventListener('beforeunload', this.unloadHandler);
-        this.setRouterHook((to, from, next) => {
+        this.setRouterHook((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
             if(!this.safeToNavigateAway) {
                 const result = confirm(__('You have unsaved changes.  Press OK to continue'));
                 if(!result) { next(false); return; } // never call next twice
@@ -414,21 +419,21 @@ export default defineComponent({
             this.selectingProvider = true
         },
 
-        unloadHandler(e) {
+        unloadHandler(e: BeforeUnloadEvent): void {
             if(!this.safeToNavigateAway) {
                 // NOTE most users will not see this message because browsers can override it
                 e.returnValue = "You have unsaved changes.";
             }
         },
 
-        scrollDown(elId, timeOut=500) {
-            clearTimeout(this.uiTimeout);
+        scrollDown(elId: string, timeOut=500): void {
+            clearTimeout(this.uiTimeout ?? undefined);
             const rawName = elId.replace('#', '');
             const anchorId = generateCardId(rawName);
             // If the target is in the hidden collapsible, force it to
             // expand + fully mount so the anchor exists in the DOM.
-            if(this.presentableHiddenCards.some(c => c.name == rawName)) {
-                this.$refs.hiddenResources?.mountAll();
+            if(this.presentableHiddenCards.some((c: Json) => c.name == rawName)) {
+                (this.$refs.hiddenResources as {mountAll(): void} | undefined)?.mountAll();
             }
             this.uiTimeout = setTimeout(
                 () => {
@@ -440,12 +445,12 @@ export default defineComponent({
             );
         },
 
-        launchModal(refId, timeToWait) {
+        launchModal(refId: string, timeToWait: number): void {
             // Modals are deferred-mounted via modalsReady. Force-mount
             // them now so the ref exists when we try to .show().
             this.modalsReady = true;
             this.$nextTick(() => {
-                const ref = this.$refs[refId];
+                const ref = this.$refs[refId] as Modal | undefined;
                 setTimeout(() => {
                     ref && ref.show();
                 }, timeToWait);
@@ -465,26 +470,8 @@ export default defineComponent({
                 return true;
             } catch (e) {
                 console.error(e);
-                createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+                createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
                 return false;
-            }
-        },
-
-        async triggerDeployment() {
-            try {
-                this.deployButton = false;
-                this.loadingDeployment = true;
-                await this.triggerSave('deploy');
-                await this.createDeploymentPathPointer({projectPath: this.getHomeProjectPath, environmentName: this.$route.params.environment})
-                const { data } = await axios.post(this.pipelinesPath, { ref: this.refValue.fullName });
-                createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
-                return visitUrl(`${this.pipelinesPath}/${data.id}`);
-            } catch (err) {
-                const { errors = [] } = err?.response?.data;
-                const [error] = errors;
-                this.deployButton = true;
-                this.loadingDeployment = false;
-                return createFlash({ message: error, type: FLASH_TYPES.ALERT, duration: this.durationOfAlerts });
             }
         },
 
@@ -502,7 +489,7 @@ export default defineComponent({
                 this.resetStagedChanges();
                 // TODO this is ugly
                 if(this.target != 'Environment') {
-                    this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug}))
+                    this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug as string}))
                     await this.commitPreparedMutations()
                 }
                 this.$emit('deleteResource');
@@ -512,7 +499,7 @@ export default defineComponent({
                 //}
             }catch (e) {
                 console.error(e);
-                createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+                createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
             }
         },
 
@@ -524,8 +511,6 @@ export default defineComponent({
         // NOTE this kicks off instantiation of a ResourceTemplate from a ResourceType
         async onSubmitTemplateResourceModal() {
             try {
-                const { name } = this.selected;
-                const titleCard = this.resourceName || name;
                 this.createNodeResourceData.name = slugify(this.resourceName);
                 this.createNodeResourceData.title = this.resourceName;
                 const created = await this.createNodeResource({...this.createNodeResourceData, selection: this.selected});
@@ -535,33 +520,38 @@ export default defineComponent({
                 }
             }catch (e) {
                 console.error(e);
-                createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+                createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
             }
         },
 
         async onSubmitModalConnect() {
             //throw new Error('connectNodeResource needs to be reimplemented')
+            // the connect button is disabled until something is picked
+            const selection = this.selectedServiceToConnect
+            if(!selection) return
             try {
-                const { name } = this.selectedServiceToConnect;
-                await this.connectNodeResource({ nodeResource: name, ...this.connectNodeResourceData });
+                // the action reads a live Resource as `resource`, anything else by name;
+                // `nodeResource` here was read by nothing, so connecting did nothing
+                const target = selection.__typename == 'Resource'? {resource: selection}: {externalResource: selection.name}
+                await this.connectNodeResource({ ...target, ...this.connectNodeResourceData });
             }catch(e) {
                 console.error(e);
-                createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+                createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
             }
         },
 
         async handleDeleteNode() {
             try {
-                const deleted = await this.deleteNode(this.deleteNodeData);
+                await this.deleteNode(this.deleteNodeData);
             } catch (e) {
                 console.error(e);
-                createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+                createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
             }
         },
 
 
         getLegendOfModal() {
-            const gerundize = (word) => {
+            const gerundize = (word: string) => {
                 let nword = word.toLowerCase();
                 if ( nword.match( /[^aeiou]e$/i ) ) {
                     nword = nword.slice(0, nword.length-1);
@@ -577,20 +567,20 @@ export default defineComponent({
             return `Are you sure you want to delete <b>${this.targetName}</b>?`;
         },
 
-        replaceSpaceWithDash(str){
+        replaceSpaceWithDash(str: string){
             return str.replace(/ /g, '-');
         },
-        onDeleteNode(obj) {
+        onDeleteNode(obj: Json) {
             this.deleteNodeData = obj;
             this.nodeAction = obj.action? obj.action : __('Delete');
             this.nodeTitle = this.resolveRequirementMatchTitle(obj.name);
             this.launchModal('oc-delete-node', 500);
 
         },
-        testId(category) {
+        testId(category: string) {
             return 'external-resource-tab-' + category
         },
-        categoryTitle(category) {
+        categoryTitle(category: string) {
             return this.getTypeCategory(category)?.title || 'Other'
         }
     },
@@ -707,7 +697,6 @@ export default defineComponent({
             :deploy-status="deployStatus"
             :target="target"
             @saveTemplate="triggerSave()"
-            @triggerDeploy="triggerDeployment()"
             @launchModalDeleteTemplate="openModalDeleteTemplate()"
             />
 
@@ -740,7 +729,7 @@ export default defineComponent({
                 </gl-tabs>
 
                 <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                    <gl-form-input id="input2" data-testid="create-resource-template-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                    <gl-form-input id="input2" data-testid="create-resource-template-title" @input="userEditedResourceName = true" v-model="resourceName" type="text"  />
                     <small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
                 </gl-form-group>
             </div>
@@ -760,7 +749,7 @@ export default defineComponent({
             <oc-list-resource v-model="providerSelection" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :valid-resource-types="availableProviderTypes"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input2" data-testid="create-provider-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  />
+                <gl-form-input id="input2" data-testid="create-provider-title" @input="userEditedResourceName = true" v-model="resourceName" type="text"  />
                 <small v-if="alertProviderExists" class="alert-input">{{ __("Your environment already has this type of provider.") }}</small>
                 <small v-else-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
             </gl-form-group>
@@ -782,7 +771,7 @@ export default defineComponent({
           <oc-list-resource v-model="selected" :name-of-resource="getNameResourceModal" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="availableResourceTypesForRequirement(selectedRequirement)" :resourceType="selectedRequirement && selectedRequirement.type"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-                <gl-form-input id="input1" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
+                <gl-form-input id="input1" @input="userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
             </gl-form-group>
         </gl-modal>
 

@@ -18,7 +18,7 @@ export default defineComponent({
     props: {
         projectInfo: {
             type: Object,
-            required: false
+            required: true
         },
     },
 
@@ -29,7 +29,7 @@ export default defineComponent({
     },
 
     methods: {
-        capitalizeFirstLetter(str) {
+        capitalizeFirstLetter(str: string) {
             return str.charAt(0).toUpperCase() + str.slice(1);
         },
     },
@@ -41,24 +41,19 @@ export default defineComponent({
             'resolveResourceTypeFromAny',
             'requirementsForType',
             'getProjectDescription',
+            'inputsSchemaForType',
+            'outputsSchemaForType',
         ]),
         ...mapState(['project']),
 
-        inputs(): any {
-            try {
-                return Object.values(this.inputsSchemaForType(this.projectInfo.primary).properties) || {}
-            } catch(e) {
-                return []
-            }
+        // The catch these replaced also swallowed the getters never being
+        // mapped, so the Details tab has been empty since they were introduced.
+        inputs(): Record<string, any>[] {
+            return Object.values(this.inputsSchemaForType(this.projectInfo.primary)?.properties ?? {})
         },
 
-        outputs(): any {
-            try {
-                return Object.values(this.outputsSchemaForType(this.projectInfo.primary).properties) || {}
-            } catch(e) {
-                return []
-            }
-
+        outputs(): Record<string, any>[] {
+            return Object.values(this.outputsSchemaForType(this.projectInfo.primary)?.properties ?? {})
         },
 
 
@@ -70,12 +65,12 @@ export default defineComponent({
         requirements() {
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.requirementsForType(this.projectInfo.primary)?.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
+                return this.requirementsForType(this.projectInfo.primary)?.filter((dependency: Record<string, any>) => dependency?.visibility != 'hidden' && (dependency?.min || 0) > 0)
             }
 
-            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0) || []
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter((pairing: Record<string, any>) => (pairing.dependency?.constraint?.min || 0) > 0) || []
 
-            return requirements.map(r => {
+            return requirements.map((r: Record<string, any>) => {
                 const constraint = r.dependency.constraint
                 const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
                 return {...constraint, resourceType}
@@ -84,12 +79,12 @@ export default defineComponent({
         extras() {
             const primaryCard = this.getPrimaryCard
             if(!primaryCard?.name) {
-                return this.requirementsForType(this.projectInfo.primary)?.filter(dependency => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
+                return this.requirementsForType(this.projectInfo.primary)?.filter((dependency: Record<string, any>) => dependency?.visibility != 'hidden' && (dependency?.min || 0) == 0) || []
             }
 
-            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0) || []
+            const requirements = this.getDisplayableDependenciesByCard(this.getPrimaryCard.name)?.filter((pairing: Record<string, any>) => (pairing.dependency?.constraint?.min || 0) == 0) || []
 
-            return requirements.map(r => {
+            return requirements.map((r: Record<string, any>) => {
                 const constraint = r.dependency.constraint
                 const resourceType = this.resolveResourceTypeFromAny(constraint.resourceType)
                 return {...constraint, resourceType}

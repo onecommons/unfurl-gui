@@ -4,6 +4,7 @@ import axios from '~/lib/utils/axios_utils'
 import {GlFormCheckbox} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
 import {fetchContainerRepositories, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import type {Branch, ProjectInfo, ProjectId} from 'oc_vue_shared/client_utils/projects'
 import {triggerPipeline} from 'oc_vue_shared/client_utils/pipelines'
 import {GithubImportHandler, importStatus, oauthStatus} from 'oc_vue_shared/client_utils/github-import'
 import {mapMutations, mapActions, mapGetters, mapState} from 'vuex'
@@ -18,7 +19,10 @@ import {connectedRepo} from './mixins'
 const {AUTHENTICATED, UNAUTHENTICATED} = oauthStatus
 const {IMPORTED} = importStatus
 
-function callbackFilter(query, items) {
+interface Suggestion {value?: string}
+type SuggestionCallback = (suggestions: Suggestion[]) => void
+
+function callbackFilter(query: string, items: Suggestion[]) {
     if(!query || items.some(item => item.value == query)) return items
     return items.filter(item => item.value?.includes(query))
 }
@@ -28,27 +32,28 @@ export default defineComponent({
     components: {SuggestionInput, GithubAuth, ImportButton, GlFormCheckbox},
     mixins: [connectedRepo],
     props: {
-        card: Object,
+        card: {type: Object, required: true},
         readonly: Boolean
     },
     data() {
         const importHandler = new GithubImportHandler()
         const data =  {
             importHandler,
-            branch: null,
-            github_project: null,
-            branchesPromise: null,
-            projectInfo: null,
-            branchError: null, // couldn't get this working in the element ui componenet
+            branch: null as string | null,
+            github_project: null as string | null,
+            branchesPromise: null as Promise<Branch[]> | null,
+            projectInfo: null as ProjectInfo | null,
+            branchError: null as boolean | null, // couldn't get this working in the element ui componenet
             useDefaultBranch: false,
             AUTHENTICATED,
             UNAUTHENTICATED,
-            saved: {}
+            // the card's other properties, as saved
+            saved: {} as Record<string, any>
         }
 
         for(const {name, value} of this.card.properties) {
             if(data.hasOwnProperty(name)) {
-                data[name] = value
+                (data as Record<string, unknown>)[name] = value
             } else {
                 data.saved[name] = value
             }
@@ -59,8 +64,8 @@ export default defineComponent({
     computed: {
         ...mapGetters(['getDeploymentTemplate', 'getCurrentNamespace', 'getHomeProjectPath', 'registryURL', 'cardIsValid']),
         ...mapState({
-            isExternalUser(state) {return state.misc.user?.external}, // intentionally defaulting to false
-            userEmail(state) {const user = state.misc.user; return user?.public_email || user?.email}
+            isExternalUser(state: any) {return state.misc.user?.external}, // intentionally defaulting to false
+            userEmail(state: any) {const user = state.misc.user; return user?.public_email || user?.email}
         }),
         project_id() {
             if(this.repoImport) {
@@ -82,10 +87,10 @@ export default defineComponent({
             }
 
             if(this.projectInfo && this.project_id) {
-                return this.projectInfo.container_registry_image_prefix
+                return (this.projectInfo.container_registry_image_prefix as string)
                     .slice(0, 0 - this.project_id.length)
                     .split('/')
-                    .filter(pathComponent => pathComponent)
+                    .filter((pathComponent: string) => pathComponent)
                     .join('/') // I don't know if the registry_url can include a path
             }
             return this.saved.registry_url ?? null
@@ -94,13 +99,14 @@ export default defineComponent({
             return !this.useDefaultBranch && this.github_project && !this.branch && this.repoImport?.importStatus != IMPORTED
         },
         repoImport() {
-            if(this.importHandler.status == AUTHENTICATED) {
-                return this.importHandler.findRepo(this.github_project)
+            // findRepo compares with ==, so a null project matched any repo without a name
+            if(this.importHandler.status == AUTHENTICATED && this.github_project) {
+                return this.importHandler.findRepo(this.github_project) ?? null
             }
             return null
         },
         displayableCardProperties() {
-            return this.card.properties.filter(property => {
+            return this.card.properties.filter((property: {name: string}) => {
                 return ['github_project', 'remote_git_url', 'branch', 'project_id', 'registry_url'].includes(property.name)
             })
         }
@@ -128,7 +134,7 @@ export default defineComponent({
             this.updateValue('registry_url')
         },
         repoImport(val) {
-            if(val?.importStatus > 1) {
+            if((val?.importStatus ?? 0) > 1 && val?.id != null) {
                 this.branchesPromise = fetchRepositoryBranches(val.id)
                 this.updateProjectInfo(val.id)
             } else {
@@ -139,11 +145,11 @@ export default defineComponent({
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         ...mapMutations(['onSaveEnvironment', 'setUpstreamCommit', 'setUpstreamId', 'setUpstreamProject', 'setUpstreamBranch']),
-        async updateProjectInfo(projectId) {
+        async updateProjectInfo(projectId: ProjectId) {
             this.projectInfo = await fetchProjectInfo(projectId)
-            await this.setupRegistryCredentials(this.projectInfo)
+            await this.setupRegistryCredentials()
         },
-        async getRepoSuggestions(queryString, callback) {
+        async getRepoSuggestions(queryString: string, callback: SuggestionCallback) {
             const repos = await this.importHandler.listRepos()
             callback(
                 callbackFilter(
@@ -152,7 +158,7 @@ export default defineComponent({
                 )
             )
         },
-        async getBranchSuggestions(queryString, callback) {
+        async getBranchSuggestions(queryString: string, callback: SuggestionCallback) {
             const branches = (await this.branchesPromise) || []
             callback(
                 callbackFilter(
@@ -192,14 +198,16 @@ export default defineComponent({
         },
 
         onImportFinished() {
+            // ImportButton emits this for the repo shown, so there is one
+            if(this.repoImport?.id == null) return
             this.branchesPromise = fetchRepositoryBranches(this.repoImport.id)
+            // which sets up the registry credentials once it has the project
             this.updateProjectInfo(this.repoImport.id)
-            this.setupRegistryCredentials(this.repoImport.id)
         },
 
         setDefaultBranchIfPossible() {
             if(this.projectInfo && this.useDefaultBranch) {
-                this.branch = this.projectInfo.default_branch
+                this.branch = this.projectInfo.default_branch ?? null
             }
         },
     },
@@ -215,14 +223,14 @@ export default defineComponent({
     },
     async mounted() {
         this.updateValue()
-        const github_project = this.card.properties.find(prop => prop.name == 'github_project')?.value
+        const github_project = this.card.properties.find((prop: {name: string}) => prop.name == 'github_project')?.value
         if(github_project) {
             await this.importHandler.loadReposPromise
             this.github_project = github_project
         }
 
         nextTick(() => {
-            this.branch = this.card.properties.find(prop => prop.name == 'branch')?.value
+            this.branch = this.card.properties.find((prop: {name: string}) => prop.name == 'branch')?.value
             if(!this.branch) {this.useDefaultBranch = true}
         })
 
@@ -232,27 +240,30 @@ export default defineComponent({
                 if(!this.projectInfo) {
                     await this.updateProjectInfo(encodeURIComponent(this.project_id))
                 }
+                // a valid card names a project; a fetch that found none is a failed save
+                const projectInfo = this.projectInfo
+                if(!projectInfo) throw new Error(`no project ${this.project_id}`)
 
                 // TODO check if blueprint default repository_id is already set
-                if((await fetchContainerRepositories(this.projectInfo.path_with_namespace)).some(repo => repo.path == `${this.project_id}/${this.branch}`)) {
+                if((await fetchContainerRepositories(projectInfo.path_with_namespace as string)).some((repo: {path: string}) => repo.path == `${this.project_id}/${this.branch}`)) {
                     console.log('image already exists')
                     // this.setUpstreamId we need to look up the last pipeline that has the given branch and project
-                    const id = this.projectInfo.id
-                    const branch = this.branch || this.projectInfo.default_branch
+                    const id = projectInfo.id
+                    const branch = this.branch || projectInfo.default_branch
                     try {
                       const commits = (await axios.get(`/api/v4/projects/${id}/repository/commits?ref=${branch}`)).data
                       this.setUpstreamCommit(commits[0].id)
                     } catch(e) {
                       console.error("couldn't find upstream commit")
-                      console.error(e.message)
+                      console.error((e as Error).message)
                     }
                     this.setUpstreamProject(id)
                     this.setUpstreamBranch(branch)
                 } else {
-                    const upstream = await triggerPipeline(`/${this.projectInfo.path_with_namespace}/-/pipelines`, [], {ref: this.branch})
+                    const upstream = await triggerPipeline(`/${projectInfo.path_with_namespace}/-/pipelines`, [], {ref: this.branch ?? undefined})
                     this.setUpstreamCommit(upstream.commit)
                     this.setUpstreamId(upstream.id)
-                    this.setUpstreamBranch(this.branch || this.projectInfo.default_branch)
+                    this.setUpstreamBranch(this.branch || projectInfo.default_branch)
                     this.setUpstreamProject(upstream.project)
                 }
             }

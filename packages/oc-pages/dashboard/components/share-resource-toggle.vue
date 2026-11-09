@@ -6,28 +6,25 @@ import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 
 // TODO make this a global thing so it can apply to other operations
-let lock
+// Share actions run one at a time, each after the last has settled -- failed
+// or not, so one refused update does not hold up every later one.
+let queue: Promise<unknown> = Promise.resolve()
 
-async function acquireLock() {
-    if(lock) {
-        await lock
-    }
-
-    let release
-    lock = new Promise((resolve, reject) => {
-        release = resolve
-    })
-
-    return release
+function serially<T>(task: () => Promise<T>): Promise<T> {
+    const result = queue.then(task)
+    queue = result.catch(() => {})
+    return result
 }
 
 export default defineComponent({
     props: {
-        card: Object
+        card: {type: Object, required: true}
     },
     data () {
+        const setting = gon.openCloudPublish
+        if(!setting) return {openCloudPublish: null}
         try {
-            return {openCloudPublish: JSON.parse(gon.openCloudPublish)}
+            return {openCloudPublish: JSON.parse(setting)}
         } catch(e) { return {openCloudPublish: null} }
     },
     components: {DetectIcon, GlDropdown, GlDropdownItem, GlDropdownDivider},
@@ -79,12 +76,10 @@ export default defineComponent({
                 resourceName = this.card.name,
                 shareState = 'environment'
 
-            const release = await acquireLock()
-
-            await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
-            await this.loadDashboard()
-
-            release()
+            return serially(async () => {
+                await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
+                await this.loadDashboard()
+            })
         },
         async shareWithDashboard() {
             const
@@ -93,12 +88,10 @@ export default defineComponent({
                 resourceName = this.card.name,
                 shareState = 'dashboard'
 
-            const release = await acquireLock()
-
-            await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
-            await this.loadDashboard()
-
-            release()
+            return serially(async () => {
+                await this.updateResourceSharedState({environmentName, deploymentName, resourceName, shareState})
+                await this.loadDashboard()
+            })
         },
         async stopSharing() {
             const
@@ -106,12 +99,10 @@ export default defineComponent({
                 deploymentName = this.getDeploymentTemplate.name,
                 resourceName = this.card.name
 
-            const release = await acquireLock()
-
-            await this.unshareResource({environmentName, deploymentName, resourceName})
-            await this.loadDashboard()
-
-            release()
+            return serially(async () => {
+                await this.unshareResource({environmentName, deploymentName, resourceName})
+                await this.loadDashboard()
+            })
         },
         sharePublic() {
             const {projectPath, title, description} = this.openCloudPublish
@@ -124,7 +115,7 @@ export default defineComponent({
                 'DASHBOARD': this.getHomeProjectPath,
             }
 
-            function interpolateVars(s) {
+            function interpolateVars(s: string) {
                 let result = s
                 for(const [key, value] of Object.entries(TEMPLATE_VARS)) {
                     const regexpTemplate = `\\$${key}`

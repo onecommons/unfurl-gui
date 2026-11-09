@@ -2,6 +2,8 @@
 import _ from 'lodash';
 import {__} from '~/locale';
 import {nextTick, defineComponent} from 'vue'
+import type {PropType} from 'vue'
+import type {Form} from '@formily/core'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {GlCard} from '@gitlab/ui'
 import {resolverName, tryResolveDirective} from 'oc_vue_shared/lib'
@@ -11,7 +13,9 @@ import { GlTabs } from '@gitlab/ui';
 import OcTab from 'oc_vue_shared/components/oc/oc-tab.vue'
 
 
-const ComponentMap = {
+type Json = Record<string, any>
+
+const ComponentMap: Record<string, string> = {
   string: 'Input',
   textarea: 'Input',
   file: 'FileSelector',
@@ -36,11 +40,12 @@ export default defineComponent({
 
   props: {
     propertyPath: {
-      type: Array,
+      type: Array as PropType<string[]>,
       default: () => []
     },
     card: {
-      type: Object
+      type: Object,
+      required: true
     },
     wrapper: {
       type: String,
@@ -52,10 +57,10 @@ export default defineComponent({
 
   data() {
     return {
-      form: null,
-      mainInputs: [],
-      saveTriggers: {},
-      currentTabTitle: null,
+      form: null as Form | null,
+      mainInputs: [] as Json[],
+      saveTriggers: {} as Record<string, (field: Json, value: unknown, disregardUncommitted?: boolean) => void>,
+      currentTabTitle: null as string | null,
     }
   },
 
@@ -148,11 +153,10 @@ export default defineComponent({
         // await this.form.validate()
 
         for(const key of Object.keys(this.formValues)) {
-          let formField
-          try { formField = this.form.fields[key] }
-          catch(e) {}
+          const formField = this.form?.fields[key]
           // objects that are only parents of $additionalProperties have no data and can be skipped for validation
-          if (formField && formField.data) {
+          // keyed by property name, so a data field, never a void (layout) one
+          if (formField && formField.data && 'validate' in formField) {
             path = [...this.propertyPath, key].join('.')
 
             const {data, value} = formField
@@ -161,12 +165,13 @@ export default defineComponent({
             } else {
               await formField.validate()
             }
-            if(formField.invalid) {
-              status = 'error'
-            }
+            // per field: the status this loop used to carry marked every
+            // field after an invalid one invalid too
+            const fieldStatus = formField.invalid? 'error': 'valid'
+            if(fieldStatus == 'error') status = 'error'
             this.updateFieldValidation(
               path,
-              status
+              fieldStatus
             )
           }
         }
@@ -178,16 +183,16 @@ export default defineComponent({
         )
       }
     },
-    inputTestid(namePath) {
+    inputTestid(namePath: string[]) {
       return `oc-input-${this.card.name}-${namePath.join('.')}`
     },
 
     // namePath is the chain of parent property names. It only affects test
     // ids: nested properties would otherwise collide with same-named
     // top-level ones, which is why specs used to scope by .el-popover.
-    convertProperties(properties, namePath = []) {
-      return _.mapValues(properties, (value, name) => {
-        const currentValue = {...value, name};
+    convertProperties(properties: Record<string, Json>, namePath: string[] = []) {
+      return _.mapValues(properties, (value: Json, name: string) => {
+        const currentValue: Json = {...value, name};
         const testid = this.inputTestid([...namePath, name])
 
         if(currentValue.sensitive && !this.userCanEdit) return null
@@ -364,35 +369,35 @@ export default defineComponent({
       });
     },
 
-    updateFieldValidation(path, status) {
+    updateFieldValidation(path: string, status: string) {
       if(!path) return
       this.setInputValidStatus({card: this.card, path, status})
     },
 
-    triggerSave(field, value, disregardUncommitted) {
+    triggerSave(field: Json, value: unknown, disregardUncommitted?: boolean) {
       const propertyName = field.name
       // debounce each property of a form separately in for autocomplete
       let triggerFn
       if(!(triggerFn = this.saveTriggers[propertyName])) {
-        this.saveTriggers[propertyName] = triggerFn = _.debounce((function(field, value, disregardUncommitted=false) {
-          let schemaDefinition
+        this.saveTriggers[propertyName] = triggerFn = _.debounce((field: Json, value: unknown, disregardUncommitted=false) => {
+          let schemaDefinition: Json | undefined
           try {
-            schemaDefinition = this.schema.properties[field.name]
+            schemaDefinition = this.schema.properties[field.name] ?? undefined
           } catch(e) {
             console.warn(`Couldn't look up schema definition for ${field.name}`)
           }
 
           // TODO move cloneDeep/serializer into another function
-          let propertyValue = _.cloneDeepWith(value, function(value) {
+          let propertyValue = _.cloneDeepWith(value, function(value: unknown) {
             if(Array.isArray(value)) {
               if (value.length == 0) {
                 return null
               }
-              if (value.some(o => o?.input !== undefined)) {
+              if (value.some((o: Json) => o?.input !== undefined)) {
                 // I'm guessing we want to fall back on 'o' in case it's a new value, but this seems fragile
-                return value.map(o => o?.input ?? o)
-              } else if (value.some(o => o?.key !== undefined)) {
-                const result = {}
+                return value.map((o: Json) => o?.input ?? o)
+              } else if (value.some((o: Json) => o?.key !== undefined)) {
+                const result: Json = {}
                 const defaultValue = schemaDefinition?.additionalProperties?.type == 'string'? '': undefined
                 for(const entry of value)  {
                   result[entry.key] = entry.value ?? defaultValue
@@ -411,7 +416,7 @@ export default defineComponent({
           let propertyName = field.name
 
           if(propertyName == '$additionalProperties') {
-            const values = {...this.form.values}
+            const values = {...this.form!.values} // set before any field can change
 
             delete values.$toscatype
             delete values.$additionalProperties
@@ -424,13 +429,13 @@ export default defineComponent({
           this.updateProperty({deploymentName: this.$route.params.slug, templateName: this.card.name, propertyName, propertyValue, propertyPath})
           if(disregardUncommitted && !this.card._uncommitted) this.clientDisregardUncommitted()
 
-        }).bind(this), 200)
+        }, 200)
       }
 
       triggerFn(field, value, disregardUncommitted)
     },
 
-    cloneInner(next, value) {
+    cloneInner(next: Json, value: any) {
       if(Array.isArray(value) && value.length > 0 && !next.isMap) {
         return value.map(input => ({input}))
       }
@@ -452,9 +457,9 @@ export default defineComponent({
     },
 
     getMainInputs() {
-      const result = []
+      const result: Json[] = []
 
-      const properties = this.card.properties || []
+      const properties: Json[] = this.card.properties || []
 
       for (const [name, definition] of Object.entries(this.schemaFields) as [string, any][]) {
         try {

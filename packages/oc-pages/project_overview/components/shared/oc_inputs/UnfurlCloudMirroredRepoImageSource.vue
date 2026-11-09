@@ -3,13 +3,17 @@ import {defineComponent} from 'vue'
 import axios from '~/lib/utils/axios_utils'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {fetchProjects, fetchRepositoryBranches, fetchProjectInfo} from 'oc_vue_shared/client_utils/projects'
+import type {Branch, ProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment-scheduler.vue'
 import {GlCard} from '@gitlab/ui'
 import SuggestionInput from './suggestion-input.vue'
 
 import {connectedRepo} from './mixins'
 
-function callbackFilter(query, items) {
+interface Suggestion {value: string}
+type SuggestionCallback = (suggestions: Suggestion[]) => void
+
+function callbackFilter(query: string, items: Suggestion[]) {
     if(!query || items.some(item => item.value == query)) return items
     return items.filter(item => item.value.includes(query))
 }
@@ -17,7 +21,7 @@ function callbackFilter(query, items) {
 export default defineComponent({
     name: 'UnfurlCloudMirroredRepoImageSource',
     props: {
-        card: Object,
+        card: {type: Object, required: true},
         readonly: Boolean
     },
     components: {
@@ -29,17 +33,17 @@ export default defineComponent({
     data() {
         const data = {
             userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
-            repositoryBranchesPromise: null,
-            project_id: null,
-            branch: null,
-            repository_tag: null,
-            projectInfo: null,
-            gitlabProjectId: -1
+            // unset for a project the user cannot see
+            repositoryBranchesPromise: null as Promise<Branch[]> | null,
+            project_id: null as string | null,
+            branch: null as string | null,
+            repository_tag: null as string | null,
+            projectInfo: null as ProjectInfo | null,
         }
 
         for(const {name, value} of this.card.properties) {
             if(data.hasOwnProperty(name)) {
-                data[name] = value
+                (data as Record<string, unknown>)[name] = value
             }
         }
 
@@ -48,18 +52,18 @@ export default defineComponent({
     methods: {
         ...mapActions(['updateProperty', 'updateCardInputValidStatus']),
         ...mapMutations(['onSaveEnvironment', 'setUpstreamProject', 'setUpstreamBranch', 'setUpstreamCommit']),
-        async getUserProjectSuggestions(queryString, callback) {
+        async getUserProjectSuggestions(queryString: string, callback: SuggestionCallback) {
             const projects = await this.userProjectSuggestionsPromise
             callback(
                 callbackFilter(
                     queryString,
                     projects
-                        .map(project => ({value: project.path_with_namespace}))
+                        .map((project: {path_with_namespace: string}) => ({value: project.path_with_namespace}))
                 )
             )
         },
-        async getBranchSuggestions(queryString, callback) {
-            const branches = await this.repositoryBranchesPromise
+        async getBranchSuggestions(queryString: string, callback: SuggestionCallback) {
+            const branches = await this.repositoryBranchesPromise ?? []
             callback(
                 callbackFilter(
                     queryString,
@@ -79,10 +83,10 @@ export default defineComponent({
         ...mapGetters(['cardIsValid', 'getDeploymentTemplate', 'getHomeProjectPath']),
         registry_url() {
             if(this.projectInfo && this.project_id) {
-                return this.projectInfo.container_registry_image_prefix
+                return (this.projectInfo.container_registry_image_prefix as string)
                     .slice(0, 0 - this.project_id.length)
                     .split('/')
-                    .filter(pathComponent => pathComponent)
+                    .filter((pathComponent: string) => pathComponent)
                     .join('/') // I don't know if the registry_url can include a path
             }
             return null
@@ -104,13 +108,11 @@ export default defineComponent({
 
                 if(!await this.isKnownProject(val)) return
 
-                this.repositoryBranchesPromise = fetchRepositoryBranches(encodeURIComponent(this.project_id))
-                this.projectInfo = await fetchProjectInfo(encodeURIComponent(this.project_id))
-                const id = this.projectInfo.id
-                this.gitlabProjectId = id
-                try {
-                    this.setupRegistryCredentials(id)
-                } catch(e) { }
+                this.repositoryBranchesPromise = fetchRepositoryBranches(encodeURIComponent(val))
+                const projectInfo = this.projectInfo = await fetchProjectInfo(encodeURIComponent(val))
+                if(!projectInfo) return
+                // async, so a try/catch around the call caught nothing
+                this.setupRegistryCredentials().catch((e: unknown) => console.error('setupRegistryCredentials', e))
 
             }
         },
@@ -124,7 +126,8 @@ export default defineComponent({
         this.updateValue()
 
         this.onSaveEnvironment(async () => {
-            if(this.cardIsValid(this.card)) {
+            // a valid card has a fetched project
+            if(this.cardIsValid(this.card) && this.projectInfo) {
                 const id = this.projectInfo.id
                 const branch = this.branch || this.projectInfo.default_branch
                 try {
@@ -132,7 +135,7 @@ export default defineComponent({
                   this.setUpstreamCommit(commits[0].id)
                 } catch(e) {
                   console.error("couldn't find upstream commit")
-                  console.error(e.message)
+                  console.error((e as Error).message)
                 }
                 this.setUpstreamProject(id)
                 this.setUpstreamBranch(branch)
