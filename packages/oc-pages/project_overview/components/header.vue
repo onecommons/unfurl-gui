@@ -1,7 +1,6 @@
 <script lang="ts">
 // @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
-/* eslint-disable vue/no-v-html */
 import { GlIcon, GlButton } from '@gitlab/ui';
 import OverviewShareModal from './header/overview-share-modal.vue'
 import createFlash from 'oc_vue_shared/client_utils/oc-flash';

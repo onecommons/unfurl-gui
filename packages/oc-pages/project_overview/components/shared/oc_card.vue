@@ -228,7 +228,6 @@ export default defineComponent({
         },
 
         openDeletemodal() {
-            // eslint-disable-next-line no-unused-expressions
             const payload = {...this.card, action: this.deleteAction}
             // TODO get rid of bus
             bus.$emit('deleteNode', payload);

@@ -7,7 +7,7 @@ const SHA_REGEX = /[\da-f]{40}/gi;
 
 // Reset the cursor in a Regex so that multiple uses before a recompile don't fail
 function resetRegExp(regex) {
-  regex.lastIndex = 0; /* eslint-disable-line no-param-reassign */
+  regex.lastIndex = 0;
 
   return regex;
 }

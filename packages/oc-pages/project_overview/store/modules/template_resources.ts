@@ -114,7 +114,6 @@ const mutations = {
     },
 
     setDeploymentTemplate(_state: State, deploymentTemplate: Json) {
-        // eslint-disable-next-line no-param-reassign
         _state.deploymentTemplate = {...deploymentTemplate};
     },
 
@@ -123,7 +122,6 @@ const mutations = {
     // the flip. See unfurl.cloud/onecommons/unfurl-gui#149 for the call sites to fix and
     // the steps to re-enable. Look for `/* Object.freeze */` markers below.
     createTemplateResource(_state: State, target: Json) {
-        // eslint-disable-next-line no-param-reassign
         if(!target.name) return;
         // TODO(#149): wrap in Object.freeze() once unsafe mutations are cleaned up.
         const card = /* Object.freeze */ ({ ...target , type: typeof(target.type) == 'string'? target.type: target?.type?.name})
