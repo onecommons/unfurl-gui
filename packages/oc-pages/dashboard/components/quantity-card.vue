@@ -3,9 +3,9 @@ import {defineComponent} from 'vue'
 import {mapGetters} from 'vuex'
 export default defineComponent({
     props: {
-        count: Number,
-        s: String,
-        p: String,
+        count: {type: Number, required: true},
+        s: {type: String, required: true},
+        p: {type: String, required: true},
         color: String,
         to: {
             type: [Object, String],
@@ -52,7 +52,7 @@ export default defineComponent({
                 <span class="count"> {{count}} </span>
                 <span class="text"> {{n__(s, p, count)}} </span>
                 <div style="height: 1em; margin-top: -0.5em; font-weight: 500;">
-                    <component :is="typeof secondaryLink == 'string'? 'a': 'router-link'" v-if="showSecondaryLink" @click="e => e.stopPropagation()" v-bind="secondaryLinkProps">
+                    <component :is="typeof secondaryLink == 'string'? 'a': 'router-link'" v-if="showSecondaryLink" @click.stop v-bind="secondaryLinkProps">
                         {{secondaryLinkText}}
                     </component>
                 </div>

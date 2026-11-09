@@ -46,7 +46,7 @@ describe('a queued deployment', () => {
             dispatch: jest.fn((name, payload) => name == 'deployInto' ? deployInto(payload) : Promise.resolve()),
             commit: jest.fn(),
         }
-        const $router = {options: {base}, replace: jest.fn()}
+        const $router = {options: {history: {base}}, replace: jest.fn()}
         const wrapper = shallowMount(Dashboard, {
             global: {mocks: {$store, $router, $route: {hash: ''}}, stubs: {RouterView: true}},
         })
@@ -103,7 +103,7 @@ describe('naming the dashboard from the path', () => {
             commit: jest.fn(),
         }
         shallowMount(Dashboard, {
-            global: {mocks: {$store, $router: {options: {base: '/org/team/mydash'}, replace: jest.fn()}, $route: {hash: ''}}, stubs: {RouterView: true}},
+            global: {mocks: {$store, $router: {options: {history: {base: '/org/team/mydash'}}, replace: jest.fn()}, $route: {hash: ''}}, stubs: {RouterView: true}},
         })
         await flushPromises()
         expect($store.commit).toHaveBeenCalledWith('setCurrentNamespace', 'org/team')

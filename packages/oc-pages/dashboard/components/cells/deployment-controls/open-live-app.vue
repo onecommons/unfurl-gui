@@ -29,7 +29,7 @@ export default defineComponent({
 })
 </script>
 <template>
-    <component :is="component" v-gl-tooltip.hover :title="title" :disabled="disabled" target="_blank" rel="noopener noreferrer" :href ="deployment.url" variant="confirm">
+    <component :is="component" v-gl-tooltip.hover :title="title" :disabled="disabled" target="_blank" rel="noopener noreferrer" :href ="deployment?.url" variant="confirm">
 
         <gl-loading-icon v-if="disabled && component != 'gl-dropdown-item'" class="gl-mr-2"/>
         <gl-icon v-else :size="16" name="external-link"/>

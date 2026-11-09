@@ -6,7 +6,7 @@ import {GlLoadingIcon, GlModal} from '@gitlab/ui'
 import {LocalDeploy} from 'oc_vue_shared/components/oc'
 import DashboardDeployDialog from './components/dashboard-deploy-dialog.vue'
 
-export function pollableDashboardItem(item) {
+export function pollableDashboardItem(item: {deployment?: unknown, environment?: unknown} | null | undefined) {
     return Boolean(item?.deployment && item?.environment)
 }
 
@@ -45,7 +45,7 @@ export default defineComponent({
             get() {
                 return this.$route.hash == '#clone-instructions'
             },
-            set(val) {
+            set(val: boolean) {
                 if(!val) {
                     this.$router.replace({...this.$route, hash: ''})
                 } else {
@@ -57,7 +57,8 @@ export default defineComponent({
     async mounted() {
         this.initUserSettings({username: this.getUsername})
 
-        const pathComponents = (this.$router.options.base ?? this.$router.options.history?.base ?? '').split('/').filter(s => s);
+        // the vue3compat router moves `base` into the history; options.base stays unset
+        const pathComponents = this.$router.options.history.base.split('/').filter(s => s);
         const currentNamespace = pathComponents.slice(0, -1).join('/')
 
         if(!window.gon.home_project) {
@@ -116,7 +117,7 @@ export default defineComponent({
                 delete sessionStorage['trigger-deployment']
             } catch(e) {
                 this.createError({
-                    message: `Failed to trigger queued deployment: ${e.message}`,
+                    message: `Failed to trigger queued deployment: ${(e as Error).message}`,
                     context,
                 })
             }
