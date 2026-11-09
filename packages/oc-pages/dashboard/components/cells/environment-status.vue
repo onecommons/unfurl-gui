@@ -10,7 +10,7 @@ export default defineComponent({
         return {incompleteEnv: false}
     },
     props: {
-        environment: Object
+        environment: {type: Object, required: true}
     },
     components: {StatusIcon},
     computed: {
@@ -25,13 +25,14 @@ export default defineComponent({
         environment: {
             immediate: true,
             async handler() {
-                if(!this.environment!.primary_provider) {
+                if(!this.environment.primary_provider) {
                     try {
-                        const providers = (await fetchDashboardProviders(this.getHomeProjectPath))!
-                            .providersByEnvironment[this.environment!.name]
+                        // null in standalone, or when the dashboard project is missing
+                        const providers = (await fetchDashboardProviders(this.getHomeProjectPath))
+                            ?.providersByEnvironment[this.environment.name]
 
                         this.incompleteEnv = !!providers?.length
-                    } catch(e) {} // error reported in environment-cell
+                    } catch(e) {} // a failed fetch is reported in environment-cell
 
                 }
             }

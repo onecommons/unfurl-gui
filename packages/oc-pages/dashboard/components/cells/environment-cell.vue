@@ -9,7 +9,8 @@ import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 export default defineComponent({
     components: { DetectIcon },
     props: {
-        environment: Object as PropType<any>,
+        // null when a merge request names an environment that does not exist
+        environment: Object as PropType<Record<string, any> | null>,
         noRouter: {type: Boolean, default: false}
     },
     data() {
@@ -18,13 +19,13 @@ export default defineComponent({
     computed: {
         ...mapGetters(['getHomeProjectPath']),
         destination() {
-            if((this.$props?.environment?.name ?? 'defaults') == 'defaults') return {href: null as unknown as undefined}
+            if((this.$props?.environment?.name ?? 'defaults') == 'defaults') return {href: undefined}
             return this.noRouter ?
                 {href: `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments/${this.$props?.environment?.name}`} :
                 this.$router.resolve({name: routes.OC_DASHBOARD_ENVIRONMENTS, params: {name: this.$props?.environment?.name}})
         },
         primaryProvider() {
-            return this.environment.primary_provider?.type || this.recordedPrimaryProvider
+            return this.environment?.primary_provider?.type || this.recordedPrimaryProvider
         }
     },
     methods: {
@@ -34,11 +35,12 @@ export default defineComponent({
         environment: {
             immediate: true,
             async handler() {
-                if(!this.environment.primary_provider) {
+                if(this.environment && !this.environment.primary_provider) {
                     let providers
                     try {
-                        providers = (await fetchDashboardProviders(this.getHomeProjectPath))!
-                            .providersByEnvironment[this.environment.name]
+                        const dashboardProviders = await fetchDashboardProviders(this.getHomeProjectPath)
+                        if(!dashboardProviders) throw new Error(`no providers found for ${this.getHomeProjectPath}`)
+                        providers = dashboardProviders.providersByEnvironment[this.environment.name]
                     } catch(e) {
                         if(!window.gon.unfurl_gui)
                             this.createError({
@@ -50,9 +52,7 @@ export default defineComponent({
                             })
                     }
 
-                    try {
-                        this.recordedPrimaryProvider = providers![0]
-                    } catch(e) {}
+                    this.recordedPrimaryProvider = providers?.[0] ?? null
                 }
             }
         }

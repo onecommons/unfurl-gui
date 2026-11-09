@@ -1,6 +1,5 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import type {RouteLocationRaw} from '@gitlab/vue-router-vue3'
 import { __ } from '~/locale';
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters} from 'vuex'
@@ -36,8 +35,8 @@ export default defineComponent({
       returnHome() {
         // TODO re-enable this when we're able to update the current namespace 
         // https://github.com/onecommons/gitlab-oc/issues/867
-        // this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
-        window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug} as RouteLocationRaw).href
+        // this.$router.push({name: 'projectHome'})
+        window.location.href = this.$router.resolve({name: 'projectHome'}).href
       }
     }
 })

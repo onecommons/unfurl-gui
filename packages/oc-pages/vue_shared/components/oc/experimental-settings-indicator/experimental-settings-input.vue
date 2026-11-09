@@ -1,13 +1,15 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import type {PropType} from 'vue'
+import type {CONFIGURABLE_HIDDEN_OPTIONS} from '../../../storage-keys'
 import {lookupKey, setLocalStorageKey} from '../../../storage-keys'
 import {GlFormInput, GlFormInputGroup} from '@gitlab/ui'
 export default defineComponent({
     name: 'ExperimentalSettingInput',
     components: {GlFormInput, GlFormInputGroup},
     props: {
-        option: Object as PropType<any>
+        // `type` is an input type; no option sets one yet
+        option: {type: Object as PropType<typeof CONFIGURABLE_HIDDEN_OPTIONS[number] & {type?: string}>, required: true}
     },
     emits: ['changed'],
     data() {

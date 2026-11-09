@@ -71,7 +71,7 @@ export default defineComponent({
 
             const username = `UNFURL_DEPLOY_TOKEN_${this.projectId}`
             const password = this.lookupVariableByEnvironment(
-                toDepTokenEnvKey(this.blueprintProjectInfo.id!),
+                toDepTokenEnvKey(this.blueprintProjectInfo.id!), // the projects API always returns id
                 '*'
             )
 
@@ -113,7 +113,7 @@ export default defineComponent({
         localDeployInvocation() {
             const deployment = this.deployment
             const environment = this.environment
-            const deploymentName = deployment!.name
+            const deploymentName = deployment!.name // rendered only under !noDeploy
 
             // attempting to make this consistent for autostop
             // this may or not make sense for local deploy?
@@ -145,6 +145,8 @@ export default defineComponent({
 
                 if(username && !password) {
                     // we don't have a deploy token for this blueprint
+                    // username is only set once blueprintProjectInfo was fetched from deployment.projectPath,
+                    // and every caller that passes a deployment passes its environment
 
                     this.gettingBlueprintCreds = true
 
@@ -174,10 +176,10 @@ export default defineComponent({
     },
 
     async created() {
+        if(!this.deployment) return
         try {
-            this.blueprintProjectInfo = await fetchProjectInfo(encodeURIComponent(this.deployment?.projectPath))
-        } catch(e) {throw e}
-        finally {
+            this.blueprintProjectInfo = await fetchProjectInfo(encodeURIComponent(this.deployment.projectPath))
+        } finally {
             this.gettingBlueprintInfo = false
         }
     }

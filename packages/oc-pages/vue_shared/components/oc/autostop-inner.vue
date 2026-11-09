@@ -25,8 +25,7 @@ export default defineComponent({
         const d = new Date(Date.now() + 2 * 60 * 60 * 1000)
         const scheduledAutostopTime = `${('0' + d.getHours()).slice(-2)}:${('0' + d.getMinutes()).slice(-2)}`
         return {
-            // @ts-expect-error Date.prototype.getYear is deprecated, absent from lib.dom
-            scheduledAutostop: new Date(d.getYear() + 1900, d.getMonth(), d.getDate()),
+            scheduledAutostop: new Date(d.getFullYear(), d.getMonth(), d.getDate()),
             scheduledAutostopTime, // TODO remember the user's last choice
             // the default is today at now+2h, which no preset expresses
             preset: 'custom',
@@ -40,8 +39,7 @@ export default defineComponent({
     computed: {
         todayArgs(): [number, number, number] {
             const d = new Date()
-            // @ts-expect-error Date.prototype.getYear is deprecated, absent from lib.dom
-            return [d.getYear() + 1900, d.getMonth(), d.getDate()]
+            return [d.getFullYear(), d.getMonth(), d.getDate()]
         },
 
         // replaces the picker's disabledDate: no point stopping in the past
@@ -76,7 +74,7 @@ export default defineComponent({
             return (parseInt(hours) * 60 + parseInt(min)) * 60 * 1000
         },
         autostop() {
-            const result = Math.floor((Date.parse(this.scheduledAutostop as unknown as string) + this.autostopTime - Date.now()) / 1000)
+            const result = Math.floor((+this.scheduledAutostop + this.autostopTime - Date.now()) / 1000)
             if(result > 0) {
                 return result
             }

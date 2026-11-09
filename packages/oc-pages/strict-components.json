@@ -60,6 +60,7 @@
   "vue_shared/components/oc/code-clipboard.vue",
   "vue_shared/components/oc/deployment-scheduler.vue",
   "vue_shared/components/oc/empty-state-job.vue",
+  "vue_shared/components/oc/environment-selection.vue",
   "vue_shared/components/oc/experimental-settings-indicator.vue",
   "vue_shared/components/oc/experimental-settings-indicator/experimental-settings-input.vue",
   "vue_shared/components/oc/github-auth.vue",

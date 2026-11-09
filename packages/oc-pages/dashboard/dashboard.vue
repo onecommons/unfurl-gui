@@ -62,7 +62,7 @@ export default defineComponent({
 
         if(!window.gon.home_project) {
             this.setCurrentNamespace(currentNamespace);
-            this.setDashboardName(pathComponents[pathComponents.lastIndex])
+            this.setDashboardName(pathComponents.at(-1))
         }
 
         this.populateCurrentUser()

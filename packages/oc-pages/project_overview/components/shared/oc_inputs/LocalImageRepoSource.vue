@@ -23,11 +23,9 @@ export default defineComponent({
     mixins: [connectedRepo],
     data() {
         const data: Record<string, any> = {
-            containerRepositories: null,
             userProjectSuggestionsPromise: fetchProjects({minAccessLevel: 10}),
             projectInfo: null,
             containerRepositoriesPromise: null,
-            // @ts-expect-error duplicate key; the later value is the one that takes effect
             containerRepositories: [],
         }
         for(const prop of this.card.properties) {

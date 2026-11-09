@@ -53,3 +53,13 @@ describe('leaving the page', () => {
         expect(jest.getTimerCount()).toBe(0)
     })
 })
+
+// The stylesheet caps a loaded console at 700px; sizing it to the viewport
+// has to lift that cap or tall screens never get the extra lines.
+it('lifts the stylesheet height cap when sizing the console to the window', () => {
+    document.body.innerHTML = '<div id="console-container" class="loaded"></div>'
+    ConsoleWrapper.methods.setConsoleHeight.call({windowHeight: 1600})
+    const container = document.querySelector('#console-container')
+    expect(container.style.maxHeight).toBe('none')
+    expect(container.style.height).toBe('1700px')
+})

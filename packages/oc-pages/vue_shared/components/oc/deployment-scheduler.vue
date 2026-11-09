@@ -20,7 +20,7 @@ export default defineComponent({
     },
     props: {
         resourceName: String,
-        upstreamProject: String,
+        upstreamProject: {type: String, required: true},
         label: String
     },
     methods: {
@@ -29,7 +29,7 @@ export default defineComponent({
     computed: {
         ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment', 'getCurrentContext']),
         _upstreamProject() {
-            return this.upstreamProject!.toLowerCase()
+            return this.upstreamProject.toLowerCase()
 
         },
         subscriptionsDict() {

@@ -9,7 +9,7 @@ export default defineComponent({
     name: 'JobSummary',
     components: { GlBadge, TableComponent },
     props: {
-        jobsData: Array as PropType<Record<string, any>[]>
+        jobsData: {type: Array as PropType<Record<string, any>[]>, required: true}
     },
     fields: [
         { key: 'template', label: 'Template', textValue: (item: Record<string, any>) => `${item.template}: ${item.type}`},
@@ -36,7 +36,7 @@ export default defineComponent({
                                 ''
                             )
 
-                            const jobId = this.jobsData![0].id
+                            const jobId = this.jobsData[0].id
 
                             const url = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/jobs/${jobId}/artifacts/browse/${basePath}`
                             const text = basePath.split('/').filter((s: string) => !!s).slice(-3).join('/')

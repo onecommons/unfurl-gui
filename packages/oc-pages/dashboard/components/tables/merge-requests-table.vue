@@ -38,6 +38,9 @@ export default defineComponent({
         GlIcon,
         EnvironmentCell
     },
+    props: {
+        noRouter: {type: Boolean, default: false},
+    },
     methods: {
         projectPathToHomeRoute,
     },
@@ -89,7 +92,6 @@ export default defineComponent({
             </div>
         </template>
         <template #environment="{item}">
-            <!-- @vue-expect-error noRouter is not declared on this component -->
             <environment-cell :noRouter="noRouter" :environment="item.environment"/>
         </template>
         <template #author="{item}">

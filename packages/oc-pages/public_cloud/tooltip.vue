@@ -5,11 +5,13 @@ import Region from './components/Region.vue'
 import Account from './components/Account.vue'
 import ResourceType from './components/ResourceType.vue'
 import {nextTick, defineComponent} from 'vue'
+import type {PropType} from 'vue'
+import type {Node} from './index'
 
 export default defineComponent({
   name: 'Tooltip',
   props: {
-    item: Object,
+    item: Object as PropType<Node | null>,
     left: {
       default: -1000
     },
@@ -87,7 +89,7 @@ export default defineComponent({
 </script>
 <template>
   <div
-    v-if="componentType"
+    v-if="componentType && item"
     id="tooltip"
     ref="container"
     class="gl-fixed"

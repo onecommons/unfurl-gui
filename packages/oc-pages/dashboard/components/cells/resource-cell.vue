@@ -9,7 +9,9 @@ import DashboardRouterLink from "../../components/dashboard-router-link.vue"
 export default defineComponent({
     components: { StatusIcon, DashboardRouterLink },
     props: {
-        resource: Object, deployment: Object, environment: Object,
+        resource: Object,
+        deployment: {type: Object, required: true},
+        environment: {type: Object, required: true},
         noRouter: {
             type: Boolean,
             default: false
@@ -35,10 +37,8 @@ export default defineComponent({
             return deploymentItem
         },
         to() {
-            const href = this.noRouter?
-            `${this.deploymentItem?.viewableLink}#${this.id}`:
-                {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment!.name, environment: this.environment!.name}, hash: `#${this.id}`}
-            return this.noRouter ? href : {to: href}
+            if(this.noRouter) return `${this.deploymentItem?.viewableLink}#${this.id}`
+            return {to: {name: routes.OC_DASHBOARD_DEPLOYMENTS, params: {name: this.deployment.name, environment: this.environment.name}, hash: `#${this.id}`}}
         },
     }
 })

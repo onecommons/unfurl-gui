@@ -1,21 +1,23 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import type {PropType} from 'vue'
+import type DeploymentItem from '../../../store/modules/deployment-info/deployment-item'
 import {GlIcon, GlButton} from '@gitlab/ui'
 import DropdownActionItem from './dropdown-action-item.vue'
 import {generateGitLabIssueSync} from 'oc_vue_shared/client_utils/gitlab-issues'
 import OpenLiveApp from './open-live-app.vue'
 export default defineComponent({
     props: {
-        deploymentItem: Object as PropType<any>,
+        // undefined until the deployment's item is loaded
+        deploymentItem: Object as PropType<DeploymentItem>,
         resumeEditingTarget: String,
         viewDeploymentTarget: String,
         viewJobsLink: String,
         viewArtifactsLink: String,
         issuesLinkArgs: Array,
         viewInRepositoryLink: String,
-        controlButtons: Array as PropType<(string | undefined)[]>,
-        disabledButtons: Array as PropType<string[]>,
+        controlButtons: {type: Array as PropType<(string | undefined)[]>, required: true},
+        disabledButtons: {type: Array as PropType<string[]>, required: true},
         component: {
             type: [String, Object],
             default: () => 'gl-button'
@@ -24,8 +26,8 @@ export default defineComponent({
     emits: ['cancelAutostop', 'cancelJob', 'cloneDeployment', 'deleteDeployment', 'edit', 'incRedeploy', 'localDeploy', 'renameDeployment', 'scheduleAutostop', 'showPreviousJobs', 'startDeployment', 'stopDeployment'],
     components: {GlIcon, GlButton, DropdownActionItem, OpenLiveApp},
     methods: {
-        hasButton(id: string) { return this.controlButtons!.includes(id) },
-        hasDisabledButton(id: string) { return this.disabledButtons!.includes(id) },
+        hasButton(id: string) { return this.controlButtons.includes(id) },
+        hasDisabledButton(id: string) { return this.disabledButtons.includes(id) },
         renameDeployment() {
             this.$emit('renameDeployment')
         },
@@ -86,11 +88,11 @@ export default defineComponent({
         <gl-icon :size="16" name="cancel"/>
         {{__('Cancel Job')}}
     </component>
-    <open-live-app :component="component" v-if="hasButton('open')" v-bind="componentFor('open')" :deployment="deploymentItem.deployment" />
+    <open-live-app :component="component" v-if="hasButton('open')" v-bind="componentFor('open')" :deployment="deploymentItem?.deployment" />
     <component :is='component' v-if="hasButton('schedule-autostop')" v-bind="componentFor('schedule-autostop')" @click="$emit('scheduleAutostop')">
         <gl-icon name="timer" :size="16" class="gl-mr-2"/>
 
-        {{deploymentItem.isAutostopCancelable? __('Rechedule Auto Stop'): __('Schedule Auto Stop')}}
+        {{deploymentItem?.isAutostopCancelable? __('Rechedule Auto Stop'): __('Schedule Auto Stop')}}
     </component>
     <component :is='component' v-if="hasButton('edit-draft')" v-bind="componentFor('edit-draft')" @click="beforeResumeEdit" :href="resumeEditingTarget">
         <gl-icon :size="16" name="pencil-square"/>

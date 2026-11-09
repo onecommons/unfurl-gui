@@ -136,9 +136,9 @@ export default defineComponent({
 
             if(timeComponents.length > 1) {
                 return timeComponents.join(':')
-            } else if ((this.autostopRemainingSeconds as unknown as number) > 1) {
+            } else if (parseInt(this.autostopRemainingSeconds) > 1) {
                 return `${this.autostopRemainingSeconds} seconds`
-            } else if ((this.autostopRemainingSeconds as unknown as number) == 1) {
+            } else if (parseInt(this.autostopRemainingSeconds) == 1) {
                 return '01 second'
             } else {
                 return ''

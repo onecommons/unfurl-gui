@@ -21,8 +21,7 @@ export default defineComponent({
 
             const pathComponents = dashboard.split('/')
             const namespace = pathComponents.slice(0, -1).join('/')
-            // arrays have no lastIndex, so this is always undefined
-            const dashboardName = pathComponents[(pathComponents as unknown as {lastIndex: number}).lastIndex]
+            const dashboardName = pathComponents.at(-1)
 
             if(!window.gon.home_project) {
                 this.$store.commit('setCurrentNamespace', namespace)

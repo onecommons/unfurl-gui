@@ -39,14 +39,14 @@ describe('pollableDashboardItem', () => {
 })
 
 describe('a queued deployment', () => {
-    function mountDashboard(deployInto) {
+    function mountDashboard(deployInto, base = '/me/dashboard') {
         const getters = {getDashboardItems: [], getUsername: 'me', getHomeProjectPath: 'me/dashboard'}
         const $store = {
             getters: new Proxy(getters, {has: () => true, get: (t, k) => k in t ? t[k] : undefined}),
             dispatch: jest.fn((name, payload) => name == 'deployInto' ? deployInto(payload) : Promise.resolve()),
             commit: jest.fn(),
         }
-        const $router = {options: {base: '/me/dashboard'}, replace: jest.fn()}
+        const $router = {options: {base}, replace: jest.fn()}
         const wrapper = shallowMount(Dashboard, {
             global: {mocks: {$store, $router, $route: {hash: ''}}, stubs: {RouterView: true}},
         })
@@ -81,5 +81,32 @@ describe('a queued deployment', () => {
         expect(deployInto).toHaveBeenCalledWith({deployment: 'app'})
         expect(sessionStorage['trigger-deployment']).toBeUndefined()
         expect(wrapper.vm.isLoaded).toBe(true)
+    })
+})
+
+// The fork never sets gon.home_project, so it names the dashboard from the
+// router base. A dashboard project with another name must not fall back to
+// the default name.
+describe('naming the dashboard from the path', () => {
+    beforeEach(() => {
+        window.gon = {}
+        sessionStorage.clear()
+        jest.spyOn(console, 'error').mockImplementation(() => {})
+    })
+    afterEach(() => jest.restoreAllMocks())
+
+    it('takes the namespace and the dashboard from the router base', async () => {
+        const getters = {getDashboardItems: [], getUsername: 'me'}
+        const $store = {
+            getters: new Proxy(getters, {has: () => true, get: (t, k) => k in t ? t[k] : undefined}),
+            dispatch: jest.fn(() => Promise.resolve()),
+            commit: jest.fn(),
+        }
+        shallowMount(Dashboard, {
+            global: {mocks: {$store, $router: {options: {base: '/org/team/mydash'}, replace: jest.fn()}, $route: {hash: ''}}, stubs: {RouterView: true}},
+        })
+        await flushPromises()
+        expect($store.commit).toHaveBeenCalledWith('setCurrentNamespace', 'org/team')
+        expect($store.commit).toHaveBeenCalledWith('setDashboardName', 'mydash')
     })
 })

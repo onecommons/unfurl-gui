@@ -43,6 +43,7 @@ export default defineComponent({
             }
 
             try {
+                // the star panel renders only in the fork (`enabled`), whose HAML always sets endpoint and count
                 const {data} = (await axios.post(this.$projectGlobal.buttonStar.endpoint!))
                 const { star_count } = data;
                 // // eslint-disable-next-line babel/camelcase

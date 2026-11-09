@@ -16,7 +16,7 @@ export default defineComponent({
     },
     methods: {
         async copyLocalCloneInvocation() {
-            const code = (this.$refs.code as HTMLElement).textContent!
+            const code = (this.$refs.code as HTMLElement).textContent! // null only on Document and Doctype nodes
             await navigator.clipboard.writeText(code)
             this.clipboardTitle = CLIPBOARD_TITLE_COPIED
         }

@@ -24,7 +24,7 @@ export default defineComponent({
         }
     },
     computed: {
-        ...mapGetters(['getHomeProjectPath, getDashboardItems', 'windowHeight']),
+        ...mapGetters(['windowHeight']),
         shouldScroll() {
             return this.autoscroll && !this.$route.hash.match(/L\d+/)
         }
@@ -111,7 +111,7 @@ export default defineComponent({
         },
         setConsoleHeight() {
             const consoleContainer = document.querySelector('#console-container') as HTMLElement
-            delete (consoleContainer.style as Partial<CSSStyleDeclaration>).maxHeight
+            consoleContainer.style.maxHeight = 'none'
             consoleContainer.style.height = (this.windowHeight - consoleContainer.getBoundingClientRect().y - BOTTOM_MARGIN) + 'px'
         }
     },

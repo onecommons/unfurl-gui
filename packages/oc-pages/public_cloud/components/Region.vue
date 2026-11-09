@@ -1,12 +1,13 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import type {PropType} from 'vue'
+import type {Node} from '../index'
 import CloudProvider from './CloudProvider.vue'
 
 export default defineComponent({
   name: 'Region',
   props: {
-    item: Object as PropType<any>
+    item: {type: Object as PropType<Node>, required: true}
   },
   components: {
     CloudProvider
@@ -15,7 +16,7 @@ export default defineComponent({
 </script>
 <template>
   <div class="gl-flex gl-flex-col">
-    <cloud-provider :item="item.parent"/>
+    <cloud-provider v-if="item.parent" :item="item.parent"/>
     <div style="color: inherit">{{item.data.name}}</div>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {GlDropdown, GlDropdownItem, GlDropdownDivider} from '@gitlab/ui'
 import {ErrorSmall, DetectIcon} from 'oc_vue_shared/components/oc'
 import {mapGetters, mapActions} from 'vuex'
@@ -18,7 +19,8 @@ export default defineComponent({
     props: {
         provider: String,
         error: String,
-        modelValue: Object,
+        // an environment, or its name (deployment-index-table's clone dialog)
+        modelValue: [Object, String] as PropType<Record<string, any> | string>,
         environmentCreation: Boolean,
     },
     data() {return {}},
@@ -43,12 +45,11 @@ export default defineComponent({
     computed: {
         ...mapGetters([ 'lookupEnvironment', 'getMatchingEnvironments', 'getHomeProjectPath', 'additionalDashboardProviders' ]),
         matchingEnvironments() {
-            return this.getMatchingEnvironments(this.provider).filter(env => env._dashboard == this.getHomeProjectPath)
+            return this.getMatchingEnvironments(this.provider).filter((env: Record<string, any>) => env._dashboard == this.getHomeProjectPath)
         },
         externalEnvironments() {
             return (this.additionalDashboardProviders || [])
-                .map(
-                    dash => Object.entries(dash.providersByEnvironment as Record<string, any>)
+                .map(                    (dash: Record<string, any>) => Object.entries(dash.providersByEnvironment as Record<string, any>)
                         .filter(([env, providers]) => providers && providers.includes(this.provider))
                         .map(([env, _]) => ({name: env, _dashboard: dash.fullPath, type: dash.primaryProviderFor(env)}))
                 ).flat()
@@ -56,12 +57,12 @@ export default defineComponent({
         env() {
             let result
             if(typeof this.modelValue == 'string') {
-                result = this.lookupEnvironment(this.modelValue || this.defaultEnvironmentName)
+                result = this.lookupEnvironment(this.modelValue)
             } else {
                 result = this.modelValue
             }
 
-            if(result?.name && this.matchingEnvironments.concat(this.externalEnvironments).some(env => env.name == result.name)) {
+            if(result?.name && this.matchingEnvironments.concat(this.externalEnvironments).some((env: Record<string, any>) => env.name == result.name)) {
                 return result
             }
 

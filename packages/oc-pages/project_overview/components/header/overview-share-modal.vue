@@ -37,7 +37,7 @@ export default defineComponent({
             if(this.visible) {
                 newTitle += ' Share'
                 if(val && val != '?type=default') {
-                    const params = Array.from(val.match(/(\w+=\w+)/g)!)
+                    const params = Array.from(val.match(/(\w+=\w+)/g) || [])
                     .filter(p => p != 'type=default')
                     newTitle += ' (' + params.join(', ') + ')'
                 }

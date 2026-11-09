@@ -1,17 +1,18 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import type {PropType} from 'vue'
+import type {Node} from '../index'
 import {DetectIcon} from 'oc_vue_shared/components/oc'
 export default defineComponent({
   name: 'CloudProvider',
   components: {DetectIcon},
   props: {
-    item: Object as PropType<any>,
+    item: {type: Object as PropType<Node>, required: true},
     isTooltip: Boolean
   },
   computed: {
     presentableResources() {
-      return this.item.children.map((child: Record<string, any>) => child.data)//.filter(resource => resource.icon)
+      return (this.item.children ?? []).map(child => child.data)//.filter(resource => resource.icon)
     },
     resourcesCountLabel() {
       const count = this.presentableResources.length

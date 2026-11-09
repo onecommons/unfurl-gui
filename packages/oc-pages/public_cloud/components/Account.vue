@@ -1,15 +1,16 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
 import type {PropType} from 'vue'
+import type {Node} from '../index'
 export default defineComponent({
   name: 'Account',
   props: {
-    item: Object as PropType<any>
+    item: {type: Object as PropType<Node>, required: true}
   },
   computed: {
     firstChild() {
-      if(this.item.children.length == 0) return null
-      return this.item.children[0]?.data
+      if(!this.item.children?.length) return null
+      return this.item.children[0].data
     },
     dashboard() {
       if(!this.firstChild) return ''

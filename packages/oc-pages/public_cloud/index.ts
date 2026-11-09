@@ -27,7 +27,7 @@ let welcomeBanner: HTMLElement | null = null
 type Json = Record<string, any>
 // a branch is a category or a cloud; a leaf is a resource type
 type Datum = Json & {name: string, kind?: string, children?: Datum[] | null, value?: number}
-type Node = d3.HierarchyCircularNode<Datum>
+export type Node = d3.HierarchyCircularNode<Datum>
 type Transform = Pick<d3.ZoomTransform, 'x' | 'y' | 'k'>
 
 

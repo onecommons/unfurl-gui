@@ -111,12 +111,12 @@ export default defineComponent({
     computed: {
         ...mapGetters(['lookupEnvironmentVariable', 'getDependent', 'getHomeProjectPath']),
         subdomain() {
-            let parentDependency = this.card as Record<string, any>
+            let parentDependency: Record<string, any> | undefined = this.card
             do {
-                if(parentDependency.properties.find((prop: Record<string, any>) => prop.name == 'subdomain')) break
-            } while (parentDependency = this.getDependent(parentDependency?.name))
-            
-            return parentDependency.properties.find((prop: Record<string, any>) => prop.name == 'subdomain')?.value
+                if(parentDependency!.properties.find((prop: Record<string, any>) => prop.name == 'subdomain')) break
+            } while (parentDependency = this.getDependent(parentDependency!.name))
+
+            return parentDependency?.properties.find((prop: Record<string, any>) => prop.name == 'subdomain')?.value
         },
         target() {
             return `${this.target_subdomain}.${this.lookupEnvironmentVariable('PROJECT_DNS_ZONE')}`

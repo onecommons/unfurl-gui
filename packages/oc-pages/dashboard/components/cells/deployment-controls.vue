@@ -30,7 +30,7 @@ export default defineComponent({
     props: {
         resumeEditingLink: [Object, String],
         viewDeploymentLink: [Object, String],
-        scope: Object,
+        scope: {type: Object, required: true},
     },
     mixins: [homeProjectDefaultBranch],
     data() {
@@ -53,9 +53,9 @@ export default defineComponent({
             'serviceDesk',
             'getDashboardItems'
         ]),
-        deployment() {return this.scope!.item.context?.deployment},
-        application() {return this.scope!.item.context?.application},
-        environment() {return this.scope!.item.context?.environment},
+        deployment() {return this.scope.item.context?.deployment},
+        application() {return this.scope.item.context?.application},
+        environment() {return this.scope.item.context?.environment},
         deploymentItem() {
             return this.deploymentItemDirect({environment: this.environment, deployment: this.deployment})
         },
@@ -195,7 +195,7 @@ export default defineComponent({
                 'view-deployment-target': this.viewDeploymentTarget,
                 'view-artifacts-link': this.deploymentItem?.artifactsLink,
                 'view-in-repository-link': this.viewInRepositoryLink,
-                'disabled-buttons': this.disabledButtons,
+                disabledButtons: this.disabledButtons,
             }
 
         },

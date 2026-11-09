@@ -813,7 +813,7 @@ export default defineComponent({
         <!-- @vue-expect-error `this` in a template is typed as possibly undefined -->
         <h3 v-if="tabs && currentTab == 0 && this.mergeRequests.length > 0">Open Merge Requests</h3>
         <!-- @vue-expect-error `this` in a template is typed as possibly undefined -->
-        <merge-requests-table v-show="(tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
+        <merge-requests-table :noRouter="noRouter" v-show="(tabs && currentTab == 0 && this.mergeRequests.length > 0) || showingMergeRequestsTab" />
     </div>
 
 </template>
