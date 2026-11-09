@@ -2,7 +2,7 @@
 // @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {mapMutations, mapActions, mapGetters} from 'vuex'
-import {compatibilityMountJobConsole} from 'oc_vue_shared/compat'
+import {compatibilityMountJobConsole, compatibilityUnmountJobConsole} from 'oc_vue_shared/compat'
 const TEXT_HTML = 'text/html' // my editor can't figure out how to indent this string
 const BOTTOM_MARGIN = -100
 export default defineComponent({
@@ -139,8 +139,8 @@ export default defineComponent({
 
     },
     beforeUnmount() {
-        this.consoleApp.$destory()
         clearTimeout(this.timeout)
+        compatibilityUnmountJobConsole(this.consoleApp)
     }
 })
 </script>
