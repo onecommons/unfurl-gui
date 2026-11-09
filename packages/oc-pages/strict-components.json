@@ -18,6 +18,7 @@
   "dashboard/components/gcp-zone-dropdown.vue",
   "dashboard/components/google-auth-button.vue",
   "dashboard/components/job-summary.vue",
+  "dashboard/components/tables/deployment-index-table.vue",
   "dashboard/components/tables/environment-index-table.vue",
   "dashboard/components/tables/merge-requests-table.vue",
   "dashboard/pages/deployment.vue",

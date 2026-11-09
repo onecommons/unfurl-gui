@@ -12,13 +12,19 @@ import {triggerIncrementalDeployment} from 'oc_vue_shared/client_utils/pipelines
 import {projectPathToHomeRoute} from 'oc_vue_shared/client_utils/dashboard'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash';
 import {nextTick, defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import _ from 'lodash'
 import * as routes from '../../router/constants'
 import MergeRequestsTable from './merge-requests-table.vue'
 
 const standalone = window.gon.unfurl_gui
 
-function deploymentGroupBy(item) {
+type Json = Record<string, any>
+interface Target {deployment: Json, environment: Json}
+interface TableScope {item: Json}
+interface TabFilter {title: string, filter?(item: Json): boolean}
+
+function deploymentGroupBy(item: Json) {
     let result
     try{
         result = `${item.deployment.name}:${item.application.name}:${item.environment.name}`
@@ -26,7 +32,7 @@ function deploymentGroupBy(item) {
     return result
 }
 
-const tabFilters = [
+const tabFilters: TabFilter[] = [
     {
         title: 'All'
     },
@@ -101,7 +107,7 @@ export default defineComponent({
     },
     props: {
         items: {
-            type: Array,
+            type: Array as PropType<Json[]>,
             required: true
         },
         hideFilter: {
@@ -130,14 +136,14 @@ export default defineComponent({
                 key: 'environment',
                 label: 'Environments',
                 s: 'Environment',
-                groupBy: (item) => item.environment?.name
+                groupBy: (item: Json) => item.environment?.name
             },
             {
                 key: 'resource',
                 label: 'Resources',
-                textValue: (item) => item.resource?.title,
-                groupBy: (item) => item.resource?.name,
-                pluralize: (...args) => self.pluralizeResources(...args),
+                textValue: (item: Json) => item.resource?.title,
+                groupBy: (item: Json) => item.resource?.name,
+                pluralize: (count: number, item: Json) => self.pluralizeResources(count, item),
                 s: 'Resource'
             },
             {
@@ -149,7 +155,7 @@ export default defineComponent({
                 key: 'controls',
                 label: 'Open',
                 tableBodyStyles: {'justify-content': 'flex-end'},
-                groupBy: (item) => item.context.deployment?.name,
+                groupBy: (item: Json) => item.context.deployment?.name,
                 textValue: () => '',
             },
         ]
@@ -159,8 +165,10 @@ export default defineComponent({
         let currentTab = tabFilters.findIndex(tab => tab.title.toLowerCase() == show?.toLowerCase())
         if(currentTab == -1) currentTab = 0
 
-        const intent = '', target = null, newDeploymentTitle = null, cloneTargetEnvironment = null
-        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null, standalone}
+        const intent = '', target = null as Target | null, newDeploymentTitle = null as string | null
+        // an environment's name until environment-selection resolves it
+        const cloneTargetEnvironment = null as Json | string | null
+        return {fields, routes, intent, target, transition: false, currentTab, newDeploymentTitle, cloneTargetEnvironment, glDark, autostop: null as number | null, standalone}
 
     },
     methods: {
@@ -177,10 +185,15 @@ export default defineComponent({
             'populateDeploymentItems',
         ]),
         ...mapMutations(['createError']),
+        // every intent is set together with its target
+        requireTarget(): Target {
+            if(!this.target) throw new Error('no deployment selected')
+            return this.target
+        },
         async deploy() {
             await this.deployInto(this.deploymentParameters)
             if(this.hasCriticalErrors) return
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             window.location.href = this.$router.resolve({
                 name: routes.OC_DASHBOARD_DEPLOYMENTS,
                 params: {
@@ -195,7 +208,7 @@ export default defineComponent({
         async undeploy() {
             await this.undeployFrom(this.deploymentParameters)
             if(this.hasCriticalErrors) return
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             window.location.href = this.$router.resolve({
                 name: routes.OC_DASHBOARD_DEPLOYMENTS,
                 params: {
@@ -208,7 +221,7 @@ export default defineComponent({
             }).href
         },
         async scheduleAutostop() {
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             const deploymentItem = this.deploymentItemDirect({deployment, environment})
             if(deploymentItem.isAutostopCancelable) {
                 await deploymentItem.cancelAutostop()
@@ -226,8 +239,8 @@ export default defineComponent({
 
             await this.populateDeploymentItems(this.getDashboardItems)
         },
-        statuses(scope) { return _.uniqBy<any>(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
-        resumeEditingLink(scope) {
+        statuses(scope: TableScope) { return _.uniqBy<any>(scope.item.context.deployment?.statuses || [], resource => resource?.status) },
+        resumeEditingLink(scope: TableScope) {
             const
                 application = scope.item.context.application,
                 deployment = scope.item.context.deployment,
@@ -251,7 +264,7 @@ export default defineComponent({
                 return to
             }
         },
-        deploymentAttrs(scope) {
+        deploymentAttrs(scope: TableScope) {
             const context = scope.item.context
             let href
             if(context.deployment?.__typename == 'DeploymentTemplate') href = this.resumeEditingLink(scope)
@@ -263,7 +276,7 @@ export default defineComponent({
         },
         async onModalConfirmed() {
             const intent = this.intent
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             const deploymentItem = this.deploymentItemDirect({deployment, environment})
 
             await nextTick() // wait until modal is closed before doing anything
@@ -294,7 +307,9 @@ export default defineComponent({
                     await this.handleDeleteRedirect()
                     return
                 case 'clone':
-                    const targetEnvironment = this.lookupEnvironment(this.cloneTargetEnvironment?.name)
+                    const cloneTarget = this.cloneTargetEnvironment
+                    const targetEnvironmentName = typeof cloneTarget == 'string'? cloneTarget: cloneTarget?.name
+                    const targetEnvironment = this.lookupEnvironment(targetEnvironmentName)
                     this.createFlash({
                         message: `Cloning ${deployment?.title}...`,
                         type: FLASH_TYPES.SUCCESS,
@@ -312,7 +327,7 @@ export default defineComponent({
                         type: FLASH_TYPES.SUCCESS,
                         duration: 5000
                     })
-                    const redirectLocation = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.cloneTargetEnvironment?.name}/${clonedDeploymentName}`
+                    const redirectLocation = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${targetEnvironmentName}/${clonedDeploymentName}`
                     window.location.href = redirectLocation
                     return
                 case 'incRedeploy':
@@ -334,43 +349,43 @@ export default defineComponent({
 
             }
         },
-        onIntentToRename(deployment, environment) {
+        onIntentToRename(deployment: Json, environment: Json) {
             this.intent = 'rename'
             this.target = {deployment, environment}
             this.newDeploymentTitle = deployment.title
         },
-        onIntentToDelete(deployment, environment) {
+        onIntentToDelete(deployment: Json, environment: Json) {
             this.intent = 'delete'
             this.target = {deployment, environment}
         },
-        onIntentToStop(deployment, environment) {
+        onIntentToStop(deployment: Json, environment: Json) {
             this.intent = 'undeploy'
             this.target = {deployment, environment}
         },
-        onIntentToStart(deployment, environment) {
+        onIntentToStart(deployment: Json, environment: Json) {
             this.intent = 'deploy'
             this.target = {deployment, environment}
         },
-        onIntentToClone(deployment, environment) {
+        onIntentToClone(deployment: Json, environment: Json) {
             this.intent = 'clone'
             this.target = {deployment, environment}
             this.cloneTargetEnvironment = environment.name
             this.newDeploymentTitle = deployment.title
         },
-        onIntentToLocalDeploy(deployment, environment) {
+        onIntentToLocalDeploy(deployment: Json, environment: Json) {
             this.intent = 'localDeploy'
             this.target = {deployment, environment}
         },
-        onIntentToRedeploy(deployment, environment) {
+        onIntentToRedeploy(deployment: Json, environment: Json) {
             this.intent = 'incRedeploy'
             this.target = {deployment, environment}
         },
-        onIntentToScheduleAutostop(deployment, environment) {
+        onIntentToScheduleAutostop(deployment: Json, environment: Json) {
             this.intent = 'scheduleAutostop'
             this.target = {deployment, environment}
         },
 
-        onIntentToEdit(deployment, environment) {
+        onIntentToEdit(deployment: Json, environment: Json) {
             this.target = {deployment, environment}
             const deploymentItem = this.deploymentItemDirect({environment, deployment})
             if(deploymentItem?.isDraft) {
@@ -380,23 +395,20 @@ export default defineComponent({
             }
         },
 
-        hasDeployPath(scope) {
-            return !this.deploymentItem?.pipeline?.id
-        },
-        rowClass(item, type) {
+        rowClass(item: Json, type: string) {
             if (type !== 'row') return
             if(`#${item?.context?.deployment?.name}` == this.$route.hash) return 'highlight'
         },
         // TODO merge these
-        deploymentItem(scope, method?, ...args) {
+        deploymentItem(scope: TableScope, method?: string, ...args: unknown[]) {
             const environment = scope.item.context.environment
             const deployment = scope.item.context.deployment
             return this.deploymentItemDirect({deployment, environment}, method, ...args)
         },
-        deploymentNameId(n) {
+        deploymentNameId(n: string) {
             return `deployment-${n}`
         },
-        pluralizeResources(count, item) {
+        pluralizeResources(count: number, item: Json) {
           if(count != 0) return
           const deploymentItem = this.deploymentItem({item})
           if(deploymentItem?.isDraft) return 'Not yet deployed'
@@ -446,7 +458,7 @@ export default defineComponent({
         ]),
         intentToDeletePreventedBy() {
             if(this.intent != 'delete') return []
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             return this.deleteDeploymentPreventedBy(deployment.name, environment.name)
         },
         ableToDelete() {
@@ -454,14 +466,14 @@ export default defineComponent({
         },
         intentToUndeployPreventedBy() {
             if(this.intent != 'undeploy') return []
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             return this.undeployPreventedBy(deployment.name, environment.name)
         },
         ableToUndeploy() {
             return this.intent == 'undeploy' && this.intentToUndeployPreventedBy.length == 0
         },
         projectPath() {
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             if(deployment.__typename == 'DeploymentTemplate') {
                 return deployment.projectPath
             } else {
@@ -471,7 +483,7 @@ export default defineComponent({
             }
         },
         deploymentParameters() {
-            const {deployment, environment} = this.target
+            const {deployment, environment} = this.requireTarget()
             const projectUrl = `${window.gon.gitlab_url}/${this.projectPath}.git`
             const deploymentBlueprint = deployment.__typename == 'DeploymentTemplate'?
                 deployment.name : deployment.deploymentTemplate
@@ -491,7 +503,7 @@ export default defineComponent({
             return `environments/${environment.name}/${this.projectPath}/${deployment.name}`
         },
         modal: {
-            set(val) {
+            set(val: boolean) {
                 if(!val) this.intent = ''
             },
             get() {
@@ -520,7 +532,7 @@ export default defineComponent({
                 case 'edit':
                     return `Edit deployment '${targetTitle}'?`
                 case 'scheduleAutostop':
-                    const {deployment, environment} = this.target
+                    const {deployment, environment} = this.requireTarget()
                     const deploymentItem = this.deploymentItemDirect({deployment, environment})
 
                     if(deploymentItem.isAutostopCancelable) {
@@ -555,11 +567,11 @@ export default defineComponent({
             })
             return result
         },
-        itemsByTab() {
-            if(!this.useTabs) return
-            const result = []
+        itemsByTab(): Json[][] {
+            if(!this.useTabs) return []
+            const result: Json[][] = []
             for(const tab of tabFilters) {
-                const tabItems = []
+                const tabItems: Json[] = []
                 for(const item of this.itemsSorted) {
                     const deploymentItem = this.deploymentItem({item})
                     if(!deploymentItem) {
@@ -574,8 +586,8 @@ export default defineComponent({
             }
             return result
         },
-        countsByTab() {
-            if(!this.useTabs) return
+        countsByTab(): number[] {
+            if(!this.useTabs) return []
             let result = this.itemsByTab.map(list => {
                 const counts = _.countBy(list, (item) => item.context.environment?.name + ':' + item.context.deployment?.name)
                 return Object.keys(counts).length
@@ -591,7 +603,7 @@ export default defineComponent({
             return this.itemsSorted
         },
         deleteWarning() {
-            return this.intent == 'delete' && this.deploymentItemDirect({deployment: this.target.deployment, environment: this.target.environment}, 'isRunning')
+            return this.intent == 'delete' && this.deploymentItemDirect(this.requireTarget(), 'isRunning')
         },
         provider() {
             return this.target?.environment?.primary_provider?.type ?? null
@@ -627,6 +639,7 @@ export default defineComponent({
 
             return matchingParams && loaded
         },
+        tabFilterList() { return tabFilters },
         showingMergeRequestsTab() {
             return this.currentTab == tabFilters.findIndex(tf => tf.title == 'Merge Requests')
         }
@@ -658,7 +671,8 @@ export default defineComponent({
         modal(val) {
             if(!val && this.$route.query.show) {
                 const newRoute = {...this.$route}
-                newRoute.query = {...newRoute.query, show: undefined}
+                const {show, ...query} = newRoute.query
+                newRoute.query = query
 
                 this.$router.replace(newRoute)
             }
@@ -666,9 +680,10 @@ export default defineComponent({
     },
     async mounted() {
         const vm = this
-        this.$refs.container.style.transition = 'none'
+        const container = this.$refs.container as HTMLElement
+        container.style.transition = 'none'
         this.transition = false
-        this.$refs.container.style.transition = ''
+        container.style.transition = ''
 
         if(this.$route.hash) {
             setTimeout(
@@ -698,6 +713,7 @@ export default defineComponent({
             :actionCancel="actionCancel"
             @primary="onModalConfirmed"
             >
+            <template v-if="target">
             <div
                 v-if="intent == 'delete' && !ableToDelete"
                 class="gl-m-5">
@@ -736,7 +752,7 @@ export default defineComponent({
                         class="gl-mt-3"
                         :model-value="cloneTargetEnvironment"
                         @update:modelValue="cloneTargetEnvironment = $event"
-                        :provider="target.environment.primary_provider.type"
+                        :provider="target.environment.primary_provider?.type"
                     />
                 </gl-form-group>
             </div>
@@ -762,9 +778,10 @@ export default defineComponent({
             <div class="gl-m-5" v-if="intent == 'undeploy' && standalone">
                 <local-deploy teardown :environment="target.environment" :deployment="target.deployment" />
             </div>
+            </template>
         </gl-modal>
         <gl-tabs v-model="currentTab" v-if="useTabs">
-            <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in $options.tabFilters"/>
+            <oc-tab :titleCount="countsByTab[index]" :title="tab.title" :key="tab.title" v-for="(tab, index) in tabFilterList"/>
         </gl-tabs>
         <table-component v-show="!showingMergeRequestsTab" :noMargin="noMargin" :hideFilter="hideFilter" :useCollapseAll="false" :items="tableItems" :fields="fields" :row-class="rowClass">
             <template #deployment$head>

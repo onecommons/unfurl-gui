@@ -20,7 +20,7 @@ export default defineComponent({
         provider: String,
         error: String,
         // an environment, or its name (deployment-index-table's clone dialog)
-        modelValue: [Object, String] as PropType<Record<string, any> | string>,
+        modelValue: [Object, String] as PropType<Record<string, any> | string | null>,
         environmentCreation: Boolean,
     },
     data() {return {}},
