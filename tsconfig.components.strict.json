@@ -1,0 +1,13 @@
+// Every component under the strict settings the .ts modules meet. Only the
+// components listed in packages/oc-pages/strict-components.json must pass:
+// scripts/src/typecheck-strict-components.js enforces that, since a program
+// also checks what its files import. See the TypeScript plan, 3e.
+{
+  "extends": "./tsconfig.components.json",
+  "compilerOptions": {
+    "strictNullChecks": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
+    "useUnknownInCatchVariables": true
+  }
+}
