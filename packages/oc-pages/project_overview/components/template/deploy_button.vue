@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { mapGetters } from 'vuex'
 
 import { GlButton, GlButtonGroup, GlDisclosureDropdown, GlFormCheckbox, GlIcon, GlTooltipDirective} from '@gitlab/ui';
@@ -30,7 +31,7 @@ export default defineComponent({
     },
     props: {
         deployStatus: String,
-        mergeRequest: Object
+        mergeRequest: Object as PropType<Record<string, any> | null>
     },
     emits: ['mergeRequestReady', 'triggerDeploy', 'triggerLocalDeploy'],
     methods: {

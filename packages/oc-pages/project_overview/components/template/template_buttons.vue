@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlButton, GlTooltipDirective } from '@gitlab/ui';
 import {__} from '~/locale'
 import _ from 'lodash'
@@ -26,8 +27,8 @@ export default defineComponent({
         deleteStatus: {type: String, default: () => 'disabled'},
         cancelStatus: {type: String, default: () => 'hidden'},
         target: {type: String, default: () => 'template'},
-        mergeRequest: Object,
-        saveTooltip: String
+        mergeRequest: Object as PropType<Record<string, any> | null>,
+        saveTooltip: String,
     },
     emits: [
         'saveTemplate', 'saveDraft', 'triggerDeploy', 'mergeRequestReady',

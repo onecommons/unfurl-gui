@@ -42,6 +42,7 @@
   "project_overview/components/template/deploy_button.vue",
   "project_overview/components/template/template_buttons.vue",
   "project_overview/components/your-deployments.vue",
+  "project_overview/pages/templates/index.vue",
   "public_cloud/cloud-table.vue",
   "public_cloud/components/Account.vue",
   "public_cloud/components/CloudProvider.vue",

@@ -19,6 +19,11 @@ import {fetchUserHasWritePermissions, setMergeRequestReadyStatus, createMergeReq
 import {normpath} from 'oc_vue_shared/lib/normalize'
 import {blueprintDefaultBranch, homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 import * as routes from '../../router/constants'
+import type {NavigationGuardNext, RouteLocationNormalized} from '@gitlab/vue-router-vue3'
+
+interface Modal {show(): void, hide(): void}
+interface DeployOptions {forceCheck?: boolean, dryRun?: boolean}
+type Json = Record<string, any>
 
 
 export default defineComponent({
@@ -44,34 +49,35 @@ export default defineComponent({
 
   data() {
     return {
-      selfBranch: null,
-      uiTimeout: null,
-      createNodeResourceData: {},
-      connectNodeResourceData: {},
-      deleteNodeData: {},
+      selfBranch: null as string | null,
+      uiTimeout: null as ReturnType<typeof setTimeout> | null,
+      createNodeResourceData: {} as Json,
+      connectNodeResourceData: {} as Json,
+      deleteNodeData: {} as Json,
       componentKey: 0,
       startedTriggeringDeployment: false,
       dataWritten: false,
-      requirementTemp: {},
+      requirementTemp: {} as Json,
       resourceName: '',
       userEditedResourceName: false,
-      alertNameExists: null,
+      alertNameExists: null as boolean | null,
       titleKey: '',
       completedRequirements: false,
       completedMainInputs: false,
       activeSkeleton: true,
       failedToLoad: false,
-      selected: {},
+      selected: {} as Json,
       autoSaveTime: 2000,
       nodeTitle: '',
-      nodeChildren: [],
+      nodeChildren: [] as unknown[],
       nodeLevel: null,
       nodeAction: '',
       durationOfAlerts: 5000,
       checkedNode: true,
-      selectedServiceToConnect: '',
+      // '' until something is picked; the connect button is disabled until then
+      selectedServiceToConnect: '' as '' | Json,
       jobsData: null,
-      mergeRequest: null
+      mergeRequest: null as Json | null
     };
   },
 
@@ -240,15 +246,15 @@ export default defineComponent({
       if(this.saveDraftStatus == 'enabled' && this.commitBranch && this.commitBranch != this.defaultEditBranch) {
         return 'Save a draft of the edits on this deployment blueprint and open a merge request.'
       }
-      return null
+      return undefined
     },
 
     commitBranch: {
-      get() {
-        return this.selfBranch || this.$route.query.branch || this.defaultEditBranch
+      get(): string | null {
+        return this.selfBranch || this.queryValue('branch') || this.defaultEditBranch
       },
 
-      set(commitBranch) {
+      set(commitBranch: string | null) {
         this.selfBranch = commitBranch
       }
     },
@@ -333,21 +339,8 @@ export default defineComponent({
       this.alertNameExists = this.requirementMatchIsValid(slugify(val));
     },
 
-    validResourceTypesForSelectedRequirement: _.debounce(function(val) {
-      if(!val.length && this.createNodeResourceData.requirement) {
-        const environmentName = this.$route.params.environment
-        this.createError({
-          message: `No types found for '${this.createNodeResourceData.requirement.constraint?.title || this.createNodeResourceData.requirement.name}' for the cloud providers in this environment`,
-          context: {
-            blueprintRepositories: this.blueprintRepositories,
-            environmentRepositories: environmentName && this.environmentTypeRepositories(environmentName),
-            needed: this.createNodeResourceData.requirement.constraint.resourceType
-          },
-          severity: 'major'
-        })
-        const ref = this.$refs['oc-template-resource']
-        ref.hide()
-      }
+    validResourceTypesForSelectedRequirement: _.debounce(function(this: {reportMissingTypes(val: unknown[]): void}, val: unknown[]) {
+      this.reportMissingTypes(val)
     }, 100),
 
     deploymentDir: {
@@ -366,7 +359,7 @@ export default defineComponent({
     }
   },
 
-  serverPrefetch() {
+  serverPrefetch(): Promise<void> {
     return this.fetchItems();
   },
 
@@ -391,13 +384,13 @@ export default defineComponent({
 
       await this.fetchTypesForParams({params})
 
-      const ref = this.$refs['oc-template-resource'];
+      const ref = this.$refs['oc-template-resource'] as Modal;
       this.createNodeResourceData = obj;
       ref.show();
     });
 
     bus.$on('launchModalToConnect', (obj) => {
-      this.connectNodeResourceData = obj;
+      this.connectNodeResourceData = obj as Json;
       this.launchModal('oc-connect-resource', 250);
     });
 
@@ -414,7 +407,7 @@ export default defineComponent({
   beforeMount() {
     // NOTE this doesn't work without https
     window.addEventListener('beforeunload', this.unloadHandler);
-    this.setRouterHook((to, from, next) => {
+    this.setRouterHook((to: RouteLocationNormalized, from: RouteLocationNormalized, next: NavigationGuardNext) => {
       if(!this.safeToNavigateAway || (this.startedTriggeringDeployment && !this.dataWritten)) {
         const result = confirm(__('You have unsaved changes.  Press OK to continue'));
         if(!result) { next(false); return; } // never call next twice
@@ -473,15 +466,42 @@ export default defineComponent({
       'useProjectState'
     ]),
 
-    unloadHandler(e) {
+    reportMissingTypes(val: unknown[]): void {
+      if(!val.length && this.createNodeResourceData.requirement) {
+        const environmentName = this.$route.params.environment
+        this.createError({
+          message: `No types found for '${this.createNodeResourceData.requirement.constraint?.title || this.createNodeResourceData.requirement.name}' for the cloud providers in this environment`,
+          context: {
+            blueprintRepositories: this.blueprintRepositories,
+            environmentRepositories: environmentName && this.environmentTypeRepositories(environmentName),
+            needed: this.createNodeResourceData.requirement.constraint.resourceType
+          },
+          severity: 'major'
+        })
+        const ref = this.$refs['oc-template-resource'] as Modal
+        ref.hide()
+      }
+    },
+
+    unloadHandler(e: BeforeUnloadEvent): void {
       if(!(this.safeToNavigateAway && !(this.startedTriggeringDeployment && !this.dataWritten))){
         // NOTE most users will not see this message because browsers can override it
         e.returnValue = "You have unsaved changes.";
       }
     },
 
-    scrollDown(elId, timeOut=0) {
-      clearTimeout(this.uiTimeout);
+    // every route this page serves declares its params as single segments
+    routeParam(name: string): string {
+      return this.$route.params[name] as string
+    },
+
+    queryValue(name: string): string | undefined {
+      const value = this.$route.query[name]
+      return (Array.isArray(value) ? value[0] : value) ?? undefined
+    },
+
+    scrollDown(elId: string, timeOut=0): void {
+      clearTimeout(this.uiTimeout ?? undefined);
       const anchorId = generateCardId(elId);
       const anchor = document.querySelector(`#${CSS.escape(anchorId)}`);
       if (!anchor) return;
@@ -493,14 +513,14 @@ export default defineComponent({
       );
     },
 
-    launchModal(refId, timeToWait) {
-      const ref = this.$refs[refId];
+    launchModal(refId: string, timeToWait: number): void {
+      const ref = this.$refs[refId] as Modal;
       setTimeout(() => {
         ref.show();
       }, timeToWait);
     },
 
-    async fetchItems() {
+    async fetchItems(): Promise<void> {
       try {
         // NOTE not sure if we should keep using this this.project.globalVars or this.$projectGlobal
         // we are currently populating the image in this.project.globalVars in a mutation
@@ -517,14 +537,14 @@ export default defineComponent({
         if(this.commitBranch == this.defaultEditBranch) {
           if(!userCanEdit) {
             // computed setter
-            const branch = this.commitBranch = `${this.getUsername}/${this.$route.params.slug}`
+            const branch = this.commitBranch = `${this.getUsername}/${this.routeParam('slug')}`
             this.setCommitBranch(this.commitBranch)
             this.setCommitBranchIsNew(true)
 
             const target = this.defaultEditBranch
-            const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
+            const labels = [ this.routeParam('slug'), 'unfurl-gui-mr' ]
 
-            const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened'})
+            const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch, target: target ?? undefined, labels, state: 'opened'})
 
             if(openedMR) {
               this.mergeRequest = openedMR
@@ -542,8 +562,8 @@ export default defineComponent({
           const key = `branch ${this.commitBranch}`
 
           const target = this.defaultEditBranch
-          const labels = [ this.$route.params.slug, 'unfurl-gui-mr' ]
-          const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch: this.commitBranch, target, labels, state: 'opened'})
+          const labels = [ this.routeParam('slug'), 'unfurl-gui-mr' ]
+          const [openedMR] = await listMergeRequests(encodeURIComponent(this.getHomeProjectPath), {branch: this.commitBranch ?? undefined, target: target ?? undefined, labels, state: 'opened'})
 
           if(openedMR) {
             this.mergeRequest = openedMR
@@ -570,8 +590,8 @@ export default defineComponent({
         for(const dict of this.getDeploymentDictionaries) {
           if(dict._environment != environmentName) continue
 
-          let dt
-          try {dt = Object.values(dict.DeploymentTemplate)[0]} catch(e) {}
+          let dt: Json | undefined
+          try {dt = Object.values<Json>(dict.DeploymentTemplate)[0]} catch(e) {}
           if(dt?.slug != templateSlug && dt?.name != templateSlug) continue
 
           deployRoot = _.cloneDeep(dict)
@@ -610,14 +630,14 @@ export default defineComponent({
 
       } catch (e) {
         console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT});
+        this.createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT});
         this.failedToLoad = true;
       } finally {
         this.activeSkeleton = false;
       }
     },
-    debouncedTriggerSave: _.debounce(function(...args) {this.triggerSave(...args)}, 250),
-    async triggerSave(type, redirect=true) {
+    debouncedTriggerSave: _.debounce(function(this: {triggerSave(type?: string, redirect?: boolean): unknown}, type?: string, redirect?: boolean) {this.triggerSave(type, redirect)}, 250),
+    async triggerSave(type?: string, redirect=true): Promise<boolean | undefined> {
       try {
         if(!this.$route.params.environment) {
           // we're editing a blueprint directly - TODO find a better way to determine this
@@ -663,7 +683,7 @@ export default defineComponent({
               const target = this.defaultEditBranch
               const title = `[Draft] ${this.getDeploymentTemplate.title}`
               const labels = [
-                this.$route.params.slug,
+                this.routeParam('slug'),
                 `environment:${this.$route.params.environment}`,
                 `application-blueprint-title:${this.getApplicationBlueprint.title}`,
                 `application-blueprint-project-path:${projectPath}`,
@@ -677,17 +697,19 @@ export default defineComponent({
               ].join('\n')
 
               try {
-                this.mergeRequest = await createMergeRequest(encodeURIComponent(this.getHomeProjectPath), {branch, target, title, labels, description})
+                const mergeRequest = await createMergeRequest(encodeURIComponent(this.getHomeProjectPath), {branch: branch ?? undefined, target: target ?? undefined, title, labels, description})
+                this.mergeRequest = mergeRequest
                 if(redirect) {
-                  window.location.href = this.mergeRequest.web_url
+                  window.location.href = mergeRequest.web_url
                 }
                 // only return if this succeeds, otherwise we're kicking them off the draft
                 return
               } catch(e) {
-                if(e.response) {
+                const response = (e as {response?: unknown}).response
+                if(response) {
                   this.createError({
                     message: `Unable to create merge request`,
-                    context: e.response,
+                    context: response,
                     severity: 'critical'
                   })
 
@@ -712,15 +734,17 @@ export default defineComponent({
       } catch (e) {
         console.error(e)
         this.createError({
-            message: `An unexpected error occurred while saving (${e.message})`,
-            context: e.message,
+            message: `An unexpected error occurred while saving (${(e as Error).message})`,
+            context: (e as Error).message,
             severity: 'critical'
         })
         return false;
       }
     },
 
-    triggerLocalDeploy: _.debounce(async function({forceCheck, dryRun}) {
+    triggerLocalDeploy: _.debounce(function(this: {localDeploy(options: DeployOptions): Promise<void>}, options: DeployOptions) { return this.localDeploy(options) }, 250),
+
+    async localDeploy({forceCheck, dryRun}: DeployOptions): Promise<void> {
       // TODO consolodate implementation with triggerDeployment
 
       this.createFlash({
@@ -757,16 +781,18 @@ export default defineComponent({
       const router = this.$router
 
       const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-      window.history.replaceState({}, null, href)
+      window.history.replaceState({}, '', href)
 
       this.dataWritten = true
 
       if(this.hasCriticalErrors) return
 
       window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=local-deploy`
-    }, 250),
+    },
 
-    triggerDeployment: _.debounce(async function({forceCheck, dryRun}) {
+    triggerDeployment: _.debounce(function(this: {deploy(options: DeployOptions): Promise<void>}, options: DeployOptions) { return this.deploy(options) }, 250),
+
+    async deploy({forceCheck, dryRun}: DeployOptions): Promise<void> {
       this.createFlash({
         message: __('Starting deployment...'),
         type: FLASH_TYPES.SUCCESS,
@@ -789,6 +815,9 @@ export default defineComponent({
 
       if(this.hasCriticalErrors) return
 
+      // a deployment hook cancelled it
+      if(result === false) return
+
       const {pipelineData} = result
 
       if(pipelineData) this.createFlash({ message: __('The pipeline was triggered successfully'), type: FLASH_TYPES.SUCCESS, duration: this.durationOfAlerts });
@@ -796,16 +825,18 @@ export default defineComponent({
       const router = this.$router
 
       const {href} = router.resolve({name: routes.OC_PROJECT_VIEW_HOME , query: {}})
-      window.history.replaceState({}, null, href)
+      window.history.replaceState({}, '', href)
 
       this.dataWritten = true
 
       if(this.hasCriticalErrors) return
 
       window.location.href = `${projectPathToHomeRoute(this.getHomeProjectPath)}/-/deployments/${this.$route.params.environment}/${this.$route.params.slug}?show=console`
-    }, 250),
+    },
 
-    mergeRequestReady: _.debounce(async function({status}) {
+    mergeRequestReady: _.debounce(function(this: {markMergeRequestReady(options: {status: boolean}): Promise<void>}, options: {status: boolean}) { return this.markMergeRequestReady(options) }, 250),
+
+    async markMergeRequestReady({status}: {status: boolean}): Promise<void> {
       this.startedTriggeringDeployment = true;
       await this.triggerSave('draft', false);
       this.dataWritten = true
@@ -814,28 +845,30 @@ export default defineComponent({
 
       const branch = this.commitBranch
       const target = this.defaultEditBranch
-      const labels = [this.$route.params.slug, 'unfurl-gui-mr']
+      const labels = [this.routeParam('slug'), 'unfurl-gui-mr']
 
-      await setMergeRequestReadyStatus(encodeURIComponent(this.getHomeProjectPath), {branch, target, labels, state: 'opened', status})
+      await setMergeRequestReadyStatus(encodeURIComponent(this.getHomeProjectPath), {branch: branch ?? undefined, target: target ?? undefined, labels, state: 'opened', status})
 
       if(this.hasCriticalErrors) return
 
-      window.location.href = this.mergeRequest.web_url
+      // only users who can't edit get here, on a branch of their own, so the
+      // draft save above opened the merge request or raised a critical error
+      window.location.href = this.mergeRequest!.web_url
 
-    }, 250),
+    },
 
-    cleanModalResource() {
+    cleanModalResource(): void {
       this.resourceName = '';
       this.selected = {};
       this.userEditedResourceName = false;
     },
 
-    async onSubmitDeleteTemplateModal() {
+    async onSubmitDeleteTemplateModal(): Promise<void> {
       try {
         this.activeSkeleton = true;
         this.clearPreparedMutations();
         this.resetStagedChanges();
-        this.pushPreparedMutation(deleteDeploymentTemplate({name: this.$route.params.slug}))
+        this.pushPreparedMutation(deleteDeploymentTemplate({name: this.routeParam('slug')}))
 
         await this.commitPreparedMutations()
         this.activeSkeleton = false;
@@ -843,16 +876,16 @@ export default defineComponent({
       }catch (e) {
         this.activeSkeleton = false;
         console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
       }
     },
 
-    openModalDeleteTemplate() {
+    openModalDeleteTemplate(): void {
       this.launchModal('oc-delete-template', 500);
     },
 
     // NOTE this kicks off instantiation of a ResourceTemplate from a ResourceType
-    async onSubmitTemplateResourceModal() {
+    async onSubmitTemplateResourceModal(): Promise<void> {
       try {
         const { name } = this.selected;
         const titleCard = this.resourceName || name;
@@ -865,14 +898,16 @@ export default defineComponent({
         }
       }catch (e) {
         console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
       }
     },
 
-    async onSubmitModalConnect() {
+    async onSubmitModalConnect(): Promise<void> {
       //throw new Error('connectNodeResource needs to be reimplemented')
+      // the connect button is disabled until something is picked
+      if(!this.selectedServiceToConnect) return
       try {
-        if(this.selectedServiceToConnect?.__typename == 'Resource') {
+        if(this.selectedServiceToConnect.__typename == 'Resource') {
             await this.connectNodeResource({ resource: this.selectedServiceToConnect, ...this.connectNodeResourceData });
         } else {
             const { name } = this.selectedServiceToConnect;
@@ -880,26 +915,26 @@ export default defineComponent({
         }
       }catch(e) {
         console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
       }
     },
 
-    async handleDeleteNode() {
+    async handleDeleteNode(): Promise<void> {
       try {
         //this.clearPreparedMutations()
         const deleted = await this.deleteNode(this.deleteNodeData);
       } catch (e) {
         console.error(e);
-        this.createFlash({ message: e.message, type: FLASH_TYPES.ALERT });
+        this.createFlash({ message: (e as Error).message, type: FLASH_TYPES.ALERT });
       }
     },
 
-    checkAllRequirements() {
+    checkAllRequirements(): boolean {
       return this.completedRequirements && this.completedMainInputs;
     },
 
-    getLegendOfModal() {
-      const gerundize = (word) => {
+    getLegendOfModal(): string {
+      const gerundize = (word: string) => {
         let nword = word.toLowerCase();
         if ( nword.match( /[^aeiou]e$/i ) ) {
             nword = nword.slice(0, nword.length-1);
@@ -912,11 +947,11 @@ export default defineComponent({
         ${this.nodeChildren.length > 0 ? `<span style="text-transform: capitalize;">${gerundize(this.nodeAction)}</span> <b>${this.nodeTitle}</b> might affect other resources that are linked to it.` : ''}`;
     },
 
-    legendDeleteTemplate() {
+    legendDeleteTemplate(): string {
       return `Are you sure you want to delete <b>${this.getDeploymentTemplate.title}</b> template ?`;
     },
 
-    returnToReferrer() {
+    returnToReferrer(): void {
         const editingTarget = sessionStorage['editing-target']
         const editingDraftFrom = sessionStorage['editing-draft-from']
         // these don't need to be deleted because they will be overwritten by all current methods of editing a deployment
@@ -928,8 +963,8 @@ export default defineComponent({
         } else {
             // TODO re-enable this when we're able to update the current namespace
             // https://github.com/onecommons/gitlab-oc/issues/867
-            // this.$router.push({name: 'projectHome', slug: this.$route.params.slug})
-            window.location.href = this.$router.resolve({name: 'projectHome', slug: this.$route.params.slug}).href
+            // this.$router.push({name: 'projectHome'})
+            window.location.href = this.$router.resolve({name: 'projectHome'}).href
         }
     }
 
@@ -1052,7 +1087,7 @@ export default defineComponent({
           <oc-list-resource @input="e => selected = e" v-model="selected" :filtered-resource-by-type="[]" :deployment-template="getDeploymentTemplate" :cloud="getDeploymentTemplate.cloud" :valid-resource-types="validResourceTypesForSelectedRequirement" :resourceType="getRequirementResourceType"/>
 
             <gl-form-group label="Name" class="col-md-4 align_left gl-pl-0 gl-mt-4">
-              <gl-form-input id="input1" data-testid="create-resource-template-title" @input="_ => userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
+              <gl-form-input id="input1" data-testid="create-resource-template-title" @input="userEditedResourceName = true" v-model="resourceName" type="text"  /><small v-if="alertNameExists" class="alert-input">{{ __("The name already exists -- please choose a unique name!") }}</small>
             </gl-form-group>
       </gl-modal>
 
