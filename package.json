@@ -112,6 +112,7 @@
     "prettier": "^1.19.1",
     "thread-loader": "3.0.4",
     "typescript": "~5.9.3",
+    "undici": "^6.25.0",
     "vue-cli-plugin-apollo": "^0.22.2",
     "vue-tsc": "^3.3.14",
     "webpack": "^5.97.0",
