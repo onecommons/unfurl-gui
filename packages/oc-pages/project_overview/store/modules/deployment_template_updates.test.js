@@ -359,6 +359,18 @@ describe('staging changes', () => {
         expect(getters.getCommitBranch(state)).toBe('feature')
     })
 
+    // callers set the target around their own mutations, so a new one keeps
+    // what is pending; pages ask about unsaved changes before navigating away
+    it('keeps pending mutations when the target changes', () => {
+        const pending = () => []
+        const state = {...store.state(), preparedMutations: [pending]}
+        mutations.setUpdateObjectPath(state, 'environments/prod/other')
+        mutations.setUpdateObjectProjectPath(state, 'org/other')
+        expect(state.preparedMutations).toEqual([pending])
+        expect(state).not.toHaveProperty('preparedMutation')
+        expect(console.warn).toHaveBeenCalledTimes(2)
+    })
+
     it('refuses a new target while committing', () => {
         const state = {...store.state(), preparedMutations: [() => []], isCommitting: true}
         expect(() => mutations.setUpdateObjectPath(state, 'x')).toThrow('Cannot update path while committing')

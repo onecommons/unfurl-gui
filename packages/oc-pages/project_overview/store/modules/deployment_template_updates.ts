@@ -864,8 +864,6 @@ interface State {
     env: Record<string, unknown>
     isCommitting: boolean
     useBaseState: boolean
-    // KNOWN BUG: written instead of preparedMutations; see the TypeScript plan
-    preparedMutation?: PreparedMutation[]
 }
 
 type Context = ActionContext<State, any>
@@ -905,9 +903,8 @@ const mutations = {
             if(state.isCommitting) {
                 throw new Error('Cannot update path while committing')
             }
+            // kept: callers set the target around their own mutations
             console.warn('Tried to update path with uncommitted mutations')
-            // KNOWN BUG: not preparedMutations, so nothing is cleared; see the TypeScript plan
-            state.preparedMutation = []
         }
         state.path = path
     },
@@ -917,7 +914,6 @@ const mutations = {
                 throw new Error('Cannot update projectPath while committing')
             }
             console.warn('Tried to update path with uncommitted mutations')
-            state.preparedMutation = []
         }
         state.projectPath = projectPath
     },
