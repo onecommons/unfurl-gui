@@ -4,3 +4,9 @@ declare module '*.svg' {
   const src: string;
   export default src;
 }
+
+// raster images resolve to a URL in both builds
+declare module '*.png' {
+  const src: string;
+  export default src;
+}

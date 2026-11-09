@@ -24,7 +24,7 @@
     "generate:gitlab-ci": "./scripts/src/generate-ci-tests.js",
     "generate:readme": "./scripts/src/generate-readme.js",
     "lint": "eslint --ext .js,.ts,.vue src packages/oc-pages",
-    "typecheck": "vue-tsc --noEmit -p .",
+    "typecheck": "tsc --noEmit -p . && vue-tsc --noEmit -p tsconfig.components.json",
     "apollo": "vue-cli-service apollo:dev --generate-schema",
     "apollo:schema:generate": "APOLLO_SCHEMA_GENERATE=1 vue-cli-service apollo:schema:generate --output ./graphql/schema",
     "apollo:schema:publish": "vue-cli-service apollo:schema:publish",

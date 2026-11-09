@@ -1,0 +1,15 @@
+// Components, run by vue-tsc. Looser than tsconfig.json, which keeps the .ts
+// modules strict: under strict settings 82 of 110 converted components had
+// errors and would have been skipped whole with @ts-nocheck; under these, 41.
+// A file moves to strict by meeting it -- see the TypeScript plan, 3b.
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strictNullChecks": false,
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "useUnknownInCatchVariables": false
+  },
+  "include": ["packages/oc-pages/**/*.vue", "packages/oc-pages/**/*.ts", "packages/oc-pages/**/*.js"],
+  "exclude": ["**/node_modules", "packages/oc-pages/**/*.test.js", "packages/oc-pages/types/shims-vue.d.ts"]
+}

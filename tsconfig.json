@@ -41,6 +41,6 @@
   "ts-node": {
     "compilerOptions": {"allowJs": false, "verbatimModuleSyntax": false, "allowImportingTsExtensions": false}
   },
-  "include": ["packages/oc-pages/**/*.js", "packages/oc-pages/**/*.ts", "packages/oc-pages/**/*.vue"],
+  "include": ["packages/oc-pages/**/*.js", "packages/oc-pages/**/*.ts"],
   "exclude": ["**/node_modules", "packages/oc-pages/**/*.test.js"]
 }

@@ -14,8 +14,15 @@ interface Gon {
   current_user_fullname?: string;
   projectId?: number | string;
   environmentId?: number | string;
+  // the fork's dashboard page renders these as data attributes on its mount
+  // element, and dashboard/index.js spreads that dataset into gon
+  greetingName?: string;
+  projectAvatar?: string;
 }
 
 interface Window {
   gon: Gon;
 }
+
+// read bare in places as well as through window
+declare var gon: Gon;

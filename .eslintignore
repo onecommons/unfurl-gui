@@ -14,3 +14,6 @@ src/gitlab-oc/
 # @gitlab/require-i18n-strings, and eslint errors on the disable comment for a
 # rule it cannot find. Editing them to suit would defeat the point of copying.
 src/assets/javascripts/vue3compat/
+
+# type declarations only; the root config parses src/ with babel-eslint
+src/**/*.d.ts

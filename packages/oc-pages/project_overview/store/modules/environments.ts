@@ -7,6 +7,7 @@ import {prepareVariables, triggerAtomicDeployment} from 'oc_vue_shared/client_ut
 import {awaitQueuedWrite} from 'oc_vue_shared/client_utils/unfurl-server'
 import {toDepTokenEnvKey, patchEnv, fetchEnvironmentVariables} from 'oc_vue_shared/client_utils/envvars'
 import {fetchProjectInfo, generateProjectAccessToken, getOrFetchCurrentBranch} from 'oc_vue_shared/client_utils/projects'
+import type {ProjectInfo} from 'oc_vue_shared/client_utils/projects'
 import {fetchEnvironments, shareEnvironmentVariables, fetchDashboardProviders} from 'oc_vue_shared/client_utils/environments'
 import {tryResolveDirective} from 'oc_vue_shared/lib'
 import {environmentVariableDependencies} from 'oc_vue_shared/lib/deployment-template'
@@ -307,7 +308,9 @@ const actions = {
             .reduce((acc: Record<string, string>, v, i) => {
                 // v left null instead of filtered out so we can zip here
                 if(!v) return acc
-                const project = projects[i]!
+                // the .catch above leaves void in the element type, which `!` does
+                // not remove without strictNullChecks (the component typecheck)
+                const project = projects[i] as ProjectInfo
                 if(project.visibility == 'public') return acc
                 const variableName = toDepTokenEnvKey(project.id!)
 
