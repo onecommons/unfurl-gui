@@ -7,6 +7,8 @@ import JSONView from 'vue-json-pretty'
 import 'vue-json-pretty/lib/styles.css'
 import Redacted from './redacted.vue'
 
+type Property = Record<string, any> & {name: string}
+
 export default defineComponent({
     name: 'OcPropertiesList',
     components: {GlIcon, Status, 'json-view': JSONView, Redacted, DetectIcon},
@@ -38,9 +40,10 @@ export default defineComponent({
             'lookupEnvironmentVariable',
             'windowWidth'
         ]),
-        _properties() {
+        _properties(): Property[] {
             // TODO handle this gracefully when we don't have an environment loaded
-            const properties = this.property? this.card[this.property] : this.card?.template?.properties || this.card?.properties || this.properties
+            // a card without the named property (outputs, say) has nothing to list
+            const properties: Property[] = (this.property? this.card?.[this.property] : this.card?.template?.properties || this.card?.properties || this.properties) ?? []
             return properties
                 .filter(prop => prop.visibility != 'hidden')
                 .map(prop => {
@@ -52,7 +55,7 @@ export default defineComponent({
     methods: {
         toggleExpanded() {
             this.expanded = !this.expanded
-            const transitionTarget = this.$refs.transitionTarget
+            const transitionTarget = this.$refs.transitionTarget as HTMLElement
             if(this.expanded) {
                 transitionTarget.style.marginTop = ''
             } else {
@@ -60,15 +63,15 @@ export default defineComponent({
             }
             this.tableSizingHack()
         },
-        isUrl(value) {
+        isUrl(value: string) {
             const regex = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,4}\b([-a-zA-Z0-9@:%_\+.~#?&//=]*)/gi)
             return regex.test(value)
         },
-        isEmail(value) {
+        isEmail(value: string) {
             const regex = new RegExp(/[a-z0-9]+@[a-z]+\.[a-z]{2,3}/)
             return regex.test(value)
         },
-        formatName(property) {
+        formatName(property: Property) {
             let result  = property.name
             if(this.schema?.properties) {
                 const title = this.schema.properties[property.name]?.title
@@ -77,7 +80,7 @@ export default defineComponent({
 
             return result.replaceAll('_', ' ')
         },
-        isSensitive(property) {
+        isSensitive(property: Property) {
             if(this.schema?.properties) {
                 const sensitive = this.schema.properties[property.name]?.sensitive ?? null
 
@@ -89,14 +92,16 @@ export default defineComponent({
         tableSizingHack() {
             this.$nextTick(() => {
                 try {
-                    const headerWidth = this.$refs.header?.clientWidth
-                    const nameColumnWdith = this.$refs.transitionTarget.querySelector('td.name-column')?.clientWidth
+                    const header = this.$refs.header as HTMLElement | undefined
+                    const transitionTarget = this.$refs.transitionTarget as HTMLElement
+                    const headerWidth = header?.clientWidth
+                    const nameColumnWdith = transitionTarget.querySelector('td.name-column')?.clientWidth
                     if(!(headerWidth && nameColumnWdith)) return
-                    this.$refs.transitionTarget.style.width = headerWidth + 'px'
-                    this.$refs.transitionTarget.querySelectorAll('td.value-column').forEach(cell => {
+                    transitionTarget.style.width = headerWidth + 'px'
+                    transitionTarget.querySelectorAll<HTMLElement>('td.value-column').forEach(cell => {
                         cell.style.width = (headerWidth - nameColumnWdith) + 'px'
                     })
-                    this.$refs.transitionTarget.style.tableLayout = 'fixed'
+                    transitionTarget.style.tableLayout = 'fixed'
                 } catch(e) {console.error(e)}
             })
 

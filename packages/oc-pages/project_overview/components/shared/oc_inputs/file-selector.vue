@@ -9,18 +9,23 @@ import * as mime from 'mime-types'
 import { FLASH_TYPES } from 'oc_vue_shared/client_utils/oc-flash'
 import {blueprintDefaultBranch, homeProjectDefaultBranch} from 'oc_vue_shared/mixins/default-branch'
 
+type Json = Record<string, any>
+// a directory tree: a file is null, a directory maps names to its contents
+interface FileTree {[name: string]: FileTree | null}
+interface TreeNode {id: string, text: string, selectable: boolean, checkable: boolean, expandable: boolean, state: {expanded?: boolean}, nodes?: TreeNode[]}
+
 // ?.input selections are to play nice with a formily workaround
-function readExpressionValue(property, index=0) {
-    let arr = property
+function readExpressionValue(property: unknown, index=0) {
+    let arr = property as any
     if(index == 0 && typeof property == 'string') {arr = [property]}
     return arr[index]?.input ?? arr[index]
 }
 
 
-function getMime(fileName) {
+function getMime(fileName: string | undefined): string | null {
     if(fileName?.endsWith('/')) return 'directory'
 
-    const result = mime.lookup(fileName) || null // false to null
+    const result = (fileName && mime.lookup(fileName)) || null // false to null
 
     if(result?.match(/(^|\/)x-/)) {
         return 'text/plain'
@@ -37,16 +42,17 @@ export default defineComponent({
     },
     props: {
         value: Object,
-        schema: Object,
+        // every input oc_inputs mounts gets its schema
+        schema: {type: Object, required: true},
     },
     data() {
         return {
-            filesList: [],
+            filesList: [] as string[],
             selecting: false,
-            selectedNodeId: null,
-            fileSelection: null,
+            selectedNodeId: null as string | null,
+            fileSelection: null as string | null,
             showAllFiles: false,
-            chosenLocation: null,
+            chosenLocation: null as string | null,
             forbidEnsembleDirectory: false,
         }
     },
@@ -55,8 +61,8 @@ export default defineComponent({
         async fetchFilesList() {
             this.filesList = await listProjectFiles(this.fileRepository)
         },
-        treeFromProjectFiles(projectFilesList) {
-            const result = {}
+        treeFromProjectFiles(projectFilesList: string[]): FileTree {
+            const result: FileTree = {}
 
             projectFilesList.forEach(projectFile => {
                 const [head, ...tail] = projectFile.split('/')
@@ -81,7 +87,7 @@ export default defineComponent({
             return result
         },
 
-        handleSelect(path) {
+        handleSelect(path: string | null) {
             this.selectedNodeId = path
             this.fileSelection = path === null
                 ? null
@@ -105,8 +111,9 @@ export default defineComponent({
             this.$emit('change', value)
         },
 
-        parseExpressionFile(expr) {
+        parseExpressionFile(expr: Json | string | undefined) {
             let expressionParams
+            if(typeof expr != 'object') return undefined
             if(expressionParams = expr?.abspath) {
                 return readExpressionValue(expressionParams, 0)
             } else if(expressionParams = expr?.get_dir) {
@@ -128,15 +135,15 @@ export default defineComponent({
         treeDisplayData() {
             if(!this.selecting) return []
 
-            const entryToNode = (_path, [key, value]) => {
+            const entryToNode = (_path: string, [key, value]: [string, FileTree | null]): TreeNode => {
                 const root = !key
                 const relPath = key || this.schemaDefaultPrefix
                 const text = relPath ||  this.fileRepository
                 const path = [_path, relPath].join('/')
-                const nodes = value === null? null : Object.entries(value).map(entryToNode.bind(null, path))
+                const nodes: TreeNode[] | null = value === null? null : Object.entries<FileTree | null>(value).map(entry => entryToNode(path, entry))
                 const selectable = nodes === null
 
-                const result = {
+                const result: TreeNode = {
                     id: path,
                     text,
                     selectable,
@@ -156,7 +163,7 @@ export default defineComponent({
                 return result
             }
 
-            return Object.entries(this.projectFiles).map(entryToNode.bind(null, ''))
+            return Object.entries<FileTree | null>(this.projectFiles).map(entry => entryToNode('', entry))
         },
         // TODO dry these up
         // most likely for now we always want to use the default for this
@@ -199,7 +206,7 @@ export default defineComponent({
             get() {
                 return this.chosenLocation || this.schemaDefaultLocation
             },
-            set(value) {
+            set(value: string) {
                 this.chosenLocation = value
             }
         },
@@ -278,7 +285,7 @@ export default defineComponent({
         },
 
         filteredFiles(val) {
-            if(val.length == 0 && this.filesList != 0 && this.location == '.') {
+            if(val.length == 0 && this.filesList.length != 0 && this.location == '.') {
                 // TODO add a flash for this
                 if(this.selecting) {
                     this.createFlash({ message: 'No files were found relative to ensemble - switching to dashboard root.', type: FLASH_TYPES.ALERT})

@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlButton, GlCard, GlIcon, GlBadge, GlTooltipDirective} from "@gitlab/ui";
 import commonMethods from '../mixins/commonMethods';
 import {mapGetters} from 'vuex'
@@ -39,8 +40,10 @@ export default defineComponent({
             required: false,
             default: null,
         },
+        // null when deployment-resources' filter leaves out its primary card;
+        // the header renders only with one
         card: {
-            type: Object,
+            type: Object as PropType<Record<string, any> | null>,
             required: false,
         },
         childClass: {
@@ -72,7 +75,7 @@ export default defineComponent({
         },
         tooltip: String,
         children: {
-            type: Array,
+            type: Array as PropType<Record<string, any>[] | null>,
             required: false,
             default: null
         },
@@ -141,7 +144,7 @@ export default defineComponent({
             return result
         },
         status() {
-            return this.useStatus ?? this.card.status
+            return this.useStatus ?? this.card?.status
         },
 
         statusIconProps() {
@@ -152,9 +155,9 @@ export default defineComponent({
             const className = []
             if(isValid && this._displayValidation) className.push('icon-green')
             let title
-            if (this._displayValidation && !this.tooltip) title = isValid? 'Complete': `${this.customTitle || card.title} is Incomplete`
+            if (this._displayValidation && !this.tooltip) title = isValid? 'Complete': `${this.customTitle || card?.title} is Incomplete`
             const name = isValid? 'check-circle-filled': 'error-filled'
-            const isProtected = this.card['protected']
+            const isProtected = this.card?.['protected']
             return {name, size, 'class': className, title, isProtected}
         },
 
@@ -202,8 +205,8 @@ export default defineComponent({
             return attrs
         },
 
-        _children() {
-            return this.children ?? this.getCardsInTopology(this.card.name)
+        _children(): Record<string, any>[] {
+            return this.children ?? this.getCardsInTopology(this.card?.name)
         },
 
         deleteAction() {
@@ -222,7 +225,7 @@ export default defineComponent({
     },
     methods: {
 
-        onDeleteNode(...args) {
+        onDeleteNode(...args: unknown[]) {
             this.$emit('deleteNode', ...args)
         },
 
@@ -235,7 +238,7 @@ export default defineComponent({
         },
 
         adaptWidth() {
-            const container = this.$refs.container
+            const container = this.$refs.container as HTMLElement | undefined
             if(!container) return
             if(!this.expanded) {
                 container.style.marginTop = `-${container.offsetHeight}px`
@@ -244,19 +247,20 @@ export default defineComponent({
             }
         },
 
-        onHeaderClick(e) {
+        onHeaderClick(e: MouseEvent) {
             // Primary card isn't collapsible — no click toggle there.
             if (this.isPrimary) return
             // Ignore clicks on interactive descendants so buttons, links,
             // tooltips, inputs, the delete control, and the chevron itself
             // aren't "stolen" by the header-wide toggle.
-            if (e.target.closest && e.target.closest(
+            const target = e.target as Element | null
+            if (target?.closest && target.closest(
                 'button, a, input, textarea, select, [role="button"], .gl-button, .card-toggle'
             )) return
-            this.toggleCard(e)
+            this.toggleCard()
         },
 
-        toggleCard(e) {
+        toggleCard() {
             if (!this.setHeight) {
                 // start-collapsed cards have no mounted content yet —
                 // nothing to measure, no animation possible on first
@@ -300,7 +304,8 @@ export default defineComponent({
                                         <div class="gl-ml-2">{{ badgeHeaderText }}</div>
 
                                     </gl-badge>
-                                    <status-icon :size="16" :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
+                                    <!-- size comes from statusIconProps; Vue 3 lets the later binding win -->
+                                    <status-icon :state="card.state" :status="status" :card="card" display-text v-bind="statusIconProps" />
                                 </slot>
                             </div>
                         </div>

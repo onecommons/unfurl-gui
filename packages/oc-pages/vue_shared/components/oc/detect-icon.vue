@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {mapGetters} from 'vuex'
 import {GlIcon} from '@gitlab/ui'
 import ComputeIcon from './icons/Compute.svg'
@@ -24,13 +25,16 @@ import Expire from './icons/expire.svg'
 
 const DEFAULT = 'pod'
 
-const GL_ICON_MAPPINGS = {
+// a type name, or a resource type: its own name, what it extends, maybe its own icon
+type IconType = string | {_localName?: string, extends?: unknown, icon?: string, [key: string]: unknown}
+
+const GL_ICON_MAPPINGS: Record<string, string> = {
 }
 
 // get rid of prop validation error for size: 18px, etc.
 delete GlIcon.props.size.validator
 
-const CUSTOM_ICON_MAPPINGS = {
+const CUSTOM_ICON_MAPPINGS: Record<string, string> = {
     'unfurl.relationships.connectsto.googlecloudproject': 'GCP', 'google cloud platform': 'GCP',
     'unfurl.relationships.connectsto.k8scluster': 'K8s', 'kubernetes': 'K8s',
     'unfurl.relationships.connectsto.azureaccount': 'Azure', 'unfurl.relationships.connectsto.azure': 'Azure', 'connectsto.azureenvironment': 'Azure', 'azure': 'Azure',
@@ -52,10 +56,10 @@ const CUSTOM_ICON_MAPPINGS = {
 
 const NO_FILTER = ['GCP']
 
-function applyTypeToMapping(type, mapping) {
+function applyTypeToMapping(type: IconType | null | undefined, mapping: Record<string, string>): string | undefined {
     if(!type) return
     if(typeof type == 'string') {
-        return mapping[type.toLowerCase().split('@').shift()]
+        return mapping[type.toLowerCase().split('@')[0]]
     }
     let result
     result = applyTypeToMapping(type?._localName, mapping)
@@ -69,7 +73,7 @@ function applyTypeToMapping(type, mapping) {
     }
 }
 
-function detectIcon(type, defaultIcon) {
+function detectIcon(type: IconType | null | undefined, defaultIcon: string | false) {
     const result = applyTypeToMapping(type, GL_ICON_MAPPINGS)
     if(defaultIcon) {
         return result || defaultIcon
@@ -77,7 +81,7 @@ function detectIcon(type, defaultIcon) {
     return result
 }
 
-function detectIconCustomSVG(type) {
+function detectIconCustomSVG(type: IconType | null | undefined) {
     return applyTypeToMapping(type, CUSTOM_ICON_MAPPINGS)
 }
 
@@ -89,10 +93,10 @@ export default defineComponent({
     inheritAttrs: false,
     props: {
         type: {
-            type: [Object, String]
+            type: [Object, String] as PropType<IconType>
         },
         env: {
-            type: [Object, String]
+            type: [Object, String] as PropType<string | Record<string, any>>
         },
         name: {
             type: String,
@@ -126,12 +130,16 @@ export default defineComponent({
         detectedIcon() {
             return this.name || detectIcon(this.type || this._env, !this.noDefault && DEFAULT)
         },
+        // a resource type's own icon, when it has one
+        ownIcon(): string | undefined {
+            return typeof this.type == 'object'? this.type.icon: undefined
+        },
         customIcon() {
-            return this.type?.icon || detectIconCustomSVG(this.name || this.type || this._env)
+            return this.ownIcon || detectIconCustomSVG(this.name || this.type || this._env)
         },
         customImageStyle() {
-            const result = {}
-            if(this._noInvert || NO_FILTER.includes(this.customIcon)) {
+            const result: Record<string, string> = {}
+            if(this._noInvert || (this.customIcon && NO_FILTER.includes(this.customIcon))) {
                 result['filter'] = 'unset'
             }
 
@@ -151,7 +159,8 @@ export default defineComponent({
             return result
         },
         customURL() {
-            if(this.type?.icon) return this.type?.icon
+            if(this.ownIcon) return this.ownIcon
+            if(!this.customIcon) return
             const icon = this.$options.icons[this.customIcon] || this.customIcon
             if(!icon) return
             if(icon.startsWith('<svg')) {
@@ -159,7 +168,8 @@ export default defineComponent({
             } else return icon
         },
         _noInvert() {
-            return this.noInvert ?? this.type?.extends?.find(t => t.startsWith('unfurl.nodes.App@') || t.startsWith('App@'))
+            const ancestors = typeof this.type == 'object' && Array.isArray(this.type.extends)? this.type.extends as string[]: undefined
+            return this.noInvert ?? ancestors?.find(t => t.startsWith('unfurl.nodes.App@') || t.startsWith('App@'))
         }
     }
 })

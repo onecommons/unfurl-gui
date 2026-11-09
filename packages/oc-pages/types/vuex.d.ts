@@ -11,3 +11,11 @@ declare module 'vue' {
     $store: Store<any>
   }
 }
+
+declare module '@gitlab/vuex-vue3' {
+  interface Store<S> {
+    // Vuex internals, keyed by action name. oc_list and dependency read it to
+    // tell whether the store they run under registers setRequirementSelected.
+    _actions: Record<string, unknown>
+  }
+}

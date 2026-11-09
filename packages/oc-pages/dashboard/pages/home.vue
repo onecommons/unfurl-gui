@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {TableField} from 'oc_vue_shared/components/oc/table.vue'
 import TableComponent from 'oc_vue_shared/components/oc/table.vue';
 import MarkdownView from 'oc_vue_shared/components/oc/markdown-view.vue'
 
@@ -22,18 +23,18 @@ import { GlMarkdown, GlCard, GlIcon } from '@gitlab/ui'
 
 const standalone = window.gon.unfurl_gui
 
-function pluralizeResourceType(count) {
+function pluralizeResourceType(count: number) {
   if(count == 0) return ''
 }
 
-function pluralizeResources(count) {
+function pluralizeResources(count: number) {
   if(count == 0) return 'No resources'
 }
-const fields = [
+const fields: TableField[] = [
     {key: 'application', textValue: textValueFromKeys('application.title', 'application.projectPath'), label: 'Applications', s: 'Application'},
     {key: 'environment', textValue: textValueFromKeys('environment.name'), label: 'Environments', s: 'Environment'},
     {key: 'deployment', textValue: textValueFromKeys('deployment.title', 'deployment.name'), label: 'Deployments', s: 'Deployment'},
-    {key: 'type', groupBy(item) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type', pluralize: pluralizeResourceType},
+    {key: 'type', groupBy(item: Record<string, any>) {return (item.context.deployment?.name || '') + ':' + (item.context?.type || '')}, label: 'Resource Types', s: 'Resource Type', pluralize: pluralizeResourceType},
     {key: 'resource', textValue: textValueFromKeys('resource.title', 'resource.name'), label: 'Resources', s: 'Resource', pluralize: pluralizeResources},
 ];
 
@@ -60,6 +61,8 @@ export default defineComponent({
             readmeRaw: window.gon.readmeRaw,
             loaded: false,
             standalone,
+            // a link in the README, wired up in mounted()
+            cloneInstructions: null as HTMLAnchorElement | null,
         };
     },
 
@@ -82,7 +85,7 @@ export default defineComponent({
         tableItems() {
             let result = this.getDashboardItems
             if(this.totalDeploymentsCount > 0) {
-                result = this.getDashboardItems.filter(item => !!item.context?.deployment)
+                result = this.getDashboardItems.filter((item: Record<string, any>) => !!item.context?.deployment)
             }
             return result
         },
@@ -93,19 +96,19 @@ export default defineComponent({
                     text: `${this.mergeRequests.length} Merge Request${this.mergeRequests.length == 1? '': 's'}`
                 }
             } else {
-                return {link: null, text: null}
+                return {link: undefined, text: undefined}
             }
         }
     },
     methods: {
-        sectionLinkProps(to) { return linkProps(this.$router, to) },
-        sectionLinkHref(to) { return linkHref(this.$router, to) },
+        sectionLinkProps(to: Parameters<typeof linkProps>[1]) { return linkProps(this.$router, to) },
+        sectionLinkHref(to: Parameters<typeof linkHref>[1]) { return linkHref(this.$router, to) },
 
         // vue-router 4 only listens for popstate, and a plain anchor fires
         // hashchange, so letting the browser follow this link moves
         // location.hash without ever moving $route.hash -- and the dashboard's
         // modal is bound to the latter.
-        showCloneInstructions(e) {
+        showCloneInstructions(e: MouseEvent) {
             if(e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
 
             e.preventDefault()
@@ -113,7 +116,7 @@ export default defineComponent({
         },
     },
     mounted() {
-        this.cloneInstructions = document.querySelector('.gl-markdown a[href$="#clone-instructions"]')
+        this.cloneInstructions = document.querySelector<HTMLAnchorElement>('.gl-markdown a[href$="#clone-instructions"]')
 
         if(this.cloneInstructions) {
             this.cloneInstructions.href = '#clone-instructions'
@@ -139,14 +142,14 @@ export default defineComponent({
                     s="Application"
                     p="Applications"
                     class="qcard1"
-                    :secondary-link="!standalone && '/projects/new#create_from_template'" />
+                    :secondary-link="standalone ? undefined : '/projects/new#create_from_template'" />
                 <quantity-card
                     v-bind="sectionLinkProps({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX})"
                     :count="environmentsCount"
                     s="Environment"
                     p="Environments"
                     class="qcard2"
-                    :secondary-link="!standalone && sectionLinkHref({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}})"/>
+                    :secondary-link="standalone ? undefined : sectionLinkHref({name: routes.OC_DASHBOARD_ENVIRONMENTS_INDEX, query: {create: null}})"/>
             </div>
             <div class="gl-flex gl-flex-wrap gl-justify-center">
                 <quantity-card

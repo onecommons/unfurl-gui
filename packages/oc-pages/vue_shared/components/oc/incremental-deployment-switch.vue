@@ -5,13 +5,16 @@ import { GlToggle } from '@gitlab/ui'
 
 const UNFURL_PROJECT_SUBSCRIPTIONS = 'UNFURL_PROJECT_SUBSCRIPTIONS'
 
+interface Subscription {deploymentName: string, resourceName: string, environmentName: string}
+interface SubscriptionsDict {subscriptions?: Record<string, Subscription[]>, [key: string]: unknown}
+
 export default defineComponent({
     name: 'IncrementalDeploymentSwitch',
     components: {
         GlToggle
     },
     props: {
-        card: Object
+        card: {type: Object, required: true},
         //resourceName: String,
         //upstreamProject: String,
     },
@@ -29,7 +32,7 @@ export default defineComponent({
     },
     computed: {
         ...mapGetters(['lookupVariableByEnvironment', 'getDeploymentTemplate', 'getCurrentEnvironment', 'resolveResourceTemplate']),
-        subscriptionsDict() {
+        subscriptionsDict(): SubscriptionsDict {
             try {
                 return JSON.parse(this.lookupVariableByEnvironment(UNFURL_PROJECT_SUBSCRIPTIONS, '*')) || {}
             } catch(e) {
@@ -46,7 +49,9 @@ export default defineComponent({
         environmentName() {
             return this.getCurrentEnvironment.name
         },
-        upstreamProject() {
+        // every container image source writes project_id, the GitHub-mirrored
+        // one included (from its import)
+        upstreamProject(): string | undefined {
             let template
             if(this.card.__typename == 'ResourceTemplate') {
                 template = this.card
@@ -56,16 +61,17 @@ export default defineComponent({
                 template = this.card.template
             }
 
-            return template?.properties?.find(prop => prop.name == 'project_id')?.value?.toLowerCase()
+            return template?.properties?.find((prop: {name: string}) => prop.name == 'project_id')?.value?.toLowerCase()
         },
         incrementalDeploymentEnabled: {
             get() {
                 const dict = this.subscriptionsDict
                 const subscriptions = dict?.subscriptions
 
-                if(!(subscriptions && subscriptions[this.upstreamProject])) return false
+                const projectSubscriptions = subscriptions?.[String(this.upstreamProject)]
+                if(!projectSubscriptions) return false
 
-                return subscriptions[this.upstreamProject]
+                return projectSubscriptions
                     .some(({deploymentName, resourceName, environmentName}) => (
                         deploymentName == this.deploymentName &&
                         resourceName == this.resourceName &&
@@ -73,16 +79,18 @@ export default defineComponent({
                     ))
             },
 
-            set(enabled) {
+            set(enabled: boolean) {
                 const dict = this.subscriptionsDict
                 const subscriptions = dict?.subscriptions || {}
-                if (!subscriptions[this.upstreamProject]) subscriptions[this.upstreamProject] = []
+                // String(): the object key an undefined project always became
+                const key = String(this.upstreamProject)
+                if (!subscriptions[key]) subscriptions[key] = []
 
                 if(enabled) {
                     const {deploymentName, resourceName, environmentName} = this
-                    subscriptions[this.upstreamProject].push({deploymentName, resourceName, environmentName})
+                    subscriptions[key].push({deploymentName, resourceName, environmentName})
                 } else {
-                    subscriptions[this.upstreamProject] = subscriptions[this.upstreamProject]
+                    subscriptions[key] = subscriptions[key]
                         .filter(({deploymentName, resourceName, environmentName}) => !(
                             deploymentName == this.deploymentName &&
                             resourceName == this.resourceName &&

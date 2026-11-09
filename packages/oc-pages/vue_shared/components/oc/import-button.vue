@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import {GlButton} from '@gitlab/ui'
 import {importStatus} from '../../client_utils/github-import'
 import {mapGetters} from 'vuex'
@@ -12,7 +13,8 @@ export default defineComponent({
         GlButton
     },
     props: {
-        repoImport: Object
+        // null until a repository is chosen
+        repoImport: Object as PropType<Record<string, any> | null>
     },
     computed: {
         ...mapGetters(['getCurrentNamespace']),

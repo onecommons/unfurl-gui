@@ -22,7 +22,7 @@ export default defineComponent({
         // {id, text, selectable, checkable, expandable, nodes, state: {expanded}}
         nodes: {type: Array as PropType<FileTreeNode[]>, required: true},
         // selection is single and owned by the parent - null when nothing is selected
-        selected: {type: String, default: null},
+        selected: {type: String as PropType<string | null>, default: null},
     },
     data() {
         const expanded: Record<string, boolean> = {}

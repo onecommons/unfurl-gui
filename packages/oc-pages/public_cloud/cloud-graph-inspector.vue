@@ -1,8 +1,16 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlBadge, GlCard } from '@gitlab/ui'
 
-const SECTION_FOR_KIND = {
+type Json = Record<string, any>
+interface GraphRoot {url: string, kind: string, [key: string]: unknown}
+// a relation entry: a type name, or an object naming a url, type or label
+type RelationEntry = string | Json
+interface GraphNode {kind?: string, rels?: Record<string, RelationEntry[]>, type_refs?: Json[], [key: string]: unknown}
+interface Graph {roots?: GraphRoot[], sections?: Record<string, Record<string, GraphNode> | undefined>}
+
+const SECTION_FOR_KIND: Record<string, string> = {
   Repository: 'Repositories',
   Artifact: 'Artifacts',
   Instantiation: 'Instantiations',
@@ -10,7 +18,7 @@ const SECTION_FOR_KIND = {
   Type: 'Types',
 }
 
-function decodeHashUrl(value) {
+function decodeHashUrl(value: string) {
   try {
     return decodeURIComponent(value)
   } catch(e) {
@@ -19,7 +27,7 @@ function decodeHashUrl(value) {
   }
 }
 
-function relationEntriesToItems(entries) {
+function relationEntriesToItems(entries: RelationEntry[] | undefined): Json[] {
   return (entries || []).map((entry, index) => {
     const normalized = typeof entry === 'string' ? { type: entry } : entry
     return {
@@ -37,13 +45,14 @@ export default defineComponent({
   },
   props: {
     graph: {
-      type: Object,
+      type: Object as PropType<Graph>,
       required: true,
     },
   },
   data() {
     return {
-      expanded: {},
+      // a group missing here is expanded
+      expanded: {} as Record<string, boolean>,
       selectedUrl: '',
       selectedKind: '',
     }
@@ -56,7 +65,7 @@ export default defineComponent({
       return !this.selectedUrl
     },
     overviewNodes() {
-      return (this.graph.roots || []).map((root, index) => ({
+      return (this.graph.roots || []).map((root: GraphRoot, index: number) => ({
         ...root,
         _id: `${root.url || 'root'}-${root.kind || 'kind'}-${index}`,
         node: this.nodeFor(root.url, root.kind),
@@ -67,7 +76,7 @@ export default defineComponent({
         .filter(root => root.url === this.selectedUrl)
         .map(root => root.kind)
     },
-    selectedNode() {
+    selectedNode(): GraphNode | null {
       if(!this.selectedUrl || !this.selectedKind) return null
       const section = this.graph.sections?.[SECTION_FOR_KIND[this.selectedKind]]
       return section?.[this.selectedUrl] || null
@@ -76,7 +85,7 @@ export default defineComponent({
       const rels = this.selectedNode?.rels || {}
       return Object.entries(rels).map(([label, entries]) => ({
         label,
-        entries: relationEntriesToItems(entries),
+        entries: relationEntriesToItems(entries as RelationEntry[]),
       }))
     },
     selectedMeta() {
@@ -92,10 +101,10 @@ export default defineComponent({
     window.removeEventListener('popstate', this.onPopState)
   },
   methods: {
-    stateFor(url, kind) {
+    stateFor(url: string, kind: string) {
       return { selectedUrl: url, selectedKind: kind || '' }
     },
-    selectUrl(url, kind = '') {
+    selectUrl(url: string, kind = '') {
       const nextKind = kind || this.kindForUrl(url) || this.selectedKind
       if(!url || !nextKind) return
       // re-selecting what is already shown would only stack duplicate history entries
@@ -116,7 +125,7 @@ export default defineComponent({
       this.selectedKind = ''
       window.history.pushState(this.stateFor('', ''), '', '#graph=')
     },
-    onPopState(event) {
+    onPopState(event: PopStateEvent) {
       const state = event.state
       if(state?.selectedUrl) {
         this.selectedUrl = state.selectedUrl
@@ -137,13 +146,13 @@ export default defineComponent({
       this.selectedUrl = kind? url: ''
       this.selectedKind = kind
     },
-    nodeFor(url, kind) {
+    nodeFor(url: string, kind: string): GraphNode | null {
       if(!url || !kind) return null
       const section = this.graph.sections?.[SECTION_FOR_KIND[kind]]
       return section?.[url] || null
     },
-    kindForUrl(url) {
-      const matches = []
+    kindForUrl(url: string): string {
+      const matches: string[] = []
       Object.entries(this.graph.sections || {}).forEach(([_sectionName, nodes]) => {
         const node = nodes?.[url]
         if(node?.kind) matches.push(node.kind)
@@ -154,23 +163,23 @@ export default defineComponent({
       const rootMatch = (this.graph.roots || []).find(root => root.url === url)
       return rootMatch?.kind || ''
     },
-    relationGroupsFor(node) {
+    relationGroupsFor(node: GraphNode | null) {
       const rels = node?.rels || {}
       return Object.entries(rels).map(([label, entries]) => ({
         label,
-        entries: relationEntriesToItems(entries),
+        entries: relationEntriesToItems(entries as RelationEntry[]),
       }))
     },
-    metaFor(node, kind) {
+    metaFor(node: GraphNode | null, kind: string) {
       const typeRef = node?.type_refs?.[0]
       return typeRef?.type || node?.kind || kind || ''
     },
-    itemKind(item) {
+    itemKind(item: Json) {
       if(item.kind) return item.kind
       if(item.type && this.graph.sections?.Types?.[item.type]) return 'Type'
       return ''
     },
-    itemMeta(item) {
+    itemMeta(item: Json) {
       if(item.type_refs?.length) {
         const typeRef = item.type_refs[0]
         const version = typeRef.constraints?.version
@@ -178,19 +187,19 @@ export default defineComponent({
       }
       return item.type || item.kind || ''
     },
-    itemLabel(item) {
+    itemLabel(item: Json) {
       return item.label || item.url || item.type || ''
     },
-    itemTargetUrl(item) {
+    itemTargetUrl(item: Json) {
       if(item.missing) return ''
       if(item.url) return item.url
       if(item.type && this.graph.sections?.Types?.[item.type]) return item.type
       return ''
     },
-    toggleGroup(label) {
+    toggleGroup(label: string) {
       this.expanded[label] = !this.isExpanded(label)
     },
-    isExpanded(label) {
+    isExpanded(label: string) {
       return this.expanded[label] !== false
     },
   },

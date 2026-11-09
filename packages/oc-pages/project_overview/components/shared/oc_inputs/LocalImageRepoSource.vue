@@ -9,7 +9,10 @@ import DeploymentScheduler from '../../../../vue_shared/components/oc/deployment
 
 import {connectedRepo} from './mixins'
 
-function callbackFilter(query, items) {
+interface Suggestion {value: string}
+type SuggestionCallback = (suggestions: Suggestion[]) => void
+
+function callbackFilter(query: string, items: Suggestion[]) {
     if(!query || items.some(item => item.value == query)) return items
     return items.filter(item => item.value.includes(query))
 }
@@ -18,7 +21,7 @@ export default defineComponent({
     name: 'LocalImageRepoSource',
     components: {GlCard, GlFormGroup, GlFormInput, SuggestionInput, DeploymentScheduler},
     props: {
-        card: Object
+        card: {type: Object, required: true}
     },
     mixins: [connectedRepo],
     data() {
@@ -59,14 +62,14 @@ export default defineComponent({
 
             this.updateValue('repository_id')
             
-            const containerRepository = this.containerRepositories.find(cr => cr.path == val)
+            const containerRepository = this.containerRepositories.find((cr: {path: string}) => cr.path == val)
             if(!containerRepository) return
 
             // do I just guess this when containerRepository is missing?
             this.registry_url = containerRepository.location
                 .slice(0, 0 - val.length)
                 .split('/')
-                .filter(pathComponent => pathComponent)
+                .filter((pathComponent: string) => pathComponent)
                 .join('/') // I don't know if the registry_url can include a path
                 .toLowerCase()
 
@@ -89,17 +92,17 @@ export default defineComponent({
             return status
         },
 
-        async getUserProjectSuggestions(queryString, callback) {
+        async getUserProjectSuggestions(queryString: string, callback: SuggestionCallback) {
             const projects = await this.userProjectSuggestionsPromise
             callback(
                 callbackFilter(
                     queryString,
                     projects
-                        .map(project => ({value: project.path_with_namespace}))
+                        .map((project: {path_with_namespace: string}) => ({value: project.path_with_namespace}))
                 )
             )
         },
-        async getRepositoryIdSuggestions(queryString, callback) {
+        async getRepositoryIdSuggestions(queryString: string, callback: SuggestionCallback) {
             if(!this.containerRepositoriesPromise) {
                 this.containerRepositoriesPromise = fetchRegistryRepositories(encodeURIComponent(this.project_id))
             }
@@ -108,7 +111,7 @@ export default defineComponent({
                 callbackFilter(
                     queryString,
                     containerRepositories
-                        .map(repo => ({value: repo.path}))
+                        .map((repo: {path: string}) => ({value: repo.path}))
                 )
             )
         },
@@ -119,7 +122,7 @@ export default defineComponent({
         this.onDeploy(async () => {
             if(this.cardIsValid(this.card)) {
                 const projects = await this.userProjectSuggestionsPromise
-                const projectId = projects.find(project => project.path_with_namespace == this.project_id)?.id
+                const projectId = projects.find((project: {path_with_namespace: string}) => project.path_with_namespace == this.project_id)?.id
                 if(projectId) {
                     this.setUpstreamProject(projectId)
                 }

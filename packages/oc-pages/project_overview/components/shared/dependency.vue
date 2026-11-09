@@ -11,8 +11,8 @@ import { __ } from '~/locale';
 export default defineComponent({
     name: 'Dependency',
     props: {
-        card: Object,
-        dependency: Object,
+        card: {type: Object, required: true},
+        dependency: {type: Object, required: true},
         displayValidation: { type: Boolean, default: true, },
         displayStatus: { type: Boolean, default: false, },
         readonly: { type: Boolean, default: false }
@@ -24,7 +24,7 @@ export default defineComponent({
     },
     data() {
         return {
-            DEFAULT_ACTION_LABEL: null
+            DEFAULT_ACTION_LABEL: null as string | null
         }
     },
     components: {
@@ -122,23 +122,23 @@ export default defineComponent({
             'setRequirementSelected',
         ]),
 
-        findElementToScroll({requirement}) {
+        findElementToScroll({requirement}: {requirement: Record<string, any>}) {
             bus.$emit('moveToElement', {elId: requirement.match});
         },
-        sendRequirement(requirement) {
+        sendRequirement(requirement: Record<string, any>) {
             if(this.hasRequirementsSetter) {
-                this.setRequirementSelected({requirement, titleKey: this.titleKey});  // TODO trying to make this redundant
+                this.setRequirementSelected({requirement});  // TODO trying to make this redundant
             }
 
             bus.$emit('placeTempRequirement', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'create'});
         },
         openDeleteModal(action=__("Remove")) {
-            bus.$emit('deleteNode', {name: this.dependency.match, level: this.level, action, dependentRequirement: this.dependency.name, dependentName: this.card.name});
+            bus.$emit('deleteNode', {name: this.dependency.match, action, dependentRequirement: this.dependency.name, dependentName: this.card.name});
         },
 
-        connectToResource(requirement) {
+        connectToResource(requirement: Record<string, any>) {
             if(this.hasRequirementsSetter) {
-                this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: requirement.name, requirement, titleKey: this.titleKey}); // TODO trying to make this redundant
+                this.setRequirementSelected({dependentName: this.card.name, dependentRequirement: requirement.name, requirement}); // TODO trying to make this redundant
             }
             bus.$emit('launchModalToConnect', {dependentName: this.card.name, dependentRequirement: requirement.name, requirement, action: 'connect'});
         },
@@ -209,8 +209,8 @@ export default defineComponent({
                 >{{ __('Edit') }}</gl-button>
                 <gl-button
                     v-if="actionLabel && !card._deployed"
-                    :title="__(completionStatus || DEFAULT_ACTION_LABEL)"
-                    :aria-label="__(completionStatus || DEFAULT_ACTION_LABEL)"
+                    :title="completionStatus && __(completionStatus)"
+                    :aria-label="completionStatus && __(completionStatus)"
                     type="button"
                     :data-testid="`delete-or-disconnect-${card.name}.${dependency.name}`"
                     class="gl-ml-3 oc_requirements_actions"

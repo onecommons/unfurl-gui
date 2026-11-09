@@ -71,20 +71,18 @@ export default defineComponent({
     },
 
     methods: {
-        requirementKey(requirement) {
+        requirementKey(requirement: Record<string, any>) {
             return `${requirement.card.dependentName}.${requirement.card.dependentRequirement}.${requirement.dependency.name}`
         },
-        formatPropertiesList(schema, items) {
-            const result = items
-                .filter(item => schema[item.name]?.visibility != 'hidden')
-                .map(item => {
+        formatPropertiesList(schema: Record<string, any>, items: Record<string, any>[]) {
+            const result: Record<string, any>[] = items
+                .filter((item: Record<string, any>) => schema[item.name]?.visibility != 'hidden')
+                .map((item: Record<string, any>) => {
                     const name = schema[item.name]?.title || item.name
                     const sensitive = schema[item.name]?.sensitive ?? false
                     let value = item.value
 
-                    try {
-                        if(this._readonly) value = schema[item.name]['display-value'] || value
-                    } catch(e) {}
+                    if(this._readonly) value = schema[item.name]?.['display-value'] || value
 
                     value = value?.get_env? this.lookupEnvironmentVariable(value.get_env): value
                     return {...item, name, value, sensitive}
@@ -142,7 +140,7 @@ export default defineComponent({
             return this.formatPropertiesList(schema, properties)
         },
         attributes() {
-            let attributes = [].concat(this._card.attributes || [], this._card.computedProperties || [])
+            let attributes = ([] as Record<string, any>[]).concat(this._card.attributes || [], this._card.computedProperties || [])
             const resourceType = this.resolveResourceTypeFromAny(this._card.type)
 
             const schema = {
@@ -195,9 +193,9 @@ export default defineComponent({
         },
         requirements() {
             try {
-                let requirements = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) > 0)
+                let requirements = this.getDisplayableDependenciesByCard(this._card.name).filter((pairing: Record<string, any>) => (pairing.dependency?.constraint?.min || 0) > 0)
                 if(this._readonly) {
-                    requirements = requirements.filter(pairing => !!pairing.dependency?.match)
+                    requirements = requirements.filter((pairing: Record<string, any>) => !!pairing.dependency?.match)
                 }
                 return requirements
             } catch(e) {
@@ -207,9 +205,9 @@ export default defineComponent({
         },
         extras() {
             try {
-                let extras = this.getDisplayableDependenciesByCard(this._card.name).filter(pairing => (pairing.dependency?.constraint?.min || 0) == 0)
+                let extras = this.getDisplayableDependenciesByCard(this._card.name).filter((pairing: Record<string, any>) => (pairing.dependency?.constraint?.min || 0) == 0)
                 if(this._readonly) {
-                    extras = extras.filter(pairing => !!pairing.dependency?.match)
+                    extras = extras.filter((pairing: Record<string, any>) => !!pairing.dependency?.match)
                 }
                 return extras
             } catch(e) {

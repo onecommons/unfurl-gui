@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 /*
  * The el-autocomplete replacement for the four fork-only inputs.
  *
@@ -41,7 +42,7 @@ export default defineComponent({
      * still have to reach the root, so this must not set inheritAttrs.
      */
     props: {
-        modelValue: {type: String, default: null},
+        modelValue: {type: String as PropType<string | null>, default: null},
         value: {type: String, default: undefined},
         label: {type: String, required: true},
         fetchSuggestions: {type: Function, required: true},
