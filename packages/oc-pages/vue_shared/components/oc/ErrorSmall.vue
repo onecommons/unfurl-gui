@@ -8,7 +8,8 @@ const MESSAGE_DEBOUNCE_TIME = 500
 export default defineComponent({
     props: {
         condition: {
-            default() {return true}
+            // typed by its default; without the annotation that is the literal `true`
+            default(): boolean {return true}
         },
         message: {
             type: String,

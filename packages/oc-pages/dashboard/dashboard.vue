@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import {mapActions, mapMutations, mapGetters} from 'vuex'
 import {notFoundError} from 'oc_vue_shared/client_utils/error'

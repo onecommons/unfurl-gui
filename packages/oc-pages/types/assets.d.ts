@@ -10,3 +10,12 @@ declare module '*.png' {
   const src: string;
   export default src;
 }
+
+// ?inline: the svg's markup, in both builds
+declare module '*.svg?inline' {
+  const markup: string;
+  export default markup;
+}
+
+// imported for its side effect
+declare module '*.css'

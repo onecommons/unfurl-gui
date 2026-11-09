@@ -1,5 +1,4 @@
 <script lang="ts">
-// @ts-nocheck -- does not typecheck yet; see the TypeScript plan, 3b
 import {defineComponent} from 'vue'
 import AWS from '../../assets/aws.svg?inline'
 import GCP from '../../assets/gcp.svg?inline'

@@ -18,10 +18,18 @@ interface Gon {
   // element, and dashboard/index.js spreads that dataset into gon
   greetingName?: string;
   projectAvatar?: string;
+  /** JSON, parsed where it is read */
+  openCloudPublish?: string;
+  readme?: string;
+  readmeRaw?: string;
+  /** set by GitLab for a signed-in user */
+  current_user_id?: number;
 }
 
 interface Window {
   gon: Gon;
+  /** set while Cypress drives the page */
+  Cypress?: unknown;
 }
 
 // read bare in places as well as through window
