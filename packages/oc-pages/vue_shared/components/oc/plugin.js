@@ -5,7 +5,6 @@ import {
     Status,
     DeploymentResources,
     OcTab,
-    GitHubRepos,
     ErrorSmall,
     EmptyStateJob,
     EnvironmentSelection,
@@ -29,7 +28,6 @@ export const OcComponents = {
         app.component('oc-status', Status)
         app.component('oc-deployment-resources', DeploymentResources)
         app.component('oc-tab', OcTab)
-        app.component('oc-github-repos', GitHubRepos)
         app.component('oc-error-small', ErrorSmall)
         app.component('oc-empty-state-job', EmptyStateJob)
         app.component('oc-environment-selection', EnvironmentSelection)

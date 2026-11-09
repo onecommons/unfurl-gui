@@ -1,5 +1,7 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType, UnwrapRef} from 'vue'
+import type {GithubImportHandler} from '../../../client_utils/github-import'
 const STATUS_URL = '/import/github/status?close=true'
 import {sleep} from '../../../client_utils/misc'
 import {oauthStatus} from '../../../client_utils/github-import'
@@ -8,7 +10,7 @@ export default defineComponent({
     name: 'GitHubReposAuthenticate',
     components: {GlIcon, GlButton},
     props: {
-        importHandler: Object
+        importHandler: {type: Object as PropType<UnwrapRef<GithubImportHandler>>, required: true}
     },
     emits: ['authenticated'],
     methods: {
@@ -30,12 +32,12 @@ export default defineComponent({
             }
 
             if(handle) {
-                while(!handle.closed && this.importHandler!.status == oauthStatus.UNAUTHENTICATED) {
-                    await this.importHandler!.loadRepos()
+                while(!handle.closed && this.importHandler.status == oauthStatus.UNAUTHENTICATED) {
+                    await this.importHandler.loadRepos()
                     await sleep(30)
                 }
                 handle.close()
-                if(this.importHandler!.status == oauthStatus.AUTHENTICATED) {
+                if(this.importHandler.status == oauthStatus.AUTHENTICATED) {
                     this.$emit('authenticated')
                 }
             } else {

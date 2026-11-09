@@ -23,7 +23,7 @@ for(const file of listed) {
   if(!fs.existsSync(path.join(ROOT, PREFIX, file))) failing.push(`${PREFIX}${file}: listed in strict-components.json but missing`)
 }
 
-const components = spawnSync('git', ['ls-files', `${PREFIX}*.vue`], {cwd: ROOT, encoding: 'utf8'}).stdout.split('\n').filter(Boolean)
+const components = spawnSync('git', ['ls-files', `${PREFIX}*.vue`], {cwd: ROOT, encoding: 'utf8'}).stdout.split('\n').filter(file => file && fs.existsSync(path.join(ROOT, file)))
 const promotable = components.filter(file => {
   if(errorFiles.has(file) || listed.has(file.replace(PREFIX, ''))) return false
   const source = fs.readFileSync(path.join(ROOT, file), 'utf8')

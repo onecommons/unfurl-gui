@@ -6,7 +6,6 @@
   "dashboard/components/cells/deployment-controls.vue",
   "dashboard/components/cells/deployment-controls/control-buttons.vue",
   "dashboard/components/cells/deployment-controls/dropdown-action-item.vue",
-  "dashboard/components/cells/deployment-controls/pipeline-dropdown-item.vue",
   "dashboard/components/cells/environment-cell.vue",
   "dashboard/components/cells/environment-status.vue",
   "dashboard/components/cells/resource-cell.vue",

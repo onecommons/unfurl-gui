@@ -124,7 +124,6 @@ export default defineComponent({
             const pushFlag = (standalone && !window.gon.gitlab_url)? '': '--push '
             return `unfurl ${subcommand}${extraArgs && ' ' + extraArgs} --commit ${pushFlag}${deploymentName}`
         },
-        deploymentExists() { return this.deployment!.__typename != 'DeploymentTemplate' },
         noDeploy() {
             return !(this.deployment && this.environment)
         },
