@@ -121,12 +121,19 @@ export function cloudProviderFriendlyName(key: string | null | undefined) {
 
 type Routed = {$route: RouteLocationNormalizedLoaded, $router: Router}
 
-// A computed property bound to the route's query parameter `v`.
-export function queryParamVar(v: string) {
+interface QueryParamVar {
+    get(this: Routed): string | undefined
+    set(this: Routed, val: string | undefined): void
+}
+
+// A computed property bound to the route's query parameter `v`. A repeated
+// parameter reads as its first value and a bare `?v` as absent.
+export function queryParamVar<K extends string>(v: K): Record<K, QueryParamVar> {
     return {
         [v]: {
             get(this: Routed) {
-                return this.$route.query[v]
+                const value = this.$route.query[v]
+                return (Array.isArray(value)? value[0]: value) ?? undefined
             },
             set(this: Routed, val: string | undefined) {
                 const query = {...this.$route.query}
@@ -146,5 +153,5 @@ export function queryParamVar(v: string) {
                 })
             }
         }
-    }
+    } as Record<K, QueryParamVar>
 }

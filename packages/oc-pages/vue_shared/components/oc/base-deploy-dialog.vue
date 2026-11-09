@@ -1,5 +1,6 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
+import type {PropType} from 'vue'
 import { GlModalDirective, GlFormGroup, GlFormInput, GlFormRadio } from '@gitlab/ui';
 import { mapGetters, mapActions } from 'vuex';
 import _ from 'lodash'
@@ -15,6 +16,10 @@ import * as overview_routes from '../../../project_overview/router/constants'
 
 const standalone = window.gon.unfurl_gui
 
+type Json = Record<string, any>
+// a repository tag as the API returns it
+interface Tag {name: string, commit?: {id: string}}
+
 export default defineComponent({
     name: 'BaseDeployDialog',
     mixins: [homeProjectDefaultBranch],
@@ -26,15 +31,17 @@ export default defineComponent({
         EnvironmentCreationDialog,
     },
     props: {
+        // null while a ?ts= reload waits for its blueprint to load
         templateSelected: {
-            default: (): Record<string, any> => ({})
+            type: Object as PropType<Json | null>,
+            default: (): Json => ({})
         },
         instantiateAs: {
             default: () => 'deployment-draft'
         },
         forceEnvCreation: Boolean,
         projectPath: String,
-        applicationBlueprint: Object
+        applicationBlueprint: Object as PropType<Json | null>
     },
     emits: ['completionStatusSet'],
     directives: {
@@ -43,12 +50,12 @@ export default defineComponent({
     data() {
         return {
             projectSlugName: null,
-            selectedEnvironment: null,
+            selectedEnvironment: null as Json | null,
             creatingEnvironment: false,
             createEnvironmentName: '',
             createEnvironmentProvider: '',
-            currentTag: null,
-            mainBranchCommitId: null,
+            currentTag: null as Tag | null,
+            mainBranchCommitId: null as string | null | undefined,
             userSpecifiedDeploymentName: !!this.$route.query.fn, // hopefully we'll consider it to be user modified if they were redirected
             standalone
         }
@@ -62,11 +69,12 @@ export default defineComponent({
         deployDialogError() {
             if (this.instantiateAs == 'deployment-draft') {
                 const environment = this.selectedEnvironment ?? null
-                if (environment && this.lookupDeploymentOrDraft(slugify(this.fn), environment)) {
-                    return `'${this.fn.trim()}' already exists in environment '${environment?.name || environment}'`
+                const fn = this.fn
+                if (environment && fn && this.lookupDeploymentOrDraft(slugify(fn), environment)) {
+                    return `'${fn.trim()}' already exists in environment '${environment.name}'`
                 }
             }
-            return null
+            return undefined
         },
         ...mapGetters([
             'getNextDefaultDeploymentName',
@@ -78,6 +86,7 @@ export default defineComponent({
             'lookupEnvironment',
             'getHomeProjectPath',
             'getLastUsedEnvironment',
+            'getUsername',
         ]),
 
         mainAtLastest() {
@@ -119,7 +128,8 @@ export default defineComponent({
     watch: {
         templateSelected: {
             immediate: true,
-            handler (val) {
+            handler (val: Json | null) {
+                if(!val) return
                 this.ts = val.name
                 if (this.userSpecifiedDeploymentName) return
                 if (val && this.instantiateAs == 'deployment-draft') {
@@ -145,10 +155,6 @@ export default defineComponent({
                 this.$emit('completionStatusSet', !val)
             }
         },
-        // modal wants to set to false
-        bprev() {
-            if(this.bprev === false) this.bprev = undefined
-        },
 
         environmentSelectionFromUrl: {
             immediate: true,
@@ -173,10 +179,14 @@ export default defineComponent({
                 overview_routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT:
                 overview_routes.OC_PROJECT_VIEW_CREATE_TEMPLATE
 
+            // a completed dialog has one: its deployment name comes from it
+            const template = this.templateSelected
+            if(!template) return
+
             // store the environment in local storage
             const lastUsedEnvironment = {
-                cloud: this.templateSelected.cloud,
-                environmentName: this.templateSelected.environment
+                cloud: template.cloud,
+                environmentName: template.environment
             }
 
             this.updateLastUsedEnvironment({
@@ -184,7 +194,8 @@ export default defineComponent({
                 username: this.getUsername
             })
 
-            const route = { query, name: page, params: { dashboard, environment: this.selectedEnvironment.name, name: slugify(query.fn), slug: slugify(query.fn) } }
+            // template mode needs no environment; the draft route does, and requires one before this runs
+            const route = { query, name: page, params: { dashboard, environment: this.selectedEnvironment?.name, name: slugify(this.fn), slug: slugify(this.fn) } }
             if(this.$router.name == 'overview') {
                 window.location.href = this.$router.resolve(route).href
             } else {
@@ -201,12 +212,12 @@ export default defineComponent({
             // Pass this page as the return target: the user is sent away to make
             // an environment and comes back here with it preselected. Without an
             // explicit target the dialog treats the trip as one-way.
-            this.$refs.environmentDialog.beginEnvironmentCreation(
+            (this.$refs.environmentDialog as {beginEnvironmentCreation(target?: string): Promise<void>}).beginEnvironmentCreation(
                 window.location.pathname + window.location.search
             )
         },
 
-        performRedirect(e) {
+        performRedirect(e?: Event) {
             e?.preventDefault()
             if(this.creatingEnvironment) {
                 this.redirectToNewEnvironment()
@@ -218,7 +229,7 @@ export default defineComponent({
     },
     async mounted() {
         if(!standalone) {
-            fetchCurrentTag(encodeURIComponent(this._projectPath)).then(tag => this.currentTag = tag)
+            fetchCurrentTag(encodeURIComponent(this._projectPath)).then(tag => this.currentTag = tag ?? null)
         }
 
         await this.homeProjectDefaultBranchPromise
@@ -248,7 +259,7 @@ export default defineComponent({
                 :error="deployDialogError" @createNewEnvironment="createNewEnvironment"
                 :environment-creation="!standalone || forceEnvCreation" />
 
-            <div v-if="shouldProvideVersionSelection" class="gl-mt-7">
+            <div v-if="currentTag && shouldProvideVersionSelection" class="gl-mt-7">
                 <gl-form-radio v-model="bprev" :value="currentTag.name">Use the current release of
                     {{ applicationBlueprint.title }} (<b>{{ currentTag.name }}</b>)</gl-form-radio>
                 <gl-form-radio v-model="bprev" :value="homeProjectDefaultBranch"> Use the latest (unreleased) version</gl-form-radio>

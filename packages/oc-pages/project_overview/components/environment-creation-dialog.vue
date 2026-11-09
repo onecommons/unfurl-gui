@@ -15,7 +15,13 @@ import {lookupKey} from 'oc_vue_shared/storage-keys'
 
 const LOCAL_DEV = 'Generic'
 
-const CLUSTER_PROVIDER_NAMES = {
+type Json = Record<string, any>
+// an existing provider, offered by availableProviders
+interface AvailableProvider {environment: Json, template: Json, source: 'connection' | 'instance'}
+// a CLUSTER_PROVIDER_NAMES key, or an existing provider to copy
+type CloudProviderChoice = string | AvailableProvider
+
+const CLUSTER_PROVIDER_NAMES: Record<string, string> = {
     'Google Cloud Platform': 'gcp',
     'Amazon Web Services': 'aws',
     'Digital Ocean': 'DigitalOcean',
@@ -71,7 +77,7 @@ export default defineComponent({
     data() {
         return {
             environmentName: '',
-            selectedCloudProvider: __('Select'),
+            selectedCloudProvider: __('Select') as CloudProviderChoice,
             CLUSTER_PROVIDER_NAMES,
             token,
             nameStartsWithNumber: false,
@@ -101,7 +107,7 @@ export default defineComponent({
             return `${window.origin}${projectPathToHomeRoute(this.getHomeProjectPath)}/-/environments`
         },
         filteredAvailableProviders() {
-            return this.availableProviders.filter(provider => {
+            return this.availableProviders.filter((provider: AvailableProvider) => {
                 /*
                  * allow everything outside of gcp and aws
                 if(provider.source == 'instance') return true
@@ -118,23 +124,20 @@ export default defineComponent({
         showExistingProviders() {
             return this.enableShowExistingProviders && this.filteredAvailableProviders?.length
         },
+        // the CLUSTER_PROVIDER_NAMES key chosen, if one was rather than an existing provider
+        selectedProviderName(): string | null {
+            return typeof this.selectedCloudProvider == 'string'? this.selectedCloudProvider: null
+        },
         currentType() {
-            return lookupCloudProviderAlias(this.selectedCloudProvider?.template?.type || this.selectedCloudProvider)
+            const choice = this.selectedCloudProvider
+            return lookupCloudProviderAlias(typeof choice == 'string'? choice: choice.template?.type)
         },
         currentText() {
             return this.displayProvider(this.selectedCloudProvider) || this.selectedCloudProvider || __('Select')
         }
     },
     watch: {
-        environmentName:  _.debounce(function(val){
-            if(this.nameStartsWithNumber = (/^\d/).test(this.environmentName)) {
-                this.$emit('environmentNameChange', '')
-            } else if(this.duplicateName = !!this.lookupEnvironment(slugify(this.environmentName))) {
-                this.$emit('environmentNameChange', '')
-            } else {
-                this.$emit('environmentNameChange', slugify(this.environmentName))
-            }
-        }, 100),
+        environmentName:  _.debounce(function(this: {checkEnvironmentName(): void}) { this.checkEnvironmentName() }, 100),
         selectedCloudProvider() {
             this.$emit('cloudProviderChange', this.selectedCloudProvider)
         }
@@ -143,10 +146,22 @@ export default defineComponent({
         ...mapActions(['environmentFromProvider', 'ocFetchEnvironments']),
         ...mapMutations(['createError', 'addProjectEnvironment']),
 
+        checkEnvironmentName() {
+            if(this.nameStartsWithNumber = (/^\d/).test(this.environmentName)) {
+                this.$emit('environmentNameChange', '')
+            } else if(this.duplicateName = !!this.lookupEnvironment(slugify(this.environmentName))) {
+                this.$emit('environmentNameChange', '')
+            } else {
+                this.$emit('environmentNameChange', slugify(this.environmentName))
+            }
+        },
+
         async createEnvironmentWithoutCluster(instances={}) {
-            const primary_provider = PROVIDER_TEMPLATE_AT_CREATION.includes(this.selectedCloudProvider) ? {
+            const type = this.currentType
+            // every provider listed there has a type
+            const primary_provider = PROVIDER_TEMPLATE_AT_CREATION.includes(this.selectedProviderName ?? '') && type ? {
                 name: 'primary_provider',
-                type: this.currentType,
+                type,
                 __typename: 'ResourceTemplate'
             } : undefined
 
@@ -181,7 +196,7 @@ export default defineComponent({
                 ])
             } catch(e) {
                 this.createError({
-                    message: `Create environment: ${e.message}`,
+                    message: `Create environment: ${(e as Error).message}`,
                     context: {
                         primary_provider,
                         instances,
@@ -195,28 +210,31 @@ export default defineComponent({
 
             await postGitlabEnvironmentForm();
 
-            if(this.selectedCloudProvider != LOCAL_DEV) {
+            if(this.selectedCloudProvider != LOCAL_DEV && type) {
                 await declareAvailableProviders(
                     this.getHomeProjectPath,
                     slugify(this.environmentName),
-                    [this.currentType]
+                    [type]
                 )
             }
         },
 
-        async beginEnvironmentCreation(_redirectTarget) {
+        async beginEnvironmentCreation(_redirectTarget?: string) {
             let redirectTarget = _redirectTarget || window.location.pathname + window.location.search
             // rails is settings params weird
             if (!redirectTarget.includes('?')) redirectTarget += '?'
 
-            sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form)).entries()))
+            sessionStorage['environmentFormEntries'] = JSON.stringify(Array.from((new FormData(this.$refs.form as HTMLFormElement)).entries()))
             sessionStorage['environmentFormAction'] = this.action
 
-            const provider = CLUSTER_PROVIDER_NAMES[this.selectedCloudProvider]
+            const provider = this.selectedProviderName == null? undefined: CLUSTER_PROVIDER_NAMES[this.selectedProviderName]
+            // what the environment is created as, so what to go to and preselect
+            const createdName = slugify(this.environmentName)
 
-            if(typeof this.selectedCloudProvider != 'string') {
+            const selected = this.selectedCloudProvider
+            if(typeof selected != 'string') {
                 await postGitlabEnvironmentForm();
-                await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: this.selectedCloudProvider})
+                await this.environmentFromProvider({newEnvironmentName: this.environmentName, provider: selected})
 
                 // A caller that asked to be returned somewhere gets a real
                 // navigation; everyone else goes to the environment just made,
@@ -227,7 +245,7 @@ export default defineComponent({
                     window.location.href = redirectTarget
                     return
                 }
-                const createdRoute = `/-/environments/${this.environmentName}`
+                const createdRoute = `/-/environments/${createdName}`
                 if(this.$router?.name == 'dashboard') {
                     this.$router.push(createdRoute)
                 } else {
@@ -264,9 +282,9 @@ export default defineComponent({
                 // exception despite creating an ingress instance too: the modal
                 // filters its cards by `isProvider`, so the ingress is never in
                 // it and the empty provider card is all that renders.
-                const wroteTemplate = PROVIDER_TEMPLATE_AT_CREATION.includes(this.selectedCloudProvider)
+                const wroteTemplate = PROVIDER_TEMPLATE_AT_CREATION.includes(selected)
                 const needsGenericModal = provider && !wroteTemplate
-                const query = DEDICATED_PROVIDER_PANELS.includes(provider)?
+                const query = provider && DEDICATED_PROVIDER_PANELS.includes(provider)?
                     `?provider=${provider}`:
                     (needsGenericModal? '?provider': '')
                 // Only when a caller asked to be returned somewhere -- that is a
@@ -286,7 +304,7 @@ export default defineComponent({
                  * preselecting it the way onProviderSetupSaved would have.
                  */
                 if(_redirectTarget && !query) {
-                    sessionStorage['instantiate_env'] = this.environmentName
+                    sessionStorage['instantiate_env'] = createdName
                     sessionStorage['instantiate_provider'] = provider
                     window.location.href = redirectTarget
                     return
@@ -294,7 +312,7 @@ export default defineComponent({
 
                 if(_redirectTarget) sessionStorage['redirectOnProviderSaved'] = redirectTarget
 
-                const environmentRoute = `/-/environments/${this.environmentName}${query}`
+                const environmentRoute = `/-/environments/${createdName}${query}`
                 // A reload here discards the whole SPA to reach a route the dashboard
                 // router already declares. Only that app has it: this dialog is also
                 // mounted in project_overview, which cannot route into an app that
@@ -306,7 +324,8 @@ export default defineComponent({
                 }
             }
         },
-        displayProvider(provider) {
+        displayProvider(provider: CloudProviderChoice) {
+            if(typeof provider == 'string') return undefined
             return provider?.template?.name == 'primary_provider' && provider?.source == 'connection'? provider?.environment?.name: provider?.template?.name
         },
         slugify

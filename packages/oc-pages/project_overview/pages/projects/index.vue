@@ -22,6 +22,10 @@ import * as routes from '../../router/constants'
 
 const standalone = window.gon.unfurl_gui
 
+type Json = Record<string, any>
+// a repository tag as the API returns it
+interface Tag {name: string, commit?: {id: string}}
+
 export default defineComponent({
     emits: ['deployTemplate'],
     name: 'ProjectPageHome',
@@ -55,12 +59,12 @@ export default defineComponent({
     data() {
         return {
             triedPopulatingDeploymentItems: false,
-            instantiateAs: null,
-            projectSlugName: null,
-            templateForkedName: null,
-            templateSelected: null,
-            selectedEnvironment: null,
-            newEnvironmentProvider: null,
+            instantiateAs: null as 'deployment-draft' | 'template' | null,
+            projectSlugName: null as string | null,
+            templateForkedName: null as string | null,
+            templateSelected: null as Json | null,
+            selectedEnvironment: null as Json | null,
+            newEnvironmentProvider: null as string | null | undefined,
             hasEditPermissions: false,
             creatingEnvironment: false,
             createEnvironmentName: '',
@@ -68,9 +72,9 @@ export default defineComponent({
             modalNextStatus: true,
             showBannerIntro: true,
             submitting: false,
-            currentTag: null,
-            version: null,
-            mainBranchCommitId: null,
+            currentTag: null as Tag | null,
+            version: null as string | null | undefined,
+            mainBranchCommitId: null as string | null | undefined,
             bannerInfo: {
                 title: __(`Deploy ${this.$projectGlobal.projectName}`),
                 description: ""
@@ -141,10 +145,10 @@ export default defineComponent({
                 const environment = this.selectedEnvironment ?? null
                 const deploymentName = this.standalone ? this.fn : this.templateForkedName
                 if(environment && deploymentName && this.lookupDeploymentOrDraft(slugify(deploymentName), environment)) {
-                    return `'${deploymentName.trim()}' already exists in environment '${environment?.name || environment}'`
+                    return `'${deploymentName.trim()}' already exists in environment '${environment.name}'`
                 }
             }
-            return null
+            return undefined
         },
         primaryProps() {
             return {
@@ -196,7 +200,7 @@ export default defineComponent({
             return true
         },
         modalOpen: {
-            set(val) {
+            set(val: boolean) {
                 if(val) return
                 this.clearModalTemplate()
                 this.baseDialogComplete = false
@@ -212,7 +216,7 @@ export default defineComponent({
             if(_.isEqual(query, oldQuery)) return
 
             const path = this.$route.path
-            if(document.activeElement.tagName == 'INPUT' && (document.activeElement as HTMLInputElement).type == 'text') {
+            if(document.activeElement?.tagName == 'INPUT' && (document.activeElement as HTMLInputElement).type == 'text') {
                 const el = document.activeElement as HTMLElement
                 el.onblur = _ => {
                     this.$router.replace({ path, query })
@@ -299,31 +303,40 @@ export default defineComponent({
         }
 
         if(!standalone) {
-            fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag)
+            fetchCurrentTag(encodeURIComponent(this.$projectGlobal.projectPath)).then(tag => this.currentTag = tag ?? null)
         }
 
-        this.blueprintDefaultBranchPromise.then(defaultBranch => {
+        ;(this.blueprintDefaultBranchPromise as Promise<string> | null)?.then(defaultBranch => {
             fetchBranches(encodeURIComponent(this.$projectGlobal.projectPath)).then(branches => this.mainBranchCommitId = branches.find(b => b.name == defaultBranch)?.commit?.id)
         })
 
-        this.selectedEnvironment = this.lookupEnvironment(this.$route.query?.env || sessionStorage['instantiate_env'])
-        this.newEnvironmentProvider = this.$route.query?.provider || sessionStorage['instantiate_provider']
+        this.selectedEnvironment = this.lookupEnvironment(this.queryValue('env') || sessionStorage['instantiate_env'])
+        this.newEnvironmentProvider = this.queryValue('provider') || sessionStorage['instantiate_provider']
 
-        const selectedTemplateName = this.standalone ? this.ts : this.$route.query?.ts
-        const templateSelected = selectedTemplateName ? this.getTemplatesList.find(template => template.name == selectedTemplateName) : null
+        const selectedTemplateName = this.standalone ? this.ts : this.queryValue('ts')
+        const templateSelected = selectedTemplateName ? this.getTemplatesList.find((template: Json) => template.name == selectedTemplateName) : null
 
         if(templateSelected) {
             bus.$emit('deployTemplate', templateSelected)
             if(this.standalone) {
-                this.fn = this.$route.query?.fn
+                this.fn = this.queryValue('fn')
             } else {
-                this.templateForkedName = this.$route.query?.fn
+                this.templateForkedName = this.queryValue('fn') ?? null
             }
         }
 
-        this.version = this.$route.query?.bprev
+        this.version = this.queryValue('bprev')
     },
     methods: {
+        queryValue(name: string): string | undefined {
+            const value = this.$route.query[name]
+            return (Array.isArray(value)? value[0]: value) ?? undefined
+        },
+        // the dialog cannot submit, and nothing redirects, without a template
+        requireTemplate(): Json {
+            if(!this.templateSelected) throw new Error('no template selected')
+            return this.templateSelected
+        },
         redirectToTemplateEditor(page = routes.OC_PROJECT_VIEW_CREATE_TEMPLATE) {
             const query = this.$route.query || {}
             if(Object.keys(query).length != 0) this.$router.replace({ query: {} })
@@ -333,29 +346,31 @@ export default defineComponent({
             // TODO re-enable this when we're able to update the current namespace
             // https://github.com/onecommons/gitlab-oc/issues/867
             // this.$router.push({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name }})
-            window.location.href = this.$router.resolve({ query, name: page, params: { dashboard, environment: this.templateSelected.environment, slug: this.templateSelected.name } }).href
+            const template = this.requireTemplate()
+            window.location.href = this.$router.resolve({ query, name: page, params: { dashboard, environment: template.environment, slug: template.name } }).href
         },
-        clearModalTemplate(e) {
+        clearModalTemplate(e?: Event) {
             if(this.submitting && !this.standalone) return
             e?.preventDefault()
             this.templateForkedName = null
             this.templateSelected = null
             this.selectedEnvironment = null
             this.creatingEnvironment = false
-            this.ts = undefined
-            this.tn = undefined
-            this.bprev = undefined
-            this.env = undefined
-            this.fn = undefined
+            // One navigation: vue-router 4 updates $route only once a navigation
+            // lands, so clearing these one setter at a time removed only the last
+            // and left ?ts=, which mounted() reads to reopen this dialog.
+            const query = {...this.$route.query}
+            for(const param of ['ts', 'tn', 'bprev', 'env', 'fn']) delete query[param]
+            if(!_.isEqual(query, this.$route.query)) this.$router.replace({...this.$route, query})
         },
         instantiatePrimaryDeploymentTemplate() {
             this.instantiateAs = 'template'
             this.templateSelected = { ...this.getTemplatesList[0] };
             this.projectSlugName = '';
         },
-        async onSubmitModal(e) {
+        async onSubmitModal(e: Event) {
             if(this.standalone) {
-                return this.$refs?.baseDeployDialog?.performRedirect(e)
+                return (this.$refs.baseDeployDialog as {performRedirect(e?: Event): void} | undefined)?.performRedirect(e)
             }
 
             if(this.creatingEnvironment) {
@@ -368,9 +383,10 @@ export default defineComponent({
                 this.prepareTemplateNew()
 
                 if(this.instantiateAs == 'deployment-draft') {
+                    const template = this.requireTemplate()
                     const lastUsedEnvironment = {
-                        cloud: this.templateSelected.cloud,
-                        environmentName: this.templateSelected.environment
+                        cloud: template.cloud,
+                        environmentName: template.environment
                     }
                     this.updateLastUsedEnvironment({
                         lastUsedEnvironment,
@@ -379,8 +395,9 @@ export default defineComponent({
 
                     this.redirectToTemplateEditor(routes.OC_PROJECT_VIEW_DRAFT_DEPLOYMENT)
                 } else {
-                    const args = { ...this.templateSelected, blueprintName: this.getApplicationBlueprint.name }
-                    this.pushPreparedMutation(createDeploymentTemplate(args))
+                    // prepareTemplateNew filled these in
+                    const {primary, primaryName, primaryType, name, title, slug, description} = this.requireTemplate()
+                    this.pushPreparedMutation(createDeploymentTemplate({blueprintName: this.getApplicationBlueprint.name, primary, primaryName, primaryType, name, title, slug, description}))
 
                     await this.commitPreparedMutations()
                     this.redirectToTemplateEditor()
@@ -402,7 +419,7 @@ export default defineComponent({
                 templateSlug,
             })
         },
-        onCancelModal(e) {
+        onCancelModal(e: Event) {
             if(this.standalone) return
             if(this.creatingEnvironment) {
                 this.creatingEnvironment = false
@@ -413,12 +430,13 @@ export default defineComponent({
         },
         prepareTemplateNew() {
             const deploymentName = this.standalone ? this.fn : this.templateForkedName
-            this.templateSelected.primary = this.templateSelected.title
-            this.templateSelected.title = deploymentName
-            this.templateSelected.name = slugify(deploymentName)
-            this.templateSelected.totalDeployments = 0
-            this.templateSelected.environment = this.selectedEnvironment?.name || this.defaultEnvironmentName
-            this.templateSelected.primaryType = this.getApplicationBlueprint.primary
+            const template = this.requireTemplate()
+            template.primary = template.title
+            template.title = deploymentName
+            template.name = slugify(deploymentName)
+            template.totalDeployments = 0
+            template.environment = this.selectedEnvironment?.name || this.defaultEnvironmentName
+            template.primaryType = this.getApplicationBlueprint.primary
         },
         createNewEnvironment() {
             this.creatingEnvironment = true
@@ -427,7 +445,7 @@ export default defineComponent({
             // Pass this page as the return target: the user is sent away to make
             // an environment and comes back here with it preselected. Without an
             // explicit target the dialog treats the trip as one-way.
-            this.$refs.environmentDialog.beginEnvironmentCreation(
+            (this.$refs.environmentDialog as {beginEnvironmentCreation(target?: string): Promise<void>}).beginEnvironmentCreation(
                 window.location.pathname + window.location.search
             )
         },
@@ -571,7 +589,7 @@ export default defineComponent({
                                 environment-creation
                             />
 
-                            <div v-if="shouldProvideVersionSelection" class="gl-mt-7">
+                            <div v-if="currentTag && shouldProvideVersionSelection" class="gl-mt-7">
                                 <gl-form-radio v-model="version" :value="currentTag.name">Use the current release of {{ getApplicationBlueprint.title }}  (<b>{{ currentTag.name }}</b>)</gl-form-radio>
                                 <gl-form-radio v-model="version" value="main"> Use the latest (unreleased) version</gl-form-radio>
                             </div>

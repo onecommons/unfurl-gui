@@ -110,4 +110,35 @@ describe('returning to the page that asked for an environment', () => {
         expect(sessionStorage.redirectOnProviderSaved).toBeUndefined()
         expect(sessionStorage.instantiate_env).toBeUndefined()
     })
+
+    // The environment is created under the slug of what was typed, so that is
+    // the name to go to and to preselect.
+    it('goes to the environment under the name it was created with', async () => {
+        const wrapper = mountDialog()
+        await wrapper.setData({environmentName: 'My Env', selectedCloudProvider: 'Google Cloud Platform'})
+
+        await wrapper.vm.beginEnvironmentCreation()
+
+        expect(location.href).toContain('/-/environments/my-env?provider=gcp')
+    })
+
+    it('preselects the environment under the name it was created with', async () => {
+        const wrapper = mountDialog()
+        await wrapper.setData({environmentName: 'My Env', selectedCloudProvider: 'Digital Ocean'})
+
+        await wrapper.vm.beginEnvironmentCreation(RETURN_TO)
+
+        expect(sessionStorage.instantiate_env).toBe('my-env')
+    })
+
+    it('goes to an environment made from an existing provider under its created name', async () => {
+        const wrapper = mountDialog()
+        const provider = {source: 'connection', template: {name: 'primary_provider', type: 'unfurl.relationships.ConnectsTo.K8sCluster'}, environment: {name: 'prod'}}
+        await wrapper.setData({environmentName: 'My Env', selectedCloudProvider: provider})
+
+        await wrapper.vm.beginEnvironmentCreation()
+
+        expect(location.href).toContain('/-/environments/my-env')
+    })
 })
+

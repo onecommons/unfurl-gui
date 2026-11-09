@@ -77,4 +77,45 @@ describe('dashboard-deploy-dialog', () => {
 
         expect(mountDialog().vm.enabled).toBe(true)
     })
+
+    // vue-router 4 resolves a navigation after the call returns, so $route
+    // does not change while reset() is still running.
+    it('resets from the template step without waiting on the route', () => {
+        $route.query = {blueprintProject: 'org/blueprint', ts: 'aws'}
+        let replaced = 0
+        $router.replace = jest.fn(() => {
+            if(++replaced > 20) throw new Error('reset() keeps navigating')
+            return Promise.resolve()
+        })
+        const wrapper = mountDialog()
+
+        wrapper.vm.reset()
+
+        expect(replaced).toBeLessThan(20)
+    })
+
+    // Each navigation starts from $route.query; until one lands, the next
+    // replaces it, so clearing parameters one at a time keeps only the last.
+    it('steps back from the template step in one navigation', () => {
+        $route.query = {blueprintProject: 'org/blueprint', ts: 'aws', fn: 'App', keep: '1'}
+        const wrapper = mountDialog()
+
+        wrapper.vm.back()
+
+        expect($router.replace).toHaveBeenCalledTimes(1)
+        expect($router.replace.mock.calls[0][0].query).toEqual({keep: '1'})
+    })
+
+    it('closes from the template step in one navigation, clearing the hash too', () => {
+        $route.query = {blueprintProject: 'org/blueprint', ts: 'aws', keep: '1'}
+        $route.hash = NEW_DEPLOYMENT_HASH
+        const wrapper = mountDialog()
+
+        wrapper.vm.reset()
+
+        const navigations = [...$router.push.mock.calls, ...$router.replace.mock.calls]
+        expect(navigations).toHaveLength(1)
+        expect(navigations[0][0]).toMatchObject({query: {keep: '1'}, hash: ''})
+    })
 })
+

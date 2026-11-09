@@ -1,17 +1,25 @@
 <script lang="ts">
 import {defineComponent} from 'vue'
-import type {WritableComputedOptions} from 'vue'
 import { __ } from '~/locale'
 import { mapGetters, mapActions, mapMutations } from 'vuex'
 import { GlModal, GlDropdown, GlDropdownItem, GlLoadingIcon} from '@gitlab/ui';
 import { queryParamVar, STD_REPOSITORY_URL } from 'oc_vue_shared/util'
+import _ from 'lodash'
 import { unfurlServerExport} from 'oc_vue_shared/client_utils/unfurl-server'
+import type {ExportResponse} from 'oc_vue_shared/client_utils/unfurl-server'
 import OcListResource from '../../project_overview/components/shared/oc_list_resource.vue'
 import { BaseDeployDialog } from 'oc_vue_shared/components/oc'
 const NEW_DEPLOYMENT_HASH = '#new-deployment'
+// the query parameters the template step sets
+const TEMPLATE_STEP_PARAMS = ['blueprintProject', 'ts', 'fn', 'bprev', 'env', 'provider']
 
-// queryParamVar's computed key is typed as an index signature, which the template cannot see
-type QueryParamVars<K extends string> = Record<K, WritableComputedOptions<any>>
+type Json = Record<string, any>
+interface BaseDeployDialogRef {
+    creatingEnvironment: boolean
+    redirectToNewEnvironment(): void
+    redirectToTemplateEditor(): void
+}
+
 
 export default defineComponent({
     name: 'DashboardDeployDialog',
@@ -23,9 +31,9 @@ export default defineComponent({
     },
     data() {
         return {
-            selectedBlueprint: null,
-            blueprintExport: null,
-            blueprints: [],
+            selectedBlueprint: null as Json | null,
+            blueprintExport: null as ExportResponse | null | undefined,
+            blueprints: [] as Json[],
             baseDialogComplete: false,
         }
     },
@@ -58,32 +66,38 @@ export default defineComponent({
             }
         },
         primarySelectTemplate() {
-            if(this.$refs.baseDeployDialog) {
-                if(this.$refs.baseDeployDialog.creatingEnvironment) {
-                    this.$refs.baseDeployDialog.redirectToNewEnvironment()
+            const baseDeployDialog = this.$refs.baseDeployDialog as BaseDeployDialogRef | undefined
+            if(baseDeployDialog) {
+                if(baseDeployDialog.creatingEnvironment) {
+                    baseDeployDialog.redirectToNewEnvironment()
                 } else {
-                    this.$refs.baseDeployDialog.redirectToTemplateEditor()
+                    baseDeployDialog.redirectToTemplateEditor()
                 }
             }
         },
         primarySelectAppBlueprint() {
+            // Next is disabled until a blueprint is selected
+            if(!this.selectedBlueprint) return
             this.blueprintProject = (new URL(this.selectedBlueprint._sourceinfo.url))
                 .pathname
                 .slice(1)
                 .replace(/\.git$/, '')
         },
-        primaryAction(e) {
+        primaryAction(e: Event) {
             e.preventDefault()
-            const fn = `primary${this.stage}`
-            return this[fn]()
+            if(this.stage == 'SelectTemplate') return this.primarySelectTemplate()
+            return this.primarySelectAppBlueprint()
+        },
+        // One navigation: vue-router 4 updates $route only once a navigation
+        // lands, so clearing the parameters one setter at a time had each
+        // replace the last, and only the final one was ever removed.
+        queryWithoutTemplateStep() {
+            const query = {...this.$route.query}
+            for(const param of TEMPLATE_STEP_PARAMS) delete query[param]
+            return query
         },
         backSelectTemplate() {
-            this.blueprintProject = undefined
-            this.ts = undefined
-            this.fn = undefined
-            this.bprev = undefined
-            this.env = undefined
-            this.provider = undefined
+            this.$router.replace({...this.$route, query: this.queryWithoutTemplateStep()})
             this.baseDialogComplete = false
         },
         backSelectAppBlueprint() {
@@ -91,22 +105,25 @@ export default defineComponent({
         },
         // vue-router 4 only listens for popstate, so assigning window.location.hash
         // moved the URL without moving $route.hash -- which is what `enabled` reads.
-        navigateToHash(hash) {
+        navigateToHash(hash: string) {
             if(this.$route.hash == hash) return
 
             this.$router.push({...this.$route, hash})
         },
-        back(e) {
+        back(e?: Event) {
             e?.preventDefault()
-            const fn = `back${this.stage}`
-            return this[fn]()
+            if(this.stage == 'SelectTemplate') return this.backSelectTemplate()
+            return this.backSelectAppBlueprint()
         },
-        reset(e){
+        // Back to the start and closed, in one navigation. This looped on
+        // `stage` until the route caught up, which under vue-router 4 is never
+        // within the loop.
+        reset(e?: Event){
             e?.preventDefault()
-            while(this.stage != 'SelectAppBlueprint') {
-                this.back()
-            }
-            this.back()
+            const query = this.queryWithoutTemplateStep()
+            this.baseDialogComplete = false
+            if(this.$route.hash == '' && _.isEqual(query, this.$route.query)) return
+            this.$router.push({...this.$route, query, hash: ''})
         },
     },
     computed: {
@@ -132,7 +149,7 @@ export default defineComponent({
                     !!this.blueprintProject
                 )
             },
-            set(val) {
+            set(val: boolean) {
                 if(val) {
                     this.navigateToHash(NEW_DEPLOYMENT_HASH)
                 } else {
@@ -140,8 +157,8 @@ export default defineComponent({
                 }
             }
         },
-        ...(queryParamVar('blueprintProject') as QueryParamVars<'blueprintProject'>),
-        ...(queryParamVar('ts') as QueryParamVars<'ts'>),
+        ...queryParamVar('blueprintProject'),
+        ...queryParamVar('ts'),
         ...queryParamVar('fn'),
         ...queryParamVar('bprev'),
         ...queryParamVar('env'),
@@ -172,8 +189,8 @@ export default defineComponent({
             return !this.selectedBlueprint
         },
         nextIsDisabled() {
-            const fn = `nextDisabled${this.stage}`
-            return this[fn] ?? false
+            if(this.stage == 'SelectTemplate') return this.nextDisabledSelectTemplate
+            return this.nextDisabledSelectAppBlueprint
         },
         applicationBlueprint() {
             return (this.blueprintExport && Object.values(this.blueprintExport.ApplicationBlueprint)[0]) ?? null

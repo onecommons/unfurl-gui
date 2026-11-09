@@ -66,6 +66,17 @@ describe('queryParamVar', () => {
         expect(component({tab: 'a'}).get()).toBe('a')
     })
 
+    // A repeated parameter parses to an array and a bare one to null; callers
+    // treat the value as a string.
+    it('reads a repeated parameter as its first value', () => {
+        expect(component({tab: ['a', 'b']}).get()).toBe('a')
+    })
+
+    it('reads a parameter without a value, or none, as undefined', () => {
+        expect(component({tab: null}).get()).toBeUndefined()
+        expect(component({}).get()).toBeUndefined()
+    })
+
     it('replaces the route with the parameter set or removed', () => {
         const c = component({tab: 'a', other: '1'})
         c.set('b')
