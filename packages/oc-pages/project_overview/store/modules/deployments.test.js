@@ -113,6 +113,14 @@ describe('lookups', () => {
         expect(gettersOf(titled).getNextDefaultDeploymentName('C++ (beta)', 'prod')).toBe('C++ (beta) 3')
     })
 
+    it('numbers past a deployment that has no title', () => {
+        const titled = {...deploymentsStore.state(), deployments: [
+            dict('a', 'prod', {Deployment: {a: {name: 'a', primary: 'web'}}}),
+            dict('b', 'prod', {Deployment: undefined, DeploymentTemplate: {b: {name: 'b', title: 'WordPress 2'}}}),
+        ]}
+        expect(gettersOf(titled).getNextDefaultDeploymentName('WordPress', 'prod')).toBe('WordPress 3')
+    })
+
     it('finds the environment a deployment lives in, preferring the one asked for', () => {
         const paths = [{name: 'environments/prod/app', environment: 'prod'}, {name: 'environments/staging/app', environment: 'staging'}]
         const g2 = gettersOf(state, {allDeploymentPaths: paths})

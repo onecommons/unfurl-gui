@@ -662,7 +662,7 @@ const getters = {
         //
         // update - this used to use getDeployments but is now using getDeploymentsOrDrafts
         for(const deployment of getters.getDeploymentsOrDrafts) {
-            const match = deployment.title.match(re)
+            const match = deployment.title?.match(re)
             if(match) {
                 const n = parseInt(match[1])
                 if(n >= max) { max = n + 1 }
