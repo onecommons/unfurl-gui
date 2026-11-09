@@ -3,6 +3,10 @@ import setupNodeEvents from './cypress/plugins/index.js'
 const BASE_URL = process.env.OC_URL || 'http://localhost:8080'
 const defaultCommandTimeout = parseInt(process.env.CY_COMMAND_TIMEOUT) || 15000
 
+// Specs are bundled with the browserslist data inside the Cypress binary, not
+// ours, so its age warning can only be fixed by upgrading Cypress
+process.env.BROWSERSLIST_IGNORE_OLD_DATA = '1'
+
 export default defineConfig({
   defaultCommandTimeout,
   // pinned so baseline screenshots stay comparable across cypress versions
